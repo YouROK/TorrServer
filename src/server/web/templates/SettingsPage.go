@@ -90,7 +90,7 @@ var settingsPage = `
                 <div class="input-group-prepend">
                     <div class="input-group-text">Порт для входящих торрент подключений (0 - случайный порт)</div>
                 </div>
-                <input id="ListenPort" class="form-control" type="number" autocomplete="off">
+                <input id="PeersListenPort" class="form-control" type="number" autocomplete="off">
             </div>            
 		<br>
             <div class="input-group">
@@ -156,7 +156,7 @@ var settingsPage = `
 			data.UploadRateLimit = Number($('#UploadRateLimit').val());
 			
 			data.RetrackersMode = Number($('#RetrackersMode').val());
-			data.ListenPort = Number($('#ListenPort').val());
+			data.PeersListenPort = Number($('#PeersListenPort').val());
          
             $.post("/settings/write", JSON.stringify(data))
                 .done(function(data) {
@@ -187,7 +187,7 @@ var settingsPage = `
 					$('#UploadRateLimit').val(data.UploadRateLimit);
 					
          			$('#RetrackersMode').val(data.RetrackersMode);
-				$('#ListenPort').val(data.ListenPort);
+				$('#PeersListenPort').val(data.PeersListenPort);
                 });
         };
 

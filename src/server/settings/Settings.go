@@ -39,7 +39,7 @@ type Settings struct {
 	DownloadRateLimit int // in kb, 0 - inf
 	UploadRateLimit   int // in kb, 0 - inf
 	ConnectionsLimit  int
-	ListenPort        int
+	PeersListenPort   int
 }
 
 func Get() *Settings {
