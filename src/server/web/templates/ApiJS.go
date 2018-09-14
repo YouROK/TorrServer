@@ -127,7 +127,7 @@ function humanizeSize(size) {
 }
 `
 
-func Api_JS(c echo.Context) error {
+func ApiJS(c echo.Context) error {
 	http.ServeContent(c.Response(), c.Request(), "api.js", settings.StartTime, helpers.NewSeekingBuffer(apijs))
 	return c.NoContent(http.StatusOK)
 }
