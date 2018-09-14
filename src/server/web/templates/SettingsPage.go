@@ -85,6 +85,13 @@ var settingsPage = `
                     <option value="2">Принудительно</option>
                 </select>
             </div>
+	    	<br>
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <div class="input-group-text">Порт для входящих торрент подключений (0 - случайный порт)</div>
+                </div>
+                <input id="ListenPort" class="form-control" type="number" autocomplete="off">
+            </div>            
 		<br>
             <div class="input-group">
                 <div class="input-group-prepend">
@@ -149,6 +156,7 @@ var settingsPage = `
 			data.UploadRateLimit = Number($('#UploadRateLimit').val());
 			
 			data.RetrackersMode = Number($('#RetrackersMode').val());
+			data.ListenPort = Number($('#ListenPort').val());
          
             $.post("/settings/write", JSON.stringify(data))
                 .done(function(data) {
@@ -179,6 +187,7 @@ var settingsPage = `
 					$('#UploadRateLimit').val(data.UploadRateLimit);
 					
          			$('#RetrackersMode').val(data.RetrackersMode);
+				$('#ListenPort').val(data.ListenPort);
                 });
         };
 
