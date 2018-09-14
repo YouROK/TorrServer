@@ -98,7 +98,10 @@ func (bt *BTServer) configure() {
 	if settings.Get().UploadRateLimit > 0 {
 		bt.config.UploadRateLimiter = utils.Limit(settings.Get().UploadRateLimit * 1024)
 	}
-
+	if settings.Get().ListenPort > 0 {
+		bt.config.ListenPort = settings.Get().ListenPort
+	} 
+	
 	//bt.config.Debug = true
 
 	fmt.Println("Configure client:", settings.Get())
