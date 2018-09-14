@@ -60,7 +60,7 @@ func Start(port string) {
 	server.GET("/", mainPage)
 	server.GET("/echo", echoPage)
 	server.POST("/shutdown", shutdownPage)
-	server.GET("/js/api.js", templates.Api_JS)
+	server.GET("/js/api.js", templates.ApiJS)
 
 	go func() {
 		defer mutex.Unlock()
