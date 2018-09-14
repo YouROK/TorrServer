@@ -88,10 +88,11 @@ var settingsPage = `
 	    	<br>
             <div class="input-group">
                 <div class="input-group-prepend">
-                    <div class="input-group-text">Порт для входящих торрент подключений (0 - случайный порт)</div>
+                    <div class="input-group-text">Порт для входящих торрент подключений</div>
                 </div>
                 <input id="PeersListenPort" class="form-control" type="number" autocomplete="off">
-            </div>            
+            </div>
+         	<small class="form-text text-muted">0 - случайный порт</small>
 		<br>
             <div class="input-group">
                 <div class="input-group-prepend">
