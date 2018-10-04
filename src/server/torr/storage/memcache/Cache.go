@@ -149,12 +149,7 @@ func (c *Cache) getRemPieces() []*Piece {
 	pieces := make([]*Piece, 0)
 	fill := int64(0)
 	loading := 0
-	used := make(map[int]struct{})
-	for _, b := range c.bufferPull.buffs {
-		if b.used {
-			used[b.pieceId] = struct{}{}
-		}
-	}
+	used := c.bufferPull.Used()
 	for u := range used {
 		v := c.pieces[u]
 		if v.Size > 0 {

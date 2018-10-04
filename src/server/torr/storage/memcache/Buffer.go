@@ -81,6 +81,18 @@ func (b *BufferPool) ReleaseBuffer(index int) {
 	}
 }
 
+func (b *BufferPool) Used() map[int]struct{} {
+	used := make(map[int]struct{})
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	for _, b := range b.buffs {
+		if b.used {
+			used[b.pieceId] = struct{}{}
+		}
+	}
+	return used
+}
+
 func (b *BufferPool) Len() int {
 	return b.frees
 }
