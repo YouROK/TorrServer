@@ -446,6 +446,7 @@ func torrentPlayListAll(c echo.Context) error {
 	m3u := helpers.MakeM3ULists(list, c.Scheme()+"://"+c.Request().Host)
 
 	c.Response().Header().Set("Content-Type", "audio/x-mpegurl")
+	c.Response().Header().Set("Connection", "close")
 	c.Response().Header().Set("Content-Disposition", `attachment; filename="playlist.m3u"`)
 	http.ServeContent(c.Response(), c.Request(), "playlist.m3u", time.Now(), bytes.NewReader([]byte(m3u)))
 	return c.NoContent(http.StatusOK)
@@ -513,7 +514,7 @@ func torrentPlay(c echo.Context) error {
 		name := utils.CleanFName(tor.Name()) + ".m3u"
 		c.Response().Header().Set("ETag", httptoo.EncodeQuotedString(fmt.Sprintf("%s/%s", tor.Hash().HexString(), name)))
 		c.Response().Header().Set("Content-Disposition", `attachment; filename="`+name+`"`)
-		http.ServeContent(c.Response(), c.Request(), name, time.Time{}, bytes.NewReader([]byte(m3u)))
+		http.ServeContent(c.Response(), c.Request(), name, time.Now(), bytes.NewReader([]byte(m3u)))
 		return c.NoContent(http.StatusOK)
 	}
 
@@ -535,7 +536,7 @@ func torrentPlay(c echo.Context) error {
 	fileInd, _ := strconv.Atoi(qfile)
 	file := helpers.FindFile(fileInd, tor)
 	if file == nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprint("File", files[fileInd], "not found in torrent", tor.Name()))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprint("File index ", fileInd, " not found in torrent ", tor.Name()))
 	}
 	return bts.Play(tor, file, preload, c)
 }
