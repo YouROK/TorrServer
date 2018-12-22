@@ -385,16 +385,19 @@ func (t *Torrent) Stats() TorrentStats {
 		st.ConnectedSeeders = tst.ConnectedSeeders
 		st.HalfOpenPeers = tst.HalfOpenPeers
 
-		for i, f := range t.Files() {
+		files := t.Files()
+
+		sort.Slice(files, func(i, j int) bool {
+			return files[i].Path() < files[j].Path()
+		})
+
+		for i, f := range files {
 			st.FileStats = append(st.FileStats, TorrentFileStat{
 				Id:     i,
 				Path:   f.Path(),
 				Length: f.Length(),
 			})
 		}
-		sort.Slice(st.FileStats, func(i, j int) bool {
-			return st.FileStats[i].Path < st.FileStats[j].Path
-		})
 	}
 	return st
 }
