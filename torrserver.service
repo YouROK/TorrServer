@@ -1,0 +1,10 @@
+[Unit]
+Description=TorrServer
+
+[Service]
+Type=simple
+ExecStart=/bin/torrserver
+
+[Install]
+WantedBy=multi-user.target
+
