@@ -51,11 +51,14 @@ func GotInfo(t *torrent.Torrent, timeout int) error {
 }
 
 func GetReadahead() int64 {
-	readahead := int64(float64(settings.Get().CacheSize) * 0.33)
-	if readahead < 66*1024*1024 {
-		readahead = int64(settings.Get().CacheSize)
-		if readahead > 66*1024*1024 {
-			readahead = 66 * 1024 * 1024
+	readahead := settings.Get().CacheSize - (138412032) //132mb
+	if readahead < 69206016 {                           //66mb
+		readahead = int64(float64(settings.Get().CacheSize) * 0.33)
+		if readahead < 66*1024*1024 {
+			readahead = int64(settings.Get().CacheSize)
+			if readahead > 66*1024*1024 {
+				readahead = 66 * 1024 * 1024
+			}
 		}
 	}
 	return readahead
