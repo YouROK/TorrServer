@@ -176,12 +176,12 @@ func (c *Cache) removePiece(piece *Piece) {
 	defer c.muPiece.Unlock()
 	piece.Release()
 
-	st := fmt.Sprintf("%v%% %v\t%s\t%s", c.prcLoaded, piece.Id, piece.accessed.Format("15:04:05.000"), piece.Hash)
+	//st := fmt.Sprintf("%v%% %v\t%s\t%s", c.prcLoaded, piece.Id, piece.accessed.Format("15:04:05.000"), piece.Hash)
 	if c.prcLoaded >= 95 {
-		fmt.Println("Clean memory GC:", st)
+		//fmt.Println("Clean memory GC:", st)
 		utils.FreeOSMemGC()
 	} else {
-		fmt.Println("Clean memory:", st)
+		//fmt.Println("Clean memory:", st)
 		utils.FreeOSMem()
 	}
 }
