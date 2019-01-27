@@ -18,8 +18,8 @@ func init() {
 	sets.CacheSize = 200 * 1024 * 1024
 	sets.PreloadBufferSize = 20 * 1024 * 1024
 	sets.ConnectionsLimit = 100
+	sets.DhtConnectionLimit = 500
 	sets.RetrackersMode = 1
-	sets.DisableDHT = true
 	StartTime = time.Now()
 }
 
@@ -30,16 +30,17 @@ type Settings struct {
 	RetrackersMode int //0 - don`t add, 1 - add retrackers, 2 - remove retrackers
 
 	//BT Config
-	DisableTCP        bool
-	DisableUTP        bool
-	DisableUPNP       bool
-	DisableDHT        bool
-	DisableUpload     bool
-	Encryption        int // 0 - Enable, 1 - disable, 2 - force
-	DownloadRateLimit int // in kb, 0 - inf
-	UploadRateLimit   int // in kb, 0 - inf
-	ConnectionsLimit  int
-	PeersListenPort   int
+	DisableTCP         bool
+	DisableUTP         bool
+	DisableUPNP        bool
+	DisableDHT         bool
+	DisableUpload      bool
+	Encryption         int // 0 - Enable, 1 - disable, 2 - force
+	DownloadRateLimit  int // in kb, 0 - inf
+	UploadRateLimit    int // in kb, 0 - inf
+	ConnectionsLimit   int
+	DhtConnectionLimit int // 0 - inf
+	PeersListenPort    int
 }
 
 func Get() *Settings {
@@ -74,7 +75,10 @@ func ReadSettings() error {
 		return err
 	}
 	if sets.ConnectionsLimit <= 0 {
-		sets.ConnectionsLimit = 50
+		sets.ConnectionsLimit = 100
+	}
+	if sets.DhtConnectionLimit < 0 {
+		sets.DhtConnectionLimit = 500
 	}
 	if sets.CacheSize <= 0 {
 		sets.CacheSize = 200 * 1024 * 1024
