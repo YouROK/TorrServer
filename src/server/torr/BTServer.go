@@ -88,6 +88,9 @@ func (bt *BTServer) configure() {
 	bt.config.PeerID = utils.PeerIDRandom(peerID)
 	bt.config.HTTPUserAgent = userAgent
 	bt.config.EstablishedConnsPerTorrent = settings.Get().ConnectionsLimit
+	if settings.Get().DhtConnectionLimit > 0 {
+		bt.config.ConnTracker.SetMaxEntries(settings.Get().DhtConnectionLimit)
+	}
 
 	bt.config.TorrentPeersHighWater = 3000
 	bt.config.HalfOpenConnsPerTorrent = 50
