@@ -101,6 +101,13 @@ var settingsPage = `
                 <input id="ConnectionsLimit" class="form-control" type="number" autocomplete="off">
             </div>
 		<br>
+			<div class="input-group">
+				<div class="input-group-prepend">
+					<div class="input-group-text">Количество соединений DHT (0 - не ограничивать)</div>
+				</div>
+				<input id="DhtConnectionLimit" class="form-control" type="number" autocomplete="off">
+			</div>
+		<br>
             <div class="input-group">
                 <div class="input-group-prepend">
                     <div class="input-group-text">Ограничение загрузки</div>
@@ -152,6 +159,7 @@ var settingsPage = `
 			data.Encryption = Number($('#Encryption').val());
  
 			data.ConnectionsLimit = Number($('#ConnectionsLimit').val());
+			data.DhtConnectionLimit = Number($('#DhtConnectionLimit').val());
  
 			data.DownloadRateLimit = Number($('#DownloadRateLimit').val());
 			data.UploadRateLimit = Number($('#UploadRateLimit').val());
@@ -183,6 +191,7 @@ var settingsPage = `
 					$('#Encryption').val(data.Encryption);
          
          			$('#ConnectionsLimit').val(data.ConnectionsLimit);
+         			$('#DhtConnectionLimit').val(data.DhtConnectionLimit);
          
 					$('#DownloadRateLimit').val(data.DownloadRateLimit);
 					$('#UploadRateLimit').val(data.UploadRateLimit);
