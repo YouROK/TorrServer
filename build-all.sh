@@ -128,7 +128,7 @@ BIN_FILENAME="dist/TorrServer-${GOOS}-${GOARCH}${GOARM}"
 echo "Android ${BIN_FILENAME}"
 go build -ldflags="${LDFLAGS}" -o ${BIN_FILENAME} main
 
-export CC=$NDK_TOOLCHAIN/bin/aaarch64-linux-android28-clang
+export CC=$NDK_TOOLCHAIN/bin/aarch64-linux-android28-clang
 export CXX=$NDK_TOOLCHAIN/bin/aarch64-linux-android28-clang++
 export GOARCH=arm64
 export GOARM=""
