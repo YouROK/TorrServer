@@ -15,8 +15,6 @@ import (
 type Cache struct {
 	storage.TorrentImpl
 
-	s *Storage
-
 	capacity int64
 	filled   int64
 	hash     metainfo.Hash
@@ -33,14 +31,14 @@ type Cache struct {
 	bufferPull *BufferPool
 
 	prcLoaded int
+	position  int
 }
 
-func NewCache(capacity int64, storage *Storage) *Cache {
+func NewCache(capacity int64) *Cache {
 	ret := &Cache{
 		capacity: capacity,
 		filled:   0,
 		pieces:   make(map[int]*Piece),
-		s:        storage,
 	}
 
 	return ret
@@ -57,7 +55,7 @@ func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
 	c.pieceCount = info.NumPieces()
 	c.piecesBuff = int(c.capacity / c.pieceLength)
 	c.hash = hash
-	c.bufferPull = NewBufferPool(c.pieceLength, c.capacity)
+	c.bufferPull = NewBufferPool(c.pieceLength)
 
 	for i := 0; i < c.pieceCount; i++ {
 		c.pieces[i] = &Piece{
@@ -81,9 +79,6 @@ func (c *Cache) Piece(m metainfo.Piece) storage.PieceImpl {
 func (c *Cache) Close() error {
 	c.isRemove = false
 	fmt.Println("Close cache for:", c.hash)
-	if _, ok := c.s.caches[c.hash]; ok {
-		delete(c.s.caches, c.hash)
-	}
 	c.pieces = nil
 	c.bufferPull = nil
 	utils.FreeOSMemGC()
@@ -112,6 +107,11 @@ func (c *Cache) GetState() state.CacheState {
 	cState.Filled = c.filled
 	cState.Pieces = stats
 	return cState
+}
+
+func (c *Cache) setPos(pos int) {
+	c.position = (c.position + pos) / 2
+	//fmt.Println("Read:", c.position)
 }
 
 func (c *Cache) cleanPieces() {
@@ -150,10 +150,15 @@ func (c *Cache) getRemPieces() []*Piece {
 	fill := int64(0)
 	loading := 0
 	used := c.bufferPull.Used()
+
+	fpices := c.piecesBuff - int(utils.GetReadahead()/c.pieceLength)
+	low := c.position - fpices + 1
+	high := c.position + c.piecesBuff - fpices + 3
+
 	for u := range used {
 		v := c.pieces[u]
 		if v.Size > 0 {
-			if v.Id > 0 {
+			if v.Id > 0 && (v.Id < low || v.Id > high) {
 				pieces = append(pieces, v)
 			}
 			fill += v.Size
@@ -164,7 +169,7 @@ func (c *Cache) getRemPieces() []*Piece {
 	}
 	c.filled = fill
 	sort.Slice(pieces, func(i, j int) bool {
-		return pieces[i].accessed.Before(pieces[j].accessed)
+		return pieces[i].accessed < pieces[j].accessed
 	})
 
 	c.prcLoaded = prc(c.piecesBuff-loading, c.piecesBuff)

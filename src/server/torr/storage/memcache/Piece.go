@@ -21,7 +21,7 @@ type Piece struct {
 
 	complete bool
 	readed   bool
-	accessed time.Time
+	accessed int64
 	buffer   []byte
 	bufIndex int
 
@@ -42,14 +42,13 @@ func (p *Piece) WriteAt(b []byte, off int64) (n int, err error) {
 	}
 	n = copy(p.buffer[off:], b[:])
 	p.Size += int64(n)
-	p.accessed = time.Now()
+	p.accessed = time.Now().Unix() + 2000
 	return
 }
 
 func (p *Piece) ReadAt(b []byte, off int64) (n int, err error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
-
 	size := len(b)
 	if size+int(off) > len(p.buffer) {
 		size = len(p.buffer) - int(off)
@@ -61,13 +60,19 @@ func (p *Piece) ReadAt(b []byte, off int64) (n int, err error) {
 		return 0, io.ErrUnexpectedEOF
 	}
 	n = copy(b, p.buffer[int(off) : int(off)+size][:])
-	p.accessed = time.Now()
+
 	if int(off)+size >= len(p.buffer) {
 		p.readed = true
 	}
 	if int64(len(b))+off >= p.Size {
 		go p.cache.cleanPieces()
 	}
+
+	if p.complete {
+		p.accessed = time.Now().Unix()
+		p.cache.setPos(p.Id)
+	}
+
 	return n, nil
 }
 
@@ -81,12 +86,13 @@ func (p *Piece) MarkComplete() error {
 
 func (p *Piece) MarkNotComplete() error {
 	p.complete = false
+	p.accessed = 0
 	return nil
 }
 
 func (p *Piece) Completion() storage.Completion {
 	return storage.Completion{
-		Complete: p.complete && len(p.buffer) > 0,
+		Complete: p.complete,
 		Ok:       true,
 	}
 }

@@ -28,7 +28,7 @@ func NewStorage(capacity int64) storage.Storage {
 func (s *Storage) OpenTorrent(info *metainfo.Info, infoHash metainfo.Hash) (storage2.TorrentImpl, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	ch := NewCache(s.capacity, s)
+	ch := NewCache(s.capacity)
 	ch.Init(info, infoHash)
 	s.caches[infoHash] = ch
 	return ch, nil

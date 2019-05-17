@@ -14,53 +14,43 @@ type buffer struct {
 }
 
 type BufferPool struct {
-	buffs map[int]*buffer
-	frees int
-	size  int64
-	mu    sync.Mutex
+	buffs        map[int]*buffer
+	bufferLength int64
+	bufferCount  int
+	mu           sync.Mutex
 }
 
-func NewBufferPool(bufferLength int64, capacity int64) *BufferPool {
+func NewBufferPool(bufferLength int64) *BufferPool {
 	bp := new(BufferPool)
-	buffsSize := int(capacity/bufferLength) + 3
-	bp.frees = buffsSize
-	bp.size = bufferLength
+	bp.bufferLength = bufferLength
+	bp.buffs = make(map[int]*buffer)
 	return bp
-}
-
-func (b *BufferPool) mkBuffs() {
-	if b.buffs != nil {
-		return
-	}
-	b.buffs = make(map[int]*buffer, b.frees)
-	fmt.Println("Create", b.frees, "buffers")
-	for i := 0; i < b.frees; i++ {
-		buf := buffer{
-			-1,
-			make([]byte, b.size),
-			false,
-		}
-		b.buffs[i] = &buf
-	}
 }
 
 func (b *BufferPool) GetBuffer(p *Piece) (buff []byte, index int) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	b.mkBuffs()
 	for id, buf := range b.buffs {
 		if !buf.used {
+			fmt.Println("Get buffer:", id)
 			buf.used = true
 			buf.pieceId = p.Id
 			buff = buf.buf
 			index = id
-			b.frees--
-			//fmt.Printf("Get buffer: %v %v %v %p\n", id, p.Id, b.frees, buff)
 			return
 		}
 	}
-	fmt.Println("Create slow buffer")
-	return make([]byte, b.size), -1
+
+	fmt.Println("Create buffer:", b.bufferCount)
+	buf := new(buffer)
+	buf.buf = make([]byte, b.bufferLength)
+	buf.used = true
+	buf.pieceId = p.Id
+	b.buffs[b.bufferCount] = buf
+	index = b.bufferCount
+	buff = buf.buf
+	b.bufferCount++
+	return
 }
 
 func (b *BufferPool) ReleaseBuffer(index int) {
@@ -70,23 +60,18 @@ func (b *BufferPool) ReleaseBuffer(index int) {
 	}
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	b.mkBuffs()
 	if buff, ok := b.buffs[index]; ok {
+		fmt.Println("Release buffer:", index)
 		buff.used = false
 		buff.pieceId = -1
-		b.frees++
-		//fmt.Println("Release buffer:", index, b.frees)
 	} else {
 		utils.FreeOSMem()
 	}
 }
 
 func (b *BufferPool) Used() map[int]struct{} {
-	if len(b.buffs) == 0 {
-		b.mu.Lock()
-		b.mkBuffs()
-		b.mu.Unlock()
-	}
+	b.mu.Lock()
+	defer b.mu.Unlock()
 	used := make(map[int]struct{})
 	for _, b := range b.buffs {
 		if b.used {
@@ -97,5 +82,13 @@ func (b *BufferPool) Used() map[int]struct{} {
 }
 
 func (b *BufferPool) Len() int {
-	return b.frees
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	count := 0
+	for _, b := range b.buffs {
+		if b.used {
+			count++
+		}
+	}
+	return count
 }
