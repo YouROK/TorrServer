@@ -96,7 +96,7 @@ func statePage(c echo.Context) error {
 			msg += fmt.Sprintf("PiecesLength: %v<br>\n", bytes.Format(cState.PiecesLength))
 			msg += fmt.Sprintf("PiecesCount: %v<br>\n", cState.PiecesCount)
 			for _, p := range cState.Pieces {
-				msg += fmt.Sprintf("\t&emsp;Piece: %v\t&emsp; Access: %s\t&emsp; Buffer size: %d(%s)\t&emsp; Complete: %v\t&emsp; Hash: %s\n<br>", p.Id, p.Accessed.Format("15:04:05.000"), p.BufferSize, bytes.Format(int64(p.BufferSize)), p.Completed, p.Hash)
+				msg += fmt.Sprintf("\t&emsp;Piece: %v\t&emsp; Access: %v\t&emsp; Buffer size: %d(%s)\t&emsp; Complete: %v\t&emsp; Hash: %s\n<br>", p.Id, p.Accessed, p.BufferSize, bytes.Format(int64(p.BufferSize)), p.Completed, p.Hash)
 			}
 		}
 		msg += "<hr><br><br>\n\n"
