@@ -46,6 +46,4 @@ func (bt *BTServer) Play(torr *Torrent, file *torrent.File, preload int64, c ech
 
 	redirectUrl := c.Scheme() + "://" + c.Request().Host + "/torrent/view/" + torr.Hash().HexString() + "/" + utils.CleanFName(file.Path())
 	return c.Redirect(http.StatusFound, redirectUrl)
-
-	//return bt.View(torr, file, c)
 }
