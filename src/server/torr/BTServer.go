@@ -8,7 +8,7 @@ import (
 
 	"server/settings"
 	"server/torr/storage"
-	"server/torr/storage/memcache"
+	"server/torr/storage/memcacheV2"
 	"server/torr/storage/state"
 	"server/utils"
 
@@ -63,7 +63,7 @@ func (bt *BTServer) Reconnect() error {
 }
 
 func (bt *BTServer) configure() {
-	bt.storage = memcache.NewStorage(settings.Get().CacheSize)
+	bt.storage = memcacheV2.NewStorage(settings.Get().CacheSize)
 
 	blocklist, _ := iplist.MMapPackedFile(filepath.Join(settings.Path, "blocklist"))
 
