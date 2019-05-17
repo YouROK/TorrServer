@@ -16,6 +16,9 @@ import (
 func Add(bts *torr.BTServer, magnet metainfo.Magnet, save bool) error {
 	fmt.Println("Adding torrent", magnet.String())
 	_, err := bts.AddTorrent(magnet, func(torr *torr.Torrent) {
+		if torr, _ := settings.LoadTorrentDB(magnet.InfoHash.HexString()); torr != nil {
+			return
+		}
 		torDb := new(settings.Torrent)
 		torDb.Name = torr.Name()
 		torDb.Hash = torr.Hash().HexString()
@@ -28,9 +31,8 @@ func Add(bts *torr.BTServer, magnet metainfo.Magnet, save bool) error {
 		})
 		for _, f := range files {
 			ff := settings.File{
-				f.Path(),
-				f.Length(),
-				false,
+				Name: f.Path(),
+				Size: f.Length(),
 			}
 			torDb.Files = append(torDb.Files, ff)
 		}
