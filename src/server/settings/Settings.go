@@ -17,8 +17,8 @@ func init() {
 	sets = new(Settings)
 	sets.CacheSize = 200 * 1024 * 1024
 	sets.PreloadBufferSize = 20 * 1024 * 1024
-	sets.ConnectionsLimit = 100
-	sets.DhtConnectionLimit = 500
+	sets.ConnectionsLimit = 20
+	sets.DhtConnectionLimit = 1000
 	sets.RetrackersMode = 1
 	StartTime = time.Now()
 }
@@ -75,10 +75,10 @@ func ReadSettings() error {
 		return err
 	}
 	if sets.ConnectionsLimit <= 0 {
-		sets.ConnectionsLimit = 100
+		sets.ConnectionsLimit = 20
 	}
 	if sets.DhtConnectionLimit < 0 {
-		sets.DhtConnectionLimit = 500
+		sets.DhtConnectionLimit = 1000
 	}
 	if sets.CacheSize <= 0 {
 		sets.CacheSize = 200 * 1024 * 1024
