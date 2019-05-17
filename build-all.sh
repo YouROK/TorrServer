@@ -119,36 +119,33 @@ export CGO_ENABLED=1
 export GOOS=android 
 export LDFLAGS="-s -w"
 
-export NDK_TOOLCHAIN=/home/yourok/Space/Projects/GO/TorrServer/pkg/gomobile/ndk-toolchains/arm
-export CC=$NDK_TOOLCHAIN/bin/arm-linux-androideabi-clang
-export CXX=$NDK_TOOLCHAIN/bin/arm-linux-androideabi-clang++
+export NDK_TOOLCHAIN=/space/Projects/GO/TorrServer/toolchains
+export CC=$NDK_TOOLCHAIN/bin/armv7a-linux-androideabi28-clang
+export CXX=$NDK_TOOLCHAIN/bin/armv7a-linux-androideabi28-clang++
 export GOARCH=arm 
 export GOARM=7
 BIN_FILENAME="dist/TorrServer-${GOOS}-${GOARCH}${GOARM}"
 echo "Android ${BIN_FILENAME}"
 go build -ldflags="${LDFLAGS}" -o ${BIN_FILENAME} main
 
-export NDK_TOOLCHAIN=/home/yourok/Space/Projects/GO/TorrServer/pkg/gomobile/ndk-toolchains/arm64
-export CC=$NDK_TOOLCHAIN/bin/aarch64-linux-android-clang
-export CXX=$NDK_TOOLCHAIN/bin/aarch64-linux-android-clang++
+export CC=$NDK_TOOLCHAIN/bin/aaarch64-linux-android28-clang
+export CXX=$NDK_TOOLCHAIN/bin/aarch64-linux-android28-clang++
 export GOARCH=arm64
 export GOARM=""
 BIN_FILENAME="dist/TorrServer-${GOOS}-${GOARCH}${GOARM}"
 echo "Android ${BIN_FILENAME}"
 go build -ldflags="${LDFLAGS}" -o ${BIN_FILENAME} main
 
-export NDK_TOOLCHAIN=/home/yourok/Space/Projects/GO/TorrServer/pkg/gomobile/ndk-toolchains/x86
-export CC=$NDK_TOOLCHAIN/bin/i686-linux-android-clang
-export CXX=$NDK_TOOLCHAIN/bin/i686-linux-android-clang++
+export CC=$NDK_TOOLCHAIN/bin/i686-linux-android28-clang
+export CXX=$NDK_TOOLCHAIN/bin/i686-linux-android28-clang++
 export GOARCH=386
 export GOARM=""
 BIN_FILENAME="dist/TorrServer-${GOOS}-${GOARCH}${GOARM}"
 echo "Android ${BIN_FILENAME}"
 go build -ldflags="${LDFLAGS}" -o ${BIN_FILENAME} main
 
-export NDK_TOOLCHAIN=/home/yourok/Space/Projects/GO/TorrServer/pkg/gomobile/ndk-toolchains/x86_64
-export CC=$NDK_TOOLCHAIN/bin/x86_64-linux-android-clang
-export CXX=$NDK_TOOLCHAIN/bin/x86_64-linux-android-clang++
+export CC=$NDK_TOOLCHAIN/bin/x86_64-linux-android28-clang
+export CXX=$NDK_TOOLCHAIN/bin/x86_64-linux-android28-clang++
 export GOARCH=amd64
 export GOARM=""
 BIN_FILENAME="dist/TorrServer-${GOOS}-${GOARCH}${GOARM}"
