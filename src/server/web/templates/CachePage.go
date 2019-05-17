@@ -31,11 +31,11 @@ var cachePage = `
 			}
 			.cache {
 				display: grid;
-            	grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            	grid-template-columns: repeat(auto-fit, minmax(25px, 1fr));
 			}
 			.piece {
 				border: 1px dashed white;
-				font-size: 16px;
+				font-size: 10px;
 				padding: 2px;
 				text-align: center;
 			}
