@@ -1,9 +1,5 @@
 package state
 
-import (
-	"time"
-)
-
 type CacheState struct {
 	Hash         string
 	Capacity     int64
@@ -15,7 +11,7 @@ type CacheState struct {
 
 type ItemState struct {
 	Id         int
-	Accessed   time.Time
+	Accessed   int64
 	BufferSize int64
 	Completed  bool
 	Hash       string
