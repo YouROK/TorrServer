@@ -21,3 +21,4 @@ src/gopkg.in/
 pkg/
 bin/
 dist/
+toolchain/
