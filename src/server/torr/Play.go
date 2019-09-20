@@ -15,7 +15,8 @@ import (
 
 func (bt *BTServer) View(torr *Torrent, file *torrent.File, c echo.Context) error {
 	go settings.SetViewed(torr.Hash().HexString(), file.Path())
-	reader := torr.NewReader(file, 0)
+	reader := NewReader(file, bt.GetCache(torr.hash))
+	//reader := torr.NewReader(file, 0)
 
 	fmt.Println("Connect reader:", len(torr.readers))
 	c.Response().Header().Set("Connection", "close")
