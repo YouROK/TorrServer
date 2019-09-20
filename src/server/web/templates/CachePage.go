@@ -30,14 +30,25 @@ var cachePage = `
 				margin: 1%;
 			}
 			.cache {
-				display: grid;
-            	grid-template-columns: repeat(auto-fit, minmax(25px, 1fr));
+				padding-left:6px;
+ 				padding-right:2px;
+ 				line-height:11px
 			}
 			.piece {
-				border: 1px dashed white;
-				font-size: 10px;
-				padding: 2px;
-				text-align: center;
+				width:10px;
+				height:10px;
+				background-color:#eef2f4;
+				border:1px solid #dee2e5;
+				display:inline-block;
+				margin-right:1px
+			}
+			.piece-complete{
+				background-color:#b8dd69;
+ 				border-color:#b8dd69
+			}
+			.piece-loading{
+				background-color:#66cbff;
+ 				border-color:#66cbff
 			}
 		</style>
 		
@@ -60,7 +71,7 @@ var cachePage = `
 	</body>
 	<script>
 		$( document ).ready(function() {
-			setInterval(updateState, 1000);
+			setInterval(updateState, 500);
 		});
 		
 		var cacheHash = "";
@@ -102,19 +113,20 @@ var cachePage = `
 					$("#cacheInfo").html(html);
 					makePieces(st.PiecesCount);
 					for(var i = 0; i < st.PiecesCount; i++) {
-						var color = "silver";
-						var size = "";
 						var piece = st.Pieces[i];
 						if (piece){
-							if (piece.Completed && piece.BufferSize >= st.PiecesLength)
-								color = "green";
-							else if (piece.Completed && piece.BufferSize == 0)
-								color = "silver";
-							else if (!piece.Completed && piece.BufferSize > 0)
-								color = "red";
-							size = ' ' + humanizeSize(piece.BufferSize);
+							if (piece.Completed && piece.BufferSize >= st.PiecesLength){
+								$("#p"+i).addClass("piece-complete");
+								$("#p"+i).removeClass("piece-loading");
+							}else if (!piece.Completed && piece.BufferSize > 0){
+								$("#p"+i).removeClass("piece-complete");
+								$("#p"+i).addClass("piece-loading");
+							}
 						}
-						setPiece(i,color,size);
+					 	if (!piece || piece.Completed && piece.BufferSize == 0){
+							$("#p"+i).removeClass("piece-complete");
+							$("#p"+i).removeClass("piece-loading");
+						}
 					}
 				},function(){
 					$("#cacheInfo").empty();
@@ -129,15 +141,9 @@ var cachePage = `
 				return;
 			var html = "";
 			for(var i = 0; i < len; i++) {
-				html += '<span class="piece" id="p'+i+'" style="background-color: silver;">'+i+'</span>';
+				html += '<span class="piece" id="p'+i+'"></span>';
 			}
 			cache.html(html);
-		}
-			
-		function setPiece(i, color, size){
-			var piece = $("#p"+i);
-			piece.delay(100).css("background-color",color);
-			piece.text(i+''+size);
 		}
 			
 		function contains(arr, elem) {
