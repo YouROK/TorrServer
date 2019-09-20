@@ -183,6 +183,16 @@ func (bt *BTServer) CacheState(hash metainfo.Hash) *state.CacheState {
 	return cacheState
 }
 
+func (bt *BTServer) GetCache(hash metainfo.Hash) *memcacheV2.Cache {
+	st := bt.GetTorrent(hash)
+	if st == nil {
+		return nil
+	}
+
+	cacheState := bt.storage.GetCache(hash)
+	return cacheState.(*memcacheV2.Cache)
+}
+
 func (bt *BTServer) WriteState(w io.Writer) {
 	bt.client.WriteStatus(w)
 }
