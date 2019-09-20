@@ -109,8 +109,9 @@ func (c *Cache) GetState() state.CacheState {
 	return cState
 }
 
-func (c *Cache) setPos(pos int) {
-	c.position = (c.position + pos) / 2
+func (c *Cache) SetPos(pos int) {
+	//c.position = (c.position + pos) / 2
+	c.position = pos
 	//fmt.Println("Read:", c.position)
 }
 
