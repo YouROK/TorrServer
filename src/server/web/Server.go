@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"sync"
 	"time"
 
 	"server/settings"
@@ -15,7 +16,6 @@ import (
 	"server/web/mods"
 	"server/web/templates"
 
-	"github.com/anacrolix/sync"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )
@@ -49,6 +49,7 @@ func Start(port string) {
 
 	//server.Use(middleware.Logger())
 	server.Use(middleware.Recover())
+	server.Use(ServerHeaderSet)
 
 	templates.InitTemplate(server)
 	initTorrent(server)
@@ -112,6 +113,13 @@ func shutdownPage(c echo.Context) error {
 		os.Exit(5)
 	}()
 	return c.NoContent(http.StatusOK)
+}
+
+func ServerHeaderSet(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		c.Response().Header().Set("Access-Control-Allow-Origin", "*")
+		return next(c)
+	}
 }
 
 func HTTPErrorHandler(err error, c echo.Context) {
