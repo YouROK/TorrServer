@@ -85,7 +85,7 @@ var settingsPage = `
                     <option value="2">Принудительно</option>
                 </select>
             </div>
-	    	<br>
+		<br>
             <div class="input-group">
                 <div class="input-group-prepend">
                     <div class="input-group-text">Порт для входящих торрент подключений</div>
@@ -197,7 +197,7 @@ var settingsPage = `
 					$('#UploadRateLimit').val(data.UploadRateLimit);
 					
          			$('#RetrackersMode').val(data.RetrackersMode);
-				$('#PeersListenPort').val(data.PeersListenPort);
+					$('#PeersListenPort').val(data.PeersListenPort);
                 });
         };
 
