@@ -2,8 +2,10 @@ package helpers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
+	"runtime"
 	"strings"
 	"time"
 
@@ -24,8 +26,10 @@ func GetMagnet(link string) (*metainfo.Magnet, error) {
 		mag, err = getMagFromHttp(url.String())
 	case "":
 		mag, err = getMag("magnet:?xt=urn:btih:" + url.Path)
-	default:
+	case "file":
 		mag, err = getMagFromFile(url.Path)
+	default:
+		err = fmt.Errorf("unknown scheme:", url, url.Scheme)
 	}
 	if err != nil {
 		return nil, err
@@ -71,7 +75,9 @@ func getMagFromHttp(url string) (*metainfo.Magnet, error) {
 }
 
 func getMagFromFile(path string) (*metainfo.Magnet, error) {
-
+	if runtime.GOOS == "windows" && strings.HasPrefix(path, "/") {
+		path = strings.TrimPrefix(path, "/")
+	}
 	minfo, err := metainfo.LoadFromFile(path)
 	if err != nil {
 		return nil, err
