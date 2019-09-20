@@ -67,7 +67,7 @@ func (p *Piece) ReadAt(b []byte, off int64) (n int, err error) {
 
 	if p.complete {
 		p.accessed = time.Now().Unix()
-		p.cache.setPos(p.Id)
+		p.cache.SetPos(p.Id)
 	}
 
 	return n, nil
