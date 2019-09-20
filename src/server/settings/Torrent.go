@@ -19,6 +19,7 @@ type Torrent struct {
 
 type File struct {
 	Name   string
+	Id     int
 	Size   int64
 	Viewed bool
 }
@@ -101,6 +102,12 @@ func SaveTorrentDB(torrent *Torrent) error {
 			if err != nil {
 				return fmt.Errorf("error save torrent files: %v", err)
 			}
+
+			err = ffdb.Put([]byte("Id"), i2b(int64(f.Id)))
+			if err != nil {
+				return fmt.Errorf("error save torrent files: %v", err)
+			}
+
 			err = ffdb.Put([]byte("Size"), i2b(f.Size))
 			if err != nil {
 				return fmt.Errorf("error save torrent files: %v", err)
@@ -189,7 +196,13 @@ func LoadTorrentDB(hash string) (*Torrent, error) {
 					return fmt.Errorf("error load torrent files")
 				}
 
-				tmp := ffdb.Get([]byte("Size"))
+				tmp := ffdb.Get([]byte("Id"))
+				if tmp == nil {
+					return fmt.Errorf("error load torrent file")
+				}
+				file.Id = int(b2i(tmp))
+
+				tmp = ffdb.Get([]byte("Size"))
 				if tmp == nil {
 					return fmt.Errorf("error load torrent file")
 				}
