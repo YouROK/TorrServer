@@ -68,6 +68,7 @@ type TorrentJsonResponse struct {
 type TorFile struct {
 	Name    string
 	Link    string
+	Play    string
 	Preload string
 	Size    int64
 	Viewed  bool
@@ -592,14 +593,14 @@ func toTorrentDB(t *torr.Torrent) *settings.Torrent {
 	mi := t.Torrent.Metainfo()
 	tor.Magnet = mi.Magnet(t.Name(), t.Torrent.InfoHash()).String()
 	tor.Size = t.Length()
-	files := t.Files()
-	sort.Slice(files, func(i, j int) bool {
-		return files[i].Path() < files[j].Path()
-	})
-	for _, f := range files {
+
+	st := getTorPlayState(t)
+
+	for _, f := range st.FileStats {
 		tf := settings.File{
-			Name:   f.Path(),
-			Size:   f.Length(),
+			Id:     f.Id,
+			Name:   f.Path,
+			Size:   f.Length,
 			Viewed: false,
 		}
 		tor.Files = append(tor.Files, tf)
@@ -626,6 +627,7 @@ func getTorrentJS(tor *settings.Torrent) (*TorrentJsonResponse, error) {
 		tf := TorFile{
 			Name:    f.Name,
 			Link:    "/torrent/view/" + js.Hash + "/" + utils.CleanFName(f.Name),
+			Play:    "/torrent/play?link=" + js.Magnet + "&file=" + fmt.Sprint(f.Id),
 			Preload: "/torrent/preload/" + js.Hash + "/" + utils.CleanFName(f.Name),
 			Size:    f.Size,
 			Viewed:  f.Viewed,
