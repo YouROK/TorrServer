@@ -44,6 +44,15 @@ func (s *Storage) GetStats(hash metainfo.Hash) *state.CacheState {
 	return nil
 }
 
+func (s *Storage) GetCache(hash metainfo.Hash) interface{} {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if c, ok := s.caches[hash]; ok {
+		return c
+	}
+	return nil
+}
+
 func (s *Storage) CloseHash(hash metainfo.Hash) {
 	if s.caches == nil {
 		return
