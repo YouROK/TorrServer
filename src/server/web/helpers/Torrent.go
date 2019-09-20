@@ -25,14 +25,15 @@ func Add(bts *torr.BTServer, magnet metainfo.Magnet, save bool) error {
 		torDb.Size = torr.Length()
 		torDb.Magnet = magnet.String()
 		torDb.Timestamp = time.Now().Unix()
-		files := torr.Files()
+		files := torr.Stats().FileStats
 		sort.Slice(files, func(i, j int) bool {
-			return files[i].Path() < files[j].Path()
+			return files[i].Path < files[j].Path
 		})
 		for _, f := range files {
 			ff := settings.File{
-				Name: f.Path(),
-				Size: f.Length(),
+				Id:   f.Id,
+				Name: f.Path,
+				Size: f.Length,
 			}
 			torDb.Files = append(torDb.Files, ff)
 		}

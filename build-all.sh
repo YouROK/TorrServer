@@ -120,32 +120,32 @@ export GOOS=android
 export LDFLAGS="-s -w"
 
 export NDK_TOOLCHAIN=/space/Projects/GO/TorrServer/toolchains
-export CC=$NDK_TOOLCHAIN/bin/armv7a-linux-androideabi28-clang
-export CXX=$NDK_TOOLCHAIN/bin/armv7a-linux-androideabi28-clang++
+export CC=$NDK_TOOLCHAIN/bin/armv7a-linux-androideabi21-clang
+export CXX=$NDK_TOOLCHAIN/bin/armv7a-linux-androideabi21-clang++
 export GOARCH=arm 
 export GOARM=7
 BIN_FILENAME="dist/TorrServer-${GOOS}-${GOARCH}${GOARM}"
 echo "Android ${BIN_FILENAME}"
 go build -ldflags="${LDFLAGS}" -o ${BIN_FILENAME} main
 
-export CC=$NDK_TOOLCHAIN/bin/aarch64-linux-android28-clang
-export CXX=$NDK_TOOLCHAIN/bin/aarch64-linux-android28-clang++
+export CC=$NDK_TOOLCHAIN/bin/aarch64-linux-android21-clang
+export CXX=$NDK_TOOLCHAIN/bin/aarch64-linux-android21-clang++
 export GOARCH=arm64
 export GOARM=""
 BIN_FILENAME="dist/TorrServer-${GOOS}-${GOARCH}${GOARM}"
 echo "Android ${BIN_FILENAME}"
 go build -ldflags="${LDFLAGS}" -o ${BIN_FILENAME} main
 
-export CC=$NDK_TOOLCHAIN/bin/i686-linux-android28-clang
-export CXX=$NDK_TOOLCHAIN/bin/i686-linux-android28-clang++
+export CC=$NDK_TOOLCHAIN/bin/i686-linux-android21-clang
+export CXX=$NDK_TOOLCHAIN/bin/i686-linux-android21-clang++
 export GOARCH=386
 export GOARM=""
 BIN_FILENAME="dist/TorrServer-${GOOS}-${GOARCH}${GOARM}"
 echo "Android ${BIN_FILENAME}"
 go build -ldflags="${LDFLAGS}" -o ${BIN_FILENAME} main
 
-export CC=$NDK_TOOLCHAIN/bin/x86_64-linux-android28-clang
-export CXX=$NDK_TOOLCHAIN/bin/x86_64-linux-android28-clang++
+export CC=$NDK_TOOLCHAIN/bin/x86_64-linux-android21-clang
+export CXX=$NDK_TOOLCHAIN/bin/x86_64-linux-android21-clang++
 export GOARCH=amd64
 export GOARM=""
 BIN_FILENAME="dist/TorrServer-${GOOS}-${GOARCH}${GOARM}"
