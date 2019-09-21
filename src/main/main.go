@@ -28,6 +28,9 @@ func (args) Version() string {
 var params args
 
 func main() {
+	//mkReleasesJS()
+	//return
+
 	arg.MustParse(&params)
 
 	if params.Path == "" {
