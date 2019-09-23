@@ -11,20 +11,20 @@ import (
 	"github.com/anacrolix/missinggo/httptoo"
 	"github.com/anacrolix/torrent"
 	"github.com/labstack/echo"
+	"log"
 )
 
 func (bt *BTServer) View(torr *Torrent, file *torrent.File, c echo.Context) error {
 	go settings.SetViewed(torr.Hash().HexString(), file.Path())
-	reader := NewReader(file, bt.GetCache(torr.hash))
-	//reader := torr.NewReader(file, 0)
+	reader := torr.NewReader(file, 0)
 
-	fmt.Println("Connect reader:", len(torr.readers))
+	log.Println("Connect client")
 	c.Response().Header().Set("Connection", "close")
 	c.Response().Header().Set("ETag", httptoo.EncodeQuotedString(fmt.Sprintf("%s/%s", torr.Hash().HexString(), file.Path())))
 
 	http.ServeContent(c.Response(), c.Request(), file.Path(), time.Time{}, reader)
 
-	fmt.Println("Disconnect reader:", len(torr.readers))
+	log.Println("Disconnect client")
 	torr.CloseReader(reader)
 	return c.NoContent(http.StatusOK)
 }

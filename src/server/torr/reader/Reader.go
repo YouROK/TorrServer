@@ -1,27 +1,21 @@
-package torr
+package reader
 
 import (
-	"io"
-
 	"github.com/anacrolix/torrent"
-	"server/torr/storage/memcacheV2"
+	"io"
 )
 
 type Reader struct {
 	torrent.Reader
-
-	offset int64
-
-	file  *torrent.File
-	cache *memcacheV2.Cache
+	offset    int64
+	readahead int64
+	file      *torrent.File
 }
 
-func NewReader(file *torrent.File, cache *memcacheV2.Cache) *Reader {
+func NewReader(file *torrent.File) *Reader {
 	r := new(Reader)
 	r.file = file
 	r.Reader = file.NewReader()
-	r.Reader.SetReadahead(0)
-	r.cache = cache
 	return r
 }
 
@@ -36,13 +30,24 @@ func (r *Reader) Seek(offset int64, whence int) (n int64, err error) {
 	}
 	n, err = r.Reader.Seek(offset, whence)
 	r.offset = n
-	r.cache.SetPos(int(n))
 	return
 }
 
 func (r *Reader) Read(p []byte) (n int, err error) {
 	n, err = r.Reader.Read(p)
 	r.offset += int64(n)
-	r.cache.SetPos(int(n))
 	return
+}
+
+func (r *Reader) SetReadahead(length int64) {
+	r.Reader.SetReadahead(length)
+	r.readahead = length
+}
+
+func (r *Reader) Offset() int64 {
+	return r.offset
+}
+
+func (r *Reader) Readahead() int64 {
+	return r.readahead
 }

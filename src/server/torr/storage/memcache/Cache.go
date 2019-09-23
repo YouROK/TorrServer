@@ -1,8 +1,6 @@
 package memcache
 
 import (
-	"fmt"
-	"sort"
 	"sync"
 
 	"server/torr/storage/state"
@@ -10,10 +8,14 @@ import (
 
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/anacrolix/torrent/storage"
+	"log"
+	"server/torr/reader"
 )
 
 type Cache struct {
 	storage.TorrentImpl
+
+	s *Storage
 
 	capacity int64
 	filled   int64
@@ -25,37 +27,39 @@ type Cache struct {
 
 	muPiece  sync.Mutex
 	muRemove sync.Mutex
+	muReader sync.Mutex
 	isRemove bool
 
 	pieces     map[int]*Piece
 	bufferPull *BufferPool
 
-	prcLoaded int
-	position  int
+	readers map[*reader.Reader]struct{}
 }
 
-func NewCache(capacity int64) *Cache {
+func NewCache(capacity int64, storage *Storage) *Cache {
 	ret := &Cache{
 		capacity: capacity,
 		filled:   0,
 		pieces:   make(map[int]*Piece),
+		readers:  make(map[*reader.Reader]struct{}),
+		s:        storage,
 	}
 
 	return ret
 }
 
 func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
-	fmt.Println("Create cache for:", info.Name)
+	log.Println("Create cache for:", info.Name)
 	//Min capacity of 2 pieces length
-	cap := info.PieceLength * 2
-	if c.capacity < cap {
-		c.capacity = cap
+	caps := info.PieceLength * 2
+	if c.capacity < caps {
+		c.capacity = caps
 	}
 	c.pieceLength = info.PieceLength
 	c.pieceCount = info.NumPieces()
 	c.piecesBuff = int(c.capacity / c.pieceLength)
 	c.hash = hash
-	c.bufferPull = NewBufferPool(c.pieceLength)
+	c.bufferPull = NewBufferPool(c.pieceLength, c.capacity)
 
 	for i := 0; i < c.pieceCount; i++ {
 		c.pieces[i] = &Piece{
@@ -69,7 +73,10 @@ func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
 
 func (c *Cache) Piece(m metainfo.Piece) storage.PieceImpl {
 	c.muPiece.Lock()
-	defer c.muPiece.Unlock()
+	defer func() {
+		c.muPiece.Unlock()
+		go utils.FreeOSMemGC(c.capacity)
+	}()
 	if val, ok := c.pieces[m.Index()]; ok {
 		return val
 	}
@@ -78,10 +85,14 @@ func (c *Cache) Piece(m metainfo.Piece) storage.PieceImpl {
 
 func (c *Cache) Close() error {
 	c.isRemove = false
-	fmt.Println("Close cache for:", c.hash)
+	log.Println("Close cache for:", c.hash)
+	if _, ok := c.s.caches[c.hash]; ok {
+		delete(c.s.caches, c.hash)
+	}
 	c.pieces = nil
 	c.bufferPull = nil
-	utils.FreeOSMemGC()
+	c.readers = nil
+	utils.FreeOSMemGC(0)
 	return nil
 }
 
@@ -109,11 +120,6 @@ func (c *Cache) GetState() state.CacheState {
 	return cState
 }
 
-func (c *Cache) setPos(pos int) {
-	c.position = (c.position + pos) / 2
-	//fmt.Println("Read:", c.position)
-}
-
 func (c *Cache) cleanPieces() {
 	if c.isRemove {
 		return
@@ -127,70 +133,74 @@ func (c *Cache) cleanPieces() {
 	defer func() { c.isRemove = false }()
 	c.muRemove.Unlock()
 
-	remPieces := c.getRemPieces()
-	if len(remPieces) > 0 && (c.capacity < c.filled || c.bufferPull.Len() <= 1) {
-		remCount := int((c.filled - c.capacity) / c.pieceLength)
-		if remCount < 1 {
-			remCount = 1
-		}
-		if remCount > len(remPieces) {
-			remCount = len(remPieces)
-		}
+	bufPieces := c.getBufferedPieces()
 
-		remPieces = remPieces[:remCount]
-
-		for _, p := range remPieces {
-			c.removePiece(p)
+	if len(bufPieces) > 0 && c.filled >= c.capacity {
+		c.muReader.Lock()
+		for reader := range c.readers {
+			beg, end := c.getReaderPieces(reader)
+			for id := range bufPieces {
+				if id >= beg && id <= end {
+					delete(bufPieces, id)
+				}
+			}
+		}
+		c.muReader.Unlock()
+		if len(bufPieces) > 0 {
+			for _, p := range bufPieces {
+				p.Release()
+			}
+			bufPieces = nil
+			go utils.FreeOSMemGC(c.capacity)
 		}
 	}
 }
 
-func (c *Cache) getRemPieces() []*Piece {
-	pieces := make([]*Piece, 0)
+func (c *Cache) getBufferedPieces() map[int]*Piece {
+	pieces := make(map[int]*Piece)
 	fill := int64(0)
-	loading := 0
 	used := c.bufferPull.Used()
-
-	fpices := c.piecesBuff - int(utils.GetReadahead()/c.pieceLength)
-	low := c.position - fpices + 1
-	high := c.position + c.piecesBuff - fpices + 3
-
 	for u := range used {
-		v := c.pieces[u]
-		if v.Size > 0 {
-			if v.Id > 0 && (v.Id < low || v.Id > high) {
-				pieces = append(pieces, v)
+		piece := c.pieces[u]
+		if piece.Size > 0 {
+			if piece.Id > 0 {
+				pieces[piece.Id] = piece
+				//pieces = append(pieces, piece)
 			}
-			fill += v.Size
-			if !v.complete {
-				loading++
-			}
+			fill += piece.Size
 		}
 	}
 	c.filled = fill
-	sort.Slice(pieces, func(i, j int) bool {
-		return pieces[i].accessed < pieces[j].accessed
-	})
 
-	c.prcLoaded = prc(c.piecesBuff-loading, c.piecesBuff)
 	return pieces
 }
 
 func (c *Cache) removePiece(piece *Piece) {
-	c.muPiece.Lock()
-	defer c.muPiece.Unlock()
 	piece.Release()
-
-	//st := fmt.Sprintf("%v%% %v\t%s\t%s", c.prcLoaded, piece.Id, piece.accessed.Format("15:04:05.000"), piece.Hash)
-	if c.prcLoaded >= 95 {
-		//fmt.Println("Clean memory GC:", st)
-		utils.FreeOSMemGC()
-	} else {
-		//fmt.Println("Clean memory:", st)
-		utils.FreeOSMem()
-	}
+	return
 }
 
-func prc(val, of int) int {
-	return int(float64(val) * 100.0 / float64(of))
+func (c *Cache) AddReader(r *reader.Reader) {
+	c.muReader.Lock()
+	defer c.muReader.Unlock()
+	c.readers[r] = struct{}{}
+}
+
+func (c *Cache) RemReader(r *reader.Reader) {
+	c.muReader.Lock()
+	defer c.muReader.Unlock()
+	delete(c.readers, r)
+}
+
+func (c *Cache) ReadersLen() int {
+	if c == nil || c.readers == nil {
+		return 0
+	}
+	return len(c.readers)
+}
+
+func (c *Cache) getReaderPieces(reader *reader.Reader) (begin, end int) {
+	end = int((reader.Offset() + reader.Readahead()) / c.pieceLength)
+	begin = int((reader.Offset() - c.capacity + reader.Readahead()) / c.pieceLength)
+	return
 }

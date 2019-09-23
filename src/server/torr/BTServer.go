@@ -7,21 +7,21 @@ import (
 	"sync"
 
 	"server/settings"
-	"server/torr/storage"
-	"server/torr/storage/memcacheV2"
+	"server/torr/storage/memcache"
 	"server/torr/storage/state"
 	"server/utils"
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/iplist"
 	"github.com/anacrolix/torrent/metainfo"
+	"log"
 )
 
 type BTServer struct {
 	config *torrent.ClientConfig
 	client *torrent.Client
 
-	storage storage.Storage
+	storage *memcache.Storage
 
 	torrents map[metainfo.Hash]*Torrent
 
@@ -53,7 +53,7 @@ func (bt *BTServer) Disconnect() {
 	if bt.client != nil {
 		bt.client.Close()
 		bt.client = nil
-		utils.FreeOSMemGC()
+		utils.FreeOSMemGC(0)
 	}
 }
 
@@ -63,12 +63,13 @@ func (bt *BTServer) Reconnect() error {
 }
 
 func (bt *BTServer) configure() {
-	bt.storage = memcacheV2.NewStorage(settings.Get().CacheSize)
+	bt.storage = memcache.NewStorage(settings.Get().CacheSize)
 
 	blocklist, _ := iplist.MMapPackedFile(filepath.Join(settings.Path, "blocklist"))
 
-	userAgent := "uTorrent/3.4.9"
-	peerID := "-UT3490-"
+	userAgent := "uTorrent/3.5.5"
+	peerID := "-UT3550-"
+	cliVers := "µTorrent 3.5.5"
 
 	bt.config = torrent.NewDefaultClientConfig()
 
@@ -87,13 +88,11 @@ func (bt *BTServer) configure() {
 	bt.config.Bep20 = peerID
 	bt.config.PeerID = utils.PeerIDRandom(peerID)
 	bt.config.HTTPUserAgent = userAgent
+	bt.config.ExtendedHandshakeClientVersion = cliVers
 	bt.config.EstablishedConnsPerTorrent = settings.Get().ConnectionsLimit
 	if settings.Get().DhtConnectionLimit > 0 {
 		bt.config.ConnTracker.SetMaxEntries(settings.Get().DhtConnectionLimit)
 	}
-
-	bt.config.TorrentPeersHighWater = 3000
-	bt.config.HalfOpenConnsPerTorrent = 50
 
 	if settings.Get().DownloadRateLimit > 0 {
 		bt.config.DownloadRateLimiter = utils.Limit(settings.Get().DownloadRateLimit * 1024)
@@ -105,9 +104,7 @@ func (bt *BTServer) configure() {
 		bt.config.ListenPort = settings.Get().PeersListenPort
 	}
 
-	//bt.config.Debug = true
-
-	fmt.Println("Configure client:", settings.Get())
+	log.Println("Configure client:", settings.Get())
 }
 
 func (bt *BTServer) AddTorrent(magnet metainfo.Magnet, onAdd func(*Torrent)) (*Torrent, error) {
@@ -181,16 +178,6 @@ func (bt *BTServer) CacheState(hash metainfo.Hash) *state.CacheState {
 
 	cacheState := bt.storage.GetStats(hash)
 	return cacheState
-}
-
-func (bt *BTServer) GetCache(hash metainfo.Hash) *memcacheV2.Cache {
-	st := bt.GetTorrent(hash)
-	if st == nil {
-		return nil
-	}
-
-	cacheState := bt.storage.GetCache(hash)
-	return cacheState.(*memcacheV2.Cache)
 }
 
 func (bt *BTServer) WriteState(w io.Writer) {

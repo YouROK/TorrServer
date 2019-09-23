@@ -1,8 +1,8 @@
 package torr
 
 import (
-	"fmt"
 	"io"
+	"log"
 	"sort"
 	"sync"
 	"time"
@@ -13,6 +13,8 @@ import (
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/labstack/gommon/bytes"
+	"server/torr/reader"
+	"server/torr/storage/memcache"
 )
 
 type TorrentStatus int
@@ -47,12 +49,11 @@ type Torrent struct {
 
 	status TorrentStatus
 
-	readers map[torrent.Reader]struct{}
-
 	muTorrent sync.Mutex
 	muReader  sync.Mutex
 
-	bt *BTServer
+	bt    *BTServer
+	cache *memcache.Cache
 
 	lastTimeSpeed       time.Time
 	DownloadSpeed       float64
@@ -102,7 +103,6 @@ func NewTorrent(magnet metainfo.Magnet, bt *BTServer) (*Torrent, error) {
 	torr.status = TorrentAdded
 	torr.lastTimeSpeed = time.Now()
 	torr.bt = bt
-	torr.readers = make(map[torrent.Reader]struct{})
 	torr.hash = magnet.InfoHash
 	torr.closed = goTorrent.Closed()
 
@@ -116,10 +116,16 @@ func (t *Torrent) WaitInfo() bool {
 	if t.Torrent == nil {
 		return false
 	}
+
+	tm := time.NewTimer(time.Minute * 10)
+
 	select {
 	case <-t.Torrent.GotInfo():
+		t.cache = t.bt.storage.GetCache(t.hash)
 		return true
 	case <-t.closed:
+		return false
+	case <-tm.C:
 		return false
 	}
 }
@@ -181,7 +187,7 @@ func (t *Torrent) progressEvent() {
 }
 
 func (t *Torrent) expired() bool {
-	return len(t.readers) == 0 && t.expiredTime.Before(time.Now()) && (t.status == TorrentWorking || t.status == TorrentClosed)
+	return t.cache.ReadersLen() == 0 && t.expiredTime.Before(time.Now()) && (t.status == TorrentWorking || t.status == TorrentClosed)
 }
 
 func (t *Torrent) Files() []*torrent.File {
@@ -207,7 +213,7 @@ func (t *Torrent) Length() int64 {
 	return t.Torrent.Length()
 }
 
-func (t *Torrent) NewReader(file *torrent.File, readahead int64) torrent.Reader {
+func (t *Torrent) NewReader(file *torrent.File, readahead int64) *reader.Reader {
 	t.muReader.Lock()
 
 	if t.status == TorrentClosed {
@@ -215,21 +221,25 @@ func (t *Torrent) NewReader(file *torrent.File, readahead int64) torrent.Reader 
 	}
 
 	defer t.muReader.Unlock()
-	reader := file.NewReader()
+	reader := reader.NewReader(file)
 	if readahead <= 0 {
 		readahead = utils.GetReadahead()
 	}
 	reader.SetReadahead(readahead)
-	t.readers[reader] = struct{}{}
+	t.cache.AddReader(reader)
 	return reader
 }
 
-func (t *Torrent) CloseReader(reader torrent.Reader) {
+func (t *Torrent) CloseReader(reader *reader.Reader) {
 	t.muReader.Lock()
 	reader.Close()
-	delete(t.readers, reader)
-	t.expiredTime = time.Now().Add(time.Second * 5)
+	t.cache.RemReader(reader)
+	t.expiredTime = time.Now().Add(time.Minute)
 	t.muReader.Unlock()
+}
+
+func (t *Torrent) GetCache() *memcache.Cache {
+	return t.cache
 }
 
 func (t *Torrent) Preload(file *torrent.File, size int64) {
@@ -276,7 +286,7 @@ func (t *Torrent) Preload(file *torrent.File, size int64) {
 	}
 	defer func() {
 		t.CloseReader(readerPre)
-		t.expiredTime = time.Now().Add(time.Minute * 1)
+		t.expiredTime = time.Now().Add(time.Minute * 5)
 	}()
 
 	if endPreloadOffset > 0 {
@@ -288,7 +298,7 @@ func (t *Torrent) Preload(file *torrent.File, size int64) {
 		readerPost.SetReadahead(buff5mb)
 		defer func() {
 			t.CloseReader(readerPost)
-			t.expiredTime = time.Now().Add(time.Minute * 1)
+			t.expiredTime = time.Now().Add(time.Minute * 5)
 		}()
 	}
 
@@ -300,9 +310,9 @@ func (t *Torrent) Preload(file *torrent.File, size int64) {
 	var lastSize int64 = 0
 	errCount := 0
 	for t.status == TorrentPreload {
-		t.expiredTime = time.Now().Add(time.Minute * 1)
+		t.expiredTime = time.Now().Add(time.Minute * 5)
 		t.PreloadedBytes = t.Torrent.BytesCompleted()
-		fmt.Println("Preload:", file.Torrent().InfoHash().HexString(), bytes.Format(t.PreloadedBytes), "/", bytes.Format(t.PreloadSize), "Speed:", utils.Format(t.DownloadSpeed), "Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
+		log.Println("Preload:", file.Torrent().InfoHash().HexString(), bytes.Format(t.PreloadedBytes), "/", bytes.Format(t.PreloadSize), "Speed:", utils.Format(t.DownloadSpeed), "Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
 		if t.PreloadedBytes >= t.PreloadSize {
 			return
 		}
@@ -336,10 +346,6 @@ func (t *Torrent) Close() {
 
 	t.muReader.Lock()
 	defer t.muReader.Unlock()
-
-	for r := range t.readers {
-		r.Close()
-	}
 
 	if _, ok := t.bt.torrents[t.hash]; ok {
 		delete(t.bt.torrents, t.hash)

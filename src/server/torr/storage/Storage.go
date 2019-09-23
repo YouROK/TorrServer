@@ -11,6 +11,5 @@ type Storage interface {
 	storage.ClientImpl
 
 	GetStats(hash metainfo.Hash) *state.CacheState
-	GetCache(hash metainfo.Hash) interface{}
 	CloseHash(hash metainfo.Hash)
 }
