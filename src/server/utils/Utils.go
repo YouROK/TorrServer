@@ -20,9 +20,18 @@ func FreeOSMem() {
 	debug.FreeOSMemory()
 }
 
-func FreeOSMemGC() {
-	runtime.GC()
-	debug.FreeOSMemory()
+func FreeOSMemGC(maxAlloc int64) {
+	if maxAlloc <= 0 {
+		runtime.GC()
+		debug.FreeOSMemory()
+		return
+	}
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	if m.Alloc > uint64(float32(maxAlloc)*2) {
+		runtime.GC()
+		debug.FreeOSMemory()
+	}
 }
 
 const (
