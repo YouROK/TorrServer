@@ -141,7 +141,7 @@ var cachePage = `
 				return;
 			var html = "";
 			for(var i = 0; i < len; i++) {
-				html += '<span class="piece" id="p'+i+'"></span>';
+				html += '<span class="piece" id="p'+i+'" title="'+i+'" ></span>';
 			}
 			cache.html(html);
 		}
