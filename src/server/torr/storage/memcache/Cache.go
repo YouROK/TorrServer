@@ -32,17 +32,19 @@ type Cache struct {
 
 	pieces     map[int]*Piece
 	bufferPull *BufferPool
+	usedPieces map[int]struct{}
 
 	readers map[*reader.Reader]struct{}
 }
 
 func NewCache(capacity int64, storage *Storage) *Cache {
 	ret := &Cache{
-		capacity: capacity,
-		filled:   0,
-		pieces:   make(map[int]*Piece),
-		readers:  make(map[*reader.Reader]struct{}),
-		s:        storage,
+		capacity:   capacity,
+		filled:     0,
+		pieces:     make(map[int]*Piece),
+		readers:    make(map[*reader.Reader]struct{}),
+		usedPieces: make(map[int]struct{}),
+		s:          storage,
 	}
 
 	return ret
@@ -159,13 +161,12 @@ func (c *Cache) cleanPieces() {
 func (c *Cache) getBufferedPieces() map[int]*Piece {
 	pieces := make(map[int]*Piece)
 	fill := int64(0)
-	used := c.bufferPull.Used()
+	used := c.usedPieces
 	for u := range used {
 		piece := c.pieces[u]
 		if piece.Size > 0 {
 			if piece.Id > 0 {
 				pieces[piece.Id] = piece
-				//pieces = append(pieces, piece)
 			}
 			fill += piece.Size
 		}
