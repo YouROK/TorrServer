@@ -3,14 +3,15 @@ package memcache
 import (
 	"sync"
 
+	"server/torr/storage"
 	"server/torr/storage/state"
 
 	"github.com/anacrolix/torrent/metainfo"
-	"github.com/anacrolix/torrent/storage"
+	storage2 "github.com/anacrolix/torrent/storage"
 )
 
 type Storage struct {
-	storage.TorrentImpl
+	storage.Storage
 
 	caches   map[metainfo.Hash]*Cache
 	capacity int64
@@ -24,7 +25,7 @@ func NewStorage(capacity int64) *Storage {
 	return stor
 }
 
-func (s *Storage) OpenTorrent(info *metainfo.Info, infoHash metainfo.Hash) (storage.TorrentImpl, error) {
+func (s *Storage) OpenTorrent(info *metainfo.Info, infoHash metainfo.Hash) (storage2.TorrentImpl, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	ch := NewCache(s.capacity, s)

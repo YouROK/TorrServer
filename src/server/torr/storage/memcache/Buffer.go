@@ -1,9 +1,9 @@
 package memcache
 
 import (
+	"fmt"
 	"sync"
 
-	"log"
 	"server/utils"
 )
 
@@ -33,11 +33,11 @@ func (b *BufferPool) mkBuffs() {
 		return
 	}
 	b.buffs = make(map[int]*buffer, b.frees)
-	log.Println("Create", b.frees, "buffers")
+	fmt.Println("Create", b.frees, "buffers")
 	for i := 0; i < b.frees; i++ {
 		buf := buffer{
 			-1,
-			make([]byte, b.size, b.size),
+			make([]byte, b.size),
 			false,
 		}
 		b.buffs[i] = &buf
@@ -59,18 +59,8 @@ func (b *BufferPool) GetBuffer(p *Piece) (buff []byte, index int) {
 			return
 		}
 	}
-	log.Println("Create slow buffer")
-
-	buf := buffer{
-		p.Id,
-		make([]byte, b.size, b.size),
-		true,
-	}
-	b.frees++
-	b.buffs[b.frees] = &buf
-	buff = buf.buf
-	index = b.frees
-	return
+	fmt.Println("Create slow buffer")
+	return make([]byte, b.size), -1
 }
 
 func (b *BufferPool) ReleaseBuffer(index int) {
@@ -85,26 +75,27 @@ func (b *BufferPool) ReleaseBuffer(index int) {
 		buff.used = false
 		buff.pieceId = -1
 		b.frees++
+		//fmt.Println("Release buffer:", index, b.frees)
 	} else {
 		utils.FreeOSMem()
 	}
 }
 
-//func (b *BufferPool) Used() map[int]struct{} {
-//	b.mu.Lock()
-//	defer b.mu.Unlock()
-//	if len(b.buffs) == 0 {
-//		b.mkBuffs()
-//	}
-//	used := make(map[int]struct{})
-//	for _, b := range b.buffs {
-//		if b.used {
-//			used[b.pieceId] = struct{}{}
-//		}
-//	}
-//	return used
-//}
-//
-//func (b *BufferPool) Len() int {
-//	return b.frees
-//}
+func (b *BufferPool) Used() map[int]struct{} {
+	if len(b.buffs) == 0 {
+		b.mu.Lock()
+		b.mkBuffs()
+		b.mu.Unlock()
+	}
+	used := make(map[int]struct{})
+	for _, b := range b.buffs {
+		if b.used {
+			used[b.pieceId] = struct{}{}
+		}
+	}
+	return used
+}
+
+func (b *BufferPool) Len() int {
+	return b.frees
+}

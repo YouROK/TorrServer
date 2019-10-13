@@ -1,15 +1,16 @@
 package memcache
 
 import (
+	"fmt"
+	"sort"
 	"sync"
 
+	"server/torr/reader"
 	"server/torr/storage/state"
 	"server/utils"
 
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/anacrolix/torrent/storage"
-	"log"
-	"server/torr/reader"
 )
 
 type Cache struct {
@@ -32,30 +33,30 @@ type Cache struct {
 
 	pieces     map[int]*Piece
 	bufferPull *BufferPool
-	usedPieces map[int]struct{}
+
+	prcLoaded int
 
 	readers map[*reader.Reader]struct{}
 }
 
 func NewCache(capacity int64, storage *Storage) *Cache {
 	ret := &Cache{
-		capacity:   capacity,
-		filled:     0,
-		pieces:     make(map[int]*Piece),
-		readers:    make(map[*reader.Reader]struct{}),
-		usedPieces: make(map[int]struct{}),
-		s:          storage,
+		capacity: capacity,
+		filled:   0,
+		pieces:   make(map[int]*Piece),
+		s:        storage,
+		readers:  make(map[*reader.Reader]struct{}),
 	}
 
 	return ret
 }
 
 func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
-	log.Println("Create cache for:", info.Name)
+	fmt.Println("Create cache for:", info.Name)
 	//Min capacity of 2 pieces length
-	caps := info.PieceLength * 2
-	if c.capacity < caps {
-		c.capacity = caps
+	cap := info.PieceLength * 2
+	if c.capacity < cap {
+		c.capacity = cap
 	}
 	c.pieceLength = info.PieceLength
 	c.pieceCount = info.NumPieces()
@@ -75,10 +76,7 @@ func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
 
 func (c *Cache) Piece(m metainfo.Piece) storage.PieceImpl {
 	c.muPiece.Lock()
-	defer func() {
-		c.muPiece.Unlock()
-		go utils.FreeOSMemGC(c.capacity)
-	}()
+	defer c.muPiece.Unlock()
 	if val, ok := c.pieces[m.Index()]; ok {
 		return val
 	}
@@ -87,7 +85,7 @@ func (c *Cache) Piece(m metainfo.Piece) storage.PieceImpl {
 
 func (c *Cache) Close() error {
 	c.isRemove = false
-	log.Println("Close cache for:", c.hash)
+	fmt.Println("Close cache for:", c.hash)
 	if _, ok := c.s.caches[c.hash]; ok {
 		delete(c.s.caches, c.hash)
 	}
@@ -135,50 +133,64 @@ func (c *Cache) cleanPieces() {
 	defer func() { c.isRemove = false }()
 	c.muRemove.Unlock()
 
-	bufPieces := c.getBufferedPieces()
-
-	if len(bufPieces) > 0 && c.filled >= c.capacity {
-		c.muReader.Lock()
-		for reader := range c.readers {
-			beg, end := c.getReaderPieces(reader)
-			for id := range bufPieces {
-				if id >= beg && id <= end {
-					delete(bufPieces, id)
-				}
-			}
+	remPieces := c.getRemPieces()
+	if len(remPieces) > 0 && (c.capacity < c.filled || c.bufferPull.Len() <= 1) {
+		remCount := int((c.filled - c.capacity) / c.pieceLength)
+		if remCount < 1 {
+			remCount = 1
 		}
-		c.muReader.Unlock()
-		if len(bufPieces) > 0 {
-			for _, p := range bufPieces {
-				p.Release()
-			}
-			bufPieces = nil
-			go utils.FreeOSMemGC(c.capacity)
+		if remCount > len(remPieces) {
+			remCount = len(remPieces)
+		}
+
+		remPieces = remPieces[:remCount]
+
+		for _, p := range remPieces {
+			c.removePiece(p)
 		}
 	}
 }
 
-func (c *Cache) getBufferedPieces() map[int]*Piece {
-	pieces := make(map[int]*Piece)
+func (c *Cache) getRemPieces() []*Piece {
+	pieces := make([]*Piece, 0)
 	fill := int64(0)
-	used := c.usedPieces
+	loading := 0
+	used := c.bufferPull.Used()
 	for u := range used {
-		piece := c.pieces[u]
-		if piece.Size > 0 {
-			if piece.Id > 0 {
-				pieces[piece.Id] = piece
+		v := c.pieces[u]
+		if v.Size > 0 {
+			if v.Id > 0 {
+				pieces = append(pieces, v)
 			}
-			fill += piece.Size
+			fill += v.Size
+			if !v.complete {
+				loading++
+			}
 		}
 	}
 	c.filled = fill
+	sort.Slice(pieces, func(i, j int) bool {
+		return pieces[i].accessed < pieces[j].accessed
+	})
 
+	c.prcLoaded = prc(c.piecesBuff-loading, c.piecesBuff)
 	return pieces
 }
 
 func (c *Cache) removePiece(piece *Piece) {
+	c.muPiece.Lock()
+	defer c.muPiece.Unlock()
 	piece.Release()
-	return
+
+	if c.prcLoaded >= 95 {
+		utils.FreeOSMemGC(c.capacity)
+	} else {
+		utils.FreeOSMem()
+	}
+}
+
+func prc(val, of int) int {
+	return int(float64(val) * 100.0 / float64(of))
 }
 
 func (c *Cache) AddReader(r *reader.Reader) {
@@ -198,10 +210,4 @@ func (c *Cache) ReadersLen() int {
 		return 0
 	}
 	return len(c.readers)
-}
-
-func (c *Cache) getReaderPieces(reader *reader.Reader) (begin, end int) {
-	end = int((reader.Offset() + reader.Readahead()) / c.pieceLength)
-	begin = int((reader.Offset() - c.capacity + reader.Readahead()) / c.pieceLength)
-	return
 }

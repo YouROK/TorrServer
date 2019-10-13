@@ -39,7 +39,6 @@ func (p *Piece) WriteAt(b []byte, off int64) (n int, err error) {
 		if p.buffer == nil {
 			return 0, errors.New("Can't get buffer write")
 		}
-		p.cache.usedPieces[p.Id] = struct{}{}
 	}
 	n = copy(p.buffer[off:], b[:])
 	p.Size += int64(n)
@@ -102,9 +101,6 @@ func (p *Piece) Release() {
 	}
 	p.Size = 0
 	p.complete = false
-	if _, ok := p.cache.usedPieces[p.Id]; ok {
-		delete(p.cache.usedPieces, p.Id)
-	}
 }
 
 func (p *Piece) Stat() state.ItemState {
