@@ -3,8 +3,6 @@ package memcache
 import (
 	"fmt"
 	"sync"
-
-	"server/utils"
 )
 
 type buffer struct {
@@ -65,7 +63,6 @@ func (b *BufferPool) GetBuffer(p *Piece) (buff []byte, index int) {
 
 func (b *BufferPool) ReleaseBuffer(index int) {
 	if index == -1 {
-		utils.FreeOSMem()
 		return
 	}
 	b.mu.Lock()
@@ -75,9 +72,6 @@ func (b *BufferPool) ReleaseBuffer(index int) {
 		buff.used = false
 		buff.pieceId = -1
 		b.frees++
-		//fmt.Println("Release buffer:", index, b.frees)
-	} else {
-		utils.FreeOSMem()
 	}
 }
 
