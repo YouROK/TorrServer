@@ -18,6 +18,7 @@ src/github.com/
 src/golang.org/
 src/bazil.org/
 src/gopkg.in/
+src/go.opencensus.io/
 pkg/
 bin/
 dist/
