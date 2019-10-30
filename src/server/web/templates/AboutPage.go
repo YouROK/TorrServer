@@ -66,6 +66,9 @@ var aboutPage = `
 			<br>
 			<i class="inline">Site: </i>
 			<a target="_blank" class="inline" href="https://github.com/YouROK">GitHub.com/YouROK</a>
+			<br>
+			<i class="inline">Telegram: </i>
+			<a target="_blank" class="inline" href="https://t.me/TorrServe">@TorrServe</a>
 		<br>
 		<hr align="left" width="25%">
 		<br>
