@@ -36,7 +36,7 @@
 # from the standard ports/downloads and therefore removed from this list.
 #
 PLATFORMS=""
-PLATFORMS="$PLATFORMS darwin/amd64" # amd64 only as of go1.5
+PLATFORMS="$PLATFORMS darwin/amd64"              # amd64 only as of go1.5
 PLATFORMS="$PLATFORMS windows/amd64 windows/386" # arm compilation not available for Windows
 PLATFORMS="$PLATFORMS linux/amd64 linux/386"
 # PLATFORMS="$PLATFORMS linux/ppc64 linux/ppc64le"
@@ -62,7 +62,7 @@ PLATFORMS="$PLATFORMS linux/mips linux/mipsle linux/mips64 linux/mips64le" # exp
 #   @dfc: you'll have to use gomobile to build for darwin/arm64 [and others]
 #   @dfc: that target expects that you're bulding for a mobile phone
 #   @dfc: iphone 5 and below, ARMv7, iphone 3 and below ARMv6, iphone 5s and above arm64
-# 
+#
 # PLATFORMS_ARM="linux freebsd netbsd"
 PLATFORMS_ARM="linux"
 
@@ -74,7 +74,7 @@ type setopt >/dev/null 2>&1
 
 export GOPATH="${PWD}"
 
-SCRIPT_NAME=`basename "$0"`
+SCRIPT_NAME=$(basename "$0")
 FAILURES=""
 SOURCE_FILE="dist/TorrServer"
 CURRENT_DIRECTORY=${PWD##*/}
@@ -91,7 +91,7 @@ for PLATFORM in $PLATFORMS; do
 done
 
 # ARM builds
-if [[ $PLATFORMS_ARM == *"linux"* ]]; then 
+if [[ $PLATFORMS_ARM == *"linux"* ]]; then
   CMD="GOOS=linux GOARCH=arm64 go build -o ${OUTPUT}-linux-arm64 main"
   echo "${CMD}"
   eval $CMD || FAILURES="${FAILURES} ${PLATFORM}"
@@ -102,9 +102,9 @@ for GOOS in $PLATFORMS_ARM; do
   # build for each ARM version
   for GOARM in 7 6 5; do
     BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}${GOARM}"
-   	CMD="GOARM=${GOARM} GOOS=${GOOS} GOARCH=${GOARCH} go build -o ${BIN_FILENAME} main"
+    CMD="GOARM=${GOARM} GOOS=${GOOS} GOARCH=${GOARCH} go build -o ${BIN_FILENAME} main"
     echo "${CMD}"
-    eval "${CMD}" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}" 
+    eval "${CMD}" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
   done
 done
 
@@ -116,13 +116,13 @@ if [[ "${FAILURES}" != "" ]]; then
 fi
 
 export CGO_ENABLED=1
-export GOOS=android 
+export GOOS=android
 export LDFLAGS="-s -w"
 
-export NDK_TOOLCHAIN=/space/Projects/GO/TorrServer/toolchains
+export NDK_TOOLCHAIN=$GOPATH/toolchains
 export CC=$NDK_TOOLCHAIN/bin/armv7a-linux-androideabi21-clang
 export CXX=$NDK_TOOLCHAIN/bin/armv7a-linux-androideabi21-clang++
-export GOARCH=arm 
+export GOARCH=arm
 export GOARM=7
 BIN_FILENAME="dist/TorrServer-${GOOS}-${GOARCH}${GOARM}"
 echo "Android ${BIN_FILENAME}"
