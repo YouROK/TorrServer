@@ -73,7 +73,7 @@ func (bt *BTServer) configure() {
 
 	bt.config = torrent.NewDefaultClientConfig()
 
-	bt.config.DisableIPv6 = true
+	bt.config.DisableIPv6 = settings.Get().EnableIPv6 == false
 	bt.config.DisableTCP = settings.Get().DisableTCP
 	bt.config.DisableUTP = settings.Get().DisableUTP
 	bt.config.NoDefaultPortForwarding = settings.Get().DisableUPNP

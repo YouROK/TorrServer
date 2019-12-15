@@ -30,6 +30,7 @@ type Settings struct {
 	RetrackersMode int //0 - don`t add, 1 - add retrackers, 2 - remove retrackers
 
 	//BT Config
+	EnableIPv6         bool
 	DisableTCP         bool
 	DisableUTP         bool
 	DisableUPNP        bool
