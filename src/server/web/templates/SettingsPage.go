@@ -55,6 +55,10 @@ var settingsPage = `
          	<small class="form-text text-muted">Размеры кэша и буфера указываются в мегабайтах</small>
 		<br>
             <div class="form-check">
+                <input id="EnableIPv6" class="form-check-input" type="checkbox" autocomplete="off">
+                <label for="EnableIPv6">Включить IPv6</label>
+            </div>
+            <div class="form-check">
                 <input id="DisableTCP" class="form-check-input" type="checkbox" autocomplete="off">
                 <label for="DisableTCP">Отключить TCP</label>
             </div>
@@ -151,6 +155,7 @@ var settingsPage = `
             data.CacheSize = Number($('#CacheSize').val())*(1024*1024);
 			data.PreloadBufferSize = Number($('#PreloadBufferSize').val())*(1024*1024);
 			
+			data.EnableIPv6 = $('#EnableIPv6').prop('checked');
 			data.DisableTCP = $('#DisableTCP').prop('checked');
 			data.DisableUTP = $('#DisableUTP').prop('checked');
 			data.DisableUPNP = $('#DisableUPNP').prop('checked');
@@ -183,7 +188,8 @@ var settingsPage = `
          			$('#CacheSize').val(data.CacheSize/(1024*1024));
 					$('#PreloadBufferSize').val(data.PreloadBufferSize/(1024*1024));
 					
-         			$('#DisableTCP').prop('checked', data.DisableTCP);
+					$('#EnableIPv6').prop('checked', data.EnableIPv6);
+					$('#DisableTCP').prop('checked', data.DisableTCP);
 					$('#DisableUTP').prop('checked', data.DisableUTP);
 					$('#DisableUPNP').prop('checked', data.DisableUPNP);
 					$('#DisableDHT').prop('checked', data.DisableDHT);
