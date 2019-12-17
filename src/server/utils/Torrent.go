@@ -19,7 +19,7 @@ var trackers = []string{
 	"http://tracker.electro-torrent.pl:80/announce",
 	"http://tracker.internetwarriors.net:1337/announce",
 	"http://tracker2.itzmx.com:6961/announce",
-	"udp://46.148.18.250:2710",
+	"udp4://46.148.18.250:2710",
 	"udp://opentor.org:2710",
 	"udp://public.popcorn-tracker.org:6969/announce",
 	"udp://tracker.opentrackr.org:1337/announce",
