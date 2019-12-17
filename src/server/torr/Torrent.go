@@ -6,7 +6,6 @@ import (
 	"sort"
 	"sync"
 	"time"
-	"fmt"
 
 	"server/settings"
 	"server/utils"
@@ -185,16 +184,16 @@ func (t *Torrent) progressEvent() {
 	}
 	t.muTorrent.Unlock()
 	t.lastTimeSpeed = time.Now()
-	if (t.BytesReadUsefulData > settings.Get().PreloadBufferSize) {
+	if t.BytesReadUsefulData > settings.Get().PreloadBufferSize {
 		adj := int64((int(t.cache.GetState().PiecesLength) * t.Torrent.Stats().ActivePeers) / (1 + t.cache.ReadersLen()))
 		switch {
-			case adj < t.cache.GetState().PiecesLength:
-				adj = t.cache.GetState().PiecesLength
-			case adj > t.cache.GetState().PiecesLength * 4:
-				adj = t.cache.GetState().PiecesLength * 4
+		case adj < t.cache.GetState().PiecesLength:
+			adj = t.cache.GetState().PiecesLength
+		case adj > t.cache.GetState().PiecesLength*4:
+			adj = t.cache.GetState().PiecesLength * 4
 		}
 		t.cache.AdjustRA(adj)
-		log.Println("Status:", t.Name(), "S:", fmt.Sprintf("%8s", utils.Format(t.DownloadSpeed)), "P:", fmt.Sprintf("%2d", t.Torrent.Stats().ActivePeers), "/", fmt.Sprintf("%2d", t.Torrent.Stats().TotalPeers), "R:", t.cache.ReadersLen(), "RA:", utils.Format(float64(adj)))
+		//log.Println("Status:", t.Name(), "S:", fmt.Sprintf("%8s", utils.Format(t.DownloadSpeed)), "P:", fmt.Sprintf("%2d", t.Torrent.Stats().ActivePeers), "/", fmt.Sprintf("%2d", t.Torrent.Stats().TotalPeers), "R:", t.cache.ReadersLen(), "RA:", utils.Format(float64(adj)))
 	}
 }
 
