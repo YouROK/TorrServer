@@ -25,6 +25,29 @@ var trackers = []string{
 	"udp://tracker.opentrackr.org:1337/announce",
 
 	"http://bt.svao-ix.ru/announce",
+
+	"udp://explodie.org:6969/announce",
+
+	//https://github.com/ngosang/trackerslist/blob/master/trackers_best_ip.txt 18.12.2019
+	"udp4://62.138.0.158:6969/announce",
+	"udp4://188.241.58.209:6969/announce",
+	"udp4://93.158.213.92:1337/announce",
+	"udp4://62.210.97.59:1337/announce",
+	"udp4://151.80.120.113:2710/announce",
+	"udp4://151.80.120.115:2710/announce",
+	"udp4://165.231.0.116:80/announce",
+	"udp4://208.83.20.20:6969/announce",
+	"udp4://5.206.54.49:6969/announce",
+	"udp4://35.156.19.129:6969/announce",
+	"udp4://37.235.174.46:2710/announce",
+	"udp4://185.181.60.67:80/announce",
+	"udp4://54.37.235.149:6969/announce",
+	"udp4://89.234.156.205:451/announce",
+	"udp4://159.100.245.181:6969/announce",
+	"udp4://142.44.243.4:1337/announce",
+	"udp4://51.15.40.114:80/announce",
+	"udp4://176.113.71.19:6961/announce",
+	"udp4://212.47.227.58:6969/announce",
 }
 
 func GetDefTrackers() []string {
