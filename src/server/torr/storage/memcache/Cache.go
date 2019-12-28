@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"server/torr/reader"
+	storage2 "server/torr/storage"
 	"server/torr/storage/state"
 	"server/utils"
 
@@ -15,6 +16,7 @@ import (
 
 type Cache struct {
 	storage.TorrentImpl
+	storage2.Cache
 
 	s *Storage
 
@@ -217,4 +219,3 @@ func (c *Cache) AdjustRA(readahead int64) {
 		r.SetReadahead(readahead)
 	}
 }
-

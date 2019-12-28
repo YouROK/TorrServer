@@ -65,7 +65,7 @@ func (s *Storage) Close() error {
 	return nil
 }
 
-func (s *Storage) GetCache(hash metainfo.Hash) *Cache {
+func (s *Storage) GetCache(hash metainfo.Hash) storage.Cache {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for _, c := range s.caches {

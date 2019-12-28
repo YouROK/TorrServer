@@ -14,7 +14,7 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/labstack/gommon/bytes"
 	"server/torr/reader"
-	"server/torr/storage/memcache"
+	"server/torr/storage"
 )
 
 type TorrentStatus int
@@ -53,7 +53,7 @@ type Torrent struct {
 	muReader  sync.Mutex
 
 	bt    *BTServer
-	cache *memcache.Cache
+	cache storage.Cache
 
 	lastTimeSpeed       time.Time
 	DownloadSpeed       float64
@@ -249,7 +249,7 @@ func (t *Torrent) CloseReader(reader *reader.Reader) {
 	t.muReader.Unlock()
 }
 
-func (t *Torrent) GetCache() *memcache.Cache {
+func (t *Torrent) GetCache() storage.Cache {
 	return t.cache
 }
 

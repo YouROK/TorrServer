@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"server/torr/storage"
+	"server/torr/storage/memcache"
 	"sync"
 
 	"server/settings"
-	"server/torr/storage/memcache"
 	"server/torr/storage/state"
 	"server/utils"
 
@@ -21,7 +22,7 @@ type BTServer struct {
 	config *torrent.ClientConfig
 	client *torrent.Client
 
-	storage *memcache.Storage
+	storage storage.Storage
 
 	torrents map[metainfo.Hash]*Torrent
 

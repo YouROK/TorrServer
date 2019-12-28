@@ -8,7 +8,6 @@ import (
 	"server/torr/storage"
 	"server/torr/storage/state"
 
-	"github.com/anacrolix/missinggo/filecache"
 	"github.com/anacrolix/torrent/metainfo"
 	storage2 "github.com/anacrolix/torrent/storage"
 )
@@ -16,7 +15,7 @@ import (
 type Storage struct {
 	storage.Storage
 
-	caches   map[metainfo.Hash]*filecache.Cache
+	caches   map[metainfo.Hash]*Cache
 	capacity int64
 	mu       sync.Mutex
 }
@@ -24,7 +23,7 @@ type Storage struct {
 func NewStorage(capacity int64) storage.Storage {
 	stor := new(Storage)
 	stor.capacity = capacity
-	stor.caches = make(map[metainfo.Hash]*filecache.Cache)
+	stor.caches = make(map[metainfo.Hash]*Cache)
 	return stor
 }
 
@@ -32,7 +31,7 @@ func (s *Storage) OpenTorrent(info *metainfo.Info, infoHash metainfo.Hash) (stor
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	path := filepath.Join(settings.Path, "cache", infoHash.String())
-	cache, err := filecache.NewCache(path)
+	cache, err := NewCache(path)
 	if err != nil {
 		return nil, err
 	}
@@ -66,4 +65,10 @@ func (s *Storage) Close() error {
 	defer s.mu.Unlock()
 
 	return nil
+}
+
+func (s *Storage) GetCache(hash metainfo.Hash) storage.Cache {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.caches[hash]
 }
