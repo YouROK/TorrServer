@@ -24,7 +24,7 @@ func MakeM3UPlayList(tor torr.TorrentStats, magnet string, host string) string {
 
 	for _, f := range tor.FileStats {
 		if GetMimeType(f.Path) != "*/*" {
-			m3u += "#EXTINF:-1 type=\"playlist\", " + f.Path + "\n"
+			m3u += "#EXTINF:-1, " + f.Path + "\n"
 			mag := url.QueryEscape(magnet)
 			m3u += host + "/torrent/play?link=" + mag + "&file=" + fmt.Sprint(f.Id) + "\n\n"
 		}
