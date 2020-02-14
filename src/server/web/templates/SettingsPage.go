@@ -54,6 +54,14 @@ var settingsPage = `
             </div>
          	<small class="form-text text-muted">Размеры кэша и буфера указываются в мегабайтах</small>
 		<br>
+			<div class="input-group">
+                <div class="input-group-prepend">
+                    <div class="input-group-text">Таймаут отключения торрента</div>
+                </div>
+                <input id="TorrentDisconnectTimeout" class="form-control" type="number" autocomplete="off">
+            </div>
+         	<small class="form-text text-muted">Время (секунд) после которого закроется торрент, после отключения соединения</small>
+		<br>
             <div class="form-check">
                 <input id="EnableIPv6" class="form-check-input" type="checkbox" autocomplete="off">
                 <label for="EnableIPv6">Включить IPv6</label>
@@ -154,6 +162,8 @@ var settingsPage = `
             var data = {};
             data.CacheSize = Number($('#CacheSize').val())*(1024*1024);
 			data.PreloadBufferSize = Number($('#PreloadBufferSize').val())*(1024*1024);
+
+			data.TorrentDisconnectTimeout = Number($('#TorrentDisconnectTimeout').val());
 			
 			data.EnableIPv6 = $('#EnableIPv6').prop('checked');
 			data.DisableTCP = $('#DisableTCP').prop('checked');
@@ -187,6 +197,7 @@ var settingsPage = `
                 .done(function(data) {
          			$('#CacheSize').val(data.CacheSize/(1024*1024));
 					$('#PreloadBufferSize').val(data.PreloadBufferSize/(1024*1024));
+					$('#TorrentDisconnectTimeout').val(data.TorrentDisconnectTimeout);
 					
 					$('#EnableIPv6').prop('checked', data.EnableIPv6);
 					$('#DisableTCP').prop('checked', data.DisableTCP);
