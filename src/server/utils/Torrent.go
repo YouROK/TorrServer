@@ -3,7 +3,10 @@ package utils
 import (
 	"encoding/base32"
 	"errors"
+	"io/ioutil"
 	"math/rand"
+	"net/http"
+	"strings"
 	"time"
 
 	"server/settings"
@@ -12,7 +15,9 @@ import (
 	"golang.org/x/time/rate"
 )
 
-var trackers = []string{
+var defTrackers = []string{
+	"http://retracker.local",
+
 	"http://bt4.t-ru.org/ann?magnet",
 	"http://retracker.mgts.by:80/announce",
 	"http://tracker.city9x.com:2710/announce",
@@ -50,8 +55,35 @@ var trackers = []string{
 	"udp4://212.47.227.58:6969/announce",
 }
 
+var loadedTrackers []string
+
 func GetDefTrackers() []string {
-	return trackers
+	loadNewTracker()
+	if len(loadedTrackers) == 0 {
+		return defTrackers
+	}
+	return loadedTrackers
+}
+
+func loadNewTracker() {
+	if len(loadedTrackers) > 0 {
+		return
+	}
+	resp, err := http.Get("https://newtrackon.com/api/stable")
+	if err == nil {
+		buf, err := ioutil.ReadAll(resp.Body)
+		if err == nil {
+			arr := strings.Split(string(buf), "\n")
+			var ret []string
+			for _, s := range arr {
+				s = strings.TrimSpace(s)
+				if len(s) > 0 {
+					ret = append(ret, s)
+				}
+			}
+			loadedTrackers = ret
+		}
+	}
 }
 
 func PeerIDRandom(peer string) string {
