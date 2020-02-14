@@ -1,7 +1,7 @@
 package memcache
 
 import (
-	"fmt"
+	"log"
 	"sort"
 	"sync"
 
@@ -53,7 +53,7 @@ func NewCache(capacity int64, storage *Storage) *Cache {
 }
 
 func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
-	fmt.Println("Create cache for:", info.Name)
+	log.Println("Create cache for:", info.Name)
 	if c.capacity == 0 {
 		c.capacity = info.PieceLength * 6
 	}
@@ -90,7 +90,7 @@ func (c *Cache) Piece(m metainfo.Piece) storage.PieceImpl {
 
 func (c *Cache) Close() error {
 	c.isRemove = false
-	fmt.Println("Close cache for:", c.hash)
+	log.Println("Close cache for:", c.hash)
 	if _, ok := c.s.caches[c.hash]; ok {
 		delete(c.s.caches, c.hash)
 	}
