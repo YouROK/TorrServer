@@ -246,7 +246,7 @@ func (t *Torrent) CloseReader(reader *reader.Reader) {
 	t.muReader.Lock()
 	reader.Close()
 	t.cache.RemReader(reader)
-	t.expiredTime = time.Now().Add(time.Minute * 10) //TODO one minute
+	t.expiredTime = time.Now().Add(time.Second * time.Duration(settings.Get().TorrentDisconnectTimeout))
 	t.muReader.Unlock()
 }
 
@@ -310,7 +310,7 @@ func (t *Torrent) Preload(file *torrent.File, size int64) {
 		readerPost.SetReadahead(buff5mb)
 		defer func() {
 			t.CloseReader(readerPost)
-			t.expiredTime = time.Now().Add(time.Second * time.Duration(settings.Get().TorrentDisconnectTimeout))
+			t.expiredTime = time.Now().Add(time.Minute * 5)
 		}()
 	}
 
