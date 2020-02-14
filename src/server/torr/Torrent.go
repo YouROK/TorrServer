@@ -10,11 +10,12 @@ import (
 	"server/settings"
 	"server/utils"
 
+	"server/torr/reader"
+	"server/torr/storage/memcache"
+
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/labstack/gommon/bytes"
-	"server/torr/reader"
-	"server/torr/storage/memcache"
 )
 
 type TorrentStatus int
@@ -245,7 +246,7 @@ func (t *Torrent) CloseReader(reader *reader.Reader) {
 	t.muReader.Lock()
 	reader.Close()
 	t.cache.RemReader(reader)
-	t.expiredTime = time.Now().Add(time.Minute)
+	t.expiredTime = time.Now().Add(time.Minute * 10) //TODO one minute
 	t.muReader.Unlock()
 }
 
@@ -309,7 +310,7 @@ func (t *Torrent) Preload(file *torrent.File, size int64) {
 		readerPost.SetReadahead(buff5mb)
 		defer func() {
 			t.CloseReader(readerPost)
-			t.expiredTime = time.Now().Add(time.Minute * 5)
+			t.expiredTime = time.Now().Add(time.Second * time.Duration(settings.Get().TorrentDisconnectTimeout))
 		}()
 	}
 
