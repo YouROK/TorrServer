@@ -5,6 +5,7 @@ import (
 	"sort"
 	"sync"
 
+	"server/settings"
 	"server/torr/reader"
 	"server/torr/storage/state"
 	"server/utils"
@@ -53,6 +54,10 @@ func NewCache(capacity int64, storage *Storage) *Cache {
 
 func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
 	fmt.Println("Create cache for:", info.Name)
+	if c.capacity == 0 {
+		c.capacity = info.PieceLength * 6
+	}
+
 	//Min capacity of 2 pieces length
 	cap := info.PieceLength * 2
 	if c.capacity < cap {
@@ -92,7 +97,7 @@ func (c *Cache) Close() error {
 	c.pieces = nil
 	c.bufferPull = nil
 	c.readers = nil
-	utils.FreeOSMemGC(0)
+	utils.FreeOSMemGC()
 	return nil
 }
 
@@ -134,7 +139,7 @@ func (c *Cache) cleanPieces() {
 	c.muRemove.Unlock()
 
 	remPieces := c.getRemPieces()
-	if len(remPieces) > 0 && (c.capacity < c.filled || c.bufferPull.Len() <= 1) {
+	if len(remPieces) > 0 && (c.filled > c.capacity || c.bufferPull.Len() <= 1) {
 		remCount := int((c.filled - c.capacity) / c.pieceLength)
 		if remCount < 1 {
 			remCount = 1
@@ -182,8 +187,8 @@ func (c *Cache) removePiece(piece *Piece) {
 	defer c.muPiece.Unlock()
 	piece.Release()
 
-	if c.prcLoaded >= 95 {
-		utils.FreeOSMemGC(c.capacity)
+	if c.prcLoaded >= 75 {
+		utils.FreeOSMemGC()
 	} else {
 		utils.FreeOSMem()
 	}
@@ -213,8 +218,12 @@ func (c *Cache) ReadersLen() int {
 }
 
 func (c *Cache) AdjustRA(readahead int64) {
+	c.muReader.Lock()
+	defer c.muReader.Unlock()
+	if settings.Get().CacheSize == 0 {
+		c.capacity = readahead * 3
+	}
 	for r, _ := range c.readers {
 		r.SetReadahead(readahead)
 	}
 }
-

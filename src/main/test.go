@@ -84,7 +84,7 @@ func mkReleasesJS() {
 func test() {
 	config := torrent.NewDefaultClientConfig()
 
-	config.EstablishedConnsPerTorrent = 100
+	config.EstablishedConnsPerTorrent = 20
 	config.HalfOpenConnsPerTorrent = 65
 	config.DisableIPv6 = true
 	config.NoDHT = true

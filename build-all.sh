@@ -42,7 +42,7 @@ PLATFORMS="$PLATFORMS linux/amd64 linux/386"
 # PLATFORMS="$PLATFORMS linux/ppc64 linux/ppc64le"
 PLATFORMS="$PLATFORMS linux/mips linux/mipsle linux/mips64 linux/mips64le" # experimental in go1.6
 #PLATFORMS="$PLATFORMS linux/arm linux/arm64"
-# PLATFORMS="$PLATFORMS freebsd/amd64"
+PLATFORMS="$PLATFORMS freebsd/amd64"
 # PLATFORMS="$PLATFORMS netbsd/amd64" # amd64 only as of go1.6
 # PLATFORMS="$PLATFORMS openbsd/amd64" # amd64 only as of go1.6
 # PLATFORMS="$PLATFORMS dragonfly/amd64" # amd64 only as of go1.5
@@ -85,7 +85,11 @@ for PLATFORM in $PLATFORMS; do
   GOARCH=${PLATFORM#*/}
   BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}"
   if [[ "${GOOS}" == "windows" ]]; then BIN_FILENAME="${BIN_FILENAME}.exe"; fi
-  CMD="GOOS=${GOOS} GOARCH=${GOARCH} go build -o ${BIN_FILENAME} main"
+  if [[ "${GOOS}" == "linux" ]]; then
+    CMD="CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} go build -o ${BIN_FILENAME} main"
+  else
+    CMD="GOOS=${GOOS} GOARCH=${GOARCH} go build -o ${BIN_FILENAME} main"
+  fi
   echo "${CMD}"
   eval $CMD || FAILURES="${FAILURES} ${PLATFORM}"
 done
