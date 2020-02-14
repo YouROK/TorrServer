@@ -3,7 +3,6 @@ package torr
 import (
 	"fmt"
 	"io"
-	"path/filepath"
 	"sync"
 
 	"server/settings"
@@ -11,10 +10,10 @@ import (
 	"server/torr/storage/state"
 	"server/utils"
 
-	"github.com/anacrolix/torrent"
-	"github.com/anacrolix/torrent/iplist"
-	"github.com/anacrolix/torrent/metainfo"
 	"log"
+
+	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/metainfo"
 )
 
 type BTServer struct {
@@ -53,7 +52,7 @@ func (bt *BTServer) Disconnect() {
 	if bt.client != nil {
 		bt.client.Close()
 		bt.client = nil
-		utils.FreeOSMemGC(0)
+		utils.FreeOSMemGC()
 	}
 }
 
@@ -65,7 +64,8 @@ func (bt *BTServer) Reconnect() error {
 func (bt *BTServer) configure() {
 	bt.storage = memcache.NewStorage(settings.Get().CacheSize)
 
-	blocklist, _ := iplist.MMapPackedFile(filepath.Join(settings.Path, "blocklist"))
+	//blocklist, _ := iplist.MMapPackedFile(filepath.Join(settings.Path, "blocklist"))
+	blocklist, _ := utils.ReadBlockedIP()
 
 	userAgent := "uTorrent/3.5.5"
 	peerID := "-UT3550-"
