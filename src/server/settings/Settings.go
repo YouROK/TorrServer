@@ -18,8 +18,9 @@ func init() {
 	sets.CacheSize = 200 * 1024 * 1024
 	sets.PreloadBufferSize = 20 * 1024 * 1024
 	sets.ConnectionsLimit = 20
-	sets.DhtConnectionLimit = 1000
+	sets.DhtConnectionLimit = 500
 	sets.RetrackersMode = 1
+	sets.TorrentDisconnectTimeout = 30
 	StartTime = time.Now()
 }
 
@@ -42,6 +43,8 @@ type Settings struct {
 	ConnectionsLimit   int
 	DhtConnectionLimit int // 0 - inf
 	PeersListenPort    int
+
+	TorrentDisconnectTimeout int // in seconds
 }
 
 func Get() *Settings {
@@ -81,8 +84,12 @@ func ReadSettings() error {
 	if sets.DhtConnectionLimit < 0 {
 		sets.DhtConnectionLimit = 1000
 	}
-	if sets.CacheSize <= 0 {
+	if sets.CacheSize < 0 {
 		sets.CacheSize = 200 * 1024 * 1024
+	}
+
+	if sets.TorrentDisconnectTimeout < 30 {
+		sets.TorrentDisconnectTimeout = 30
 	}
 	return nil
 }
