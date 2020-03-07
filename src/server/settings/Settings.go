@@ -31,18 +31,19 @@ type Settings struct {
 	RetrackersMode int //0 - don`t add, 1 - add retrackers, 2 - remove retrackers
 
 	//BT Config
-	EnableIPv6         bool
-	DisableTCP         bool
-	DisableUTP         bool
-	DisableUPNP        bool
-	DisableDHT         bool
-	DisableUpload      bool
-	Encryption         int // 0 - Enable, 1 - disable, 2 - force
+	EnableIPv6    bool
+	DisableTCP    bool
+	DisableUTP    bool
+	DisableUPNP   bool
+	DisableDHT    bool
+	DisableUpload bool
+	//Encryption         int // 0 - Enable, 1 - disable, 2 - force
 	DownloadRateLimit  int // in kb, 0 - inf
 	UploadRateLimit    int // in kb, 0 - inf
 	ConnectionsLimit   int
 	DhtConnectionLimit int // 0 - inf
 	PeersListenPort    int
+	PeerStrategy       int // 0 - Timeout, 1 - Fastest, 2 - Fuzzing
 
 	TorrentDisconnectTimeout int // in seconds
 }
