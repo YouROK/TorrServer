@@ -272,7 +272,14 @@ func LoadTorrentsDB() ([]*Torrent, error) {
 					if ffdb == nil {
 						return fmt.Errorf("error load torrent files")
 					}
-					tmp := ffdb.Get([]byte("Size"))
+
+					tmp := ffdb.Get([]byte("Id"))
+					if tmp == nil {
+						return fmt.Errorf("error load torrent file")
+					}
+					file.Id = int(b2i(tmp))
+
+					tmp = ffdb.Get([]byte("Size"))
 					if tmp == nil {
 						return fmt.Errorf("error load torrent file")
 					}
