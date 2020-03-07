@@ -620,7 +620,7 @@ func getTorrentJS(tor *settings.Torrent) (*TorrentJsonResponse, error) {
 	js.AddTime = tor.Timestamp
 	js.Length = tor.Size
 	//fname is fake param for file name
-	js.Playlist = "/torrent/play?link=" + url.QueryEscape(tor.Magnet) + "&m3u=true&fname=" + utils.CleanFName(tor.Name+".m3u")
+	js.Playlist = "/torrent/play?link=" + url.QueryEscape(tor.Magnet) + "&m3u=true"
 	var size int64 = 0
 	for _, f := range tor.Files {
 		size += f.Size
