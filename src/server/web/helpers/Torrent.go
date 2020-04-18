@@ -13,9 +13,9 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 )
 
-func Add(bts *torr.BTServer, magnet metainfo.Magnet, save bool) error {
+func Add(bts *torr.BTServer, magnet metainfo.Magnet, infobytes []byte, save bool) error {
 	fmt.Println("Adding torrent", magnet.String())
-	_, err := bts.AddTorrent(magnet, func(torr *torr.Torrent) {
+	_, err := bts.AddTorrent(magnet, infobytes, func(torr *torr.Torrent) {
 		if torr, _ := settings.LoadTorrentDB(magnet.InfoHash.HexString()); torr != nil {
 			return
 		}
@@ -24,6 +24,7 @@ func Add(bts *torr.BTServer, magnet metainfo.Magnet, save bool) error {
 		torDb.Hash = torr.Hash().HexString()
 		torDb.Size = torr.Length()
 		torDb.Magnet = magnet.String()
+		torDb.InfoBytes = infobytes
 		torDb.Timestamp = time.Now().Unix()
 		files := torr.Stats().FileStats
 		sort.Slice(files, func(i, j int) bool {

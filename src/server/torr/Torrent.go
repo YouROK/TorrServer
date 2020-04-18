@@ -74,7 +74,7 @@ type Torrent struct {
 	progressTicker *time.Ticker
 }
 
-func NewTorrent(magnet metainfo.Magnet, bt *BTServer) (*Torrent, error) {
+func NewTorrent(magnet metainfo.Magnet, infobytes []byte, bt *BTServer) (*Torrent, error) {
 	switch settings.Get().RetrackersMode {
 	case 1:
 		magnet.Trackers = append(magnet.Trackers, utils.GetDefTrackers()...)
@@ -84,6 +84,7 @@ func NewTorrent(magnet metainfo.Magnet, bt *BTServer) (*Torrent, error) {
 		magnet.Trackers = utils.GetDefTrackers()
 	}
 	goTorrent, _, err := bt.client.AddTorrentSpec(&torrent.TorrentSpec{
+		InfoBytes:   infobytes,
 		Trackers:    [][]string{magnet.Trackers},
 		DisplayName: magnet.DisplayName,
 		InfoHash:    magnet.InfoHash,

@@ -7,8 +7,6 @@ import (
 
 	"server/utils"
 
-	dht2 "github.com/anacrolix/dht"
-
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/labstack/echo"
 	"github.com/labstack/gommon/bytes"
@@ -41,12 +39,10 @@ func statePage(c echo.Context) error {
 	for _, dht := range state.DHTs {
 		msg += fmt.Sprintf("%s DHT server at %s:<br>\n", dht.Addr().Network(), dht.Addr().String())
 		dhtStats := dht.Stats()
-		if ds, ok := dhtStats.(dht2.ServerStats); ok {
-			msg += fmt.Sprintf("\t&emsp;# Nodes: %d (%d good, %d banned)<br>\n", ds.Nodes, ds.GoodNodes, ds.BadNodes)
-			msg += fmt.Sprintf("\t&emsp;Server ID: %x<br>\n", dht.ID())
-			msg += fmt.Sprintf("\t&emsp;Announces: %d<br>\n", ds.SuccessfulOutboundAnnouncePeerQueries)
-			msg += fmt.Sprintf("\t&emsp;Outstanding transactions: %d<br>\n", ds.OutstandingTransactions)
-		}
+		msg += fmt.Sprintf("\t&emsp;# Nodes: %d (%d good, %d banned)<br>\n", dhtStats.Nodes, dhtStats.GoodNodes, dhtStats.BadNodes)
+		msg += fmt.Sprintf("\t&emsp;Server ID: %x<br>\n", dht.ID())
+		msg += fmt.Sprintf("\t&emsp;Announces: %d<br>\n", dhtStats.SuccessfulOutboundAnnouncePeerQueries)
+		msg += fmt.Sprintf("\t&emsp;Outstanding transactions: %d<br>\n", dhtStats.OutstandingTransactions)
 	}
 
 	sort.Slice(state.Torrents, func(i, j int) bool {

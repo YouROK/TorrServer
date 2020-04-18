@@ -10,6 +10,7 @@ import (
 type Torrent struct {
 	Name      string
 	Magnet    string
+	InfoBytes []byte
 	Hash      string
 	Size      int64
 	Timestamp int64
@@ -80,6 +81,10 @@ func SaveTorrentDB(torrent *Torrent) error {
 			return fmt.Errorf("error save torrent: %v", err)
 		}
 		err = hdb.Put([]byte("Link"), []byte(torrent.Magnet))
+		if err != nil {
+			return fmt.Errorf("error save torrent: %v", err)
+		}
+		err = hdb.Put([]byte("InfoBytes"), torrent.InfoBytes)
 		if err != nil {
 			return fmt.Errorf("error save torrent: %v", err)
 		}
@@ -171,6 +176,13 @@ func LoadTorrentDB(hash string) (*Torrent, error) {
 				return fmt.Errorf("error load torrent")
 			}
 			torr.Magnet = string(tmp)
+
+			tmp = hdb.Get([]byte("InfoBytes"))
+			if len(tmp) > 0 {
+				torr.InfoBytes = tmp
+			} else {
+				torr.InfoBytes = nil
+			}
 
 			tmp = hdb.Get([]byte("Size"))
 			if tmp == nil {

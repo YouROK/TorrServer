@@ -8,10 +8,11 @@ import (
 	"server/settings"
 	"server/utils"
 
+	"log"
+
 	"github.com/anacrolix/missinggo/httptoo"
 	"github.com/anacrolix/torrent"
 	"github.com/labstack/echo"
-	"log"
 )
 
 func (bt *BTServer) View(torr *Torrent, file *torrent.File, c echo.Context) error {

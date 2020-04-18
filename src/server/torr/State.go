@@ -1,14 +1,14 @@
 package torr
 
 import (
-	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/dht"
 )
 
 type BTState struct {
 	LocalPort int
 	PeerID    string
 	BannedIPs int
-	DHTs      []torrent.DhtServer
+	DHTs      []*dht.Server
 
 	Torrents []*Torrent
 }

@@ -84,7 +84,7 @@ func torrentAdd(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Link must be non-empty")
 	}
 
-	magnet, err := helpers.GetMagnet(jreq.Link)
+	magnet, infoBytes, err := helpers.GetMagnet(jreq.Link)
 	if err != nil {
 		fmt.Println("Error get magnet:", jreq.Hash, err)
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
@@ -94,7 +94,17 @@ func torrentAdd(c echo.Context) error {
 		magnet.DisplayName = jreq.Title
 	}
 
-	err = helpers.Add(bts, *magnet, !jreq.DontSave)
+	tor := bts.GetTorrent(magnet.InfoHash)
+	if tor != nil {
+		return c.String(http.StatusOK, magnet.InfoHash.HexString())
+	}
+
+	torDb, err := settings.LoadTorrentDB(magnet.InfoHash.HexString())
+	if err == nil && torDb != nil {
+		infoBytes = torDb.InfoBytes
+	}
+
+	err = helpers.Add(bts, *magnet, infoBytes, !jreq.DontSave)
 	if err != nil {
 		fmt.Println("Error add torrent:", jreq.Hash, err)
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
@@ -117,7 +127,7 @@ func torrentUpload(c echo.Context) error {
 	defer form.RemoveAll()
 
 	_, dontSave := form.Value["DontSave"]
-	var magnets []metainfo.Magnet
+	magnets := map[*metainfo.Magnet][]byte{}
 
 	for _, file := range form.File {
 		torrFile, err := file[0].Open()
@@ -138,12 +148,12 @@ func torrentUpload(c echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 		magnet := mi.Magnet(info.Name, mi.HashInfoBytes())
-		magnets = append(magnets, magnet)
+		magnets[&magnet] = mi.InfoBytes
 	}
 
 	ret := make([]string, 0)
-	for _, magnet := range magnets {
-		er := helpers.Add(bts, magnet, !dontSave)
+	for magnet, infobytes := range magnets {
+		er := helpers.Add(bts, *magnet, infobytes, !dontSave)
 		if er != nil {
 			err = er
 			fmt.Println("Error add torrent:", magnet.String(), er)
@@ -334,7 +344,7 @@ func preload(hashHex, fileLink string, size int64) *echo.HTTPError {
 			if err != nil {
 				return echo.NewHTTPError(http.StatusBadRequest, "Error parser magnet in db: "+hashHex)
 			}
-			tor, err = bts.AddTorrent(m, nil)
+			tor, err = bts.AddTorrent(m, torrDb.InfoBytes, nil)
 			if err != nil {
 				return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 			}
@@ -476,7 +486,7 @@ func torrentPlay(c echo.Context) error {
 		}
 	}
 
-	magnet, err := helpers.GetMagnet(link)
+	magnet, infoBytes, err := helpers.GetMagnet(link)
 	if err != nil {
 		fmt.Println("Error get magnet:", link, err)
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
@@ -484,7 +494,7 @@ func torrentPlay(c echo.Context) error {
 
 	tor := bts.GetTorrent(magnet.InfoHash)
 	if tor == nil {
-		tor, err = bts.AddTorrent(*magnet, nil)
+		tor, err = bts.AddTorrent(*magnet, infoBytes, nil)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
@@ -502,6 +512,7 @@ func torrentPlay(c echo.Context) error {
 		if t, err := settings.LoadTorrentDB(magnet.InfoHash.HexString()); t == nil && err == nil {
 			torrDb := toTorrentDB(tor)
 			if torrDb != nil {
+				torrDb.InfoBytes = infoBytes
 				settings.SaveTorrentDB(torrDb)
 			}
 		}
@@ -565,7 +576,7 @@ func torrentView(c echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, "Error parser magnet in db: "+hashHex)
 		}
 
-		tor, err = bts.AddTorrent(m, nil)
+		tor, err = bts.AddTorrent(m, torrDb.InfoBytes, nil)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}

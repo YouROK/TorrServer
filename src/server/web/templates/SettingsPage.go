@@ -89,12 +89,12 @@ var settingsPage = `
 		<br>
             <div class="input-group">
                 <div class="input-group-prepend">
-                    <div class="input-group-text">Peer strategy</div>
+                    <div class="input-group-text">Шифрование</div>
                 </div>
-                <select id="PeerStrategy" class="form-control">
-                    <option value="0">Duplicate Request Timeout</option>
-                    <option value="1">Fastest</option>
-                    <option value="2">Fuzzing</option>
+                <select id="Encryption" class="form-control">
+                    <option value="0">По умолчанию</option>
+                    <option value="1">Отключить</option>
+                    <option value="2">Принудительно</option>
                 </select>
             </div>
 		<br>
@@ -171,7 +171,7 @@ var settingsPage = `
 			data.DisableUPNP = $('#DisableUPNP').prop('checked');
 			data.DisableDHT = $('#DisableDHT').prop('checked');
 			data.DisableUpload = $('#DisableUpload').prop('checked');
-			data.PeerStrategy = Number($('#PeerStrategy').val());
+			data.Encryption = Number($('#Encryption').val());
  
 			data.ConnectionsLimit = Number($('#ConnectionsLimit').val());
 			data.DhtConnectionLimit = Number($('#DhtConnectionLimit').val());
@@ -205,7 +205,7 @@ var settingsPage = `
 					$('#DisableUPNP').prop('checked', data.DisableUPNP);
 					$('#DisableDHT').prop('checked', data.DisableDHT);
 					$('#DisableUpload').prop('checked', data.DisableUpload);
-					$('#PeerStrategy').val(data.PeerStrategy);
+					$('#Encryption').val(data.Encryption);
          
          			$('#ConnectionsLimit').val(data.ConnectionsLimit);
          			$('#DhtConnectionLimit').val(data.DhtConnectionLimit);

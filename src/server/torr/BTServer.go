@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"sync"
-	"time"
 
 	"server/settings"
 	"server/torr/storage/memcache"
@@ -80,10 +79,10 @@ func (bt *BTServer) configure() {
 	bt.config.NoDefaultPortForwarding = settings.Get().DisableUPNP
 	bt.config.NoDHT = settings.Get().DisableDHT
 	bt.config.NoUpload = settings.Get().DisableUpload
-	//bt.config.EncryptionPolicy = torrent.EncryptionPolicy{
-	//	DisableEncryption: settings.Get().Encryption == 1,
-	//	ForceEncryption:   settings.Get().Encryption == 2,
-	//}
+	bt.config.EncryptionPolicy = torrent.EncryptionPolicy{
+		DisableEncryption: settings.Get().Encryption == 1,
+		ForceEncryption:   settings.Get().Encryption == 2,
+	}
 	bt.config.IPBlocklist = blocklist
 	bt.config.DefaultStorage = bt.storage
 	bt.config.Bep20 = peerID
@@ -91,13 +90,6 @@ func (bt *BTServer) configure() {
 	bt.config.HTTPUserAgent = userAgent
 	bt.config.ExtendedHandshakeClientVersion = cliVers
 	bt.config.EstablishedConnsPerTorrent = settings.Get().ConnectionsLimit
-	if settings.Get().PeerStrategy == 1 { //Fastest
-		bt.config.DefaultRequestStrategy = torrent.RequestStrategyFastest()
-	} else if settings.Get().PeerStrategy == 2 { //Fuzzing
-		bt.config.DefaultRequestStrategy = torrent.RequestStrategyFuzzing()
-	} else {
-		bt.config.DefaultRequestStrategy = torrent.RequestStrategyDuplicateRequestTimeout(time.Second * 5)
-	}
 	if settings.Get().DhtConnectionLimit > 0 {
 		bt.config.ConnTracker.SetMaxEntries(settings.Get().DhtConnectionLimit)
 	}
@@ -115,8 +107,8 @@ func (bt *BTServer) configure() {
 	log.Println("Configure client:", settings.Get())
 }
 
-func (bt *BTServer) AddTorrent(magnet metainfo.Magnet, onAdd func(*Torrent)) (*Torrent, error) {
-	torr, err := NewTorrent(magnet, bt)
+func (bt *BTServer) AddTorrent(magnet metainfo.Magnet, infobytes []byte, onAdd func(*Torrent)) (*Torrent, error) {
+	torr, err := NewTorrent(magnet, infobytes, bt)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +161,6 @@ func (bt *BTServer) BTState() *BTState {
 	btState.LocalPort = bt.client.LocalPort()
 	btState.PeerID = fmt.Sprintf("%x", bt.client.PeerID())
 	btState.BannedIPs = len(bt.client.BadPeerIPs())
-
 	for _, dht := range bt.client.DhtServers() {
 		btState.DHTs = append(btState.DHTs, dht)
 	}
