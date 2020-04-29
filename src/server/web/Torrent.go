@@ -626,19 +626,19 @@ func getTorrentJS(tor *settings.Torrent) (*TorrentJsonResponse, error) {
 	if err == nil && len(tor.Name) < len(mag.DisplayName) {
 		js.Name = mag.DisplayName
 	}
+	mag.Trackers = []string{} //Remove retrackers for small link size
 	js.Magnet = tor.Magnet
 	js.Hash = tor.Hash
 	js.AddTime = tor.Timestamp
 	js.Length = tor.Size
-	//fname is fake param for file name
-	js.Playlist = "/torrent/play?link=" + url.QueryEscape(tor.Magnet) + "&m3u=true"
+	js.Playlist = "/torrent/play?link=" + url.QueryEscape(mag.String()) + "&m3u=true"
 	var size int64 = 0
 	for _, f := range tor.Files {
 		size += f.Size
 		tf := TorFile{
 			Name:    f.Name,
 			Link:    "/torrent/view/" + js.Hash + "/" + utils.CleanFName(f.Name),
-			Play:    "/torrent/play?link=" + js.Magnet + "&file=" + fmt.Sprint(f.Id),
+			Play:    "/torrent/play?link=" + mag.String() + "&file=" + fmt.Sprint(f.Id),
 			Preload: "/torrent/preload/" + js.Hash + "/" + utils.CleanFName(f.Name),
 			Size:    f.Size,
 			Viewed:  f.Viewed,
