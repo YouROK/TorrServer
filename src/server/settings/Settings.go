@@ -88,8 +88,8 @@ func ReadSettings() error {
 		sets.CacheSize = 200 * 1024 * 1024
 	}
 
-	if sets.TorrentDisconnectTimeout < 30 {
-		sets.TorrentDisconnectTimeout = 30
+	if sets.TorrentDisconnectTimeout < 1 {
+		sets.TorrentDisconnectTimeout = 1
 	}
 	return nil
 }
