@@ -7,7 +7,6 @@ import (
 
 	"server/settings"
 	"server/torr"
-	"server/utils"
 )
 
 func MakeM3ULists(torrents []*settings.Torrent, host string) string {
@@ -24,7 +23,7 @@ func MakeM3ULists(torrents []*settings.Torrent, host string) string {
 		}
 		magnet = url.QueryEscape(magnet)
 
-		m3u += host + "/torrent/play?link=" + url.QueryEscape(magnet) + "&m3u=true&fname=" + utils.CleanFName(t.Name+".m3u") + "\n\n"
+		m3u += host + "/torrent/play?link=" + url.QueryEscape(magnet) + "&m3u=true\n\n"
 	}
 	return m3u
 }
