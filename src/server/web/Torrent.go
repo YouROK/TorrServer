@@ -488,13 +488,6 @@ func torrentPlay(c echo.Context) error {
 
 	magnet, infoBytes, err := helpers.GetMagnet(link)
 	if err != nil {
-		link, er := url.QueryUnescape(link)
-		if er == nil {
-			magnet, infoBytes, err = helpers.GetMagnet(link)
-		}
-	}
-
-	if err != nil {
 		fmt.Println("Error get magnet:", link, err)
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
