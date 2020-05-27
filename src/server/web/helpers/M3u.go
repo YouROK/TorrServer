@@ -13,7 +13,7 @@ func MakeM3ULists(torrents []*settings.Torrent, host string) string {
 	m3u := "#EXTM3U\n"
 
 	for _, t := range torrents {
-		m3u += "#EXTINF:-1 type=\"playlist\", " + t.Name + "\n"
+		m3u += "#EXTINF:0 type=\"playlist\", " + t.Name + "\n"
 
 		magnet := t.Magnet
 		mag, _, err := GetMagnet(magnet)
@@ -42,7 +42,7 @@ func MakeM3UPlayList(tor torr.TorrentStats, magnet string, host string) string {
 			if fn == "" {
 				fn = f.Path
 			}
-			m3u += "#EXTINF:-1, " + fn + "\n"
+			m3u += "#EXTINF:0, " + fn + "\n"
 			m3u += host + "/torrent/play?link=" + magnet + "&file=" + fmt.Sprint(f.Id) + "\n\n"
 		}
 	}
