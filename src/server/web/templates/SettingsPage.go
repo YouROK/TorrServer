@@ -220,6 +220,9 @@ var settingsPage = `
 
         $(document).ready(function() {
             refreshSettings();
+			navigator.registerProtocolHandler("magnet",
+                             	"http://localhost:8090/torrent/play?link=%s&save=true&stat=true",
+                                "TorrServer");
         });
 
 		$(document).on("wheel", "input[type=number]", function (e) {
