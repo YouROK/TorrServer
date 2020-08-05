@@ -38,6 +38,8 @@ func initTorrent(e *echo.Echo) {
 
 	e.GET("/torrent/play", torrentPlay)
 	e.HEAD("/torrent/play", torrentPlay)
+	e.GET("/torrent/play/*", torrentPlay)
+	e.HEAD("/torrent/play/*", torrentPlay)
 
 	e.GET("/torrent/view/:hash/:file", torrentView)
 	e.HEAD("/torrent/view/:hash/:file", torrentView)
@@ -638,8 +640,8 @@ func getTorrentJS(tor *settings.Torrent) (*TorrentJsonResponse, error) {
 		tf := TorFile{
 			Name:    f.Name,
 			Link:    "/torrent/view/" + js.Hash + "/" + utils.CleanFName(f.Name),
-			Play:    "/torrent/play?link=" + mag.String() + "&file=" + fmt.Sprint(f.Id),
-			Preload: "/torrent/preload/" + js.Hash + "/" + utils.CleanFName(f.Name),
+			Play:    "/torrent/play/" + utils.CleanFName(f.Name) + "?link=" + mag.String() + "&file=" + fmt.Sprint(f.Id),
+			Preload: "/torrent/play/" + utils.CleanFName(f.Name) + "?link=" + mag.String() + "&file=" + fmt.Sprint(f.Id) + "&preload=true",
 			Size:    f.Size,
 			Viewed:  f.Viewed,
 		}
