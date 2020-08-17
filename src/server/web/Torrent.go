@@ -114,7 +114,7 @@ func torrentAdd(c echo.Context) error {
 
 	if jreq.Info != "" {
 		go func() {
-			utils.AddInfo(magnet.InfoHash.HexString(), jreq.Info)
+			settings.AddInfo(magnet.InfoHash.HexString(), jreq.Info)
 		}()
 	}
 
