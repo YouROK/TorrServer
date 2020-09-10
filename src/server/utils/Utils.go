@@ -10,7 +10,7 @@ import (
 )
 
 func CleanFName(file string) string {
-	re := regexp.MustCompile(`[ !*'();:@&=+$,/?#\[\]~"]`)
+	re := regexp.MustCompile(`[ !*'();:@&=+$,/?#\[\]~"]{}`)
 	ret := re.ReplaceAllString(file, `_`)
 	ret = strings.Replace(ret, "__", "_", -1)
 	return ret
