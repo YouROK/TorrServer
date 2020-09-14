@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/boltdb/bolt"
+	bolt "go.etcd.io/bbolt"
 )
 
 type Torrent struct {
@@ -19,44 +19,9 @@ type Torrent struct {
 }
 
 type File struct {
-	Name   string
-	Id     int
-	Size   int64
-	Viewed bool
-}
-
-func SetViewed(hash, filename string) error {
-	err := openDB()
-	if err != nil {
-		return err
-	}
-
-	return db.Update(func(tx *bolt.Tx) error {
-		dbt := tx.Bucket(dbTorrentsName)
-		if dbt == nil {
-			return fmt.Errorf("could not find torrent")
-		}
-		hdb := dbt.Bucket([]byte(hash))
-		if hdb == nil {
-			return fmt.Errorf("could not find torrent")
-		}
-
-		fdb := hdb.Bucket([]byte("Files"))
-		if fdb == nil {
-			return fmt.Errorf("could not find torrent")
-		}
-
-		fdb = fdb.Bucket([]byte(filename))
-		if fdb == nil {
-			return fmt.Errorf("could not find torrent")
-		}
-
-		err = fdb.Put([]byte("Viewed"), []byte{1})
-		if err != nil {
-			return fmt.Errorf("error save torrent %v", err)
-		}
-		return nil
-	})
+	Name string
+	Id   int
+	Size int64
 }
 
 func SaveTorrentDB(torrent *Torrent) error {
@@ -114,16 +79,6 @@ func SaveTorrentDB(torrent *Torrent) error {
 			}
 
 			err = ffdb.Put([]byte("Size"), i2b(f.Size))
-			if err != nil {
-				return fmt.Errorf("error save torrent files: %v", err)
-			}
-
-			b := 0
-			if f.Viewed {
-				b = 1
-			}
-
-			err = ffdb.Put([]byte("Viewed"), []byte{byte(b)})
 			if err != nil {
 				return fmt.Errorf("error save torrent files: %v", err)
 			}
@@ -220,11 +175,6 @@ func LoadTorrentDB(hash string) (*Torrent, error) {
 				}
 				file.Size = b2i(tmp)
 
-				tmp = ffdb.Get([]byte("Viewed"))
-				if tmp == nil {
-					return fmt.Errorf("error load torrent file")
-				}
-				file.Viewed = len(tmp) > 0 && tmp[0] == 1
 				torr.Files = append(torr.Files, file)
 			}
 			SortFiles(torr.Files)
@@ -297,11 +247,6 @@ func LoadTorrentsDB() ([]*Torrent, error) {
 					}
 					file.Size = b2i(tmp)
 
-					tmp = ffdb.Get([]byte("Viewed"))
-					if tmp == nil {
-						return fmt.Errorf("error load torrent file")
-					}
-					file.Viewed = len(tmp) > 0 && tmp[0] == 1
 					torr.Files = append(torr.Files, file)
 				}
 				SortFiles(torr.Files)

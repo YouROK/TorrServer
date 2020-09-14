@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/boltdb/bolt"
+	bolt "go.etcd.io/bbolt"
 )
 
 var (
 	db             *bolt.DB
+	dbViewedName   = []byte("Viewed")
 	dbInfosName    = []byte("Infos")
 	dbTorrentsName = []byte("Torrents")
 	dbSettingsName = []byte("Settings")

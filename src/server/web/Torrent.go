@@ -32,6 +32,10 @@ func initTorrent(e *echo.Echo) {
 	e.POST("/torrent/cache", torrentCache)
 	e.POST("/torrent/drop", torrentDrop)
 
+	e.POST("/torrent/viewed/add", torrentViewedAdd)
+	e.POST("/torrent/viewed/remove", torrentViewedRem)
+	e.GET("/torrent/viewed/list", torrentViewedList)
+
 	e.GET("/torrent/restart", torrentRestart)
 
 	e.GET("/torrent/playlist.m3u", torrentPlayListAll)
@@ -441,6 +445,46 @@ func torrentDrop(c echo.Context) error {
 	return c.NoContent(http.StatusOK)
 }
 
+func torrentViewedAdd(c echo.Context) error {
+	jreq, err := getJsReqTorr(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	if jreq.Hash == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "Hash must be non-empty")
+	}
+
+	err = settings.SetViewed(jreq.Hash)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	return c.NoContent(http.StatusOK)
+}
+
+func torrentViewedRem(c echo.Context) error {
+	jreq, err := getJsReqTorr(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	if jreq.Hash == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "Hash must be non-empty")
+	}
+
+	err = settings.RemTorrentViewed(jreq.Hash)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	return c.NoContent(http.StatusOK)
+}
+
+func torrentViewedList(c echo.Context) error {
+	err = settings.List(jreq.Hash)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	return c.NoContent(http.StatusOK)
+}
+
 func torrentRestart(c echo.Context) error {
 	fmt.Println("Restart torrent engine")
 	err := bts.Reconnect()
@@ -611,10 +655,9 @@ func toTorrentDB(t *torr.Torrent) *settings.Torrent {
 
 	for _, f := range st.FileStats {
 		tf := settings.File{
-			Id:     f.Id,
-			Name:   f.Path,
-			Size:   f.Length,
-			Viewed: false,
+			Id:   f.Id,
+			Name: f.Path,
+			Size: f.Length,
 		}
 		tor.Files = append(tor.Files, tf)
 	}
@@ -643,7 +686,7 @@ func getTorrentJS(tor *settings.Torrent) (*TorrentJsonResponse, error) {
 			Play:    "/torrent/play/" + utils.CleanFName(f.Name) + "?link=" + mag.String() + "&file=" + fmt.Sprint(f.Id),
 			Preload: "/torrent/play/" + utils.CleanFName(f.Name) + "?link=" + mag.String() + "&file=" + fmt.Sprint(f.Id) + "&preload=true",
 			Size:    f.Size,
-			Viewed:  f.Viewed,
+			Viewed:  settings.GetViewed(tor.Hash, f.Name),
 		}
 		js.Files = append(js.Files, tf)
 	}
