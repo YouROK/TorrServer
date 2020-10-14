@@ -15,26 +15,16 @@ func SetViewed(hash, filename string) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		dbt, err := tx.CreateBucketIfNotExists(dbViewedName)
 		if err != nil {
-			return fmt.Errorf("could not find torrent")
+			return fmt.Errorf("error save viewed %v", err)
 		}
 		hdb, err := dbt.CreateBucketIfNotExists([]byte(hash))
 		if err != nil {
-			return fmt.Errorf("could not find torrent")
+			return fmt.Errorf("error save viewed %v", err)
 		}
 
-		fdb, err := hdb.CreateBucketIfNotExists([]byte("Files"))
+		err = hdb.Put([]byte(filename), []byte{1})
 		if err != nil {
-			return fmt.Errorf("could not find torrent")
-		}
-
-		fdb, err = fdb.CreateBucketIfNotExists([]byte(filename))
-		if err != nil {
-			return fmt.Errorf("could not find torrent")
-		}
-
-		err = fdb.Put([]byte("Viewed"), []byte{1})
-		if err != nil {
-			return fmt.Errorf("error save torrent %v", err)
+			return fmt.Errorf("error save viewed %v", err)
 		}
 		return nil
 	})
@@ -69,82 +59,45 @@ func GetViewed(hash, filename string) bool {
 	err = db.View(func(tx *bolt.Tx) error {
 		hdb := tx.Bucket(dbViewedName)
 		if hdb == nil {
-			return fmt.Errorf("could not find torrent")
+			return fmt.Errorf("error get viewed")
 		}
 		hdb = hdb.Bucket([]byte(hash))
 		if hdb != nil {
-			fdb := hdb.Bucket([]byte("Files"))
-			if fdb == nil {
-				return fmt.Errorf("error load torrent files")
-			}
-			cf := fdb.Cursor()
-			for fn, _ := cf.First(); fn != nil; fn, _ = cf.Next() {
-				if string(fn) != filename {
-					continue
-				}
-
-				ffdb := fdb.Bucket(fn)
-				if ffdb == nil {
-					return fmt.Errorf("error load torrent files")
-				}
-
-				tmp := ffdb.Get([]byte("Viewed"))
-				if tmp == nil {
-					return fmt.Errorf("error load torrent file")
-				}
-				if len(tmp) > 0 && tmp[0] == 1 {
-					viewed = true
-					break
-				}
-			}
+			vw := hdb.Get([]byte(filename))
+			viewed = vw != nil && vw[0] == 1
 		}
 		return nil
 	})
 	return viewed
 }
 
-func GetViewedList() []struct {
-	Hash string
-	File string
-} {
+func GetViewedList() map[string][]string {
 	err := openDB()
 	if err != nil {
 		return nil
 	}
-	viewed := false
+
+	var list = make(map[string][]string)
+
 	err = db.View(func(tx *bolt.Tx) error {
-		hdb := tx.Bucket(dbViewedName)
-		if hdb == nil {
+		rdb := tx.Bucket(dbViewedName)
+		if rdb == nil {
 			return fmt.Errorf("could not find torrent")
 		}
-		hdb = hdb.Bucket([]byte(hash))
-		if hdb != nil {
+
+		rdb.ForEach(func(hash, _ []byte) error {
+			hdb := rdb.Bucket(hash)
 			fdb := hdb.Bucket([]byte("Files"))
-			if fdb == nil {
-				return fmt.Errorf("error load torrent files")
-			}
-			cf := fdb.Cursor()
-			for fn, _ := cf.First(); fn != nil; fn, _ = cf.Next() {
-				if string(fn) != filename {
-					continue
+			fdb.ForEach(func(fileName, _ []byte) error {
+				vw := fdb.Get(fileName)
+				if vw != nil && vw[0] == 1 {
+					list[string(hash)] = append(list[string(hash)], string(fileName))
 				}
-
-				ffdb := fdb.Bucket(fn)
-				if ffdb == nil {
-					return fmt.Errorf("error load torrent files")
-				}
-
-				tmp := ffdb.Get([]byte("Viewed"))
-				if tmp == nil {
-					return fmt.Errorf("error load torrent file")
-				}
-				if len(tmp) > 0 && tmp[0] == 1 {
-					viewed = true
-					break
-				}
-			}
-		}
+				return nil
+			})
+			return nil
+		})
 		return nil
 	})
-	return viewed
+	return list
 }
