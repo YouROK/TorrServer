@@ -22,9 +22,10 @@ func openDB() error {
 	}
 
 	var err error
-	db, err = bolt.Open(filepath.Join(Path, "torrserver.db"), 0666, nil)
+	var ro = Get().ReadOnlyMode
+	db, err = bolt.Open(filepath.Join(Path, "torrserver.db"), 0666, &bolt.Options{ReadOnly: ro})
 	if err != nil {
-		fmt.Print(err)
+		fmt.Println(err)
 		return err
 	}
 

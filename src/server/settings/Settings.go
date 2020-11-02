@@ -37,6 +37,7 @@ type Settings struct {
 	DisableUPNP        bool
 	DisableDHT         bool
 	DisableUpload      bool
+	ReadOnlyMode       bool
 	Encryption         int // 0 - Enable, 1 - disable, 2 - force
 	DownloadRateLimit  int // in kb, 0 - inf
 	UploadRateLimit    int // in kb, 0 - inf
@@ -112,4 +113,11 @@ func SaveSettings() error {
 		}
 		return setsDB.Put([]byte("json"), []byte(buf))
 	})
+}
+
+func SetRDB() {
+	SaveSettings()
+	fmt.Println("Enable Read-only DB mode")
+	CloseDB()
+	sets.ReadOnlyMode = true
 }

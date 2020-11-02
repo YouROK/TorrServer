@@ -182,7 +182,7 @@ func torrentGet(c echo.Context) error {
 	tor, err := settings.LoadTorrentDB(jreq.Hash)
 	if err != nil {
 		fmt.Println("Error get torrent:", jreq.Hash, err)
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		// return echo.NewHTTPError(http.StatusBadRequest, err.Error()) // Handle R/O DB
 	}
 
 	torrStatus := torr.TorrentAdded
