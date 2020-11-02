@@ -73,6 +73,7 @@ func (bt *BTServer) configure() {
 
 	bt.config = torrent.NewDefaultClientConfig()
 
+	bt.config.Debug = settings.Get().EnableDebug
 	bt.config.DisableIPv6 = settings.Get().EnableIPv6 == false
 	bt.config.DisableTCP = settings.Get().DisableTCP
 	bt.config.DisableUTP = settings.Get().DisableUTP
@@ -93,7 +94,6 @@ func (bt *BTServer) configure() {
 	if settings.Get().DhtConnectionLimit > 0 {
 		bt.config.ConnTracker.SetMaxEntries(settings.Get().DhtConnectionLimit)
 	}
-
 	if settings.Get().DownloadRateLimit > 0 {
 		bt.config.DownloadRateLimiter = utils.Limit(settings.Get().DownloadRateLimit * 1024)
 	}

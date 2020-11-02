@@ -514,8 +514,9 @@ func torrentPlay(c echo.Context) error {
 	if link == "" {
 		return echo.NewHTTPError(http.StatusBadRequest, "link should not be empty")
 	}
-	fmt.Println("Play:", c.QueryParams())
-
+	if (settings.Get().EnableDebug) {
+	    fmt.Println("Play:", c.QueryParams()) // mute log flood on play
+	}
 	qsave := c.QueryParam("save")
 	qpreload := c.QueryParam("preload")
 	qfile := c.QueryParam("file")
