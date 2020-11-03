@@ -18,6 +18,7 @@ type args struct {
 	Port string `arg:"-p" help:"web server port"`
 	Path string `arg:"-d" help:"database path"`
 	Add  string `arg:"-a" help:"add torrent link and exit"`
+	RDB  bool   `arg:"-r" help:"start in read-only DB mode"`
 	Kill bool   `arg:"-k" help:"dont kill program on signal"`
 }
 
@@ -45,7 +46,11 @@ func main() {
 	Preconfig(params.Kill)
 
 	server.Start(params.Path, params.Port)
-	settings.SaveSettings()
+	if (params.RDB) {
+	    settings.SetRDB()
+	} else {
+	    settings.SaveSettings()
+	}
 	fmt.Println(server.WaitServer())
 	time.Sleep(time.Second * 3)
 	os.Exit(0)
