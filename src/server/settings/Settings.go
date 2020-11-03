@@ -16,6 +16,7 @@ var (
 func init() {
 	sets = new(Settings)
 	sets.CacheSize = 200 * 1024 * 1024
+	sets.EnableDebug = false
 	sets.PreloadBufferSize = 20 * 1024 * 1024
 	sets.ConnectionsLimit = 20
 	sets.DhtConnectionLimit = 500
@@ -32,6 +33,7 @@ type Settings struct {
 
 	//BT Config
 	EnableIPv6         bool
+	EnableDebug        bool
 	DisableTCP         bool
 	DisableUTP         bool
 	DisableUPNP        bool

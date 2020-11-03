@@ -86,6 +86,10 @@ var settingsPage = `
                 <input id="DisableUpload" class="form-check-input" type="checkbox" autocomplete="off">
                 <label for="DisableUpload">Отключить Отдачу</label>
             </div>
+            <div class="form-check">
+                <input id="EnableDebug" class="form-check-input" type="checkbox" autocomplete="off">
+                <label for="EnableDebug">Режим отладки (только для разработчиков)</label>
+            </div>
 		<br>
             <div class="input-group">
                 <div class="input-group-prepend">
@@ -171,6 +175,7 @@ var settingsPage = `
 			data.DisableUPNP = $('#DisableUPNP').prop('checked');
 			data.DisableDHT = $('#DisableDHT').prop('checked');
 			data.DisableUpload = $('#DisableUpload').prop('checked');
+			data.EnableDebug = $('#EnableDebug').prop('checked');
 			data.Encryption = Number($('#Encryption').val());
  
 			data.ConnectionsLimit = Number($('#ConnectionsLimit').val());
