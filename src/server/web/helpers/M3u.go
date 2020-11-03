@@ -7,13 +7,14 @@ import (
 
 	"server/settings"
 	"server/torr"
+	"server/utils"
 )
 
 func MakeM3ULists(torrents []*settings.Torrent, host string) string {
 	m3u := "#EXTM3U\n"
 
 	for _, t := range torrents {
-		m3u += "#EXTINF:0 type=\"playlist\", " + t.Name + "\n"
+		m3u += "#EXTINF:0 type=\"playlist\"," + t.Name + "\n"
 
 		magnet := t.Magnet
 		mag, _, err := GetMagnet(magnet)
@@ -21,7 +22,7 @@ func MakeM3ULists(torrents []*settings.Torrent, host string) string {
 			mag.Trackers = []string{} //Remove retrackers for small link size
 			magnet = mag.String()
 		}
-		m3u += host + "/torrent/play?link=" + url.QueryEscape(magnet) + "&m3u=true\n\n"
+		m3u += host + "/torrent/play?link=" + url.QueryEscape(magnet) + "&m3u=true\n"
 	}
 	return m3u
 }
@@ -32,6 +33,7 @@ func MakeM3UPlayList(tor torr.TorrentStats, magnet string, host string) string {
 	mag, _, err := GetMagnet(magnet)
 	if err == nil {
 		mag.Trackers = []string{} //Remove retrackers for small link size
+		mag.DisplayName = "" //Remove dn from link (useless)
 		magnet = mag.String()
 	}
 	magnet = url.QueryEscape(magnet)
@@ -42,8 +44,8 @@ func MakeM3UPlayList(tor torr.TorrentStats, magnet string, host string) string {
 			if fn == "" {
 				fn = f.Path
 			}
-			m3u += "#EXTINF:0, " + fn + "\n"
-			m3u += host + "/torrent/play?link=" + magnet + "&file=" + fmt.Sprint(f.Id) + "\n\n"
+			m3u += "#EXTINF:0," + fn + "\n"
+			m3u += host + "/torrent/play/" + url.QueryEscape(utils.CleanFName(f.Path)) + "?link=" + magnet + "&file=" + fmt.Sprint(f.Id) + "\n"
 		}
 	}
 	return m3u
