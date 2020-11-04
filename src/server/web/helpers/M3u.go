@@ -19,7 +19,8 @@ func MakeM3ULists(torrents []*settings.Torrent, host string) string {
 		magnet := t.Magnet
 		mag, _, err := GetMagnet(magnet)
 		if err == nil {
-			mag.Trackers = []string{} //Remove retrackers for small link size
+			mag.Trackers = []string{} // remove retrackers for small link size
+			mag.DisplayName = "" // clear dn from link - long query params may fail in QueryParam("link")
 			magnet = mag.String()
 		}
 		m3u += host + "/torrent/play?link=" + url.QueryEscape(magnet) + "&m3u=true\n"
