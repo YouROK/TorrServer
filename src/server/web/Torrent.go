@@ -672,7 +672,8 @@ func getTorrentJS(tor *settings.Torrent) (*TorrentJsonResponse, error) {
 	if err == nil && len(tor.Name) < len(mag.DisplayName) {
 		js.Name = mag.DisplayName
 	}
-	mag.Trackers = []string{} //Remove retrackers for small link size
+	mag.Trackers = []string{} // remove retrackers for small link size
+	mag.DisplayName = "" // clear dn from link - long query params may fail in QueryParam("link")
 	js.Magnet = tor.Magnet
 	js.Hash = tor.Hash
 	js.AddTime = tor.Timestamp
@@ -684,8 +685,8 @@ func getTorrentJS(tor *settings.Torrent) (*TorrentJsonResponse, error) {
 		tf := TorFile{
 			Name:    f.Name,
 			Link:    "/torrent/view/" + js.Hash + "/" + utils.CleanFName(f.Name),
-			Play:    "/torrent/play/" + utils.CleanFName(f.Name) + "?link=" + mag.String() + "&file=" + fmt.Sprint(f.Id),
-			Preload: "/torrent/play/" + utils.CleanFName(f.Name) + "?link=" + mag.String() + "&file=" + fmt.Sprint(f.Id) + "&preload=true",
+			Play:    "/torrent/play/" + utils.CleanFName(f.Name) + "?link=" + url.QueryEscape(mag.String()) + "&file=" + fmt.Sprint(f.Id),
+			Preload: "/torrent/play/" + utils.CleanFName(f.Name) + "?link=" + url.QueryEscape(mag.String()) + "&file=" + fmt.Sprint(f.Id) + "&preload=true",
 			Size:    f.Size,
 			Viewed:  settings.GetViewed(tor.Hash, f.Name),
 		}

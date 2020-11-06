@@ -12,6 +12,11 @@ func AddInfo(hash, info string) error {
 	if err != nil {
 		return err
 	}
+	
+	infoe := GetInfo(hash)
+	if infoe != "{}" {
+		return nil // already filled
+	}
 
 	hash = strings.ToUpper(hash)
 	return db.Update(func(tx *bolt.Tx) error {
