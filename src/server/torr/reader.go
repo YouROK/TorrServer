@@ -1,10 +1,9 @@
-package reader
+package torr
 
 import (
-	"github.com/anacrolix/torrent"
-	"server/torr"
-
 	"io"
+
+	"github.com/anacrolix/torrent"
 )
 
 type Reader struct {
@@ -14,7 +13,7 @@ type Reader struct {
 	file      *torrent.File
 }
 
-func NewReader(torr *torr.Torrent, file *torrent.File, readahead int64) *Reader {
+func NewReader(torr *Torrent, file *torrent.File, readahead int64) *Reader {
 	r := new(Reader)
 	r.file = file
 	r.Reader = file.NewReader()

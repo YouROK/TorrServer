@@ -10,12 +10,10 @@ import (
 	"server/torr/utils"
 	utils2 "server/utils"
 
-	"server/torr/reader"
 	"server/torr/storage/torrstor"
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
-	"github.com/labstack/gommon/bytes"
 )
 
 type TorrentStatus int
@@ -227,15 +225,15 @@ func (t *Torrent) Length() int64 {
 	return t.Torrent.Length()
 }
 
-func (t *Torrent) NewReader(file *torrent.File, readahead int64) *reader.Reader {
+func (t *Torrent) NewReader(file *torrent.File, readahead int64) *Reader {
 	if t.status == TorrentClosed {
 		return nil
 	}
-	reader := reader.NewReader(t, file, readahead)
+	reader := NewReader(t, file, readahead)
 	return reader
 }
 
-func (t *Torrent) CloseReader(reader *reader.Reader) {
+func (t *Torrent) CloseReader(reader *Reader) {
 	reader.Close()
 	t.cache.RemReader(reader)
 	t.expiredTime = time.Now().Add(time.Second * time.Duration(settings.BTsets.TorrentDisconnectTimeout))
@@ -317,7 +315,7 @@ func (t *Torrent) Preload(file *torrent.File, size int64) {
 	for t.status == TorrentPreload {
 		t.expiredTime = time.Now().Add(time.Minute * 5)
 		t.PreloadedBytes = t.Torrent.BytesCompleted()
-		log.Println("Preload:", file.Torrent().InfoHash().HexString(), bytes.Format(t.PreloadedBytes), "/", bytes.Format(t.PreloadSize), "Speed:", utils2.Format(t.DownloadSpeed), "Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
+		log.Println("Preload:", file.Torrent().InfoHash().HexString(), utils2.Format(float64(t.PreloadedBytes)), "/", utils2.Format(float64(t.PreloadSize)), "Speed:", utils2.Format(t.DownloadSpeed), "Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
 		if t.PreloadedBytes >= t.PreloadSize {
 			return
 		}

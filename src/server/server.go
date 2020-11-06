@@ -2,6 +2,7 @@ package server
 
 import (
 	"server/settings"
+	"server/web"
 )
 
 func Start(settingsPath, port string, roSets bool) {
@@ -9,18 +10,18 @@ func Start(settingsPath, port string, roSets bool) {
 	if port == "" {
 		port = "8090"
 	}
-	//server.Start(port)
+	web.Start(port)
 }
 
 func WaitServer() string {
-	//err := server.Wait()
-	// if err != nil {
-	// 	return err.Error()
-	// }
+	err := web.Wait()
+	if err != nil {
+		return err.Error()
+	}
 	return ""
 }
 
 func Stop() {
-	// go server.Stop()
+	web.Stop()
 	settings.CloseDB()
 }

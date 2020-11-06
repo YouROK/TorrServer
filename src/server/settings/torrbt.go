@@ -38,7 +38,7 @@ func (v *BTSets) String() string {
 }
 
 var (
-	BTsets = loadBTSets()
+	BTsets *BTSets
 )
 
 func SetBTSets(sets *BTSets) {
@@ -54,12 +54,12 @@ func SetBTSets(sets *BTSets) {
 	tdb.Set("Settings", "BitTorr", buf)
 }
 
-func loadBTSets() *BTSets {
+func loadBTSets() {
 	buf := tdb.Get("Settings", "BitTorr")
 	if len(buf) > 0 {
 		err := json.Unmarshal(buf, &BTsets)
 		if err == nil {
-			return BTsets
+			return
 		}
 		log.TLogln("Error unmarshal btsets", err)
 	}
@@ -73,5 +73,5 @@ func loadBTSets() *BTSets {
 	sets.DhtConnectionLimit = 500
 	sets.RetrackersMode = 1
 	sets.TorrentDisconnectTimeout = 30
-	return sets
+	BTsets = sets
 }

@@ -5,8 +5,8 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/anacrolix/torrent"
 	"server/settings"
-	"server/torr/reader"
 	"server/torr/utils"
 
 	"github.com/anacrolix/torrent/metainfo"
@@ -36,7 +36,7 @@ type Cache struct {
 
 	prcLoaded int
 
-	readers map[*reader.Reader]struct{}
+	readers map[torrent.Reader]struct{}
 }
 
 func NewCache(capacity int64, storage *Storage) *Cache {
@@ -45,7 +45,7 @@ func NewCache(capacity int64, storage *Storage) *Cache {
 		filled:   0,
 		pieces:   make(map[int]*Piece),
 		s:        storage,
-		readers:  make(map[*reader.Reader]struct{}),
+		readers:  make(map[torrent.Reader]struct{}),
 	}
 
 	return ret
@@ -173,13 +173,13 @@ func prc(val, of int) int {
 	return int(float64(val) * 100.0 / float64(of))
 }
 
-func (c *Cache) AddReader(r *reader.Reader) {
+func (c *Cache) AddReader(r torrent.Reader) {
 	c.muReader.Lock()
 	defer c.muReader.Unlock()
 	c.readers[r] = struct{}{}
 }
 
-func (c *Cache) RemReader(r *reader.Reader) {
+func (c *Cache) RemReader(r torrent.Reader) {
 	c.muReader.Lock()
 	defer c.muReader.Unlock()
 	delete(c.readers, r)

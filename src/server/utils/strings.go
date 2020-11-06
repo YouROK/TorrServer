@@ -2,19 +2,8 @@ package utils
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
-	"strings"
 )
-
-func CleanFName(file string) string {
-	re := regexp.MustCompile(`[ !*'();:@&=+$,/?#\[\]~"{}]`)
-	ret := re.ReplaceAllString(file, `_`)
-	ret = strings.Replace(ret, "__", "_", -1)
-	ret = strings.Replace(ret, "._", "_", -1)
-	ret = strings.Replace(ret, "_.", ".", -1)
-	return ret
-}
 
 const (
 	_ = 1.0 << (10 * iota) // ignore first value by assigning to blank identifier

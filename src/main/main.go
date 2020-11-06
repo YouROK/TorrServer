@@ -10,7 +10,6 @@ import (
 
 	"github.com/alexflint/go-arg"
 	"server"
-	"server/settings"
 	"server/version"
 )
 
@@ -45,12 +44,7 @@ func main() {
 
 	Preconfig(params.Kill)
 
-	server.Start(params.Path, params.Port)
-	if (params.RDB) {
-	    settings.SetRDB()
-	} else {
-	    settings.SaveSettings()
-	}
+	server.Start(params.Path, params.Port, params.RDB)
 	fmt.Println(server.WaitServer())
 	time.Sleep(time.Second * 3)
 	os.Exit(0)

@@ -26,15 +26,16 @@ export GOPATH="${PWD}"
 GOBIN="/usr/local/go/bin/go"
 
 [ -d src/github.com/alexflint/go-arg ] && go get -v github.com/alexflint/go-arg
+
 [ -d src/github.com/anacrolix/dht ] && go get -v github.com/anacrolix/dht
 [ -d src/github.com/anacrolix/missinggo/httptoo ] && go get -v github.com/anacrolix/missinggo/httptoo
 [ -d src/github.com/anacrolix/torrent ] && go get -v github.com/anacrolix/torrent
 [ -d src/github.com/anacrolix/torrent/iplist ] && go get -v github.com/anacrolix/torrent/iplist
 [ -d src/github.com/anacrolix/torrent/metainfo ] && go get -v github.com/anacrolix/torrent/metainfo
 [ -d src/github.com/anacrolix/utp ] && go get -v github.com/anacrolix/utp
-[ -d src/github.com/labstack/echo ] && go get -v github.com/labstack/echo
-[ -d src/github.com/labstack/echo/middleware ] && go get -v github.com/labstack/echo/middleware
-[ -d src/github.com/labstack/gommon/bytes ] && go get -v github.com/labstack/gommon/bytes
+
+[ -d src/github.com/gin-gonic/gin ] && go get -u github.com/gin-gonic/gin
+
 [ -d src/github.com/pion/webrtc/v2 ] && go get -v github.com/pion/webrtc/v2
 [ -d src/go.etcd.io/bbolt ] && go get -v go.etcd.io/bbolt
 
