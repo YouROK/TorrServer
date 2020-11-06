@@ -161,9 +161,10 @@ func (bt *BTServer) BTState() *BTState {
 	btState.LocalPort = bt.client.LocalPort()
 	btState.PeerID = fmt.Sprintf("%x", bt.client.PeerID())
 	btState.BannedIPs = len(bt.client.BadPeerIPs())
-	for _, dht := range bt.client.DhtServers() {
-		btState.DHTs = append(btState.DHTs, dht)
-	}
+//	for _, dht := range bt.client.DhtServers() {
+//		btState.DHTs = append(btState.DHTs, dht)
+//	}
+	btState.DHTs := bt.client.DhtServers()
 	for _, t := range bt.torrents {
 		btState.Torrents = append(btState.Torrents, t)
 	}
