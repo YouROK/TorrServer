@@ -80,9 +80,9 @@ func (bt *BTServer) configure() {
 	bt.config.NoDefaultPortForwarding = settings.Get().DisableUPNP
 	bt.config.NoDHT = settings.Get().DisableDHT
 	bt.config.NoUpload = settings.Get().DisableUpload
-	bt.config.EncryptionPolicy = torrent.EncryptionPolicy{
-		DisableEncryption: settings.Get().Encryption == 1,
-		ForceEncryption:   settings.Get().Encryption == 2,
+	bt.config.HeaderObfuscationPolicy = torrent.HeaderObfuscationPolicy {
+		RequirePreferred: settings.Get().Encryption == 2, // Whether the value of Preferred is a strict requirement
+		Preferred: settings.Get().Encryption != 1, // Whether header obfuscation is preferred
 	}
 	bt.config.IPBlocklist = blocklist
 	bt.config.DefaultStorage = bt.storage
