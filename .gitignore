@@ -23,3 +23,5 @@ pkg/
 bin/
 dist/
 toolchains/
+/src/crawshaw.io/
+/src/go.etcd.io/
