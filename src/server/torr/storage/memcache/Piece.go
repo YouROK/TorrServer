@@ -67,6 +67,7 @@ func (p *Piece) ReadAt(b []byte, off int64) (n int, err error) {
 	}
 	if int64(len(b))+off >= p.Size {
 		go p.cache.cleanPieces()
+		return n, io.EOF
 	}
 	return n, nil
 }
