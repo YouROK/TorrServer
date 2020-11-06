@@ -454,7 +454,7 @@ func torrentViewedAdd(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Hash must be non-empty")
 	}
 
-	err = settings.SetViewed(jreq.Hash)
+	err = settings.SetViewed(jreq.Hash, jreq.Title)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
@@ -478,10 +478,10 @@ func torrentViewedRem(c echo.Context) error {
 }
 
 func torrentViewedList(c echo.Context) error {
-	err = settings.List(jreq.Hash)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-	}
+//	err = settings.List(jreq.Hash)
+//	if err != nil {
+//		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+//	}
 	return c.NoContent(http.StatusOK)
 }
 
