@@ -103,7 +103,8 @@ func (bt *BTServer) configure() {
 	if settings.Get().PeersListenPort > 0 {
 		bt.config.ListenPort = settings.Get().PeersListenPort
 	}
-
+	bt.config.DefaultRequestStrategy = torrent.RequestStrategyFastest()
+	
 	log.Println("Configure client:", settings.Get())
 }
 
@@ -164,7 +165,6 @@ func (bt *BTServer) BTState() *BTState {
 //	for _, dht := range bt.client.DhtServers() {
 //		btState.DHTs = append(btState.DHTs, dht)
 //	}
-	btState.DHTs := bt.client.DhtServers()
 	for _, t := range bt.torrents {
 		btState.Torrents = append(btState.Torrents, t)
 	}
