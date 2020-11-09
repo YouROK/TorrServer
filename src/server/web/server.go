@@ -18,7 +18,7 @@ func Start(port string) {
 	route := gin.New()
 	route.Use(gin.Logger(), gin.Recovery())
 
-	api.SetupRouteApi(route)
+	api.SetupRouteApi(route, BTS)
 
 	waitChan <- route.Run(":" + port)
 }

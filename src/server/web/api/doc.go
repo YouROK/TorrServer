@@ -3,6 +3,13 @@ package api
 /*
 API
 
+respnose JSON{
+
+}
+request JSON{
+	Action string
+}
+
 echo version
 
 {

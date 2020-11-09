@@ -99,6 +99,21 @@ func (bt *BTServer) configure() {
 	log.Println("Configure client:", settings.BTsets)
 }
 
+func (bt *BTServer) GetTorrent(hash torrent.InfoHash) *Torrent {
+	if torr, ok := bt.torrents[hash]; ok {
+		return torr
+	}
+	return nil
+}
+
+func (bt *BTServer) ListTorrents() []*Torrent {
+	var list []*Torrent
+	for _, t := range bt.torrents {
+		list = append(list, t)
+	}
+	return list
+}
+
 func (bt *BTServer) RemoveTorrent(hash torrent.InfoHash) {
 	if torr, ok := bt.torrents[hash]; ok {
 		torr.Close()
