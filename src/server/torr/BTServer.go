@@ -103,7 +103,8 @@ func (bt *BTServer) configure() {
 	if settings.Get().PeersListenPort > 0 {
 		bt.config.ListenPort = settings.Get().PeersListenPort
 	}
-
+	bt.config.DefaultRequestStrategy = torrent.RequestStrategyFastest()
+	
 	log.Println("Configure client:", settings.Get())
 }
 
@@ -161,9 +162,9 @@ func (bt *BTServer) BTState() *BTState {
 	btState.LocalPort = bt.client.LocalPort()
 	btState.PeerID = fmt.Sprintf("%x", bt.client.PeerID())
 	btState.BannedIPs = len(bt.client.BadPeerIPs())
-	for _, dht := range bt.client.DhtServers() {
-		btState.DHTs = append(btState.DHTs, dht)
-	}
+//	for _, dht := range bt.client.DhtServers() {
+//		btState.DHTs = append(btState.DHTs, dht)
+//	}
 	for _, t := range bt.torrents {
 		btState.Torrents = append(btState.Torrents, t)
 	}
