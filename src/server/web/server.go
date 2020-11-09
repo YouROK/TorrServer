@@ -3,6 +3,7 @@ package web
 import (
 	"github.com/gin-gonic/gin"
 	"server/torr"
+	"server/web/api"
 )
 
 var (
@@ -17,11 +18,7 @@ func Start(port string) {
 	route := gin.New()
 	route.Use(gin.Logger(), gin.Recovery())
 
-	route.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
+	api.SetupRouteApi(route)
 
 	waitChan <- route.Run(":" + port)
 }
