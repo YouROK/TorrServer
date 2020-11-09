@@ -1,12 +1,9 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
-	"github.com/anacrolix/missinggo/httptoo"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"server/torr"
@@ -21,6 +18,10 @@ func stream(c *gin.Context) {
 	_, save := c.GetQuery("save")
 	_, m3u := c.GetQuery("m3u")
 	_, play := c.GetQuery("play")
+	title := c.Query("title")
+	poster := c.Query("poster")
+
+	// TODO unescape args
 
 	if link == "" {
 		c.AbortWithError(http.StatusBadRequest, errors.New("link should not be empty"))
@@ -57,6 +58,10 @@ func stream(c *gin.Context) {
 			return
 		}
 	}
+
+	tor.Title = title
+	tor.Poster = poster
+
 	// save to db
 	if save {
 		utils.AddTorrent(tor)
