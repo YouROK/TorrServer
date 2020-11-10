@@ -7,7 +7,7 @@ import (
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
-	"server/torr"
+	"server/torr/state"
 )
 
 type TorrentDB struct {
@@ -18,7 +18,7 @@ type TorrentDB struct {
 
 	Timestamp int64 `json:"timestamp,omitempty"`
 
-	Files []torr.TorrentFileStat `json:"files,omitempty"`
+	Files []state.TorrentFileStat `json:"files,omitempty"`
 }
 
 type File struct {
@@ -63,7 +63,7 @@ func ListTorrent() []*TorrentDB {
 		buf := tdb.Get("Torrents", key)
 		if len(buf) > 0 {
 			var torr *TorrentDB
-			err := json.Unmarshal(buf, torr)
+			err := json.Unmarshal(buf, &torr)
 			if err == nil {
 				list = append(list, torr)
 			}

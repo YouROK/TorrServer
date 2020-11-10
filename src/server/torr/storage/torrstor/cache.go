@@ -1,11 +1,11 @@
 package torrstor
 
 import (
-	"log"
 	"sort"
 	"sync"
 
 	"github.com/anacrolix/torrent"
+	"server/log"
 	"server/settings"
 	"server/torr/utils"
 
@@ -52,7 +52,7 @@ func NewCache(capacity int64, storage *Storage) *Cache {
 }
 
 func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
-	log.Println("Create cache for:", info.Name)
+	log.TLogln("Create cache for:", info.Name)
 	if c.capacity == 0 {
 		c.capacity = info.PieceLength * 6
 	}
@@ -89,7 +89,7 @@ func (c *Cache) Piece(m metainfo.Piece) storage.PieceImpl {
 
 func (c *Cache) Close() error {
 	c.isRemove = false
-	log.Println("Close cache for:", c.hash)
+	log.TLogln("Close cache for:", c.hash)
 	if _, ok := c.s.caches[c.hash]; ok {
 		delete(c.s.caches, c.hash)
 	}

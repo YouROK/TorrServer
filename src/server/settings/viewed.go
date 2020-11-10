@@ -1,0 +1,79 @@
+package settings
+
+import (
+	"encoding/json"
+
+	"server/log"
+)
+
+type Viewed struct {
+	Hash      string `json:"hash"`
+	FileIndex int    `json:"file_index"`
+}
+
+func SetViewed(vv *Viewed) {
+	buf := tdb.Get("Viewed", vv.Hash)
+	var indeces map[int]struct{}
+	err := json.Unmarshal(buf, &indeces)
+	if err == nil {
+		indeces[vv.FileIndex] = struct{}{}
+		buf, err = json.Marshal(indeces)
+		if err == nil {
+			tdb.Set("Viewed", vv.Hash, buf)
+		}
+	}
+	if err != nil {
+		log.TLogln("Error set viewed:", err)
+	}
+}
+
+func RemViewed(vv *Viewed) {
+	buf := tdb.Get("Viewed", vv.Hash)
+	var indeces map[int]struct{}
+	err := json.Unmarshal(buf, &indeces)
+	if err == nil {
+		delete(indeces, vv.FileIndex)
+		buf, err = json.Marshal(indeces)
+		if err == nil {
+			tdb.Set("Viewed", vv.Hash, buf)
+		}
+	}
+	if err != nil {
+		log.TLogln("Error rem viewed:", err)
+	}
+}
+
+func ListViewed(hash string) []*Viewed {
+	var err error
+	if hash != "" {
+		buf := tdb.Get("Viewed", hash)
+		var indeces map[int]struct{}
+		err = json.Unmarshal(buf, &indeces)
+		if err == nil {
+			var ret []*Viewed
+			for i, _ := range indeces {
+				ret = append(ret, &Viewed{hash, i})
+			}
+			return ret
+		}
+	} else {
+		var ret []*Viewed
+		keys := tdb.List("Viewed")
+		for _, key := range keys {
+			buf := tdb.Get("Viewed", key)
+			var indeces map[int]struct{}
+			err = json.Unmarshal(buf, &indeces)
+			if err == nil {
+				for i, _ := range indeces {
+					ret = append(ret, &Viewed{hash, i})
+				}
+			}
+		}
+		return ret
+	}
+
+	if err != nil {
+		log.TLogln("Error list viewed:", err)
+	}
+	return nil
+}

@@ -126,9 +126,9 @@ func (v *TDB) List(xpath string) []string {
 			}
 		}
 
-		buckt.ForEach(func(_, v []byte) error {
-			if len(v) > 0 {
-				ret = append(ret, string(v))
+		buckt.ForEach(func(k, _ []byte) error {
+			if len(k) > 0 {
+				ret = append(ret, string(k))
 			}
 			return nil
 		})

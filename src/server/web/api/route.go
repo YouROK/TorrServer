@@ -25,6 +25,11 @@ func SetupRouteApi(route *gin.Engine, serv *torr.BTServer) {
 
 	route.GET("/stream", stream)
 	route.GET("/stream/*fname", stream)
+
+	route.POST("/viewed", viewed)
+
+	route.GET("/playlist/all.m3u", allPlayList)
+	route.GET("/playlist", playList)
 }
 
 func echo(c *gin.Context) {

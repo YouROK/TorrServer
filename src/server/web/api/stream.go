@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -9,6 +10,13 @@ import (
 	"server/torr"
 	"server/web/api/utils"
 )
+
+// http://127.0.0.1:8090/stream/fname?link=...&index=0&stat
+// http://127.0.0.1:8090/stream/fname?link=...&index=0&m3u
+// http://127.0.0.1:8090/stream/fname?link=...&index=0&play
+// http://127.0.0.1:8090/stream/fname?link=...&save&title=...&poster=...
+// http://127.0.0.1:8090/stream/fname?link=...&index=0&play&save
+// http://127.0.0.1:8090/stream/fname?link=...&index=0&play&save&title=...&poster=...
 
 func stream(c *gin.Context) {
 	link := c.Query("link")
@@ -21,12 +29,18 @@ func stream(c *gin.Context) {
 	title := c.Query("title")
 	poster := c.Query("poster")
 
-	// TODO unescape args
-
 	if link == "" {
 		c.AbortWithError(http.StatusBadRequest, errors.New("link should not be empty"))
 		return
 	}
+
+	if title == "" {
+		title = c.Param("fname")
+	}
+
+	link, _ = url.QueryUnescape(link)
+	title, _ = url.QueryUnescape(title)
+	poster, _ = url.QueryUnescape(poster)
 
 	spec, err := utils.ParseLink(link)
 	if err != nil {
@@ -65,6 +79,7 @@ func stream(c *gin.Context) {
 	// save to db
 	if save {
 		utils.AddTorrent(tor)
+		c.Status(200)
 	}
 	// wait torrent info
 	if !tor.WaitInfo() {
@@ -94,13 +109,13 @@ func stream(c *gin.Context) {
 	if stat || (!m3u && !play) {
 		c.JSON(200, tor.Stats())
 		return
-	}
+	} else
 	// return m3u if query
 	if m3u {
 		//TODO m3u
 		c.JSON(200, tor.Stats())
 		return
-	}
+	} else
 	// return play if query
 	if play {
 		tor.Stream(index, c.Request, c.Writer)

@@ -13,10 +13,6 @@ type setsReqJS struct {
 	requestI
 	Sets *settings2.BTSets `json:"sets,omitempty"`
 }
-type setsRespJS struct {
-	responseI
-	Sets *settings2.BTSets `json:"sets,omitempty"`
-}
 
 func settings(c *gin.Context) {
 	var req setsReqJS
@@ -27,9 +23,7 @@ func settings(c *gin.Context) {
 	}
 
 	if req.Action == "get" {
-		resp := setsRespJS{}
-		resp.Sets = settings2.BTsets
-		c.JSON(200, resp)
+		c.JSON(200, settings2.BTsets)
 		return
 	}
 	if req.Action == "set" {

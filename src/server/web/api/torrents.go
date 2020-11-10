@@ -5,11 +5,14 @@ import (
 
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
+	"server/log"
 	"server/torr"
+	"server/torr/state"
 	"server/web/api/utils"
 )
 
-//Action: add, get, rem, list
+//Action: add, get, rem, list, drop
 type torrReqJS struct {
 	requestI
 	Link     string `json:"link,omitempty"`
@@ -26,43 +29,62 @@ func torrents(c *gin.Context) {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-
+	c.Status(http.StatusBadRequest)
 	switch req.Action {
 	case "add":
 		{
-			add(req, c)
+			addTorrent(req, c)
 		}
 	case "get":
 		{
-			get(req, c)
+			getTorrent(req, c)
 		}
 	case "rem":
 		{
-			rem(req, c)
+			remTorrent(req, c)
 		}
 	case "list":
 		{
-			list(req, c)
+			listTorrent(req, c)
+		}
+	case "drop":
+		{
+			dropTorrent(req, c)
 		}
 	}
 }
 
-func add(req torrReqJS, c *gin.Context) {
+func addTorrent(req torrReqJS, c *gin.Context) {
+	log.TLogln("add torrent", req.Link)
 	torrSpec, err := utils.ParseLink(req.Link)
 	if err != nil {
+		log.TLogln("error add torrent:", err)
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
 	torr, err := torr.NewTorrent(torrSpec, bts)
 	if err != nil {
+		log.TLogln("error add torrent:", err)
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
+
+	if !torr.WaitInfo() {
+		log.TLogln("error add torrent:", "timeout connection torrent")
+		c.AbortWithError(http.StatusNotFound, errors.New("timeout connection torrent"))
+		return
+	}
+
 	torr.Title = req.Title
 	torr.Poster = req.Poster
 
+	if torr.Title == "" {
+		torr.Title = torr.Name()
+	}
+
 	if req.SaveToDB {
+		log.TLogln("save to db:", torr.Torrent.InfoHash().HexString())
 		utils.AddTorrent(torr)
 	}
 
@@ -70,7 +92,7 @@ func add(req torrReqJS, c *gin.Context) {
 	c.JSON(200, st)
 }
 
-func get(req torrReqJS, c *gin.Context) {
+func getTorrent(req torrReqJS, c *gin.Context) {
 	hash := metainfo.NewHashFromHex(req.Hash)
 	tor := bts.GetTorrent(hash)
 	if tor == nil {
@@ -85,17 +107,22 @@ func get(req torrReqJS, c *gin.Context) {
 	}
 }
 
-func rem(req torrReqJS, c *gin.Context) {
+func remTorrent(req torrReqJS, c *gin.Context) {
 	hash := metainfo.NewHashFromHex(req.Hash)
 	bts.RemoveTorrent(hash)
 	utils.RemTorrent(hash)
 	c.Status(200)
 }
 
-func list(req torrReqJS, c *gin.Context) {
+func listTorrent(req torrReqJS, c *gin.Context) {
+	stats := listTorrents()
+	c.JSON(200, stats)
+}
+
+func listTorrents() []*state.TorrentStats {
 	btlist := bts.ListTorrents()
 	dblist := utils.ListTorrents()
-	var stats []torr.TorrentStats
+	var stats []*state.TorrentStats
 	for _, tr := range btlist {
 		stats = append(stats, tr.Stats())
 	}
@@ -109,6 +136,16 @@ mainloop:
 		}
 		stats = append(stats, db.Stats())
 	}
+	return stats
+}
 
-	c.JSON(200, stats)
+func dropTorrent(req torrReqJS, c *gin.Context) {
+	if req.Hash == "" {
+		c.AbortWithError(http.StatusBadRequest, errors.New("hash is empty"))
+		return
+	}
+	hash := metainfo.NewHashFromHex(req.Hash)
+
+	bts.RemoveTorrent(hash)
+	c.Status(200)
 }

@@ -83,6 +83,9 @@ func (bt *BTServer) configure() {
 	bt.config.HTTPUserAgent = userAgent
 	bt.config.ExtendedHandshakeClientVersion = cliVers
 	bt.config.EstablishedConnsPerTorrent = settings.BTsets.ConnectionsLimit
+
+	bt.config.DefaultRequestStrategy = torrent.RequestStrategyFastest()
+
 	if settings.BTsets.DhtConnectionLimit > 0 {
 		bt.config.ConnTracker.SetMaxEntries(settings.BTsets.DhtConnectionLimit)
 	}
