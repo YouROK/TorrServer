@@ -5,18 +5,19 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
 	"server/torr"
 	"server/web/api/utils"
+
+	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 )
 
-// http://127.0.0.1:8090/stream/fname?link=...&index=0&stat
-// http://127.0.0.1:8090/stream/fname?link=...&index=0&m3u
-// http://127.0.0.1:8090/stream/fname?link=...&index=0&play
+// http://127.0.0.1:8090/stream/fname?link=...&index=1&stat
+// http://127.0.0.1:8090/stream/fname?link=...&index=1&m3u
+// http://127.0.0.1:8090/stream/fname?link=...&index=1&play
 // http://127.0.0.1:8090/stream/fname?link=...&save&title=...&poster=...
-// http://127.0.0.1:8090/stream/fname?link=...&index=0&play&save
-// http://127.0.0.1:8090/stream/fname?link=...&index=0&play&save&title=...&poster=...
+// http://127.0.0.1:8090/stream/fname?link=...&index=1&play&save
+// http://127.0.0.1:8090/stream/fname?link=...&index=1&play&save&title=...&poster=...
 
 func stream(c *gin.Context) {
 	link := c.Query("link")
@@ -82,7 +83,7 @@ func stream(c *gin.Context) {
 		c.Status(200)
 	}
 	// wait torrent info
-	if !tor.WaitInfo() {
+	if !tor.GotInfo() {
 		c.AbortWithError(http.StatusInternalServerError, errors.New("timeout torrent get info"))
 		return
 	}
@@ -90,7 +91,7 @@ func stream(c *gin.Context) {
 	// find file
 	index := -1
 	if len(tor.Files()) == 1 {
-		index = 0
+		index = 1
 	} else {
 		ind, err := strconv.Atoi(indexStr)
 		if err == nil {

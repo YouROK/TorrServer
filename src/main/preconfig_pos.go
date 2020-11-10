@@ -9,8 +9,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-
-	"server"
 )
 
 func Preconfig(kill bool) {
@@ -27,8 +25,6 @@ func Preconfig(kill bool) {
 			if kill {
 				fmt.Println("Signal catched:", s)
 				fmt.Println("For stop server, close in web")
-			} else {
-				server.Stop()
 			}
 		}
 	}()

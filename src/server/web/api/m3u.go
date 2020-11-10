@@ -8,11 +8,12 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
 	sets "server/settings"
 	"server/torr/state"
 	"server/utils"
+
+	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 )
 
 func allPlayList(c *gin.Context) {

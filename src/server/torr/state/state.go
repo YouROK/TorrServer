@@ -31,6 +31,9 @@ const (
 )
 
 type TorrentStats struct {
+	Title  string `json:"title"`
+	Poster string `json:"poster"`
+
 	Name string `json:"name,omitempty"`
 	Hash string `json:"hash,omitempty"`
 

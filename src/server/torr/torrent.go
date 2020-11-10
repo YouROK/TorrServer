@@ -42,8 +42,6 @@ type Torrent struct {
 	PreloadSize    int64
 	PreloadedBytes int64
 
-	hash metainfo.Hash
-
 	expiredTime time.Time
 
 	closed <-chan struct{}
@@ -80,6 +78,7 @@ func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 	torr.bt = bt
 	torr.closed = goTorrent.Closed()
 	torr.TorrentSpec = spec
+	torr.expiredTime = time.Now().Add(time.Minute)
 
 	go torr.watch()
 
@@ -97,7 +96,7 @@ func (t *Torrent) WaitInfo() bool {
 
 	select {
 	case <-t.Torrent.GotInfo():
-		t.cache = t.bt.storage.GetCache(t.hash)
+		t.cache = t.bt.storage.GetCache(t.Hash())
 		return true
 	case <-t.closed:
 		return false
@@ -192,7 +191,13 @@ func (t *Torrent) Files() []*torrent.File {
 }
 
 func (t *Torrent) Hash() metainfo.Hash {
-	return t.hash
+	if t.Torrent != nil {
+		t.Torrent.InfoHash()
+	}
+	if t.TorrentSpec != nil {
+		return t.TorrentSpec.InfoHash
+	}
+	return [20]byte{}
 }
 
 func (t *Torrent) Length() int64 {
@@ -329,8 +334,8 @@ func (t *Torrent) Close() {
 	t.bt.mu.Lock()
 	defer t.bt.mu.Unlock()
 
-	if _, ok := t.bt.torrents[t.hash]; ok {
-		delete(t.bt.torrents, t.hash)
+	if _, ok := t.bt.torrents[t.Hash()]; ok {
+		delete(t.bt.torrents, t.Hash())
 	}
 
 	t.drop()
@@ -344,6 +349,9 @@ func (t *Torrent) Stats() *state.TorrentStats {
 
 	st.TorrentStatus = t.Status
 	st.TorrentStatusString = t.Status.String()
+	st.Title = t.Title
+	st.Poster = t.Poster
+
 	if t.TorrentSpec != nil {
 		st.Hash = t.TorrentSpec.InfoHash.HexString()
 	}
@@ -383,7 +391,7 @@ func (t *Torrent) Stats() *state.TorrentStats {
 
 		for i, f := range files {
 			st.FileStats = append(st.FileStats, state.TorrentFileStat{
-				Id:     i,
+				Id:     i + 1,
 				Path:   f.Path(),
 				Length: f.Length(),
 			})

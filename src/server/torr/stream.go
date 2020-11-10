@@ -12,10 +12,10 @@ import (
 
 func (t *Torrent) Stream(fileIndex int, req *http.Request, resp http.ResponseWriter) error {
 	files := t.Files()
-	if fileIndex < 0 || fileIndex >= len(files) {
+	if fileIndex < 1 || fileIndex > len(files) {
 		return errors.New("file index out of range")
 	}
-	file := files[fileIndex]
+	file := files[fileIndex-1]
 	reader := t.NewReader(file, 0)
 
 	log.Println("Connect client")

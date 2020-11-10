@@ -39,7 +39,7 @@ GOBIN="/usr/local/go/bin/go"
 [ -d src/github.com/pion/webrtc/v2 ] && go get -v github.com/pion/webrtc/v2
 [ -d src/go.etcd.io/bbolt ] && go get -v go.etcd.io/bbolt
 
-#ln -s . src/github.com/pion/webrtc/v2
+ln -s . src/github.com/pion/webrtc/v2
 
 $GOBIN version
 

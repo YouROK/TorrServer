@@ -3,9 +3,11 @@ package utils
 import (
 	"time"
 
-	"github.com/anacrolix/torrent/metainfo"
 	"server/settings"
 	"server/torr"
+	"server/torr/state"
+
+	"github.com/anacrolix/torrent/metainfo"
 )
 
 func AddTorrent(torr *torr.Torrent) {
@@ -26,6 +28,7 @@ func GetTorrent(hash metainfo.Hash) *torr.Torrent {
 			torr.TorrentSpec = db.TorrentSpec
 			torr.Title = db.Title
 			torr.Poster = db.Poster
+			torr.Status = state.TorrentInDB
 			return torr
 		}
 	}
@@ -44,6 +47,7 @@ func ListTorrents() []*torr.Torrent {
 		torr.TorrentSpec = db.TorrentSpec
 		torr.Title = db.Title
 		torr.Poster = db.Poster
+		torr.Status = state.TorrentInDB
 		ret = append(ret, torr)
 	}
 	return ret

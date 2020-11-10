@@ -3,13 +3,14 @@ package api
 import (
 	"net/http"
 
-	"github.com/anacrolix/torrent/metainfo"
-	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
 	"server/log"
 	"server/torr"
 	"server/torr/state"
 	"server/web/api/utils"
+
+	"github.com/anacrolix/torrent/metainfo"
+	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 )
 
 //Action: add, get, rem, list, drop
@@ -70,7 +71,7 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 		return
 	}
 
-	if !torr.WaitInfo() {
+	if !torr.GotInfo() {
 		log.TLogln("error add torrent:", "timeout connection torrent")
 		c.AbortWithError(http.StatusNotFound, errors.New("timeout connection torrent"))
 		return

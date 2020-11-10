@@ -5,9 +5,10 @@ import (
 	"sort"
 	"sync"
 
+	"server/torr/state"
+
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
-	"server/torr/state"
 )
 
 type TorrentDB struct {
