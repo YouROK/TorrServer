@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"server/torr"
 	"server/web/api"
+	"server/web/pages"
 )
 
 var (
@@ -18,7 +19,8 @@ func Start(port string) {
 	route := gin.New()
 	route.Use(gin.Logger(), gin.Recovery())
 
-	api.SetupRouteApi(route, BTS)
+	api.SetupRoute(route)
+	pages.SetupRoute(route)
 
 	waitChan <- route.Run(":" + port)
 }

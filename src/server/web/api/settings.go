@@ -5,13 +5,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	settings2 "server/settings"
+	sets "server/settings"
 )
 
 //Action: get, set
 type setsReqJS struct {
 	requestI
-	Sets *settings2.BTSets `json:"sets,omitempty"`
+	Sets *sets.BTSets `json:"sets,omitempty"`
 }
 
 func settings(c *gin.Context) {
@@ -23,11 +23,11 @@ func settings(c *gin.Context) {
 	}
 
 	if req.Action == "get" {
-		c.JSON(200, settings2.BTsets)
+		c.JSON(200, sets.BTsets)
 		return
 	}
 	if req.Action == "set" {
-		settings2.SetBTSets(req.Sets)
+		sets.SetBTSets(req.Sets)
 		c.Status(200)
 		return
 	}

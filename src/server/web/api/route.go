@@ -2,7 +2,6 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"server/torr"
 	"server/version"
 )
 
@@ -10,13 +9,7 @@ type requestI struct {
 	Action string `json:"action,omitempty"`
 }
 
-type responseI struct {
-}
-
-var bts *torr.BTServer
-
-func SetupRouteApi(route *gin.Engine, serv *torr.BTServer) {
-	bts = serv
+func SetupRoute(route *gin.Engine) {
 	route.GET("/echo", echo)
 
 	route.POST("/settings", settings)
