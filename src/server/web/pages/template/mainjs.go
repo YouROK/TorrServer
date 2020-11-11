@@ -28,6 +28,7 @@ const torrElem =
 
 `
 
+//Backbone.js
 var torrElem = `"""
 <div class="btn-group d-flex" role="group">
 	<button type="button" class="btn btn-secondary wrap w-100" data-toggle="collapse" data-target="#info_'+tor.Hash+'"></button>';
