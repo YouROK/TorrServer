@@ -33,10 +33,10 @@ type Template struct {
 func InitTemplate(c *gin.Engine) *Template {
 	temp := new(Template)
 
-	temp.parseMainPage()
-	// temp.parseSettingsPage()
-	// temp.parseAboutPage()
-	// temp.parseCachePage()
+	temp.parsePage("mainPage", mainPage)
+	temp.parsePage("apijsPage", apiJS)
+	temp.parsePage("mainjsPage", mainJS)
+
 	c.SetHTMLTemplate(temp.templates)
 	return temp
 }

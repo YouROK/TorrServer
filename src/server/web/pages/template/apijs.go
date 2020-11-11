@@ -1,6 +1,6 @@
 package template
 
-const apijs = `
+const apiJS = `
 // Torrents
 function addTorrent(link, title, poster, save, done, fail){
 	torrent("add",link,null,title,poster,save,done,fail);
@@ -37,10 +37,34 @@ function torrent(action, link, hash, title, poster, save, done, fail){
 //
 
 // Settings
-	
+function getSettings(done, fail){
+	sendApi("get",null,"/settings",done,fail);
+}
+
+function setSettings(sets, done, fail){
+	sendApi("set",sets,"/settings",done,fail);
+}
+//
+
+// Viewed
+function listViewed(done, fail){
+	sendApi("list",null,"/viewed",done,fail);
+}
+
+function setViewed(hash, index, done, fail){
+	var obj = {"hash":hash, "file_index":index};
+	sendApi("set",obj,"/viewed",done,fail);
+}
+
+function remViewed(hash, index, done, fail){
+	var obj = {"hash":hash, "file_index":index};
+	sendApi("rem",obj,"/viewed",done,fail);
+}
 //
 
 function sendApi(action, obj, path, done, fail){
+	if (obj==null)
+		obj={};
 	obj[action]=action;
 	var req = JSON.stringify(obj);
 	$.post(path,req)

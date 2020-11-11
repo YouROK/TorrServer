@@ -13,7 +13,9 @@ const mainPage = `
 <html lang="ru">
 	` + header + `
 	<body>
+		<script src="/api.js"></script>
 		<script src="/main.js"></script>
+
 		<style>
 			.wrap {
 				white-space: normal;
