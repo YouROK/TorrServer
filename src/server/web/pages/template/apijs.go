@@ -37,8 +37,22 @@ function torrent(action, link, hash, title, poster, save, done, fail){
 //
 
 // Settings
-
+	
 //
+
+function sendApi(action, obj, path, done, fail){
+	obj[action]=action;
+	var req = JSON.stringify(obj);
+	$.post(path,req)
+	.done(function( data ) {
+		if (done)
+			done(data);
+	})
+	.fail(function( data ) {
+		if (fail)
+			fail(data);
+	});
+}
 
 function humanizeSize(size) {
 	if (typeof size == 'undefined' || size == 0)
