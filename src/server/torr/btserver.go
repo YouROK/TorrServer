@@ -36,6 +36,7 @@ func (bt *BTServer) Connect() error {
 	bt.configure()
 	bt.client, err = torrent.NewClient(bt.config)
 	bt.torrents = make(map[metainfo.Hash]*Torrent)
+	InitApiHelper(bt)
 	return err
 }
 
@@ -109,10 +110,10 @@ func (bt *BTServer) GetTorrent(hash torrent.InfoHash) *Torrent {
 	return nil
 }
 
-func (bt *BTServer) ListTorrents() []*Torrent {
-	var list []*Torrent
-	for _, t := range bt.torrents {
-		list = append(list, t)
+func (bt *BTServer) ListTorrents() map[metainfo.Hash]*Torrent {
+	list := make(map[metainfo.Hash]*Torrent)
+	for k, v := range bt.torrents {
+		list[k] = v
 	}
 	return list
 }

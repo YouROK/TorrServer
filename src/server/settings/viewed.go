@@ -12,14 +12,25 @@ type Viewed struct {
 }
 
 func SetViewed(vv *Viewed) {
+	var indexes map[int]struct{}
+	var err error
+
 	buf := tdb.Get("Viewed", vv.Hash)
-	var indeces map[int]struct{}
-	err := json.Unmarshal(buf, &indeces)
-	if err == nil {
-		indeces[vv.FileIndex] = struct{}{}
-		buf, err = json.Marshal(indeces)
+	if len(buf) == 0 {
+		indexes = make(map[int]struct{})
+		indexes[vv.FileIndex] = struct{}{}
+		buf, err = json.Marshal(indexes)
 		if err == nil {
 			tdb.Set("Viewed", vv.Hash, buf)
+		}
+	} else {
+		err = json.Unmarshal(buf, &indexes)
+		if err == nil {
+			indexes[vv.FileIndex] = struct{}{}
+			buf, err = json.Marshal(indexes)
+			if err == nil {
+				tdb.Set("Viewed", vv.Hash, buf)
+			}
 		}
 	}
 	if err != nil {
@@ -65,7 +76,7 @@ func ListViewed(hash string) []*Viewed {
 			err = json.Unmarshal(buf, &indeces)
 			if err == nil {
 				for i, _ := range indeces {
-					ret = append(ret, &Viewed{hash, i})
+					ret = append(ret, &Viewed{key, i})
 				}
 			}
 		}

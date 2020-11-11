@@ -24,7 +24,8 @@ type Torrent struct {
 	Poster string
 	*torrent.TorrentSpec
 
-	Status state.TorrentStatus
+	Stat      state.TorrentStat
+	Timestamp int64
 	/////
 
 	*torrent.Torrent
@@ -50,7 +51,6 @@ type Torrent struct {
 }
 
 func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
-
 	switch settings.BTsets.RetrackersMode {
 	case 1:
 		spec.Trackers = append(spec.Trackers, [][]string{utils.GetDefTrackers()}...)
@@ -73,12 +73,13 @@ func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 
 	torr := new(Torrent)
 	torr.Torrent = goTorrent
-	torr.Status = state.TorrentAdded
+	torr.Stat = state.TorrentAdded
 	torr.lastTimeSpeed = time.Now()
 	torr.bt = bt
 	torr.closed = goTorrent.Closed()
 	torr.TorrentSpec = spec
 	torr.expiredTime = time.Now().Add(time.Minute)
+	torr.Timestamp = time.Now().Unix()
 
 	go torr.watch()
 
@@ -106,12 +107,12 @@ func (t *Torrent) WaitInfo() bool {
 }
 
 func (t *Torrent) GotInfo() bool {
-	if t.Status == state.TorrentClosed {
+	if t.Stat == state.TorrentClosed {
 		return false
 	}
-	t.Status = state.TorrentGettingInfo
+	t.Stat = state.TorrentGettingInfo
 	if t.WaitInfo() {
-		t.Status = state.TorrentWorking
+		t.Stat = state.TorrentWorking
 		t.expiredTime = time.Now().Add(time.Minute * 5)
 		return true
 	} else {
@@ -179,7 +180,7 @@ func (t *Torrent) updateRA() {
 }
 
 func (t *Torrent) expired() bool {
-	return t.cache.ReadersLen() == 0 && t.expiredTime.Before(time.Now()) && (t.Status == state.TorrentWorking || t.Status == state.TorrentClosed)
+	return t.cache.ReadersLen() == 0 && t.expiredTime.Before(time.Now()) && (t.Stat == state.TorrentWorking || t.Stat == state.TorrentClosed)
 }
 
 func (t *Torrent) Files() []*torrent.File {
@@ -208,7 +209,7 @@ func (t *Torrent) Length() int64 {
 }
 
 func (t *Torrent) NewReader(file *torrent.File, readahead int64) *Reader {
-	if t.Status == state.TorrentClosed {
+	if t.Stat == state.TorrentClosed {
 		return nil
 	}
 	reader := NewReader(t, file, readahead)
@@ -230,14 +231,14 @@ func (t *Torrent) Preload(index int, size int64) {
 		return
 	}
 
-	if t.Status == state.TorrentGettingInfo {
+	if t.Stat == state.TorrentGettingInfo {
 		t.WaitInfo()
 		// wait change status
 		time.Sleep(100 * time.Millisecond)
 	}
 
 	t.muTorrent.Lock()
-	if t.Status != state.TorrentWorking {
+	if t.Stat != state.TorrentWorking {
 		t.muTorrent.Unlock()
 		return
 	}
@@ -249,12 +250,12 @@ func (t *Torrent) Preload(index int, size int64) {
 		t.muTorrent.Unlock()
 		return
 	}
-	t.Status = state.TorrentPreload
+	t.Stat = state.TorrentPreload
 	t.muTorrent.Unlock()
 
 	defer func() {
-		if t.Status == state.TorrentPreload {
-			t.Status = state.TorrentWorking
+		if t.Stat == state.TorrentPreload {
+			t.Stat = state.TorrentWorking
 		}
 	}()
 
@@ -299,7 +300,7 @@ func (t *Torrent) Preload(index int, size int64) {
 	t.PreloadSize = size
 	var lastSize int64 = 0
 	errCount := 0
-	for t.Status == state.TorrentPreload {
+	for t.Stat == state.TorrentPreload {
 		t.expiredTime = time.Now().Add(time.Minute * 5)
 		t.PreloadedBytes = t.Torrent.BytesCompleted()
 		log.TLogln("Preload:", file.Torrent().InfoHash().HexString(), utils2.Format(float64(t.PreloadedBytes)), "/", utils2.Format(float64(t.PreloadSize)), "Speed:", utils2.Format(t.DownloadSpeed), "Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
@@ -330,7 +331,7 @@ func (t *Torrent) drop() {
 }
 
 func (t *Torrent) Close() {
-	t.Status = state.TorrentClosed
+	t.Stat = state.TorrentClosed
 	t.bt.mu.Lock()
 	defer t.bt.mu.Unlock()
 
@@ -341,16 +342,17 @@ func (t *Torrent) Close() {
 	t.drop()
 }
 
-func (t *Torrent) Stats() *state.TorrentStats {
+func (t *Torrent) Status() *state.TorrentStatus {
 	t.muTorrent.Lock()
 	defer t.muTorrent.Unlock()
 
-	st := new(state.TorrentStats)
+	st := new(state.TorrentStatus)
 
-	st.TorrentStatus = t.Status
-	st.TorrentStatusString = t.Status.String()
+	st.Stat = t.Stat
+	st.StatString = t.Stat.String()
 	st.Title = t.Title
 	st.Poster = t.Poster
+	st.Timestamp = t.Timestamp
 
 	if t.TorrentSpec != nil {
 		st.Hash = t.TorrentSpec.InfoHash.HexString()

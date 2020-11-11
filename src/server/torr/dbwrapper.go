@@ -1,54 +1,54 @@
-package utils
+package torr
 
 import (
 	"time"
 
 	"server/settings"
-	"server/torr"
 	"server/torr/state"
 
 	"github.com/anacrolix/torrent/metainfo"
 )
 
-func AddTorrent(torr *torr.Torrent) {
+func AddTorrentDB(torr *Torrent) {
 	t := new(settings.TorrentDB)
 	t.TorrentSpec = torr.TorrentSpec
+	t.Name = torr.Name()
 	t.Title = torr.Title
 	t.Poster = torr.Poster
 	t.Timestamp = time.Now().Unix()
-	t.Files = torr.Stats().FileStats
+	t.Files = torr.Status().FileStats
 	settings.AddTorrent(t)
 }
 
-func GetTorrent(hash metainfo.Hash) *torr.Torrent {
+func GetTorrentDB(hash metainfo.Hash) *Torrent {
 	list := settings.ListTorrent()
 	for _, db := range list {
 		if hash == db.InfoHash {
-			torr := new(torr.Torrent)
+			torr := new(Torrent)
 			torr.TorrentSpec = db.TorrentSpec
 			torr.Title = db.Title
 			torr.Poster = db.Poster
-			torr.Status = state.TorrentInDB
+			torr.Stat = state.TorrentInDB
 			return torr
 		}
 	}
 	return nil
 }
 
-func RemTorrent(hash metainfo.Hash) {
+func RemTorrentDB(hash metainfo.Hash) {
 	settings.RemTorrent(hash)
 }
 
-func ListTorrents() []*torr.Torrent {
-	var ret []*torr.Torrent
+func ListTorrentsDB() map[metainfo.Hash]*Torrent {
+	ret := make(map[metainfo.Hash]*Torrent)
 	list := settings.ListTorrent()
 	for _, db := range list {
-		torr := new(torr.Torrent)
+		torr := new(Torrent)
 		torr.TorrentSpec = db.TorrentSpec
 		torr.Title = db.Title
 		torr.Poster = db.Poster
-		torr.Status = state.TorrentInDB
-		ret = append(ret, torr)
+		torr.Stat = state.TorrentInDB
+		ret[torr.TorrentSpec.InfoHash] = torr
 	}
 	return ret
 }

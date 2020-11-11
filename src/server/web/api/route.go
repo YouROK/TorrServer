@@ -22,6 +22,7 @@ func SetupRouteApi(route *gin.Engine, serv *torr.BTServer) {
 	route.POST("/settings", settings)
 
 	route.POST("/torrents", torrents)
+	route.POST("/torrent/upload", torrentUpload)
 
 	route.GET("/stream", stream)
 	route.GET("/stream/*fname", stream)

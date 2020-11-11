@@ -8,7 +8,9 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/anacrolix/missinggo/httptoo"
 	sets "server/settings"
+	"server/torr"
 	"server/torr/state"
 	"server/utils"
 
@@ -18,21 +20,17 @@ import (
 
 func allPlayList(c *gin.Context) {
 	_, fromlast := c.GetQuery("fromlast")
-	stats := listTorrents()
+	torrs := torr.ListTorrent()
 
 	host := "http://" + c.Request.Host
 	list := "#EXTM3U\n"
-
-	for _, stat := range stats {
-		list += getM3uList(stat, host, fromlast)
+	hash := ""
+	for _, tr := range torrs {
+		list += getM3uList(tr.Status(), host, fromlast)
+		hash += tr.Hash().HexString()
 	}
 
-	c.Header("Content-Type", "audio/x-mpegurl")
-	c.Header("Connection", "close")
-	c.Header("Content-Disposition", `attachment; filename="all.m3u"`)
-	http.ServeContent(c.Writer, c.Request, "all.m3u", time.Now(), bytes.NewReader([]byte(list)))
-
-	c.Status(200)
+	sendM3U(c, "all.m3u", hash, list)
 }
 
 func playList(c *gin.Context) {
@@ -43,34 +41,43 @@ func playList(c *gin.Context) {
 		return
 	}
 
-	stats := listTorrents()
-	var stat *state.TorrentStats
-	for _, st := range stats {
-		if st.Hash == hash {
-			stat = st
+	tors := torr.ListTorrent()
+	var tor *torr.Torrent
+	for _, tr := range tors {
+		if tr.Hash().HexString() == hash {
+			tor = tr
 			break
 		}
 	}
 
-	if stat == nil {
+	if tor == nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
 
 	// TODO проверить
 	host := "http://" + c.Request.Host
-	list := getM3uList(stat, host, fromlast)
+	list := getM3uList(tor.Status(), host, fromlast)
 	list = "#EXTM3U\n" + list
 
+	sendM3U(c, tor.Name()+".m3u", tor.Hash().HexString(), list)
+}
+
+func sendM3U(c *gin.Context, name, hash string, m3u string) {
 	c.Header("Content-Type", "audio/x-mpegurl")
 	c.Header("Connection", "close")
-	c.Header("Content-Disposition", `attachment; filename="playlist.m3u"`)
-	http.ServeContent(c.Writer, c.Request, "playlist.m3u", time.Now(), bytes.NewReader([]byte(list)))
-
+	if hash != "" {
+		c.Header("ETag", httptoo.EncodeQuotedString(fmt.Sprintf("%s/%s", hash, name)))
+	}
+	if name == "" {
+		name = "playlist.m3u"
+	}
+	c.Header("Content-Disposition", `attachment; filename="`+name+`"`)
+	http.ServeContent(c.Writer, c.Request, name, time.Now(), bytes.NewReader([]byte(m3u)))
 	c.Status(200)
 }
 
-func getM3uList(tor *state.TorrentStats, host string, fromLast bool) string {
+func getM3uList(tor *state.TorrentStatus, host string, fromLast bool) string {
 	m3u := ""
 	from := 0
 	if fromLast {
@@ -87,15 +94,20 @@ func getM3uList(tor *state.TorrentStats, host string, fromLast bool) string {
 					fn = f.Path
 				}
 				m3u += "#EXTINF:0," + fn + "\n"
-				// http://127.0.0.1:8090/stream/fname?link=...&index=0&play
-				m3u += host + "/stream/" + url.QueryEscape(f.Path) + "?link=" + tor.Hash + "&file=" + fmt.Sprint(f.Id) + "\n"
+				title := filepath.Base(f.Path)
+				if tor.Title != "" {
+					title = tor.Title
+				} else if tor.Name != "" {
+					title = tor.Name
+				}
+				m3u += host + "/stream/" + url.PathEscape(title) + "?link=" + tor.Hash + "&index=" + fmt.Sprint(f.Id) + "&play\n"
 			}
 		}
 	}
 	return m3u
 }
 
-func searchLastPlayed(tor *state.TorrentStats) int {
+func searchLastPlayed(tor *state.TorrentStatus) int {
 	//TODO проверить
 	viewed := sets.ListViewed(tor.Hash)
 	for i := len(tor.FileStats); i > 0; i-- {

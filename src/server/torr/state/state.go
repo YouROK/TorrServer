@@ -1,8 +1,8 @@
 package state
 
-type TorrentStatus int
+type TorrentStat int
 
-func (t TorrentStatus) String() string {
+func (t TorrentStat) String() string {
 	switch t {
 	case TorrentAdded:
 		return "Torrent added"
@@ -22,7 +22,7 @@ func (t TorrentStatus) String() string {
 }
 
 const (
-	TorrentAdded = TorrentStatus(iota)
+	TorrentAdded = TorrentStat(iota)
 	TorrentGettingInfo
 	TorrentPreload
 	TorrentWorking
@@ -30,15 +30,16 @@ const (
 	TorrentInDB
 )
 
-type TorrentStats struct {
-	Title  string `json:"title"`
-	Poster string `json:"poster"`
+type TorrentStatus struct {
+	Title     string `json:"title"`
+	Poster    string `json:"poster"`
+	Timestamp int64  `json:"timestamp"`
 
 	Name string `json:"name,omitempty"`
 	Hash string `json:"hash,omitempty"`
 
-	TorrentStatus       TorrentStatus `json:"torrent_status,omitempty"`
-	TorrentStatusString string        `json:"torrent_status_string,omitempty"`
+	Stat       TorrentStat `json:"stat"`
+	StatString string      `json:"stat_string"`
 
 	LoadedSize  int64 `json:"loaded_size,omitempty"`
 	TorrentSize int64 `json:"torrent_size,omitempty"`

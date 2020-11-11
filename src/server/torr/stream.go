@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/anacrolix/missinggo/httptoo"
+	sets "server/settings"
 )
 
 func (t *Torrent) Stream(fileIndex int, req *http.Request, resp http.ResponseWriter) error {
@@ -19,6 +20,8 @@ func (t *Torrent) Stream(fileIndex int, req *http.Request, resp http.ResponseWri
 	reader := t.NewReader(file, 0)
 
 	log.Println("Connect client")
+
+	sets.SetViewed(&sets.Viewed{t.Hash().HexString(), fileIndex})
 
 	resp.Header().Set("Connection", "close")
 	resp.Header().Set("ETag", httptoo.EncodeQuotedString(fmt.Sprintf("%s/%s", t.Hash().HexString(), file.Path())))

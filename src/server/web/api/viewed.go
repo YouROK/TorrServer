@@ -7,6 +7,10 @@ import (
 	sets "server/settings"
 )
 
+/*
+file index starts from 1
+*/
+
 // Action: set, rem, list
 type viewedReqJS struct {
 	requestI

@@ -3,6 +3,7 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"runtime"
@@ -12,6 +13,25 @@ import (
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 )
+
+func ParseFile(file multipart.File) (*torrent.TorrentSpec, error) {
+	minfo, err := metainfo.Load(file)
+	if err != nil {
+		return nil, err
+	}
+	info, err := minfo.UnmarshalInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	mag := minfo.Magnet(info.Name, minfo.HashInfoBytes())
+	return &torrent.TorrentSpec{
+		InfoBytes:   minfo.InfoBytes,
+		Trackers:    [][]string{mag.Trackers},
+		DisplayName: info.Name,
+		InfoHash:    minfo.HashInfoBytes(),
+	}, nil
+}
 
 func ParseLink(link string) (*torrent.TorrentSpec, error) {
 	urlLink, err := url.Parse(link)
@@ -40,9 +60,14 @@ func fromMagnet(link string) (*torrent.TorrentSpec, error) {
 		return nil, err
 	}
 
+	var trackers [][]string
+	if len(mag.Trackers) > 0 {
+		trackers = [][]string{mag.Trackers}
+	}
+
 	return &torrent.TorrentSpec{
 		InfoBytes:   nil,
-		Trackers:    [][]string{mag.Trackers},
+		Trackers:    trackers,
 		DisplayName: mag.DisplayName,
 		InfoHash:    mag.InfoHash,
 	}, nil
