@@ -10,11 +10,30 @@ func (t *Template) parseMainPage() {
 
 const mainPage = `
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 	` + header + `
-	<body>
-		<script src="/api.js"></script>
-		<script src="/main.js"></script>
+<body ng-app="app">
+<script src="/api.js"></script>
+<script src="/main.js"></script>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light {{active}}" ng-click="$event.preventDefault()">
+    <div class="navbar-nav">
+        <a href="#" class="nav-item nav-link torrents" ng-click="active='torrents'">Torrents</a>
+        <a href="#" class="nav-item nav-link settings" ng-click="active='settings'">Settings</a>
+        <a href="#" class="nav-item nav-link cache" ng-click="active='cache'">Cache</a>
+        <a href="#" class="nav-item nav-link about" ng-click="active='about'">About</a>
+    </div>
+</nav>
+    
+    <p ng-hide="active">Please click a menu item</p>
+    <p ng-show="active">You chose <b>{{active}}</b></p>
+ 
+		
+</body>
+</html>
+`
+
+const tmp = `
 
 		<style>
 			.wrap {
@@ -64,5 +83,16 @@ const mainPage = `
 			</span>
 		</footer>
 	</body>
+
+<script id="contactTemplate" type="text/template">
+    <img src="<%= photo %>" alt="<%= name %>" />
+    <h1><%= name %><span><%= type %></span></h1>
+    <div><%= address %></div>
+    <dl>
+        <dt>Tel:</dt><dd><%= tel %></dd>
+        <dt>Email:</dt><dd><a href="mailto:<%= email %>"><%= email %></a></dd>
+    </dl>
+</script>
+
 </html>
 `

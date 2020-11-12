@@ -1,6 +1,4 @@
-package template
 
-const mainJS = `
 (function() {
     const Torrent = Backbone.Model.extend({
         defaults: function() {
@@ -47,4 +45,3 @@ const mainJS = `
     var Torrents = new TorrentList;
     var App = new AppView;
 })();
-`

@@ -56,6 +56,7 @@ func (t *Template) parsePage(name, page string) error {
 	} else {
 		tmpl = t.templates.New(name)
 	}
+	tmpl.Delims("<<", ">>")
 	_, err := tmpl.Parse(s)
 	if err != nil {
 		return err
