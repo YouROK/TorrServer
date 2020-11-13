@@ -65,6 +65,11 @@ func stream(c *gin.Context) {
 		return
 	}
 
+	if !tor.GotInfo() {
+		c.AbortWithError(http.StatusInternalServerError, errors.New("timeout connection torrent"))
+		return
+	}
+
 	// save to db
 	if save {
 		torr.SaveTorrentToDB(tor)

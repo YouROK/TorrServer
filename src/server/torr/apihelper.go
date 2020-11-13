@@ -1,12 +1,12 @@
 package torr
 
 import (
-	"errors"
 	"sort"
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 	"server/log"
+	sets "server/settings"
 )
 
 var (
@@ -24,13 +24,12 @@ func AddTorrent(spec *torrent.TorrentSpec, title, poster string) (*Torrent, erro
 		return nil, err
 	}
 
-	if !torr.GotInfo() {
-		log.TLogln("error add torrent:", "timeout connection torrent")
-		return nil, errors.New("timeout connection torrent")
+	if torr.Title == "" {
+		torr.Title = title
 	}
-
-	torr.Title = title
-	torr.Poster = poster
+	if torr.Poster == "" {
+		torr.Poster = poster
+	}
 
 	if torr.Title == "" {
 		torr.Title = torr.Name()
@@ -85,4 +84,10 @@ func ListTorrent() []*Torrent {
 func DropTorrent(hashHex string) {
 	hash := metainfo.NewHashFromHex(hashHex)
 	bts.RemoveTorrent(hash)
+}
+
+func SetSettings(set *sets.BTSets) {
+	bts.Disconnect()
+	sets.SetBTSets(set)
+	bts.Connect()
 }

@@ -12,6 +12,7 @@ import (
 )
 
 func (t *Torrent) Stream(fileIndex int, req *http.Request, resp http.ResponseWriter) error {
+	t.WaitInfo()
 	files := t.Files()
 	if fileIndex < 1 || fileIndex > len(files) {
 		return errors.New("file index out of range")

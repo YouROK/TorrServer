@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	sets "server/settings"
+	"server/torr"
 )
 
 //Action: get, set
@@ -27,7 +28,7 @@ func settings(c *gin.Context) {
 		return
 	}
 	if req.Action == "set" {
-		sets.SetBTSets(req.Sets)
+		torr.SetSettings(req.Sets)
 		c.Status(200)
 		return
 	}

@@ -27,5 +27,5 @@ func SetupRoute(route *gin.Engine) {
 }
 
 func echo(c *gin.Context) {
-	c.String(200, "{\"version\": \"%v\"}", version.Version)
+	c.String(200, "%v", version.Version)
 }

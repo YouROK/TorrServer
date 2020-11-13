@@ -75,12 +75,18 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 		return
 	}
 
-	if req.SaveToDB {
-		torr.SaveTorrentToDB(tor)
-	}
+	go func() {
+		if !tor.GotInfo() {
+			log.TLogln("error add torrent:", "timeout connection torrent")
+			return
+		}
 
-	st := tor.Status()
-	c.JSON(200, st)
+		if req.SaveToDB {
+			torr.SaveTorrentToDB(tor)
+		}
+	}()
+
+	c.JSON(200, tor.Status())
 }
 
 func getTorrent(req torrReqJS, c *gin.Context) {
@@ -109,6 +115,10 @@ func remTorrent(req torrReqJS, c *gin.Context) {
 
 func listTorrent(req torrReqJS, c *gin.Context) {
 	list := torr.ListTorrent()
+	if list == nil {
+		c.Status(http.StatusNotFound)
+		return
+	}
 	var stats []*state.TorrentStatus
 	for _, tr := range list {
 		stats = append(stats, tr.Status())
