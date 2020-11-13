@@ -3,10 +3,11 @@ package torr
 import (
 	"sort"
 
-	"github.com/anacrolix/torrent"
-	"github.com/anacrolix/torrent/metainfo"
 	"server/log"
 	sets "server/settings"
+
+	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/metainfo"
 )
 
 var (
@@ -24,11 +25,19 @@ func AddTorrent(spec *torrent.TorrentSpec, title, poster string) (*Torrent, erro
 		return nil, err
 	}
 
+	torDB := GetTorrentDB(spec.InfoHash)
+
 	if torr.Title == "" {
 		torr.Title = title
+		if title == "" && torDB != nil {
+			torr.Title = torDB.Title
+		}
 	}
 	if torr.Poster == "" {
 		torr.Poster = poster
+		if torr.Poster == "" && torDB != nil {
+			torr.Poster = torDB.Poster
+		}
 	}
 
 	if torr.Title == "" {
@@ -75,7 +84,11 @@ func ListTorrent() []*Torrent {
 	}
 
 	sort.Slice(ret, func(i, j int) bool {
-		return ret[i].Timestamp > ret[j].Timestamp
+		if ret[i].Timestamp != ret[j].Timestamp {
+			return ret[i].Timestamp > ret[j].Timestamp
+		} else {
+			return ret[i].Title > ret[j].Title
+		}
 	})
 
 	return ret
