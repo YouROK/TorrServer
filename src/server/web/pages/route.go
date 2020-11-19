@@ -12,6 +12,6 @@ func SetupRoute(route *gin.Engine) {
 	temp = template.InitTemplate(route)
 
 	route.GET("/", mainPage)
-	route.GET("/api.js", apijsPage)
-	route.GET("/main.js", mainjsPage)
+	// route.GET("/api.js", apijsPage)
+	// route.GET("/main.js", mainjsPage)
 }

@@ -8,24 +8,6 @@ import (
 
 var ctx *gin.Engine
 
-//
-// func InitTemplate(route *gin.Engine) {
-// 	ctx = route
-//
-// 	tmpl := getTemplate("favicon", faviconB64)
-// 	tmpl = getTemplate("header", header)
-//
-// 	route.SetHTMLTemplate(tmpl)
-// }
-//
-// func getTemplate(name, body string) *template.Template {
-// 	tmpl, err := template.New(name).ParseFiles(body)
-// 	if err != nil {
-// 		log.TLogln("error parse template", err)
-// 	}
-// 	return tmpl
-// }
-
 type Template struct {
 	templates *template.Template
 }
@@ -34,8 +16,8 @@ func InitTemplate(c *gin.Engine) *Template {
 	temp := new(Template)
 
 	temp.parsePage("mainPage", mainPage)
-	temp.parsePage("apijsPage", apiJS)
-	temp.parsePage("mainjsPage", mainJS)
+	// temp.parsePage("apijsPage", apiJS)
+	// temp.parsePage("mainjsPage", mainJS)
 
 	c.SetHTMLTemplate(temp.templates)
 	return temp
