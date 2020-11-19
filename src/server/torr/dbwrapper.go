@@ -16,7 +16,6 @@ func AddTorrentDB(torr *Torrent) {
 	t.Title = torr.Title
 	t.Poster = torr.Poster
 	t.Timestamp = time.Now().Unix()
-	t.Files = torr.Status().FileStats
 	settings.AddTorrent(t)
 }
 

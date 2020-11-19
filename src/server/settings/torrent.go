@@ -5,8 +5,6 @@ import (
 	"sort"
 	"sync"
 
-	"server/torr/state"
-
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 )
@@ -20,8 +18,6 @@ type TorrentDB struct {
 
 	Timestamp int64 `json:"timestamp,omitempty"`
 	Size      int64 `json:"size,omitempty"`
-
-	Files []state.TorrentFileStat `json:"files,omitempty"`
 }
 
 type File struct {
