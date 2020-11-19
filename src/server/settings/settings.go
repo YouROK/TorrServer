@@ -14,3 +14,10 @@ func InitSets(path string, readOnly bool) {
 func CloseDB() {
 	tdb.CloseDB()
 }
+
+func IsReadOnly() bool {
+	if tdb == nil || tdb.ReadOnly {
+		return true
+	}
+	return false
+}

@@ -14,11 +14,11 @@ import (
 )
 
 type args struct {
-	Port string `arg:"-p" help:"web server port"`
-	Path string `arg:"-d" help:"database path"`
-	Add  string `arg:"-a" help:"add torrent link and exit"`
-	RDB  bool   `arg:"-r" help:"start in read-only DB mode"`
-	Kill bool   `arg:"-k" help:"dont kill program on signal"`
+	Port     string `arg:"-p" help:"web server port"`
+	Path     string `arg:"-d" help:"database path"`
+	Add      string `arg:"-a" help:"add torrent link and exit"`
+	RDB      bool   `arg:"-r" help:"start in read-only DB mode"`
+	DontKill bool   `arg:"-k" help:"dont kill program on signal"`
 }
 
 func (args) Version() string {
@@ -42,7 +42,7 @@ func main() {
 		add()
 	}
 
-	Preconfig(params.Kill)
+	Preconfig(params.DontKill)
 
 	server.Start(params.Path, params.Port, params.RDB)
 	fmt.Println(server.WaitServer())

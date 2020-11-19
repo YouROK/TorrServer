@@ -1,7 +1,12 @@
 package api
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/gin-gonic/gin"
+	sets "server/settings"
+	"server/torr"
 	"server/version"
 )
 
@@ -11,6 +16,7 @@ type requestI struct {
 
 func SetupRoute(route *gin.Engine) {
 	route.GET("/echo", echo)
+	route.GET("/shutdown", shutdown)
 
 	route.POST("/settings", settings)
 
@@ -28,4 +34,16 @@ func SetupRoute(route *gin.Engine) {
 
 func echo(c *gin.Context) {
 	c.String(200, "%v", version.Version)
+}
+
+func shutdown(c *gin.Context) {
+	if sets.IsReadOnly() {
+		c.Status(http.StatusForbidden)
+		return
+	}
+	c.Status(200)
+	go func() {
+		time.Sleep(1000)
+		torr.Shutdown()
+	}()
 }

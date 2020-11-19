@@ -1,6 +1,7 @@
 package torr
 
 import (
+	"os"
 	"sort"
 
 	"server/log"
@@ -103,4 +104,10 @@ func SetSettings(set *sets.BTSets) {
 	bts.Disconnect()
 	sets.SetBTSets(set)
 	bts.Connect()
+}
+
+func Shutdown() {
+	bts.Disconnect()
+	sets.CloseDB()
+	os.Exit(0)
 }
