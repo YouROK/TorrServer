@@ -26,6 +26,7 @@ type Torrent struct {
 
 	Stat      state.TorrentStat
 	Timestamp int64
+	Size      int64
 	/////
 
 	*torrent.Torrent
@@ -80,6 +81,7 @@ func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 	torr.TorrentSpec = spec
 	torr.expiredTime = time.Now().Add(time.Minute)
 	torr.Timestamp = time.Now().Unix()
+	torr.Size = goTorrent.Length()
 
 	go torr.watch()
 
@@ -353,6 +355,7 @@ func (t *Torrent) Status() *state.TorrentStatus {
 	st.Title = t.Title
 	st.Poster = t.Poster
 	st.Timestamp = t.Timestamp
+	st.TorrentSize = t.Size
 
 	if t.TorrentSpec != nil {
 		st.Hash = t.TorrentSpec.InfoHash.HexString()
@@ -361,7 +364,7 @@ func (t *Torrent) Status() *state.TorrentStatus {
 		st.Name = t.Torrent.Name()
 		st.Hash = t.Torrent.InfoHash().HexString()
 		st.LoadedSize = t.Torrent.BytesCompleted()
-		st.TorrentSize = t.Length()
+		st.TorrentSize = t.Torrent.Length()
 		st.PreloadedBytes = t.PreloadedBytes
 		st.PreloadSize = t.PreloadSize
 		st.DownloadSpeed = t.DownloadSpeed

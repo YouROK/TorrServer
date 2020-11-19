@@ -19,6 +19,7 @@ type TorrentDB struct {
 	Poster string `json:"poster,omitempty"`
 
 	Timestamp int64 `json:"timestamp,omitempty"`
+	Size      int64 `json:"size,omitempty"`
 
 	Files []state.TorrentFileStat `json:"files,omitempty"`
 }
