@@ -14,3 +14,4 @@ go get -v github.com/pion/webrtc/v2
 go get -v go.etcd.io/bbolt
 
 ln -s . src/github.com/pion/webrtc/v2
+go get -v github.com/pion/webrtc/v2
