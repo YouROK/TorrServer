@@ -7,6 +7,8 @@
         "android-amd64": "https://github.com/YouROK/TorrServer/releases/download/1.1.77/TorrServer-android-amd64",
         "android-arm64": "https://github.com/YouROK/TorrServer/releases/download/1.1.77/TorrServer-android-arm64",
         "android-arm7": "https://github.com/YouROK/TorrServer/releases/download/1.1.77/TorrServer-android-arm7",
+        "android-10-arm64": "https://github.com/YouROK/TorrServer/releases/download/1.1.77/TorrServer-android-arm64-10",
+        "android-10-arm7": "https://github.com/YouROK/TorrServer/releases/download/1.1.77/TorrServer-android-arm7-10",
         "darwin-amd64": "https://github.com/YouROK/TorrServer/releases/download/1.1.77/TorrServer-darwin-amd64",
         "freebsd-amd64": "https://github.com/YouROK/TorrServer/releases/download/1.1.77/TorrServer-freebsd-amd64",
         "linux-386": "https://github.com/YouROK/TorrServer/releases/download/1.1.77/TorrServer-linux-386",
