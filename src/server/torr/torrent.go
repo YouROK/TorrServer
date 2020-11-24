@@ -81,7 +81,6 @@ func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 	torr.TorrentSpec = spec
 	torr.expiredTime = time.Now().Add(time.Minute)
 	torr.Timestamp = time.Now().Unix()
-	torr.Size = goTorrent.Length()
 
 	go torr.watch()
 
