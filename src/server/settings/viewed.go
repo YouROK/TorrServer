@@ -58,6 +58,9 @@ func ListViewed(hash string) []*Viewed {
 	var err error
 	if hash != "" {
 		buf := tdb.Get("Viewed", hash)
+		if len(buf) == 0 {
+			return []*Viewed{}
+		}
 		var indeces map[int]struct{}
 		err = json.Unmarshal(buf, &indeces)
 		if err == nil {
@@ -72,6 +75,9 @@ func ListViewed(hash string) []*Viewed {
 		keys := tdb.List("Viewed")
 		for _, key := range keys {
 			buf := tdb.Get("Viewed", key)
+			if len(buf) == 0 {
+				return []*Viewed{}
+			}
 			var indeces map[int]struct{}
 			err = json.Unmarshal(buf, &indeces)
 			if err == nil {
@@ -86,5 +92,5 @@ func ListViewed(hash string) []*Viewed {
 	if err != nil {
 		log.TLogln("Error list viewed:", err)
 	}
-	return nil
+	return []*Viewed{}
 }

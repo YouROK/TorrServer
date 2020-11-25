@@ -62,13 +62,12 @@ func GetTorrent(hashHex string) *Torrent {
 
 	tor = GetTorrentDB(hash)
 
-	tr, err := NewTorrent(tor.TorrentSpec, bts)
-	if err != nil {
-		log.TLogln("error get torrent db:", err)
-	}
-	if tr != nil {
-		go tr.GotInfo()
-	}
+	go func() {
+		tr, _ := NewTorrent(tor.TorrentSpec, bts)
+		if tr != nil {
+			tr.GotInfo()
+		}
+	}()
 	return tor
 }
 
