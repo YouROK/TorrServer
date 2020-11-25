@@ -4,10 +4,11 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/anacrolix/torrent"
 	"server/log"
 	"server/settings"
 	"server/torr/utils"
+
+	"github.com/anacrolix/torrent"
 
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/anacrolix/torrent/storage"
@@ -137,14 +138,15 @@ func (c *Cache) getRemPieces() []*Piece {
 	loading := 0
 	used := c.bufferPull.Used()
 	for u := range used {
-		v := c.pieces[u]
-		if v.Size > 0 {
-			if v.Id > 0 {
-				pieces = append(pieces, v)
-			}
-			fill += v.Size
-			if !v.complete {
-				loading++
+		if v, ok := c.pieces[u]; ok {
+			if v.Size > 0 {
+				if v.Id > 0 {
+					pieces = append(pieces, v)
+				}
+				fill += v.Size
+				if !v.complete {
+					loading++
+				}
 			}
 		}
 	}
