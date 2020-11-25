@@ -19,7 +19,6 @@ import (
 )
 
 type Torrent struct {
-	///// info for db
 	Title  string
 	Poster string
 	*torrent.TorrentSpec
@@ -27,7 +26,6 @@ type Torrent struct {
 	Stat      state.TorrentStat
 	Timestamp int64
 	Size      int64
-	/////
 
 	*torrent.Torrent
 	muTorrent sync.Mutex
@@ -363,7 +361,7 @@ func (t *Torrent) Status() *state.TorrentStatus {
 		st.Name = t.Torrent.Name()
 		st.Hash = t.Torrent.InfoHash().HexString()
 		st.LoadedSize = t.Torrent.BytesCompleted()
-		st.TorrentSize = t.Torrent.Length()
+
 		st.PreloadedBytes = t.PreloadedBytes
 		st.PreloadSize = t.PreloadSize
 		st.DownloadSpeed = t.DownloadSpeed
@@ -387,18 +385,20 @@ func (t *Torrent) Status() *state.TorrentStatus {
 		st.ConnectedSeeders = tst.ConnectedSeeders
 		st.HalfOpenPeers = tst.HalfOpenPeers
 
-		files := t.Files()
+		if t.Torrent.Info() != nil {
+			st.TorrentSize = t.Torrent.Length()
 
-		sort.Slice(files, func(i, j int) bool {
-			return files[i].Path() < files[j].Path()
-		})
-
-		for i, f := range files {
-			st.FileStats = append(st.FileStats, state.TorrentFileStat{
-				Id:     i + 1,
-				Path:   f.Path(),
-				Length: f.Length(),
+			files := t.Files()
+			sort.Slice(files, func(i, j int) bool {
+				return files[i].Path() < files[j].Path()
 			})
+			for i, f := range files {
+				st.FileStats = append(st.FileStats, state.TorrentFileStat{
+					Id:     i + 1,
+					Path:   f.Path(),
+					Length: f.Length(),
+				})
+			}
 		}
 	}
 	return st

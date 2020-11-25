@@ -56,10 +56,19 @@ func SaveTorrentToDB(torr *Torrent) {
 func GetTorrent(hashHex string) *Torrent {
 	hash := metainfo.NewHashFromHex(hashHex)
 	tor := bts.GetTorrent(hash)
-	if tor == nil {
-		tor = GetTorrentDB(hash)
+	if tor != nil {
+		return tor
 	}
 
+	tor = GetTorrentDB(hash)
+
+	tr, err := NewTorrent(tor.TorrentSpec, bts)
+	if err != nil {
+		log.TLogln("error get torrent db:", err)
+	}
+	if tr != nil {
+		go tr.GotInfo()
+	}
 	return tor
 }
 
