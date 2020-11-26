@@ -116,7 +116,7 @@ func remTorrent(req torrReqJS, c *gin.Context) {
 func listTorrent(req torrReqJS, c *gin.Context) {
 	list := torr.ListTorrent()
 	if list == nil {
-		c.Status(http.StatusNotFound)
+		c.JSON(200, []*state.TorrentStatus{})
 		return
 	}
 	var stats []*state.TorrentStatus
