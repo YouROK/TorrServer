@@ -5,8 +5,8 @@ import (
 	"server/web"
 )
 
-func Start(settingsPath, port string, roSets bool) {
-	settings.InitSets(settingsPath, roSets)
+func Start(port string, roSets bool) {
+	settings.InitSets(roSets)
 	if port == "" {
 		port = "8090"
 	}

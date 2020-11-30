@@ -10,6 +10,8 @@ import (
 
 	"github.com/alexflint/go-arg"
 	"server"
+	"server/log"
+	"server/settings"
 	"server/version"
 )
 
@@ -41,11 +43,11 @@ func main() {
 	if params.Add != "" {
 		add()
 	}
-
+	settings.Path = params.Path
 	Preconfig(params.DontKill)
 
-	server.Start(params.Path, params.Port, params.RDB)
-	fmt.Println(server.WaitServer())
+	server.Start(params.Port, params.RDB)
+	log.TLogln(server.WaitServer())
 	time.Sleep(time.Second * 3)
 	os.Exit(0)
 }

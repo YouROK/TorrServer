@@ -14,8 +14,8 @@ type TDB struct {
 	db       *bolt.DB
 }
 
-func NewTDB(path string, readOnly bool) *TDB {
-	db, err := bolt.Open(filepath.Join(path, "config.db"), 0666, nil)
+func NewTDB(readOnly bool) *TDB {
+	db, err := bolt.Open(filepath.Join(Path, "config.db"), 0666, nil)
 	if err != nil {
 		log.TLogln(err)
 		return nil
@@ -23,7 +23,7 @@ func NewTDB(path string, readOnly bool) *TDB {
 
 	tdb := new(TDB)
 	tdb.db = db
-	tdb.Path = path
+	tdb.Path = Path
 	tdb.ReadOnly = readOnly
 	return tdb
 }

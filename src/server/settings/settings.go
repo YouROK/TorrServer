@@ -5,9 +5,8 @@ var (
 	Path string
 )
 
-func InitSets(path string, readOnly bool) {
-	Path = path
-	tdb = NewTDB(path, readOnly)
+func InitSets(readOnly bool) {
+	tdb = NewTDB(readOnly)
 	loadBTSets()
 }
 
