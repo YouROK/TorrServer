@@ -28,8 +28,9 @@ func SetupRoute(route *gin.Engine) {
 
 	route.POST("/viewed", viewed)
 
-	route.GET("/playlist/all.m3u", allPlayList)
+	route.GET("/playlistall/all.m3u", allPlayList)
 	route.GET("/playlist", playList)
+	route.GET("/playlist/*fname", playList)
 }
 
 func echo(c *gin.Context) {

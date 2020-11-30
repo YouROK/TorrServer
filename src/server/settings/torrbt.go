@@ -24,7 +24,6 @@ type BTSets struct {
 	DisableUPNP        bool
 	DisableDHT         bool
 	DisableUpload      bool
-	Encryption         int // ???? 0 - Enable, 1 - disable, 2 - force
 	DownloadRateLimit  int // in kb, 0 - inf
 	UploadRateLimit    int // in kb, 0 - inf
 	ConnectionsLimit   int
@@ -66,7 +65,7 @@ func loadBTSets() {
 
 	sets := new(BTSets)
 	sets.EnableDebug = false
-
+	sets.DisableUTP = true
 	sets.CacheSize = 200 * 1024 * 1024 // 200mb
 	sets.PreloadBufferSize = 20 * 1024 * 1024
 	sets.ConnectionsLimit = 20

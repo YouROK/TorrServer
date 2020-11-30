@@ -100,6 +100,8 @@ func (bt *BTServer) configure() {
 		bt.config.ListenPort = settings.BTsets.PeersListenPort
 	}
 
+	bt.config.DefaultRequestStrategy = torrent.RequestStrategyFuzzing()
+
 	log.Println("Configure client:", settings.BTsets)
 }
 

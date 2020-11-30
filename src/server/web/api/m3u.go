@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
+	"sort"
 	"time"
 
 	"github.com/anacrolix/missinggo/httptoo"
@@ -19,14 +20,14 @@ import (
 )
 
 func allPlayList(c *gin.Context) {
-	_, fromlast := c.GetQuery("fromlast")
 	torrs := torr.ListTorrent()
 
 	host := "http://" + c.Request.Host
 	list := "#EXTM3U\n"
 	hash := ""
 	for _, tr := range torrs {
-		list += getM3uList(tr.Status(), host, fromlast)
+		list += "#EXTINF:0 type=\"playlist\"," + tr.Title + "\n"
+		list += host + "/stream/" + url.PathEscape(tr.Title) + ".m3u?link=" + tr.TorrentSpec.InfoHash.HexString() + "&m3u\n"
 		hash += tr.Hash().HexString()
 	}
 
@@ -34,28 +35,23 @@ func allPlayList(c *gin.Context) {
 }
 
 func playList(c *gin.Context) {
-	hash := c.Query("torrhash")
+	hash, _ := c.GetQuery("hash")
 	_, fromlast := c.GetQuery("fromlast")
 	if hash == "" {
 		c.AbortWithError(http.StatusBadRequest, errors.New("hash is empty"))
 		return
 	}
 
-	tors := torr.ListTorrent()
-	var tor *torr.Torrent
-	for _, tr := range tors {
-		if tr.Hash().HexString() == hash {
-			tor = tr
-			break
-		}
-	}
-
+	tor := torr.GetTorrent(hash)
 	if tor == nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
+	if !tor.WaitInfo() {
+		c.AbortWithError(http.StatusInternalServerError, errors.New("error get torrent info"))
+		return
+	}
 
-	// TODO проверить
 	host := "http://" + c.Request.Host
 	list := getM3uList(tor.Status(), host, fromlast)
 	list = "#EXTM3U\n" + list
@@ -94,13 +90,8 @@ func getM3uList(tor *state.TorrentStatus, host string, fromLast bool) string {
 					fn = f.Path
 				}
 				m3u += "#EXTINF:0," + fn + "\n"
-				title := filepath.Base(f.Path)
-				if tor.Title != "" {
-					title = tor.Title
-				} else if tor.Name != "" {
-					title = tor.Name
-				}
-				m3u += host + "/stream/" + url.PathEscape(title) + "?link=" + tor.Hash + "&index=" + fmt.Sprint(f.Id) + "&play\n"
+				name := filepath.Base(f.Path)
+				m3u += host + "/stream/" + url.PathEscape(name) + "?link=" + tor.Hash + "&index=" + fmt.Sprint(f.Id) + "&play\n"
 			}
 		}
 	}
@@ -108,15 +99,24 @@ func getM3uList(tor *state.TorrentStatus, host string, fromLast bool) string {
 }
 
 func searchLastPlayed(tor *state.TorrentStatus) int {
-	//TODO проверить
 	viewed := sets.ListViewed(tor.Hash)
-	for i := len(tor.FileStats); i > 0; i-- {
-		stat := tor.FileStats[i]
-		for _, v := range viewed {
-			if stat.Id == v.FileIndex {
-				return v.FileIndex
+	if len(viewed) == 0 {
+		return -1
+	}
+	sort.Slice(viewed, func(i, j int) bool {
+		return viewed[i].FileIndex > viewed[j].FileIndex
+	})
+
+	lastViewedIndex := viewed[0].FileIndex
+
+	for i, stat := range tor.FileStats {
+		if stat.Id == lastViewedIndex {
+			if i+1 >= len(tor.FileStats) {
+				return -1
 			}
+			return i + 1
 		}
 	}
+
 	return -1
 }
