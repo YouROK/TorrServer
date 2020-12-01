@@ -34,6 +34,8 @@ func allPlayList(c *gin.Context) {
 	sendM3U(c, "all.m3u", hash, list)
 }
 
+// http://127.0.0.1:8090/playlist?hash=...
+// http://127.0.0.1:8090/playlist?hash=...&fromlast
 func playList(c *gin.Context) {
 	hash, _ := c.GetQuery("hash")
 	_, fromlast := c.GetQuery("fromlast")
