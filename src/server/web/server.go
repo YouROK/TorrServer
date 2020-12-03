@@ -1,6 +1,7 @@
 package web
 
 import (
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"server/torr"
 	"server/web/api"
@@ -17,8 +18,7 @@ func Start(port string) {
 	BTS.Connect()
 
 	route := gin.New()
-	route.Use(gin.Logger(), gin.Recovery())
-
+	route.Use(gin.Logger(), gin.Recovery(), cors.Default())
 	api.SetupRoute(route)
 	pages.SetupRoute(route)
 
