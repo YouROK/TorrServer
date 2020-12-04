@@ -42,10 +42,6 @@ func AddTorrent(spec *torrent.TorrentSpec, title, poster string) (*Torrent, erro
 		}
 	}
 
-	if torr.Title == "" {
-		torr.Title = torr.Name()
-	}
-
 	return torr, nil
 }
 

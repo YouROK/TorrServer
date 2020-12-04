@@ -14,8 +14,14 @@ func AddTorrentDB(torr *Torrent) {
 	t.TorrentSpec = torr.TorrentSpec
 	t.Name = torr.Name()
 	t.Title = torr.Title
+	if t.Title == "" {
+		t.Title = t.Name
+	}
 	t.Poster = torr.Poster
 	t.Size = torr.Size
+	if t.Size == 0 && torr.Torrent != nil {
+		t.Size = torr.Torrent.Length()
+	}
 	t.Timestamp = time.Now().Unix()
 	settings.AddTorrent(t)
 }
