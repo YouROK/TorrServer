@@ -78,8 +78,8 @@ func GetMimeType(filename string) string {
 	return "*/*"
 }
 
-func GetPlayableFiles(st state.TorrentStatus) []state.TorrentFileStat {
-	files := make([]state.TorrentFileStat, 0)
+func GetPlayableFiles(st state.TorrentStatus) []*state.TorrentFileStat {
+	files := make([]*state.TorrentFileStat, 0)
 	for _, f := range st.FileStats {
 		if GetMimeType(f.Path) != "*/*" {
 			files = append(files, f)

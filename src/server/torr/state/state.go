@@ -61,7 +61,7 @@ type TorrentStatus struct {
 	PiecesDirtiedGood   int64       `json:"pieces_dirtied_good,omitempty"`
 	PiecesDirtiedBad    int64       `json:"pieces_dirtied_bad,omitempty"`
 
-	FileStats []TorrentFileStat `json:"file_stats,omitempty"`
+	FileStats []*TorrentFileStat `json:"file_stats,omitempty"`
 }
 
 type TorrentFileStat struct {

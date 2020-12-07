@@ -23,6 +23,8 @@ func SetupRoute(route *gin.Engine) {
 	route.POST("/torrents", torrents)
 	route.POST("/torrent/upload", torrentUpload)
 
+	route.POST("/cache", cache)
+
 	route.GET("/stream", stream)
 	route.GET("/stream/*fname", stream)
 

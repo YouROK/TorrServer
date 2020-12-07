@@ -6,6 +6,7 @@ import (
 
 	"server/log"
 	"server/settings"
+	"server/torr/storage/state"
 	"server/torr/utils"
 
 	"github.com/anacrolix/torrent"
@@ -53,7 +54,7 @@ func NewCache(capacity int64, storage *Storage) *Cache {
 }
 
 func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
-	log.TLogln("Create cache for:", info.Name)
+	log.TLogln("Create cache for:", info.Name, hash.HexString())
 	if c.capacity == 0 {
 		c.capacity = info.PieceLength * 6
 	}
@@ -203,4 +204,36 @@ func (c *Cache) AdjustRA(readahead int64) {
 	for r, _ := range c.readers {
 		r.SetReadahead(readahead)
 	}
+}
+
+func (c *Cache) GetState() *state.CacheState {
+	cState := new(state.CacheState)
+	cState.Capacity = c.capacity
+	cState.PiecesLength = c.pieceLength
+	cState.PiecesCount = c.pieceCount
+	cState.Hash = c.hash.HexString()
+
+	stats := make(map[int]state.ItemState, 0)
+	c.muPiece.Lock()
+	var fill int64 = 0
+	for _, p := range c.pieces {
+		if p.Size > 0 {
+			fill += p.Length
+			stats[p.Id] = state.ItemState{
+				Id:        p.Id,
+				Size:      p.Size,
+				Length:    p.Length,
+				Completed: p.complete,
+			}
+		}
+	}
+	c.filled = fill
+	c.muPiece.Unlock()
+	cState.Filled = c.filled
+	cState.Pieces = stats
+	return cState
+}
+
+func (c *Cache) GetCapacity() int64 {
+	return c.capacity
 }

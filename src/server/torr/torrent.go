@@ -9,6 +9,7 @@ import (
 	"server/log"
 	"server/settings"
 	"server/torr/state"
+	cacheSt "server/torr/storage/state"
 	"server/torr/utils"
 	utils2 "server/utils"
 
@@ -258,10 +259,10 @@ func (t *Torrent) Preload(index int, size int64) {
 		}
 	}()
 
-	if index < 0 || index >= len(t.Files()) {
-		index = 0
+	file := t.findFileIndex(index)
+	if file == nil {
+		file = t.Files()[0]
 	}
-	file := t.Files()[index]
 
 	buff5mb := int64(5 * 1024 * 1024)
 	startPreloadLength := size
@@ -393,7 +394,7 @@ func (t *Torrent) Status() *state.TorrentStatus {
 				return files[i].Path() < files[j].Path()
 			})
 			for i, f := range files {
-				st.FileStats = append(st.FileStats, state.TorrentFileStat{
+				st.FileStats = append(st.FileStats, &state.TorrentFileStat{
 					Id:     i + 1,
 					Path:   f.Path(),
 					Length: f.Length(),
@@ -402,4 +403,33 @@ func (t *Torrent) Status() *state.TorrentStatus {
 		}
 	}
 	return st
+}
+
+func (t *Torrent) CacheState() *cacheSt.CacheState {
+	if t.Torrent != nil && t.cache != nil {
+		st := t.cache.GetState()
+		st.DownloadSpeed = t.DownloadSpeed
+		return st
+	}
+	return nil
+}
+
+func (t *Torrent) findFileIndex(index int) *torrent.File {
+	st := t.Status()
+	var stFile *state.TorrentFileStat
+	for _, f := range st.FileStats {
+		if index == f.Id {
+			stFile = f
+			break
+		}
+	}
+	if stFile == nil {
+		return nil
+	}
+	for _, file := range t.Files() {
+		if file.Path() == stFile.Path {
+			return file
+		}
+	}
+	return nil
 }
