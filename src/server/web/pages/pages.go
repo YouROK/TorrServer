@@ -6,5 +6,5 @@ import (
 )
 
 func mainPage(c *gin.Context) {
-	c.Data(200, "text/html; charset=utf-8", []byte(template.MainPage))
+	c.Data(200, "text/html; charset=utf-8", template.IndexHtml)
 }
