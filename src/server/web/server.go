@@ -18,7 +18,7 @@ func Start(port string) {
 	BTS.Connect()
 
 	route := gin.New()
-	route.Use(gin.Logger(), gin.Recovery(), cors.Default())
+	route.Use(gin.Recovery(), cors.Default())
 	api.SetupRoute(route)
 	pages.SetupRoute(route)
 
