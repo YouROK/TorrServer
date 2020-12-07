@@ -1,9 +1,11 @@
 package torr
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/anacrolix/torrent"
+	"server/log"
 )
 
 type Reader struct {
@@ -11,6 +13,12 @@ type Reader struct {
 	offset    int64
 	readahead int64
 	file      *torrent.File
+	torr      *Torrent
+
+	///Preload
+	isPreload         bool
+	endOffsetPreload  int64
+	currOffsetPreload int64
 }
 
 func NewReader(torr *Torrent, file *torrent.File, readahead int64) *Reader {
@@ -23,6 +31,7 @@ func NewReader(torr *Torrent, file *torrent.File, readahead int64) *Reader {
 	}
 	r.SetReadahead(readahead)
 	torr.GetCache().AddReader(r)
+	r.torr = torr
 	return r
 }
 
@@ -43,6 +52,7 @@ func (r *Reader) Seek(offset int64, whence int) (n int64, err error) {
 func (r *Reader) Read(p []byte) (n int, err error) {
 	n, err = r.Reader.Read(p)
 	r.offset += int64(n)
+	r.preload()
 	return
 }
 
@@ -57,4 +67,40 @@ func (r *Reader) Offset() int64 {
 
 func (r *Reader) Readahead() int64 {
 	return r.readahead
+}
+
+func (r *Reader) preload() {
+	r.currOffsetPreload = r.offset
+	capacity := r.torr.cache.GetCapacity()
+	plength := r.torr.Info().PieceLength
+	r.endOffsetPreload = r.offset + capacity - r.readahead - plength
+	if r.endOffsetPreload > r.file.Length() {
+		r.endOffsetPreload = r.file.Length()
+	}
+	if r.endOffsetPreload < r.readahead || r.isPreload {
+		return
+	}
+	r.isPreload = true
+	//TODO remove logs
+	fmt.Println("Start buffering...")
+	go func() {
+		buffReader := r.file.NewReader()
+		defer func() {
+			r.isPreload = false
+			buffReader.Close()
+			fmt.Println("End buffering...")
+		}()
+		buffReader.SetReadahead(0)
+		buffReader.Seek(r.currOffsetPreload, io.SeekStart)
+		buff5mb := make([]byte, 1024)
+		for r.currOffsetPreload < r.endOffsetPreload {
+			off, err := buffReader.Read(buff5mb)
+			if err != nil {
+				log.TLogln("Error read e head buffer", err)
+				return
+			}
+			r.currOffsetPreload += int64(off)
+			fmt.Println("buffered:", r.offset, "|", r.currOffsetPreload, "/", r.endOffsetPreload)
+		}
+	}()
 }
