@@ -2,6 +2,7 @@ package torrstor
 
 import (
 	"io"
+	"sync"
 
 	"github.com/anacrolix/torrent"
 )
@@ -14,6 +15,7 @@ type Reader struct {
 
 	cache    *Cache
 	isClosed bool
+	mu       sync.Mutex
 
 	///Preload
 	isPreload         bool
@@ -33,6 +35,8 @@ func NewReader(file *torrent.File, cache *Cache) *Reader {
 }
 
 func (r *Reader) Seek(offset int64, whence int) (n int64, err error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	if r.isClosed {
 		return 0, io.EOF
 	}
@@ -50,6 +54,8 @@ func (r *Reader) Seek(offset int64, whence int) (n int64, err error) {
 }
 
 func (r *Reader) Read(p []byte) (n int, err error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	if r.isClosed {
 		return 0, io.EOF
 	}
@@ -60,6 +66,8 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 }
 
 func (r *Reader) SetReadAHead(length int64) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	r.Reader.SetReadahead(length)
 	r.readahead = length
 }
@@ -73,6 +81,8 @@ func (r *Reader) ReadAHead() int64 {
 }
 
 func (r *Reader) Close() error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	r.isClosed = true
 	delete(r.cache.readers, r)
 	return r.Reader.Close()

@@ -1,10 +1,8 @@
 package torrstor
 
 import (
-	"fmt"
 	"io"
 
-	"github.com/dustin/go-humanize"
 	"server/log"
 )
 
@@ -30,16 +28,13 @@ func (r *Reader) preload() {
 
 	r.isPreload = true
 
-	//TODO remove logs
-	fmt.Println("Start buffering...", humanize.Bytes(uint64(r.offset)), humanize.Bytes(uint64(r.endOffsetPreload)))
 	go func() {
 		buffReader := r.file.NewReader()
 		defer func() {
 			r.isPreload = false
 			buffReader.Close()
-			fmt.Println("End buffering...")
 		}()
-		buffReader.SetReadahead(1)
+		buffReader.SetReadahead(0)
 		buffReader.Seek(r.currOffsetPreload, io.SeekStart)
 		buff := make([]byte, 1024)
 		for r.currOffsetPreload < r.endOffsetPreload && !r.isClosed {
