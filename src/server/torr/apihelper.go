@@ -1,6 +1,7 @@
 package torr
 
 import (
+	"io"
 	"os"
 	"sort"
 	"time"
@@ -120,4 +121,8 @@ func Shutdown() {
 	bts.Disconnect()
 	sets.CloseDB()
 	os.Exit(0)
+}
+
+func WriteStatus(w io.Writer) {
+	bts.client.WriteStatus(w)
 }

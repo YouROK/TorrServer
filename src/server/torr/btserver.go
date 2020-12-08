@@ -3,6 +3,7 @@ package torr
 import (
 	"log"
 	"sync"
+	"time"
 
 	"server/settings"
 	"server/torr/storage/torrstor"
@@ -73,10 +74,6 @@ func (bt *BTServer) configure() {
 	bt.config.NoDefaultPortForwarding = settings.BTsets.DisableUPNP
 	bt.config.NoDHT = settings.BTsets.DisableDHT
 	bt.config.NoUpload = settings.BTsets.DisableUpload
-	// bt.config.EncryptionPolicy = torrent.EncryptionPolicy{
-	// 	DisableEncryption: settings.BTsets.Encryption == 1,
-	// 	ForceEncryption:   settings.BTsets.Encryption == 2,
-	// }
 	bt.config.IPBlocklist = blocklist
 	bt.config.DefaultStorage = bt.storage
 	bt.config.Bep20 = peerID
@@ -85,7 +82,20 @@ func (bt *BTServer) configure() {
 	bt.config.ExtendedHandshakeClientVersion = cliVers
 	bt.config.EstablishedConnsPerTorrent = settings.BTsets.ConnectionsLimit
 
-	bt.config.DefaultRequestStrategy = torrent.RequestStrategyFastest()
+	// Encryption/Obfuscation
+	bt.config.HeaderObfuscationPolicy = torrent.HeaderObfuscationPolicy{
+		RequirePreferred: false,
+		Preferred:        true,
+	}
+
+	switch settings.BTsets.Strategy {
+	case 1: // RequestStrategyFuzzing
+		bt.config.DefaultRequestStrategy = torrent.RequestStrategyFuzzing()
+	case 2: // RequestStrategyFastest
+		bt.config.DefaultRequestStrategy = torrent.RequestStrategyFastest()
+	default: // RequestStrategyDuplicateRequestTimeout
+		bt.config.DefaultRequestStrategy = torrent.RequestStrategyDuplicateRequestTimeout(1 * time.Second)
+	}
 
 	if settings.BTsets.DhtConnectionLimit > 0 {
 		bt.config.ConnTracker.SetMaxEntries(settings.BTsets.DhtConnectionLimit)

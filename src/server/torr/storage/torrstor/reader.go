@@ -28,9 +28,12 @@ func NewReader(file *torrent.File, cache *Cache) *Reader {
 	r.file = file
 	r.Reader = file.NewReader()
 
-	r.SetReadAHead(0)
+	r.SetReadahead(0)
 	r.cache = cache
-	r.cache.readers[r] = struct{}{}
+
+	cache.muReaders.Lock()
+	cache.readers[r] = struct{}{}
+	cache.muReaders.Unlock()
 	return r
 }
 
@@ -65,7 +68,7 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 	return
 }
 
-func (r *Reader) SetReadAHead(length int64) {
+func (r *Reader) SetReadahead(length int64) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.Reader.SetReadahead(length)
@@ -84,7 +87,11 @@ func (r *Reader) Close() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.isClosed = true
+
+	r.cache.muReaders.Lock()
 	delete(r.cache.readers, r)
+	r.cache.muReaders.Unlock()
+
 	return r.Reader.Close()
 }
 
@@ -93,6 +100,11 @@ func (c *Cache) NewReader(file *torrent.File) *Reader {
 }
 
 func (c *Cache) Readers() int {
+	if c == nil {
+		return 0
+	}
+	c.muReaders.Lock()
+	defer c.muReaders.Unlock()
 	if c == nil || c.readers == nil {
 		return 0
 	}

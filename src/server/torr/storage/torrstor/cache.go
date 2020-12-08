@@ -27,7 +27,8 @@ type Cache struct {
 	pieces     map[int]*Piece
 	bufferPull *BufferPool
 
-	readers map[*Reader]struct{}
+	readers   map[*Reader]struct{}
+	muReaders sync.Mutex
 
 	isRemove bool
 	muRemove sync.Mutex
@@ -80,7 +81,14 @@ func (c *Cache) Close() error {
 	}
 	c.pieces = nil
 	c.bufferPull = nil
+
+	c.muReaders.Lock()
+	for reader, _ := range c.readers {
+		reader.Close()
+	}
 	c.readers = nil
+	c.muReaders.Unlock()
+
 	utils.FreeOSMemGC()
 	return nil
 }
@@ -94,9 +102,11 @@ func (c *Cache) AdjustRA(readahead int64) {
 	if settings.BTsets.CacheSize == 0 {
 		c.capacity = readahead * 3
 	}
+	c.muReaders.Lock()
 	for r, _ := range c.readers {
 		r.SetReadahead(readahead)
 	}
+	c.muReaders.Unlock()
 }
 
 func (c *Cache) GetState() *state.CacheState {
@@ -121,6 +131,7 @@ func (c *Cache) GetState() *state.CacheState {
 		}
 	}
 
+	c.muReaders.Lock()
 	for r, _ := range c.readers {
 		start, end := r.getUsedPieces()
 		if p, ok := c.pieces[start]; ok {
@@ -159,6 +170,7 @@ func (c *Cache) GetState() *state.CacheState {
 			}
 		}
 	}
+	c.muReaders.Unlock()
 
 	c.filled = fill
 	cState.Filled = c.filled
@@ -199,12 +211,14 @@ func (c *Cache) getRemPieces() []*Piece {
 	for id, p := range c.pieces {
 		if p.Size > 0 {
 			fill += p.Size
+			c.muReaders.Lock()
 			for r, _ := range c.readers {
 				start, end := r.getUsedPieces()
 				if id < start || id > end {
 					piecesRemove = append(piecesRemove, p)
 				}
 			}
+			c.muReaders.Unlock()
 		}
 	}
 

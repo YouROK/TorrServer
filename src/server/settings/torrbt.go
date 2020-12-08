@@ -29,6 +29,7 @@ type BTSets struct {
 	ConnectionsLimit   int
 	DhtConnectionLimit int // 0 - inf
 	PeersListenPort    int
+	Strategy           int // 0 - RequestStrategyDuplicateRequestTimeout, 1 - RequestStrategyFuzzing, 2 - RequestStrategyFastest
 }
 
 func (v *BTSets) String() string {

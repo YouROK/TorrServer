@@ -3,6 +3,7 @@ package torrstor
 import (
 	"io"
 
+	"github.com/dustin/go-humanize"
 	"server/log"
 )
 
@@ -15,8 +16,7 @@ func (r *Reader) getUsedPieces() (int, int) {
 }
 
 func (r *Reader) preload() {
-	r.currOffsetPreload = r.offset
-	r.endOffsetPreload = r.offset + r.cache.capacity
+	r.endOffsetPreload = r.offset + r.cache.capacity - 1024
 
 	if r.endOffsetPreload > r.file.Length() {
 		r.endOffsetPreload = r.file.Length()
@@ -27,7 +27,7 @@ func (r *Reader) preload() {
 	}
 
 	r.isPreload = true
-
+	log.TLogln("Start buffering from", humanize.IBytes(uint64(r.currOffsetPreload)))
 	go func() {
 		buffReader := r.file.NewReader()
 		defer func() {
@@ -35,6 +35,7 @@ func (r *Reader) preload() {
 			buffReader.Close()
 		}()
 		buffReader.SetReadahead(0)
+		r.currOffsetPreload = r.offset + r.readahead
 		buffReader.Seek(r.currOffsetPreload, io.SeekStart)
 		buff := make([]byte, 1024)
 		for r.currOffsetPreload < r.endOffsetPreload && !r.isClosed {
@@ -44,7 +45,14 @@ func (r *Reader) preload() {
 				return
 			}
 			r.currOffsetPreload += int64(off)
+			r.endOffsetPreload = r.offset + r.cache.capacity - 1024
+			if r.currOffsetPreload < r.offset {
+				r.currOffsetPreload = r.offset + r.readahead
+				buffReader.Seek(r.currOffsetPreload, io.SeekStart)
+			}
+			//log.TLogln(humanize.IBytes(uint64(r.offset)), humanize.IBytes(uint64(r.currOffsetPreload)), humanize.IBytes(uint64(r.endOffsetPreload)))
 		}
+		log.TLogln("End buffering")
 	}()
 }
 
