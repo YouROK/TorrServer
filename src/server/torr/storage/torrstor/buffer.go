@@ -20,7 +20,7 @@ type BufferPool struct {
 
 func NewBufferPool(bufferLength int64, capacity int64) *BufferPool {
 	bp := new(BufferPool)
-	buffsSize := int(capacity/bufferLength) + 3
+	buffsSize := int(capacity/bufferLength) + 4
 	bp.frees = buffsSize
 	bp.size = bufferLength
 	return bp
@@ -72,21 +72,6 @@ func (b *BufferPool) ReleaseBuffer(index int) {
 		buff.pieceId = -1
 		b.frees++
 	}
-}
-
-func (b *BufferPool) Used() map[int]struct{} {
-	if len(b.buffs) == 0 {
-		b.mu.Lock()
-		b.mkBuffs()
-		b.mu.Unlock()
-	}
-	used := make(map[int]struct{})
-	for _, b := range b.buffs {
-		if b.used {
-			used[b.pieceId] = struct{}{}
-		}
-	}
-	return used
 }
 
 func (b *BufferPool) Len() int {

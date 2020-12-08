@@ -166,9 +166,9 @@ func (t *Torrent) progressEvent() {
 }
 
 func (t *Torrent) updateRA() {
-	if t.BytesReadUsefulData > settings.BTsets.PreloadBufferSize {
+	if t.Torrent != nil && t.Torrent.Info() != nil {
 		pieceLen := t.Torrent.Info().PieceLength
-		adj := pieceLen * int64(t.Torrent.Stats().ActivePeers) / int64(1+t.cache.ReadersLen())
+		adj := pieceLen * int64(t.Torrent.Stats().ActivePeers) / int64(1+t.cache.Readers())
 		switch {
 		case adj < pieceLen:
 			adj = pieceLen
@@ -180,7 +180,7 @@ func (t *Torrent) updateRA() {
 }
 
 func (t *Torrent) expired() bool {
-	return t.cache.ReadersLen() == 0 && t.expiredTime.Before(time.Now()) && (t.Stat == state.TorrentWorking || t.Stat == state.TorrentClosed)
+	return t.cache.Readers() == 0 && t.expiredTime.Before(time.Now()) && (t.Stat == state.TorrentWorking || t.Stat == state.TorrentClosed)
 }
 
 func (t *Torrent) Files() []*torrent.File {
@@ -208,17 +208,16 @@ func (t *Torrent) Length() int64 {
 	return t.Torrent.Length()
 }
 
-func (t *Torrent) NewReader(file *torrent.File, readahead int64) *Reader {
+func (t *Torrent) NewReader(file *torrent.File) *torrstor.Reader {
 	if t.Stat == state.TorrentClosed {
 		return nil
 	}
-	reader := NewReader(t, file, readahead)
+	reader := t.cache.NewReader(file)
 	return reader
 }
 
-func (t *Torrent) CloseReader(reader *Reader) {
+func (t *Torrent) CloseReader(reader *torrstor.Reader) {
 	reader.Close()
-	t.cache.RemReader(reader)
 	t.expiredTime = time.Now().Add(time.Second * time.Duration(settings.BTsets.TorrentDisconnectTimeout))
 }
 
@@ -264,39 +263,71 @@ func (t *Torrent) Preload(index int, size int64) {
 		file = t.Files()[0]
 	}
 
-	buff5mb := int64(5 * 1024 * 1024)
-	startPreloadLength := size
-	endPreloadOffset := int64(0)
-	if startPreloadLength > buff5mb {
-		endPreloadOffset = file.Offset() + file.Length() - buff5mb
-	}
-
-	readerPre := t.NewReader(file, startPreloadLength)
-	if readerPre == nil {
+	readerStart := file.NewReader()
+	if readerStart == nil {
 		return
 	}
 	defer func() {
-		t.CloseReader(readerPre)
+		readerStart.Close()
 		t.expiredTime = time.Now().Add(time.Minute * 5)
 	}()
-
-	if endPreloadOffset > 0 {
-		readerPost := t.NewReader(file, 1)
-		if readerPre == nil {
-			return
-		}
-		readerPost.Seek(endPreloadOffset, io.SeekStart)
-		readerPost.SetReadahead(buff5mb)
-		defer func() {
-			t.CloseReader(readerPost)
-			t.expiredTime = time.Now().Add(time.Minute * 5)
-		}()
+	readerEnd := file.NewReader()
+	if readerEnd == nil {
+		return
 	}
+	defer func() {
+		readerEnd.Close()
+	}()
+
+	readerStart.SetReadahead(0)
+	readerEnd.SetReadahead(0)
 
 	if size > file.Length() {
 		size = file.Length()
 	}
-
+	/// preload from start
+	go func() {
+		defer func() {
+			t.Stat = state.TorrentWorking
+		}()
+		offset := int64(0)
+		end := size - (2 * t.Info().PieceLength)
+		if end < 0 {
+			end = size
+		}
+		buf := make([]byte, 1024)
+		readerStart.Seek(offset, io.SeekStart)
+		for offset < end {
+			off, err := readerStart.Read(buf)
+			if err != nil {
+				if err != io.EOF {
+					log.TLogln("Error preload:", err)
+				}
+				break
+			}
+			offset += int64(off)
+		}
+	}()
+	/// preload from end -2 pieces
+	go func() {
+		offset := file.Length() - (2 * t.Info().PieceLength)
+		end := file.Length() - 1024
+		if offset < 0 || end < 0 {
+			return
+		}
+		buf := make([]byte, 1024)
+		readerEnd.Seek(offset, io.SeekStart)
+		for offset < end {
+			off, err := readerEnd.Read(buf)
+			if err != nil {
+				if err != io.EOF {
+					log.TLogln("Error preload:", err)
+				}
+				break
+			}
+			offset += int64(off)
+		}
+	}()
 	t.PreloadSize = size
 	var lastSize int64 = 0
 	errCount := 0
@@ -408,7 +439,7 @@ func (t *Torrent) Status() *state.TorrentStatus {
 func (t *Torrent) CacheState() *cacheSt.CacheState {
 	if t.Torrent != nil && t.cache != nil {
 		st := t.cache.GetState()
-		st.DownloadSpeed = t.DownloadSpeed
+		st.Torrent = t.Status()
 		return st
 	}
 	return nil

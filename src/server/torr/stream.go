@@ -18,7 +18,7 @@ func (t *Torrent) Stream(fileIndex int, req *http.Request, resp http.ResponseWri
 		return errors.New("file index out of range")
 	}
 	file := files[fileIndex-1]
-	reader := t.NewReader(file, 0)
+	reader := t.NewReader(file)
 
 	log.Println("Connect client")
 
