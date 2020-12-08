@@ -15,6 +15,8 @@ type Reader struct {
 	file      *torrent.File
 	torr      *Torrent
 
+	isClosed bool
+
 	///Preload
 	isPreload         bool
 	endOffsetPreload  int64
@@ -69,11 +71,16 @@ func (r *Reader) Readahead() int64 {
 	return r.readahead
 }
 
+func (r *Reader) Close() error {
+	r.isClosed = true
+	return r.Reader.Close()
+}
+
 func (r *Reader) preload() {
 	r.currOffsetPreload = r.offset
 	capacity := r.torr.cache.GetCapacity()
 	plength := r.torr.Info().PieceLength
-	r.endOffsetPreload = r.offset + capacity - r.readahead - plength
+	r.endOffsetPreload = r.offset + capacity - r.readahead - plength*3
 	if r.endOffsetPreload > r.file.Length() {
 		r.endOffsetPreload = r.file.Length()
 	}
@@ -93,14 +100,13 @@ func (r *Reader) preload() {
 		buffReader.SetReadahead(0)
 		buffReader.Seek(r.currOffsetPreload, io.SeekStart)
 		buff5mb := make([]byte, 1024)
-		for r.currOffsetPreload < r.endOffsetPreload {
+		for r.currOffsetPreload < r.endOffsetPreload && !r.isClosed {
 			off, err := buffReader.Read(buff5mb)
 			if err != nil {
 				log.TLogln("Error read e head buffer", err)
 				return
 			}
 			r.currOffsetPreload += int64(off)
-			fmt.Println("buffered:", r.offset, "|", r.currOffsetPreload, "/", r.endOffsetPreload)
 		}
 	}()
 }

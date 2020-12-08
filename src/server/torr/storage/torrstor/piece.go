@@ -56,7 +56,7 @@ func (p *Piece) ReadAt(b []byte, off int64) (n int, err error) {
 		}
 	}
 	if len(p.buffer) < int(off) || len(p.buffer) < int(off)+size {
-		return 0, io.ErrUnexpectedEOF
+		return 0, io.EOF
 	}
 	n = copy(b, p.buffer[int(off) : int(off)+size][:])
 	p.accessed = time.Now().Unix()
@@ -65,6 +65,9 @@ func (p *Piece) ReadAt(b []byte, off int64) (n int, err error) {
 	}
 	if int64(len(b))+off >= p.Size {
 		go p.cache.cleanPieces()
+	}
+	if n == 0 && err == nil {
+		return 0, io.EOF
 	}
 	return n, nil
 }

@@ -29,7 +29,7 @@ func (t *Torrent) Stream(fileIndex int, req *http.Request, resp http.ResponseWri
 
 	http.ServeContent(resp, req, file.Path(), time.Time{}, reader)
 
-	log.Println("Disconnect client")
 	t.CloseReader(reader)
+	log.Println("Disconnect client")
 	return nil
 }
