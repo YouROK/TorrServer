@@ -57,15 +57,19 @@ func (bt *BTServer) Reconnect() error {
 }
 
 func (bt *BTServer) configure() {
-	bt.storage = torrstor.NewStorage(settings.BTsets.CacheSize)
-
 	blocklist, _ := utils.ReadBlockedIP()
+	bt.config = torrent.NewDefaultClientConfig()
+
+	if !settings.BTsets.SaveOnDisk {
+		bt.storage = torrstor.NewStorage(settings.BTsets.CacheSize)
+		bt.config.DefaultStorage = bt.storage
+	} else {
+		bt.config.DataDir = settings.BTsets.ContentPath
+	}
 
 	userAgent := "uTorrent/3.5.5"
 	peerID := "-UT3550-"
 	cliVers := "µTorrent 3.5.5"
-
-	bt.config = torrent.NewDefaultClientConfig()
 
 	bt.config.Debug = settings.BTsets.EnableDebug
 	bt.config.DisableIPv6 = settings.BTsets.EnableIPv6 == false
@@ -75,7 +79,6 @@ func (bt *BTServer) configure() {
 	bt.config.NoDHT = settings.BTsets.DisableDHT
 	bt.config.NoUpload = settings.BTsets.DisableUpload
 	bt.config.IPBlocklist = blocklist
-	bt.config.DefaultStorage = bt.storage
 	bt.config.Bep20 = peerID
 	bt.config.PeerID = utils.PeerIDRandom(peerID)
 	bt.config.HTTPUserAgent = userAgent

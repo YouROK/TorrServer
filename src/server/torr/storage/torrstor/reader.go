@@ -21,6 +21,7 @@ type Reader struct {
 	isPreload         bool
 	endOffsetPreload  int64
 	currOffsetPreload int64
+	muPreload         sync.Mutex
 }
 
 func NewReader(file *torrent.File, cache *Cache) *Reader {
@@ -64,7 +65,9 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 	}
 	n, err = r.Reader.Read(p)
 	r.offset += int64(n)
-	go r.preload()
+	if !r.isPreload {
+		go r.preload()
+	}
 	return
 }
 
@@ -79,7 +82,7 @@ func (r *Reader) Offset() int64 {
 	return r.offset
 }
 
-func (r *Reader) ReadAHead() int64 {
+func (r *Reader) Readahead() int64 {
 	return r.readahead
 }
 

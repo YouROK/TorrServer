@@ -133,7 +133,7 @@ func (c *Cache) GetState() *state.CacheState {
 
 	c.muReaders.Lock()
 	for r, _ := range c.readers {
-		start, end := r.getUsedPieces()
+		start, prereader, end := r.getUsedPieces()
 		if p, ok := c.pieces[start]; ok {
 			stats[start] = state.ItemState{
 				Id:         p.Id,
@@ -149,6 +149,24 @@ func (c *Cache) GetState() *state.CacheState {
 				Length:     c.pieceLength,
 				Completed:  false,
 				ReaderType: 1,
+			}
+		}
+
+		if p, ok := c.pieces[prereader]; ok {
+			stats[prereader] = state.ItemState{
+				Id:         p.Id,
+				Size:       p.Size,
+				Length:     p.Length,
+				Completed:  p.complete,
+				ReaderType: 3,
+			}
+		} else {
+			stats[prereader] = state.ItemState{
+				Id:         prereader,
+				Size:       0,
+				Length:     c.pieceLength,
+				Completed:  false,
+				ReaderType: 3,
 			}
 		}
 
@@ -213,7 +231,7 @@ func (c *Cache) getRemPieces() []*Piece {
 			fill += p.Size
 			c.muReaders.Lock()
 			for r, _ := range c.readers {
-				start, end := r.getUsedPieces()
+				start, _, end := r.getUsedPieces()
 				if id < start || id > end {
 					piecesRemove = append(piecesRemove, p)
 				}
