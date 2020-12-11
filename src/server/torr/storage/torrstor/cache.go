@@ -133,7 +133,7 @@ func (c *Cache) GetState() *state.CacheState {
 
 	c.muReaders.Lock()
 	for r, _ := range c.readers {
-		start, prereader, end := r.getUsedPieces()
+		start, end := r.getUsedPiecesRange()
 		if p, ok := c.pieces[start]; ok {
 			stats[start] = state.ItemState{
 				Id:         p.Id,
@@ -151,25 +151,6 @@ func (c *Cache) GetState() *state.CacheState {
 				ReaderType: 1,
 			}
 		}
-
-		if p, ok := c.pieces[prereader]; ok {
-			stats[prereader] = state.ItemState{
-				Id:         p.Id,
-				Size:       p.Size,
-				Length:     p.Length,
-				Completed:  p.complete,
-				ReaderType: 3,
-			}
-		} else {
-			stats[prereader] = state.ItemState{
-				Id:         prereader,
-				Size:       0,
-				Length:     c.pieceLength,
-				Completed:  false,
-				ReaderType: 3,
-			}
-		}
-
 		if p, ok := c.pieces[end]; ok {
 			stats[end] = state.ItemState{
 				Id:         p.Id,
@@ -185,6 +166,42 @@ func (c *Cache) GetState() *state.CacheState {
 				Length:     c.pieceLength,
 				Completed:  false,
 				ReaderType: 2,
+			}
+		}
+
+		reader, loader := r.getReaderPieces()
+		if p, ok := c.pieces[reader]; ok {
+			stats[reader] = state.ItemState{
+				Id:         p.Id,
+				Size:       p.Size,
+				Length:     p.Length,
+				Completed:  p.complete,
+				ReaderType: 3,
+			}
+		} else {
+			stats[reader] = state.ItemState{
+				Id:         reader,
+				Size:       0,
+				Length:     c.pieceLength,
+				Completed:  false,
+				ReaderType: 3,
+			}
+		}
+		if p, ok := c.pieces[loader]; ok {
+			stats[loader] = state.ItemState{
+				Id:         p.Id,
+				Size:       p.Size,
+				Length:     p.Length,
+				Completed:  p.complete,
+				ReaderType: 3,
+			}
+		} else {
+			stats[loader] = state.ItemState{
+				Id:         loader,
+				Size:       0,
+				Length:     c.pieceLength,
+				Completed:  false,
+				ReaderType: 3,
 			}
 		}
 	}
@@ -231,7 +248,7 @@ func (c *Cache) getRemPieces() []*Piece {
 			fill += p.Size
 			c.muReaders.Lock()
 			for r, _ := range c.readers {
-				start, _, end := r.getUsedPieces()
+				start, end := r.getUsedPiecesRange()
 				if id < start || id > end {
 					piecesRemove = append(piecesRemove, p)
 				}

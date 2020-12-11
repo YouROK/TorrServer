@@ -18,10 +18,9 @@ type Reader struct {
 	mu       sync.Mutex
 
 	///Preload
-	isPreload         bool
-	endOffsetPreload  int64
-	currOffsetPreload int64
-	muPreload         sync.Mutex
+	isPreload    bool
+	loaderOffset int64
+	muPreload    sync.Mutex
 }
 
 func NewReader(file *torrent.File, cache *Cache) *Reader {
