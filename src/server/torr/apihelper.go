@@ -59,18 +59,20 @@ func GetTorrent(hashHex string) *Torrent {
 		return tor
 	}
 
-	tor = GetTorrentDB(hash)
-
-	go func() {
-		tr, _ := NewTorrent(tor.TorrentSpec, bts)
-		if tr != nil {
-			tr.Title = tor.Title
-			tr.Poster = tor.Poster
-			tr.Size = tor.Size
-			tr.Timestamp = tor.Timestamp
-			tr.GotInfo()
-		}
-	}()
+	tr := GetTorrentDB(hash)
+	if tr != nil {
+		tor = tr
+		go func() {
+			tr, _ := NewTorrent(tor.TorrentSpec, bts)
+			if tr != nil {
+				tr.Title = tor.Title
+				tr.Poster = tor.Poster
+				tr.Size = tor.Size
+				tr.Timestamp = tor.Timestamp
+				tr.GotInfo()
+			}
+		}()
+	}
 	return tor
 }
 
