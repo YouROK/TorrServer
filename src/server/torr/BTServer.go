@@ -91,6 +91,12 @@ func (bt *BTServer) configure() {
 	bt.config.HTTPUserAgent = userAgent
 	bt.config.ExtendedHandshakeClientVersion = cliVers
 	bt.config.EstablishedConnsPerTorrent = settings.Get().ConnectionsLimit
+	if settings.Get().ChooseStrategy == 1 {
+		bt.config.DefaultRequestStrategy = torrent.RequestStrategyFastest()
+	}
+	if settings.Get().ChooseStrategy == 2 {
+		bt.config.DefaultRequestStrategy = torrent.RequestStrategyFuzzing()
+	}
 	if settings.Get().DhtConnectionLimit > 0 {
 		bt.config.ConnTracker.SetMaxEntries(settings.Get().DhtConnectionLimit)
 	}
@@ -103,8 +109,6 @@ func (bt *BTServer) configure() {
 	if settings.Get().PeersListenPort > 0 {
 		bt.config.ListenPort = settings.Get().PeersListenPort
 	}
-	bt.config.DefaultRequestStrategy = torrent.RequestStrategyFastest()
-	
 	log.Println("Configure client:", settings.Get())
 }
 

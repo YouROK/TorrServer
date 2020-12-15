@@ -22,6 +22,7 @@ func init() {
 	sets.DhtConnectionLimit = 500
 	sets.RetrackersMode = 1
 	sets.TorrentDisconnectTimeout = 30
+	sets.ChooseStrategy = 0
 	StartTime = time.Now()
 }
 
@@ -30,6 +31,8 @@ type Settings struct {
 	PreloadBufferSize int64 // in byte, buffer for preload
 
 	RetrackersMode int //0 - don`t add, 1 - add retrackers, 2 - remove retrackers
+
+	ChooseStrategy int //0 - default speed strategy (balanced), 1 - fast, 2 - slow (fuzzing)
 
 	//BT Config
 	EnableIPv6         bool
@@ -46,7 +49,7 @@ type Settings struct {
 	ConnectionsLimit   int
 	DhtConnectionLimit int // 0 - inf
 	PeersListenPort    int
-
+	
 	TorrentDisconnectTimeout int // in seconds
 }
 

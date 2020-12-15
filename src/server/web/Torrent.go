@@ -346,7 +346,7 @@ func preload(hashHex, fileLink string, size int64) *echo.HTTPError {
 			if err != nil || torrDb == nil {
 				return echo.NewHTTPError(http.StatusBadRequest, "Torrent not found: "+hashHex)
 			}
-			m, err := metainfo.ParseMagnetURI(torrDb.Magnet)
+			m, err := metainfo.ParseMagnetUri(torrDb.Magnet)
 			if err != nil {
 				return echo.NewHTTPError(http.StatusBadRequest, "Error parser magnet in db: "+hashHex)
 			}
@@ -618,7 +618,7 @@ func torrentView(c echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, "Torrent not found: "+hashHex)
 		}
 
-		m, err := metainfo.ParseMagnetURI(torrDb.Magnet)
+		m, err := metainfo.ParseMagnetUri(torrDb.Magnet)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, "Error parser magnet in db: "+hashHex)
 		}
@@ -667,7 +667,7 @@ func toTorrentDB(t *torr.Torrent) *settings.Torrent {
 
 func getTorrentJS(tor *settings.Torrent) (*TorrentJsonResponse, error) {
 	js := new(TorrentJsonResponse)
-	mag, err := metainfo.ParseMagnetURI(tor.Magnet)
+	mag, err := metainfo.ParseMagnetUri(tor.Magnet)
 	js.Name = tor.Name
 	if err == nil && len(tor.Name) < len(mag.DisplayName) {
 		js.Name = mag.DisplayName

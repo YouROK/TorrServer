@@ -102,6 +102,17 @@ var settingsPage = `
                 </select>
             </div>
 		<br>
+		    <div class="input-group">
+                <div class="input-group-prepend">
+                    <div class="input-group-text">Стратегия загрузки</div>
+                </div>
+                <select id="ChooseStrategy" class="form-control">
+                    <option value="0">По умолчанию</option>
+                    <option value="1">Fastest</option>
+                    <option value="2">Fuzzing</option>
+                </select>
+            </div>
+		<br>
             <div class="input-group">
                 <div class="input-group-prepend">
                     <div class="input-group-text">Порт для входящих торрент подключений</div>
@@ -177,6 +188,7 @@ var settingsPage = `
 			data.DisableUpload = $('#DisableUpload').prop('checked');
 			data.EnableDebug = $('#EnableDebug').prop('checked');
 			data.Encryption = Number($('#Encryption').val());
+			data.ChooseStrategy = Number($('#ChooseStrategy').val());
  
 			data.ConnectionsLimit = Number($('#ConnectionsLimit').val());
 			data.DhtConnectionLimit = Number($('#DhtConnectionLimit').val());
@@ -211,7 +223,8 @@ var settingsPage = `
 					$('#DisableDHT').prop('checked', data.DisableDHT);
 					$('#DisableUpload').prop('checked', data.DisableUpload);
 					$('#Encryption').val(data.Encryption);
-         
+					$('#ChooseStrategy').val(data.ChooseStrategy);
+
          			$('#ConnectionsLimit').val(data.ConnectionsLimit);
          			$('#DhtConnectionLimit').val(data.DhtConnectionLimit);
          
