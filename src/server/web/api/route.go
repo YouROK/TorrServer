@@ -25,6 +25,9 @@ func SetupRoute(route *gin.Engine) {
 
 	route.POST("/cache", cache)
 
+	route.HEAD("/stream", stream)
+	route.HEAD("/stream/*fname", stream)
+
 	route.GET("/stream", stream)
 	route.GET("/stream/*fname", stream)
 
