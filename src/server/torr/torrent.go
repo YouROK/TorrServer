@@ -1,7 +1,6 @@
 package torr
 
 import (
-	"io"
 	"sort"
 	"sync"
 	"time"
@@ -10,10 +9,9 @@ import (
 	"server/settings"
 	"server/torr/state"
 	cacheSt "server/torr/storage/state"
+	"server/torr/storage/torrstor"
 	"server/torr/utils"
 	utils2 "server/utils"
-
-	"server/torr/storage/torrstor"
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
@@ -219,7 +217,7 @@ func (t *Torrent) NewReader(file *torrent.File) *torrstor.Reader {
 }
 
 func (t *Torrent) CloseReader(reader *torrstor.Reader) {
-	reader.Close()
+	t.cache.CloseReader(reader)
 	t.expiredTime = time.Now().Add(time.Second * time.Duration(settings.BTsets.TorrentDisconnectTimeout))
 }
 
@@ -231,9 +229,17 @@ func (t *Torrent) Preload(index int, size int64) {
 	if size < 0 {
 		return
 	}
+	if size == 0 {
+		size = settings.BTsets.PreloadBufferSize
+	}
+	if size == 0 {
+		return
+	}
 
 	if t.Stat == state.TorrentGettingInfo {
-		t.WaitInfo()
+		if !t.WaitInfo() {
+			return
+		}
 		// wait change status
 		time.Sleep(100 * time.Millisecond)
 	}
@@ -244,13 +250,6 @@ func (t *Torrent) Preload(index int, size int64) {
 		return
 	}
 
-	if size == 0 {
-		size = settings.BTsets.PreloadBufferSize
-	}
-	if size == 0 {
-		t.muTorrent.Unlock()
-		return
-	}
 	t.Stat = state.TorrentPreload
 	t.muTorrent.Unlock()
 
@@ -265,93 +264,21 @@ func (t *Torrent) Preload(index int, size int64) {
 		file = t.Files()[0]
 	}
 
-	readerStart := file.NewReader()
-	if readerStart == nil {
-		return
+	startPiece := file.Offset() / t.Info().PieceLength
+	endPiece := (file.Offset() + size) / t.Info().PieceLength
+	for i := startPiece; i < endPiece; i++ {
+		t.Torrent.Piece(int(i)).SetPriority(torrent.PiecePriorityNormal)
 	}
-	defer func() {
-		readerStart.Close()
-		t.expiredTime = time.Now().Add(time.Minute * 5)
-	}()
-	readerEnd := file.NewReader()
-	if readerEnd == nil {
-		return
-	}
-	defer func() {
-		readerEnd.Close()
-	}()
 
-	readerStart.SetReadahead(0)
-	readerEnd.SetReadahead(0)
+	endPiece = (file.Offset() + file.Length() - 1024) / t.Info().PieceLength
+	t.Torrent.Piece(int(endPiece)).SetPriority(torrent.PiecePriorityNormal)
 
-	if size > file.Length() {
-		size = file.Length()
-	}
-	/// preload from start
-	go func() {
-		defer func() {
-			t.Stat = state.TorrentWorking
-		}()
-		offset := int64(0)
-		end := size - (2 * t.Info().PieceLength)
-		if end < 0 {
-			end = size
-		}
-		buf := make([]byte, 1024)
-		readerStart.Seek(offset, io.SeekStart)
-		for offset < end {
-			off, err := readerStart.Read(buf)
-			if err != nil {
-				if err != io.EOF {
-					log.TLogln("Error preload:", err)
-				}
-				break
-			}
-			offset += int64(off)
-		}
-	}()
-	/// preload from end -2 pieces
-	go func() {
-		offset := file.Length() - (2 * t.Info().PieceLength)
-		end := file.Length() - 1024
-		if offset < 0 || end < 0 {
-			return
-		}
-		buf := make([]byte, 1024)
-		readerEnd.Seek(offset, io.SeekStart)
-		for offset < end {
-			off, err := readerEnd.Read(buf)
-			if err != nil {
-				if err != io.EOF {
-					log.TLogln("Error preload:", err)
-				}
-				break
-			}
-			offset += int64(off)
-		}
-	}()
-	t.PreloadSize = size
-	var lastSize int64 = 0
-	errCount := 0
-	for t.Stat == state.TorrentPreload {
-		t.expiredTime = time.Now().Add(time.Minute * 5)
+	for t.PreloadedBytes < size {
 		t.PreloadedBytes = t.Torrent.BytesCompleted()
 		log.TLogln("Preload:", file.Torrent().InfoHash().HexString(), utils2.Format(float64(t.PreloadedBytes)), "/", utils2.Format(float64(t.PreloadSize)), "Speed:", utils2.Format(t.DownloadSpeed), "Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
-		if t.PreloadedBytes >= t.PreloadSize {
-			return
-		}
-
-		if lastSize == t.PreloadedBytes {
-			errCount++
-		} else {
-			lastSize = t.PreloadedBytes
-			errCount = 0
-		}
-		if errCount > 120 {
-			return
-		}
-		time.Sleep(time.Second)
+		time.Sleep(time.Millisecond * 500)
 	}
+	log.TLogln("End preload:", file.Torrent().InfoHash().HexString(), "Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
 }
 
 func (t *Torrent) drop() {
@@ -365,12 +292,12 @@ func (t *Torrent) drop() {
 
 func (t *Torrent) Close() {
 	t.Stat = state.TorrentClosed
-	t.bt.mu.Lock()
-	defer t.bt.mu.Unlock()
 
+	t.bt.mu.Lock()
 	if _, ok := t.bt.torrents[t.Hash()]; ok {
 		delete(t.bt.torrents, t.Hash())
 	}
+	t.bt.mu.Unlock()
 
 	t.drop()
 }
