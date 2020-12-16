@@ -236,6 +236,8 @@ func (t *Torrent) Preload(index int, size int64) {
 		return
 	}
 
+	t.PreloadSize = size
+
 	if t.Stat == state.TorrentGettingInfo {
 		if !t.WaitInfo() {
 			return
@@ -263,21 +265,30 @@ func (t *Torrent) Preload(index int, size int64) {
 	if file == nil {
 		file = t.Files()[0]
 	}
-
-	startPiece := file.Offset() / t.Info().PieceLength
-	endPiece := (file.Offset() + size) / t.Info().PieceLength
+	pieceLength := t.Info().PieceLength
+	startPiece := file.Offset() / pieceLength
+	endPiece := int64(float32(file.Offset()+size)/float32(pieceLength) + 0.5)
 	for i := startPiece; i < endPiece; i++ {
 		t.Torrent.Piece(int(i)).SetPriority(torrent.PiecePriorityNormal)
 	}
 
-	endPiece = (file.Offset() + file.Length() - 1024) / t.Info().PieceLength
-	t.Torrent.Piece(int(endPiece)).SetPriority(torrent.PiecePriorityNormal)
+	endedPiece := (file.Offset() + file.Length() - 1024) / t.Info().PieceLength
+	t.Torrent.Piece(int(endedPiece)).SetPriority(torrent.PiecePriorityNormal)
 
-	for t.PreloadedBytes < size {
+	for t.PreloadedBytes < size-pieceLength {
+		t.muTorrent.Lock()
+		if t.Torrent == nil {
+			return
+		}
 		t.PreloadedBytes = t.Torrent.BytesCompleted()
+		t.muTorrent.Unlock()
 		log.TLogln("Preload:", file.Torrent().InfoHash().HexString(), utils2.Format(float64(t.PreloadedBytes)), "/", utils2.Format(float64(t.PreloadSize)), "Speed:", utils2.Format(t.DownloadSpeed), "Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
 		time.Sleep(time.Millisecond * 500)
 	}
+	for i := startPiece; i < endPiece; i++ {
+		t.Torrent.Piece(int(i)).SetPriority(torrent.PiecePriorityNone)
+	}
+	t.Torrent.Piece(int(endedPiece)).SetPriority(torrent.PiecePriorityNone)
 	log.TLogln("End preload:", file.Torrent().InfoHash().HexString(), "Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
 }
 
