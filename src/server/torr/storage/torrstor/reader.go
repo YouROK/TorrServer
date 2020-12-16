@@ -23,7 +23,7 @@ type Reader struct {
 	muPreload    sync.Mutex
 }
 
-func NewReader(file *torrent.File, cache *Cache) *Reader {
+func newReader(file *torrent.File, cache *Cache) *Reader {
 	r := new(Reader)
 	r.file = file
 	r.Reader = file.NewReader()
@@ -89,16 +89,11 @@ func (r *Reader) Close() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.isClosed = true
-
-	r.cache.muReaders.Lock()
-	delete(r.cache.readers, r)
-	r.cache.muReaders.Unlock()
-
 	return r.Reader.Close()
 }
 
 func (c *Cache) NewReader(file *torrent.File) *Reader {
-	return NewReader(file, c)
+	return newReader(file, c)
 }
 
 func (c *Cache) Readers() int {
@@ -111,4 +106,11 @@ func (c *Cache) Readers() int {
 		return 0
 	}
 	return len(c.readers)
+}
+
+func (c *Cache) CloseReader(r *Reader) {
+	r.cache.muReaders.Lock()
+	r.Close()
+	delete(r.cache.readers, r)
+	r.cache.muReaders.Unlock()
 }
