@@ -7,12 +7,18 @@ import (
 )
 
 type BTSets struct {
+	// Cache
 	CacheSize         int64 // in byte, def 200 mb
 	PreloadBufferSize int64 // in byte, buffer for preload
 
+	// Reader
+	ReaderPreload int // in percent, 32%-100%, [...S__X__E...] [S-E] not clean
+
+	// Storage
 	SaveOnDisk  bool   // save on disk?
 	ContentPath string // path to save content
 
+	// Torrent
 	RetrackersMode           int  // 0 - don`t add, 1 - add retrackers (def), 2 - remove retrackers 3 - replace retrackers
 	TorrentDisconnectTimeout int  // in seconds
 	EnableDebug              bool // print logs
@@ -45,6 +51,10 @@ func SetBTSets(sets *BTSets) {
 	if tdb.ReadOnly {
 		return
 	}
+
+	if sets.ReaderPreload < 32 {
+		sets.ReaderPreload = 32
+	}
 	BTsets = sets
 	buf, err := json.Marshal(BTsets)
 	if err != nil {
@@ -59,6 +69,9 @@ func loadBTSets() {
 	if len(buf) > 0 {
 		err := json.Unmarshal(buf, &BTsets)
 		if err == nil {
+			if BTsets.ReaderPreload < 32 {
+				BTsets.ReaderPreload = 32
+			}
 			return
 		}
 		log.TLogln("Error unmarshal btsets", err)
@@ -73,5 +86,6 @@ func loadBTSets() {
 	sets.DhtConnectionLimit = 500
 	sets.RetrackersMode = 1
 	sets.TorrentDisconnectTimeout = 30
+	sets.ReaderPreload = 70 // 70% preload
 	BTsets = sets
 }
