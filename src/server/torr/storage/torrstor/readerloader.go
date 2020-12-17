@@ -49,7 +49,7 @@ func (r *Reader) preload() {
 	}
 
 	for i := begin; i < end; i++ {
-		if i >= readerPiece && i <= readerPiece+rahPiece { // reader pieces
+		if i <= readerPiece+rahPiece { // reader pieces
 			continue
 		}
 		torr.Piece(i).SetPriority(torrent.PiecePriorityNormal)
