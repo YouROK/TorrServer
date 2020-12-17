@@ -1,7 +1,7 @@
 {
  "Name": "TorrServer",
  "Version": "1.1.77_7ST",
- "BuildDate": "15.12.2020",
+ "BuildDate": "17.12.2020",
  "Links": {
   "darwin-amd64": "https://github.com/trinity-aml/TorrServer/releases/download/1.1.77_7ST/TorrServer-darwin-amd64",
   "freebsd-amd64": "https://github.com/trinity-aml/TorrServer/releases/download/1.1.77_7ST/TorrServer-freebsd-amd64",

@@ -32,6 +32,7 @@ FAILURES=""
 SOURCE_FILE="dist/TorrServer"
 CURRENT_DIRECTORY=${PWD##*/}
 OUTPUT=${SOURCE_FILE:-$CURRENT_DIRECTORY} # if no src file given, use current dir name
+export LDFLAGS="'-s -w'"
 
 for PLATFORM in $PLATFORMS; do
   GOOS=${PLATFORM%/*}
@@ -39,9 +40,9 @@ for PLATFORM in $PLATFORMS; do
   BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}"
   if [[ "${GOOS}" == "windows" ]]; then BIN_FILENAME="${BIN_FILENAME}.exe"; fi
   if [[ "${GOOS}" == "linux" ]]; then
-    CMD="CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} ${GOBIN} build -o ${BIN_FILENAME} main"
+    CMD="CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} ${GOBIN} build -ldflags="${LDFLAGS}" -o ${BIN_FILENAME} main"
   else
-    CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GOBIN} build -o ${BIN_FILENAME} main"
+    CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GOBIN} build -ldflags="${LDFLAGS}" -o ${BIN_FILENAME} main"
   fi
   echo "${CMD}"
   eval $CMD || FAILURES="${FAILURES} ${PLATFORM}"
@@ -49,7 +50,7 @@ done
 
 # ARM builds
 if [[ $PLATFORMS_ARM == *"linux"* ]]; then
-  CMD="GOOS=linux GOARCH=arm64 ${GOBIN} build -o ${OUTPUT}-linux-arm64 main"
+  CMD="GOOS=linux GOARCH=arm64 ${GOBIN} build -ldflags="${LDFLAGS}" -o ${OUTPUT}-linux-arm64 main"
   echo "${CMD}"
   eval $CMD || FAILURES="${FAILURES} ${PLATFORM}"
 fi
@@ -59,7 +60,7 @@ for GOOS in $PLATFORMS_ARM; do
   # build for each ARM version
   for GOARM in 7 6 5; do
     BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}${GOARM}"
-    CMD="GOARM=${GOARM} GOOS=${GOOS} GOARCH=${GOARCH} ${GOBIN} build -o ${BIN_FILENAME} main"
+    CMD="GOARM=${GOARM} GOOS=${GOOS} GOARCH=${GOARCH} ${GOBIN} build -ldflags="${LDFLAGS}" -o ${BIN_FILENAME} main"
     echo "${CMD}"
     eval "${CMD}" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
   done
