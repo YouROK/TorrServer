@@ -83,9 +83,6 @@ func (c *Cache) Close() error {
 	c.bufferPull = nil
 
 	c.muReaders.Lock()
-	for reader, _ := range c.readers {
-		reader.Close()
-	}
 	c.readers = nil
 	c.muReaders.Unlock()
 
