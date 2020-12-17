@@ -55,6 +55,9 @@ func SetBTSets(sets *BTSets) {
 	if sets.ReaderPreload < 32 {
 		sets.ReaderPreload = 32
 	}
+	if sets.ReaderPreload > 100 {
+		sets.ReaderPreload = 100
+	}
 	BTsets = sets
 	buf, err := json.Marshal(BTsets)
 	if err != nil {
