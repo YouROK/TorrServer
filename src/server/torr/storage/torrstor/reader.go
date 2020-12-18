@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/anacrolix/torrent"
+	"server/log"
 )
 
 type Reader struct {
@@ -60,13 +61,18 @@ func (r *Reader) Seek(offset int64, whence int) (n int64, err error) {
 func (r *Reader) Read(p []byte) (n int, err error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	err = io.EOF
 	if r.isClosed {
-		return 0, io.EOF
+		return
 	}
-	n, err = r.Reader.Read(p)
-	r.offset += int64(n)
-	if !r.isPreload {
-		go r.preload()
+	if r.file.Torrent() != nil && r.file.Torrent().Info() != nil {
+		n, err = r.Reader.Read(p)
+		r.offset += int64(n)
+		if !r.isPreload {
+			go r.preload()
+		}
+	} else {
+		log.TLogln("Torrent closed and readed")
 	}
 	return
 }
@@ -86,11 +92,13 @@ func (r *Reader) Readahead() int64 {
 	return r.readahead
 }
 
-func (r *Reader) Close() error {
+func (r *Reader) Close() {
+	// file reader close in gotorrent
+	// this struct close in cache
+	// TODO провверить как будут закрываться ридеры
 	r.mu.Lock()
-	defer r.mu.Unlock()
 	r.isClosed = true
-	return r.Reader.Close()
+	r.mu.Unlock()
 }
 
 func (c *Cache) NewReader(file *torrent.File) *Reader {
