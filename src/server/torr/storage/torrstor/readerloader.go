@@ -5,9 +5,13 @@ import (
 	"server/settings"
 )
 
-func (r *Reader) getPiecesRange() (int, int) {
-	startOff, endOff := r.getReaderRange()
-	return r.getPieceNum(startOff), r.getPieceNum(endOff)
+type Range struct {
+	Start, End int
+}
+
+func (r *Reader) getPiecesRange() Range {
+	startOff, endOff := r.getOffsetRange()
+	return Range{r.getPieceNum(startOff), r.getPieceNum(endOff)}
 }
 
 func (r *Reader) getReaderPiece() int {
@@ -19,7 +23,7 @@ func (r *Reader) getPieceNum(offset int64) int {
 	return int((offset + r.file.Offset()) / r.cache.pieceLength)
 }
 
-func (r *Reader) getReaderRange() (int64, int64) {
+func (r *Reader) getOffsetRange() (int64, int64) {
 	prc := int64(settings.BTsets.ReaderReadAHead)
 	beginOffset := r.offset - r.cache.capacity*(100-prc)/100
 	endOffset := r.offset + r.cache.capacity*prc/100
@@ -36,23 +40,14 @@ func (r *Reader) getReaderRange() (int64, int64) {
 
 func (r *Reader) preload() {
 	torr := r.file.Torrent()
-	begin, end := r.getPiecesRange()
+	rrange := r.getPiecesRange()
 	rahPiece := int(r.readahead / torr.Info().PieceLength)
 	readerPiece := r.getReaderPiece()
 
-	for i := r.lastRangeBegin; i < r.lastRangeEnd; i++ {
-		if i >= readerPiece && i <= readerPiece+rahPiece { // reader pieces
-			continue
+	// from reader readahead to end of range
+	for i := readerPiece + rahPiece; i < rrange.End; i++ {
+		if torr.Piece(i).State().Priority == torrent.PiecePriorityNone {
+			torr.Piece(i).SetPriority(torrent.PiecePriorityNormal)
 		}
-		piece := torr.Piece(i)
-		piece.SetPriority(torrent.PiecePriorityNone)
 	}
-
-	for i := begin; i < end; i++ {
-		if i <= readerPiece+rahPiece { // reader pieces
-			continue
-		}
-		torr.Piece(i).SetPriority(torrent.PiecePriorityNormal)
-	}
-	r.lastRangeBegin, r.lastRangeEnd = begin, end
 }

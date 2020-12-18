@@ -96,6 +96,7 @@ func (t *Torrent) WaitInfo() bool {
 	select {
 	case <-t.Torrent.GotInfo():
 		t.cache = t.bt.storage.GetCache(t.Hash())
+		t.cache.SetTorrent(t.Torrent)
 		return true
 	case <-t.closed:
 		return false

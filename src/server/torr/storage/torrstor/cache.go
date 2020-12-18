@@ -4,6 +4,7 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/anacrolix/torrent"
 	"server/log"
 	"server/settings"
 	"server/torr/storage/state"
@@ -32,6 +33,7 @@ type Cache struct {
 
 	isRemove bool
 	muRemove sync.Mutex
+	torrent  *torrent.Torrent
 }
 
 func NewCache(capacity int64, storage *Storage) *Cache {
@@ -65,6 +67,10 @@ func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
 			cache:  c,
 		}
 	}
+}
+
+func (c *Cache) SetTorrent(torr *torrent.Torrent) {
+	c.torrent = torr
 }
 
 func (c *Cache) Piece(m metainfo.Piece) storage.PieceImpl {
@@ -130,9 +136,9 @@ func (c *Cache) GetState() *state.CacheState {
 
 	c.muReaders.Lock()
 	for r, _ := range c.readers {
-		start, end := r.getPiecesRange()
-		if p, ok := c.pieces[start]; ok {
-			stats[start] = state.ItemState{
+		rrange := r.getPiecesRange()
+		if p, ok := c.pieces[rrange.Start]; ok {
+			stats[rrange.Start] = state.ItemState{
 				Id:         p.Id,
 				Size:       p.Size,
 				Length:     p.Length,
@@ -140,16 +146,16 @@ func (c *Cache) GetState() *state.CacheState {
 				ReaderType: 1,
 			}
 		} else {
-			stats[start] = state.ItemState{
-				Id:         start,
+			stats[rrange.Start] = state.ItemState{
+				Id:         rrange.Start,
 				Size:       0,
 				Length:     c.pieceLength,
 				Completed:  false,
 				ReaderType: 1,
 			}
 		}
-		if p, ok := c.pieces[end]; ok {
-			stats[end] = state.ItemState{
+		if p, ok := c.pieces[rrange.End]; ok {
+			stats[rrange.End] = state.ItemState{
 				Id:         p.Id,
 				Size:       p.Size,
 				Length:     p.Length,
@@ -157,8 +163,8 @@ func (c *Cache) GetState() *state.CacheState {
 				ReaderType: 2,
 			}
 		} else {
-			stats[end] = state.ItemState{
-				Id:         end,
+			stats[rrange.End] = state.ItemState{
+				Id:         rrange.End,
 				Size:       0,
 				Length:     c.pieceLength,
 				Completed:  false,
@@ -207,6 +213,11 @@ func (c *Cache) cleanPieces() {
 	c.muRemove.Unlock()
 
 	remPieces := c.getRemPieces()
+	for _, p := range remPieces {
+		if c.torrent.Piece(p.Id).State().Priority == torrent.PiecePriorityNone {
+			c.torrent.Piece(p.Id).SetPriority(torrent.PiecePriorityNormal)
+		}
+	}
 	if c.filled > c.capacity {
 		rems := (c.filled - c.capacity) / c.pieceLength
 		for _, p := range remPieces {
@@ -226,14 +237,20 @@ func (c *Cache) getRemPieces() []*Piece {
 	for id, p := range c.pieces {
 		if p.Size > 0 {
 			fill += p.Size
+
+			ranges := make([]Range, 0)
 			c.muReaders.Lock()
 			for r, _ := range c.readers {
-				start, end := r.getPiecesRange()
-				if id < start || id > end {
+				ranges = append(ranges, r.getPiecesRange())
+			}
+			c.muReaders.Unlock()
+			ranges = mergeRange(ranges)
+
+			for _, rr := range ranges {
+				if id < rr.Start || id > rr.End {
 					piecesRemove = append(piecesRemove, p)
 				}
 			}
-			c.muReaders.Unlock()
 		}
 	}
 
@@ -243,4 +260,35 @@ func (c *Cache) getRemPieces() []*Piece {
 
 	c.filled = fill
 	return piecesRemove
+}
+
+func mergeRange(ranges []Range) []Range {
+	if len(ranges) <= 1 {
+		return ranges
+	}
+	// copy ranges
+	merged := append([]Range(nil), ranges...)
+
+	sort.Slice(merged, func(i, j int) bool {
+		if merged[i].Start < merged[j].Start {
+			return true
+		}
+		if merged[i].Start == merged[j].Start && merged[i].End < merged[j].End {
+			return true
+		}
+		return false
+	})
+
+	j := 0
+	for i := 1; i < len(merged); i++ {
+		if merged[j].End >= merged[i].Start {
+			if merged[j].End < merged[i].End {
+				merged[j].End = merged[i].End
+			}
+		} else {
+			j++
+			merged[j] = merged[i]
+		}
+	}
+	return merged[:j+1]
 }

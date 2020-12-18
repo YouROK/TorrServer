@@ -57,10 +57,8 @@ func (s *Storage) Close() error {
 func (s *Storage) GetCache(hash metainfo.Hash) *Cache {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	for _, c := range s.caches {
-		if c.hash == hash {
-			return c
-		}
+	if cache, ok := s.caches[hash]; ok {
+		return cache
 	}
 	return nil
 }
