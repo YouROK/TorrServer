@@ -213,11 +213,6 @@ func (c *Cache) cleanPieces() {
 	c.muRemove.Unlock()
 
 	remPieces := c.getRemPieces()
-	for _, p := range remPieces {
-		if c.torrent.Piece(p.Id).State().Priority == torrent.PiecePriorityNone {
-			c.torrent.Piece(p.Id).SetPriority(torrent.PiecePriorityNormal)
-		}
-	}
 	if c.filled > c.capacity {
 		rems := (c.filled - c.capacity) / c.pieceLength
 		for _, p := range remPieces {
@@ -234,22 +229,30 @@ func (c *Cache) getRemPieces() []*Piece {
 	piecesRemove := make([]*Piece, 0)
 	fill := int64(0)
 
+	ranges := make([]Range, 0)
+	c.muReaders.Lock()
+	for r, _ := range c.readers {
+		ranges = append(ranges, r.getPiecesRange())
+	}
+	c.muReaders.Unlock()
+	ranges = mergeRange(ranges)
+
 	for id, p := range c.pieces {
-		if p.Size > 0 {
-			fill += p.Size
-
-			ranges := make([]Range, 0)
-			c.muReaders.Lock()
-			for r, _ := range c.readers {
-				ranges = append(ranges, r.getPiecesRange())
-			}
-			c.muReaders.Unlock()
-			ranges = mergeRange(ranges)
-
+		if len(ranges) > 0 {
 			for _, rr := range ranges {
 				if id < rr.Start || id > rr.End {
-					piecesRemove = append(piecesRemove, p)
+					if c.torrent.Piece(id).State().Priority != torrent.PiecePriorityNone {
+						c.torrent.Piece(id).SetPriority(torrent.PiecePriorityNone)
+					}
+					if p.Size > 0 {
+						fill += p.Size
+						piecesRemove = append(piecesRemove, p)
+					}
 				}
+			}
+		} else {
+			if c.torrent.Piece(id).State().Priority != torrent.PiecePriorityNone {
+				c.torrent.Piece(id).SetPriority(torrent.PiecePriorityNone)
 			}
 		}
 	}

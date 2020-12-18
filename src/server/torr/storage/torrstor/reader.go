@@ -94,6 +94,7 @@ func (r *Reader) Close() {
 	r.mu.Lock()
 	r.isClosed = true
 	r.mu.Unlock()
+	go r.cache.getRemPieces()
 }
 
 func (c *Cache) NewReader(file *torrent.File) *Reader {
