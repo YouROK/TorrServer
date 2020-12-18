@@ -92,7 +92,7 @@ func stream(c *gin.Context) {
 	}
 	// preload torrent
 	if preload {
-		tor.Preload(index, 0)
+		torr.Preload(tor, index)
 	}
 	// return stat if query
 	if stat {

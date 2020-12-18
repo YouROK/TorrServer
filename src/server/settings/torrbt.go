@@ -8,11 +8,9 @@ import (
 
 type BTSets struct {
 	// Cache
-	CacheSize         int64 // in byte, def 200 mb
-	PreloadBufferSize int64 // in byte, buffer for preload
-
-	// Reader
-	ReaderPreload int // in percent, 5%-100%, [...S__X__E...] [S-E] not clean
+	CacheSize       int64 // in byte, def 200 mb
+	PreloadBuffer   bool
+	ReaderReadAHead int // in percent, 5%-100%, [...S__X__E...] [S-E] not clean
 
 	// Storage
 	SaveOnDisk  bool   // save on disk?
@@ -52,11 +50,11 @@ func SetBTSets(sets *BTSets) {
 		return
 	}
 
-	if sets.ReaderPreload < 5 {
-		sets.ReaderPreload = 5
+	if sets.ReaderReadAHead < 5 {
+		sets.ReaderReadAHead = 5
 	}
-	if sets.ReaderPreload > 100 {
-		sets.ReaderPreload = 100
+	if sets.ReaderReadAHead > 100 {
+		sets.ReaderReadAHead = 100
 	}
 	BTsets = sets
 	buf, err := json.Marshal(BTsets)
@@ -72,8 +70,8 @@ func loadBTSets() {
 	if len(buf) > 0 {
 		err := json.Unmarshal(buf, &BTsets)
 		if err == nil {
-			if BTsets.ReaderPreload < 5 {
-				BTsets.ReaderPreload = 5
+			if BTsets.ReaderReadAHead < 5 {
+				BTsets.ReaderReadAHead = 5
 			}
 			return
 		}
@@ -84,11 +82,11 @@ func loadBTSets() {
 	sets.EnableDebug = false
 	sets.DisableUTP = true
 	sets.CacheSize = 200 * 1024 * 1024 // 200mb
-	sets.PreloadBufferSize = 20 * 1024 * 1024
+	sets.PreloadBuffer = true
 	sets.ConnectionsLimit = 20
 	sets.DhtConnectionLimit = 500
 	sets.RetrackersMode = 1
 	sets.TorrentDisconnectTimeout = 30
-	sets.ReaderPreload = 70 // 70% preload
+	sets.ReaderReadAHead = 70 // 70% preload
 	BTsets = sets
 }

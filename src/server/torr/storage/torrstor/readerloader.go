@@ -20,7 +20,7 @@ func (r *Reader) getPieceNum(offset int64) int {
 }
 
 func (r *Reader) getReaderRange() (int64, int64) {
-	prc := int64(settings.BTsets.ReaderPreload)
+	prc := int64(settings.BTsets.ReaderReadAHead)
 	beginOffset := r.offset - r.cache.capacity*(100-prc)/100
 	endOffset := r.offset + r.cache.capacity*prc/100
 

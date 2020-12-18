@@ -6,11 +6,10 @@ import (
 	"sort"
 	"time"
 
-	"server/log"
-	sets "server/settings"
-
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
+	"server/log"
+	sets "server/settings"
 )
 
 var (
@@ -127,4 +126,17 @@ func Shutdown() {
 
 func WriteStatus(w io.Writer) {
 	bts.client.WriteStatus(w)
+}
+
+func Preload(torr *Torrent, index int) {
+	if !sets.BTsets.PreloadBuffer {
+		size := int64(20 * 1024 * 1024)
+		if size > sets.BTsets.CacheSize {
+			size = sets.BTsets.CacheSize
+		}
+		torr.Preload(index, size)
+	} else {
+		size := int64(float32(sets.BTsets.ReaderReadAHead) / 100.0 * float32(sets.BTsets.CacheSize))
+		torr.Preload(index, size)
+	}
 }
