@@ -29,7 +29,7 @@ go run build_web.go
 
 $GOBIN version
 
-export LDFLAGS="'-s -w'"
+LDFLAGS="'-s -w'"
 SCRIPT_NAME=$(basename "$0")
 FAILURES=""
 SOURCE_FILE="dist/TorrServer"
