@@ -3,7 +3,9 @@ package web
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"server/log"
 	"server/torr"
+	"server/version"
 	"server/web/api"
 	"server/web/pages"
 )
@@ -14,7 +16,7 @@ var (
 )
 
 func Start(port string) {
-
+	log.TLogln("Start TorrServer", version.Version)
 	BTS.Connect()
 
 	route := gin.New()
