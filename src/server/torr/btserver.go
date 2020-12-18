@@ -87,7 +87,7 @@ func (bt *BTServer) configure() {
 
 	// Encryption/Obfuscation
 	bt.config.HeaderObfuscationPolicy = torrent.HeaderObfuscationPolicy{
-		RequirePreferred: false,
+		RequirePreferred: settings.BTsets.ForceEncrypt,
 		Preferred:        true,
 	}
 

@@ -17,6 +17,7 @@ type BTSets struct {
 	ContentPath string // path to save content
 
 	// Torrent
+	ForceEncrypt             bool
 	RetrackersMode           int  // 0 - don`t add, 1 - add retrackers (def), 2 - remove retrackers 3 - replace retrackers
 	TorrentDisconnectTimeout int  // in seconds
 	EnableDebug              bool // print logs
