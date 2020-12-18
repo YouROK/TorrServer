@@ -12,7 +12,7 @@ type BTSets struct {
 	PreloadBufferSize int64 // in byte, buffer for preload
 
 	// Reader
-	ReaderPreload int // in percent, 32%-100%, [...S__X__E...] [S-E] not clean
+	ReaderPreload int // in percent, 5%-100%, [...S__X__E...] [S-E] not clean
 
 	// Storage
 	SaveOnDisk  bool   // save on disk?
@@ -52,8 +52,8 @@ func SetBTSets(sets *BTSets) {
 		return
 	}
 
-	if sets.ReaderPreload < 32 {
-		sets.ReaderPreload = 32
+	if sets.ReaderPreload < 5 {
+		sets.ReaderPreload = 5
 	}
 	if sets.ReaderPreload > 100 {
 		sets.ReaderPreload = 100
@@ -72,8 +72,8 @@ func loadBTSets() {
 	if len(buf) > 0 {
 		err := json.Unmarshal(buf, &BTsets)
 		if err == nil {
-			if BTsets.ReaderPreload < 32 {
-				BTsets.ReaderPreload = 32
+			if BTsets.ReaderPreload < 5 {
+				BTsets.ReaderPreload = 5
 			}
 			return
 		}
