@@ -153,6 +153,8 @@ func (t *Torrent) progressEvent() {
 
 		t.BytesWrittenData = st.BytesWrittenData.Int64()
 		t.BytesReadUsefulData = st.BytesReadUsefulData.Int64()
+
+		t.PreloadedBytes = t.Torrent.BytesCompleted()
 	} else {
 		t.DownloadSpeed = 0
 		t.UploadSpeed = 0
@@ -226,16 +228,9 @@ func (t *Torrent) GetCache() *torrstor.Cache {
 }
 
 func (t *Torrent) Preload(index int, size int64) {
-	if size < 0 {
+	if size <= 0 {
 		return
 	}
-	if size == 0 {
-		size = settings.BTsets.PreloadBufferSize
-	}
-	if size == 0 {
-		return
-	}
-
 	t.PreloadSize = size
 
 	if t.Stat == state.TorrentGettingInfo {
@@ -267,7 +262,7 @@ func (t *Torrent) Preload(index int, size int64) {
 	}
 	pieceLength := t.Info().PieceLength
 	startPiece := file.Offset() / pieceLength
-	endPiece := int64(float32(file.Offset()+size)/float32(pieceLength) + 0.5)
+	endPiece := (file.Offset() + size) / pieceLength
 	for i := startPiece; i < endPiece; i++ {
 		t.Torrent.Piece(int(i)).SetPriority(torrent.PiecePriorityNormal)
 	}
