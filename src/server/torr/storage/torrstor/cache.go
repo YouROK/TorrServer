@@ -238,21 +238,23 @@ func (c *Cache) getRemPieces() []*Piece {
 	ranges = mergeRange(ranges)
 
 	for id, p := range c.pieces {
+		if p.Size > 0 {
+			fill += p.Size
+		}
 		if len(ranges) > 0 {
-			for _, rr := range ranges {
-				if id < rr.Start || id > rr.End {
-					if c.torrent.Piece(id).State().Priority != torrent.PiecePriorityNone {
-						c.torrent.Piece(id).SetPriority(torrent.PiecePriorityNone)
-					}
-					if p.Size > 0 {
-						fill += p.Size
-						piecesRemove = append(piecesRemove, p)
-					}
+			if !inRanges(ranges, id) {
+				piece := c.torrent.Piece(id)
+				if piece.State().Priority != torrent.PiecePriorityNone {
+					piece.SetPriority(torrent.PiecePriorityNone)
+				}
+				if p.Size > 0 {
+					piecesRemove = append(piecesRemove, p)
 				}
 			}
 		} else {
-			if c.torrent.Piece(id).State().Priority != torrent.PiecePriorityNone {
-				c.torrent.Piece(id).SetPriority(torrent.PiecePriorityNone)
+			piece := c.torrent.Piece(id)
+			if piece.State().Priority != torrent.PiecePriorityNone {
+				piece.SetPriority(torrent.PiecePriorityNone)
 			}
 		}
 	}
@@ -263,35 +265,4 @@ func (c *Cache) getRemPieces() []*Piece {
 
 	c.filled = fill
 	return piecesRemove
-}
-
-func mergeRange(ranges []Range) []Range {
-	if len(ranges) <= 1 {
-		return ranges
-	}
-	// copy ranges
-	merged := append([]Range(nil), ranges...)
-
-	sort.Slice(merged, func(i, j int) bool {
-		if merged[i].Start < merged[j].Start {
-			return true
-		}
-		if merged[i].Start == merged[j].Start && merged[i].End < merged[j].End {
-			return true
-		}
-		return false
-	})
-
-	j := 0
-	for i := 1; i < len(merged); i++ {
-		if merged[j].End >= merged[i].Start {
-			if merged[j].End < merged[i].End {
-				merged[j].End = merged[i].End
-			}
-		} else {
-			j++
-			merged[j] = merged[i]
-		}
-	}
-	return merged[:j+1]
 }

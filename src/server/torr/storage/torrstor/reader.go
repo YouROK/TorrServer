@@ -48,7 +48,7 @@ func (r *Reader) Seek(offset int64, whence int) (n int64, err error) {
 	case io.SeekCurrent:
 		r.offset += offset
 	case io.SeekEnd:
-		r.offset = r.file.Length() - offset
+		r.offset = r.file.Length() + offset
 	}
 	n, err = r.Reader.Seek(offset, whence)
 	r.offset = n
@@ -93,6 +93,9 @@ func (r *Reader) Close() {
 	// TODO провверить как будут закрываться ридеры
 	r.mu.Lock()
 	r.isClosed = true
+	if len(r.file.Torrent().Files()) > 0 {
+		r.Reader.Close()
+	}
 	r.mu.Unlock()
 	go r.cache.getRemPieces()
 }

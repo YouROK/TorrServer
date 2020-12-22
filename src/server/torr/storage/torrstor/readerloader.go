@@ -5,10 +5,6 @@ import (
 	"server/settings"
 )
 
-type Range struct {
-	Start, End int
-}
-
 func (r *Reader) getPiecesRange() Range {
 	startOff, endOff := r.getOffsetRange()
 	return Range{r.getPieceNum(startOff), r.getPieceNum(endOff)}
