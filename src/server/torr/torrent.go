@@ -272,13 +272,16 @@ func (t *Torrent) Preload(index int, size int64) {
 	// Reader for not pieces break in cache without readers
 	readerStart := t.cache.NewReader(file)
 	readerStart.Read(make([]byte, 1))
-	defer t.cache.CloseReader(readerStart)
+	defer t.CloseReader(readerStart)
+
 	readerEnd := t.cache.NewReader(file)
 	readerEnd.Seek(-1024, io.SeekEnd)
 	readerEnd.Read(make([]byte, 1))
-	defer t.cache.CloseReader(readerEnd)
+	defer t.CloseReader(readerEnd)
+
 	pl := t.Info().PieceLength
 	lastStat := ""
+
 	for t.PreloadedBytes < size-pl {
 		t.muTorrent.Lock()
 		if t.Torrent == nil {
