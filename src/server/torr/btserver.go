@@ -46,6 +46,7 @@ func (bt *BTServer) Disconnect() {
 	defer bt.mu.Unlock()
 	if bt.client != nil {
 		bt.client.Close()
+		InitApiHelper(nil)
 		bt.client = nil
 		utils.FreeOSMemGC()
 	}

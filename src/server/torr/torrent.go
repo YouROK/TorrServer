@@ -1,6 +1,7 @@
 package torr
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"sort"
@@ -51,6 +52,10 @@ type Torrent struct {
 }
 
 func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
+	// TODO panic when settings sets
+	if bt == nil {
+		return nil, errors.New("BT client not connected")
+	}
 	switch settings.BTsets.RetrackersMode {
 	case 1:
 		spec.Trackers = append(spec.Trackers, [][]string{utils.GetDefTrackers()}...)
@@ -282,12 +287,12 @@ func (t *Torrent) Preload(index int, size int64) {
 		t.PreloadedBytes = t.Torrent.BytesCompleted()
 		t.muTorrent.Unlock()
 
-		stat := fmt.Sprint(file.Torrent().InfoHash().HexString(), utils2.Format(float64(t.PreloadedBytes)), "/", utils2.Format(float64(t.PreloadSize)), "Speed:", utils2.Format(t.DownloadSpeed), "Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
+		stat := fmt.Sprint(file.Torrent().InfoHash().HexString(), " ", utils2.Format(float64(t.PreloadedBytes)), "/", utils2.Format(float64(t.PreloadSize)), " Speed:", utils2.Format(t.DownloadSpeed), " Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
 		if stat != lastStat {
 			log.TLogln("Preload:", stat)
 			lastStat = stat
 		}
-		time.Sleep(time.Millisecond * 500)
+		time.Sleep(time.Millisecond * 1000)
 	}
 	log.TLogln("End preload:", file.Torrent().InfoHash().HexString(), "Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
 }
