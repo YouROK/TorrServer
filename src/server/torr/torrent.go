@@ -136,7 +136,6 @@ func (t *Torrent) watch() {
 		case <-t.progressTicker.C:
 			go t.progressEvent()
 		case <-t.closed:
-			t.Close()
 			return
 		}
 	}
