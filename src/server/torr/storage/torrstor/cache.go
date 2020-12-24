@@ -114,88 +114,42 @@ func (c *Cache) AdjustRA(readahead int64) {
 
 func (c *Cache) GetState() *state.CacheState {
 	cState := new(state.CacheState)
-	cState.Capacity = c.capacity
-	cState.PiecesLength = c.pieceLength
-	cState.PiecesCount = c.pieceCount
-	cState.Hash = c.hash.HexString()
 
-	stats := make(map[int]state.ItemState, 0)
+	piecesState := make(map[int]state.ItemState, 0)
 	var fill int64 = 0
 	for _, p := range c.pieces {
 		if p.Size > 0 {
 			fill += p.Length
-			stats[p.Id] = state.ItemState{
-				Id:         p.Id,
-				Size:       p.Size,
-				Length:     p.Length,
-				Completed:  p.complete,
-				ReaderType: 0,
+			piecesState[p.Id] = state.ItemState{
+				Id:        p.Id,
+				Size:      p.Size,
+				Length:    p.Length,
+				Completed: p.complete,
 			}
 		}
 	}
 
+	readersState := make([]*state.ReaderState, 0)
 	c.muReaders.Lock()
 	for r, _ := range c.readers {
-		rrange := r.getPiecesRange()
-		if p, ok := c.pieces[rrange.Start]; ok {
-			stats[rrange.Start] = state.ItemState{
-				Id:         p.Id,
-				Size:       p.Size,
-				Length:     p.Length,
-				Completed:  p.complete,
-				ReaderType: 1,
-			}
-		} else {
-			stats[rrange.Start] = state.ItemState{
-				Id:         rrange.Start,
-				Size:       0,
-				Length:     c.pieceLength,
-				Completed:  false,
-				ReaderType: 1,
-			}
-		}
-		if p, ok := c.pieces[rrange.End]; ok {
-			stats[rrange.End] = state.ItemState{
-				Id:         p.Id,
-				Size:       p.Size,
-				Length:     p.Length,
-				Completed:  p.complete,
-				ReaderType: 2,
-			}
-		} else {
-			stats[rrange.End] = state.ItemState{
-				Id:         rrange.End,
-				Size:       0,
-				Length:     c.pieceLength,
-				Completed:  false,
-				ReaderType: 2,
-			}
-		}
-
-		reader := r.getReaderPiece()
-		if p, ok := c.pieces[reader]; ok {
-			stats[reader] = state.ItemState{
-				Id:         p.Id,
-				Size:       p.Size,
-				Length:     p.Length,
-				Completed:  p.complete,
-				ReaderType: 3,
-			}
-		} else {
-			stats[reader] = state.ItemState{
-				Id:         reader,
-				Size:       0,
-				Length:     c.pieceLength,
-				Completed:  false,
-				ReaderType: 3,
-			}
-		}
+		rng := r.getPiecesRange()
+		pc := r.getReaderPiece()
+		readersState = append(readersState, &state.ReaderState{
+			Start:  rng.Start,
+			End:    rng.End,
+			Reader: pc,
+		})
 	}
 	c.muReaders.Unlock()
 
 	c.filled = fill
-	cState.Filled = c.filled
-	cState.Pieces = stats
+	cState.Capacity = c.capacity
+	cState.PiecesLength = c.pieceLength
+	cState.PiecesCount = c.pieceCount
+	cState.Hash = c.hash.HexString()
+	cState.Filled = fill
+	cState.Pieces = piecesState
+	cState.Readers = readersState
 	return cState
 }
 

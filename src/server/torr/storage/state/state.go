@@ -12,12 +12,18 @@ type CacheState struct {
 	PiecesCount  int
 	Torrent      *state.TorrentStatus
 	Pieces       map[int]ItemState
+	Readers      []*ReaderState
 }
 
 type ItemState struct {
-	Id         int
-	Length     int64
-	Size       int64
-	Completed  bool
-	ReaderType int
+	Id        int
+	Length    int64
+	Size      int64
+	Completed bool
+}
+
+type ReaderState struct {
+	Start  int
+	End    int
+	Reader int
 }
