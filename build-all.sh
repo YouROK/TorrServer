@@ -32,7 +32,7 @@ FAILURES=""
 SOURCE_FILE="dist/TorrServer"
 CURRENT_DIRECTORY=${PWD##*/}
 OUTPUT=${SOURCE_FILE:-$CURRENT_DIRECTORY} # if no src file given, use current dir name
-export LDFLAGS="'-s -w'"
+LDFLAGS="'-s -w'"
 
 for PLATFORM in $PLATFORMS; do
   GOOS=${PLATFORM%/*}
