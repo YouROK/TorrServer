@@ -14,10 +14,4 @@ TorrServer, stream torrent to http
 
 ###### **Tw1cker Руслан Пахнев** [github.com/Nemiroff](https://github.com/Nemiroff)
 
-###### **kuzzman** [tv-box.pp.ua](http://tv-box.pp.ua/)
-
-###### **MadAndron**
-
 ###### **SpAwN_LMG**
-
-###### **Zivio**
