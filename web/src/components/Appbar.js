@@ -25,6 +25,7 @@ import { Box } from '@material-ui/core'
 import AddDialog from './Add'
 import RemoveAll from './RemoveAll'
 import SettingsDialog from './Settings'
+import AboutDialog from './About'
 import { playlistAllHost, shutdownHost, torrserverHost } from '../utils/Hosts'
 import DonateDialog from './Donate'
 import UploadDialog from './Upload'
@@ -162,17 +163,18 @@ export default function MiniDrawer() {
                     <AddDialog />
                     <UploadDialog />
                     <RemoveAll />
-                    <DonateDialog />
-                </List>
-                <Divider />
-                <List>
                     <ListItem button key="Playlist all torrents" onClick={() => window.open(playlistAllHost(), '_blank')}>
                         <ListItemIcon>
                             <ListIcon />
                         </ListItemIcon>
                         <ListItemText primary="Playlist all torrents" />
                     </ListItem>
+                </List>
+                <Divider />
+                <List>
                     <SettingsDialog />
+                    <DonateDialog />
+                    <AboutDialog />
                     <ListItem button key="Close server" onClick={() => fetch(shutdownHost())}>
                         <ListItemIcon>
                             <PowerSettingsNewIcon />

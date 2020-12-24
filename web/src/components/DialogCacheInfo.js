@@ -72,9 +72,9 @@ function getCacheMap(cache) {
             }
 
             cache.Readers.forEach((r,k)=> {
-                if (i >= r.Start && i <= r.End && i != r.Reader)
+                if (i >= r.Start && i <= r.End && i !== r.Reader)
                     html += ' reader-range'
-                if (i == r.Reader) {
+                if (i === r.Reader) {
                     html += ' piece-reader'
                     info += ' reader'
                 }
