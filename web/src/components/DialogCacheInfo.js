@@ -70,16 +70,15 @@ function getCacheMap(cache) {
                 html += ' piece-loading'
                 info += ' ' + (cache.Pieces[i].Size/cache.Pieces[i].Length*100).toFixed(2) + '%'
             }
-
-            cache.Readers.forEach((r,k)=> {
-                if (i >= r.Start && i <= r.End && i !== r.Reader)
-                    html += ' reader-range'
-                if (i === r.Reader) {
-                    html += ' piece-reader'
-                    info += ' reader'
-                }
-            })
         }
+        cache.Readers.forEach((r,k)=> {
+            if (i >= r.Start && i <= r.End && i !== r.Reader)
+                html += ' reader-range'
+            if (i === r.Reader) {
+                html += ' piece-reader'
+                info += ' reader'
+            }
+        })
         html += "' title='" + info + "'></span>"
     }
     return html
