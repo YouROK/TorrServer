@@ -60,8 +60,8 @@ export default function DialogTorrentInfo(props) {
                             </Button>
                         </ButtonGroup>
                     </ListItem>
-                    {torrent.file_stats &&
-                        torrent.file_stats.map((file) => (
+                    {getPlayableFile(torrent) &&
+                        getPlayableFile(torrent).map((file) => (
                             <ButtonGroup style={style.width100} disableElevation variant="contained" color="primary">
                                 <Button
                                     style={style.width100}
@@ -83,6 +83,17 @@ export default function DialogTorrentInfo(props) {
     )
 }
 
+function getPlayableFile(torrent){
+    return torrent.file_stats.filter(file => extPlayable.includes(getExt(file.path)))
+}
+
+function getExt(filename){
+    const ext = filename.split('.').pop()
+    if (ext == filename)
+        return ''
+    return ext.toLowerCase()
+}
+
 function getPreload(torrent) {
     if (torrent.preloaded_bytes > 0 && torrent.preload_size > 0 && torrent.preloaded_bytes < torrent.preload_size) {
         let progress = ((torrent.preloaded_bytes * 100) / torrent.preload_size).toFixed(2)
@@ -93,3 +104,64 @@ function getPreload(torrent) {
 
     return humanizeSize(torrent.preloaded_bytes)
 }
+
+const extPlayable = [
+// video
+    "3g2",
+    "3gp",
+    "aaf",
+    "asf",
+    "avchd",
+    "avi",
+    "drc",
+    "flv",
+    "iso",
+    "m2v",
+    "m2ts",
+    "m4p",
+    "m4v",
+    "mkv",
+    "mng",
+    "mov",
+    "mp2",
+    "mp4",
+    "mpe",
+    "mpeg",
+    "mpg",
+    "mpv",
+    "mxf",
+    "nsv",
+    "ogg",
+    "ogv",
+    "ts",
+    "qt",
+    "rm",
+    "rmvb",
+    "roq",
+    "svi",
+    "vob",
+    "webm",
+    "wmv",
+    "yuv",
+// audio
+    "aac",
+    "aiff",
+    "ape",
+    "au",
+    "flac",
+    "gsm",
+    "it",
+    "m3u",
+    "m4a",
+    "mid",
+    "mod",
+    "mp3",
+    "mpa",
+    "pls",
+    "ra",
+    "s3m",
+    "sid",
+    "wav",
+    "wma",
+    "xm"
+]
