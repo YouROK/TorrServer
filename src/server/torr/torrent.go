@@ -373,7 +373,7 @@ func (t *Torrent) Status() *state.TorrentStatus {
 			})
 			for i, f := range files {
 				st.FileStats = append(st.FileStats, &state.TorrentFileStat{
-					Id:     i,
+					Id:     i + 1, // in web id 0 is undefined
 					Path:   f.Path(),
 					Length: f.Length(),
 				})
