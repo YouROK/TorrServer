@@ -8,24 +8,46 @@ import (
 	"time"
 
 	"github.com/anacrolix/missinggo/httptoo"
+	"github.com/anacrolix/torrent"
 	sets "server/settings"
+	"server/torr/state"
 )
 
-func (t *Torrent) Stream(fileIndex int, req *http.Request, resp http.ResponseWriter) error {
+func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter) error {
 	if !t.GotInfo() {
 		http.NotFound(resp, req)
 		return errors.New("torrent don't get info")
 	}
-	files := t.Files()
-	if fileIndex < 1 || fileIndex > len(files) {
-		return errors.New("file index out of range")
+
+	st := t.Status()
+	var stFile *state.TorrentFileStat
+	for _, fileStat := range st.FileStats {
+		if fileStat.Id == fileID {
+			stFile = fileStat
+			break
+		}
 	}
-	file := files[fileIndex-1]
+	if stFile == nil {
+		return fmt.Errorf("file with id %v not found", fileID)
+	}
+
+	files := t.Files()
+	var file *torrent.File
+	for _, tfile := range files {
+		if tfile.Path() == stFile.Path {
+			file = tfile
+			break
+		}
+	}
+	if file == nil {
+		return fmt.Errorf("file with id %v not found", fileID)
+	}
+
 	reader := t.NewReader(file)
 
 	log.Println("Connect client")
 
-	sets.SetViewed(&sets.Viewed{t.Hash().HexString(), fileIndex})
+	sets.SetViewed(&sets.Viewed{t.Hash().HexString(), fileID})
 
 	resp.Header().Set("Connection", "close")
 	resp.Header().Set("ETag", httptoo.EncodeQuotedString(fmt.Sprintf("%s/%s", t.Hash().HexString(), file.Path())))
