@@ -84,6 +84,8 @@ export default function DialogTorrentInfo(props) {
 }
 
 function getPlayableFile(torrent){
+    if (!torrent || !torrent.file_stats)
+        return null
     return torrent.file_stats.filter(file => extPlayable.includes(getExt(file.path)))
 }
 
