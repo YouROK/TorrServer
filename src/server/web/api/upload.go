@@ -42,9 +42,18 @@ func torrentUpload(c *gin.Context) {
 			log.TLogln("error upload torrent:", err)
 			continue
 		}
-		if save {
-			torr.SaveTorrentToDB(tor)
-		}
+
+		go func() {
+			if !tor.GotInfo() {
+				log.TLogln("error add torrent:", "timeout connection torrent")
+				return
+			}
+
+			if save {
+				torr.SaveTorrentToDB(tor)
+			}
+		}()
+
 		retList = append(retList, tor.Status())
 	}
 	c.JSON(200, retList)
