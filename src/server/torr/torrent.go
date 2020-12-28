@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"io"
 	"sort"
-	"sync"
 	"time"
+
+	sync "github.com/sasha-s/go-deadlock"
 
 	"server/log"
 	"server/settings"

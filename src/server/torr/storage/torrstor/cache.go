@@ -1,8 +1,8 @@
 package torrstor
 
 import (
+	sync "github.com/sasha-s/go-deadlock"
 	"sort"
-	"sync"
 
 	"github.com/anacrolix/torrent"
 	"server/log"

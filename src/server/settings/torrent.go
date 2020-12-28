@@ -2,8 +2,8 @@ package settings
 
 import (
 	"encoding/json"
+	sync "github.com/sasha-s/go-deadlock"
 	"sort"
-	"sync"
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"

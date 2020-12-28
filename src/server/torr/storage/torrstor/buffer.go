@@ -2,7 +2,7 @@ package torrstor
 
 import (
 	"fmt"
-	"sync"
+	sync "github.com/sasha-s/go-deadlock"
 )
 
 type buffer struct {
