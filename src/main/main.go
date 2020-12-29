@@ -1,10 +1,9 @@
 package main
 
 import (
-	"bytes"
-	"errors"
+	"context"
 	"fmt"
-	"net/http"
+	"net"
 	"os"
 	"time"
 
@@ -18,7 +17,6 @@ import (
 type args struct {
 	Port     string `arg:"-p" help:"web server port"`
 	Path     string `arg:"-d" help:"database path"`
-	Add      string `arg:"-a" help:"add torrent link and exit"`
 	RDB      bool   `arg:"-r" help:"start in read-only DB mode"`
 	DontKill bool   `arg:"-k" help:"dont kill program on signal"`
 }
@@ -40,10 +38,8 @@ func main() {
 		params.Port = "8090"
 	}
 
-	if params.Add != "" {
-		add()
-	}
 	settings.Path = params.Path
+	dnsResolve()
 	Preconfig(params.DontKill)
 
 	server.Start(params.Port, params.RDB)
@@ -52,28 +48,21 @@ func main() {
 	os.Exit(0)
 }
 
-func add() {
-	err := addRemote()
-	if err != nil {
-		fmt.Println("Error add torrent:", err)
-		os.Exit(-1)
-	}
+func dnsResolve() {
+	addrs, err := net.LookupHost("www.themoviedb.org")
+	if len(addrs) == 0 {
+		fmt.Println("Check dns", addrs, err)
 
-	fmt.Println("Added ok")
-	os.Exit(0)
-}
+		fn := func(ctx context.Context, network, address string) (net.Conn, error) {
+			d := net.Dialer{}
+			return d.DialContext(ctx, "udp", "1.1.1.1:53")
+		}
 
-func addRemote() error {
-	url := "http://localhost:" + params.Port + "/torrent/add"
-	fmt.Println("Add torrent link:", params.Add, "\n", url)
+		net.DefaultResolver = &net.Resolver{
+			Dial: fn,
+		}
 
-	json := `{"Link":"` + params.Add + `"}`
-	resp, err := http.Post(url, "text/html; charset=utf-8", bytes.NewBufferString(json))
-	if err != nil {
-		return err
+		addrs, err = net.LookupHost("www.themoviedb.org")
+		fmt.Println("Check new dns", addrs, err)
 	}
-	if resp.StatusCode != 200 {
-		return errors.New(resp.Status)
-	}
-	return nil
 }
