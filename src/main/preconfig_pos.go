@@ -28,22 +28,4 @@ func Preconfig(dkill bool) {
 			}
 		}()
 	}
-	//
-	// //dns resover
-	// addrs, err := net.LookupHost("www.themoviedb.org")
-	// if len(addrs) == 0 {
-	// 	fmt.Println("Check dns", addrs, err)
-	//
-	// 	fn := func(ctx context.Context, network, address string) (net.Conn, error) {
-	// 		d := net.Dialer{}
-	// 		return d.DialContext(ctx, "udp", "1.1.1.1:53")
-	// 	}
-	//
-	// 	net.DefaultResolver = &net.Resolver{
-	// 		Dial: fn,
-	// 	}
-	//
-	// 	addrs, err = net.LookupHost("www.themoviedb.org")
-	// 	fmt.Println("Check new dns", addrs, err)
-	// }
 }
