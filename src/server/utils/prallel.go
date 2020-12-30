@@ -1,7 +1,7 @@
 package utils
 
 import (
-	sync "github.com/sasha-s/go-deadlock"
+	"sync"
 )
 
 func ParallelFor(begin, end int, fn func(i int)) {

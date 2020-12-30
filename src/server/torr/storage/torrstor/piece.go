@@ -2,8 +2,8 @@ package torrstor
 
 import (
 	"errors"
-	sync "github.com/sasha-s/go-deadlock"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/anacrolix/torrent/storage"

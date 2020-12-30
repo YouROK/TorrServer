@@ -1,7 +1,7 @@
 package torrstor
 
 import (
-	sync "github.com/sasha-s/go-deadlock"
+	"sync"
 
 	"server/torr/storage"
 
