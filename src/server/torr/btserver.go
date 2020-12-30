@@ -1,8 +1,8 @@
 package torr
 
 import (
-	sync "github.com/sasha-s/go-deadlock"
 	"log"
+	"sync"
 	"time"
 
 	"server/settings"
