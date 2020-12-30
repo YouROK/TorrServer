@@ -54,7 +54,7 @@ func GetTorrent(hashHex string) *Torrent {
 	hash := metainfo.NewHashFromHex(hashHex)
 	tor := bts.GetTorrent(hash)
 	if tor != nil {
-		tor.expiredTime = time.Now().Add(time.Minute)
+		tor.AddExpiredTime(time.Minute)
 		return tor
 	}
 

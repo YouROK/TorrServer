@@ -7,7 +7,7 @@ import (
 	"sort"
 	"time"
 
-	sync "github.com/sasha-s/go-deadlock"
+	"sync"
 
 	"server/log"
 	"server/settings"
@@ -84,7 +84,7 @@ func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 	torr.bt = bt
 	torr.closed = goTorrent.Closed()
 	torr.TorrentSpec = spec
-	torr.expiredTime = time.Now().Add(time.Minute)
+	torr.AddExpiredTime(time.Minute)
 	torr.Timestamp = time.Now().Unix()
 
 	go torr.watch()
@@ -120,12 +120,16 @@ func (t *Torrent) GotInfo() bool {
 	t.Stat = state.TorrentGettingInfo
 	if t.WaitInfo() {
 		t.Stat = state.TorrentWorking
-		t.expiredTime = time.Now().Add(time.Minute * 5)
+		t.AddExpiredTime(time.Minute * 5)
 		return true
 	} else {
 		t.Close()
 		return false
 	}
+}
+
+func (t *Torrent) AddExpiredTime(duration time.Duration) {
+	t.expiredTime = time.Now().Add(duration)
 }
 
 func (t *Torrent) watch() {
@@ -228,7 +232,7 @@ func (t *Torrent) NewReader(file *torrent.File) *torrstor.Reader {
 
 func (t *Torrent) CloseReader(reader *torrstor.Reader) {
 	t.cache.CloseReader(reader)
-	t.expiredTime = time.Now().Add(time.Second * time.Duration(settings.BTsets.TorrentDisconnectTimeout))
+	t.AddExpiredTime(time.Second * time.Duration(settings.BTsets.TorrentDisconnectTimeout))
 }
 
 func (t *Torrent) GetCache() *torrstor.Cache {
