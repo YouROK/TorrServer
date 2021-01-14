@@ -304,7 +304,7 @@ func (t *Torrent) Preload(file *torrent.File, size int64) {
 
 	if endPreloadOffset > 0 {
 		readerPost := t.NewReader(file, 1)
-		if readerPre == nil {
+		if readerPost == nil {
 			return
 		}
 		readerPost.Seek(endPreloadOffset, io.SeekStart)
