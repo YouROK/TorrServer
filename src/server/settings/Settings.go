@@ -23,9 +23,9 @@ func init() {
 	sets.RetrackersMode = 1
 	sets.TorrentDisconnectTimeout = 30
 	sets.ChooseStrategy = 0
-	sets.DropPeers = false
+	sets.DropPeers = true
 	sets.DropIds = false
-	sets.DisableLimiting = false
+	sets.DisableLimiting = true
 	StartTime = time.Now()
 }
 
