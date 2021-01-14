@@ -96,10 +96,11 @@ var settingsPage = `
                 <input id="DropPeers" class="form-check-input" type="checkbox" autocomplete="off">
                 <label for="DropPeers">DropMutuallyCompletePeers</label>
             </div>
+			<div class="form-check">
 			    <input id="DropIds" class="form-check-input" type="checkbox" autocomplete="off">
                 <label for="DropIds">DropDuplicatePeerIds</label>
             </div>
-            </div>
+            <div class="form-check">
 			    <input id="DisableLimiting" class="form-check-input" type="checkbox" autocomplete="off">
                 <label for="DisableLimiting">DisableAcceptRateLimiting</label>
             </div>
