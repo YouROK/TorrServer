@@ -87,6 +87,10 @@ var settingsPage = `
                 <label for="DisableUpload">Отключить Отдачу</label>
             </div>
             <div class="form-check">
+                <input id="DropPeers" class="form-check-input" type="checkbox" autocomplete="off">
+                <label for="DropPeers">Drop mutually complete peers</label>
+            </div>
+            <div class="form-check">
                 <input id="EnableDebug" class="form-check-input" type="checkbox" autocomplete="off">
                 <label for="EnableDebug">Режим отладки (только для разработчиков)</label>
             </div>
@@ -186,6 +190,7 @@ var settingsPage = `
 			data.DisableUPNP = $('#DisableUPNP').prop('checked');
 			data.DisableDHT = $('#DisableDHT').prop('checked');
 			data.DisableUpload = $('#DisableUpload').prop('checked');
+			data.DropPeers = $('#DropPeers').prop('checked');
 			data.EnableDebug = $('#EnableDebug').prop('checked');
 			data.Encryption = Number($('#Encryption').val());
 			data.ChooseStrategy = Number($('#ChooseStrategy').val());
@@ -222,6 +227,7 @@ var settingsPage = `
 					$('#DisableUPNP').prop('checked', data.DisableUPNP);
 					$('#DisableDHT').prop('checked', data.DisableDHT);
 					$('#DisableUpload').prop('checked', data.DisableUpload);
+					$('#DropPeers').prop('checked', data.DropPeers);
 					$('#Encryption').val(data.Encryption);
 					$('#ChooseStrategy').val(data.ChooseStrategy);
 

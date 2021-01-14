@@ -23,6 +23,7 @@ func init() {
 	sets.RetrackersMode = 1
 	sets.TorrentDisconnectTimeout = 30
 	sets.ChooseStrategy = 0
+	sets.DropPeers = true
 	StartTime = time.Now()
 }
 
@@ -32,7 +33,7 @@ type Settings struct {
 
 	RetrackersMode int //0 - don`t add, 1 - add retrackers, 2 - remove retrackers
 
-	ChooseStrategy int //0 - default speed strategy (balanced), 1 - fast, 2 - slow (fuzzing)
+	ChooseStrategy int //0 - default speed strategy (balanced), 1 - fast, 2 - fuzzing
 
 	//BT Config
 	EnableIPv6         bool
@@ -43,6 +44,7 @@ type Settings struct {
 	DisableDHT         bool
 	DisableUpload      bool
 	ReadOnlyMode       bool
+	DropPeers          bool
 	Encryption         int // 0 - Enable, 1 - disable, 2 - force
 	DownloadRateLimit  int // in kb, 0 - inf
 	UploadRateLimit    int // in kb, 0 - inf
@@ -88,7 +90,7 @@ func ReadSettings() error {
 		sets.ConnectionsLimit = 20
 	}
 	if sets.DhtConnectionLimit < 0 {
-		sets.DhtConnectionLimit = 1000
+		sets.DhtConnectionLimit = 500
 	}
 	if sets.CacheSize < 0 {
 		sets.CacheSize = 200 * 1024 * 1024

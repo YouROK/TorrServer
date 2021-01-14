@@ -80,6 +80,7 @@ func (bt *BTServer) configure() {
 	bt.config.NoDefaultPortForwarding = settings.Get().DisableUPNP
 	bt.config.NoDHT = settings.Get().DisableDHT
 	bt.config.NoUpload = settings.Get().DisableUpload
+	bt.config.DropMutuallyCompletePeers = settings.Get().DropPeers
 	bt.config.HeaderObfuscationPolicy = torrent.HeaderObfuscationPolicy {
 		RequirePreferred: settings.Get().Encryption == 2, // Whether the value of Preferred is a strict requirement
 		Preferred: settings.Get().Encryption != 1, // Whether header obfuscation is preferred
@@ -93,9 +94,10 @@ func (bt *BTServer) configure() {
 	bt.config.EstablishedConnsPerTorrent = settings.Get().ConnectionsLimit
 	if settings.Get().ChooseStrategy == 1 {
 		bt.config.DefaultRequestStrategy = torrent.RequestStrategyFastest()
-	}
-	if settings.Get().ChooseStrategy == 2 {
+	} else if settings.Get().ChooseStrategy == 2 {
 		bt.config.DefaultRequestStrategy = torrent.RequestStrategyFuzzing()
+	} else {
+		bt.config.DefaultRequestStrategy = torrent.RequestStrategyDuplicateRequestTimeout(1 * time.Second)
 	}
 	if settings.Get().DhtConnectionLimit > 0 {
 		bt.config.ConnTracker.SetMaxEntries(settings.Get().DhtConnectionLimit)
