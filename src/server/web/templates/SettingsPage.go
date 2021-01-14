@@ -87,12 +87,21 @@ var settingsPage = `
                 <label for="DisableUpload">Отключить Отдачу</label>
             </div>
             <div class="form-check">
-                <input id="DropPeers" class="form-check-input" type="checkbox" autocomplete="off">
-                <label for="DropPeers">Drop mutually complete peers</label>
-            </div>
-            <div class="form-check">
                 <input id="EnableDebug" class="form-check-input" type="checkbox" autocomplete="off">
                 <label for="EnableDebug">Режим отладки (только для разработчиков)</label>
+            </div>
+		<br>
+			<small class="form-text text-muted">Тонкие (экспериментальные) настройки торрентов</small>
+            <div class="form-check">
+                <input id="DropPeers" class="form-check-input" type="checkbox" autocomplete="off">
+                <label for="DropPeers">DropMutuallyCompletePeers</label>
+            </div>
+			    <input id="DropIds" class="form-check-input" type="checkbox" autocomplete="off">
+                <label for="DropIds">DropDuplicatePeerIds</label>
+            </div>
+            </div>
+			    <input id="DisableLimiting" class="form-check-input" type="checkbox" autocomplete="off">
+                <label for="DisableLimiting">DisableAcceptRateLimiting</label>
             </div>
 		<br>
             <div class="input-group">
@@ -191,6 +200,8 @@ var settingsPage = `
 			data.DisableDHT = $('#DisableDHT').prop('checked');
 			data.DisableUpload = $('#DisableUpload').prop('checked');
 			data.DropPeers = $('#DropPeers').prop('checked');
+			data.DropIds = $('#DropIds').prop('checked');
+			data.DisableLimiting = $('#DisableLimiting').prop('checked');
 			data.EnableDebug = $('#EnableDebug').prop('checked');
 			data.Encryption = Number($('#Encryption').val());
 			data.ChooseStrategy = Number($('#ChooseStrategy').val());
@@ -228,6 +239,9 @@ var settingsPage = `
 					$('#DisableDHT').prop('checked', data.DisableDHT);
 					$('#DisableUpload').prop('checked', data.DisableUpload);
 					$('#DropPeers').prop('checked', data.DropPeers);
+					$('#DropIds').prop('checked', data.DropIds);
+					$('#DisableLimiting').prop('checked', data.DisableLimiting);
+					$('#EnableDebug').prop('checked', data.EnableDebug);
 					$('#Encryption').val(data.Encryption);
 					$('#ChooseStrategy').val(data.ChooseStrategy);
 

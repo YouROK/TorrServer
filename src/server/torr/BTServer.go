@@ -82,6 +82,8 @@ func (bt *BTServer) configure() {
 	bt.config.NoDHT = settings.Get().DisableDHT
 	bt.config.NoUpload = settings.Get().DisableUpload
 	bt.config.DropMutuallyCompletePeers = settings.Get().DropPeers
+	bt.config.DropDuplicatePeerIds = settings.Get().DropIds
+	bt.config.DisableAcceptRateLimiting = settings.Get().DisableLimiting
 	bt.config.HeaderObfuscationPolicy = torrent.HeaderObfuscationPolicy {
 		RequirePreferred: settings.Get().Encryption == 2, // Whether the value of Preferred is a strict requirement
 		Preferred: settings.Get().Encryption != 1, // Whether header obfuscation is preferred

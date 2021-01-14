@@ -23,7 +23,9 @@ func init() {
 	sets.RetrackersMode = 1
 	sets.TorrentDisconnectTimeout = 30
 	sets.ChooseStrategy = 0
-	sets.DropPeers = true
+	sets.DropPeers = false
+	sets.DropIds = false
+	sets.DisableLimiting = false
 	StartTime = time.Now()
 }
 
@@ -45,6 +47,8 @@ type Settings struct {
 	DisableUpload      bool
 	ReadOnlyMode       bool
 	DropPeers          bool
+	DropIds            bool
+	DisableLimiting    bool
 	Encryption         int // 0 - Enable, 1 - disable, 2 - force
 	DownloadRateLimit  int // in kb, 0 - inf
 	UploadRateLimit    int // in kb, 0 - inf
