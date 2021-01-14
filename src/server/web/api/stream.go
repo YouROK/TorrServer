@@ -102,7 +102,7 @@ func stream(c *gin.Context) {
 	// return m3u if query
 	if m3u {
 		m3ulist := "#EXTM3U\n" + getM3uList(tor.Status(), "http://"+c.Request.Host, fromlast)
-		sendM3U(c, tor.Name(), tor.Hash().HexString(), m3ulist)
+		sendM3U(c, tor.Name()+".m3u", tor.Hash().HexString(), m3ulist)
 		return
 	} else
 	// return play if query
