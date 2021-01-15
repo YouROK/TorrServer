@@ -43,7 +43,7 @@ func main() {
 	js.Links = make(map[string]string)
 	for _, f := range files {
 		arch := strings.TrimPrefix(f.Name(), "TorrServer-")
-		js.Links[arch] = "https://github.com/trinity-aml/TorrServer/releases/download/" + release_version + "/" + f.Name()
+		js.Links[arch] = "https://github.com/YouROK/TorrServer/releases/download/" + release_version + "/" + f.Name()
 	}
 	buf, err := json.MarshalIndent(&js, "", " ")
 	if err != nil {

@@ -23,7 +23,7 @@ PLATFORMS_ARM="linux"
 type setopt >/dev/null 2>&1
 
 export GOPATH="${PWD}"
-GOBIN="/usr/local/go/bin/go"
+GOBIN="/usr/local/go_111/bin/go"
 
 $GOBIN version
 
@@ -32,7 +32,6 @@ FAILURES=""
 SOURCE_FILE="dist/TorrServer"
 CURRENT_DIRECTORY=${PWD##*/}
 OUTPUT=${SOURCE_FILE:-$CURRENT_DIRECTORY} # if no src file given, use current dir name
-LDFLAGS="'-s -w'"
 
 for PLATFORM in $PLATFORMS; do
   GOOS=${PLATFORM%/*}
@@ -40,9 +39,9 @@ for PLATFORM in $PLATFORMS; do
   BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}"
   if [[ "${GOOS}" == "windows" ]]; then BIN_FILENAME="${BIN_FILENAME}.exe"; fi
   if [[ "${GOOS}" == "linux" ]]; then
-    CMD="CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} ${GOBIN} build -ldflags="${LDFLAGS}" -o ${BIN_FILENAME} main"
+    CMD="CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} ${GOBIN} build -o ${BIN_FILENAME} main"
   else
-    CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GOBIN} build -ldflags="${LDFLAGS}" -o ${BIN_FILENAME} main"
+    CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GOBIN} build -o ${BIN_FILENAME} main"
   fi
   echo "${CMD}"
   eval $CMD || FAILURES="${FAILURES} ${PLATFORM}"
@@ -50,7 +49,7 @@ done
 
 # ARM builds
 if [[ $PLATFORMS_ARM == *"linux"* ]]; then
-  CMD="GOOS=linux GOARCH=arm64 ${GOBIN} build -ldflags="${LDFLAGS}" -o ${OUTPUT}-linux-arm64 main"
+  CMD="GOOS=linux GOARCH=arm64 ${GOBIN} build -o ${OUTPUT}-linux-arm64 main"
   echo "${CMD}"
   eval $CMD || FAILURES="${FAILURES} ${PLATFORM}"
 fi
@@ -60,7 +59,7 @@ for GOOS in $PLATFORMS_ARM; do
   # build for each ARM version
   for GOARM in 7 6 5; do
     BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}${GOARM}"
-    CMD="GOARM=${GOARM} GOOS=${GOOS} GOARCH=${GOARCH} ${GOBIN} build -ldflags="${LDFLAGS}" -o ${BIN_FILENAME} main"
+    CMD="GOARM=${GOARM} GOOS=${GOOS} GOARCH=${GOARCH} ${GOBIN} build -o ${BIN_FILENAME} main"
     echo "${CMD}"
     eval "${CMD}" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
   done
@@ -73,3 +72,45 @@ if [[ "${FAILURES}" != "" ]]; then
   exit 1
 fi
 
+export CGO_ENABLED=1
+export GOOS=android
+export LDFLAGS="-s -w"
+
+# GOBIN="/usr/local/go_111/bin/go"
+
+$GOBIN version
+
+export NDK_TOOLCHAIN=$GOPATH/toolchains
+export CC=$NDK_TOOLCHAIN/bin/armv7a-linux-androideabi21-clang
+export CXX=$NDK_TOOLCHAIN/bin/armv7a-linux-androideabi21-clang++
+export GOARCH=arm
+export GOARM=7
+BIN_FILENAME="dist/TorrServer-${GOOS}-${GOARCH}${GOARM}"
+echo "Android ${BIN_FILENAME}"
+${GOBIN} build -ldflags="${LDFLAGS}" -o ${BIN_FILENAME} main
+
+export CC=$NDK_TOOLCHAIN/bin/aarch64-linux-android21-clang
+export CXX=$NDK_TOOLCHAIN/bin/aarch64-linux-android21-clang++
+export GOARCH=arm64
+export GOARM=""
+BIN_FILENAME="dist/TorrServer-${GOOS}-${GOARCH}${GOARM}"
+echo "Android ${BIN_FILENAME}"
+${GOBIN} build -ldflags="${LDFLAGS}" -o ${BIN_FILENAME} main
+
+export CC=$NDK_TOOLCHAIN/bin/i686-linux-android21-clang
+export CXX=$NDK_TOOLCHAIN/bin/i686-linux-android21-clang++
+export GOARCH=386
+export GOARM=""
+BIN_FILENAME="dist/TorrServer-${GOOS}-${GOARCH}${GOARM}"
+echo "Android ${BIN_FILENAME}"
+${GOBIN} build -ldflags="${LDFLAGS}" -o ${BIN_FILENAME} main
+
+export CC=$NDK_TOOLCHAIN/bin/x86_64-linux-android21-clang
+export CXX=$NDK_TOOLCHAIN/bin/x86_64-linux-android21-clang++
+export GOARCH=amd64
+export GOARM=""
+BIN_FILENAME="dist/TorrServer-${GOOS}-${GOARCH}${GOARM}"
+echo "Android ${BIN_FILENAME}"
+${GOBIN} build -ldflags="${LDFLAGS}" -o ${BIN_FILENAME} main
+
+# ./compile.sh
