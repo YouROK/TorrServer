@@ -85,6 +85,9 @@ func (bt *BTServer) configure() {
 	bt.config.ExtendedHandshakeClientVersion = cliVers
 	bt.config.EstablishedConnsPerTorrent = settings.BTsets.ConnectionsLimit
 
+	//bt.config.DropMutuallyCompletePeers = true
+	//bt.config.DropDuplicatePeerIds = true
+
 	// Encryption/Obfuscation
 	bt.config.HeaderObfuscationPolicy = torrent.HeaderObfuscationPolicy{
 		RequirePreferred: settings.BTsets.ForceEncrypt,
@@ -97,7 +100,7 @@ func (bt *BTServer) configure() {
 	case 2: // RequestStrategyFastest
 		bt.config.DefaultRequestStrategy = torrent.RequestStrategyFastest()
 	default: // RequestStrategyDuplicateRequestTimeout
-		bt.config.DefaultRequestStrategy = torrent.RequestStrategyDuplicateRequestTimeout(1 * time.Second)
+		bt.config.DefaultRequestStrategy = torrent.RequestStrategyDuplicateRequestTimeout(5 * time.Second)
 	}
 
 	if settings.BTsets.DhtConnectionLimit > 0 {
