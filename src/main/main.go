@@ -17,6 +17,7 @@ import (
 type args struct {
 	Port     string `arg:"-p" help:"web server port"`
 	Path     string `arg:"-d" help:"database path"`
+	LogPath  string `arg:"-l" help:"log path"`
 	RDB      bool   `arg:"-r" help:"start in read-only DB mode"`
 	DontKill bool   `arg:"-k" help:"dont kill program on signal"`
 }
@@ -39,6 +40,8 @@ func main() {
 	}
 
 	settings.Path = params.Path
+	log.Init(params.LogPath)
+
 	dnsResolve()
 	Preconfig(params.DontKill)
 
