@@ -5,12 +5,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/metainfo"
 	"server/settings"
 	"server/torr/storage/torrstor"
 	"server/torr/utils"
-
-	"github.com/anacrolix/torrent"
-	"github.com/anacrolix/torrent/metainfo"
 )
 
 type BTServer struct {
@@ -67,9 +66,9 @@ func (bt *BTServer) configure() {
 		bt.config.DataDir = settings.BTsets.ContentPath
 	}
 
-	userAgent := "uTorrent/3.5.5"
-	peerID := "-UT3550-"
-	cliVers := "µTorrent 3.5.5"
+	userAgent := "qBittorrent/4.3.2"
+	peerID := "-qB4320-"
+	cliVers := userAgent //"uTorrent/2210(25302)"
 
 	bt.config.Debug = settings.BTsets.EnableDebug
 	bt.config.DisableIPv6 = settings.BTsets.EnableIPv6 == false
@@ -84,6 +83,7 @@ func (bt *BTServer) configure() {
 	bt.config.HTTPUserAgent = userAgent
 	bt.config.ExtendedHandshakeClientVersion = cliVers
 	bt.config.EstablishedConnsPerTorrent = settings.BTsets.ConnectionsLimit
+	bt.config.UpnpID = "YouROK/TorrServer"
 
 	//bt.config.DropMutuallyCompletePeers = true
 	//bt.config.DropDuplicatePeerIds = true
