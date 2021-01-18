@@ -283,23 +283,25 @@ func (t *Torrent) Preload(index int, size int64) {
 	readerEnd.Read(make([]byte, 1))
 	defer t.CloseReader(readerEnd)
 
-	pl := t.Info().PieceLength
-	lastStat := ""
+	if t.Info() != nil {
+		pl := t.Info().PieceLength
+		lastStat := ""
 
-	for t.PreloadedBytes < size-pl {
-		t.muTorrent.Lock()
-		if t.Torrent == nil {
-			return
-		}
-		t.PreloadedBytes = t.Torrent.BytesCompleted()
-		t.muTorrent.Unlock()
+		for t.PreloadedBytes < size-pl {
+			t.muTorrent.Lock()
+			if t.Torrent == nil {
+				return
+			}
+			t.PreloadedBytes = t.Torrent.BytesCompleted()
+			t.muTorrent.Unlock()
 
-		stat := fmt.Sprint(file.Torrent().InfoHash().HexString(), " ", utils2.Format(float64(t.PreloadedBytes)), "/", utils2.Format(float64(t.PreloadSize)), " Speed:", utils2.Format(t.DownloadSpeed), " Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
-		if stat != lastStat {
-			log.TLogln("Preload:", stat)
-			lastStat = stat
+			stat := fmt.Sprint(file.Torrent().InfoHash().HexString(), " ", utils2.Format(float64(t.PreloadedBytes)), "/", utils2.Format(float64(t.PreloadSize)), " Speed:", utils2.Format(t.DownloadSpeed), " Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
+			if stat != lastStat {
+				log.TLogln("Preload:", stat)
+				lastStat = stat
+			}
+			time.Sleep(time.Millisecond * 1000)
 		}
-		time.Sleep(time.Millisecond * 1000)
 	}
 	log.TLogln("End preload:", file.Torrent().InfoHash().HexString(), "Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
 }
