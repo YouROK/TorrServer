@@ -91,7 +91,6 @@ func Migrate() {
 				TorrentSpec: spec,
 				Name:        torr.Name,
 				Title:       title,
-				Poster:      "",
 				Timestamp:   torr.Timestamp,
 				Size:        torr.Size,
 			})
