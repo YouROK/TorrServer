@@ -8,6 +8,7 @@ var (
 func InitSets(readOnly bool) {
 	tdb = NewTDB(readOnly)
 	loadBTSets()
+	Migrate()
 }
 
 func CloseDB() {
