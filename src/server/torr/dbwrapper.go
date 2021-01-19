@@ -14,6 +14,7 @@ func AddTorrentDB(torr *Torrent) {
 	t.TorrentSpec = torr.TorrentSpec
 	t.Name = torr.Name()
 	t.Title = torr.Title
+	t.Data = torr.Data
 	if t.Title == "" {
 		t.Title = t.Name
 	}
@@ -36,6 +37,7 @@ func GetTorrentDB(hash metainfo.Hash) *Torrent {
 			torr.Poster = db.Poster
 			torr.Timestamp = db.Timestamp
 			torr.Size = db.Size
+			torr.Data = db.Data
 			torr.Stat = state.TorrentInDB
 			return torr
 		}
@@ -57,6 +59,7 @@ func ListTorrentsDB() map[metainfo.Hash]*Torrent {
 		torr.Poster = db.Poster
 		torr.Timestamp = db.Timestamp
 		torr.Size = db.Size
+		torr.Data = db.Data
 		torr.Stat = state.TorrentInDB
 		ret[torr.TorrentSpec.InfoHash] = torr
 	}

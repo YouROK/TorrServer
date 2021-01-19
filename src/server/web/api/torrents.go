@@ -19,6 +19,7 @@ type torrReqJS struct {
 	Hash     string `json:"hash,omitempty"`
 	Title    string `json:"title,omitempty"`
 	Poster   string `json:"poster,omitempty"`
+	Data     string `json:"data,omitempty"`
 	SaveToDB bool   `json:"save_to_db,omitempty"`
 }
 
@@ -68,7 +69,7 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 		return
 	}
 
-	tor, err := torr.AddTorrent(torrSpec, req.Title, req.Poster)
+	tor, err := torr.AddTorrent(torrSpec, req.Title, req.Poster, req.Data)
 	if err != nil {
 		log.TLogln("error add torrent:", err)
 		c.AbortWithError(http.StatusInternalServerError, err)

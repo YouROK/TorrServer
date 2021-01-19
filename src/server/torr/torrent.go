@@ -24,6 +24,7 @@ import (
 type Torrent struct {
 	Title  string
 	Poster string
+	Data   string
 	*torrent.TorrentSpec
 
 	Stat      state.TorrentStat

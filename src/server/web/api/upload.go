@@ -28,6 +28,10 @@ func torrentUpload(c *gin.Context) {
 	if len(form.Value["poster"]) > 0 {
 		poster = form.Value["poster"][0]
 	}
+	data := ""
+	if len(form.Value["data"]) > 0 {
+		data = form.Value["data"][0]
+	}
 
 	for name, file := range form.File {
 		log.TLogln("add torrent file", name)
@@ -45,7 +49,7 @@ func torrentUpload(c *gin.Context) {
 			continue
 		}
 
-		tor, err := torr.AddTorrent(spec, title, poster)
+		tor, err := torr.AddTorrent(spec, title, poster, data)
 		if err != nil {
 			log.TLogln("error upload torrent:", err)
 			continue

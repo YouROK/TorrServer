@@ -15,6 +15,7 @@ type TorrentDB struct {
 	Name   string `json:"name"`
 	Title  string `json:"title,omitempty"`
 	Poster string `json:"poster,omitempty"`
+	Data   string `json:"data,omitempty"`
 
 	Timestamp int64 `json:"timestamp,omitempty"`
 	Size      int64 `json:"size,omitempty"`

@@ -20,7 +20,7 @@ func InitApiHelper(bt *BTServer) {
 	bts = bt
 }
 
-func AddTorrent(spec *torrent.TorrentSpec, title, poster string) (*Torrent, error) {
+func AddTorrent(spec *torrent.TorrentSpec, title, poster string, data string) (*Torrent, error) {
 	torr, err := NewTorrent(spec, bts)
 	if err != nil {
 		log.TLogln("error add torrent:", err)
@@ -39,6 +39,12 @@ func AddTorrent(spec *torrent.TorrentSpec, title, poster string) (*Torrent, erro
 		torr.Poster = poster
 		if torr.Poster == "" && torDB != nil {
 			torr.Poster = torDB.Poster
+		}
+	}
+	if torr.Data == "" {
+		torr.Data = data
+		if torr.Data == "" && torDB != nil {
+			torr.Data = torDB.Data
 		}
 	}
 

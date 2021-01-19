@@ -59,7 +59,7 @@ func stream(c *gin.Context) {
 		return
 	}
 
-	tor, err := torr.AddTorrent(spec, title, poster)
+	tor, err := torr.AddTorrent(spec, title, poster, "")
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
