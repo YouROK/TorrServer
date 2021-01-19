@@ -59,6 +59,9 @@ export default function Torrent(props) {
                             setOpen(true)
                         }}
                     >
+                        {torrent.poster &&
+                            <img src={torrent.poster} alt={torrent.title} style={{width: 'auto',height:'100px',marginRight:'0px'}}/>
+                        }
                         <Typography>
                             {torrent.name ? torrent.name : torrent.title}
                             {torrent.torrent_size > 0 ? ' | ' + humanizeSize(torrent.torrent_size) : ''}
