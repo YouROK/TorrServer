@@ -2,6 +2,7 @@
 
 export GOPATH="${PWD}"
 
+go get -v github.com/pkg/browser
 go get -v github.com/alexflint/go-arg
 go get -v github.com/anacrolix/dht
 go get -v github.com/anacrolix/missinggo/httptoo
