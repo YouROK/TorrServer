@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/alexflint/go-arg"
+	"github.com/pkg/browser"
 	"server"
 	"server/log"
 	"server/settings"
@@ -20,6 +21,7 @@ type args struct {
 	LogPath  string `arg:"-l" help:"log path"`
 	RDB      bool   `arg:"-r" help:"start in read-only DB mode"`
 	DontKill bool   `arg:"-k" help:"dont kill program on signal"`
+	UI       bool   `arg:"-u" help:"run page torrserver in browser"`
 }
 
 func (args) Version() string {
@@ -44,6 +46,13 @@ func main() {
 
 	dnsResolve()
 	Preconfig(params.DontKill)
+
+	if params.UI {
+		go func() {
+			time.Sleep(time.Second)
+			browser.OpenURL("http://127.0.0.1:" + params.Port)
+		}()
+	}
 
 	server.Start(params.Port, params.RDB)
 	log.TLogln(server.WaitServer())
