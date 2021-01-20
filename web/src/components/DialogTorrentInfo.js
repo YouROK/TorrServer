@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 import Typography from '@material-ui/core/Typography'
 import { Button, ButtonGroup, Grid, List, ListItem } from '@material-ui/core'
 import CachedIcon from '@material-ui/icons/Cached'
+import LinearProgress from '@material-ui/core/LinearProgress';
 
 import { getPeerString, humanizeSize } from '../utils/Utils'
 import { playlistTorrHost, streamHost } from '../utils/Hosts'
@@ -18,14 +19,18 @@ const style = {
     poster: {
         display: 'flex',
         flexDirection: 'row',
+        borderRadius:'5px',
     },
 }
 
 export default function DialogTorrentInfo(props) {
     const [torrent, setTorrent] = React.useState(props.torrent)
+    const [progress, setProgress] = React.useState(-1)
 
     useEffect(() => {
         setTorrent(props.torrent)
+        if(torrent.stat==2)
+            setProgress(torrent.preloaded_bytes * 100 / torrent.preload_size)
     }, [props.torrent, props.open])
 
     return (
@@ -47,6 +52,7 @@ export default function DialogTorrentInfo(props) {
                         </Typography>
                     </Grid>
                 </Grid>
+                {torrent.stat==2 && <LinearProgress style={{marginTop:'10px'}} variant="determinate" value={progress} />}
             </DialogTitle>
             <DialogContent>
                 <List>

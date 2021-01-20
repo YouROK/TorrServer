@@ -17,12 +17,6 @@ import { torrentsHost } from '../utils/Hosts'
 import DialogCacheInfo from './DialogCacheInfo'
 import DataUsageIcon from '@material-ui/icons/DataUsage'
 
-const style = {
-    width100: {
-        width: '100%',
-    },
-}
-
 export default function Torrent(props) {
     const [open, setOpen] = React.useState(false)
     const [showCache, setShowCache] = React.useState(false)
@@ -53,14 +47,14 @@ export default function Torrent(props) {
             <ListItem>
                 <ButtonGroup style={{width:'100%',boxShadow:'2px 2px 2px gray'}} disableElevation variant="contained" color="primary">
                     <Button
-                        style={style.width100}
+                        style={{width: '100%', justifyContent:'start'}}
                         onClick={() => {
                             setShowCache(false)
                             setOpen(true)
                         }}
                     >
                         {torrent.poster &&
-                            <img src={torrent.poster} alt={torrent.title} style={{width: 'auto',height:'100px',margin:'0 10px 0 0',borderRadius:'5px'}}/>
+                            <img src={torrent.poster} alt={torrent.title} align="left" style={{width: 'auto',height:'100px',margin:'0 10px 0 0',borderRadius:'5px'}}/>
                         }
                         <Typography>
                             {torrent.name ? torrent.name : torrent.title}
