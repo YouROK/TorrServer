@@ -3,11 +3,9 @@ package torr
 import (
 	"errors"
 	"fmt"
-	"io"
 	"sort"
-	"time"
-
 	"sync"
+	"time"
 
 	"server/log"
 	"server/settings"
@@ -274,21 +272,18 @@ func (t *Torrent) Preload(index int, size int64) {
 		file = t.Files()[0]
 	}
 
-	// Reader for not pieces break in cache without readers
-	readerStart := t.cache.NewReader(file)
-	readerStart.Read(make([]byte, 1))
-	defer t.CloseReader(readerStart)
-
-	readerEnd := t.cache.NewReader(file)
-	readerEnd.Seek(-1024, io.SeekEnd)
-	readerEnd.Read(make([]byte, 1))
-	defer t.CloseReader(readerEnd)
-
 	if t.Info() != nil {
 		pl := t.Info().PieceLength
-		lastStat := ""
+		mb5 := int64(5 * 1024 * 1024)
 
-		for t.PreloadedBytes < size-pl {
+		pieceFileStart := int(file.Offset() / pl)
+		pieceFileEnd := int((file.Offset() + file.Length()) / pl)
+		readerPieceBefore := int((file.Offset() + size - mb5) / pl)
+		readerPieceAfter := int((file.Offset() + file.Length() - mb5) / pl)
+
+		lastStat := time.Now().Add(-time.Second)
+
+		for true {
 			t.muTorrent.Lock()
 			if t.Torrent == nil {
 				return
@@ -297,11 +292,37 @@ func (t *Torrent) Preload(index int, size int64) {
 			t.muTorrent.Unlock()
 
 			stat := fmt.Sprint(file.Torrent().InfoHash().HexString(), " ", utils2.Format(float64(t.PreloadedBytes)), "/", utils2.Format(float64(t.PreloadSize)), " Speed:", utils2.Format(t.DownloadSpeed), " Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
-			if stat != lastStat {
+			if time.Since(lastStat) > time.Second {
 				log.TLogln("Preload:", stat)
-				lastStat = stat
+				lastStat = time.Now()
 			}
-			time.Sleep(time.Millisecond * 1000)
+
+			isComplete := true
+			if readerPieceBefore >= pieceFileStart {
+				for i := pieceFileStart; i < readerPieceBefore; i++ {
+					if !t.Piece(i).State().Complete {
+						isComplete = false
+						if t.Piece(i).State().Priority == torrent.PiecePriorityNone {
+							t.Piece(i).SetPriority(torrent.PiecePriorityNormal)
+						}
+					}
+				}
+			}
+			if readerPieceAfter <= pieceFileEnd {
+				for i := readerPieceAfter; i <= pieceFileEnd; i++ {
+					if !t.Piece(i).State().Complete {
+						isComplete = false
+						if t.Piece(i).State().Priority == torrent.PiecePriorityNone {
+							t.Piece(i).SetPriority(torrent.PiecePriorityNormal)
+						}
+					}
+				}
+			}
+			t.AddExpiredTime(time.Second * time.Duration(settings.BTsets.TorrentDisconnectTimeout))
+			if isComplete {
+				break
+			}
+			time.Sleep(time.Millisecond * 10)
 		}
 	}
 	log.TLogln("End preload:", file.Torrent().InfoHash().HexString(), "Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
