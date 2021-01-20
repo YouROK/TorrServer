@@ -51,7 +51,7 @@ export default function Torrent(props) {
     return (
         <div>
             <ListItem>
-                <ButtonGroup style={style.width100} disableElevation variant="contained" color="primary">
+                <ButtonGroup style={{width:'100%',boxShadow:'2px 2px 2px gray'}} disableElevation variant="contained" color="primary">
                     <Button
                         style={style.width100}
                         onClick={() => {
@@ -60,7 +60,7 @@ export default function Torrent(props) {
                         }}
                     >
                         {torrent.poster &&
-                            <img src={torrent.poster} alt={torrent.title} style={{width: 'auto',height:'100px',marginRight:'0px'}}/>
+                            <img src={torrent.poster} alt={torrent.title} style={{width: 'auto',height:'100px',margin:'0 10px 0 0',borderRadius:'5px'}}/>
                         }
                         <Typography>
                             {torrent.name ? torrent.name : torrent.title}
