@@ -43,7 +43,7 @@ func (r *Reader) preload() {
 	// from reader readahead to end of range
 	for i := readerPiece + rahPiece; i < rrange.End; i++ {
 		if torr.Piece(i).State().Priority == torrent.PiecePriorityNone {
-			torr.Piece(i).SetPriority(torrent.PiecePriorityHigh)
+			torr.Piece(i).SetPriority(torrent.PiecePriorityNormal)
 		}
 	}
 }
