@@ -17,7 +17,11 @@ var (
 
 func Start(port string) {
 	log.TLogln("Start TorrServer", version.Version)
-	BTS.Connect()
+	err := BTS.Connect()
+	if err != nil {
+		waitChan <- err
+		return
+	}
 
 	route := gin.New()
 	route.Use(gin.Recovery(), cors.Default())
