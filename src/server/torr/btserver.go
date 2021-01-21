@@ -50,11 +50,6 @@ func (bt *BTServer) Disconnect() {
 	}
 }
 
-func (bt *BTServer) Reconnect() error {
-	bt.Disconnect()
-	return bt.Connect()
-}
-
 func (bt *BTServer) configure() {
 	blocklist, _ := utils.ReadBlockedIP()
 	bt.config = torrent.NewDefaultClientConfig()
