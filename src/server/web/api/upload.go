@@ -6,7 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"server/log"
 	"server/torr"
-	"server/torr/state"
 	"server/web/api/utils"
 )
 
@@ -19,7 +18,6 @@ func torrentUpload(c *gin.Context) {
 	defer form.RemoveAll()
 
 	save := len(form.Value["save"]) > 0
-	var retList []*state.TorrentStatus
 	title := ""
 	if len(form.Value["title"]) > 0 {
 		title = form.Value["title"][0]
@@ -32,7 +30,7 @@ func torrentUpload(c *gin.Context) {
 	if len(form.Value["data"]) > 0 {
 		data = form.Value["data"][0]
 	}
-
+	var tor *torr.Torrent
 	for name, file := range form.File {
 		log.TLogln("add torrent file", name)
 
@@ -49,7 +47,7 @@ func torrentUpload(c *gin.Context) {
 			continue
 		}
 
-		tor, err := torr.AddTorrent(spec, title, poster, data)
+		tor, err = torr.AddTorrent(spec, title, poster, data)
 		if err != nil {
 			log.TLogln("error upload torrent:", err)
 			continue
@@ -66,7 +64,7 @@ func torrentUpload(c *gin.Context) {
 			}
 		}()
 
-		retList = append(retList, tor.Status())
+		break
 	}
-	c.JSON(200, retList)
+	c.JSON(200, tor.Status())
 }
