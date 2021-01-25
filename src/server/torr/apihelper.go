@@ -119,6 +119,9 @@ func DropTorrent(hashHex string) {
 }
 
 func SetSettings(set *sets.BTSets) {
+	if sets.ReadOnly {
+		return
+	}
 	bts.Disconnect()
 	sets.SetBTSets(set)
 	bts.Connect()

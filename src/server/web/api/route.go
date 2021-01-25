@@ -43,7 +43,7 @@ func echo(c *gin.Context) {
 }
 
 func shutdown(c *gin.Context) {
-	if sets.IsReadOnly() {
+	if sets.ReadOnly {
 		c.Status(http.StatusForbidden)
 		return
 	}

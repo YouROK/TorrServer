@@ -47,7 +47,7 @@ var (
 )
 
 func SetBTSets(sets *BTSets) {
-	if tdb.ReadOnly {
+	if ReadOnly {
 		return
 	}
 

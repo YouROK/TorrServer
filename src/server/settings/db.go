@@ -9,12 +9,11 @@ import (
 )
 
 type TDB struct {
-	Path     string
-	ReadOnly bool
-	db       *bolt.DB
+	Path string
+	db   *bolt.DB
 }
 
-func NewTDB(readOnly bool) *TDB {
+func NewTDB() *TDB {
 	db, err := bolt.Open(filepath.Join(Path, "config.db"), 0666, nil)
 	if err != nil {
 		log.TLogln(err)
@@ -24,7 +23,6 @@ func NewTDB(readOnly bool) *TDB {
 	tdb := new(TDB)
 	tdb.db = db
 	tdb.Path = Path
-	tdb.ReadOnly = readOnly
 	return tdb
 }
 
@@ -69,7 +67,7 @@ func (v *TDB) Get(xpath, name string) []byte {
 }
 
 func (v *TDB) Set(xpath, name string, value []byte) {
-	if v.ReadOnly {
+	if ReadOnly {
 		return
 	}
 
@@ -144,7 +142,7 @@ func (v *TDB) List(xpath string) []string {
 }
 
 func (v *TDB) Rem(xpath, name string) {
-	if v.ReadOnly {
+	if ReadOnly {
 		return
 	}
 
