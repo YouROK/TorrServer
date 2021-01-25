@@ -83,7 +83,7 @@ func loadBTSets() {
 	sets.EnableDebug = false
 	sets.DisableUTP = true
 	sets.CacheSize = 200 * 1024 * 1024 // 200mb
-	sets.PreloadBuffer = true
+	sets.PreloadBuffer = false
 	sets.ConnectionsLimit = 20
 	sets.DhtConnectionLimit = 500
 	sets.RetrackersMode = 1
