@@ -359,6 +359,7 @@ func (t *Torrent) Status() *state.TorrentStatus {
 	st.StatString = t.Stat.String()
 	st.Title = t.Title
 	st.Poster = t.Poster
+	st.Data = t.Data
 	st.Timestamp = t.Timestamp
 	st.TorrentSize = t.Size
 
