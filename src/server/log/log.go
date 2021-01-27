@@ -15,6 +15,7 @@ func Init(path string) {
 
 		os.Stdout = ff
 		os.Stderr = ff
+		log.SetOutput(ff)
 	}
 }
 
