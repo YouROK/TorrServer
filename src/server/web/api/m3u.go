@@ -114,10 +114,10 @@ func searchLastPlayed(tor *state.TorrentStatus) int {
 
 	for i, stat := range tor.FileStats {
 		if stat.Id == lastViewedIndex {
-			if i+1 >= len(tor.FileStats) {
+			if i >= len(tor.FileStats) {
 				return -1
 			}
-			return i + 1
+			return i
 		}
 	}
 
