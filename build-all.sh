@@ -25,7 +25,7 @@ type setopt >/dev/null 2>&1
 export GOPATH="${PWD}"
 GOBIN="/usr/local/go/bin/go"
 
-go run build_web.go
+#go run build_web.go
 
 $GOBIN version
 
@@ -68,51 +68,57 @@ for GOOS in $PLATFORMS_ARM; do
   done
 done
 
-# eval errors
-if [[ "${FAILURES}" != "" ]]; then
-  echo ""
-  echo "${SCRIPT_NAME} failed on: ${FAILURES}"
-  exit 1
-fi
+#####################################
+### Android build section
+#####
 
 export CGO_ENABLED=1
 export GOOS=android
 
-# GOBIN="/usr/local/go_111/bin/go"
+# GOBIN="/usr/local/go116b/bin/go"
 
 $GOBIN version
 
-export NDK_TOOLCHAIN=$GOPATH/toolchains
+export NDK_TOOLCHAIN=$GOPATH/toolchain
 export CC=$NDK_TOOLCHAIN/bin/armv7a-linux-androideabi21-clang
 export CXX=$NDK_TOOLCHAIN/bin/armv7a-linux-androideabi21-clang++
 export GOARCH=arm
 export GOARM=7
 BIN_FILENAME="dist/TorrServer-${GOOS}-${GOARCH}${GOARM}"
-echo "Android ${BIN_FILENAME}"
-${GOBIN} build -ldflags="${LDFLAGS}" -o ${BIN_FILENAME} main
+CMD="${GOBIN} build -ldflags=${LDFLAGS} -o ${BIN_FILENAME} main"
+echo "${CMD}"
+eval "${CMD}" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
 
 export CC=$NDK_TOOLCHAIN/bin/aarch64-linux-android21-clang
 export CXX=$NDK_TOOLCHAIN/bin/aarch64-linux-android21-clang++
 export GOARCH=arm64
 export GOARM=""
 BIN_FILENAME="dist/TorrServer-${GOOS}-${GOARCH}${GOARM}"
-echo "Android ${BIN_FILENAME}"
-${GOBIN} build -ldflags="${LDFLAGS}" -o ${BIN_FILENAME} main
+CMD="${GOBIN} build -ldflags=${LDFLAGS} -o ${BIN_FILENAME} main"
+echo "${CMD}"
+eval "${CMD}" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
 
 export CC=$NDK_TOOLCHAIN/bin/i686-linux-android21-clang
 export CXX=$NDK_TOOLCHAIN/bin/i686-linux-android21-clang++
 export GOARCH=386
 export GOARM=""
 BIN_FILENAME="dist/TorrServer-${GOOS}-${GOARCH}${GOARM}"
-echo "Android ${BIN_FILENAME}"
-${GOBIN} build -ldflags="${LDFLAGS}" -o ${BIN_FILENAME} main
+CMD="${GOBIN} build -ldflags=${LDFLAGS} -o ${BIN_FILENAME} main"
+echo "${CMD}"
+eval "${CMD}" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
 
 export CC=$NDK_TOOLCHAIN/bin/x86_64-linux-android21-clang
 export CXX=$NDK_TOOLCHAIN/bin/x86_64-linux-android21-clang++
 export GOARCH=amd64
 export GOARM=""
 BIN_FILENAME="dist/TorrServer-${GOOS}-${GOARCH}${GOARM}"
-echo "Android ${BIN_FILENAME}"
-${GOBIN} build -ldflags="${LDFLAGS}" -o ${BIN_FILENAME} main
+CMD="${GOBIN} build -ldflags=${LDFLAGS} -o ${BIN_FILENAME} main"
+echo "${CMD}"
+eval "${CMD}" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
 
-# ./compile.sh
+# eval errors
+if [[ "${FAILURES}" != "" ]]; then
+  echo ""
+  echo "${SCRIPT_NAME} failed on: ${FAILURES}"
+  exit 1
+fi
