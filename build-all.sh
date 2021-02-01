@@ -26,6 +26,7 @@ export GOPATH="${PWD}"
 GOBIN="/usr/local/go/bin/go"
 
 #go run build_web.go
+#go clean -i -r -x -cache
 
 $GOBIN version
 
