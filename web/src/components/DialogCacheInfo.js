@@ -17,7 +17,7 @@ export default function DialogCacheInfo(props) {
                 getCache(hash, (cache) => {
                     setCache(cache)
                 })
-            }, 1000)
+            }, 100)
         else clearInterval(timerID.current)
 
         return () => {
