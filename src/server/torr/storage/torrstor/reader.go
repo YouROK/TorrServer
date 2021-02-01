@@ -16,7 +16,6 @@ type Reader struct {
 
 	cache    *Cache
 	isClosed bool
-	// mu       sync.Mutex
 
 	///Preload
 	muPreload sync.Mutex
@@ -37,8 +36,6 @@ func newReader(file *torrent.File, cache *Cache) *Reader {
 }
 
 func (r *Reader) Seek(offset int64, whence int) (n int64, err error) {
-	// r.mu.Lock()
-	// defer r.mu.Unlock()
 	if r.isClosed {
 		return 0, io.EOF
 	}
@@ -71,8 +68,6 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 }
 
 func (r *Reader) SetReadahead(length int64) {
-	// r.mu.Lock()
-	// defer r.mu.Unlock()
 	r.Reader.SetReadahead(length)
 	r.readahead = length
 }
@@ -88,13 +83,10 @@ func (r *Reader) Readahead() int64 {
 func (r *Reader) Close() {
 	// file reader close in gotorrent
 	// this struct close in cache
-	// TODO провверить как будут закрываться ридеры
-	// r.mu.Lock()
 	r.isClosed = true
 	if len(r.file.Torrent().Files()) > 0 {
 		r.Reader.Close()
 	}
-	// r.mu.Unlock()
 	go r.cache.getRemPieces()
 }
 
