@@ -21,8 +21,13 @@ func (r *Reader) getPieceNum(offset int64) int {
 
 func (r *Reader) getOffsetRange() (int64, int64) {
 	prc := int64(settings.BTsets.ReaderReadAHead)
-	beginOffset := r.offset - r.cache.capacity*(100-prc)/100
-	endOffset := r.offset + r.cache.capacity*prc/100
+	readers := int64(len(r.cache.readers))
+	if readers == 0 {
+		readers = 1
+	}
+
+	beginOffset := r.offset - (r.cache.capacity/readers)*(100-prc)/100
+	endOffset := r.offset + (r.cache.capacity/readers)*prc/100
 
 	if beginOffset < 0 {
 		beginOffset = 0
