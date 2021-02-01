@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/storage"
 )
 
@@ -102,6 +103,12 @@ func (p *Piece) Release() {
 	}
 	p.Size = 0
 	p.complete = false
+
+	//Костыль чтобы двиг понял что куска нет, иногда загружает его по новый хз почему
+	pce := p.cache.torrent.Piece(p.Id)
+	pce.SetPriority(torrent.PiecePriorityNone)
+	pce.UpdateCompletion()
+	pce.SetPriority(torrent.PiecePriorityNone)
 }
 
 func WriteToDisk(b []byte, off int64) (n int, err error) {
