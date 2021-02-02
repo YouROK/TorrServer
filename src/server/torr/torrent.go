@@ -25,23 +25,23 @@ type Torrent struct {
 	Data   string
 	*torrent.TorrentSpec
 
-	Stat      state.TorrentStat
+	Stat	  state.TorrentStat
 	Timestamp int64
-	Size      int64
+	Size	  int64
 
 	*torrent.Torrent
 	muTorrent sync.Mutex
 
-	bt    *BTServer
+	bt	*BTServer
 	cache *torrstor.Cache
 
-	lastTimeSpeed       time.Time
-	DownloadSpeed       float64
-	UploadSpeed         float64
+	lastTimeSpeed	   time.Time
+	DownloadSpeed	   float64
+	UploadSpeed		 float64
 	BytesReadUsefulData int64
-	BytesWrittenData    int64
+	BytesWrittenData	int64
 
-	PreloadSize    int64
+	PreloadSize	int64
 	PreloadedBytes int64
 
 	expiredTime time.Time
@@ -56,14 +56,20 @@ func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 	if bt == nil {
 		return nil, errors.New("BT client not connected")
 	}
-	switch settings.BTsets.RetrackersMode {
-	case 1:
-		spec.Trackers = append(spec.Trackers, [][]string{utils.GetDefTrackers()}...)
-	case 2:
-		spec.Trackers = nil
-	case 3:
-		spec.Trackers = [][]string{utils.GetDefTrackers()}
-	}
+		spec.Trackers = [][]string{[]string{"http://retracker.local"}}
+
+		if settings.BTsets.RetrackersFromFile {
+				spec.Trackers = append(spec.Trackers, [][]string{utils.LoadFromFile()}...)
+		}
+
+		if settings.BTsets.RetrackersFromNGOSang {
+				spec.Trackers = append(spec.Trackers, [][]string{utils.LoadNGOSang()}...)
+		}
+
+		if settings.BTsets.RetrackersFromNewTrackon {
+				spec.Trackers = append(spec.Trackers, [][]string{utils.LoadNewTrackon()}...)
+		}
+
 
 	goTorrent, _, err := bt.client.AddTorrentSpec(spec)
 	if err != nil {
@@ -403,7 +409,7 @@ func (t *Torrent) Status() *state.TorrentStatus {
 			})
 			for i, f := range files {
 				st.FileStats = append(st.FileStats, &state.TorrentFileStat{
-					Id:     i + 1, // in web id 0 is undefined
+					Id:	 i + 1, // in web id 0 is undefined
 					Path:   f.Path(),
 					Length: f.Length(),
 				})

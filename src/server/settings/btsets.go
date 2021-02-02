@@ -17,10 +17,12 @@ type BTSets struct {
 	ContentPath string // path to save content
 
 	// Torrent
-	ForceEncrypt             bool
-	RetrackersMode           int  // 0 - don`t add, 1 - add retrackers (def), 2 - remove retrackers 3 - replace retrackers
-	TorrentDisconnectTimeout int  // in seconds
-	EnableDebug              bool // print logs
+	ForceEncrypt              bool
+	RetrackersFromFile        bool
+	RetrackersFromNGOSang     bool
+	RetrackersFromNewTrackon  bool
+	TorrentDisconnectTimeout  int  // in seconds
+	EnableDebug               bool // print logs
 
 	// BT Config
 	EnableIPv6         bool
@@ -86,7 +88,9 @@ func loadBTSets() {
 	sets.PreloadBuffer = false
 	sets.ConnectionsLimit = 20
 	sets.DhtConnectionLimit = 500
-	sets.RetrackersMode = 1
+	sets.RetrackersFromFile = true
+	sets.RetrackersFromNGOSang = false
+	sets.RetrackersFromNewTrackon = false
 	sets.TorrentDisconnectTimeout = 30
 	sets.ReaderReadAHead = 70 // 70% preload
 	BTsets = sets
