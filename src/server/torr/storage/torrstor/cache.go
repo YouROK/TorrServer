@@ -25,8 +25,7 @@ type Cache struct {
 	pieceLength int64
 	pieceCount  int
 
-	pieces     map[int]*Piece
-	bufferPull *BufferPool
+	pieces map[int]*Piece
 
 	readers   map[*Reader]struct{}
 	muReaders sync.Mutex
@@ -57,7 +56,6 @@ func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
 	c.pieceLength = info.PieceLength
 	c.pieceCount = info.NumPieces()
 	c.hash = hash
-	c.bufferPull = NewBufferPool(c.pieceLength, c.capacity)
 
 	for i := 0; i < c.pieceCount; i++ {
 		c.pieces[i] = &Piece{
@@ -86,7 +84,6 @@ func (c *Cache) Close() error {
 		delete(c.storage.caches, c.hash)
 	}
 	c.pieces = nil
-	c.bufferPull = nil
 
 	c.muReaders.Lock()
 	c.readers = nil

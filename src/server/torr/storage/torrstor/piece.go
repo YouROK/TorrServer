@@ -22,7 +22,6 @@ type Piece struct {
 	readed   bool
 	accessed int64
 	buffer   []byte
-	bufIndex int
 
 	mu    sync.RWMutex
 	cache *Cache
@@ -34,10 +33,7 @@ func (p *Piece) WriteAt(b []byte, off int64) (n int, err error) {
 
 	if p.buffer == nil {
 		go p.cache.cleanPieces()
-		p.buffer, p.bufIndex = p.cache.bufferPull.GetBuffer(p)
-		if p.buffer == nil {
-			return 0, errors.New("Can't get buffer write")
-		}
+		p.buffer = make([]byte, p.cache.pieceLength)
 	}
 	n = copy(p.buffer[off:], b[:])
 	p.Size += int64(n)
@@ -98,8 +94,6 @@ func (p *Piece) Release() {
 	defer p.mu.Unlock()
 	if p.buffer != nil {
 		p.buffer = nil
-		p.cache.bufferPull.ReleaseBuffer(p.bufIndex)
-		p.bufIndex = -1
 	}
 	p.Size = 0
 	p.complete = false
@@ -109,12 +103,4 @@ func (p *Piece) Release() {
 	pce.SetPriority(torrent.PiecePriorityNone)
 	pce.UpdateCompletion()
 	pce.SetPriority(torrent.PiecePriorityNone)
-}
-
-func WriteToDisk(b []byte, off int64) (n int, err error) {
-	return 0, nil
-}
-
-func ReadFromDisk(b []byte, off int64) (n int, err error) {
-	return 0, nil
 }
