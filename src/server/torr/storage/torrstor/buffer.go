@@ -61,7 +61,7 @@ func (b *BufferPool) GetBuffer(p *Piece) (buff []byte, index int) {
 }
 
 func (b *BufferPool) ReleaseBuffer(index int) {
-	if index == -1 {
+	if index == -1 || b == nil {
 		return
 	}
 	b.mu.Lock()
