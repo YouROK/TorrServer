@@ -3,7 +3,7 @@
 PLATFORMS=""
 PLATFORMS="$PLATFORMS linux/amd64 linux/386"
 PLATFORMS="$PLATFORMS windows/amd64 windows/386" # arm compilation not available for Windows
-PLATFORMS="$PLATFORMS darwin/amd64"              # amd64 only as of go1.5
+PLATFORMS="$PLATFORMS darwin/amd64 darwin/arm64"
 PLATFORMS="$PLATFORMS freebsd/amd64"
 PLATFORMS="$PLATFORMS linux/mips linux/mipsle linux/mips64 linux/mips64le" # experimental in go1.6
 #PLATFORMS="$PLATFORMS linux/arm linux/arm64"
@@ -23,6 +23,8 @@ PLATFORMS_ARM="linux"
 type setopt >/dev/null 2>&1
 
 export GOPATH="${PWD}"
+export GO111MODULE=auto
+
 GOBIN="/usr/local/go/bin/go"
 
 go run build_web.go
