@@ -139,7 +139,7 @@ func WriteStatus(w io.Writer) {
 
 func Preload(torr *Torrent, index int) {
 	if !sets.BTsets.PreloadBuffer {
-		size := int64(20 * 1024 * 1024)
+		size := int64(32 * 1024 * 1024)
 		if size > sets.BTsets.CacheSize {
 			size = sets.BTsets.CacheSize
 		}

@@ -109,6 +109,8 @@ func (bt *BTServer) configure() {
 	}
 	if settings.BTsets.PeersListenPort > 0 {
 		bt.config.ListenPort = settings.BTsets.PeersListenPort
+	} else {
+		bt.config.ListenPort = 50109
 	}
 
 	log.Println("Configure client:", settings.BTsets)

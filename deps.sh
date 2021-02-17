@@ -1,9 +1,11 @@
 #!/bin/bash
 
 export GOPATH="${PWD}"
+export GO111MODULE=auto
 
 go get -v github.com/pkg/browser
 go get -v github.com/alexflint/go-arg
+go get -v golang.org/x/time/rate
 go get -v github.com/anacrolix/dht
 go get -v github.com/anacrolix/missinggo/httptoo
 go get -v github.com/anacrolix/torrent
