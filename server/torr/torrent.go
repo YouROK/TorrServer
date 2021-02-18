@@ -132,7 +132,7 @@ func (t *Torrent) AddExpiredTime(duration time.Duration) {
 }
 
 func (t *Torrent) watch() {
-	t.progressTicker = time.NewTicker(time.Second)
+	t.progressTicker = time.NewTicker(time.Millisecond * 250)
 	defer t.progressTicker.Stop()
 
 	for {
