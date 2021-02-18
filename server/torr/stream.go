@@ -45,6 +45,20 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 
 	reader := t.NewReader(file)
 
+	//off := int64(0)
+	//buf := make([]byte, 32*1024)
+	//for true {
+	//	n, err := reader.Read(buf)
+	//	if err != nil {
+	//		fmt.Println("error read", err)
+	//		break
+	//	}
+	//	off = off + int64(n)
+	//	if off%(200*1024*1024) == 0 {
+	//		time.Sleep(time.Second * 15)
+	//	}
+	//}
+
 	log.Println("Connect client")
 
 	sets.SetViewed(&sets.Viewed{t.Hash().HexString(), fileID})
