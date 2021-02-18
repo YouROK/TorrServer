@@ -40,8 +40,13 @@ func (r *Reader) getOffsetRange() (int64, int64) {
 }
 
 func (r *Reader) preload() {
-	torr := r.file.Torrent()
 	rrange := r.getPiecesRange()
+	if rrange.Start == r.ranges.Start && rrange.End == r.ranges.End {
+		return
+	}
+
+	torr := r.file.Torrent()
+	r.ranges = rrange
 	rahPiece := int(r.readahead / torr.Info().PieceLength)
 	readerPiece := r.getReaderPiece()
 

@@ -165,7 +165,7 @@ func (c *Cache) cleanPieces() {
 
 	remPieces := c.getRemPieces()
 	if c.filled > c.capacity {
-		rems := (c.filled - c.capacity) / c.pieceLength
+		rems := (c.filled-c.capacity)/c.pieceLength + 1
 		for _, p := range remPieces {
 			c.removePiece(p)
 			rems--
@@ -192,19 +192,23 @@ func (c *Cache) getRemPieces() []*Piece {
 		if p.Size > 0 {
 			fill += p.Size
 		}
+		piece := c.torrent.Piece(id)
+		state := piece.State()
 		if len(ranges) > 0 {
 			if !inRanges(ranges, id) {
-				piece := c.torrent.Piece(id)
-				if piece.State().Priority != torrent.PiecePriorityNone {
+				if state.Priority != torrent.PiecePriorityNone {
 					piece.SetPriority(torrent.PiecePriorityNone)
 				}
 				if p.Size > 0 {
 					piecesRemove = append(piecesRemove, p)
 				}
+			} else {
+				if state.Priority != torrent.PiecePriorityNow && state.Priority != torrent.PiecePriorityReadahead && state.Priority != torrent.PiecePriorityNormal {
+					piece.SetPriority(torrent.PiecePriorityNormal)
+				}
 			}
 		} else {
-			piece := c.torrent.Piece(id)
-			if piece.State().Priority != torrent.PiecePriorityNone {
+			if state.Priority != torrent.PiecePriorityNone {
 				piece.SetPriority(torrent.PiecePriorityNone)
 			}
 		}
