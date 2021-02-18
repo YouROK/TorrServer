@@ -7,7 +7,8 @@ import DialogTitle from '@material-ui/core/DialogTitle'
 import DialogContent from '@material-ui/core/DialogContent'
 import DialogActions from '@material-ui/core/DialogActions'
 import Button from '@material-ui/core/Button'
-
+import Snackbar from '@material-ui/core/Snackbar'
+import IconButton from '@material-ui/core/IconButton'
 import CreditCardIcon from '@material-ui/icons/CreditCard'
 import List from '@material-ui/core/List'
 import ButtonGroup from '@material-ui/core/ButtonGroup'
@@ -17,6 +18,7 @@ const donateFrame =
 
 export default function DonateDialog() {
     const [open, setOpen] = React.useState(false)
+    const [snakeOpen, setSnakeOpen] = React.useState(true)
 
     const handleClickOpen = () => {
         setOpen(true)
@@ -54,6 +56,27 @@ export default function DonateDialog() {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            <Snackbar
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'center',
+                }}
+                open={snakeOpen}
+                onClose={()=>{setSnakeOpen(false)}}
+                autoHideDuration={6000}
+                message="Donate?"
+                action={
+                    <React.Fragment>
+                        <IconButton size="small" aria-label="close" color="inherit" onClick={()=>{
+                            setSnakeOpen(false)
+                            setOpen(true)
+                        }}>
+                            <CreditCardIcon fontSize="small" />
+                        </IconButton>
+                    </React.Fragment>
+                }
+            />
         </div>
     )
 }
