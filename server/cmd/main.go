@@ -9,6 +9,7 @@ import (
 
 	"github.com/alexflint/go-arg"
 	"github.com/pkg/browser"
+
 	"server"
 	"server/log"
 	"server/settings"
