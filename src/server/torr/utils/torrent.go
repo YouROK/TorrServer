@@ -12,39 +12,17 @@ import (
 
 var defTrackers = []string{
 	"http://retracker.local",
-
 	"http://bt4.t-ru.org/ann?magnet",
 	"http://retracker.mgts.by:80/announce",
 	"http://tracker.city9x.com:2710/announce",
 	"http://tracker.electro-torrent.pl:80/announce",
 	"http://tracker.internetwarriors.net:1337/announce",
 	"http://tracker2.itzmx.com:6961/announce",
-	"udp4://46.148.18.250:2710",
 	"udp://opentor.org:2710",
 	"udp://public.popcorn-tracker.org:6969/announce",
 	"udp://tracker.opentrackr.org:1337/announce",
-
 	"http://bt.svao-ix.ru/announce",
-
 	"udp://explodie.org:6969/announce",
-
-	// https://github.com/ngosang/trackerslist/blob/master/trackers_best_ip.txt
-	// 2020-12-24
-	"udp://93.158.213.92:1337/announce",
-	"udp://151.80.120.114:2710/announce",
-	"udp://31.131.4.62:6969/announce",
-	"udp://194.182.165.153:6969/announce",
-	"udp://208.83.20.20:6969/announce",
-	"udp://184.105.151.164:6969/announce",
-	"udp://62.210.97.59:1337/announce",
-	"udp://176.113.71.60:6961/announce",
-	"udp://51.15.55.204:1337/announce",
-	"udp://89.234.156.205:451/announce",
-	"udp://5.206.60.196:6969/announce",
-	"udp://5.226.148.20:6969/announce",
-	"udp://185.181.60.67:80/announce",
-	"udp://37.235.174.46:2710/announce",
-	"http://54.37.106.164:80/announce",
 }
 
 var loadedTrackers []string
@@ -61,7 +39,7 @@ func loadNewTracker() {
 	if len(loadedTrackers) > 0 {
 		return
 	}
-	resp, err := http.Get("https://newtrackon.com/api/stable")
+	resp, err := http.Get("https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best_ip.txt")
 	if err == nil {
 		buf, err := ioutil.ReadAll(resp.Body)
 		if err == nil {
@@ -73,7 +51,7 @@ func loadNewTracker() {
 					ret = append(ret, s)
 				}
 			}
-			loadedTrackers = ret
+			loadedTrackers = append(ret, defTrackers...)
 		}
 	}
 }
