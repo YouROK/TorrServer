@@ -31,7 +31,7 @@ func LoadNewTrackon() []string {
 
 func LoadNGOSang() []string {
 	var ret []string
-	resp, err := http.Get("https://ngosang.github.io/trackerslist/trackers_best.txt")
+	resp, err := http.Get("https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best_ip.txt")
 	if err == nil {
 		buf, err := ioutil.ReadAll(resp.Body)
 		if err == nil {
