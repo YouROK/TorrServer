@@ -19,9 +19,11 @@ src/golang.org/
 src/bazil.org/
 src/gopkg.in/
 src/go.opencensus.io/
+src/crawshaw.io/
+src/go.etcd.io/
+src/google.golang.org/
+src/cloud.google.com/
+src/go4.org/
 pkg/
 bin/
 toolchains/
-/src/crawshaw.io/
-/src/go.etcd.io/
-/src/google.golang.org/
