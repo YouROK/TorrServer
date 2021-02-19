@@ -201,7 +201,7 @@ func (c *Cache) getRemPieces() []*Piece {
 					piecesRemove = append(piecesRemove, p)
 				}
 			} else {
-				if state.Priority != torrent.PiecePriorityNow && state.Priority != torrent.PiecePriorityReadahead && state.Priority != torrent.PiecePriorityNormal {
+				if state.Priority == torrent.PiecePriorityNone {
 					piece.SetPriority(torrent.PiecePriorityNormal)
 				}
 			}

@@ -3,6 +3,7 @@ package torrstor
 import (
 	"io"
 	"sync"
+	"time"
 
 	"github.com/anacrolix/torrent"
 
@@ -113,6 +114,32 @@ func (c *Cache) CloseReader(r *Reader) {
 	r.Close()
 	delete(r.cache.readers, r)
 	r.cache.muReaders.Unlock()
+	go c.updatePriority()
+}
+
+func (c *Cache) updatePriority() {
+	time.Sleep(time.Second)
+	ranges := make([]Range, 0)
+	c.muReaders.Lock()
+	for r, _ := range c.readers {
+		ranges = append(ranges, r.getPiecesRange())
+	}
+	c.muReaders.Unlock()
+	ranges = mergeRange(ranges)
+
+	for id, _ := range c.pieces {
+		if len(ranges) > 0 {
+			if !inRanges(ranges, id) {
+				if c.torrent.PieceState(id).Priority != torrent.PiecePriorityNone {
+					c.torrent.Piece(id).SetPriority(torrent.PiecePriorityNone)
+				}
+			}
+		} else {
+			if c.torrent.PieceState(id).Priority != torrent.PiecePriorityNone {
+				c.torrent.Piece(id).SetPriority(torrent.PiecePriorityNone)
+			}
+		}
+	}
 }
 
 func (r *Reader) getPiecesRange() Range {
