@@ -55,7 +55,7 @@ func ParseLink(link string) (*torrent.TorrentSpec, error) {
 }
 
 func fromMagnet(link string) (*torrent.TorrentSpec, error) {
-	mag, err := metainfo.ParseMagnetUri(link)
+	mag, err := metainfo.ParseMagnetURI(link)
 	if err != nil {
 		return nil, err
 	}

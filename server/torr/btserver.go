@@ -3,10 +3,10 @@ package torr
 import (
 	"log"
 	"sync"
-	"time"
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
+
 	"server/settings"
 	"server/torr/storage/torrstor"
 	"server/torr/utils"
@@ -78,25 +78,29 @@ func (bt *BTServer) configure() {
 	bt.config.HTTPUserAgent = userAgent
 	bt.config.ExtendedHandshakeClientVersion = cliVers
 	bt.config.EstablishedConnsPerTorrent = settings.BTsets.ConnectionsLimit
-	bt.config.UpnpID = "YouROK/TorrServer"
+	// bt.config.UpnpID = "YouROK/TorrServer"
 
 	//bt.config.DropMutuallyCompletePeers = true
 	//bt.config.DropDuplicatePeerIds = true
 
 	// Encryption/Obfuscation
-	bt.config.HeaderObfuscationPolicy = torrent.HeaderObfuscationPolicy{
-		RequirePreferred: settings.BTsets.ForceEncrypt,
-		Preferred:        true,
+	// bt.config.HeaderObfuscationPolicy = torrent.HeaderObfuscationPolicy{
+	// 	RequirePreferred: settings.BTsets.ForceEncrypt,
+	// 	Preferred:        true,
+	// }
+
+	bt.config.EncryptionPolicy = torrent.EncryptionPolicy{
+		ForceEncryption: settings.BTsets.ForceEncrypt,
 	}
 
-	switch settings.BTsets.Strategy {
-	case 1: // RequestStrategyFuzzing
-		bt.config.DefaultRequestStrategy = torrent.RequestStrategyFuzzing()
-	case 2: // RequestStrategyFastest
-		bt.config.DefaultRequestStrategy = torrent.RequestStrategyFastest()
-	default: // RequestStrategyDuplicateRequestTimeout
-		bt.config.DefaultRequestStrategy = torrent.RequestStrategyDuplicateRequestTimeout(5 * time.Second)
-	}
+	// switch settings.BTsets.Strategy {
+	// case 1: // RequestStrategyFuzzing
+	// 	bt.config.DefaultRequestStrategy = torrent.RequestStrategyFuzzing()
+	// case 2: // RequestStrategyFastest
+	// 	bt.config.DefaultRequestStrategy = torrent.RequestStrategyFastest()
+	// default: // RequestStrategyDuplicateRequestTimeout
+	// 	bt.config.DefaultRequestStrategy = torrent.RequestStrategyDuplicateRequestTimeout(5 * time.Second)
+	// }
 
 	if settings.BTsets.DhtConnectionLimit > 0 {
 		bt.config.ConnTracker.SetMaxEntries(settings.BTsets.DhtConnectionLimit)

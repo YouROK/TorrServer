@@ -300,9 +300,9 @@ func (t *Torrent) Preload(index int, size int64) {
 			isComplete := true
 			if readerPieceBefore >= pieceFileStart {
 				for i := pieceFileStart; i < readerPieceBefore; i++ {
-					if !t.Piece(i).State().Complete {
+					if !t.PieceState(i).Complete {
 						isComplete = false
-						if t.Piece(i).State().Priority == torrent.PiecePriorityNone {
+						if t.PieceState(i).Priority == torrent.PiecePriorityNone {
 							t.Piece(i).SetPriority(torrent.PiecePriorityNormal)
 						}
 					}
@@ -310,9 +310,9 @@ func (t *Torrent) Preload(index int, size int64) {
 			}
 			if readerPieceAfter <= pieceFileEnd {
 				for i := readerPieceAfter; i <= pieceFileEnd; i++ {
-					if !t.Piece(i).State().Complete {
+					if !t.PieceState(i).Complete {
 						isComplete = false
-						if t.Piece(i).State().Priority == torrent.PiecePriorityNone {
+						if t.PieceState(i).Priority == torrent.PiecePriorityNone {
 							t.Piece(i).SetPriority(torrent.PiecePriorityNormal)
 						}
 					}

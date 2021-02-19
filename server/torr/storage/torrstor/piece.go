@@ -98,9 +98,5 @@ func (p *Piece) Release() {
 	p.Size = 0
 	p.complete = false
 
-	//Костыль чтобы двиг понял что куска нет, иногда загружает его по новый хз почему
-	pce := p.cache.torrent.Piece(p.Id)
-	pce.SetPriority(torrent.PiecePriorityNone)
-	pce.UpdateCompletion()
-	pce.SetPriority(torrent.PiecePriorityNone)
+	p.cache.torrent.Piece(p.Id).SetPriority(torrent.PiecePriorityNone)
 }

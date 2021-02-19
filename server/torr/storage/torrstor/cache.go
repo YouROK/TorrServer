@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/anacrolix/torrent"
+
 	"server/log"
 	"server/settings"
 	"server/torr/storage/state"
@@ -193,12 +194,9 @@ func (c *Cache) getRemPieces() []*Piece {
 			fill += p.Size
 		}
 		piece := c.torrent.Piece(id)
-		state := piece.State()
+		state := c.torrent.PieceState(id)
 		if len(ranges) > 0 {
 			if !inRanges(ranges, id) {
-				if state.Priority != torrent.PiecePriorityNone {
-					piece.SetPriority(torrent.PiecePriorityNone)
-				}
 				if p.Size > 0 {
 					piecesRemove = append(piecesRemove, p)
 				}
@@ -206,10 +204,6 @@ func (c *Cache) getRemPieces() []*Piece {
 				if state.Priority != torrent.PiecePriorityNow && state.Priority != torrent.PiecePriorityReadahead && state.Priority != torrent.PiecePriorityNormal {
 					piece.SetPriority(torrent.PiecePriorityNormal)
 				}
-			}
-		} else {
-			if state.Priority != torrent.PiecePriorityNone {
-				piece.SetPriority(torrent.PiecePriorityNone)
 			}
 		}
 	}
