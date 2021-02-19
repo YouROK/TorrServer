@@ -14,7 +14,7 @@ GOBIN="/usr/local/go/bin/go"
 
 $GOBIN version
 
-$GOBIN run build_web.go
+#$GOBIN run build_web.go
 
 LDFLAGS="'-s -w'"
 FAILURES=""
@@ -23,7 +23,7 @@ OUTPUT="${ROOT}/dist/TorrServer"
 
 cd "${ROOT}/server"
 $GOBIN clean -i -r -cache
-rm -f "${ROOT}/dist/TorrServer*"
+#rm -f "${OUTPUT}*"
 
 $GOBIN mod tidy
 
