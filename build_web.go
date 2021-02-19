@@ -23,8 +23,8 @@ func main() {
 	for _, f := range fs {
 		if strings.HasSuffix(f.Name(), ".html") {
 			name := filenameWithoutExtension(f.Name())
-			fmt.Println("Create template go:", "src/server/web/pages/template/"+name+"_html.go")
-			out, err := os.Create("src/server/web/pages/template/" + name + "_html.go")
+			fmt.Println("Create template go:", "server/web/pages/template/"+name+"_html.go")
+			out, err := os.Create("server/web/pages/template/" + name + "_html.go")
 			if err != nil {
 				fmt.Println("Error create file", err)
 				os.Exit(1)
@@ -47,7 +47,7 @@ func main() {
 			out.Close()
 
 			fmt.Println("go fmt template...")
-			run("go", "fmt", "src/server/web/pages/template/"+name+"_html.go")
+			run("go", "fmt", "server/web/pages/template/"+name+"_html.go")
 			fmt.Println("Complete OK")
 		}
 	}
