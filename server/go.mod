@@ -1,8 +1,6 @@
 module server
 
-replace (
-	github.com/anacrolix/torrent v1.2.5 => github.com/yourok/torrent v0.0.0-20210219123643-1755850cdcd4
-)
+replace github.com/anacrolix/torrent v1.2.5 => github.com/yourok/torrent v0.0.0-20210219123643-1755850cdcd4
 
 require (
 	github.com/alexflint/go-arg v1.3.0
