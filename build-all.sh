@@ -25,6 +25,8 @@ cd "${ROOT}/server"
 $GOBIN clean -i -r -cache
 rm -f "${ROOT}/dist/TorrServer*"
 
+$GOBIN mod tidy
+
 BUILD_FLAGS="-tags disable_libutp -ldflags=${LDFLAGS}"
 
 #####################################
