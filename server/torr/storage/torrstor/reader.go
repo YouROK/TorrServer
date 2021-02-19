@@ -6,6 +6,7 @@ import (
 
 	"github.com/anacrolix/torrent"
 	"server/log"
+	"server/settings"
 )
 
 type Reader struct {
@@ -61,7 +62,6 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 	if r.file.Torrent() != nil && r.file.Torrent().Info() != nil {
 		n, err = r.Reader.Read(p)
 		r.offset += int64(n)
-		//go r.preload()
 	} else {
 		log.TLogln("Torrent closed and readed")
 	}
@@ -112,4 +112,38 @@ func (c *Cache) CloseReader(r *Reader) {
 	r.Close()
 	delete(r.cache.readers, r)
 	r.cache.muReaders.Unlock()
+}
+
+func (r *Reader) getPiecesRange() Range {
+	startOff, endOff := r.getOffsetRange()
+	return Range{r.getPieceNum(startOff), r.getPieceNum(endOff)}
+}
+
+func (r *Reader) getReaderPiece() int {
+	readerOff := r.offset
+	return r.getPieceNum(readerOff)
+}
+
+func (r *Reader) getPieceNum(offset int64) int {
+	return int((offset + r.file.Offset()) / r.cache.pieceLength)
+}
+
+func (r *Reader) getOffsetRange() (int64, int64) {
+	prc := int64(settings.BTsets.ReaderReadAHead)
+	readers := int64(len(r.cache.readers))
+	if readers == 0 {
+		readers = 1
+	}
+
+	beginOffset := r.offset - (r.cache.capacity/readers)*(100-prc)/100
+	endOffset := r.offset + (r.cache.capacity/readers)*prc/100
+
+	if beginOffset < 0 {
+		beginOffset = 0
+	}
+
+	if endOffset > r.file.Length() {
+		endOffset = r.file.Length()
+	}
+	return beginOffset, endOffset
 }
