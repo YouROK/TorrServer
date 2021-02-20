@@ -96,7 +96,6 @@ func (c *Cache) Close() error {
 
 func (c *Cache) removePiece(piece *Piece) {
 	piece.Release()
-	utils.FreeOSMemGC()
 }
 
 func (c *Cache) AdjustRA(readahead int64) {
