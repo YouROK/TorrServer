@@ -60,10 +60,9 @@ func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
 
 	for i := 0; i < c.pieceCount; i++ {
 		c.pieces[i] = &Piece{
-			Id:     i,
-			Length: info.Piece(i).Length(),
-			Hash:   info.Piece(i).Hash().HexString(),
-			cache:  c,
+			Id:    i,
+			Hash:  info.Piece(i).Hash().HexString(),
+			cache: c,
 		}
 	}
 }
@@ -116,11 +115,11 @@ func (c *Cache) GetState() *state.CacheState {
 	var fill int64 = 0
 	for _, p := range c.pieces {
 		if p.Size > 0 {
-			fill += p.Length
+			fill += p.Size
 			piecesState[p.Id] = state.ItemState{
 				Id:        p.Id,
 				Size:      p.Size,
-				Length:    p.Length,
+				Length:    c.pieceLength,
 				Completed: p.complete,
 			}
 		}
@@ -192,16 +191,14 @@ func (c *Cache) getRemPieces() []*Piece {
 		if p.Size > 0 {
 			fill += p.Size
 		}
-		piece := c.torrent.Piece(id)
-		state := c.torrent.PieceState(id)
 		if len(ranges) > 0 {
 			if !inRanges(ranges, id) {
-				if p.Size > 0 {
+				if p.Size > 0 && !c.isIdInFileBE(ranges, id) {
 					piecesRemove = append(piecesRemove, p)
 				}
 			} else {
-				if state.Priority == torrent.PiecePriorityNone {
-					piece.SetPriority(torrent.PiecePriorityNormal)
+				if c.torrent.PieceState(id).Priority == torrent.PiecePriorityNone {
+					c.torrent.Piece(id).SetPriority(torrent.PiecePriorityNormal)
 				}
 			}
 		}
@@ -213,4 +210,19 @@ func (c *Cache) getRemPieces() []*Piece {
 
 	c.filled = fill
 	return piecesRemove
+}
+
+func (c *Cache) isIdInFileBE(ranges []Range, id int) bool {
+	for _, rng := range ranges {
+		ss := int(rng.File.Offset() / c.pieceLength)
+		se := int((5*1024*1024 + rng.File.Offset()) / c.pieceLength)
+
+		es := int((rng.File.Offset() + rng.File.Length() - 5*1024*1024) / c.pieceLength)
+		ee := int((rng.File.Offset() + rng.File.Length()) / c.pieceLength)
+
+		if id >= ss && id <= se || id >= es && id <= ee {
+			return true
+		}
+	}
+	return false
 }

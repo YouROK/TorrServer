@@ -13,10 +13,9 @@ import (
 type Piece struct {
 	storage.PieceImpl
 
-	Id     int
-	Hash   string
-	Length int64
-	Size   int64
+	Id   int
+	Hash string
+	Size int64
 
 	complete bool
 	readed   bool
