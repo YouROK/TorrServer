@@ -2,10 +2,13 @@ package torrstor
 
 import (
 	"sort"
+
+	"github.com/anacrolix/torrent"
 )
 
 type Range struct {
 	Start, End int
+	File       *torrent.File
 }
 
 func inRanges(ranges []Range, ind int) bool {

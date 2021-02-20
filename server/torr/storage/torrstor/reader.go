@@ -144,7 +144,7 @@ func (c *Cache) updatePriority() {
 
 func (r *Reader) getPiecesRange() Range {
 	startOff, endOff := r.getOffsetRange()
-	return Range{r.getPieceNum(startOff), r.getPieceNum(endOff)}
+	return Range{r.getPieceNum(startOff), r.getPieceNum(endOff), r.file}
 }
 
 func (r *Reader) getReaderPiece() int {
