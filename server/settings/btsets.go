@@ -12,10 +12,6 @@ type BTSets struct {
 	PreloadBuffer   bool
 	ReaderReadAHead int // in percent, 5%-100%, [...S__X__E...] [S-E] not clean
 
-	// Storage
-	SaveOnDisk  bool   // save on disk?
-	ContentPath string // path to save content
-
 	// Torrent
 	ForceEncrypt             bool
 	RetrackersMode           int  // 0 - don`t add, 1 - add retrackers (def), 2 - remove retrackers 3 - replace retrackers
