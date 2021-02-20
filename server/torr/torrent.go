@@ -155,17 +155,17 @@ func (t *Torrent) progressEvent() {
 	t.muTorrent.Lock()
 	if t.Torrent != nil && t.Torrent.Info() != nil {
 		st := t.Torrent.Stats()
-		deltaDlBytes := st.BytesReadUsefulData.Int64() - t.BytesReadUsefulData
-		deltaUpBytes := st.BytesWrittenData.Int64() - t.BytesWrittenData
+		deltaDlBytes := st.BytesRead.Int64() - t.BytesReadUsefulData
+		deltaUpBytes := st.BytesWritten.Int64() - t.BytesWrittenData
 		deltaTime := time.Since(t.lastTimeSpeed).Seconds()
 
 		t.DownloadSpeed = float64(deltaDlBytes) / deltaTime
 		t.UploadSpeed = float64(deltaUpBytes) / deltaTime
 
-		t.BytesWrittenData = st.BytesWrittenData.Int64()
-		t.BytesReadUsefulData = st.BytesReadUsefulData.Int64()
+		t.BytesReadUsefulData = st.BytesRead.Int64()
+		t.BytesWrittenData = st.BytesWritten.Int64()
 
-		t.PreloadedBytes = t.Torrent.BytesCompleted()
+		t.PreloadedBytes = t.cache.GetState().Filled
 	} else {
 		t.DownloadSpeed = 0
 		t.UploadSpeed = 0
@@ -288,7 +288,8 @@ func (t *Torrent) Preload(index int, size int64) {
 			if t.Torrent == nil {
 				return
 			}
-			t.PreloadedBytes = t.Torrent.BytesCompleted()
+
+			t.PreloadedBytes = t.cache.GetState().Filled
 			t.muTorrent.Unlock()
 
 			stat := fmt.Sprint(file.Torrent().InfoHash().HexString(), " ", utils2.Format(float64(t.PreloadedBytes)), "/", utils2.Format(float64(t.PreloadSize)), " Speed:", utils2.Format(t.DownloadSpeed), " Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
