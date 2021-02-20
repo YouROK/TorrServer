@@ -28,6 +28,7 @@ type BTSets struct {
 	DisableUTP         bool
 	DisableUPNP        bool
 	DisableDHT         bool
+	DisablePEX         bool
 	DisableUpload      bool
 	DownloadRateLimit  int // in kb, 0 - inf
 	UploadRateLimit    int // in kb, 0 - inf
