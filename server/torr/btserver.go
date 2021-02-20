@@ -54,12 +54,8 @@ func (bt *BTServer) configure() {
 	blocklist, _ := utils.ReadBlockedIP()
 	bt.config = torrent.NewDefaultClientConfig()
 
-	if !settings.BTsets.SaveOnDisk {
-		bt.storage = torrstor.NewStorage(settings.BTsets.CacheSize)
-		bt.config.DefaultStorage = bt.storage
-	} else {
-		bt.config.DataDir = settings.BTsets.ContentPath
-	}
+	bt.storage = torrstor.NewStorage(settings.BTsets.CacheSize)
+	bt.config.DefaultStorage = bt.storage
 
 	userAgent := "qBittorrent/4.3.2"
 	peerID := "-qB4320-"
