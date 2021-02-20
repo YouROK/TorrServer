@@ -129,6 +129,8 @@ export default function SettingsDialog() {
                             <br />
                             <FormControlLabel control={<Switch checked={settings.DisableDHT} onChange={inputForm} id="DisableDHT" color="primary" />} label="Disable DHT" />
                             <br />
+                            <FormControlLabel control={<Switch checked={settings.DisablePEX} onChange={inputForm} id="DisablePEX" color="primary" />} label="Disable PEX" />
+                            <br />
                             <FormControlLabel control={<Switch checked={settings.DisableUpload} onChange={inputForm} id="DisableUpload" color="primary" />} label="Disable upload" />
                             <br />
                             <TextField onChange={inputForm} margin="dense" id="DownloadRateLimit" label="Download rate limit" value={settings.DownloadRateLimit} type="number" fullWidth />
@@ -136,13 +138,6 @@ export default function SettingsDialog() {
                             <TextField onChange={inputForm} margin="dense" id="ConnectionsLimit" label="Connections limit" value={settings.ConnectionsLimit} type="number" fullWidth />
                             <TextField onChange={inputForm} margin="dense" id="DhtConnectionLimit" label="Dht connection limit" value={settings.DhtConnectionLimit} type="number" fullWidth />
                             <TextField onChange={inputForm} margin="dense" id="PeersListenPort" label="Peers listen port" value={settings.PeersListenPort} type="number" fullWidth />
-                            <h1 />
-                            <InputLabel id="Strategy">Strategy</InputLabel>
-                            <Select onChange={inputForm} type="number" native="true" id="Strategy" value={settings.Strategy}>
-                                <option value={0}>DuplicateRequestTimeout</option>
-                                <option value={1}>Fuzzing</option>
-                                <option value={2}>Fastest</option>
-                            </Select>
                         </>
                     )}
                 </DialogContent>
@@ -159,22 +154,3 @@ export default function SettingsDialog() {
     )
 }
 
-/*
-{
-	"CacheSize": 209715200,
-	"PreloadBufferSize": 20971520,
-	"RetrackersMode": 1,
-	"TorrentDisconnectTimeout": 30,
-	"EnableIPv6": false,
-	"DisableTCP": false,
-	"DisableUTP": true,
-	"DisableUPNP": false,
-	"DisableDHT": false,
-	"DisableUpload": false,
-	"DownloadRateLimit": 0,
-	"UploadRateLimit": 0,
-	"ConnectionsLimit": 20,
-	"DhtConnectionLimit": 500,
-	"PeersListenPort": 0
-}
- */
