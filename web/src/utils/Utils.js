@@ -5,6 +5,6 @@ export function humanizeSize(size) {
 }
 
 export function getPeerString(torrent) {
-    if (!torrent || !torrent.connected_seeders) return '[0] 0 / 0'
+    if (!torrent || !torrent.connected_seeders) return ''
     return '[' + torrent.connected_seeders + '] ' + torrent.active_peers + ' / ' + torrent.total_peers
 }
