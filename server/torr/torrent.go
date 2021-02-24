@@ -132,7 +132,7 @@ func (t *Torrent) AddExpiredTime(duration time.Duration) {
 }
 
 func (t *Torrent) watch() {
-	t.progressTicker = time.NewTicker(time.Millisecond * 250)
+	t.progressTicker = time.NewTicker(time.Second)
 	defer t.progressTicker.Stop()
 
 	for {
@@ -323,7 +323,7 @@ func (t *Torrent) Preload(index int, size int64) {
 			if isComplete {
 				break
 			}
-			time.Sleep(time.Millisecond * 10)
+			time.Sleep(time.Second)
 		}
 	}
 	log.TLogln("End preload:", file.Torrent().InfoHash().HexString(), "Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
