@@ -58,10 +58,10 @@ export default function DialogTorrentInfo(props) {
                 <List>
                     <ListItem>
                         <ButtonGroup style={style.width100} variant="contained" color="primary" aria-label="contained primary button group">
-                            <Button style={style.width100} href={playlistTorrHost() + '/' + encodeURI(torrent.name || torrent.title || 'file') + '.m3u?link=' + torrent.hash + '&m3u'}>
+                            <Button style={style.width100} href={playlistTorrHost() + '/' + encodeURIComponent(torrent.name || torrent.title || 'file') + '.m3u?link=' + torrent.hash + '&m3u'}>
                                 Playlist
                             </Button>
-                            <Button style={style.width100} href={playlistTorrHost() + '/' + encodeURI(torrent.name || torrent.title || 'file') + '.m3u?link=' + torrent.hash + '&m3u&fromlast'}>
+                            <Button style={style.width100} href={playlistTorrHost() + '/' + encodeURIComponent(torrent.name || torrent.title || 'file') + '.m3u?link=' + torrent.hash + '&m3u&fromlast'}>
                                 Playlist after last view
                             </Button>
                         </ButtonGroup>
@@ -71,7 +71,7 @@ export default function DialogTorrentInfo(props) {
                             <ButtonGroup style={style.width100} disableElevation variant="contained" color="primary">
                                 <Button
                                     style={style.width100}
-                                    href={streamHost() + '/' + encodeURI(file.path.split('\\').pop().split('/').pop()) + '?link=' + torrent.hash + '&index=' + file.id + '&play'}
+                                    href={streamHost() + '/' + encodeURIComponent(file.path.split('\\').pop().split('/').pop()) + '?link=' + torrent.hash + '&index=' + file.id + '&play'}
                                 >
                                     <Typography>
                                         {file.path.split('\\').pop().split('/').pop()} | {humanizeSize(file.length)}
