@@ -163,7 +163,7 @@ export default function MiniDrawer() {
                     <AddDialog />
                     <UploadDialog />
                     <RemoveAll />
-                    <ListItem button key="Playlist all torrents" onClick={() => window.open(playlistAllHost(), '_blank')}>
+                    <ListItem button component="a" key="Playlist all torrents" target="_blank" href={playlistAllHost()}>
                         <ListItemIcon>
                             <ListIcon />
                         </ListItemIcon>
