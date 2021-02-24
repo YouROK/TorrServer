@@ -10,7 +10,7 @@ import ListItem from '@material-ui/core/ListItem'
 import DialogActions from '@material-ui/core/DialogActions'
 import Dialog from '@material-ui/core/Dialog'
 
-import { humanizeSize } from '../utils/Utils'
+import { getPeerString, humanizeSize } from '../utils/Utils'
 
 import DialogTorrentInfo from './DialogTorrentInfo'
 import { torrentsHost } from '../utils/Hosts'
@@ -54,12 +54,13 @@ export default function Torrent(props) {
                         }}
                     >
                         {torrent.poster &&
-                            <img src={torrent.poster} alt={torrent.title} align="left" style={{width: 'auto',height:'100px',margin:'0 10px 0 0',borderRadius:'5px'}}/>
+                            <img src={torrent.poster} alt="" align="left" style={{width: 'auto',height:'100px',margin:'0 10px 0 0',borderRadius:'5px'}}/>
                         }
                         <Typography>
-                            {torrent.name ? torrent.name : torrent.title}
+                            {torrent.title ? torrent.title : torrent.name}
                             {torrent.torrent_size > 0 ? ' | ' + humanizeSize(torrent.torrent_size) : ''}
                             {torrent.download_speed > 0 ? ' | ' + humanizeSize(torrent.download_speed) + '/sec' : ''}
+                            {getPeerString(torrent) ? ' | ' + getPeerString(torrent) : '' }
                         </Typography>
                     </Button>
                     <Button
