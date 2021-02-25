@@ -5,7 +5,7 @@ import CachedIcon from '@material-ui/icons/Cached'
 import LinearProgress from '@material-ui/core/LinearProgress';
 
 import { getPeerString, humanizeSize } from '../utils/Utils'
-import { playlistTorrHost, streamHost } from '../utils/Hosts'
+import { playlistTorrHost, streamHost, viewedHost } from '../utils/Hosts'
 import DialogTitle from '@material-ui/core/DialogTitle'
 import DialogContent from '@material-ui/core/DialogContent'
 
@@ -25,12 +25,20 @@ const style = {
 
 export default function DialogTorrentInfo(props) {
     const [torrent, setTorrent] = React.useState(props.torrent)
+    const [viewed, setViewed] = React.useState(null)
     const [progress, setProgress] = React.useState(-1)
 
     useEffect(() => {
         setTorrent(props.torrent)
         if(torrent.stat==2)
             setProgress(torrent.preloaded_bytes * 100 / torrent.preload_size)
+        getViewed(props.torrent.hash,(list) => {
+            if (list) {
+                let lst = list.map((itm) => itm.file_index)
+                setViewed(lst)
+            }else
+                setViewed(null)
+        })
     }, [props.torrent, props.open])
 
     return (
@@ -74,7 +82,7 @@ export default function DialogTorrentInfo(props) {
                                     href={streamHost() + '/' + encodeURIComponent(file.path.split('\\').pop().split('/').pop()) + '?link=' + torrent.hash + '&index=' + file.id + '&play'}
                                 >
                                     <Typography>
-                                        {file.path.split('\\').pop().split('/').pop()} | {humanizeSize(file.length)}
+                                        {file.path.split('\\').pop().split('/').pop()} | {humanizeSize(file.length)} {viewed && viewed.indexOf(file.id)!=-1 && "| ✓"}
                                     </Typography>
                                 </Button>
                                 <Button onClick={() => fetch(streamHost() + '?link=' + torrent.hash + '&index=' + file.id + '&preload')}>
@@ -87,6 +95,30 @@ export default function DialogTorrentInfo(props) {
             </DialogContent>
         </div>
     )
+}
+
+function getViewed(hash, callback) {
+    try {
+        fetch(viewedHost(), {
+            method: 'post',
+            body: JSON.stringify({ action: 'list', hash: hash }),
+            headers: {
+                Accept: 'application/json, text/plain, */*',
+                'Content-Type': 'application/json',
+            },
+        })
+            .then((res) => res.json())
+            .then(
+                (json) => {
+                    callback(json)
+                },
+                (error) => {
+                    callback(null)
+                }
+            )
+    } catch (e) {
+        console.error(e)
+    }
 }
 
 function getPlayableFile(torrent){
