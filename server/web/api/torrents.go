@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strings"
 
 	"server/log"
 	"server/torr"
@@ -62,6 +63,7 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 	}
 
 	log.TLogln("add torrent", req.Link)
+	req.Link = strings.ReplaceAll(req.Link, "&amp;", "&")
 	torrSpec, err := utils.ParseLink(req.Link)
 	if err != nil {
 		log.TLogln("error add torrent:", err)
