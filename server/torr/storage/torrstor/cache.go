@@ -3,6 +3,7 @@ package torrstor
 import (
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/anacrolix/torrent"
 
@@ -225,4 +226,58 @@ func (c *Cache) isIdInFileBE(ranges []Range, id int) bool {
 		}
 	}
 	return false
+}
+
+//////////////////
+// Reader section
+////////
+
+func (c *Cache) NewReader(file *torrent.File) *Reader {
+	return newReader(file, c)
+}
+
+func (c *Cache) Readers() int {
+	if c == nil {
+		return 0
+	}
+	c.muReaders.Lock()
+	defer c.muReaders.Unlock()
+	if c == nil || c.readers == nil {
+		return 0
+	}
+	return len(c.readers)
+}
+
+func (c *Cache) CloseReader(r *Reader) {
+	r.cache.muReaders.Lock()
+	r.Close()
+	delete(r.cache.readers, r)
+	r.cache.muReaders.Unlock()
+	// go c.updatePriority()
+}
+
+func (c *Cache) updatePriority() {
+	return
+	time.Sleep(time.Second)
+	ranges := make([]Range, 0)
+	c.muReaders.Lock()
+	for r, _ := range c.readers {
+		ranges = append(ranges, r.getPiecesRange())
+	}
+	c.muReaders.Unlock()
+	ranges = mergeRange(ranges)
+
+	for id, _ := range c.pieces {
+		if len(ranges) > 0 {
+			if !inRanges(ranges, id) {
+				if c.torrent.PieceState(id).Priority != torrent.PiecePriorityNone {
+					c.torrent.Piece(id).SetPriority(torrent.PiecePriorityNone)
+				}
+			}
+		} else {
+			if c.torrent.PieceState(id).Priority != torrent.PiecePriorityNone {
+				c.torrent.Piece(id).SetPriority(torrent.PiecePriorityNone)
+			}
+		}
+	}
 }
