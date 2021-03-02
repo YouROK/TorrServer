@@ -2,6 +2,8 @@ package torr
 
 import (
 	"log"
+	"net"
+	"strconv"
 	"sync"
 
 	"github.com/anacrolix/torrent"
@@ -92,10 +94,25 @@ func (bt *BTServer) configure() {
 	if settings.BTsets.PeersListenPort > 0 {
 		bt.config.ListenPort = settings.BTsets.PeersListenPort
 	} else {
-		bt.config.ListenPort = 50109
+		log.Println("Find upnp port")
+		upnpport := 32000
+		for {
+			l, err := net.Listen("tcp", ":"+strconv.Itoa(upnpport))
+			if l != nil {
+				l.Close()
+			}
+			if err == nil {
+				break
+			}
+			upnpport++
+		}
+		log.Println("Set upnp port", upnpport)
+		bt.config.ListenPort = upnpport
 	}
 
 	log.Println("Configure client:", settings.BTsets)
+	log.Println("Configure client:", bt.config)
+
 }
 
 func (bt *BTServer) GetTorrent(hash torrent.InfoHash) *Torrent {
