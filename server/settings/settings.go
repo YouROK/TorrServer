@@ -4,6 +4,7 @@ var (
 	tdb      *TDB
 	Path     string
 	ReadOnly bool
+	HttpAuth bool
 )
 
 func InitSets(readOnly bool) {

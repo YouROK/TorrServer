@@ -14,7 +14,7 @@ type requestI struct {
 	Action string `json:"action,omitempty"`
 }
 
-func SetupRoute(route *gin.Engine) {
+func SetupRoute(route *gin.RouterGroup) {
 	route.GET("/echo", echo)
 	route.GET("/shutdown", shutdown)
 

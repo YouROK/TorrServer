@@ -21,6 +21,7 @@ type args struct {
 	Path     string `arg:"-d" help:"database path"`
 	LogPath  string `arg:"-l" help:"log path"`
 	RDB      bool   `arg:"-r" help:"start in read-only DB mode"`
+	HttpAuth bool   `arg:"-a" help:"Http auth on all requests"`
 	DontKill bool   `arg:"-k" help:"dont kill program on signal"`
 	UI       bool   `arg:"-u" help:"run page torrserver in browser"`
 }
@@ -43,6 +44,7 @@ func main() {
 	}
 
 	settings.Path = params.Path
+	settings.HttpAuth = params.HttpAuth
 	log.Init(params.LogPath)
 
 	dnsResolve()

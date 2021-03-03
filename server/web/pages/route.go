@@ -6,7 +6,7 @@ import (
 	"server/web/pages/template"
 )
 
-func SetupRoute(route *gin.Engine) {
+func SetupRoute(route *gin.RouterGroup) {
 	route.GET("/", mainPage)
 	route.GET("/stat", statPage)
 }

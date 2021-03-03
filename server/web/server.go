@@ -3,10 +3,12 @@ package web
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+
 	"server/log"
 	"server/torr"
 	"server/version"
 	"server/web/api"
+	"server/web/auth"
 	"server/web/pages"
 )
 
@@ -26,8 +28,15 @@ func Start(port string) {
 
 	route := gin.New()
 	route.Use(gin.Recovery(), cors.Default())
-	api.SetupRoute(route)
-	pages.SetupRoute(route)
+
+	routeAuth := auth.SetupAuth(route)
+	if routeAuth != nil {
+		api.SetupRoute(routeAuth)
+		pages.SetupRoute(routeAuth)
+	} else {
+		api.SetupRoute(&route.RouterGroup)
+		pages.SetupRoute(&route.RouterGroup)
+	}
 	log.TLogln("Start web", port)
 	waitChan <- route.Run(":" + port)
 }
