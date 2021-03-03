@@ -32,7 +32,7 @@ func (p *Piece) WriteAt(b []byte, off int64) (n int, err error) {
 
 	if p.buffer == nil {
 		go p.cache.cleanPieces()
-		p.buffer = make([]byte, p.cache.pieceLength)
+		p.buffer = make([]byte, p.cache.pieceLength, p.cache.pieceLength)
 	}
 	n = copy(p.buffer[off:], b[:])
 	p.Size += int64(n)
