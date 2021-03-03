@@ -173,6 +173,9 @@ func (c *Cache) cleanPieces() {
 				break
 			}
 		}
+		if rems <= 0 {
+			utils.FreeOSMemGC()
+		}
 	}
 }
 
