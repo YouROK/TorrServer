@@ -62,7 +62,7 @@ func main() {
 }
 
 func dnsResolve() {
-	addrs, err := net.LookupHost("www.themoviedb.org")
+	addrs, err := net.LookupHost("www.google.com")
 	if len(addrs) == 0 {
 		fmt.Println("Check dns", addrs, err)
 

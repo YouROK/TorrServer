@@ -79,12 +79,12 @@ func loadBTSets() {
 	sets := new(BTSets)
 	sets.EnableDebug = false
 	sets.DisableUTP = true
-	sets.CacheSize = 200 * 1024 * 1024 // 200mb
+	sets.CacheSize = 100 * 1024 * 1024 // 100mb
 	sets.PreloadBuffer = false
-	sets.ConnectionsLimit = 20
+	sets.ConnectionsLimit = 50
 	sets.DhtConnectionLimit = 500
 	sets.RetrackersMode = 1
 	sets.TorrentDisconnectTimeout = 30
-	sets.ReaderReadAHead = 70 // 70% preload
+	sets.ReaderReadAHead = 95 // 95% preload
 	BTsets = sets
 }
