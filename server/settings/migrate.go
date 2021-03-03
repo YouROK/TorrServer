@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	bolt "go.etcd.io/bbolt"
+	"server/log"
 	"server/web/api/utils"
 )
 
@@ -86,7 +87,7 @@ func Migrate() {
 			if len(spec.DisplayName) > len(title) {
 				title = spec.DisplayName
 			}
-
+			log.TLogln("Migrate torrent", torr.Name, torr.Hash, torr.Size)
 			AddTorrent(&TorrentDB{
 				TorrentSpec: spec,
 				Name:        torr.Name,
