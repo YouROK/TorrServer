@@ -22,12 +22,11 @@ func Start(port string) {
 		waitChan <- err
 		return
 	}
-
 	route := gin.New()
 	route.Use(gin.Recovery(), cors.Default())
 	api.SetupRoute(route)
 	pages.SetupRoute(route)
-
+	log.TLogln("Start web", port)
 	waitChan <- route.Run(":" + port)
 }
 
