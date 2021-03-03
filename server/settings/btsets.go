@@ -81,7 +81,7 @@ func loadBTSets() {
 	sets.DisableUTP = true
 	sets.CacheSize = 100 * 1024 * 1024 // 100mb
 	sets.PreloadBuffer = false
-	sets.ConnectionsLimit = 50
+	sets.ConnectionsLimit = 25
 	sets.DhtConnectionLimit = 500
 	sets.RetrackersMode = 1
 	sets.TorrentDisconnectTimeout = 30
