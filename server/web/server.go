@@ -22,6 +22,8 @@ func Start(port string) {
 		waitChan <- err
 		return
 	}
+	gin.SetMode(gin.ReleaseMode)
+
 	route := gin.New()
 	route.Use(gin.Recovery(), cors.Default())
 	api.SetupRoute(route)
