@@ -253,11 +253,10 @@ func (c *Cache) CloseReader(r *Reader) {
 	r.Close()
 	delete(r.cache.readers, r)
 	r.cache.muReaders.Unlock()
-	// go c.updatePriority()
+	go c.updatePriority()
 }
 
 func (c *Cache) updatePriority() {
-	return
 	time.Sleep(time.Second)
 	ranges := make([]Range, 0)
 	c.muReaders.Lock()
