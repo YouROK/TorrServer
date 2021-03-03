@@ -14,7 +14,7 @@ GOBIN="/usr/local/go/bin/go"
 
 $GOBIN version
 
-#$GOBIN run build_web.go
+$GOBIN run build_web.go
 
 LDFLAGS="'-s -w'"
 FAILURES=""
@@ -22,12 +22,11 @@ ROOT=${PWD}
 OUTPUT="${ROOT}/dist/TorrServer"
 
 cd "${ROOT}/server"
-$GOBIN clean -i -r -cache
-#rm -f "${OUTPUT}*"
 
+$GOBIN clean -i -r -cache --modcache
 $GOBIN mod tidy
 
-BUILD_FLAGS="-tags disable_libutp -ldflags=${LDFLAGS}"
+BUILD_FLAGS="-ldflags=${LDFLAGS}"
 
 #####################################
 ### ARM build section
