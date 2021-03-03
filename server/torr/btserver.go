@@ -111,8 +111,6 @@ func (bt *BTServer) configure() {
 	}
 
 	log.Println("Configure client:", settings.BTsets)
-	log.Println("Configure client:", bt.config)
-
 }
 
 func (bt *BTServer) GetTorrent(hash torrent.InfoHash) *Torrent {
