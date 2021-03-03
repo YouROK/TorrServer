@@ -29,6 +29,8 @@ func Start(port string) {
 	route := gin.New()
 	route.Use(gin.Recovery(), cors.Default())
 
+	route.GET("/echo", echo)
+
 	routeAuth := auth.SetupAuth(route)
 	if routeAuth != nil {
 		api.SetupRoute(routeAuth)
@@ -48,4 +50,8 @@ func Wait() error {
 func Stop() {
 	BTS.Disconnect()
 	waitChan <- nil
+}
+
+func echo(c *gin.Context) {
+	c.String(200, "%v", version.Version)
 }

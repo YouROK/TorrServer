@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
 	sets "server/settings"
 	"server/torr"
-	"server/version"
 )
 
 type requestI struct {
@@ -15,7 +15,6 @@ type requestI struct {
 }
 
 func SetupRoute(route *gin.RouterGroup) {
-	route.GET("/echo", echo)
 	route.GET("/shutdown", shutdown)
 
 	route.POST("/settings", settings)
@@ -36,10 +35,6 @@ func SetupRoute(route *gin.RouterGroup) {
 	route.GET("/playlistall/all.m3u", allPlayList)
 	route.GET("/playlist", playList)
 	route.GET("/playlist/*fname", playList)
-}
-
-func echo(c *gin.Context) {
-	c.String(200, "%v", version.Version)
 }
 
 func shutdown(c *gin.Context) {
