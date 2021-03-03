@@ -1,8 +1,6 @@
 module server
 
-replace github.com/anacrolix/torrent v1.2.5 => /home/yourok/MEGAWork/go/torrent
-
-//github.com/yourok/torrent v0.0.0-20210302124413-ade31ee47747
+replace github.com/anacrolix/torrent v1.2.5 => github.com/yourok/torrent v0.0.0-20210302124413-ade31ee47747
 
 require (
 	github.com/alexflint/go-arg v1.3.0
