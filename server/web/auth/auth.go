@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"server/log"
 	"server/settings"
 )
 
@@ -27,6 +28,9 @@ func getAccounts() gin.Accounts {
 		return nil
 	}
 	var accs gin.Accounts
-	json.Unmarshal(buf, &accs)
+	err = json.Unmarshal(buf, &accs)
+	if err != nil {
+		log.TLogln("Error parse accs.db", err)
+	}
 	return accs
 }
