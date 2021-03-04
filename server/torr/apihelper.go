@@ -73,6 +73,7 @@ func GetTorrent(hashHex string) *Torrent {
 			if tr != nil {
 				tr.Title = tor.Title
 				tr.Poster = tor.Poster
+				tr.Data = tor.Data
 				tr.Size = tor.Size
 				tr.Timestamp = tor.Timestamp
 				tr.GotInfo()
