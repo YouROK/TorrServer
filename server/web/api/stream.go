@@ -36,6 +36,17 @@ func stream(c *gin.Context) {
 	_, play := c.GetQuery("play")
 	title := c.Query("title")
 	poster := c.Query("poster")
+	notAuth := c.GetBool("not_auth")
+
+	if notAuth && play {
+		streamNoAuth(c)
+		return
+	}
+	if notAuth {
+		c.Header("WWW-Authenticate", "Basic realm=Authorization Required")
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
 
 	if link == "" {
 		c.AbortWithError(http.StatusBadRequest, errors.New("link should not be empty"))
@@ -110,4 +121,69 @@ func stream(c *gin.Context) {
 		tor.Stream(index, c.Request, c.Writer)
 		return
 	}
+}
+
+func streamNoAuth(c *gin.Context) {
+	link := c.Query("link")
+	indexStr := c.Query("index")
+	_, preload := c.GetQuery("preload")
+	title := c.Query("title")
+	poster := c.Query("poster")
+
+	// c.Header("WWW-Authenticate", "Basic realm=Authorization Required")
+	// c.AbortWithStatus(http.StatusUnauthorized)
+
+	if link == "" {
+		c.AbortWithError(http.StatusBadRequest, errors.New("link should not be empty"))
+		return
+	}
+
+	if title == "" {
+		title = c.Param("fname")
+		title, _ = url.PathUnescape(title)
+		title = strings.TrimLeft(title, "/")
+	} else {
+		title, _ = url.QueryUnescape(title)
+	}
+
+	link, _ = url.QueryUnescape(link)
+	poster, _ = url.QueryUnescape(poster)
+
+	spec, err := utils.ParseLink(link)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	tor := torr.GetTorrent(spec.InfoHash.HexString())
+	if tor == nil {
+		c.AbortWithError(http.StatusNotFound, errors.New("Torrent not found"))
+		return
+	}
+
+	if !tor.GotInfo() {
+		c.AbortWithError(http.StatusInternalServerError, errors.New("timeout connection torrent"))
+		return
+	}
+
+	// find file
+	index := -1
+	if len(tor.Files()) == 1 {
+		index = 1
+	} else {
+		ind, err := strconv.Atoi(indexStr)
+		if err == nil {
+			index = ind
+		}
+	}
+	if index == -1 { // if file index not set and play file exec
+		c.AbortWithError(http.StatusBadRequest, errors.New("\"index\" is empty or wrong"))
+		return
+	}
+	// preload torrent
+	if preload {
+		torr.Preload(tor, index)
+	}
+
+	tor.Stream(index, c.Request, c.Writer)
 }
