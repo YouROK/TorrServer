@@ -130,9 +130,6 @@ func streamNoAuth(c *gin.Context) {
 	title := c.Query("title")
 	poster := c.Query("poster")
 
-	// c.Header("WWW-Authenticate", "Basic realm=Authorization Required")
-	// c.AbortWithStatus(http.StatusUnauthorized)
-
 	if link == "" {
 		c.AbortWithError(http.StatusBadRequest, errors.New("link should not be empty"))
 		return
