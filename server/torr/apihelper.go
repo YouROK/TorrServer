@@ -129,6 +129,15 @@ func SetSettings(set *sets.BTSets) {
 	bts.Connect()
 }
 
+func SetDefSettings() {
+	if sets.ReadOnly {
+		return
+	}
+	bts.Disconnect()
+	sets.SetDefault()
+	bts.Connect()
+}
+
 func Shutdown() {
 	bts.Disconnect()
 	sets.CloseDB()

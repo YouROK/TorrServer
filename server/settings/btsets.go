@@ -76,6 +76,10 @@ func loadBTSets() {
 		log.TLogln("Error unmarshal btsets", err)
 	}
 
+	SetDefault()
+}
+
+func SetDefault() {
 	sets := new(BTSets)
 	sets.EnableDebug = false
 	sets.DisableUTP = true

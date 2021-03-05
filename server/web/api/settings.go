@@ -10,7 +10,7 @@ import (
 	"server/torr"
 )
 
-//Action: get, set
+//Action: get, set, def
 type setsReqJS struct {
 	requestI
 	Sets *sets.BTSets `json:"sets,omitempty"`
@@ -27,9 +27,12 @@ func settings(c *gin.Context) {
 	if req.Action == "get" {
 		c.JSON(200, sets.BTsets)
 		return
-	}
-	if req.Action == "set" {
+	} else if req.Action == "set" {
 		torr.SetSettings(req.Sets)
+		c.Status(200)
+		return
+	} else if req.Action == "def" {
+		torr.SetDefSettings()
 		c.Status(200)
 		return
 	}
