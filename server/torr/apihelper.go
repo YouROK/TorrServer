@@ -73,6 +73,7 @@ func GetTorrent(hashHex string) *Torrent {
 			if tr != nil {
 				tr.Title = tor.Title
 				tr.Poster = tor.Poster
+				tr.Data = tor.Data
 				tr.Size = tor.Size
 				tr.Timestamp = tor.Timestamp
 				tr.GotInfo()
@@ -125,6 +126,15 @@ func SetSettings(set *sets.BTSets) {
 	}
 	bts.Disconnect()
 	sets.SetBTSets(set)
+	bts.Connect()
+}
+
+func SetDefSettings() {
+	if sets.ReadOnly {
+		return
+	}
+	bts.Disconnect()
+	sets.SetDefault()
 	bts.Connect()
 }
 
