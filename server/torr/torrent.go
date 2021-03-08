@@ -272,6 +272,10 @@ func (t *Torrent) Preload(index int, size int64) {
 		file = t.Files()[0]
 	}
 
+	if size > file.Length() {
+		size = file.Length()
+	}
+
 	if t.Info() != nil {
 		pl := t.Info().PieceLength
 		mb5 := int64(5 * 1024 * 1024)
