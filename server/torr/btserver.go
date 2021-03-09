@@ -3,6 +3,8 @@ package torr
 import (
 	"log"
 	"net"
+	"net/http"
+	"net/url"
 	"strconv"
 	"sync"
 
@@ -77,6 +79,19 @@ func (bt *BTServer) configure() {
 	bt.config.HTTPUserAgent = userAgent
 	bt.config.ExtendedHandshakeClientVersion = cliVers
 	bt.config.EstablishedConnsPerTorrent = settings.BTsets.ConnectionsLimit
+
+	if settings.BTsets.ProxyURL != "" {
+		purl, err := url.Parse(settings.BTsets.ProxyURL)
+		if err != nil {
+			log.Printf("Warning: unable to use proxy: %v", err)
+		} else {
+			bt.config.HTTPProxy = http.ProxyURL(purl)
+
+			if settings.BTsets.UseProxyForPeerConnections {
+				bt.config.ProxyURL = settings.BTsets.ProxyURL
+			}
+		}
+	}
 
 	bt.config.EncryptionPolicy = torrent.EncryptionPolicy{
 		ForceEncryption: settings.BTsets.ForceEncrypt,

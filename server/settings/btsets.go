@@ -32,6 +32,10 @@ type BTSets struct {
 	DhtConnectionLimit int // 0 - inf
 	PeersListenPort    int
 	Strategy           int // 0 - RequestStrategyDuplicateRequestTimeout, 1 - RequestStrategyFuzzing, 2 - RequestStrategyFastest
+
+	// Proxy
+	ProxyURL                   string
+	UseProxyForPeerConnections bool	//false - use proxy only for tracker connections, true - use proxy for tracker and peer connections
 }
 
 func (v *BTSets) String() string {
