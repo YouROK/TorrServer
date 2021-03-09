@@ -1,9 +1,10 @@
 [Unit]
-Description = Torrserver
+Description = TorrServer
 After = syslog.target network.target nss-lookup.target
 
 [Service]
 Type = simple
+Environment="GODEBUG=madvdontneed=1"
 ExecStart = /path/to/torrserver -d /path/to/db/
 ExecReload = /bin/kill -HUP ${MAINPID}
 ExecStop = /bin/kill -INT ${MAINPID}
