@@ -14,7 +14,7 @@ import List from '@material-ui/core/List'
 import ButtonGroup from '@material-ui/core/ButtonGroup'
 
 const donateFrame =
-    '<iframe src="https://yoomoney.ru/quickpay/shop-widget?writer=seller&targets=%D0%9F%D0%BE%D0%B4%D0%B4%D0%B5%D1%80%D0%B6%D0%BA%D0%B0%20%D0%BF%D1%80%D0%BE%D0%B5%D0%BA%D1%82%D0%BE%D0%B2&targets-hint=&default-sum=200&button-text=14&payment-type-choice=on&mobile-payment-type-choice=on&comment=on&hint=&successURL=&quickpay=shop&account=410013733697114" width="100%" height="302" frameborder="0" allowtransparency="true" scrolling="no"></iframe>'
+    '<iframe src="https://yoomoney.ru/quickpay/shop-widget?writer=seller&targets=TorrServer Donate&targets-hint=&default-sum=200&button-text=14&payment-type-choice=on&mobile-payment-type-choice=on&comment=on&hint=&successURL=&quickpay=shop&account=410013733697114" width="100%" height="302" frameborder="0" allowtransparency="true" scrolling="no"></iframe>'
 
 export default function DonateDialog() {
     const [open, setOpen] = React.useState(false)
