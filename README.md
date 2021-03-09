@@ -16,10 +16,9 @@ TorrServer [--port PORT] [--path PATH] [--logpath LOGPATH] [--rdb] [--httpauth] 
 * --ui, -u                         run page torrserver in browser
 * --version                        display version and exit
 
+###
 
-#
 
----
 ### Http Api of TorrServer:
 #### GET
 
@@ -126,9 +125,8 @@ if hash is not empty, return viewed file of torrent
 ##### Json struct see in
 https://github.com/YouROK/TorrServer/blob/d36d0c28f805ceab39adb4aac2869cd7a272085b/server/settings/viewed.go
 
-#
+###
 
----
 ### Donate:
 [PayPal](https://www.paypal.me/yourok)
 
@@ -137,9 +135,8 @@ YooMoney card: 5599 0050 6424 4747
 
 SberBank card: 4276 4000 6707 2919
 
-#
+###
 
----
 ### Thanks to everyone who tested and helped
 
 ###### **Anacrolix Matt Joiner** [github.com/anacrolix](https://github.com/anacrolix/)
