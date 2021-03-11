@@ -138,7 +138,7 @@ https://github.com/YouROK/TorrServer/blob/d36d0c28f805ceab39adb4aac2869cd7a27208
 
 The user data file should be located near to the settings.\
 File name: *accs.db*\
-File format:\
+File format:
 
 {\
     "User1": "Pass1",\
@@ -155,8 +155,8 @@ YooMoney card: 5599 0050 6424 4747
 
 SberBank card: 4276 4000 6707 2919
 
-###
 
+#
 ### Thanks to everyone who tested and helped
 
 ###### **Anacrolix Matt Joiner** [github.com/anacrolix](https://github.com/anacrolix/)
