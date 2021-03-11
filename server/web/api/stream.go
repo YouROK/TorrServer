@@ -53,14 +53,6 @@ func stream(c *gin.Context) {
 		return
 	}
 
-	if title == "" {
-		title = c.Param("fname")
-		title, _ = url.PathUnescape(title)
-		title = strings.TrimLeft(title, "/")
-	} else {
-		title, _ = url.QueryUnescape(title)
-	}
-
 	link, _ = url.QueryUnescape(link)
 	poster, _ = url.QueryUnescape(poster)
 
@@ -70,10 +62,21 @@ func stream(c *gin.Context) {
 		return
 	}
 
-	tor, err := torr.AddTorrent(spec, title, poster, "")
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
+	tor := torr.GetTorrent(spec.InfoHash.HexString())
+	if tor == nil {
+		if title == "" {
+			title = c.Param("fname")
+			title, _ = url.PathUnescape(title)
+			title = strings.TrimLeft(title, "/")
+		} else {
+			title, _ = url.QueryUnescape(title)
+		}
+
+		tor, err = torr.AddTorrent(spec, title, poster, "")
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
 	}
 
 	if !tor.GotInfo() {
