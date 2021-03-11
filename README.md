@@ -136,8 +136,9 @@ https://github.com/YouROK/TorrServer/blob/d36d0c28f805ceab39adb4aac2869cd7a27208
 ### Authorization
 
 The user data file should be located near to the settings.\
-Basic auth, read more in wiki
+Basic auth, read more in wiki \
 https://en.wikipedia.org/wiki/Basic_access_authentication
+
 File name: *accs.db*\
 File format:
 
