@@ -2,9 +2,11 @@
 TorrServer, stream torrent to http
 
 ### Installation
-Just download from releases and exec file
-https://github.com/YouROK/TorrServer/releases
-After open browser link http://127.0.0.1:8090
+Just download server from releases and exec file\
+https://github.com/YouROK/TorrServer/releases \
+After open browser link http://127.0.0.1:8090 \
+On linux systems you need to set the environment variable before run \
+***export GODEBUG=madvdontneed=1***
 
 
 #
