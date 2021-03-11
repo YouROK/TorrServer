@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//Action: add, get, rem, list, drop
+//Action: add, get, set, rem, list, drop
 type torrReqJS struct {
 	requestI
 	Link     string `json:"link,omitempty"`
@@ -41,6 +41,10 @@ func torrents(c *gin.Context) {
 		{
 			getTorrent(req, c)
 		}
+	case "set":
+		{
+			setTorrent(req, c)
+		}
 	case "rem":
 		{
 			remTorrent(req, c)
@@ -53,6 +57,7 @@ func torrents(c *gin.Context) {
 		{
 			dropTorrent(req, c)
 		}
+
 	}
 }
 
@@ -105,6 +110,15 @@ func getTorrent(req torrReqJS, c *gin.Context) {
 	} else {
 		c.Status(http.StatusNotFound)
 	}
+}
+
+func setTorrent(req torrReqJS, c *gin.Context) {
+	if req.Hash == "" {
+		c.AbortWithError(http.StatusBadRequest, errors.New("hash is empty"))
+		return
+	}
+	torr.SetTorrent(req.Hash, req.Title, req.Poster, req.Data)
+	c.Status(200)
 }
 
 func remTorrent(req torrReqJS, c *gin.Context) {

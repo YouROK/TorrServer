@@ -83,6 +83,25 @@ func GetTorrent(hashHex string) *Torrent {
 	return tor
 }
 
+func SetTorrent(hashHex, title, poster, data string) *Torrent {
+	hash := metainfo.NewHashFromHex(hashHex)
+	tor := bts.GetTorrent(hash)
+	if tor != nil {
+		tor.Title = title
+		tor.Poster = poster
+		tor.Data = data
+	}
+
+	tor = GetTorrentDB(hash)
+	if tor != nil {
+		tor.Title = title
+		tor.Poster = poster
+		tor.Data = data
+		AddTorrentDB(tor)
+	}
+	return tor
+}
+
 func RemTorrent(hashHex string) {
 	hash := metainfo.NewHashFromHex(hashHex)
 	bts.RemoveTorrent(hash)
