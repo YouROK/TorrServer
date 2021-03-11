@@ -22,9 +22,8 @@ TorrServer [--port PORT] [--path PATH] [--logpath LOGPATH] [--rdb] [--httpauth] 
 * --ui, -u                         run page torrserver in browser
 * --version                        display version and exit
 
-###
 
-
+#
 ### Http Api of TorrServer:
 #### GET
 
