@@ -82,7 +82,7 @@ TorrServer [--port PORT] [--path PATH] [--logpath LOGPATH] [--rdb] [--httpauth] 
 ###### /torrents
 ##### Send json:
 {\
-    "action": "add/get/rem/list/drop",\
+    "action": "add/get/set/rem/list/drop",\
     "link": "hash/magnet/link to torrent",\
     "hash": "hash of torrent",\
     "title": "title of torrent",\
