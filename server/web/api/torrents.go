@@ -89,6 +89,10 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 			return
 		}
 
+		if tor.Title == "" {
+			tor.Title = tor.Name()
+		}
+
 		if req.SaveToDB {
 			torr.SaveTorrentToDB(tor)
 		}
