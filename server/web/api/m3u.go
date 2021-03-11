@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/anacrolix/missinggo/httptoo"
@@ -93,12 +94,31 @@ func getM3uList(tor *state.TorrentStatus, host string, fromLast bool) string {
 					fn = f.Path
 				}
 				m3u += "#EXTINF:0," + fn + "\n"
+				subs := findSubs(tor.FileStats, f)
+				if subs != nil {
+					sname := filepath.Base(subs.Path)
+					m3u += "#EXTVLCOPT:sub-file=" + host + "/stream/" + url.PathEscape(sname) + "?link=" + tor.Hash + "&index=" + fmt.Sprint(f.Id) + "&play\n"
+				}
 				name := filepath.Base(f.Path)
 				m3u += host + "/stream/" + url.PathEscape(name) + "?link=" + tor.Hash + "&index=" + fmt.Sprint(f.Id) + "&play\n"
 			}
 		}
 	}
 	return m3u
+}
+
+func findSubs(files []*state.TorrentFileStat, file *state.TorrentFileStat) *state.TorrentFileStat {
+	name := strings.TrimSuffix(file.Path, filepath.Ext(file.Path))
+
+	for _, f := range files {
+		if f.Path == name+".srt" {
+			return f
+		}
+		if f.Path == name+".ass" {
+			return f
+		}
+	}
+	return nil
 }
 
 func searchLastPlayed(tor *state.TorrentStatus) int {
