@@ -131,8 +131,22 @@ if hash is not empty, return viewed file of torrent
 ##### Json struct see in
 https://github.com/YouROK/TorrServer/blob/d36d0c28f805ceab39adb4aac2869cd7a272085b/server/settings/viewed.go
 
-###
 
+
+#
+### Authorization
+
+The user data file should be located near to the settings.\
+File name: *accs.db*\
+File format:\
+
+{\
+    "User1": "Pass1",\
+    "User2": "Pass2"\
+}
+
+
+#
 ### Donate:
 [PayPal](https://www.paypal.me/yourok)
 
