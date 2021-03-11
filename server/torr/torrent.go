@@ -147,7 +147,9 @@ func (t *Torrent) watch() {
 
 func (t *Torrent) progressEvent() {
 	if t.expired() {
-		log.TLogln("Torrent close by timeout", t.Torrent.InfoHash().HexString())
+		if t.TorrentSpec != nil {
+			log.TLogln("Torrent close by timeout", t.TorrentSpec.InfoHash.HexString())
+		}
 		t.bt.RemoveTorrent(t.Hash())
 		return
 	}
