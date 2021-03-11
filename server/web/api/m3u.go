@@ -108,13 +108,14 @@ func getM3uList(tor *state.TorrentStatus, host string, fromLast bool) string {
 }
 
 func findSubs(files []*state.TorrentFileStat, file *state.TorrentFileStat) *state.TorrentFileStat {
-	name := strings.TrimSuffix(file.Path, filepath.Ext(file.Path))
+	name := filepath.Base(strings.TrimSuffix(file.Path, filepath.Ext(file.Path)))
 
 	for _, f := range files {
-		if f.Path == name+".srt" {
+		fname := strings.ToLower(filepath.Base(f.Path))
+		if fname == strings.ToLower(name+".srt") {
 			return f
 		}
-		if f.Path == name+".ass" {
+		if fname == strings.ToLower(name+".ass") {
 			return f
 		}
 	}
