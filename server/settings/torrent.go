@@ -12,7 +12,6 @@ import (
 type TorrentDB struct {
 	*torrent.TorrentSpec
 
-	Name   string `json:"name"`
 	Title  string `json:"title,omitempty"`
 	Poster string `json:"poster,omitempty"`
 	Data   string `json:"data,omitempty"`

@@ -90,7 +90,6 @@ func Migrate() {
 			log.TLogln("Migrate torrent", torr.Name, torr.Hash, torr.Size)
 			AddTorrent(&TorrentDB{
 				TorrentSpec: spec,
-				Name:        torr.Name,
 				Title:       title,
 				Timestamp:   torr.Timestamp,
 				Size:        torr.Size,

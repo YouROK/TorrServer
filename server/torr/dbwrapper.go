@@ -12,12 +12,8 @@ import (
 func AddTorrentDB(torr *Torrent) {
 	t := new(settings.TorrentDB)
 	t.TorrentSpec = torr.TorrentSpec
-	t.Name = torr.Name()
 	t.Title = torr.Title
 	t.Data = torr.Data
-	if t.Title == "" {
-		t.Title = t.Name
-	}
 	t.Poster = torr.Poster
 	t.Size = torr.Size
 	if t.Size == 0 && torr.Torrent != nil {
