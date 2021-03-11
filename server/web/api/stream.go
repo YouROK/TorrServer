@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"server/torr"
+	"server/torr/state"
 	"server/web/api/utils"
 
 	"github.com/gin-gonic/gin"
@@ -36,6 +37,7 @@ func stream(c *gin.Context) {
 	_, play := c.GetQuery("play")
 	title := c.Query("title")
 	poster := c.Query("poster")
+	data := ""
 	notAuth := c.GetBool("not_auth")
 
 	if notAuth && play {
@@ -53,6 +55,7 @@ func stream(c *gin.Context) {
 		return
 	}
 
+	title, _ = url.QueryUnescape(title)
 	link, _ = url.QueryUnescape(link)
 	poster, _ = url.QueryUnescape(poster)
 
@@ -63,16 +66,19 @@ func stream(c *gin.Context) {
 	}
 
 	tor := torr.GetTorrent(spec.InfoHash.HexString())
-	if tor == nil {
+	if tor != nil {
+		title = tor.Title
+		poster = tor.Poster
+		data = tor.Data
+	}
+	if tor == nil || tor.Stat == state.TorrentInDB {
 		if title == "" {
 			title = c.Param("fname")
 			title, _ = url.PathUnescape(title)
 			title = strings.TrimLeft(title, "/")
-		} else {
-			title, _ = url.QueryUnescape(title)
 		}
 
-		tor, err = torr.AddTorrent(spec, title, poster, "")
+		tor, err = torr.AddTorrent(spec, title, poster, data)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
