@@ -3,6 +3,7 @@ package torrstor
 import (
 	"errors"
 	"io"
+	"strings"
 	"sync"
 	"time"
 
@@ -35,6 +36,25 @@ func (p *Piece) WriteAt(b []byte, off int64) (n int, err error) {
 		p.buffer = make([]byte, p.cache.pieceLength, p.cache.pieceLength)
 	}
 	n = copy(p.buffer[off:], b[:])
+	//samsung tv fix xvid/divx
+	if p.Id == 0 && off < 192 {
+		str := strings.ToLower(string(p.buffer[112:116]))
+		if str == "xvid" || str == "divx" {
+			p.buffer[112] = 0x4D //M
+			p.buffer[113] = 0x50 //P
+			p.buffer[114] = 0x34 //4
+			p.buffer[115] = 0x56 //V
+		}
+		str = strings.ToLower(string(p.buffer[188:192]))
+		if str == "xvid" || str == "divx" {
+			p.buffer[188] = 0x4D //M
+			p.buffer[189] = 0x50 //P
+			p.buffer[190] = 0x34 //4
+			p.buffer[191] = 0x56 //V
+		}
+
+		println(string(p.buffer[110:192]))
+	}
 	p.Size += int64(n)
 	p.accessed = time.Now().Unix()
 	return
