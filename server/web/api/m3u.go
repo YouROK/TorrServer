@@ -51,9 +51,13 @@ func playList(c *gin.Context) {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
-	if !tor.WaitInfo() {
-		c.AbortWithError(http.StatusInternalServerError, errors.New("error get torrent info"))
-		return
+
+	if tor.Stat == state.TorrentInDB {
+		tor = torr.LoadTorrent(tor)
+		if tor == nil {
+			c.AbortWithError(http.StatusInternalServerError, errors.New("error get torrent info"))
+			return
+		}
 	}
 
 	host := "http://" + c.Request.Host
