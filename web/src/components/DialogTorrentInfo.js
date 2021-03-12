@@ -72,6 +72,12 @@ export default function DialogTorrentInfo(props) {
                             <Button style={style.width100} href={playlistTorrHost() + '/' + encodeURIComponent(torrent.name || torrent.title || 'file') + '.m3u?link=' + torrent.hash + '&m3u&fromlast'}>
                                 Playlist after last view
                             </Button>
+                            <Button style={style.width100} onClick={()=>{
+                                remViews(torrent.hash)
+                                setViewed(null)
+                            }} >
+                                Remove views
+                            </Button>
                         </ButtonGroup>
                     </ListItem>
                     {getPlayableFile(torrent) &&
@@ -95,6 +101,22 @@ export default function DialogTorrentInfo(props) {
             </DialogContent>
         </div>
     )
+}
+
+function remViews(hash){
+    try {
+        if (hash)
+        fetch(viewedHost(), {
+            method: 'post',
+            body: JSON.stringify({ action: 'rem', hash: hash, file_index:-1 }),
+            headers: {
+                Accept: 'application/json, text/plain, */*',
+                'Content-Type': 'application/json',
+            },
+        })
+    } catch (e) {
+        console.error(e)
+    }
 }
 
 function getViewed(hash, callback) {
