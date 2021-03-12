@@ -43,10 +43,14 @@ func RemViewed(vv *Viewed) {
 	var indeces map[int]struct{}
 	err := json.Unmarshal(buf, &indeces)
 	if err == nil {
-		delete(indeces, vv.FileIndex)
-		buf, err = json.Marshal(indeces)
-		if err == nil {
-			tdb.Set("Viewed", vv.Hash, buf)
+		if vv.FileIndex != -1 {
+			delete(indeces, vv.FileIndex)
+			buf, err = json.Marshal(indeces)
+			if err == nil {
+				tdb.Set("Viewed", vv.Hash, buf)
+			}
+		} else {
+			tdb.Rem("Viewed", vv.Hash)
 		}
 	}
 	if err != nil {
