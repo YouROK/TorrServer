@@ -21,6 +21,23 @@ func InitApiHelper(bt *BTServer) {
 	bts = bt
 }
 
+func LoadTorrent(tor *Torrent) *Torrent {
+	if tor.TorrentSpec == nil {
+		return nil
+	}
+	tr, err := NewTorrent(tor.TorrentSpec, bts)
+	if err != nil {
+		return nil
+	}
+	if !tr.WaitInfo() {
+		return nil
+	}
+	tr.Title = tor.Title
+	tr.Poster = tor.Poster
+	tr.Data = tor.Data
+	return tr
+}
+
 func AddTorrent(spec *torrent.TorrentSpec, title, poster string, data string) (*Torrent, error) {
 	torr, err := NewTorrent(spec, bts)
 	if err != nil {
