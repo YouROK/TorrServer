@@ -200,11 +200,23 @@ func (c *Cache) getRemPieces() []*Piece {
 				if p.Size > 0 && !c.isIdInFileBE(ranges, id) {
 					piecesRemove = append(piecesRemove, p)
 				}
-			} else {
-				if c.torrent.PieceState(id).Priority == torrent.PiecePriorityNone {
-					c.torrent.Piece(id).SetPriority(torrent.PiecePriorityNormal)
-				}
 			}
+		}
+	}
+
+	for r, _ := range c.readers {
+		pc := r.getReaderPiece()
+		end := r.getPiecesRange().End
+		limit := 5
+
+		for pc <= end && limit > 0 {
+			if !c.pieces[pc].complete {
+				if c.torrent.PieceState(pc).Priority == torrent.PiecePriorityNone {
+					c.torrent.Piece(pc).SetPriority(torrent.PiecePriorityNormal)
+				}
+				limit--
+			}
+			pc++
 		}
 	}
 
