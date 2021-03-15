@@ -78,9 +78,15 @@ func (bt *BTServer) configure() {
 	bt.config.ExtendedHandshakeClientVersion = cliVers
 	bt.config.EstablishedConnsPerTorrent = settings.BTsets.ConnectionsLimit
 
+	// Encryption/Obfuscation
 	bt.config.EncryptionPolicy = torrent.EncryptionPolicy{
 		ForceEncryption: settings.BTsets.ForceEncrypt,
 	}
+
+	// bt.config.HeaderObfuscationPolicy = torrent.HeaderObfuscationPolicy{
+	// 	RequirePreferred: settings.BTsets.ForceEncrypt,
+	// 	Preferred:        true,
+	// }
 
 	if settings.BTsets.DhtConnectionLimit > 0 {
 		bt.config.ConnTracker.SetMaxEntries(settings.BTsets.DhtConnectionLimit)
