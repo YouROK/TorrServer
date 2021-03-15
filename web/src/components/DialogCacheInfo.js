@@ -10,12 +10,18 @@ export default function DialogCacheInfo(props) {
     const [hash] = React.useState(props.hash)
     const [cache, setCache] = React.useState({})
     const timerID = useRef(-1)
+    const canvasRef = useRef(null)
+    const dialogRef = useRef(null)
 
     useEffect(() => {
+        const canvas = canvasRef.current
+        const context = canvas.getContext('2d')
+
         if (hash)
             timerID.current = setInterval(() => {
                 getCache(hash, (cache) => {
-                    setCache(cache)
+                    setCache(cache);
+                    redraw(cache, canvas, context, dialogRef)
                 })
             }, 100)
         else clearInterval(timerID.current)
@@ -48,40 +54,107 @@ export default function DialogCacheInfo(props) {
                     <b>Status </b> {cache.Torrent && cache.Torrent.stat_string && cache.Torrent.stat_string}
                 </Typography>
             </DialogTitle>
-            <DialogContent>
-                <div className="cache" dangerouslySetInnerHTML={{ __html: getCacheMap(cache) }} />
+            <DialogContent ref={dialogRef}>
+                <canvas ref={canvasRef} />
             </DialogContent>
         </div>
     )
 }
 
-function getCacheMap(cache) {
-    if (!cache || !cache.PiecesCount) return ''
-    var html = ''
-    for (let i = 0; i < cache.PiecesCount; i++) {
-        html += "<span class='piece"
-        let info = i
-        if (cache.Pieces && cache.Pieces[i]) {
-            let piece = cache.Pieces[i]
+const pieceSize = 12;
+
+const colors = {
+    0: "#eef2f4", // empty piece
+    1: "#00d0d0", // donwloading
+    2: "#009090", // donwloading fill color
+    3: "#3fb57a", // downloaded
+    4: "#9a9aff", // reader range color
+    5: "#000000", // reader current position
+}
+
+
+const map = new Map();
+const savedCanvas = document.createElement("canvas");
+savedCanvas.ctx = savedCanvas.getContext("2d");
+
+
+
+function redraw(cache, canvas, ctx, dialogRef) {
+    if (!cache || !cache.PiecesCount || !dialogRef.current) return;
+    if(dialogRef.current.offsetWidth !== canvas.width + 50 || cache.PiecesCount !== map.size) {
+        canvas.width = dialogRef.current.offsetWidth - 50;
+        renderPieces(canvas, ctx, cache.PiecesCount);
+    }
+    ctx.drawImage(savedCanvas, 0, 0);
+    if (cache.Pieces) {
+        Object.values(cache.Pieces).forEach(piece => {
+            const cords = map.get(piece.Id);
             if (piece.Completed && piece.Size >= piece.Length) {
-                html += ' piece-complete'
-                info += ' 100%'
-            }else {
-                html += ' piece-loading'
-                info += ' ' + (cache.Pieces[i].Size/cache.Pieces[i].Length*100).toFixed(2) + '%'
-            }
-        }
-        cache.Readers.forEach((r,k)=> {
-            if (i >= r.Start && i <= r.End && i !== r.Reader)
-                html += ' reader-range'
-            if (i === r.Reader) {
-                html += ' piece-reader'
-                info += ' reader'
+                ctx.fillStyle = colors[3];
+                ctx.beginPath();
+                ctx.rect(cords.x, cords.y, pieceSize, pieceSize);
+                ctx.fill();
+            } else {
+                ctx.fillStyle = colors[1];
+                ctx.beginPath();
+                ctx.rect(cords.x, cords.y, pieceSize, pieceSize);
+                ctx.fill();
+                const percent = piece.Size / piece.Length
+                fillPiece(ctx, piece.Id, percent)
             }
         })
-        html += "' title='" + info + "'></span>"
     }
-    return html
+    cache.Readers.forEach(r => setReader(ctx, r.Start, r.Reader, r.End ))
+}
+
+
+function renderPieces(canvas, ctx, count) {
+    const horizont = ~~(canvas.width / (pieceSize + 1));
+    canvas.height = ~~(count / horizont) * (pieceSize + 1) + pieceSize + 1;
+    const vertical = ~~(canvas.height / pieceSize);
+
+    ctx.fillStyle = colors[0];
+
+    map.clear();
+
+    for(let y = 0; y < vertical; y++) {
+        for(let x = 0; x < horizont; x++) {
+            if(map.size >= count) break;
+            map.set(map.size, { x: (pieceSize + 1) * x, y: (pieceSize + 1) * y});
+            ctx.beginPath();
+            ctx.rect((pieceSize + 1) * x, (pieceSize + 1) * y, pieceSize, pieceSize);
+            ctx.fill();
+        }
+    }
+    savedCanvas.width = canvas.width;
+    savedCanvas.height = canvas.height;
+    savedCanvas.ctx.drawImage(canvas, 0, 0);
+}
+
+function fillPiece(ctx, piece, percent) {
+    let cords = map.get(piece);
+    let offest = pieceSize * percent;
+    if(offest < 1) return; //if less than one pixel a spot remains under a piece
+    ctx.fillStyle = colors[2];
+    ctx.beginPath();
+    ctx.rect(cords.x, cords.y + (pieceSize - offest), pieceSize, offest);
+    ctx.fill();
+}
+
+function setReader(ctx, start, reader, end) {
+    ctx.strokeStyle = colors[4];
+    for (let i = start; i <= end; i++) {
+        cords = map.get(i)
+        ctx.beginPath();
+        ctx.rect(cords.x + 0.5, cords.y + 0.5, pieceSize - 1, pieceSize - 1);
+        ctx.stroke();
+    }
+
+    let cords = map.get(reader);
+    ctx.strokeStyle = colors[5];
+    ctx.beginPath();
+    ctx.rect(cords.x + 0.5, cords.y + 0.5, pieceSize - 1, pieceSize - 1);
+    ctx.stroke();
 }
 
 function getCache(hash, callback) {
@@ -109,21 +182,3 @@ function getCache(hash, callback) {
         callback({})
     }
 }
-/*
-{
-	"Hash": "41e36c8de915d80db83fc134bee4e7e2d292657e",
-	"Capacity": 209715200,
-	"Filled": 2914808,
-	"PiecesLength": 4194304,
-	"PiecesCount": 2065,
-	"DownloadSpeed": 32770.860273455524,
-	"Pieces": {
-		"2064": {
-			"Id": 2064,
-			"Length": 2914808,
-			"Size": 162296,
-			"Completed": false
-		}
-	}
-}
- */
