@@ -101,7 +101,7 @@ func getM3uList(tor *state.TorrentStatus, host string, fromLast bool) string {
 				subs := findSubs(tor.FileStats, f)
 				if subs != nil {
 					sname := filepath.Base(subs.Path)
-					m3u += "#EXTVLCOPT:sub-file=" + host + "/stream/" + url.PathEscape(sname) + "?link=" + tor.Hash + "&index=" + fmt.Sprint(f.Id) + "&play\n"
+					m3u += "#EXTVLCOPT:sub-file=" + host + "/stream/" + url.PathEscape(sname) + "?link=" + tor.Hash + "&index=" + fmt.Sprint(subs.Id) + "&play\n"
 				}
 				name := filepath.Base(f.Path)
 				m3u += host + "/stream/" + url.PathEscape(name) + "?link=" + tor.Hash + "&index=" + fmt.Sprint(f.Id) + "&play\n"
