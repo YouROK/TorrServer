@@ -62,7 +62,6 @@ func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
 	for i := 0; i < c.pieceCount; i++ {
 		c.pieces[i] = &Piece{
 			Id:    i,
-			Hash:  info.Piece(i).Hash().HexString(),
 			cache: c,
 		}
 	}
