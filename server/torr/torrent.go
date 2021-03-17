@@ -279,13 +279,13 @@ func (t *Torrent) Preload(index int, size int64) {
 	}
 
 	if t.Info() != nil {
-		pl := t.Info().PieceLength
+		pieceLength := t.Info().PieceLength
 		mb5 := int64(5 * 1024 * 1024)
 
-		pieceFileStart := int(file.Offset() / pl)
-		pieceFileEnd := int((file.Offset() + file.Length()) / pl)
-		readerPieceBefore := int((file.Offset() + size - mb5) / pl)
-		readerPieceAfter := int((file.Offset() + file.Length() - mb5) / pl)
+		pieceFileStart := int(file.Offset() / pieceLength)
+		pieceFileEnd := int((file.Offset() + file.Length()) / pieceLength)
+		readerPieceBefore := int((file.Offset() + size - mb5) / pieceLength)
+		readerPieceAfter := int((file.Offset() + file.Length() - mb5) / pieceLength)
 
 		lastStat := time.Now().Add(-time.Second)
 
@@ -325,6 +325,10 @@ func (t *Torrent) Preload(index int, size int64) {
 					}
 				}
 			}
+			if t.PreloadedBytes >= size-pieceLength {
+				isComplete = true
+			}
+
 			t.AddExpiredTime(time.Second * time.Duration(settings.BTsets.TorrentDisconnectTimeout))
 			if isComplete {
 				break
