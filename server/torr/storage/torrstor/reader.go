@@ -90,7 +90,7 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 }
 
 func (r *Reader) SetReadahead(length int64) {
-	if length > r.cache.capacity {
+	if r.cache != nil && length > r.cache.capacity {
 		length = r.cache.capacity
 	}
 	r.Reader.SetReadahead(length)
