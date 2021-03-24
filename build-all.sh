@@ -10,11 +10,10 @@ PLATFORMS="$PLATFORMS linux/mips linux/mipsle linux/mips64 linux/mips64le"
 type setopt >/dev/null 2>&1
 
 GOBIN="/usr/local/go/bin/go"
-#GOBIN="/usr/local/go116b/bin/go"
 
 $GOBIN version
 
-#$GOBIN run build_web.go
+$GOBIN run build_web.go
 
 LDFLAGS="'-s -w'"
 FAILURES=""
@@ -24,7 +23,7 @@ OUTPUTT="${ROOT}/test/TestLoad"
 
 cd "${ROOT}/server"
 
-#$GOBIN clean -i -r -cache --modcache
+$GOBIN clean -i -r -cache --modcache
 $GOBIN mod tidy
 
 BUILD_FLAGS="-ldflags=${LDFLAGS}"
