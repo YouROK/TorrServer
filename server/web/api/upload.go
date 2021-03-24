@@ -59,6 +59,10 @@ func torrentUpload(c *gin.Context) {
 				return
 			}
 
+			if tor.Title == "" {
+				tor.Title = tor.Name()
+			}
+
 			if save {
 				torr.SaveTorrentToDB(tor)
 			}
