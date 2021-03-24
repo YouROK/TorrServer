@@ -21,6 +21,7 @@ import (
 // http://127.0.0.1:8090/stream/fname?link=...&index=1&m3u&fromlast
 // stream torrent
 // http://127.0.0.1:8090/stream/fname?link=...&index=1&play
+// http://127.0.0.1:8090/stream/fname?link=...&index=1&play&preload
 // http://127.0.0.1:8090/stream/fname?link=...&index=1&play&save
 // http://127.0.0.1:8090/stream/fname?link=...&index=1&play&save&title=...&poster=...
 // only save
