@@ -14,16 +14,17 @@ GOBIN="/usr/local/go/bin/go"
 
 $GOBIN version
 
-$GOBIN run build_web.go
+#$GOBIN run build_web.go
 
 LDFLAGS="'-s -w'"
 FAILURES=""
 ROOT=${PWD}
 OUTPUT="${ROOT}/dist/TorrServer"
+OUTPUTT="${ROOT}/test/TestLoad"
 
 cd "${ROOT}/server"
 
-$GOBIN clean -i -r -cache --modcache
+#$GOBIN clean -i -r -cache --modcache
 $GOBIN mod tidy
 
 BUILD_FLAGS="-ldflags=${LDFLAGS}"
@@ -39,12 +40,22 @@ CMD="GOOS=linux GOARCH=${GOARCH} ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME
 echo "${CMD}"
 eval $CMD || FAILURES="${FAILURES} ${PLATFORM}"
 
+BIN_FILENAME="${OUTPUTT}-${GOOS}-${GOARCH}"
+CMD="GOOS=linux GOARCH=${GOARCH} ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd/test_load"
+echo "${CMD}"
+eval $CMD || FAILURES="${FAILURES} ${PLATFORM}"
+
 GOARCH="arm"
 GOARM="7"
 BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}${GOARM}"
 CMD="GOOS=${GOOS} GOARCH=${GOARCH} GOARM=${GOARM} ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
 echo "${CMD}"
 eval "${CMD}" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
+
+BIN_FILENAME="${OUTPUTT}-${GOOS}-${GOARCH}"
+CMD="GOOS=linux GOARCH=${GOARCH} ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd/test_load"
+echo "${CMD}"
+eval $CMD || FAILURES="${FAILURES} ${PLATFORM}"
 
 #####################################
 ### X86 build section
@@ -55,11 +66,13 @@ for PLATFORM in $PLATFORMS; do
   GOARCH=${PLATFORM#*/}
   BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}"
   if [[ "${GOOS}" == "windows" ]]; then BIN_FILENAME="${BIN_FILENAME}.exe"; fi
-  if [[ "${GOOS}" == "linux" ]]; then
-    CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
-  else
-    CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
-  fi
+  CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
+  echo "${CMD}"
+  eval $CMD || FAILURES="${FAILURES} ${PLATFORM}"
+
+  BIN_FILENAME="${OUTPUTT}-${GOOS}-${GOARCH}"
+  if [[ "${GOOS}" == "windows" ]]; then BIN_FILENAME="${BIN_FILENAME}.exe"; fi
+  CMD="GOOS=linux GOARCH=${GOARCH} ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd/test_load"
   echo "${CMD}"
   eval $CMD || FAILURES="${FAILURES} ${PLATFORM}"
 done
