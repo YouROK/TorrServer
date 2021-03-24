@@ -27,3 +27,4 @@ toolchains/
 /src/go.etcd.io/
 /src/google.golang.org/
 /toolchain/
+/test/
