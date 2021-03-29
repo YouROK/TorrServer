@@ -83,9 +83,9 @@ func SetDefault() {
 	sets := new(BTSets)
 	sets.EnableDebug = false
 	sets.DisableUTP = true
-	sets.CacheSize = 100 * 1024 * 1024 // 100mb
+	sets.CacheSize = 96 * 1024 * 1024 // 100mb
 	sets.PreloadBuffer = false
-	sets.ConnectionsLimit = 25
+	sets.ConnectionsLimit = 23
 	sets.DhtConnectionLimit = 500
 	sets.RetrackersMode = 1
 	sets.TorrentDisconnectTimeout = 30
