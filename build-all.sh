@@ -46,6 +46,13 @@ CMD="GOOS=${GOOS} GOARCH=${GOARCH} GOARM=${GOARM} ${GOBIN} build ${BUILD_FLAGS} 
 echo "${CMD}"
 eval "${CMD}" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
 
+GOARCH="arm"
+GOARM="5"
+BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}${GOARM}"
+CMD="GOOS=${GOOS} GOARCH=${GOARCH} GOARM=${GOARM} ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
+echo "${CMD}"
+eval "${CMD}" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
+
 #####################################
 ### X86 build section
 #####
