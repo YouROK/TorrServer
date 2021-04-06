@@ -3,6 +3,7 @@ package torrstor
 import (
 	"errors"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/anacrolix/torrent"
@@ -19,10 +20,14 @@ type Piece struct {
 	accessed int64
 	buffer   []byte
 
+	mu    sync.RWMutex
 	cache *Cache
 }
 
 func (p *Piece) WriteAt(b []byte, off int64) (n int, err error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
 	if p.buffer == nil {
 		go p.cache.cleanPieces()
 		p.buffer = make([]byte, p.cache.pieceLength, p.cache.pieceLength)
@@ -34,6 +39,9 @@ func (p *Piece) WriteAt(b []byte, off int64) (n int, err error) {
 }
 
 func (p *Piece) ReadAt(b []byte, off int64) (n int, err error) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
 	size := len(b)
 	if size+int(off) > len(p.buffer) {
 		size = len(p.buffer) - int(off)
@@ -76,6 +84,8 @@ func (p *Piece) Completion() storage.Completion {
 }
 
 func (p *Piece) Release() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	if p.buffer != nil {
 		p.buffer = nil
 	}
