@@ -98,10 +98,14 @@ func getM3uList(tor *state.TorrentStatus, host string, fromLast bool) string {
 					fn = f.Path
 				}
 				m3u += "#EXTINF:0," + fn + "\n"
-				subs := findSubs(tor.FileStats, f)
-				if subs != nil {
-					sname := filepath.Base(subs.Path)
-					m3u += "#EXTVLCOPT:input-slave=" + host + "/stream/" + url.PathEscape(sname) + "?link=" + tor.Hash + "&index=" + fmt.Sprint(subs.Id) + "&play\n"
+				fileNamesakes := findFileNamesakes(tor.FileStats, f)	//find external media with same name (audio/subtiles tracks)
+				if fileNamesakes != nil {
+					m3u+= "#EXTVLCOPT:input-slave="			//include VLC option for external media
+					for _, namesake := range fileNamesakes {	//include play-links to external media, with # splitter		
+						sname := filepath.Base(namesake.Path)
+						m3u += host + "/stream/" + url.PathEscape(sname) + "?link=" + tor.Hash + "&index=" + fmt.Sprint(namesake.Id) + "&play#"						
+					}
+					m3u += "\n"
 				}
 				name := filepath.Base(f.Path)
 				m3u += host + "/stream/" + url.PathEscape(name) + "?link=" + tor.Hash + "&index=" + fmt.Sprint(f.Id) + "&play\n"
@@ -111,19 +115,18 @@ func getM3uList(tor *state.TorrentStatus, host string, fromLast bool) string {
 	return m3u
 }
 
-func findSubs(files []*state.TorrentFileStat, file *state.TorrentFileStat) *state.TorrentFileStat {
+func findFileNamesakes(files []*state.TorrentFileStat, file *state.TorrentFileStat) []*state.TorrentFileStat {
+//find files with the same name in torrent
 	name := filepath.Base(strings.TrimSuffix(file.Path, filepath.Ext(file.Path)))
-
+	var namesakes []*state.TorrentFileStat
 	for _, f := range files {
-		fname := strings.ToLower(filepath.Base(f.Path))
-		if fname == strings.ToLower(name+".srt") {
-			return f
-		}
-		if fname == strings.ToLower(name+".ass") {
-			return f
-		}
+		if strings.Contains(f.Path, name) {				//external tracks always include name of videofile
+			if (f != file) {					//exclude itself
+				namesakes = append(namesakes, f)
+			}
+		}		
 	}
-	return nil
+    return namesakes
 }
 
 func searchLastPlayed(tor *state.TorrentStatus) int {
