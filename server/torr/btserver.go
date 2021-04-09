@@ -83,11 +83,6 @@ func (bt *BTServer) configure() {
 		ForceEncryption: settings.BTsets.ForceEncrypt,
 	}
 
-	// bt.config.HeaderObfuscationPolicy = torrent.HeaderObfuscationPolicy{
-	// 	RequirePreferred: settings.BTsets.ForceEncrypt,
-	// 	Preferred:        true,
-	// }
-
 	if settings.BTsets.DhtConnectionLimit > 0 {
 		bt.config.ConnTracker.SetMaxEntries(settings.BTsets.DhtConnectionLimit)
 	}
