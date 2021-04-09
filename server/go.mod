@@ -2,7 +2,7 @@ module server
 
 replace (
 	github.com/anacrolix/dht v1.0.1 => github.com/YouROK/dht v0.0.0-20210323193211-11c03221cb67
-	github.com/anacrolix/torrent v1.2.6 => github.com/yourok/torrent v0.0.0-20210315105830-97ae9ed6a436
+	github.com/anacrolix/torrent v1.2.6 => github.com/yourok/torrent v0.0.0-20210406082438-ad488c2037fc
 )
 
 go 1.16
