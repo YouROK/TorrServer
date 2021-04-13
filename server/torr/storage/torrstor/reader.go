@@ -4,6 +4,7 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/anacrolix/torrent"
 
@@ -21,8 +22,9 @@ type Reader struct {
 	isClosed bool
 
 	///Preload
-	muPreload sync.Mutex
-	ranges    Range
+	lastAccess int64
+	muPreload  sync.Mutex
+	ranges     Range
 }
 
 func newReader(file *torrent.File, cache *Cache) *Reader {
@@ -53,6 +55,7 @@ func (r *Reader) Seek(offset int64, whence int) (n int64, err error) {
 	}
 	n, err = r.Reader.Seek(offset, whence)
 	r.offset = n
+	r.lastAccess = time.Now().Unix()
 	return
 }
 
@@ -83,6 +86,7 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 		}
 
 		r.offset += int64(n)
+		r.lastAccess = time.Now().Unix()
 	} else {
 		log.TLogln("Torrent closed and readed")
 	}
@@ -130,6 +134,11 @@ func (r *Reader) getPieceNum(offset int64) int {
 }
 
 func (r *Reader) getOffsetRange() (int64, int64) {
+
+	if time.Now().Unix() > r.lastAccess+60 {
+		return r.file.Offset(), r.file.Offset()
+	}
+
 	prc := int64(settings.BTsets.ReaderReadAHead)
 	readers := int64(len(r.cache.readers))
 	if readers == 0 {
