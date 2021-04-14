@@ -156,7 +156,8 @@ func streamNoAuth(c *gin.Context) {
 
 	tor := torr.GetTorrent(spec.InfoHash.HexString())
 	if tor == nil {
-		c.AbortWithStatus(http.StatusForbidden)
+		c.Header("WWW-Authenticate", "Basic realm=Authorization Required")
+		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
