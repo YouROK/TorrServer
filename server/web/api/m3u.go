@@ -10,11 +10,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anacrolix/missinggo/httptoo"
 	sets "server/settings"
 	"server/torr"
 	"server/torr/state"
 	"server/utils"
+
+	"github.com/anacrolix/missinggo/httptoo"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -78,7 +79,6 @@ func sendM3U(c *gin.Context, name, hash string, m3u string) {
 	}
 	c.Header("Content-Disposition", `attachment; filename="`+name+`"`)
 	http.ServeContent(c.Writer, c.Request, name, time.Now(), bytes.NewReader([]byte(m3u)))
-	c.Status(200)
 }
 
 func getM3uList(tor *state.TorrentStatus, host string, fromLast bool) string {
