@@ -188,7 +188,7 @@ func streamNoAuth(c *gin.Context) {
 			index = ind
 		}
 	}
-	if index == -1 { // if file index not set and play file exec
+	if index == -1 && play { // if file index not set and play file exec
 		c.AbortWithError(http.StatusBadRequest, errors.New("\"index\" is empty or wrong"))
 		return
 	}
