@@ -5,7 +5,10 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net/http"
+	"path/filepath"
 	"strings"
+
+	"server/settings"
 
 	"golang.org/x/time/rate"
 )
@@ -26,6 +29,22 @@ var defTrackers = []string{
 }
 
 var loadedTrackers []string
+
+func GetTrackerFromFile() []string {
+	name := filepath.Join(settings.Path, "trackers.txt")
+	buf, err := ioutil.ReadFile(name)
+	if err == nil {
+		list := strings.Split(string(buf), "\n")
+		var ret []string
+		for _, l := range list {
+			if strings.HasPrefix(l, "udp") || strings.HasPrefix(l, "http") {
+				ret = append(ret, l)
+			}
+		}
+		return ret
+	}
+	return nil
+}
 
 func GetDefTrackers() []string {
 	loadNewTracker()
