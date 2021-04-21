@@ -122,9 +122,8 @@ export default function DialogCacheInfo(props) {
                 </Typography>
             </DialogTitle>
             <DialogContent>
-                {/*<div className="cache" dangerouslySetInnerHTML={{ __html: getCacheMap(cache) }} />*/}
                 <div className="cache">
-                    {pMap.map((itm) => <span className={itm.class} title={itm.info}>{itm.prc>0 && itm.prc<100 && (<div className="piece-progress" style={{height: itm.prc+"%"}}></div>)}</span>)}
+                    {pMap.map((itm) => <span className={itm.class} title={itm.info}>{itm.prc>0 && itm.prc<100 && (<div className="piece-progress" style={{height: itm.prc/100*12+"px"}}></div>)}</span>)}
                 </div>
             </DialogContent>
         </div>
