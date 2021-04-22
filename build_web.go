@@ -1,13 +1,10 @@
 package main
 
 import (
-	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 )
 
@@ -17,40 +14,40 @@ func main() {
 	run("npm", "run", "build-js")
 	os.Chdir(dir)
 
-	compileHtml := "web/dest/"
-
-	fs, _ := ioutil.ReadDir(compileHtml)
-	for _, f := range fs {
-		if strings.HasSuffix(f.Name(), ".html") {
-			name := filenameWithoutExtension(f.Name())
-			fmt.Println("Create template go:", "server/web/pages/template/"+name+"_html.go")
-			out, err := os.Create("server/web/pages/template/" + name + "_html.go")
-			if err != nil {
-				fmt.Println("Error create file", err)
-				os.Exit(1)
-				return
-			}
-
-			fmt.Println("Read html:", compileHtml+f.Name())
-			buf, err := ioutil.ReadFile(compileHtml + f.Name())
-			if err != nil {
-				fmt.Println("Error read file", err)
-				os.Exit(1)
-				return
-			}
-			fmt.Println("Write template...")
-			out.Write([]byte("package template \n\nvar " + strings.Title(name) + "Html = []byte{"))
-			for _, b := range buf {
-				out.Write([]byte(strconv.Itoa(int(b)) + ", "))
-			}
-			out.Write([]byte("}"))
-			out.Close()
-
-			fmt.Println("go fmt template...")
-			run("go", "fmt", "server/web/pages/template/"+name+"_html.go")
-			fmt.Println("Complete OK")
-		}
-	}
+	run("cp", "web/dest/index.html", "server/web/pages/template/pages/")
+	// compileHtml := "web/dest/"
+	// fs, _ := ioutil.ReadDir(compileHtml)
+	// for _, f := range fs {
+	// 	if strings.HasSuffix(f.Name(), ".html") {
+	// 		name := filenameWithoutExtension(f.Name())
+	// 		fmt.Println("Create template go:", "server/web/pages/template/"+name+"_html.go")
+	// 		out, err := os.Create("server/web/pages/template/" + name + "_html.go")
+	// 		if err != nil {
+	// 			fmt.Println("Error create file", err)
+	// 			os.Exit(1)
+	// 			return
+	// 		}
+	//
+	// 		fmt.Println("Read html:", compileHtml+f.Name())
+	// 		buf, err := ioutil.ReadFile(compileHtml + f.Name())
+	// 		if err != nil {
+	// 			fmt.Println("Error read file", err)
+	// 			os.Exit(1)
+	// 			return
+	// 		}
+	// 		fmt.Println("Write template...")
+	// 		out.Write([]byte("package template \n\nvar " + strings.Title(name) + "Html = []byte{"))
+	// 		for _, b := range buf {
+	// 			out.Write([]byte(strconv.Itoa(int(b)) + ", "))
+	// 		}
+	// 		out.Write([]byte("}"))
+	// 		out.Close()
+	//
+	// 		fmt.Println("go fmt template...")
+	// 		run("go", "fmt", "server/web/pages/template/"+name+"_html.go")
+	// 		fmt.Println("Complete OK")
+	// 	}
+	// }
 }
 
 func run(name string, args ...string) {
