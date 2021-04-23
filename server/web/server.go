@@ -1,6 +1,8 @@
 package web
 
 import (
+	"net"
+
 	"server/web/blocker"
 
 	"github.com/gin-contrib/cors"
@@ -21,6 +23,10 @@ var (
 
 func Start(port string) {
 	log.TLogln("Start TorrServer", version.Version)
+	ips := getLocalIps()
+	if len(ips) > 0 {
+		log.TLogln("IP:", ips)
+	}
 	err := BTS.Connect()
 	if err != nil {
 		waitChan <- err
@@ -56,4 +62,31 @@ func Stop() {
 
 func echo(c *gin.Context) {
 	c.String(200, "%v", version.Version)
+}
+
+func getLocalIps() []string {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		log.TLogln("Error get local IPs")
+		return nil
+	}
+	var list []string
+	for _, i := range ifaces {
+		addrs, _ := i.Addrs()
+		if i.Flags&net.FlagUp == net.FlagUp {
+			for _, addr := range addrs {
+				var ip net.IP
+				switch v := addr.(type) {
+				case *net.IPNet:
+					ip = v.IP
+				case *net.IPAddr:
+					ip = v.IP
+				}
+				if !ip.IsLoopback() {
+					list = append(list, ip.String())
+				}
+			}
+		}
+	}
+	return list
 }
