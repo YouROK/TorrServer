@@ -74,17 +74,22 @@ func fromMagnet(link string) (*torrent.TorrentSpec, error) {
 	}, nil
 }
 
-func fromHttp(url string) (*torrent.TorrentSpec, error) {
-	req, err := http.NewRequest("GET", url, nil)
+func fromHttp(link string) (*torrent.TorrentSpec, error) {
+	req, err := http.NewRequest("GET", link, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	client := new(http.Client)
-	client.Timeout = time.Duration(time.Second * 30)
+	client.Timeout = time.Duration(time.Second * 120)
 	req.Header.Set("User-Agent", "DWL/1.1.1 (Torrent)")
 
 	resp, err := client.Do(req)
+	if er, ok := err.(*url.Error); ok {
+		if strings.HasPrefix(er.URL, "magnet:") {
+			return fromMagnet(er.URL)
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
