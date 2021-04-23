@@ -1,6 +1,8 @@
 package web
 
 import (
+	"server/web/blocker"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
@@ -27,7 +29,7 @@ func Start(port string) {
 	gin.SetMode(gin.ReleaseMode)
 
 	route := gin.New()
-	route.Use(gin.Recovery(), cors.Default())
+	route.Use(gin.Recovery(), cors.Default(), blocker.Blocker())
 
 	route.GET("/echo", echo)
 
