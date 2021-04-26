@@ -1,7 +1,23 @@
-## TorrServer
+# TorrServer
+
 TorrServer, stream torrent to http
 
-### Installation
+## Build
+
+```sh
+# build web app
+go run build_web.go
+# build server
+cd server
+go mod tidy
+go clean -i -r -cache --modcache
+GOOS=$GOOS GOARCH=$GOARCH $GO_ARM go build -ldflags='-s -w' -o $BIN_FILENAME ./cmd
+```
+
+where `GOOS`, `GOARCH`, `GO_ARM` is set according to preferred system. See `build-all.sh` for details.
+
+## Installation
+
 Just download server from releases and exec file\
 https://github.com/YouROK/TorrServer/releases \
 After open browser link http://127.0.0.1:8090 \
