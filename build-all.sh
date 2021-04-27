@@ -14,16 +14,20 @@ GOBIN="/usr/local/go/bin/go"
 
 $GOBIN version
 
-$GOBIN run build_web.go
-
 LDFLAGS="'-s -w'"
 FAILURES=""
 ROOT=${PWD}
 OUTPUT="${ROOT}/dist/TorrServer"
 
-cd "${ROOT}/server"
+#### Build web
+echo "Build web"
+cd "${ROOT}/web"
+npm run --silent build-js
+cp ${ROOT}/web/dest/index.html ${ROOT}/server/web/pages/template/pages/
 
-$GOBIN clean -i -r -cache --modcache
+echo "Build server"
+cd "${ROOT}/server"
+$GOBIN clean -i -r -cache #--modcache
 $GOBIN mod tidy
 
 BUILD_FLAGS="-ldflags=${LDFLAGS}"
