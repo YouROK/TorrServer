@@ -17,6 +17,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type IPB struct {
+	Ip          net.IP
+	Description string
+}
+
 func Blocker() gin.HandlerFunc {
 	emptyFN := func(c *gin.Context) {
 		c.Next()
@@ -49,7 +54,7 @@ func Blocker() gin.HandlerFunc {
 			}
 			if blackIpList.NumRanges() > 0 {
 				if r, ok := blackIpList.Lookup(ip); ok {
-					log.WebLogln("Block ip, in black list:", ip.String(), "in range", r.Description, ":", r.First, "-", r.Last)
+					log.WebLogln("Block ip, in black list:", ip.String(), "in range", r)
 					c.String(http.StatusTeapot, "Banned")
 					c.Abort()
 					return
@@ -60,17 +65,17 @@ func Blocker() gin.HandlerFunc {
 	}
 }
 
-func scanBuf(buf []byte) iplist.Ranger {
+func scanBuf(buf []byte) []IPB {
 	if len(buf) == 0 {
-		return iplist.New(nil)
+		return nil
 	}
-	var ranges []iplist.Range
+	var ranges []IPB
 	scanner := bufio.NewScanner(strings.NewReader(string(buf)))
 	for scanner.Scan() {
 		r, ok, err := parseLine(scanner.Bytes())
 		if err != nil {
 			log.TLogln("Error scan ip list:", err)
-			return iplist.New(nil)
+			return nil
 		}
 		if ok {
 			ranges = append(ranges, r)
@@ -86,14 +91,13 @@ func scanBuf(buf []byte) iplist.Ranger {
 	return iplist.New(nil)
 }
 
-func parseLine(l []byte) (r iplist.Range, ok bool, err error) {
+func parseLine(l []byte) (r IPB, ok bool, err error) {
 	l = bytes.TrimSpace(l)
 	if len(l) == 0 || bytes.HasPrefix(l, []byte("#")) {
 		return
 	}
 	colon := bytes.LastIndexAny(l, ":")
-	hyphen := bytes.IndexByte(l[colon+1:], '-')
-	hyphen += colon + 1
+
 	if colon >= 0 {
 		r.Description = string(l[:colon])
 	}
