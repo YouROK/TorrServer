@@ -52,6 +52,9 @@ func AddTorrent(spec *torrent.TorrentSpec, title, poster string, data string) (*
 		if title == "" && torDB != nil {
 			torr.Title = torDB.Title
 		}
+		if torr.Title == "" && torr.Torrent != nil {
+			torr.Title = torr.Name()
+		}
 	}
 	if torr.Poster == "" {
 		torr.Poster = poster
