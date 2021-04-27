@@ -10,12 +10,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/anacrolix/missinggo/httptoo"
+
 	sets "server/settings"
 	"server/torr"
 	"server/torr/state"
 	"server/utils"
-
-	"github.com/anacrolix/missinggo/httptoo"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -24,7 +24,7 @@ import (
 func allPlayList(c *gin.Context) {
 	torrs := torr.ListTorrent()
 
-	host := "http://" + c.Request.Host
+	host := utils.GetScheme(c) + "://" + c.Request.Host
 	list := "#EXTM3U\n"
 	hash := ""
 	// fn=file.m3u fix forkplayer bug with end .m3u in link
@@ -61,7 +61,7 @@ func playList(c *gin.Context) {
 		}
 	}
 
-	host := "http://" + c.Request.Host
+	host := utils.GetScheme(c) + "://" + c.Request.Host
 	list := getM3uList(tor.Status(), host, fromlast)
 	list = "#EXTM3U\n" + list
 

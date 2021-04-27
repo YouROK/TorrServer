@@ -4,6 +4,7 @@ import (
 	"net"
 
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/location"
 	"github.com/gin-gonic/gin"
 
 	"server/log"
@@ -38,7 +39,7 @@ func Start(port string) {
 	corsCfg.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "X-Requested-With", "Accept", "Authorization"}
 
 	route := gin.New()
-	route.Use(log.WebLogger(), blocker.Blocker(), gin.Recovery(), cors.New(corsCfg))
+	route.Use(log.WebLogger(), blocker.Blocker(), gin.Recovery(), cors.New(corsCfg), location.Default())
 
 	route.GET("/echo", echo)
 
