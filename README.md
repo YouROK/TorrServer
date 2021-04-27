@@ -150,6 +150,24 @@ File format:
 }
 
 
+
+#
+### Whitelist/Blacklist ip
+The lists file should be located near to the settings.
+
+whitelist file name: wip.txt\
+blacklist file name: bip.txt
+
+whitelist has prior
+
+Example:\
+local:127.0.0.0-127.0.0.255\
+127.0.0.0-127.0.0.255\
+local:127.0.0.1\
+127.0.0.1\
+\# at the beginning of the line, comment
+
+
 #
 ### Donate:
 [PayPal](https://www.paypal.me/yourok)
