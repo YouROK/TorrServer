@@ -111,6 +111,9 @@ func watchTDir(dir string) {
 						tor, err := torr.AddTorrent(sp, "", "", "")
 						if err == nil {
 							if tor.GotInfo() {
+								if tor.Title == "" {
+									tor.Title = tor.Name()
+								}
 								torr.SaveTorrentToDB(tor)
 								tor.Drop()
 								os.Remove(filename)
