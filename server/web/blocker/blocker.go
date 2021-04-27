@@ -23,21 +23,12 @@ func Blocker() gin.HandlerFunc {
 	}
 
 	name := filepath.Join(settings.Path, "bip.txt")
-	buf, err := ioutil.ReadFile(name)
-	if err != nil {
-		return emptyFN
-	}
+	buf, _ := ioutil.ReadFile(name)
 	blackIpList := scanBuf(buf)
 
 	name = filepath.Join(settings.Path, "wip.txt")
-	buf, err = ioutil.ReadFile(name)
-	if err != nil {
-		return emptyFN
-	}
+	buf, _ = ioutil.ReadFile(name)
 	whiteIpList := scanBuf(buf)
-	if blackIpList.NumRanges() == 0 {
-		return emptyFN
-	}
 
 	if blackIpList.NumRanges() == 0 && whiteIpList.NumRanges() == 0 {
 		return emptyFN
@@ -70,8 +61,11 @@ func Blocker() gin.HandlerFunc {
 }
 
 func scanBuf(buf []byte) iplist.Ranger {
-	scanner := bufio.NewScanner(strings.NewReader(string(buf)))
+	if len(buf) == 0 {
+		return iplist.New(nil)
+	}
 	var ranges []iplist.Range
+	scanner := bufio.NewScanner(strings.NewReader(string(buf)))
 	for scanner.Scan() {
 		r, ok, err := parseLine(scanner.Bytes())
 		if err != nil {
