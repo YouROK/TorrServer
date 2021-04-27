@@ -12,7 +12,9 @@ On linux systems you need to set the environment variable before run \
 Install golang 1.16+ by instruction: https://golang.org/doc/install \
 Goto dir to source\
 Run build script under linux build-all.sh\
-For build web page need install npm
+For build web page need install npm\
+For build android server need android toolchain\
+Download android ndk and copy android-ndk-XXX/toolchains/llvm/prebuilt/linux-x86_64 dir to source, rename it to toolchain
 
 #
 ### Server args:
