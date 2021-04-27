@@ -41,7 +41,7 @@ func Blocker() gin.HandlerFunc {
 			minifyIP(&ip)
 			if whiteIpList.NumRanges() > 0 {
 				if _, ok := whiteIpList.Lookup(ip); !ok {
-					log.TLogln("Block ip, not in white list", ip.String())
+					log.WebLogln("Block ip, not in white list", ip.String())
 					c.String(http.StatusTeapot, "Banned")
 					c.Abort()
 					return
@@ -49,7 +49,7 @@ func Blocker() gin.HandlerFunc {
 			}
 			if blackIpList.NumRanges() > 0 {
 				if r, ok := blackIpList.Lookup(ip); ok {
-					log.TLogln("Block ip, in black list:", ip.String(), "in range", r.Description, ":", r.First, "-", r.Last)
+					log.WebLogln("Block ip, in black list:", ip.String(), "in range", r.Description, ":", r.First, "-", r.Last)
 					c.String(http.StatusTeapot, "Banned")
 					c.Abort()
 					return

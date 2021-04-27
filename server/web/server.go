@@ -3,8 +3,6 @@ package web
 import (
 	"net"
 
-	"server/web/blocker"
-
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
@@ -13,6 +11,7 @@ import (
 	"server/version"
 	"server/web/api"
 	"server/web/auth"
+	"server/web/blocker"
 	"server/web/pages"
 )
 
@@ -34,8 +33,12 @@ func Start(port string) {
 	}
 	gin.SetMode(gin.ReleaseMode)
 
+	corsCfg := cors.DefaultConfig()
+	corsCfg.AllowAllOrigins = true
+	corsCfg.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "X-Requested-With", "Accept", "Authorization"}
+
 	route := gin.New()
-	route.Use(gin.Recovery(), cors.Default(), blocker.Blocker())
+	route.Use(log.WebLogger(), blocker.Blocker(), gin.Recovery(), cors.New(corsCfg))
 
 	route.GET("/echo", echo)
 
