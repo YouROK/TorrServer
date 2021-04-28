@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -75,8 +76,14 @@ func WebLogger() gin.HandlerFunc {
 			c.Next()
 			return
 		}
-		body, _ := ioutil.ReadAll(c.Request.Body)
-		c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+		body := ""
+		//save body if not form or file
+		if !strings.HasPrefix(c.Request.Header.Get("Content-Type"), "multipart/form-data") {
+			body, _ := ioutil.ReadAll(c.Request.Body)
+			c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+		} else {
+			body = "body hidden, too large"
+		}
 		c.Next()
 
 		statusCode := c.Writer.Status()
