@@ -1,16 +1,28 @@
 #!/bin/bash
 
-PLATFORMS=""
-PLATFORMS="$PLATFORMS linux/amd64 linux/386"
-PLATFORMS="$PLATFORMS windows/amd64 windows/386"
-PLATFORMS="$PLATFORMS darwin/amd64 darwin/arm64"
-PLATFORMS="$PLATFORMS freebsd/amd64"
-PLATFORMS="$PLATFORMS linux/mips linux/mipsle linux/mips64 linux/mips64le"
+PLATFORMS=(
+  'linux/arm64' 'linux/arm7' 'linux/arm5'
+  'linux/amd64' 'linux/386'
+  'windows/amd64' 'windows/386'
+  'darwin/amd64' 'darwin/arm64'
+  'freebsd/amd64'
+  'linux/mips' 'linux/mipsle' 'linux/mips64' 'linux/mips64le'
+)
 
 type setopt >/dev/null 2>&1
 
-GOBIN="/usr/local/go/bin/go"
-#GOBIN="/usr/local/go116b/bin/go"
+set_goarm() {
+  if [[ "$1" =~ arm([5,7]) ]]; then
+    GOARCH="arm"
+    GOARM="${BASH_REMATCH[1]}"
+    GO_ARM="GOARM=${GOARM}"
+  else
+    GOARM=""
+    GO_ARM=""
+  fi
+}
+
+GOBIN="go"
 
 $GOBIN version
 
@@ -21,101 +33,57 @@ OUTPUT="${ROOT}/dist/TorrServer"
 
 #### Build web
 echo "Build web"
-cd "${ROOT}/web"
+cd "${ROOT}/web" || exit 1
 npm run --silent build-js
-cp ${ROOT}/web/dest/index.html ${ROOT}/server/web/pages/template/pages/
+cp "${ROOT}/web/dest/index.html" "${ROOT}/server/web/pages/template/pages/"
 
+#### Build server
 echo "Build server"
-cd "${ROOT}/server"
+cd "${ROOT}/server" || exit 1
 $GOBIN clean -i -r -cache #--modcache
 $GOBIN mod tidy
 
 BUILD_FLAGS="-ldflags=${LDFLAGS}"
 
 #####################################
-### ARM build section
-#####
-
-GOOS="linux"
-GOARCH="arm64"
-BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}"
-CMD="GOOS=linux GOARCH=${GOARCH} ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
-echo "${CMD}"
-eval $CMD || FAILURES="${FAILURES} ${PLATFORM}"
-
-GOARCH="arm"
-GOARM="7"
-BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}${GOARM}"
-CMD="GOOS=${GOOS} GOARCH=${GOARCH} GOARM=${GOARM} ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
-echo "${CMD}"
-eval "${CMD}" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
-
-GOARCH="arm"
-GOARM="5"
-BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}${GOARM}"
-CMD="GOOS=${GOOS} GOARCH=${GOARCH} GOARM=${GOARM} ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
-echo "${CMD}"
-eval "${CMD}" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
-
-#####################################
 ### X86 build section
 #####
 
-for PLATFORM in $PLATFORMS; do
+for PLATFORM in "${PLATFORMS[@]}"; do
   GOOS=${PLATFORM%/*}
   GOARCH=${PLATFORM#*/}
-  BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}"
+  set_goarm "$GOARCH"
+  BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}${GOARM}"
   if [[ "${GOOS}" == "windows" ]]; then BIN_FILENAME="${BIN_FILENAME}.exe"; fi
-  if [[ "${GOOS}" == "linux" ]]; then
-    CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
-  else
-    CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
-  fi
+  CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GO_ARM} ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
   echo "${CMD}"
-  eval $CMD || FAILURES="${FAILURES} ${PLATFORM}"
+  eval "$CMD" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
 done
 
 #####################################
 ### Android build section
 #####
 
+declare -A COMPILERS=(
+  ["arm7"]="armv7a-linux-androideabi21-clang"
+  ["arm64"]="aarch64-linux-android21-clang"
+  ["386"]="i686-linux-android21-clang"
+  ["amd64"]="x86_64-linux-android21-clang"
+)
+
 export NDK_TOOLCHAIN=$ROOT/toolchain
 
 GOOS=android
 
-export CC=$NDK_TOOLCHAIN/bin/armv7a-linux-androideabi21-clang
-export CXX=$NDK_TOOLCHAIN/bin/armv7a-linux-androideabi21-clang++
-GOARCH="arm"
-GOARM="7"
-BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}${GOARM}"
-CMD="GOOS=${GOOS} GOARCH=${GOARCH} GOARM=${GOARM} CGO_ENABLED=1 ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
-echo "${CMD}"
-eval "${CMD}" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
-
-export CC=$NDK_TOOLCHAIN/bin/aarch64-linux-android21-clang
-export CXX=$NDK_TOOLCHAIN/bin/aarch64-linux-android21-clang++
-GOARCH="arm64"
-GOARM=""
-BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}${GOARM}"
-CMD="GOOS=${GOOS} GOARCH=${GOARCH} CGO_ENABLED=1 ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
-echo "${CMD}"
-eval "${CMD}" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
-
-export CC=$NDK_TOOLCHAIN/bin/i686-linux-android21-clang
-export CXX=$NDK_TOOLCHAIN/bin/i686-linux-android21-clang++
-GOARCH="386"
-BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}${GOARM}"
-CMD="GOOS=${GOOS} GOARCH=${GOARCH} CGO_ENABLED=1 ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
-echo "${CMD}"
-eval "${CMD}" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
-
-export CC=$NDK_TOOLCHAIN/bin/x86_64-linux-android21-clang
-export CXX=$NDK_TOOLCHAIN/bin/x86_64-linux-android21-clang++
-GOARCH="amd64"
-BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}${GOARM}"
-CMD="GOOS=${GOOS} GOARCH=${GOARCH} CGO_ENABLED=1 ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
-echo "${CMD}"
-eval "${CMD}" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
+for GOARCH in "${!COMPILERS[@]}"; do
+  export CC="$NDK_TOOLCHAIN/bin/${COMPILERS[$GOARCH]}"
+  export CXX="$NDK_TOOLCHAIN/bin/${COMPILERS[$GOARCH]}++"
+  set_goarm "$GOARCH"
+  BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}${GOARM}"
+  CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GO_ARM} CGO_ENABLED=1 ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
+  echo "${CMD}"
+  eval "${CMD}" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
+done
 
 # eval errors
 if [[ "${FAILURES}" != "" ]]; then
