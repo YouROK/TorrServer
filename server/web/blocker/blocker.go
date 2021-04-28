@@ -13,14 +13,8 @@ import (
 	"server/log"
 	"server/settings"
 
-	"github.com/anacrolix/torrent/iplist"
 	"github.com/gin-gonic/gin"
 )
-
-type IPB struct {
-	Ip          net.IP
-	Description string
-}
 
 func Blocker() gin.HandlerFunc {
 	emptyFN := func(c *gin.Context) {
@@ -54,7 +48,7 @@ func Blocker() gin.HandlerFunc {
 			}
 			if blackIpList.NumRanges() > 0 {
 				if r, ok := blackIpList.Lookup(ip); ok {
-					log.WebLogln("Block ip, in black list:", ip.String(), "in range", r)
+					log.WebLogln("Block ip, in black list:", ip.String(), "in range", r.Description, ":", r.First, "-", r.Last)
 					c.String(http.StatusTeapot, "Banned")
 					c.Abort()
 					return
@@ -65,17 +59,17 @@ func Blocker() gin.HandlerFunc {
 	}
 }
 
-func scanBuf(buf []byte) []IPB {
+func scanBuf(buf []byte) Ranger {
 	if len(buf) == 0 {
-		return nil
+		return New(nil)
 	}
-	var ranges []IPB
+	var ranges []Range
 	scanner := bufio.NewScanner(strings.NewReader(string(buf)))
 	for scanner.Scan() {
 		r, ok, err := parseLine(scanner.Bytes())
 		if err != nil {
 			log.TLogln("Error scan ip list:", err)
-			return nil
+			return New(nil)
 		}
 		if ok {
 			ranges = append(ranges, r)
@@ -86,18 +80,19 @@ func scanBuf(buf []byte) []IPB {
 		log.TLogln("Error scan ip list:", err)
 	}
 	if len(ranges) > 0 {
-		return iplist.New(ranges)
+		return New(ranges)
 	}
-	return iplist.New(nil)
+	return New(nil)
 }
 
-func parseLine(l []byte) (r IPB, ok bool, err error) {
+func parseLine(l []byte) (r Range, ok bool, err error) {
 	l = bytes.TrimSpace(l)
 	if len(l) == 0 || bytes.HasPrefix(l, []byte("#")) {
 		return
 	}
 	colon := bytes.LastIndexAny(l, ":")
-
+	hyphen := bytes.IndexByte(l[colon+1:], '-')
+	hyphen += colon + 1
 	if colon >= 0 {
 		r.Description = string(l[:colon])
 	}
@@ -117,11 +112,4 @@ func parseLine(l []byte) (r IPB, ok bool, err error) {
 	}
 	ok = true
 	return
-}
-
-func minifyIP(ip *net.IP) {
-	v4 := ip.To4()
-	if v4 != nil {
-		*ip = append(make([]byte, 0, 4), v4...)
-	}
 }
