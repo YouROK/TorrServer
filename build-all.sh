@@ -1,8 +1,8 @@
 #!/bin/bash
 
 PLATFORMS=(
-  'linux/arm64' 'linux/arm7' 'linux/arm5'
-  'linux/amd64' 'linux/386'
+  'linux/arm64' 'linux/arm7' 'linux/amd64'
+  'linux/arm5' 'linux/386'
   'windows/amd64' 'windows/386'
   'darwin/amd64' 'darwin/arm64'
   'freebsd/amd64'
@@ -40,7 +40,7 @@ cp "${ROOT}/web/dest/index.html" "${ROOT}/server/web/pages/template/pages/"
 #### Build server
 echo "Build server"
 cd "${ROOT}/server" || exit 1
-$GOBIN clean -i -r -cache #--modcache
+#$GOBIN clean -i -r -cache #--modcache
 $GOBIN mod tidy
 
 BUILD_FLAGS="-ldflags=${LDFLAGS}"
