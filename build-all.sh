@@ -40,7 +40,7 @@ cp "${ROOT}/web/dest/index.html" "${ROOT}/server/web/pages/template/pages/"
 #### Build server
 echo "Build server"
 cd "${ROOT}/server" || exit 1
-#$GOBIN clean -i -r -cache #--modcache
+$GOBIN clean -i -r -cache #--modcache
 $GOBIN mod tidy
 
 BUILD_FLAGS="-ldflags=${LDFLAGS}"
