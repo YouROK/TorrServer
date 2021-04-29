@@ -24,7 +24,7 @@ func Init(path, webpath string) {
 	logPath = path
 
 	if webpath != "" {
-		ff, err := os.OpenFile(webLogPath, os.O_RDWR|os.O_CREATE, 0666)
+		ff, err := os.OpenFile(webLogPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
 			TLogln("Error create web log file:", err)
 		} else {
@@ -39,7 +39,7 @@ func Init(path, webpath string) {
 				os.Remove(path)
 			}
 		}
-		ff, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0666)
+		ff, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
 			TLogln("Error create log file:", err)
 			return
