@@ -80,9 +80,7 @@ func (c *Cache) Piece(m metainfo.Piece) storage.PieceImpl {
 
 func (c *Cache) Close() error {
 	log.TLogln("Close cache for:", c.hash)
-	if _, ok := c.storage.caches[c.hash]; ok {
-		delete(c.storage.caches, c.hash)
-	}
+	delete(c.storage.caches, c.hash)
 	c.pieces = nil
 
 	c.muReaders.Lock()

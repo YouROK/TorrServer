@@ -359,9 +359,7 @@ func (t *Torrent) Close() {
 	t.Stat = state.TorrentClosed
 
 	t.bt.mu.Lock()
-	if _, ok := t.bt.torrents[t.Hash()]; ok {
-		delete(t.bt.torrents, t.Hash())
-	}
+	delete(t.bt.torrents, t.Hash())
 	t.bt.mu.Unlock()
 
 	t.drop()
