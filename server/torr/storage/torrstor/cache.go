@@ -206,11 +206,7 @@ func (c *Cache) getRemPieces() []*Piece {
 	}
 
 	for r, _ := range c.readers {
-		notLoadSize := int64(FileRangeNotDelete)
-		if c.pieceLength > notLoadSize {
-			notLoadSize = c.pieceLength
-		}
-		if r.offset-r.file.Offset() < notLoadSize {
+		if c.isIdInFileBE(ranges, r.getReaderPiece()) {
 			continue
 		}
 		pc := r.getReaderPiece()
