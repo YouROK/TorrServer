@@ -37,6 +37,8 @@ type Cache struct {
 	torrent  *torrent.Torrent
 }
 
+const FileRangeNotDelete = 5 * 1024 * 1024
+
 func NewCache(capacity int64, storage *Storage) *Cache {
 	ret := &Cache{
 		capacity: capacity,
@@ -204,6 +206,13 @@ func (c *Cache) getRemPieces() []*Piece {
 	}
 
 	for r, _ := range c.readers {
+		notLoadSize := int64(FileRangeNotDelete)
+		if c.pieceLength > notLoadSize {
+			notLoadSize = c.pieceLength
+		}
+		if r.offset-r.file.Offset() < notLoadSize {
+			continue
+		}
 		pc := r.getReaderPiece()
 		end := r.getPiecesRange().End
 		limit := 5
@@ -230,9 +239,9 @@ func (c *Cache) getRemPieces() []*Piece {
 func (c *Cache) isIdInFileBE(ranges []Range, id int) bool {
 	for _, rng := range ranges {
 		ss := int(rng.File.Offset() / c.pieceLength)
-		se := int((5*1024*1024 + rng.File.Offset()) / c.pieceLength)
+		se := int((FileRangeNotDelete + rng.File.Offset()) / c.pieceLength)
 
-		es := int((rng.File.Offset() + rng.File.Length() - 5*1024*1024) / c.pieceLength)
+		es := int((rng.File.Offset() + rng.File.Length() - FileRangeNotDelete) / c.pieceLength)
 		ee := int((rng.File.Offset() + rng.File.Length()) / c.pieceLength)
 
 		if id >= ss && id <= se || id >= es && id <= ee {
