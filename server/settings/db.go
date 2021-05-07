@@ -4,8 +4,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	bolt "go.etcd.io/bbolt"
 	"server/log"
+
+	bolt "go.etcd.io/bbolt"
 )
 
 type TDB struct {
@@ -99,7 +100,6 @@ func (v *TDB) Set(xpath, name string, value []byte) {
 		log.TLogln("value:", value)
 	}
 
-	return
 }
 
 func (v *TDB) List(xpath string) []string {
@@ -173,5 +173,4 @@ func (v *TDB) Rem(xpath, name string) {
 		log.TLogln("Error rem sets", xpath+"/"+name, ", error:", err)
 	}
 
-	return
 }
