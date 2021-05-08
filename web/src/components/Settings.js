@@ -138,6 +138,10 @@ export default function SettingsDialog() {
                             <TextField onChange={inputForm} margin="dense" id="ConnectionsLimit" label="Connections limit" value={settings.ConnectionsLimit} type="number" fullWidth />
                             <TextField onChange={inputForm} margin="dense" id="DhtConnectionLimit" label="Dht connection limit" value={settings.DhtConnectionLimit} type="number" fullWidth />
                             <TextField onChange={inputForm} margin="dense" id="PeersListenPort" label="Peers listen port" value={settings.PeersListenPort} type="number" fullWidth />
+                            <br />
+                            <FormControlLabel control={<Switch checked={settings.UseDisk} onChange={inputForm} id="UseDisk" color="primary" />} label="Use disk" />
+                            <br />
+                            <TextField onChange={inputForm} margin="dense" id="TorrentsSavePath" label="Torrents save path" value={settings.TorrentsSavePath} type="url" fullWidth />
                         </>
                     )}
                 </DialogContent>
