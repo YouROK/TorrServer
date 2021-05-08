@@ -1,96 +1,76 @@
 package torrstor
 
 import (
-	"errors"
-	"io"
-	"sync"
-	"time"
-
-	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/storage"
+	"server/settings"
 )
 
 type Piece struct {
-	storage.PieceImpl
+	storage.PieceImpl `json:"-"`
 
-	Id   int
-	Size int64
+	Id   int   `json:"-"`
+	Size int64 `json:"size"`
 
-	complete bool
-	accessed int64
-	buffer   []byte
+	Complete bool  `json:"complete"`
+	Accessed int64 `json:"accessed"`
 
-	mu    sync.RWMutex
-	cache *Cache
+	mPiece *MemPiece  `json:"-"`
+	dPiece *DiskPiece `json:"-"`
+
+	cache *Cache `json:"-"`
+}
+
+func NewPiece(id int, cache *Cache) *Piece {
+	p := &Piece{
+		Id:    id,
+		cache: cache,
+	}
+
+	if !settings.BTsets.UseDisk {
+		p.mPiece = NewMemPiece(p)
+	} else {
+		p.dPiece = NewDiskPiece(p)
+	}
+	return p
 }
 
 func (p *Piece) WriteAt(b []byte, off int64) (n int, err error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	if p.buffer == nil {
-		go p.cache.cleanPieces()
-		p.buffer = make([]byte, p.cache.pieceLength, p.cache.pieceLength)
+	if !settings.BTsets.UseDisk {
+		return p.mPiece.WriteAt(b, off)
+	} else {
+		return p.dPiece.WriteAt(b, off)
 	}
-	n = copy(p.buffer[off:], b[:])
-	p.Size += int64(n)
-	p.accessed = time.Now().Unix()
-	return
 }
 
 func (p *Piece) ReadAt(b []byte, off int64) (n int, err error) {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-
-	size := len(b)
-	if size+int(off) > len(p.buffer) {
-		size = len(p.buffer) - int(off)
-		if size < 0 {
-			size = 0
-		}
+	if !settings.BTsets.UseDisk {
+		return p.mPiece.ReadAt(b, off)
+	} else {
+		return p.dPiece.ReadAt(b, off)
 	}
-	if len(p.buffer) < int(off) || len(p.buffer) < int(off)+size {
-		return 0, io.EOF
-	}
-	n = copy(b, p.buffer[int(off) : int(off)+size][:])
-	p.accessed = time.Now().Unix()
-	if int64(len(b))+off >= p.Size {
-		go p.cache.cleanPieces()
-	}
-	if n == 0 {
-		return 0, io.EOF
-	}
-	return n, nil
 }
 
 func (p *Piece) MarkComplete() error {
-	if len(p.buffer) == 0 {
-		return errors.New("piece is not complete")
-	}
-	p.complete = true
+	p.Complete = true
 	return nil
 }
 
 func (p *Piece) MarkNotComplete() error {
-	p.complete = false
+	p.Complete = false
 	return nil
 }
 
 func (p *Piece) Completion() storage.Completion {
 	return storage.Completion{
-		Complete: p.complete && len(p.buffer) > 0,
+		Complete: p.Complete,
 		Ok:       true,
 	}
 }
 
 func (p *Piece) Release() {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if p.buffer != nil {
-		p.buffer = nil
+	if !settings.BTsets.UseDisk {
+		p.mPiece.Release()
+	} else {
+		p.dPiece.Release()
 	}
-	p.Size = 0
-	p.complete = false
-
-	p.cache.torrent.Piece(p.Id).SetPriority(torrent.PiecePriorityNone)
 }
