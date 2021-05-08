@@ -8,9 +8,11 @@ import (
 
 type BTSets struct {
 	// Cache
-	CacheSize       int64 // in byte, def 200 mb
-	PreloadBuffer   bool
-	ReaderReadAHead int // in percent, 5%-100%, [...S__X__E...] [S-E] not clean
+	CacheSize        int64 // in byte, def 200 mb
+	PreloadBuffer    bool
+	ReaderReadAHead  int // in percent, 5%-100%, [...S__X__E...] [S-E] not clean
+	UseDisk          bool
+	TorrentsSavePath string
 
 	// Torrent
 	ForceEncrypt             bool
