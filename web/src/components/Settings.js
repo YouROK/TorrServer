@@ -79,6 +79,8 @@ export default function SettingsDialog() {
             sets[event.target.id] = Number(event.target.value)
         } else if (event.target.type === 'checkbox') {
             sets[event.target.id] = Boolean(event.target.checked)
+        } else if (event.target.type === 'url') {
+            sets[event.target.id] = event.target.value
         }
         setSets(sets)
     }
