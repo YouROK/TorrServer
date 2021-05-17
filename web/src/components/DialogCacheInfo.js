@@ -118,6 +118,8 @@ export default function DialogCacheInfo(props) {
                     <br />
                     <b>Download speed </b> {cache.Torrent && cache.Torrent.download_speed ? humanizeSize(cache.Torrent.download_speed) + '/sec' : ''}
                     <br />
+                    <b>Upload speed </b> {cache.Torrent && cache.Torrent.upload_speed ? humanizeSize(cache.Torrent.upload_speed) + '/sec' : ''}
+                    <br />
                     <b>Status </b> {cache.Torrent && cache.Torrent.stat_string && cache.Torrent.stat_string}
                 </Typography>
             </DialogTitle>
