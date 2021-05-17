@@ -1,38 +1,41 @@
 package torrstor
 
 import (
-	"io"
+	"os"
+	"path/filepath"
+	"strconv"
 	"sync"
 	"time"
+
+	"server/log"
+	"server/settings"
 )
 
 type DiskPiece struct {
 	piece *Piece
 
+	file *os.File
+
 	mu sync.RWMutex
 }
 
 func NewDiskPiece(p *Piece) *DiskPiece {
-	return &DiskPiece{piece: p}
+	name := filepath.Join(settings.BTsets.TorrentsSavePath, p.cache.hash.HexString(), strconv.Itoa(p.Id))
+	ff, err := os.OpenFile(name, os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		log.TLogln("Error open file:", err)
+		return nil
+	}
+	return &DiskPiece{piece: p, file: ff}
 }
 
 func (p *DiskPiece) WriteAt(b []byte, off int64) (n int, err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	id := int64(p.piece.Id)
-	pl := p.piece.cache.pieceLength
-	poff := id * pl
-	off += poff
+	n, err = p.file.WriteAt(b, off)
 
-	n = 0
-	off, err = p.piece.cache.file.Seek(off, io.SeekStart)
-	if err == nil {
-		n, err = p.piece.cache.file.Write(b)
-	}
-
-	go p.piece.cache.loadPieces()
-	p.piece.cache.saveInfo()
+	go p.piece.cache.LoadPiecesOnDisk()
 
 	p.piece.Size += int64(n)
 	p.piece.Accessed = time.Now().Unix()
@@ -43,21 +46,12 @@ func (p *DiskPiece) ReadAt(b []byte, off int64) (n int, err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	id := int64(p.piece.Id)
-	pl := p.piece.cache.pieceLength
-	poff := id * pl
-	off += poff
-
-	n = 0
-	off, err = p.piece.cache.file.Seek(off, io.SeekStart)
-	if err == nil {
-		n, err = p.piece.cache.file.Read(b)
-	}
+	n, err = p.file.ReadAt(b, off)
 
 	p.piece.Accessed = time.Now().Unix()
 	return n, nil
 }
 
 func (p *DiskPiece) Release() {
-
+	p.file.Close()
 }
