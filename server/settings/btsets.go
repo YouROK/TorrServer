@@ -8,9 +8,11 @@ import (
 
 type BTSets struct {
 	// Cache
-	CacheSize       int64 // in byte, def 200 mb
-	PreloadBuffer   bool
-	ReaderReadAHead int // in percent, 5%-100%, [...S__X__E...] [S-E] not clean
+	CacheSize        int64 // in byte, def 200 mb
+	PreloadBuffer    bool
+	ReaderReadAHead  int // in percent, 5%-100%, [...S__X__E...] [S-E] not clean
+	UseDisk          bool
+	TorrentsSavePath string
 
 	// Torrent
 	ForceEncrypt             bool
@@ -83,9 +85,9 @@ func SetDefault() {
 	sets := new(BTSets)
 	sets.EnableDebug = false
 	sets.DisableUTP = true
-	sets.CacheSize = 100 * 1024 * 1024 // 100mb
+	sets.CacheSize = 96 * 1024 * 1024 // 100mb
 	sets.PreloadBuffer = false
-	sets.ConnectionsLimit = 25
+	sets.ConnectionsLimit = 23
 	sets.DhtConnectionLimit = 500
 	sets.RetrackersMode = 1
 	sets.TorrentDisconnectTimeout = 30

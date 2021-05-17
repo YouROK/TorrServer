@@ -79,6 +79,8 @@ export default function SettingsDialog() {
             sets[event.target.id] = Number(event.target.value)
         } else if (event.target.type === 'checkbox') {
             sets[event.target.id] = Boolean(event.target.checked)
+        } else if (event.target.type === 'url') {
+            sets[event.target.id] = event.target.value
         }
         setSets(sets)
     }
@@ -138,6 +140,10 @@ export default function SettingsDialog() {
                             <TextField onChange={inputForm} margin="dense" id="ConnectionsLimit" label="Connections limit" value={settings.ConnectionsLimit} type="number" fullWidth />
                             <TextField onChange={inputForm} margin="dense" id="DhtConnectionLimit" label="Dht connection limit" value={settings.DhtConnectionLimit} type="number" fullWidth />
                             <TextField onChange={inputForm} margin="dense" id="PeersListenPort" label="Peers listen port" value={settings.PeersListenPort} type="number" fullWidth />
+                            <br />
+                            <FormControlLabel control={<Switch checked={settings.UseDisk} onChange={inputForm} id="UseDisk" color="primary" />} label="Use disk" />
+                            <br />
+                            <TextField onChange={inputForm} margin="dense" id="TorrentsSavePath" label="Torrents save path" value={settings.TorrentsSavePath} type="url" fullWidth />
                         </>
                     )}
                 </DialogContent>

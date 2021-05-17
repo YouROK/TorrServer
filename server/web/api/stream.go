@@ -7,6 +7,7 @@ import (
 
 	"server/torr"
 	"server/torr/state"
+	utils2 "server/utils"
 	"server/web/api/utils"
 
 	"github.com/gin-gonic/gin"
@@ -40,7 +41,7 @@ func stream(c *gin.Context) {
 	data := ""
 	notAuth := c.GetBool("not_auth")
 
-	if notAuth && play {
+	if notAuth && (play || m3u) {
 		streamNoAuth(c)
 		return
 	}
@@ -119,7 +120,7 @@ func stream(c *gin.Context) {
 	} else
 	// return m3u if query
 	if m3u {
-		m3ulist := "#EXTM3U\n" + getM3uList(tor.Status(), "http://"+c.Request.Host, fromlast)
+		m3ulist := "#EXTM3U\n" + getM3uList(tor.Status(), utils2.GetScheme(c)+"://"+c.Request.Host, fromlast)
 		sendM3U(c, tor.Name()+".m3u", tor.Hash().HexString(), m3ulist)
 		return
 	} else
@@ -134,6 +135,9 @@ func streamNoAuth(c *gin.Context) {
 	link := c.Query("link")
 	indexStr := c.Query("index")
 	_, preload := c.GetQuery("preload")
+	_, m3u := c.GetQuery("m3u")
+	_, fromlast := c.GetQuery("fromlast")
+	_, play := c.GetQuery("play")
 	title := c.Query("title")
 	poster := c.Query("poster")
 	data := ""
@@ -153,7 +157,8 @@ func streamNoAuth(c *gin.Context) {
 
 	tor := torr.GetTorrent(spec.InfoHash.HexString())
 	if tor == nil {
-		c.AbortWithStatus(http.StatusForbidden)
+		c.Header("WWW-Authenticate", "Basic realm=Authorization Required")
+		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
@@ -184,7 +189,7 @@ func streamNoAuth(c *gin.Context) {
 			index = ind
 		}
 	}
-	if index == -1 { // if file index not set and play file exec
+	if index == -1 && play { // if file index not set and play file exec
 		c.AbortWithError(http.StatusBadRequest, errors.New("\"index\" is empty or wrong"))
 		return
 	}
@@ -193,5 +198,18 @@ func streamNoAuth(c *gin.Context) {
 		torr.Preload(tor, index)
 	}
 
-	tor.Stream(index, c.Request, c.Writer)
+	// return m3u if query
+	if m3u {
+		m3ulist := "#EXTM3U\n" + getM3uList(tor.Status(), utils2.GetScheme(c)+"://"+c.Request.Host, fromlast)
+		sendM3U(c, tor.Name()+".m3u", tor.Hash().HexString(), m3ulist)
+		return
+	} else
+	// return play if query
+	if play {
+		tor.Stream(index, c.Request, c.Writer)
+		return
+	}
+	c.Header("WWW-Authenticate", "Basic realm=Authorization Required")
+	c.AbortWithStatus(http.StatusUnauthorized)
+
 }

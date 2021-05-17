@@ -24,8 +24,8 @@ func ParseFile(file multipart.File) (*torrent.TorrentSpec, error) {
 		return nil, err
 	}
 
-	mag := minfo.Magnet(info.Name, minfo.HashInfoBytes())
-	// mag := minfo.Magnet(nil, &info)
+	// mag := minfo.Magnet(info.Name, minfo.HashInfoBytes())
+	mag := minfo.Magnet(nil, &info)
 	return &torrent.TorrentSpec{
 		InfoBytes:   minfo.InfoBytes,
 		Trackers:    [][]string{mag.Trackers},
@@ -74,17 +74,22 @@ func fromMagnet(link string) (*torrent.TorrentSpec, error) {
 	}, nil
 }
 
-func fromHttp(url string) (*torrent.TorrentSpec, error) {
-	req, err := http.NewRequest("GET", url, nil)
+func fromHttp(link string) (*torrent.TorrentSpec, error) {
+	req, err := http.NewRequest("GET", link, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	client := new(http.Client)
-	client.Timeout = time.Duration(time.Second * 30)
+	client.Timeout = time.Duration(time.Second * 60)
 	req.Header.Set("User-Agent", "DWL/1.1.1 (Torrent)")
 
 	resp, err := client.Do(req)
+	if er, ok := err.(*url.Error); ok {
+		if strings.HasPrefix(er.URL, "magnet:") {
+			return fromMagnet(er.URL)
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -101,8 +106,8 @@ func fromHttp(url string) (*torrent.TorrentSpec, error) {
 	if err != nil {
 		return nil, err
 	}
-	mag := minfo.Magnet(info.Name, minfo.HashInfoBytes())
-	// mag := minfo.Magnet(nil, &info)
+	// mag := minfo.Magnet(info.Name, minfo.HashInfoBytes())
+	mag := minfo.Magnet(nil, &info)
 
 	return &torrent.TorrentSpec{
 		InfoBytes:   minfo.InfoBytes,
@@ -125,8 +130,8 @@ func fromFile(path string) (*torrent.TorrentSpec, error) {
 		return nil, err
 	}
 
-	mag := minfo.Magnet(info.Name, minfo.HashInfoBytes())
-	// mag := minfo.Magnet(nil, &info)
+	// mag := minfo.Magnet(info.Name, minfo.HashInfoBytes())
+	mag := minfo.Magnet(nil, &info)
 	return &torrent.TorrentSpec{
 		InfoBytes:   minfo.InfoBytes,
 		Trackers:    [][]string{mag.Trackers},

@@ -8,6 +8,13 @@ After open browser link http://127.0.0.1:8090 \
 On linux systems you need to set the environment variable before run \
 ***export GODEBUG=madvdontneed=1***
 
+### Build
+Install golang 1.16+ by instruction: https://golang.org/doc/install \
+Goto dir to source\
+Run build script under linux build-all.sh\
+For build web page need install npm\
+For build android server need android toolchain\
+Download android ndk and copy android-ndk-XXX/toolchains/llvm/prebuilt/linux-x86_64 dir to source, rename it to toolchain
 
 #
 ### Server args:
@@ -148,6 +155,24 @@ File format:
     "User1": "Pass1",\
     "User2": "Pass2"\
 }
+
+
+
+#
+### Whitelist/Blacklist ip
+The lists file should be located near to the settings.
+
+whitelist file name: wip.txt\
+blacklist file name: bip.txt
+
+whitelist has prior
+
+Example:\
+local:127.0.0.0-127.0.0.255\
+127.0.0.0-127.0.0.255\
+local:127.0.0.1\
+127.0.0.1\
+\# at the beginning of the line, comment
 
 
 #

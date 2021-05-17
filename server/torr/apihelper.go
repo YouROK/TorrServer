@@ -3,6 +3,7 @@ package torr
 import (
 	"io"
 	"os"
+	"path/filepath"
 	"sort"
 	"time"
 
@@ -51,6 +52,9 @@ func AddTorrent(spec *torrent.TorrentSpec, title, poster string, data string) (*
 		torr.Title = title
 		if title == "" && torDB != nil {
 			torr.Title = torDB.Title
+		}
+		if torr.Title == "" && torr.Torrent != nil && torr.Torrent.Info() != nil {
+			torr.Title = torr.Info().Name
 		}
 	}
 	if torr.Poster == "" {
@@ -123,6 +127,20 @@ func RemTorrent(hashHex string) {
 	hash := metainfo.NewHashFromHex(hashHex)
 	bts.RemoveTorrent(hash)
 	RemTorrentDB(hash)
+	if sets.BTsets.UseDisk &&
+		hashHex != "" &&
+		hashHex != "/" &&
+		sets.BTsets.TorrentsSavePath != "" &&
+		sets.BTsets.TorrentsSavePath != "/" {
+
+		name := filepath.Join(sets.BTsets.TorrentsSavePath, hashHex)
+		err := os.RemoveAll(name)
+		if err != nil {
+			log.TLogln("Error remove cache:", err)
+		} else {
+			log.TLogln("Remove cache from disk:", hashHex)
+		}
+	}
 }
 
 func ListTorrent() []*Torrent {
