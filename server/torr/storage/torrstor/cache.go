@@ -300,7 +300,7 @@ func (c *Cache) LoadPiecesOnDisk() {
 		limit := 5
 
 		for limit > 0 {
-			if !c.pieces[pc].Complete {
+			if c.pieces != nil && c.pieces[pc] != nil && !c.pieces[pc].Complete {
 				if c.torrent.PieceState(pc).Priority == torrent.PiecePriorityNone {
 					c.torrent.Piece(pc).SetPriority(torrent.PiecePriorityNormal)
 				}
@@ -314,13 +314,13 @@ func (c *Cache) LoadPiecesOnDisk() {
 		pc := 0
 		end := c.pieceCount
 		for pc <= end {
-			if !c.pieces[pc].Complete {
+			if c.pieces != nil && c.pieces[pc] != nil && !c.pieces[pc].Complete {
 				break
 			}
 			pc++
 		}
 		for pc <= end && limit > 0 {
-			if !c.pieces[pc].Complete {
+			if c.pieces != nil && c.pieces[pc] != nil && !c.pieces[pc].Complete {
 				if c.torrent.PieceState(pc).Priority == torrent.PiecePriorityNone {
 					c.torrent.Piece(pc).SetPriority(torrent.PiecePriorityNormal)
 				}
