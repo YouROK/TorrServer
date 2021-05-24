@@ -1,27 +1,27 @@
-import React, { useEffect, useRef } from 'react'
-import ButtonGroup from '@material-ui/core/ButtonGroup'
+import { useEffect, useRef, useState } from 'react'
 import Button from '@material-ui/core/Button'
 
 import 'fontsource-roboto'
 
+import HeightIcon from '@material-ui/icons/Height';
 import CloseIcon from '@material-ui/icons/Close';
 import DeleteIcon from '@material-ui/icons/Delete'
-import Typography from '@material-ui/core/Typography'
-import ListItem from '@material-ui/core/ListItem'
 import DialogActions from '@material-ui/core/DialogActions'
 import Dialog from '@material-ui/core/Dialog'
 
-import { getPeerString, humanizeSize } from '../utils/Utils'
+import { getPeerString, humanizeSize } from '../../utils/Utils'
 
-import DialogTorrentInfo from './DialogTorrentInfo'
-import { torrentsHost } from '../utils/Hosts'
-import DialogCacheInfo from './DialogCacheInfo'
+import DialogTorrentInfo from '../DialogTorrentInfo'
+import { torrentsHost } from '../../utils/Hosts'
+import DialogCacheInfo from '../DialogCacheInfo'
 import DataUsageIcon from '@material-ui/icons/DataUsage'
+import { NoImageIcon } from '../../icons';
+import { StyledButton, TorrentCard, TorrentCardButtons, TorrentCardDescription, TorrentCardDescriptionContent, TorrentCardDescriptionLabel, TorrentCardPoster } from './style';
 
 export default function Torrent(props) {
-    const [open, setOpen] = React.useState(false)
-    const [showCache, setShowCache] = React.useState(false)
-    const [torrent, setTorrent] = React.useState(props.torrent)
+    const [open, setOpen] = useState(false)
+    const [showCache, setShowCache] = useState(false)
+    const [torrent, setTorrent] = useState(props.torrent)
     const timerID = useRef(-1)
 
     useEffect(() => {
@@ -43,61 +43,74 @@ export default function Torrent(props) {
         }
     }, [torrent.hash, open])
 
+    const { title, name, poster, torrent_size, download_speed } = torrent
+
     return (
-        <div>
-            <ListItem>
-                <ButtonGroup style={{width:'100%',boxShadow:'2px 2px 2px gray'}} disableElevation variant="contained" color="primary">
-                    <Button
-                        style={{width: '100%', justifyContent:'start'}}
-                        onClick={() => {
-                            setShowCache(false)
-                            setOpen(true)
-                        }}
-                    >
-                        {torrent.poster &&
-                            <img src={torrent.poster} alt="" align="left" style={{width: 'auto',height:'100px',margin:'0 10px 0 0',borderRadius:'5px'}}/>
-                        }
-                        <Typography>
-                            {torrent.title ? torrent.title : torrent.name}
-                            {torrent.torrent_size > 0 ? ' | ' + humanizeSize(torrent.torrent_size) : ''}
-                            {torrent.download_speed > 0 ? ' | ' + humanizeSize(torrent.download_speed) + '/sec' : ''}
-                            {getPeerString(torrent) ? ' | ' + getPeerString(torrent) : '' }
-                        </Typography>
-                    </Button>
-                    <Button
+        <>
+
+            <TorrentCard>
+                <TorrentCardPoster isPoster={poster}>
+                    {poster
+                        ? <img src={poster} alt="poster" />
+                        : <NoImageIcon />}
+                </TorrentCardPoster>
+
+                <TorrentCardButtons>
+                    <StyledButton
                         onClick={() => {
                             setShowCache(true)
                             setOpen(true)
                         }}
                     >
                         <DataUsageIcon />
-                        <Typography>Cache</Typography>
-                    </Button>
-                    <Button
-                        onClick={() => {
-                            dropTorrent(torrent)
-                        }}
+                        Cache
+                    </StyledButton>
+
+                    <StyledButton
+                        onClick={() => dropTorrent(torrent)}
                     >
                         <CloseIcon />
-                        <Typography>Drop</Typography>
-                    </Button>
-                    <Button
-                        onClick={() => {
-                            deleteTorrent(torrent)
-                        }}
+                        Drop
+                    </StyledButton>
+
+                    <StyledButton
+                        onClick={() => deleteTorrent(torrent)}
                     >
                         <DeleteIcon />
-                        <Typography>Delete</Typography>
-                    </Button>
-                </ButtonGroup>
-            </ListItem>
+                        Delete
+                    </StyledButton>
+
+                    <StyledButton
+                        onClick={() => {
+                            setShowCache(false)
+                            setOpen(true)
+                        }}
+                    >
+                        <HeightIcon />
+                        Details
+                    </StyledButton>
+                </TorrentCardButtons>
+
+                <TorrentCardDescription>
+                    <TorrentCardDescriptionLabel>Name</TorrentCardDescriptionLabel>
+                    <TorrentCardDescriptionContent>{title || name}</TorrentCardDescriptionContent>
+
+                    <TorrentCardDescriptionLabel>Size</TorrentCardDescriptionLabel>
+                    <TorrentCardDescriptionContent>{torrent_size > 0 && humanizeSize(torrent_size)}</TorrentCardDescriptionContent>
+
+                    <TorrentCardDescriptionLabel>Download speed</TorrentCardDescriptionLabel>
+                    <TorrentCardDescriptionContent>{download_speed > 0 ? humanizeSize(download_speed) : '---'}</TorrentCardDescriptionContent>
+
+                    <TorrentCardDescriptionLabel>Peers</TorrentCardDescriptionLabel>
+                    <TorrentCardDescriptionContent>{getPeerString(torrent) || '---'}</TorrentCardDescriptionContent>
+                </TorrentCardDescription>
+            </TorrentCard>
+
             <Dialog
                 open={open}
-                onClose={() => {
-                    setOpen(false)
-                }}
+                onClose={() => setOpen(false)}
                 aria-labelledby="form-dialog-title"
-                fullWidth={true}
+                fullWidth
                 maxWidth={'lg'}
             >
                 {!showCache ? <DialogTorrentInfo torrent={(open, torrent)} /> : <DialogCacheInfo hash={(open, torrent.hash)} />}
@@ -105,15 +118,13 @@ export default function Torrent(props) {
                     <Button
                         variant="outlined"
                         color="primary"
-                        onClick={() => {
-                            setOpen(false)
-                        }}
+                        onClick={() => setOpen(false)}
                     >
                         OK
                     </Button>
                 </DialogActions>
             </Dialog>
-        </div>
+        </>
     )
 }
 
