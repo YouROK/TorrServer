@@ -50,6 +50,7 @@ export const TorrentCardDescription = styled.div`
     background: #74c39c;
     border-radius: 5px;
     padding: 5px;
+    word-break: break-word;
 `
 
 export const TorrentCardDescriptionLabel = styled.div`
