@@ -6,44 +6,44 @@ import DialogTitle from '@material-ui/core/DialogTitle'
 import DialogContent from '@material-ui/core/DialogContent'
 import { cacheHost } from '../utils/Hosts'
 
-const style = {
-    cache: {
-        paddingLeft: "6px",
-        paddingRight: "2px",
-        lineHeight: "11px",
-    },
-    piece: {
-        width: "12px",
-        height: "12px",
-        backgroundColor: "#eef2f4",
-        border: "1px solid #eef2f4",
-        display: "inline-block",
-        marginRight: "1px",
-    },
-    pieceComplete: {
-        backgroundColor: "#3fb57a",
-        borderColor: "#3fb57a",
-    },
-    pieceLoading: {
-        backgroundColor: "#00d0d0",
-        borderColor: "#00d0d0",
-    },
-    readerRange: {
-        borderColor: "#9a9aff !important",
-    },
-    pieceReader: {
-        borderColor: "#000000 !important",
-    },
-    pieceProgress: {
-        position: "relative",
-        zIndex: "1",
-        backgroundColor: "#009090",
+// const style = {
+//     cache: {
+//         paddingLeft: "6px",
+//         paddingRight: "2px",
+//         lineHeight: "11px",
+//     },
+//     piece: {
+//         width: "12px",
+//         height: "12px",
+//         backgroundColor: "#eef2f4",
+//         border: "1px solid #eef2f4",
+//         display: "inline-block",
+//         marginRight: "1px",
+//     },
+//     pieceComplete: {
+//         backgroundColor: "#3fb57a",
+//         borderColor: "#3fb57a",
+//     },
+//     pieceLoading: {
+//         backgroundColor: "#00d0d0",
+//         borderColor: "#00d0d0",
+//     },
+//     readerRange: {
+//         borderColor: "#9a9aff !important",
+//     },
+//     pieceReader: {
+//         borderColor: "#000000 !important",
+//     },
+//     pieceProgress: {
+//         position: "relative",
+//         zIndex: "1",
+//         backgroundColor: "#009090",
 
-        left: "-1px",
-        top: "-1px",
-        width: "12px",
-    },
-}
+//         left: "-1px",
+//         top: "-1px",
+//         width: "12px",
+//     },
+// }
 
 export default function DialogCacheInfo(props) {
     const [hash] = React.useState(props.hash)
@@ -65,8 +65,8 @@ export default function DialogCacheInfo(props) {
         }
     }, [hash, props.open])
 
-    useEffect(()=>{
-        if (cache && cache.PiecesCount && cache.Pieces){
+    useEffect(() => {
+        if (cache && cache.PiecesCount && cache.Pieces) {
             var map = [];
             for (let i = 0; i < cache.PiecesCount; i++) {
                 var reader = 0
@@ -96,12 +96,12 @@ export default function DialogCacheInfo(props) {
             }
             setPMap(map)
         }
-    },[cache.Pieces])
+    }, [cache.Pieces])
 
     return (
         <div>
             <DialogTitle id="form-dialog-title">
-                <Typography fullWidth>
+                <Typography>
                     <b>Hash </b> {cache.Hash}
                     <br />
                     <b>Capacity </b> {humanizeSize(cache.Capacity)}
@@ -125,7 +125,13 @@ export default function DialogCacheInfo(props) {
             </DialogTitle>
             <DialogContent>
                 <div className="cache">
-                    {pMap.map((itm) => <span className={itm.class} title={itm.info}>{itm.prc>0 && itm.prc<100 && (<div className="piece-progress" style={{height: itm.prc/100*12+"px"}}></div>)}</span>)}
+                    {pMap.map(itm => (
+                        <span key={itm.info} className={itm.class} title={itm.info}>
+                            {itm.prc > 0 && itm.prc < 100 && (
+                                <div className="piece-progress" style={{ height: itm.prc / 100 * 12 + "px" }}></div>
+                            )}
+                        </span>
+                    ))}
                 </div>
             </DialogContent>
         </div>
@@ -140,18 +146,18 @@ function getCacheMap(cache) {
         let info = i
         var prcDiv = ""
         if (cache.Pieces && cache.Pieces[i]) {
-            let prc = (cache.Pieces[i].Size/cache.Pieces[i].Length*100).toFixed(2)
+            let prc = (cache.Pieces[i].Size / cache.Pieces[i].Length * 100).toFixed(2)
             let piece = cache.Pieces[i]
             if (piece.Completed && piece.Size >= piece.Length) {
                 html += ' piece-complete'
                 info += ' 100%'
-            }else {
+            } else {
                 html += ' piece-loading'
                 info += ' ' + prc + '%'
-                prcDiv = "<div class='piece-progress' style='height: "+prc+"%;'></div>"
+                prcDiv = "<div class='piece-progress' style='height: " + prc + "%;'></div>"
             }
         }
-        cache.Readers.forEach((r,k)=> {
+        cache.Readers.forEach((r, k) => {
             if (i >= r.Start && i <= r.End && i !== r.Reader)
                 html += ' reader-range'
             if (i === r.Reader) {
@@ -193,19 +199,19 @@ function getCache(hash, callback) {
 }
 /*
 {
-	"Hash": "41e36c8de915d80db83fc134bee4e7e2d292657e",
-	"Capacity": 209715200,
-	"Filled": 2914808,
-	"PiecesLength": 4194304,
-	"PiecesCount": 2065,
-	"DownloadSpeed": 32770.860273455524,
-	"Pieces": {
-		"2064": {
-			"Id": 2064,
-			"Length": 2914808,
-			"Size": 162296,
-			"Completed": false
-		}
-	}
+    "Hash": "41e36c8de915d80db83fc134bee4e7e2d292657e",
+    "Capacity": 209715200,
+    "Filled": 2914808,
+    "PiecesLength": 4194304,
+    "PiecesCount": 2065,
+    "DownloadSpeed": 32770.860273455524,
+    "Pieces": {
+        "2064": {
+            "Id": 2064,
+            "Length": 2914808,
+            "Size": 162296,
+            "Completed": false
+        }
+    }
 }
  */
