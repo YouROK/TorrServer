@@ -21,9 +21,9 @@ export default function DonateDialog() {
     const [snakeOpen, setSnakeOpen] = React.useState(true)
 
     // NOT USED FOR NOW
-    // const handleClickOpen = () => {
-    //     setOpen(true)
-    // }
+    const handleClickOpen = () => {
+        setOpen(true)
+    }
     const handleClose = () => {
         setOpen(false)
     }
@@ -31,12 +31,12 @@ export default function DonateDialog() {
     return (
         <div>
             {/* !!!!!!!!!!! Should be removed or moved to sidebar because it is not visible. It is hiddent behind header */}
-            {/* <ListItem button key="Donate" onClick={handleClickOpen}>
+            <ListItem button key="Donate" onClick={handleClickOpen}>
                 <ListItemIcon>
                     <CreditCardIcon />
                 </ListItemIcon>
                 <ListItemText primary="Donate" />
-            </ListItem> */}
+            </ListItem>
             {/* !!!!!!!!!!!!!!!!!!!! */}
 
             <Dialog open={open} onClose={handleClose} aria-labelledby="form-dialog-title" fullWidth>

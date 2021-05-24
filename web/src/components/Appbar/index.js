@@ -114,6 +114,7 @@ export default function MiniDrawer() {
 
                 <List>
                     <SettingsDialog />
+                    <DonateDialog />
                     <AboutDialog />
                     <ListItem button key="Close server" onClick={() => fetch(shutdownHost())}>
                         <ListItemIcon>
