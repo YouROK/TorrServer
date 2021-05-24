@@ -27,10 +27,10 @@ const baseTheme = createMuiTheme({
 export default function App() {
     return (
         <React.Fragment>
-            <MuiThemeProvider theme={baseTheme}>
-                <CssBaseline />
-                <Appbar />
-            </MuiThemeProvider>
+          <MuiThemeProvider theme={baseTheme}>
+              <CssBaseline />
+              <Appbar />
+          </MuiThemeProvider>
         </React.Fragment>
     )
 }

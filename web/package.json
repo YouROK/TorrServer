@@ -47,5 +47,10 @@
     "gulp-inline-source": "^4.0.0",
     "gulp-replace": "^1.0.0",
     "prettier": "2.2.1"
-  }
+  },
+  "description": "",
+  "main": "gulpfile.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }

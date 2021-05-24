@@ -22,7 +22,7 @@ import PowerSettingsNewIcon from '@material-ui/icons/PowerSettingsNew'
 import TorrentList from './TorrentList'
 import { Box } from '@material-ui/core'
 
-import AddDialog from './Add'
+import AddDialogButton from './Add'
 import RemoveAll from './RemoveAll'
 import SettingsDialog from './Settings'
 import AboutDialog from './About'
@@ -160,7 +160,7 @@ export default function MiniDrawer() {
                 </div>
                 <Divider />
                 <List>
-                    <AddDialog />
+                    <AddDialogButton />
                     <UploadDialog />
                     <RemoveAll />
                     <ListItem button component="a" key="Playlist all torrents" target="_blank" href={playlistAllHost()}>
