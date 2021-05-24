@@ -80,7 +80,7 @@ export default function DialogCacheInfo(props) {
                     prc = (cache.Pieces[i].Size / cache.Pieces[i].Length * 100).toFixed(2)
                 }
 
-                cache.Readers.forEach((r, k) => {
+                cache.Readers.forEach(r => {
                     if (i >= r.Start && i <= r.End && i !== r.Reader)
                         cls += " reader-range"
                     if (i === r.Reader) {
@@ -123,6 +123,7 @@ export default function DialogCacheInfo(props) {
                     <b>Status </b> {cache.Torrent && cache.Torrent.stat_string && cache.Torrent.stat_string}
                 </Typography>
             </DialogTitle>
+            
             <DialogContent>
                 <div className="cache">
                     {pMap.map(itm => (
@@ -138,39 +139,39 @@ export default function DialogCacheInfo(props) {
     )
 }
 
-function getCacheMap(cache) {
-    if (!cache || !cache.PiecesCount) return ''
-    var html = ''
-    for (let i = 0; i < cache.PiecesCount; i++) {
-        html += "<span class='piece"
-        let info = i
-        var prcDiv = ""
-        if (cache.Pieces && cache.Pieces[i]) {
-            let prc = (cache.Pieces[i].Size / cache.Pieces[i].Length * 100).toFixed(2)
-            let piece = cache.Pieces[i]
-            if (piece.Completed && piece.Size >= piece.Length) {
-                html += ' piece-complete'
-                info += ' 100%'
-            } else {
-                html += ' piece-loading'
-                info += ' ' + prc + '%'
-                prcDiv = "<div class='piece-progress' style='height: " + prc + "%;'></div>"
-            }
-        }
-        cache.Readers.forEach((r, k) => {
-            if (i >= r.Start && i <= r.End && i !== r.Reader)
-                html += ' reader-range'
-            if (i === r.Reader) {
-                html += ' piece-reader'
-                info += ' reader'
-            }
-        })
-        html += "' title='" + info + "'>"
-        html += prcDiv
-        html += "</span>"
-    }
-    return html
-}
+// function getCacheMap(cache) {
+//     if (!cache || !cache.PiecesCount) return ''
+//     var html = ''
+//     for (let i = 0; i < cache.PiecesCount; i++) {
+//         html += "<span class='piece"
+//         let info = i
+//         var prcDiv = ""
+//         if (cache.Pieces && cache.Pieces[i]) {
+//             let prc = (cache.Pieces[i].Size / cache.Pieces[i].Length * 100).toFixed(2)
+//             let piece = cache.Pieces[i]
+//             if (piece.Completed && piece.Size >= piece.Length) {
+//                 html += ' piece-complete'
+//                 info += ' 100%'
+//             } else {
+//                 html += ' piece-loading'
+//                 info += ' ' + prc + '%'
+//                 prcDiv = "<div class='piece-progress' style='height: " + prc + "%;'></div>"
+//             }
+//         }
+//         cache.Readers.forEach((r, k) => {
+//             if (i >= r.Start && i <= r.End && i !== r.Reader)
+//                 html += ' reader-range'
+//             if (i === r.Reader) {
+//                 html += ' piece-reader'
+//                 info += ' reader'
+//             }
+//         })
+//         html += "' title='" + info + "'>"
+//         html += prcDiv
+//         html += "</span>"
+//     }
+//     return html
+// }
 
 function getCache(hash, callback) {
     try {
