@@ -6,45 +6,6 @@ import DialogTitle from '@material-ui/core/DialogTitle'
 import DialogContent from '@material-ui/core/DialogContent'
 import { cacheHost } from '../utils/Hosts'
 
-// const style = {
-//     cache: {
-//         paddingLeft: "6px",
-//         paddingRight: "2px",
-//         lineHeight: "11px",
-//     },
-//     piece: {
-//         width: "12px",
-//         height: "12px",
-//         backgroundColor: "#eef2f4",
-//         border: "1px solid #eef2f4",
-//         display: "inline-block",
-//         marginRight: "1px",
-//     },
-//     pieceComplete: {
-//         backgroundColor: "#3fb57a",
-//         borderColor: "#3fb57a",
-//     },
-//     pieceLoading: {
-//         backgroundColor: "#00d0d0",
-//         borderColor: "#00d0d0",
-//     },
-//     readerRange: {
-//         borderColor: "#9a9aff !important",
-//     },
-//     pieceReader: {
-//         borderColor: "#000000 !important",
-//     },
-//     pieceProgress: {
-//         position: "relative",
-//         zIndex: "1",
-//         backgroundColor: "#009090",
-
-//         left: "-1px",
-//         top: "-1px",
-//         width: "12px",
-//     },
-// }
-
 export default function DialogCacheInfo(props) {
     const [hash] = React.useState(props.hash)
     const [cache, setCache] = React.useState({})
@@ -138,40 +99,6 @@ export default function DialogCacheInfo(props) {
         </div>
     )
 }
-
-// function getCacheMap(cache) {
-//     if (!cache || !cache.PiecesCount) return ''
-//     var html = ''
-//     for (let i = 0; i < cache.PiecesCount; i++) {
-//         html += "<span class='piece"
-//         let info = i
-//         var prcDiv = ""
-//         if (cache.Pieces && cache.Pieces[i]) {
-//             let prc = (cache.Pieces[i].Size / cache.Pieces[i].Length * 100).toFixed(2)
-//             let piece = cache.Pieces[i]
-//             if (piece.Completed && piece.Size >= piece.Length) {
-//                 html += ' piece-complete'
-//                 info += ' 100%'
-//             } else {
-//                 html += ' piece-loading'
-//                 info += ' ' + prc + '%'
-//                 prcDiv = "<div class='piece-progress' style='height: " + prc + "%;'></div>"
-//             }
-//         }
-//         cache.Readers.forEach((r, k) => {
-//             if (i >= r.Start && i <= r.End && i !== r.Reader)
-//                 html += ' reader-range'
-//             if (i === r.Reader) {
-//                 html += ' piece-reader'
-//                 info += ' reader'
-//             }
-//         })
-//         html += "' title='" + info + "'>"
-//         html += prcDiv
-//         html += "</span>"
-//     }
-//     return html
-// }
 
 function getCache(hash, callback) {
     try {
