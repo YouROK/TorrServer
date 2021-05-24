@@ -1,11 +1,10 @@
-import React, { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import clsx from 'clsx'
-import { makeStyles, useTheme } from '@material-ui/core/styles'
+import { useTheme } from '@material-ui/core/styles'
 import Drawer from '@material-ui/core/Drawer'
 import AppBar from '@material-ui/core/AppBar'
 import Toolbar from '@material-ui/core/Toolbar'
 import List from '@material-ui/core/List'
-import CssBaseline from '@material-ui/core/CssBaseline'
 import Typography from '@material-ui/core/Typography'
 import Divider from '@material-ui/core/Divider'
 import IconButton from '@material-ui/core/IconButton'
@@ -19,86 +18,22 @@ import ListItemText from '@material-ui/core/ListItemText'
 import ListIcon from '@material-ui/icons/List'
 import PowerSettingsNewIcon from '@material-ui/icons/PowerSettingsNew'
 
-import TorrentList from './TorrentList'
-import { Box } from '@material-ui/core'
+import TorrentList from '../TorrentList'
 
-import AddDialog from './Add'
-import RemoveAll from './RemoveAll'
-import SettingsDialog from './Settings'
-import AboutDialog from './About'
-import { playlistAllHost, shutdownHost, torrserverHost } from '../utils/Hosts'
-import DonateDialog from './Donate'
-import UploadDialog from './Upload'
-
-const drawerWidth = 240
-
-const useStyles = makeStyles((theme) => ({
-    root: {
-        display: 'flex',
-    },
-    appBar: {
-        zIndex: theme.zIndex.drawer + 1,
-        transition: theme.transitions.create(['width', 'margin'], {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
-        }),
-    },
-    appBarShift: {
-        marginLeft: drawerWidth,
-        width: `calc(100% - ${drawerWidth}px)`,
-        transition: theme.transitions.create(['width', 'margin'], {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-        }),
-    },
-    menuButton: {
-        marginRight: 36,
-    },
-    hide: {
-        display: 'none',
-    },
-    drawer: {
-        width: drawerWidth,
-        flexShrink: 0,
-        whiteSpace: 'nowrap',
-    },
-    drawerOpen: {
-        width: drawerWidth,
-        transition: theme.transitions.create('width', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-        }),
-    },
-    drawerClose: {
-        transition: theme.transitions.create('width', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
-        }),
-        overflowX: 'hidden',
-        width: theme.spacing(7) + 1,
-        [theme.breakpoints.up('sm')]: {
-            width: theme.spacing(9) + 1,
-        },
-    },
-    toolbar: {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'flex-end',
-        padding: theme.spacing(0, 1),
-        // necessary for content to be below app bar
-        ...theme.mixins.toolbar,
-    },
-    content: {
-        flexGrow: 1,
-        padding: theme.spacing(3),
-    },
-}))
+import AddDialogButton from '../Add'
+import RemoveAll from '../RemoveAll'
+import SettingsDialog from '../Settings'
+import AboutDialog from '../About'
+import { playlistAllHost, shutdownHost, torrserverHost } from '../../utils/Hosts'
+import DonateDialog from '../Donate'
+import UploadDialog from '../Upload'
+import useStyles from './useStyles'
 
 export default function MiniDrawer() {
     const classes = useStyles()
     const theme = useTheme()
-    const [open, setOpen] = React.useState(false)
-    const [tsVersion, setTSVersion] = React.useState('')
+    const [open, setOpen] = useState(false)
+    const [tsVersion, setTSVersion] = useState('')
 
     const handleDrawerOpen = () => {
         setOpen(true)
@@ -118,7 +53,6 @@ export default function MiniDrawer() {
 
     return (
         <div className={classes.root}>
-            <CssBaseline />
             <AppBar
                 position="fixed"
                 className={clsx(classes.appBar, {
@@ -142,6 +76,7 @@ export default function MiniDrawer() {
                     </Typography>
                 </Toolbar>
             </AppBar>
+
             <Drawer
                 variant="permanent"
                 className={clsx(classes.drawer, {
@@ -156,11 +91,15 @@ export default function MiniDrawer() {
                 }}
             >
                 <div className={classes.toolbar}>
-                    <IconButton onClick={handleDrawerClose}>{theme.direction === 'rtl' ? <ChevronRightIcon /> : <ChevronLeftIcon />}</IconButton>
+                    <IconButton onClick={handleDrawerClose}>
+                        {theme.direction === 'rtl' ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+                    </IconButton>
                 </div>
+                
                 <Divider />
+
                 <List>
-                    <AddDialog />
+                    <AddDialogButton />
                     <UploadDialog />
                     <RemoveAll />
                     <ListItem button component="a" key="Playlist all torrents" target="_blank" href={playlistAllHost()}>
@@ -170,10 +109,11 @@ export default function MiniDrawer() {
                         <ListItemText primary="Playlist all torrents" />
                     </ListItem>
                 </List>
+
                 <Divider />
+
                 <List>
                     <SettingsDialog />
-                    <DonateDialog />
                     <AboutDialog />
                     <ListItem button key="Close server" onClick={() => fetch(shutdownHost())}>
                         <ListItemIcon>
@@ -182,12 +122,15 @@ export default function MiniDrawer() {
                         <ListItemText primary="Close server" />
                     </ListItem>
                 </List>
-                <Divider />
             </Drawer>
+            
             <main className={classes.content}>
-                <Box m="5em" />
+                <div className={classes.toolbar} />
+                
                 <TorrentList />
             </main>
+
+            <DonateDialog />
         </div>
     )
 }

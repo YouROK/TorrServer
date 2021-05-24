@@ -1,13 +1,18 @@
-import React, { useEffect, useRef } from 'react'
-import Container from '@material-ui/core/Container'
+import styled from 'styled-components';
+import { useEffect, useRef, useState } from 'react'
 import Torrent from './Torrent'
-import List from '@material-ui/core/List'
 import { Typography } from '@material-ui/core'
 import { torrentsHost } from '../utils/Hosts'
 
-export default function TorrentList(props, onChange) {
-    const [torrents, setTorrents] = React.useState([])
-    const [offline, setOffline] = React.useState(true)
+const TorrentListWrapper = styled.div`
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 350px));
+    gap: 30px;
+`
+
+export default function TorrentList() {
+    const [torrents, setTorrents] = useState([])
+    const [offline, setOffline] = useState(true)
     const timerID = useRef(-1)
 
     useEffect(() => {
@@ -25,9 +30,11 @@ export default function TorrentList(props, onChange) {
     }, [])
 
     return (
-        <React.Fragment>
-            <Container maxWidth="lg">{!offline ? <List>{torrents && torrents.map((torrent) => <Torrent key={torrent.hash} torrent={torrent} />)}</List> : <Typography>Offline</Typography>}</Container>
-        </React.Fragment>
+        <TorrentListWrapper>
+            {offline ? <Typography>Offline</Typography> : (
+                torrents && torrents.map(torrent => <Torrent key={torrent.hash} torrent={torrent} />)
+            )}
+        </TorrentListWrapper>
     )
 }
 
