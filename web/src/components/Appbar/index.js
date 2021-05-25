@@ -14,6 +14,7 @@ import ChevronRightIcon from '@material-ui/icons/ChevronRight'
 import ListItem from '@material-ui/core/ListItem'
 import ListItemIcon from '@material-ui/core/ListItemIcon'
 import ListItemText from '@material-ui/core/ListItemText'
+import CreditCardIcon from '@material-ui/icons/CreditCard'
 
 import ListIcon from '@material-ui/icons/List'
 import PowerSettingsNewIcon from '@material-ui/icons/PowerSettingsNew'
@@ -25,22 +26,24 @@ import RemoveAll from '../RemoveAll'
 import SettingsDialog from '../Settings'
 import AboutDialog from '../About'
 import { playlistAllHost, shutdownHost, torrserverHost } from '../../utils/Hosts'
-import DonateDialog from '../Donate'
+import DonateSnackbar from '../Donate'
+import DonateDialog from '../Donate/DonateDialog'
 import UploadDialog from '../Upload'
 import useStyles from './useStyles'
 
 export default function MiniDrawer() {
     const classes = useStyles()
     const theme = useTheme()
-    const [open, setOpen] = useState(false)
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+    const [isDonationDialogOpen, setIsDonationDialogOpen] = useState(false)
     const [tsVersion, setTSVersion] = useState('')
 
     const handleDrawerOpen = () => {
-        setOpen(true)
+        setIsDrawerOpen(true)
     }
 
     const handleDrawerClose = () => {
-        setOpen(false)
+        setIsDrawerOpen(false)
     }
 
     useEffect(() => {
@@ -49,14 +52,14 @@ export default function MiniDrawer() {
             .then((txt) => {
                 if (!txt.startsWith('<!DOCTYPE html>')) setTSVersion(txt)
             })
-    }, [open])
+    }, [isDrawerOpen])
 
     return (
         <div className={classes.root}>
             <AppBar
                 position="fixed"
                 className={clsx(classes.appBar, {
-                    [classes.appBarShift]: open,
+                    [classes.appBarShift]: isDrawerOpen,
                 })}
             >
                 <Toolbar>
@@ -66,7 +69,7 @@ export default function MiniDrawer() {
                         onClick={handleDrawerOpen}
                         edge="start"
                         className={clsx(classes.menuButton, {
-                            [classes.hide]: open,
+                            [classes.hide]: isDrawerOpen,
                         })}
                     >
                         <MenuIcon />
@@ -80,13 +83,13 @@ export default function MiniDrawer() {
             <Drawer
                 variant="permanent"
                 className={clsx(classes.drawer, {
-                    [classes.drawerOpen]: open,
-                    [classes.drawerClose]: !open,
+                    [classes.drawerOpen]: isDrawerOpen,
+                    [classes.drawerClose]: !isDrawerOpen,
                 })}
                 classes={{
                     paper: clsx({
-                        [classes.drawerOpen]: open,
-                        [classes.drawerClose]: !open,
+                        [classes.drawerOpen]: isDrawerOpen,
+                        [classes.drawerClose]: !isDrawerOpen,
                     }),
                 }}
             >
@@ -95,7 +98,7 @@ export default function MiniDrawer() {
                         {theme.direction === 'rtl' ? <ChevronRightIcon /> : <ChevronLeftIcon />}
                     </IconButton>
                 </div>
-                
+
                 <Divider />
 
                 <List>
@@ -114,7 +117,6 @@ export default function MiniDrawer() {
 
                 <List>
                     <SettingsDialog />
-                    <DonateDialog />
                     <AboutDialog />
                     <ListItem button key="Close server" onClick={() => fetch(shutdownHost())}>
                         <ListItemIcon>
@@ -123,15 +125,27 @@ export default function MiniDrawer() {
                         <ListItemText primary="Close server" />
                     </ListItem>
                 </List>
+
+                <Divider />
+
+                <List>
+                    <ListItem button key="Donation" onClick={() => setIsDonationDialogOpen(true)}>
+                        <ListItemIcon>
+                            <CreditCardIcon />
+                        </ListItemIcon>
+                        <ListItemText primary="Donate" />
+                    </ListItem>
+                </List>
             </Drawer>
-            
+
             <main className={classes.content}>
                 <div className={classes.toolbar} />
-                
+
                 <TorrentList />
             </main>
 
-            <DonateDialog />
+            {isDonationDialogOpen && <DonateDialog onClose={() => setIsDonationDialogOpen(false)} />}
+            {!JSON.parse(localStorage.getItem('snackbarIsClosed')) && <DonateSnackbar />}
         </div>
     )
 }

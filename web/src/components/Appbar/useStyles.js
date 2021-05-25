@@ -29,7 +29,7 @@ export default makeStyles((theme) => ({
   },
   drawer: {
       width: drawerWidth,
-      flexShrink: 0,
+      flexShrink: 1,
       whiteSpace: 'nowrap',
   },
   drawerOpen: {
