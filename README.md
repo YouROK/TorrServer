@@ -75,6 +75,11 @@ TorrServer [--port PORT] [--path PATH] [--logpath LOGPATH] [--rdb] [--httpauth] 
 >
 >http://127.0.0.1:8090/stream/fname?link=...&save&title=...&poster=...
 
+###### /play/:hash/:id
+#### params:
+* hash - hash of torrent
+* index - index of file
+
 ###### /playlistall/all.m3u
 *Get all http links of all torrents in m3u list*
 
