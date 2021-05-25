@@ -271,7 +271,7 @@ func (c *Cache) isIdInFileBE(ranges []Range, id int) bool {
 
 // run only in cache on disk
 func (c *Cache) LoadPiecesOnDisk() {
-	if c.torrent == nil {
+	if c.torrent == nil || !settings.BTsets.UseDisk {
 		return
 	}
 
