@@ -7,8 +7,13 @@ import Torrent from './Torrent'
 
 const TorrentListWrapper = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 350px));
+  grid-template-columns: repeat(auto-fit, 350px);
   gap: 30px;
+
+  @media (max-width: 600px), (max-height: 500px) {
+    gap: 10px;
+    grid-template-columns: repeat(auto-fit, 310px);
+  }
 `
 
 export default function TorrentList() {
