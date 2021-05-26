@@ -22,6 +22,7 @@ import {
   TorrentCardDescriptionContent,
   TorrentCardDescriptionLabel,
   TorrentCardPoster,
+  TorrentCardDetails,
 } from './style'
 
 export default function Torrent({ torrent }) {
@@ -66,17 +67,12 @@ export default function Torrent({ torrent }) {
             }}
           >
             <DataUsageIcon />
-            Cache
+            <span>Cache</span>
           </StyledButton>
 
           <StyledButton onClick={() => dropTorrent(torrentLocalComponentValue)}>
             <CloseIcon />
-            Drop
-          </StyledButton>
-
-          <StyledButton onClick={() => deleteTorrent(torrentLocalComponentValue)}>
-            <DeleteIcon />
-            Delete
+            <span>Drop</span>
           </StyledButton>
 
           <StyledButton
@@ -86,28 +82,43 @@ export default function Torrent({ torrent }) {
             }}
           >
             <HeightIcon />
-            Details
+            <span>Details</span>
+          </StyledButton>
+
+          <StyledButton onClick={() => deleteTorrent(torrentLocalComponentValue)}>
+            <DeleteIcon />
+            <span>Delete</span>
           </StyledButton>
         </TorrentCardButtons>
 
         <TorrentCardDescription>
-          <TorrentCardDescriptionLabel>Name</TorrentCardDescriptionLabel>
-          <TorrentCardDescriptionContent>{title || name}</TorrentCardDescriptionContent>
+          <span>
+            <TorrentCardDescriptionLabel>Name</TorrentCardDescriptionLabel>
+            <TorrentCardDescriptionContent isTitle>{title || name}</TorrentCardDescriptionContent>
+          </span>
 
-          <TorrentCardDescriptionLabel>Size</TorrentCardDescriptionLabel>
-          <TorrentCardDescriptionContent>
-            {torrent_size > 0 && humanizeSize(torrent_size)}
-          </TorrentCardDescriptionContent>
+          <TorrentCardDetails>
+            <span>
+              <TorrentCardDescriptionLabel>Size</TorrentCardDescriptionLabel>
+              <TorrentCardDescriptionContent>
+                {torrent_size > 0 && humanizeSize(torrent_size)}
+              </TorrentCardDescriptionContent>
+            </span>
 
-          <TorrentCardDescriptionLabel>Download speed</TorrentCardDescriptionLabel>
-          <TorrentCardDescriptionContent>
-            {download_speed > 0 ? humanizeSize(download_speed) : '---'}
-          </TorrentCardDescriptionContent>
+            <span>
+              <TorrentCardDescriptionLabel>Speed</TorrentCardDescriptionLabel>
+              <TorrentCardDescriptionContent>
+                {download_speed > 0 ? humanizeSize(download_speed) : '---'}
+              </TorrentCardDescriptionContent>
+            </span>
 
-          <TorrentCardDescriptionLabel>Peers</TorrentCardDescriptionLabel>
-          <TorrentCardDescriptionContent>
-            {getPeerString(torrentLocalComponentValue) || '---'}
-          </TorrentCardDescriptionContent>
+            <span>
+              <TorrentCardDescriptionLabel>Peers</TorrentCardDescriptionLabel>
+              <TorrentCardDescriptionContent>
+                {getPeerString(torrentLocalComponentValue) || '---'}
+              </TorrentCardDescriptionContent>
+            </span>
+          </TorrentCardDetails>
         </TorrentCardDescription>
       </TorrentCard>
 
