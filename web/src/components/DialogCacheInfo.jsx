@@ -5,54 +5,63 @@ import DialogContent from '@material-ui/core/DialogContent'
 import { getPeerString, humanizeSize } from 'utils/Utils'
 import { cacheHost } from 'utils/Hosts'
 
-export default function DialogCacheInfo({ hash, open }) {
+export default function DialogCacheInfo({ hash }) {
   const [cache, setCache] = useState({})
-  const timerID = useRef(-1)
   const [pMap, setPMap] = useState([])
+  const timerID = useRef(null)
+  const componentIsMounted = useRef(true)
+
+  useEffect(
+    () => () => {
+      componentIsMounted.current = false
+    },
+    [],
+  )
 
   useEffect(() => {
-    if (hash)
+    if (hash) {
       timerID.current = setInterval(() => {
-        getCache(hash, cache => {
-          setCache(cache)
+        getCache(hash, value => {
+          // this is needed to avoid memory leak
+          if (componentIsMounted.current) setCache(value)
         })
       }, 100)
-    else clearInterval(timerID.current)
+    } else clearInterval(timerID.current)
 
     return () => {
       clearInterval(timerID.current)
     }
-  }, [hash, open])
+  }, [hash])
 
   useEffect(() => {
-    if (cache && cache.PiecesCount && cache.Pieces) {
-      const map = []
-      for (let i = 0; i < cache.PiecesCount; i++) {
-        const reader = 0
-        let cls = 'piece'
-        let prc = 0
-        if (cache.Pieces[i]) {
-          if (cache.Pieces[i].Completed && cache.Pieces[i].Size >= cache.Pieces[i].Length) cls += ' piece-complete'
-          else cls += ' piece-loading'
-          prc = ((cache.Pieces[i].Size / cache.Pieces[i].Length) * 100).toFixed(2)
-        }
+    if (!cache?.PiecesCount || !cache?.Pieces) return
 
-        cache.Readers.forEach(r => {
-          if (i >= r.Start && i <= r.End && i !== r.Reader) cls += ' reader-range'
-          if (i === r.Reader) {
-            cls += ' piece-reader'
-          }
-        })
-        map.push({
-          prc,
-          class: cls,
-          info: i,
-          reader,
-        })
+    const { Pieces, PiecesCount, Readers } = cache
+
+    const map = []
+
+    for (let i = 0; i < PiecesCount; i++) {
+      const cls = ['piece']
+      let prc = 0
+
+      const currentPiece = Pieces[i]
+      if (currentPiece) {
+        if (currentPiece.Completed && currentPiece.Size === currentPiece.Length) cls.push('piece-complete')
+        else cls.push('piece-loading')
+
+        prc = (currentPiece.Size / currentPiece.Length).toFixed(2)
       }
-      setPMap(map)
+
+      Readers.forEach(r => {
+        if (i === r.Reader) return cls.push('piece-reader')
+        if (i >= r.Start && i <= r.End) cls.push('reader-range')
+      })
+
+      map.push({ prc, className: cls.join(' '), id: i })
     }
-  }, [cache.Pieces])
+
+    setPMap(map)
+  }, [cache])
 
   return (
     <div>
@@ -84,20 +93,22 @@ export default function DialogCacheInfo({ hash, open }) {
 
       <DialogContent>
         <div className='cache'>
-          {pMap.map(itm => (
-            <span key={itm.info} className={itm.class} title={itm.info}>
-              {itm.prc > 0 && itm.prc < 100 && (
-                <div className='piece-progress' style={{ height: `${(itm.prc / 100) * 12}px` }} />
-              )}
-            </span>
-          ))}
+          {pMap.map(({ prc, className: currentPieceCalss, id }) => {
+            const boxHeight = 12
+
+            return (
+              <span key={id} className={currentPieceCalss}>
+                {prc > 0 && prc < 1 && <div className='piece-progress' style={{ height: `${prc * boxHeight}px` }} />}
+              </span>
+            )
+          })}
         </div>
       </DialogContent>
     </div>
   )
 }
 
-function getCache(hash, callback) {
+const getCache = (hash, callback) => {
   try {
     fetch(cacheHost(), {
       method: 'post',
@@ -108,15 +119,10 @@ function getCache(hash, callback) {
       },
     })
       .then(res => res.json())
-      .then(
-        json => {
-          callback(json)
-        },
-        error => {
-          callback({})
-          console.error(error)
-        },
-      )
+      .then(callback, error => {
+        callback({})
+        console.error(error)
+      })
   } catch (e) {
     console.error(e)
     callback({})

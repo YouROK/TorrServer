@@ -123,10 +123,10 @@ export default function Torrent({ torrent }) {
       </TorrentCard>
 
       <Dialog open={open} onClose={() => setOpen(false)} aria-labelledby='form-dialog-title' fullWidth maxWidth='lg'>
-        {!showCache ? (
-          <DialogTorrentInfo torrent={(open, torrentLocalComponentValue)} />
+        {showCache ? (
+          <DialogCacheInfo hash={torrentLocalComponentValue.hash} />
         ) : (
-          <DialogCacheInfo hash={(open, torrentLocalComponentValue.hash)} />
+          <DialogTorrentInfo torrent={torrentLocalComponentValue} />
         )}
         <DialogActions>
           <Button variant='outlined' color='primary' onClick={() => setOpen(false)}>
