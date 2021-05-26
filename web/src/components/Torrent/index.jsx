@@ -75,11 +75,6 @@ export default function Torrent({ torrent }) {
             <span>Drop</span>
           </StyledButton>
 
-          <StyledButton onClick={() => deleteTorrent(torrentLocalComponentValue)}>
-            <DeleteIcon />
-            <span>Delete</span>
-          </StyledButton>
-
           <StyledButton
             onClick={() => {
               setShowCache(false)
@@ -88,6 +83,11 @@ export default function Torrent({ torrent }) {
           >
             <HeightIcon />
             <span>Details</span>
+          </StyledButton>
+
+          <StyledButton onClick={() => deleteTorrent(torrentLocalComponentValue)}>
+            <DeleteIcon />
+            <span>Delete</span>
           </StyledButton>
         </TorrentCardButtons>
 

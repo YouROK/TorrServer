@@ -14,6 +14,10 @@ const TorrentListWrapper = styled.div`
     gap: 10px;
     grid-template-columns: repeat(auto-fit, 310px);
   }
+
+  @media (max-width: 410px) {
+    grid-template-columns: minmax(min-content, 290px);
+  }
 `
 
 export default function TorrentList() {
