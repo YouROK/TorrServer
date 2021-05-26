@@ -2,8 +2,7 @@ import styled from 'styled-components'
 import { useEffect, useRef, useState } from 'react'
 import { Typography } from '@material-ui/core'
 import { torrentsHost } from 'utils/Hosts'
-
-import Torrent from './Torrent'
+import Torrent from 'components/Torrent'
 
 const TorrentListWrapper = styled.div`
   display: grid;
@@ -20,18 +19,38 @@ const TorrentListWrapper = styled.div`
   }
 `
 
+const getTorrentList = (callback, errorCallback) => {
+  fetch(torrentsHost(), {
+    method: 'post',
+    body: JSON.stringify({ action: 'list' }),
+    headers: {
+      Accept: 'application/json, text/plain, */*',
+      'Content-Type': 'application/json',
+    },
+  })
+    .then(res => res.json())
+    .then(callback)
+    .catch(() => errorCallback())
+}
+
 export default function TorrentList() {
   const [torrents, setTorrents] = useState([])
   const [offline, setOffline] = useState(true)
   const timerID = useRef(-1)
 
+  const updateTorrentList = torrs => {
+    setTorrents(torrs)
+    setOffline(false)
+  }
+
+  const resetTorrentList = () => {
+    setTorrents([])
+    setOffline(true)
+  }
+
   useEffect(() => {
     timerID.current = setInterval(() => {
-      getTorrentList(torrs => {
-        if (torrs) setOffline(false)
-        else setOffline(true)
-        setTorrents(torrs)
-      })
+      getTorrentList(updateTorrentList, resetTorrentList)
     }, 1000)
 
     return () => {
@@ -43,22 +62,11 @@ export default function TorrentList() {
     <TorrentListWrapper>
       {offline ? (
         <Typography>Offline</Typography>
+      ) : !torrents.length ? (
+        <Typography>No torrents added</Typography>
       ) : (
         torrents && torrents.map(torrent => <Torrent key={torrent.hash} torrent={torrent} />)
       )}
     </TorrentListWrapper>
   )
-}
-
-function getTorrentList(callback) {
-  fetch(torrentsHost(), {
-    method: 'post',
-    body: JSON.stringify({ action: 'list' }),
-    headers: {
-      Accept: 'application/json, text/plain, */*',
-      'Content-Type': 'application/json',
-    },
-  })
-    .then(res => res.json())
-    .then(callback)
 }

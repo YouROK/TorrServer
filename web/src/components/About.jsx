@@ -37,6 +37,8 @@ export default function AboutDialog() {
               <br />
               <b>tsynik nikk Никита</b> <a href='https://github.com/tsynik'>github.com/tsynik</a>
               <br />
+              <b>dancheskus</b> <a href='https://github.com/dancheskus'>github.com/dancheskus</a>
+              <br />
               <b>Tw1cker Руслан Пахнев</b> <a href='https://github.com/Nemiroff'>github.com/Nemiroff</a>
               <br />
               <b>SpAwN_LMG</b>

@@ -8,10 +8,10 @@
 > `http://192.168.78.4:8090` - correct
 >
 > `http://192.168.78.4:8090/` - wrong
-3. `npm start`
+3. `yarn start`
 
 ### Eslint
 > Prettier will fix the code every time the code is saved
 
-- `npm run lint` - to find all linting problems
-- `npm run fix` - to fix code
+- `yarn lint` - to find all linting problems
+- `yarn fix` - to fix code
