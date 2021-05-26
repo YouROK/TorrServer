@@ -20,7 +20,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "lint": "eslint --ext .js,.jsx src --color",
-    "fix": "eslint --ext .js,.jsx src --color --fix"
+    "fix": "yarn lint --fix"
   },
   "browserslist": {
     "production": [

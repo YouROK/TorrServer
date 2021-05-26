@@ -27,7 +27,7 @@ export default function AboutDialog() {
 
         <DialogContent>
           <DialogContent>
-            <a id='alert-dialog-description'>
+            <DialogContentText id='alert-dialog-description'>
               <center>
                 <h2>Thanks to everyone who tested and helped.</h2>
               </center>

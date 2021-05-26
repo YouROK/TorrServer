@@ -36,13 +36,8 @@ export default function MiniDrawer() {
   const [isDonationDialogOpen, setIsDonationDialogOpen] = useState(false)
   const [tsVersion, setTSVersion] = useState('')
 
-  const handleDrawerOpen = () => {
-    setIsDrawerOpen(true)
-  }
-
-  const handleDrawerClose = () => {
-    setIsDrawerOpen(false)
-  }
+  const handleDrawerOpen = () => setIsDrawerOpen(true)
+  const handleDrawerClose = () => setIsDrawerOpen(false)
 
   useEffect(() => {
     fetch(`${getTorrServerHost()}/echo`)
