@@ -4,6 +4,51 @@ import DialogTitle from '@material-ui/core/DialogTitle'
 import DialogContent from '@material-ui/core/DialogContent'
 import { getPeerString, humanizeSize } from 'utils/Utils'
 import { cacheHost } from 'utils/Hosts'
+import styled, { css } from 'styled-components'
+
+const boxHeight = 12
+
+const CacheWrapper = styled.div`
+  padding-left: 6px;
+  padding-right: 2px;
+  line-height: 11px;
+
+  .piece {
+    width: ${boxHeight}px;
+    height: ${boxHeight}px;
+    background-color: #eef2f4;
+    border: 1px solid #eef2f4;
+    display: inline-block;
+    margin-right: 1px;
+  }
+  .piece-complete {
+    background-color: #3fb57a;
+    border-color: #3fb57a;
+  }
+  .piece-loading {
+    background-color: #00d0d0;
+    border-color: #00d0d0;
+  }
+  .reader-range {
+    border-color: #9a9aff;
+  }
+  .piece-reader {
+    border-color: #000000;
+  }
+`
+
+const PieceInProgress = styled.div`
+  ${({ prc }) => css`
+    position: relative;
+    z-index: 1;
+    background-color: #3fb57a;
+
+    top: -1px;
+    left: -1px;
+    width: 12px;
+    height: ${prc * boxHeight}px;
+  `}
+`
 
 export default function DialogCacheInfo({ hash }) {
   const [cache, setCache] = useState({})
@@ -12,6 +57,7 @@ export default function DialogCacheInfo({ hash }) {
   const componentIsMounted = useRef(true)
 
   useEffect(
+    // this function is required to notify "getCache" when NOT to make state update
     () => () => {
       componentIsMounted.current = false
     },
@@ -22,7 +68,7 @@ export default function DialogCacheInfo({ hash }) {
     if (hash) {
       timerID.current = setInterval(() => {
         getCache(hash, value => {
-          // this is needed to avoid memory leak
+          // this is required to avoid memory leak
           if (componentIsMounted.current) setCache(value)
         })
       }, 100)
@@ -92,17 +138,13 @@ export default function DialogCacheInfo({ hash }) {
       </DialogTitle>
 
       <DialogContent>
-        <div className='cache'>
-          {pMap.map(({ prc, className: currentPieceCalss, id }) => {
-            const boxHeight = 12
-
-            return (
-              <span key={id} className={currentPieceCalss}>
-                {prc > 0 && prc < 1 && <div className='piece-progress' style={{ height: `${prc * boxHeight}px` }} />}
-              </span>
-            )
-          })}
-        </div>
+        <CacheWrapper>
+          {pMap.map(({ prc, className: currentPieceCalss, id }) => (
+            <span key={id} className={currentPieceCalss}>
+              {prc > 0 && prc < 1 && <PieceInProgress prc={prc} />}
+            </span>
+          ))}
+        </CacheWrapper>
       </DialogContent>
     </div>
   )
