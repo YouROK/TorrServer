@@ -27,7 +27,7 @@ export default function AboutDialog() {
 
         <DialogContent>
           <DialogContent>
-            <DialogContentText id='alert-dialog-description'>
+            <a id='alert-dialog-description'>
               <center>
                 <h2>Thanks to everyone who tested and helped.</h2>
               </center>
@@ -36,6 +36,8 @@ export default function AboutDialog() {
               <b>Anacrolix Matt Joiner</b> <a href='https://github.com/anacrolix/'>github.com/anacrolix</a>
               <br />
               <b>tsynik nikk Никита</b> <a href='https://github.com/tsynik'>github.com/tsynik</a>
+              <br />
+              <b>dancheskus</b> <a href='https://github.com/dancheskus'>github.com/dancheskus</a>
               <br />
               <b>Tw1cker Руслан Пахнев</b> <a href='https://github.com/Nemiroff'>github.com/Nemiroff</a>
               <br />
