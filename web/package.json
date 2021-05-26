@@ -48,7 +48,7 @@
     "gulp": "^4.0.2",
     "gulp-inline-source": "^4.0.0",
     "gulp-replace": "^1.1.3",
-    "prettier": "2.3.0"
+    "prettier": "^2.3.0"
   },
   "description": "",
   "main": "gulpfile.js",
