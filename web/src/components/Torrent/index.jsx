@@ -1,18 +1,20 @@
 /* eslint-disable camelcase */
 import 'fontsource-roboto'
-import { useEffect, useRef, useState } from 'react'
-import Button from '@material-ui/core/Button'
+import { forwardRef, useEffect, useRef, useState } from 'react'
+import DialogActions from '@material-ui/core/DialogActions'
+import DialogTorrentInfo from 'components/DialogTorrentInfo'
+import DialogCacheInfo from 'components/DialogCacheInfo'
 import HeightIcon from '@material-ui/icons/Height'
 import CloseIcon from '@material-ui/icons/Close'
 import DeleteIcon from '@material-ui/icons/Delete'
-import DialogActions from '@material-ui/core/DialogActions'
-import Dialog from '@material-ui/core/Dialog'
 import DataUsageIcon from '@material-ui/icons/DataUsage'
 import { getPeerString, humanizeSize } from 'utils/Utils'
 import { torrentsHost } from 'utils/Hosts'
 import { NoImageIcon } from 'icons'
-import DialogTorrentInfo from 'components/DialogTorrentInfo'
-import DialogCacheInfo from 'components/DialogCacheInfo'
+import DialogTorrentDetailsContent from 'components/DialogTorrentDetailsContent'
+import Dialog from '@material-ui/core/Dialog'
+import Slide from '@material-ui/core/Slide'
+import { Button } from '@material-ui/core'
 
 import {
   StyledButton,
@@ -24,6 +26,9 @@ import {
   TorrentCardPoster,
   TorrentCardDetails,
 } from './style'
+
+// eslint-disable-next-line react/jsx-props-no-spreading
+const Transition = forwardRef((props, ref) => <Slide direction='up' ref={ref} {...props} />)
 
 export default function Torrent({ torrent }) {
   const [open, setOpen] = useState(false)
@@ -122,7 +127,11 @@ export default function Torrent({ torrent }) {
         </TorrentCardDescription>
       </TorrentCard>
 
-      <Dialog open={open} onClose={() => setOpen(false)} aria-labelledby='form-dialog-title' fullWidth maxWidth='lg'>
+      <Dialog open={open} fullScreen TransitionComponent={Transition}>
+        <DialogTorrentDetailsContent closeDialog={() => setOpen(false)} torrent={torrentLocalComponentValue} />
+      </Dialog>
+
+      {/* <Dialog open={open} fullScreen>
         {showCache ? (
           <DialogCacheInfo hash={torrentLocalComponentValue.hash} />
         ) : (
@@ -133,7 +142,7 @@ export default function Torrent({ torrent }) {
             OK
           </Button>
         </DialogActions>
-      </Dialog>
+      </Dialog> */}
     </>
   )
 }

@@ -5,6 +5,7 @@
   "dependencies": {
     "@material-ui/core": "^4.11.4",
     "@material-ui/icons": "^4.11.2",
+    "axios": "^0.21.1",
     "clsx": "^1.1.1",
     "fontsource-roboto": "^4.0.0",
     "konva": "^8.0.1",

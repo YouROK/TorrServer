@@ -1,19 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Typography from '@material-ui/core/Typography'
 import DialogTitle from '@material-ui/core/DialogTitle'
 import DialogContent from '@material-ui/core/DialogContent'
 import { getPeerString, humanizeSize } from 'utils/Utils'
-import { cacheHost } from 'utils/Hosts'
 import { Stage, Layer } from 'react-konva'
 import Measure from 'react-measure'
+import { useUpdateCache, useCreateCacheMap } from 'components/DialogTorrentDetailsContent/customHooks'
 
 import SingleBlock from './SingleBlock'
 
 export default function DialogCacheInfo({ hash }) {
-  const [cache, setCache] = useState({})
-  const [pMap, setPMap] = useState([])
-  const timerID = useRef(null)
-  const componentIsMounted = useRef(true)
   const [dimensions, setDimensions] = useState({ width: -1, height: -1 })
   const [isShortView, setIsShortView] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
@@ -23,6 +19,9 @@ export default function DialogCacheInfo({ hash }) {
     marginBetweenBlocks: null,
     stageOffset: null,
   })
+
+  const cache = useUpdateCache(hash)
+  const cacheMap = useCreateCacheMap(cache, () => setIsLoading(false))
 
   const updateStageSettings = (boxHeight, strokeWidth) => {
     setStageSettings({
@@ -36,58 +35,7 @@ export default function DialogCacheInfo({ hash }) {
   useEffect(() => {
     // initializing stageSettings
     updateStageSettings(24, 4)
-
-    return () => {
-      // this function is required to notify "getCache" when NOT to make state update
-      componentIsMounted.current = false
-    }
   }, [])
-
-  useEffect(() => {
-    if (hash) {
-      timerID.current = setInterval(() => {
-        getCache(hash, value => {
-          // this is required to avoid memory leak
-          if (componentIsMounted.current) setCache(value)
-        })
-      }, 100)
-    } else clearInterval(timerID.current)
-
-    return () => {
-      clearInterval(timerID.current)
-    }
-  }, [hash])
-
-  useEffect(() => {
-    if (!cache.PiecesCount || !cache.Pieces) return
-
-    const { Pieces, PiecesCount, Readers } = cache
-
-    const map = []
-
-    for (let i = 0; i < PiecesCount; i++) {
-      const newPiece = { id: i }
-
-      const currentPiece = Pieces[i]
-      if (currentPiece) {
-        if (currentPiece.Completed && currentPiece.Size === currentPiece.Length) newPiece.isComplete = true
-        else {
-          newPiece.inProgress = true
-          newPiece.percentage = (currentPiece.Size / currentPiece.Length).toFixed(2)
-        }
-      }
-
-      Readers.forEach(r => {
-        if (i === r.Reader) newPiece.isActive = true
-        if (i >= r.Start && i <= r.End) newPiece.isReaderRange = true
-      })
-
-      map.push(newPiece)
-    }
-
-    setPMap(map)
-    setIsLoading(false)
-  }, [cache])
 
   const { boxHeight, strokeWidth, marginBetweenBlocks, stageOffset } = stageSettings
 
@@ -98,7 +46,7 @@ export default function DialogCacheInfo({ hash }) {
     preloadPiecesAmount === piecesInOneRow
       ? preloadPiecesAmount - 1
       : preloadPiecesAmount + piecesInOneRow - (preloadPiecesAmount % piecesInOneRow) - 1
-  const amountOfRows = Math.ceil((isShortView ? amountOfBlocksToRenderInShortView : pMap.length) / piecesInOneRow)
+  const amountOfRows = Math.ceil((isShortView ? amountOfBlocksToRenderInShortView : cacheMap.length) / piecesInOneRow)
   let activeId = null
 
   return (
@@ -158,7 +106,7 @@ export default function DialogCacheInfo({ hash }) {
                 height={stageOffset + blockSizeWithMargin * amountOfRows}
               >
                 <Layer>
-                  {pMap.map(({ id, percentage, isComplete, inProgress, isActive, isReaderRange }) => {
+                  {cacheMap.map(({ id, percentage, isComplete, inProgress, isActive, isReaderRange }) => {
                     const currentRow = Math.floor((isShortView ? id - activeId : id) / piecesInOneRow)
 
                     // -------- related only for short view -------
@@ -207,26 +155,6 @@ export default function DialogCacheInfo({ hash }) {
   )
 }
 
-const getCache = (hash, callback) => {
-  try {
-    fetch(cacheHost(), {
-      method: 'post',
-      body: JSON.stringify({ action: 'get', hash }),
-      headers: {
-        Accept: 'application/json, text/plain, */*',
-        'Content-Type': 'application/json',
-      },
-    })
-      .then(res => res.json())
-      .then(callback, error => {
-        callback({})
-        console.error(error)
-      })
-  } catch (e) {
-    console.error(e)
-    callback({})
-  }
-}
 /*
 {
     "Hash": "41e36c8de915d80db83fc134bee4e7e2d292657e",
