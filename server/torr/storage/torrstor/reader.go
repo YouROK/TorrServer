@@ -135,7 +135,7 @@ func (r *Reader) getPieceNum(offset int64) int {
 
 func (r *Reader) getOffsetRange() (int64, int64) {
 
-	if time.Now().Unix() > r.lastAccess+60 {
+	if time.Now().Unix() > r.lastAccess+60 && len(r.cache.readers) > 1 {
 		return r.file.Offset(), r.file.Offset()
 	}
 

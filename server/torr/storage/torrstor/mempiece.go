@@ -29,6 +29,9 @@ func (p *MemPiece) WriteAt(b []byte, off int64) (n int, err error) {
 	}
 	n = copy(p.buffer[off:], b[:])
 	p.piece.Size += int64(n)
+	if p.piece.Size > p.piece.cache.pieceLength {
+		p.piece.Size = p.piece.cache.pieceLength
+	}
 	p.piece.Accessed = time.Now().Unix()
 	return
 }

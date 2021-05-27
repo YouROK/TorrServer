@@ -16,7 +16,7 @@ export default function DonateDialog({ onClose }) {
       <DialogTitle id='form-dialog-title'>Donate</DialogTitle>
       <DialogContent>
         <List>
-          <ListItem>
+          <ListItem key='DonateLinks'>
             <ButtonGroup variant='outlined' color='primary' aria-label='contained primary button group'>
               <Button onClick={() => window.open('https://www.paypal.com/paypalme/yourok', '_blank')}>PayPal</Button>
               <Button onClick={() => window.open('https://yoomoney.ru/to/410013733697114', '_blank')}>
@@ -24,7 +24,7 @@ export default function DonateDialog({ onClose }) {
               </Button>
             </ButtonGroup>
           </ListItem>
-          <ListItem>
+          <ListItem key='DonateForm'>
             {/* eslint-disable-next-line react/no-danger */}
             <div dangerouslySetInnerHTML={{ __html: donateFrame }} />
           </ListItem>

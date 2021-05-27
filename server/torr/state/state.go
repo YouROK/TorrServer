@@ -1,5 +1,9 @@
 package state
 
+import (
+	"server/torr/storage/reader"
+)
+
 type TorrentStat int
 
 func (t TorrentStat) String() string {
@@ -61,6 +65,8 @@ type TorrentStatus struct {
 	ChunksReadWasted    int64       `json:"chunks_read_wasted,omitempty"`
 	PiecesDirtiedGood   int64       `json:"pieces_dirtied_good,omitempty"`
 	PiecesDirtiedBad    int64       `json:"pieces_dirtied_bad,omitempty"`
+
+	Readers []*reader.ReaderState `json:"readers,omitempty"`
 
 	FileStats []*TorrentFileStat `json:"file_stats,omitempty"`
 }
