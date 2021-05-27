@@ -427,6 +427,11 @@ func (t *Torrent) Status() *state.TorrentStatus {
 			}
 		}
 	}
+
+	if t.cache != nil {
+		st.Readers = t.cache.GetState().Readers
+	}
+
 	return st
 }
 
