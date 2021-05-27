@@ -62,7 +62,7 @@ export default function DialogCacheInfo({ hash }) {
   }, [hash])
 
   useEffect(() => {
-    if (!cache?.PiecesCount || !cache?.Pieces) return
+    if (!cache.PiecesCount || !cache.Pieces) return
 
     const { Pieces, PiecesCount, Readers } = cache
 
