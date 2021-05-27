@@ -7,7 +7,7 @@ import { cacheHost } from 'utils/Hosts'
 import { Stage, Layer } from 'react-konva'
 import Measure from 'react-measure'
 
-import SingleBlock, { boxHeight, strokeWidth, marginBetweenBlocks } from './SingleBlock'
+import SingleBlock from './SingleBlock'
 
 export default function DialogCacheInfo({ hash }) {
   const [cache, setCache] = useState({})
@@ -15,14 +15,36 @@ export default function DialogCacheInfo({ hash }) {
   const timerID = useRef(null)
   const componentIsMounted = useRef(true)
   const [dimensions, setDimensions] = useState({ width: -1, height: -1 })
+  const [stageSettings, setStageSettings] = useState({
+    boxHeight: null,
+    strokeWidth: null,
+    marginBetweenBlocks: null,
+    stageOffset: null,
+  })
+  const [isShortView, setIsShortView] = useState(true)
+  const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(
-    // this function is required to notify "getCache" when NOT to make state update
-    () => () => {
+  const updateStageSettings = (boxHeight, strokeWidth) => {
+    setStageSettings({
+      boxHeight,
+      strokeWidth,
+      marginBetweenBlocks: strokeWidth,
+      stageOffset: strokeWidth * 2,
+    })
+  }
+
+  const { boxHeight, strokeWidth, marginBetweenBlocks, stageOffset } = stageSettings
+  let activeId = null
+
+  useEffect(() => {
+    // initializing stageSettings
+    updateStageSettings(24, 4)
+
+    return () => {
+      // this function is required to notify "getCache" when NOT to make state update
       componentIsMounted.current = false
-    },
-    [],
-  )
+    }
+  }, [])
 
   useEffect(() => {
     if (hash) {
@@ -52,16 +74,14 @@ export default function DialogCacheInfo({ hash }) {
       const currentPiece = Pieces[i]
       if (currentPiece) {
         if (currentPiece.Completed && currentPiece.Size === currentPiece.Length) newPiece.isComplete = true
-        else newPiece.inProgress = true
-
-        newPiece.percentage = (currentPiece.Size / currentPiece.Length).toFixed(2)
+        else {
+          newPiece.inProgress = true
+          newPiece.percentage = (currentPiece.Size / currentPiece.Length).toFixed(2)
+        }
       }
 
       Readers.forEach(r => {
-        if (i === r.Reader) {
-          newPiece.isActive = true
-          return
-        }
+        if (i === r.Reader) newPiece.isActive = true
         if (i >= r.Start && i <= r.End) newPiece.isReaderRange = true
       })
 
@@ -69,11 +89,17 @@ export default function DialogCacheInfo({ hash }) {
     }
 
     setPMap(map)
+    setIsLoading(false)
   }, [cache])
 
+  const preloadPiecesAmount = Math.round(cache.Capacity / cache.PiecesLength - 1)
   const blockSizeWithMargin = boxHeight + strokeWidth + marginBetweenBlocks
   const piecesInOneRow = Math.floor((dimensions.width * 0.9) / blockSizeWithMargin)
-  const amountOfRows = Math.ceil(pMap.length / piecesInOneRow) + 1
+  const amountOfBlocksToRenderInShortView =
+    preloadPiecesAmount === piecesInOneRow
+      ? preloadPiecesAmount - 1
+      : preloadPiecesAmount + piecesInOneRow - (preloadPiecesAmount % piecesInOneRow) - 1
+  const amountOfRows = Math.ceil((isShortView ? amountOfBlocksToRenderInShortView : pMap.length) / piecesInOneRow)
 
   return (
     <Measure bounds onResize={contentRect => setDimensions(contentRect.bounds)}>
@@ -107,20 +133,56 @@ export default function DialogCacheInfo({ hash }) {
           </DialogTitle>
 
           <DialogContent>
-            {!pMap.length ? (
+            <button
+              type='button'
+              onClick={() => {
+                if (isShortView) {
+                  updateStageSettings(12, 2)
+                  setIsShortView(false)
+                } else {
+                  updateStageSettings(24, 4)
+                  setIsShortView(true)
+                }
+                setIsLoading(true)
+              }}
+            >
+              updateStageSettings
+            </button>
+            {isLoading ? (
               'loading'
             ) : (
               <Stage
                 style={{ display: 'flex', justifyContent: 'center' }}
-                offsetX={-3}
-                width={dimensions.width * 0.9}
-                height={amountOfRows * blockSizeWithMargin}
+                offset={{ x: -stageOffset, y: -stageOffset }}
+                width={stageOffset + blockSizeWithMargin * piecesInOneRow}
+                height={stageOffset + blockSizeWithMargin * amountOfRows}
               >
                 <Layer>
                   {pMap.map(({ id, percentage, isComplete, inProgress, isActive, isReaderRange }) => {
-                    const currentRow = Math.floor(id / piecesInOneRow) + 1
+                    const currentRow = Math.floor((isShortView ? id - activeId : id) / piecesInOneRow)
 
-                    return (
+                    // -------- related only for short view -------
+                    if (isActive) activeId = id
+                    const shouldBeRendered =
+                      isActive || (id - activeId <= amountOfBlocksToRenderInShortView && id - activeId >= 0)
+                    // --------------------------------------------
+
+                    return isShortView ? (
+                      shouldBeRendered && (
+                        <SingleBlock
+                          key={id}
+                          x={((id - activeId) % piecesInOneRow) * blockSizeWithMargin}
+                          y={currentRow * blockSizeWithMargin}
+                          percentage={percentage}
+                          inProgress={inProgress}
+                          isComplete={isComplete}
+                          isReaderRange={isReaderRange}
+                          isActive={isActive}
+                          boxHeight={boxHeight}
+                          strokeWidth={strokeWidth}
+                        />
+                      )
+                    ) : (
                       <SingleBlock
                         key={id}
                         x={(id % piecesInOneRow) * blockSizeWithMargin}
@@ -130,6 +192,8 @@ export default function DialogCacheInfo({ hash }) {
                         isComplete={isComplete}
                         isReaderRange={isReaderRange}
                         isActive={isActive}
+                        boxHeight={boxHeight}
+                        strokeWidth={strokeWidth}
                       />
                     )
                   })}

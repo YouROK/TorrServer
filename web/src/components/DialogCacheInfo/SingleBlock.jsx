@@ -1,9 +1,5 @@
 import { Rect } from 'react-konva'
 
-export const boxHeight = 12
-export const strokeWidth = 2
-export const marginBetweenBlocks = 2
-
 export default function SingleBlock({
   x,
   y,
@@ -12,6 +8,8 @@ export default function SingleBlock({
   inProgress = false,
   isReaderRange = false,
   isComplete = false,
+  boxHeight,
+  strokeWidth,
 }) {
   const strokeColor = isActive
     ? '#000'

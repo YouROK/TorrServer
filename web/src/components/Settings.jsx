@@ -135,13 +135,7 @@ export default function SettingsDialog() {
               <br />
               <br />
               <InputLabel htmlFor='RetrackersMode'>Retracker mode</InputLabel>
-              <Select
-                onChange={inputForm}
-                type='number'
-                native='true'
-                id='RetrackersMode'
-                value={settings.RetrackersMode}
-              >
+              <Select onChange={inputForm} type='number' native id='RetrackersMode' value={settings.RetrackersMode}>
                 <option value={0}>Don&apos;t add retrackers</option>
                 <option value={1}>Add retrackers</option>
                 <option value={2}>Remove retrackers</option>
