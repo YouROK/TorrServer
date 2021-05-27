@@ -15,14 +15,14 @@ export default function DialogCacheInfo({ hash }) {
   const timerID = useRef(null)
   const componentIsMounted = useRef(true)
   const [dimensions, setDimensions] = useState({ width: -1, height: -1 })
+  const [isShortView, setIsShortView] = useState(true)
+  const [isLoading, setIsLoading] = useState(true)
   const [stageSettings, setStageSettings] = useState({
     boxHeight: null,
     strokeWidth: null,
     marginBetweenBlocks: null,
     stageOffset: null,
   })
-  const [isShortView, setIsShortView] = useState(true)
-  const [isLoading, setIsLoading] = useState(true)
 
   const updateStageSettings = (boxHeight, strokeWidth) => {
     setStageSettings({
@@ -32,9 +32,6 @@ export default function DialogCacheInfo({ hash }) {
       stageOffset: strokeWidth * 2,
     })
   }
-
-  const { boxHeight, strokeWidth, marginBetweenBlocks, stageOffset } = stageSettings
-  let activeId = null
 
   useEffect(() => {
     // initializing stageSettings
@@ -92,6 +89,8 @@ export default function DialogCacheInfo({ hash }) {
     setIsLoading(false)
   }, [cache])
 
+  const { boxHeight, strokeWidth, marginBetweenBlocks, stageOffset } = stageSettings
+
   const preloadPiecesAmount = Math.round(cache.Capacity / cache.PiecesLength - 1)
   const blockSizeWithMargin = boxHeight + strokeWidth + marginBetweenBlocks
   const piecesInOneRow = Math.floor((dimensions.width * 0.9) / blockSizeWithMargin)
@@ -100,6 +99,7 @@ export default function DialogCacheInfo({ hash }) {
       ? preloadPiecesAmount - 1
       : preloadPiecesAmount + piecesInOneRow - (preloadPiecesAmount % piecesInOneRow) - 1
   const amountOfRows = Math.ceil((isShortView ? amountOfBlocksToRenderInShortView : pMap.length) / piecesInOneRow)
+  let activeId = null
 
   return (
     <Measure bounds onResize={contentRect => setDimensions(contentRect.bounds)}>
