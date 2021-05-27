@@ -2,7 +2,6 @@ package state
 
 import (
 	"server/torr/state"
-	"server/torr/storage/reader"
 )
 
 type CacheState struct {
@@ -13,7 +12,7 @@ type CacheState struct {
 	PiecesCount  int
 	Torrent      *state.TorrentStatus
 	Pieces       map[int]ItemState
-	Readers      []*reader.ReaderState
+	Readers      []*ReaderState
 }
 
 type ItemState struct {
@@ -21,4 +20,10 @@ type ItemState struct {
 	Length    int64
 	Size      int64
 	Completed bool
+}
+
+type ReaderState struct {
+	Start  int
+	End    int
+	Reader int
 }

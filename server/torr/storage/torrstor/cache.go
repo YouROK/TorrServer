@@ -13,7 +13,6 @@ import (
 
 	"server/log"
 	"server/settings"
-	"server/torr/storage/reader"
 	"server/torr/storage/state"
 	"server/torr/utils"
 
@@ -150,12 +149,12 @@ func (c *Cache) GetState() *state.CacheState {
 		}
 	}
 
-	readersState := make([]*reader.ReaderState, 0)
+	readersState := make([]*state.ReaderState, 0)
 	c.muReaders.Lock()
 	for r, _ := range c.readers {
 		rng := r.getPiecesRange()
 		pc := r.getReaderPiece()
-		readersState = append(readersState, &reader.ReaderState{
+		readersState = append(readersState, &state.ReaderState{
 			Start:  rng.Start,
 			End:    rng.End,
 			Reader: pc,
