@@ -5,6 +5,8 @@ import styled, { css } from 'styled-components'
 import { NoImageIcon } from 'icons'
 import { getPeerString, humanizeSize } from 'utils/Utils'
 import { viewedHost } from 'utils/Hosts'
+import { CopyToClipboard } from 'react-copy-to-clipboard'
+import { useState } from 'react'
 
 import { useUpdateCache, useCreateCacheMap } from './customHooks'
 
@@ -49,7 +51,11 @@ const HeaderSection = styled.section`
   gap: 30px;
 `
 
-const TorrentData = styled.div``
+const TorrentData = styled.div`
+  > :not(:last-child) {
+    margin-bottom: 20px;
+  }
+`
 
 const CacheSection = styled.section`
   padding: 40px;
@@ -84,8 +90,20 @@ const ButtonSectionButton = styled.div`
 
 const TorrentFilesSection = styled.div``
 
+const TorrentName = styled.div`
+  font-size: 50px;
+  font-weight: 200;
+  line-height: 1;
+`
+const TorrentSubName = styled.div`
+  color: #7c7b7c;
+`
+
+const shortenText = (text, count) => text.slice(0, count) + (text.length > count ? '...' : '')
+
 export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
   const classes = useStyles()
+  const [isLoading, setIsLoading] = useState(true)
   const {
     poster,
     hash,
@@ -98,7 +116,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
   } = torrent
 
   const cache = useUpdateCache(hash)
-  const cacheMap = useCreateCacheMap(cache)
+  const cacheMap = useCreateCacheMap(cache, () => setIsLoading(false))
 
   const { Capacity, PiecesCount, PiecesLength } = cache
 
@@ -118,43 +136,57 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
         </Toolbar>
       </AppBar>
 
-      <DialogContent>
-        <HeaderSection>
-          <Poster poster={poster}>{poster ? <img alt='poster' src={poster} /> : <NoImageIcon />}</Poster>
+      {isLoading ? (
+        'loading'
+      ) : (
+        <DialogContent>
+          <HeaderSection>
+            <Poster poster={poster}>{poster ? <img alt='poster' src={poster} /> : <NoImageIcon />}</Poster>
 
-          <TorrentData>
-            <div>hash: {hash}</div>
-            <div>title: {title}</div>
-            <div>name: {name}</div>
-            <div>peers: {getPeerString(torrent)}</div>
-            <div>loaded: {getPreload(torrent)}</div>
-            <div>download speed: {humanizeSize(downloadSpeed)}</div>
-            <div>upload speed: {humanizeSize(uploadSpeed)}</div>
-            <div>status: {statString}</div>
-            <div>torrent size: {humanizeSize(torrentSize)}</div>
+            <TorrentData>
+              <div>
+                {name && name !== title ? (
+                  <>
+                    <TorrentName>{shortenText(name, 50)}</TorrentName>
+                    <TorrentSubName>{shortenText(title, 160)}</TorrentSubName>
+                  </>
+                ) : (
+                  <TorrentName>{shortenText(title, 50)}</TorrentName>
+                )}
+              </div>
 
-            <div>Capacity: {humanizeSize(Capacity)}</div>
-            <div>PiecesCount: {PiecesCount}</div>
-            <div>PiecesLength: {humanizeSize(PiecesLength)}</div>
-          </TorrentData>
-        </HeaderSection>
+              <div>peers: {getPeerString(torrent)}</div>
+              <div>loaded: {getPreload(torrent)}</div>
+              <div>download speed: {humanizeSize(downloadSpeed)}</div>
+              <div>upload speed: {humanizeSize(uploadSpeed)}</div>
+              <div>status: {statString}</div>
+              <div>torrent size: {humanizeSize(torrentSize)}</div>
 
-        <CacheSection />
+              <div>Capacity: {humanizeSize(Capacity)}</div>
+              <div>PiecesCount: {PiecesCount}</div>
+              <div>PiecesLength: {humanizeSize(PiecesLength)}</div>
+            </TorrentData>
+          </HeaderSection>
 
-        <ButtonSection>
-          <ButtonSectionButton>copy hash</ButtonSectionButton>
+          <CacheSection />
 
-          <ButtonSectionButton>remove views</ButtonSectionButton>
+          <ButtonSection>
+            <CopyToClipboard text={hash}>
+              <ButtonSectionButton>copy hash</ButtonSectionButton>
+            </CopyToClipboard>
 
-          <ButtonSectionButton>drop torrent</ButtonSectionButton>
+            <ButtonSectionButton>remove views</ButtonSectionButton>
 
-          <ButtonSectionButton>download playlist</ButtonSectionButton>
+            <ButtonSectionButton>drop torrent</ButtonSectionButton>
 
-          <ButtonSectionButton>download playlist after last view</ButtonSectionButton>
-        </ButtonSection>
+            <ButtonSectionButton>download playlist</ButtonSectionButton>
 
-        <TorrentFilesSection />
-      </DialogContent>
+            <ButtonSectionButton>download playlist after last view</ButtonSectionButton>
+          </ButtonSection>
+
+          <TorrentFilesSection />
+        </DialogContent>
+      )}
     </>
   )
 }
