@@ -36,7 +36,7 @@ export const useUpdateCache = hash => {
   return cache
 }
 
-export const useCreateCacheMap = (cache, callback) => {
+export const useCreateCacheMap = cache => {
   const [cacheMap, setCacheMap] = useState([])
 
   useEffect(() => {
@@ -67,8 +67,7 @@ export const useCreateCacheMap = (cache, callback) => {
     }
 
     setCacheMap(map)
-    callback && callback()
-  }, [cache, callback])
+  }, [cache])
 
   return cacheMap
 }

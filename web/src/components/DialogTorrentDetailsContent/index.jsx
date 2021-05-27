@@ -6,7 +6,7 @@ import { NoImageIcon } from 'icons'
 import { getPeerString, humanizeSize } from 'utils/Utils'
 import { viewedHost } from 'utils/Hosts'
 import { CopyToClipboard } from 'react-copy-to-clipboard'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { useUpdateCache, useCreateCacheMap } from './customHooks'
 
@@ -116,7 +116,9 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
   } = torrent
 
   const cache = useUpdateCache(hash)
-  const cacheMap = useCreateCacheMap(cache, () => setIsLoading(false))
+  const cacheMap = useCreateCacheMap(cache)
+
+  useEffect(() => setIsLoading(false), [cacheMap])
 
   const { Capacity, PiecesCount, PiecesLength } = cache
 
