@@ -72,7 +72,7 @@ export default function DialogTorrentInfo({ torrent, open }) {
 
       <DialogContent>
         <List>
-          <ListItem>
+          <ListItem key='TorrentMenu'>
             <ButtonGroup
               style={style.width100}
               variant='contained'
