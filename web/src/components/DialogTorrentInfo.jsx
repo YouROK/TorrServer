@@ -109,7 +109,7 @@ export default function DialogTorrentInfo({ torrent, open }) {
 
           {getPlayableFile(torrentLocalComponentValue) &&
             getPlayableFile(torrentLocalComponentValue).map(file => (
-              <ButtonGroup style={style.width100} disableElevation variant='contained' color='primary'>
+              <ButtonGroup key={file.id} style={style.width100} disableElevation variant='contained' color='primary'>
                 <Button
                   style={style.width100}
                   href={`${streamHost()}/${encodeURIComponent(file.path.split('\\').pop().split('/').pop())}?link=${
