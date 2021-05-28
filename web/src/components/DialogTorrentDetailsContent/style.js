@@ -43,12 +43,6 @@ export const TorrentMainSection = styled.section`
   background: linear-gradient(145deg, #e4f6ed, #b5dec9);
 `
 
-export const TorrentData = styled.div`
-  > :not(:last-child) {
-    margin-bottom: 20px;
-  }
-`
-
 export const CacheSection = styled.section`
   grid-area: cache;
   padding: 40px;
@@ -100,14 +94,20 @@ export const TorrentFilesSection = styled.div`
 `
 
 export const SectionSubName = styled.div`
-  color: #7c7b7c;
+  ${({ mb }) => css`
+    ${mb && `margin-bottom: ${mb}px`};
+    color: #7c7b7c;
+  `}
 `
 
 export const SectionTitle = styled.div`
-  font-size: 35px;
-  font-weight: 200;
-  line-height: 1;
-  word-break: break-word;
+  ${({ mb }) => css`
+    ${mb && `margin-bottom: ${mb}px`};
+    font-size: 35px;
+    font-weight: 200;
+    line-height: 1;
+    word-break: break-word;
+  `}
 `
 
 export const SectionHeader = styled.div`

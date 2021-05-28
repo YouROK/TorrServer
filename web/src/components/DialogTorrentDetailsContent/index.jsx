@@ -22,7 +22,6 @@ import {
   DialogContentGrid,
   TorrentMainSection,
   Poster,
-  TorrentData,
   SectionTitle,
   SectionSubName,
   StatisticsWrapper,
@@ -116,17 +115,15 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
           <TorrentMainSection>
             <Poster poster={poster}>{poster ? <img alt='poster' src={poster} /> : <NoImageIcon />}</Poster>
 
-            <TorrentData>
-              <div>
-                {name && name !== title ? (
-                  <>
-                    <SectionTitle>{shortenText(name, 50)}</SectionTitle>
-                    <SectionSubName>{shortenText(title, 160)}</SectionSubName>
-                  </>
-                ) : (
-                  <SectionTitle>{shortenText(title, 50)}</SectionTitle>
-                )}
-              </div>
+            <div>
+              {name && name !== title ? (
+                <>
+                  <SectionTitle>{shortenText(name, 50)}</SectionTitle>
+                  <SectionSubName mb={20}>{shortenText(title, 160)}</SectionSubName>
+                </>
+              ) : (
+                <SectionTitle mb={20}>{shortenText(title, 50)}</SectionTitle>
+              )}
 
               <StatisticsWrapper>
                 <StatisticsField
@@ -161,12 +158,12 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                   icon={ViewAgendaIcon}
                 />
               </StatisticsWrapper>
-            </TorrentData>
+            </div>
           </TorrentMainSection>
 
           <CacheSection>
             <SectionHeader>
-              <SectionTitle>Buffer</SectionTitle>
+              <SectionTitle mb={20}>Buffer</SectionTitle>
               {!settings?.PreloadBuffer && (
                 <SectionSubName>Enable &quot;Preload Buffer&quot; in settings to change buffer size</SectionSubName>
               )}
@@ -209,7 +206,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
           </ButtonSection>
 
           <TorrentFilesSection>
-            <SectionTitle>Torrent Content</SectionTitle>
+            <SectionTitle mb={20}>Torrent Content</SectionTitle>
 
             {!playableFileList?.length
               ? 'No playable files in this torrent'
