@@ -1,13 +1,18 @@
-import styled, { css } from 'styled-components'
 import { NoImageIcon } from 'icons'
 import { getPeerString, humanizeSize } from 'utils/Utils'
-// import { viewedHost } from 'utils/Hosts'
 import { CopyToClipboard } from 'react-copy-to-clipboard'
 import { useEffect, useState } from 'react'
-import { Button } from '@material-ui/core'
-import { ArrowDownward, ArrowUpward, SwapVerticalCircle, ViewAgenda } from '@material-ui/icons'
+import { Button, ButtonGroup, Typography } from '@material-ui/core'
+import {
+  ArrowDownward as ArrowDownwardIcon,
+  ArrowUpward as ArrowUpwardIcon,
+  SwapVerticalCircle as SwapVerticalCircleIcon,
+  ViewAgenda as ViewAgendaIcon,
+  Cached as CachedIcon,
+} from '@material-ui/icons'
 import axios from 'axios'
-import { torrentsHost } from 'utils/Hosts'
+import { streamHost, torrentsHost, viewedHost } from 'utils/Hosts'
+import { GETTING_INFO, IN_DB } from 'torrentStates'
 
 import { useUpdateCache, useCreateCacheMap, useGetSettings } from './customHooks'
 import DialogHeader from './DialogHeader'
@@ -35,32 +40,56 @@ const shortenText = (text, count) => text.slice(0, count) + (text.length > count
 export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
   const [isLoading, setIsLoading] = useState(true)
   const [isDetailedCacheView, setIsDetailedCacheView] = useState(false)
+  const [viewedFileList, setViewedFileList] = useState()
+  const [playableFileList, setPlayableFileList] = useState()
+
   const {
     poster,
     hash,
     title,
     name,
+    stat,
     download_speed: downloadSpeed,
     upload_speed: uploadSpeed,
     stat_string: statString,
     torrent_size: torrentSize,
+    file_stats: torrentFileList,
   } = torrent
 
   const cache = useUpdateCache(hash)
   const cacheMap = useCreateCacheMap(cache)
   const settings = useGetSettings(cache)
 
-  const dropTorrent = hash => axios.post(torrentsHost(), { action: 'drop', hash })
+  const dropTorrent = () => axios.post(torrentsHost(), { action: 'drop', hash })
+  const removeTorrentViews = () =>
+    axios.post(viewedHost(), { action: 'rem', hash, file_index: -1 }).then(() => setViewedFileList())
+  const preloadBuffer = fileId => fetch(`${streamHost()}?link=${hash}&index=${fileId}&preload`)
+  const getFileLink = (path, id) =>
+    `${streamHost()}/${encodeURIComponent(path.split('\\').pop().split('/').pop())}?link=${hash}&index=${id}&play`
 
   const { Capacity, PiecesCount, PiecesLength, Filled } = cache
 
   useEffect(() => {
+    setPlayableFileList(torrentFileList?.filter(file => playableExtList.includes(getExt(file.path))))
+  }, [torrentFileList])
+
+  useEffect(() => {
     const cacheLoaded = !!Object.entries(cache).length
-    const torrentLoaded = torrent.stat_string !== 'Torrent in db' && torrent.stat_string !== 'Torrent getting info'
+    const torrentLoaded = stat !== GETTING_INFO && stat !== IN_DB
 
     if (!cacheLoaded && !isLoading) setIsLoading(true)
     if (cacheLoaded && isLoading && torrentLoaded) setIsLoading(false)
-  }, [torrent, cache, isLoading])
+  }, [stat, cache, isLoading])
+
+  useEffect(() => {
+    // getting viewed file list
+    axios.post(viewedHost(), { action: 'list', hash }).then(({ data }) => {
+      if (data) {
+        const lst = data.map(itm => itm.file_index)
+        setViewedFileList(lst)
+      } else setViewedFileList()
+    })
+  }, [hash])
 
   const bufferSize = settings?.PreloadBuffer ? Capacity : 33554432 // Default is 32mb if PreloadBuffer is false
 
@@ -105,7 +134,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                   value={humanizeSize(downloadSpeed) || '0 B'}
                   iconBg='#118f00'
                   valueBg='#13a300'
-                  icon={ArrowDownward}
+                  icon={ArrowDownwardIcon}
                 />
 
                 <StatisticsField
@@ -113,7 +142,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                   value={humanizeSize(uploadSpeed) || '0 B'}
                   iconBg='#0146ad'
                   valueBg='#0058db'
-                  icon={ArrowUpward}
+                  icon={ArrowUpwardIcon}
                 />
 
                 <StatisticsField
@@ -121,7 +150,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                   value={getPeerString(torrent)}
                   iconBg='#0146ad'
                   valueBg='#0058db'
-                  icon={SwapVerticalCircle}
+                  icon={SwapVerticalCircleIcon}
                 />
 
                 <StatisticsField
@@ -129,7 +158,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                   value={humanizeSize(torrentSize)}
                   iconBg='#0146ad'
                   valueBg='#0058db'
-                  icon={ViewAgenda}
+                  icon={ViewAgendaIcon}
                 />
               </StatisticsWrapper>
             </TorrentData>
@@ -141,7 +170,11 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
               {!settings?.PreloadBuffer && (
                 <SectionSubName>Enable &quot;Preload Buffer&quot; in settings to change buffer size</SectionSubName>
               )}
-              <LoadingProgress value={Filled} fullAmount={bufferSize} label={humanizeSize(bufferSize)} />
+              <LoadingProgress
+                value={Filled}
+                fullAmount={bufferSize}
+                label={`${humanizeSize(Filled) || '0 B'} / ${humanizeSize(bufferSize)}`}
+              />
             </SectionHeader>
 
             <TorrentCache isMini cache={cache} cacheMap={cacheMap} />
@@ -166,9 +199,9 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
               </ButtonSectionButton>
             </CopyToClipboard>
 
-            <ButtonSectionButton>remove views</ButtonSectionButton>
+            <ButtonSectionButton onClick={() => removeTorrentViews()}>remove views</ButtonSectionButton>
 
-            <ButtonSectionButton onClick={() => dropTorrent(hash)}>drop torrent</ButtonSectionButton>
+            <ButtonSectionButton onClick={() => dropTorrent()}>drop torrent</ButtonSectionButton>
 
             <ButtonSectionButton>download playlist</ButtonSectionButton>
 
@@ -177,6 +210,26 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
 
           <TorrentFilesSection>
             <SectionTitle>Torrent Content</SectionTitle>
+
+            {!playableFileList?.length
+              ? 'No playable files in this torrent'
+              : playableFileList.map(({ id, path, length }) => (
+                  <ButtonGroup key={id} disableElevation variant='contained' color='primary'>
+                    <Button>
+                      <a href={getFileLink(path, id)}>
+                        <Typography>
+                          {path.split('\\').pop().split('/').pop()} | {humanizeSize(length)}{' '}
+                          {viewedFileList && viewedFileList?.indexOf(id) !== -1 && '| ✓'}
+                        </Typography>
+                      </a>
+                    </Button>
+
+                    <Button onClick={() => preloadBuffer(id)}>
+                      <CachedIcon />
+                      <Typography>Preload</Typography>
+                    </Button>
+                  </ButtonGroup>
+                ))}
           </TorrentFilesSection>
         </DialogContentGrid>
       )}
@@ -184,117 +237,68 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
   )
 }
 
-// function getPreload(torrent) {
-//   if (torrent.preloaded_bytes > 0 && torrent.preload_size > 0 && torrent.preloaded_bytes < torrent.preload_size) {
-//     const progress = ((torrent.preloaded_bytes * 100) / torrent.preload_size).toFixed(2)
-//     return `${humanizeSize(torrent.preloaded_bytes)} / ${humanizeSize(torrent.preload_size)}   ${progress}%`
-//   }
-
-//   if (!torrent.preloaded_bytes) return humanizeSize(0)
-
-//   return humanizeSize(torrent.preloaded_bytes)
-// }
-
-// function remViews(hash) {
-//   try {
-//     if (hash)
-//       fetch(viewedHost(), {
-//         method: 'post',
-//         body: JSON.stringify({ action: 'rem', hash, file_index: -1 }),
-//         headers: {
-//           Accept: 'application/json, text/plain, */*',
-//           'Content-Type': 'application/json',
-//         },
-//       })
-//   } catch (e) {
-//     console.error(e)
-//   }
-// }
-
-// function getViewed(hash, callback) {
-//   try {
-//     fetch(viewedHost(), {
-//       method: 'post',
-//       body: JSON.stringify({ action: 'list', hash }),
-//       headers: {
-//         Accept: 'application/json, text/plain, */*',
-//         'Content-Type': 'application/json',
-//       },
-//     })
-//       .then(res => res.json())
-//       .then(callback)
-//   } catch (e) {
-//     console.error(e)
-//   }
-// }
-
-// function getPlayableFile(torrent) {
-//   if (!torrent || !torrent.file_stats) return null
-//   return torrent.file_stats.filter(file => extPlayable.includes(getExt(file.path)))
-// }
-
-// function getExt(filename) {
-//   const ext = filename.split('.').pop()
-//   if (ext === filename) return ''
-//   return ext.toLowerCase()
-// }
-// const extPlayable = [
-//   // video
-//   '3g2',
-//   '3gp',
-//   'aaf',
-//   'asf',
-//   'avchd',
-//   'avi',
-//   'drc',
-//   'flv',
-//   'iso',
-//   'm2v',
-//   'm2ts',
-//   'm4p',
-//   'm4v',
-//   'mkv',
-//   'mng',
-//   'mov',
-//   'mp2',
-//   'mp4',
-//   'mpe',
-//   'mpeg',
-//   'mpg',
-//   'mpv',
-//   'mxf',
-//   'nsv',
-//   'ogg',
-//   'ogv',
-//   'ts',
-//   'qt',
-//   'rm',
-//   'rmvb',
-//   'roq',
-//   'svi',
-//   'vob',
-//   'webm',
-//   'wmv',
-//   'yuv',
-//   // audio
-//   'aac',
-//   'aiff',
-//   'ape',
-//   'au',
-//   'flac',
-//   'gsm',
-//   'it',
-//   'm3u',
-//   'm4a',
-//   'mid',
-//   'mod',
-//   'mp3',
-//   'mpa',
-//   'pls',
-//   'ra',
-//   's3m',
-//   'sid',
-//   'wav',
-//   'wma',
-//   'xm',
-// ]
+function getExt(filename) {
+  const ext = filename.split('.').pop()
+  if (ext === filename) return ''
+  return ext.toLowerCase()
+}
+const playableExtList = [
+  // video
+  '3g2',
+  '3gp',
+  'aaf',
+  'asf',
+  'avchd',
+  'avi',
+  'drc',
+  'flv',
+  'iso',
+  'm2v',
+  'm2ts',
+  'm4p',
+  'm4v',
+  'mkv',
+  'mng',
+  'mov',
+  'mp2',
+  'mp4',
+  'mpe',
+  'mpeg',
+  'mpg',
+  'mpv',
+  'mxf',
+  'nsv',
+  'ogg',
+  'ogv',
+  'ts',
+  'qt',
+  'rm',
+  'rmvb',
+  'roq',
+  'svi',
+  'vob',
+  'webm',
+  'wmv',
+  'yuv',
+  // audio
+  'aac',
+  'aiff',
+  'ape',
+  'au',
+  'flac',
+  'gsm',
+  'it',
+  'm3u',
+  'm4a',
+  'mid',
+  'mod',
+  'mp3',
+  'mpa',
+  'pls',
+  'ra',
+  's3m',
+  'sid',
+  'wav',
+  'wma',
+  'xm',
+]

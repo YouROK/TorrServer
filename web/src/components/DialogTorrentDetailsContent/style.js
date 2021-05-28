@@ -166,14 +166,22 @@ export const StatisticsFieldValue = styled.div`
   `}
 `
 
-export const LoadingProgress = styled.div.attrs(({ value, fullAmount }) => ({
-  percentage: Math.min(100, (value * 100) / fullAmount),
-}))`
-  ${({ percentage, label }) => css`
+export const LoadingProgress = styled.div.attrs(({ value, fullAmount }) => {
+  const percentage = (value * 100) / fullAmount
+  const percentageMinmax = Math.min(100, percentage)
+  // console.log(percentage)
+  const stylePercentage = percentageMinmax === 100 ? 100 : percentageMinmax % 100
+
+  return {
+    style: {
+      background: `linear-gradient(to right, #b5dec9 0%, #b5dec9 ${stylePercentage}%, #fff ${stylePercentage}%, #fff 100%)`,
+    },
+  }
+})`
+  ${({ label }) => css`
     border: 1px solid;
     padding: 10px 20px;
     border-radius: 5px;
-    background: linear-gradient(to right, #b5dec9 0%, #b5dec9 ${percentage}%, #fff ${percentage}%, #fff 100%);
 
     :before {
       content: '${label}';
