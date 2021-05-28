@@ -167,14 +167,12 @@ export const StatisticsFieldValue = styled.div`
 `
 
 export const LoadingProgress = styled.div.attrs(({ value, fullAmount }) => {
-  const percentage = (value * 100) / fullAmount
-  const percentageMinmax = Math.min(100, percentage)
-  // console.log(percentage)
-  const stylePercentage = percentageMinmax === 100 ? 100 : percentageMinmax % 100
+  const percentage = Math.min(100, (value * 100) / fullAmount)
 
   return {
+    // this block is here according to styled-components recomendation about fast changable components
     style: {
-      background: `linear-gradient(to right, #b5dec9 0%, #b5dec9 ${stylePercentage}%, #fff ${stylePercentage}%, #fff 100%)`,
+      background: `linear-gradient(to right, #b5dec9 0%, #b5dec9 ${percentage}%, #fff ${percentage}%, #fff 100%)`,
     },
   }
 })`
