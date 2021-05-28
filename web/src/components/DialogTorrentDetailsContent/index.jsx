@@ -50,18 +50,17 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
   const cacheMap = useCreateCacheMap(cache)
   const settings = useGetSettings(cache)
 
-  const dropTorrent = hash => {
-    axios.post(torrentsHost(), { action: 'drop', hash }).then(() => console.log('torrent dropped'))
-  }
+  const dropTorrent = hash => axios.post(torrentsHost(), { action: 'drop', hash })
 
   const { Capacity, PiecesCount, PiecesLength, Filled } = cache
 
   useEffect(() => {
-    const cacheIsLoading = !Object.entries(cache).length
+    const cacheLoaded = !!Object.entries(cache).length
+    const torrentLoaded = torrent.stat_string !== 'Torrent in db' && torrent.stat_string !== 'Torrent getting info'
 
-    if (cacheIsLoading && !isLoading) setIsLoading(true)
-    if (!cacheIsLoading && isLoading) setIsLoading(false)
-  }, [cache, isLoading])
+    if (!cacheLoaded && !isLoading) setIsLoading(true)
+    if (cacheLoaded && isLoading && torrentLoaded) setIsLoading(false)
+  }, [torrent, cache, isLoading])
 
   const bufferSize = settings?.PreloadBuffer ? Capacity : 33554432 // Default is 32mb if PreloadBuffer is false
 
