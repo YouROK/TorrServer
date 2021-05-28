@@ -1,23 +1,18 @@
-import Button from '@material-ui/core/Button'
-import { AppBar, IconButton, makeStyles, Toolbar, Typography } from '@material-ui/core'
-import CloseIcon from '@material-ui/icons/Close'
 import styled, { css } from 'styled-components'
 import { NoImageIcon } from 'icons'
 import { getPeerString, humanizeSize } from 'utils/Utils'
 import { viewedHost } from 'utils/Hosts'
 import { CopyToClipboard } from 'react-copy-to-clipboard'
 import { useEffect, useState } from 'react'
+import { Button } from '@material-ui/core'
 
 import { useUpdateCache, useCreateCacheMap } from './customHooks'
+import DialogHeader from './DialogHeader'
+import TorrentCache from './TorrentCache'
 
-const useStyles = makeStyles(theme => ({
-  appBar: { position: 'relative' },
-  title: { marginLeft: theme.spacing(2), flex: 1 },
-}))
-
-const DialogContent = styled.div`
+const DialogContentGrid = styled.div`
   display: grid;
-  grid-template-rows: min-content 200px 80px 70px;
+  grid-template-rows: min-content min-content 80px min-content;
 `
 const Poster = styled.div`
   ${({ poster }) => css`
@@ -44,11 +39,12 @@ const Poster = styled.div`
         `}
   `}
 `
-const HeaderSection = styled.section`
+const TorrentMainSection = styled.section`
   padding: 40px;
   display: grid;
   grid-template-columns: min-content 1fr;
   gap: 30px;
+  background: lightgray;
 `
 
 const TorrentData = styled.div`
@@ -59,7 +55,8 @@ const TorrentData = styled.div`
 
 const CacheSection = styled.section`
   padding: 40px;
-  background: lightgray;
+  display: flex;
+  flex-direction: column;
 `
 
 const ButtonSection = styled.section`
@@ -86,6 +83,16 @@ const ButtonSectionButton = styled.div`
   :hover {
     background: red;
   }
+
+  .hash-group {
+    display: grid;
+    place-items: center;
+  }
+
+  .hash-text {
+    font-size: 10px;
+    color: #7c7b7c;
+  }
 `
 
 const TorrentFilesSection = styled.div``
@@ -99,11 +106,22 @@ const TorrentSubName = styled.div`
   color: #7c7b7c;
 `
 
+const SectionTitle = styled.div`
+  font-size: 35px;
+  font-weight: 200;
+  line-height: 1;
+  margin-bottom: 20px;
+`
+
+const DetailedTorrentCacheViewWrapper = styled.div`
+  padding-top: 50px;
+`
+
 const shortenText = (text, count) => text.slice(0, count) + (text.length > count ? '...' : '')
 
 export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
-  const classes = useStyles()
   const [isLoading, setIsLoading] = useState(true)
+  const [isDetailedCacheView, setIsDetailedCacheView] = useState(false)
   const {
     poster,
     hash,
@@ -118,31 +136,31 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
   const cache = useUpdateCache(hash)
   const cacheMap = useCreateCacheMap(cache)
 
-  useEffect(() => setIsLoading(false), [cacheMap])
+  useEffect(() => {
+    const torrentLoaded = torrent.stat_string !== 'Torrent in db' && torrent.stat_string !== 'Torrent getting info'
+    torrentLoaded && isLoading && setIsLoading(false)
+  }, [torrent, isLoading])
 
   const { Capacity, PiecesCount, PiecesLength } = cache
 
   return (
     <>
-      <AppBar className={classes.appBar}>
-        <Toolbar>
-          <IconButton edge='start' color='inherit' onClick={closeDialog} aria-label='close'>
-            <CloseIcon />
-          </IconButton>
-          <Typography variant='h6' className={classes.title}>
-            Torrent Details
-          </Typography>
-          <Button autoFocus color='inherit' onClick={closeDialog}>
-            close
-          </Button>
-        </Toolbar>
-      </AppBar>
+      <DialogHeader
+        onClose={closeDialog}
+        title={isDetailedCacheView ? 'Detailed Cache View' : 'Torrent Details'}
+        // eslint-disable-next-line react/jsx-props-no-spreading
+        {...(isDetailedCacheView && { onBack: () => setIsDetailedCacheView(false) })}
+      />
 
       {isLoading ? (
         'loading'
+      ) : isDetailedCacheView ? (
+        <DetailedTorrentCacheViewWrapper>
+          <TorrentCache cache={cache} cacheMap={cacheMap} />
+        </DetailedTorrentCacheViewWrapper>
       ) : (
-        <DialogContent>
-          <HeaderSection>
+        <DialogContentGrid>
+          <TorrentMainSection>
             <Poster poster={poster}>{poster ? <img alt='poster' src={poster} /> : <NoImageIcon />}</Poster>
 
             <TorrentData>
@@ -168,13 +186,32 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
               <div>PiecesCount: {PiecesCount}</div>
               <div>PiecesLength: {humanizeSize(PiecesLength)}</div>
             </TorrentData>
-          </HeaderSection>
+          </TorrentMainSection>
 
-          <CacheSection />
+          <CacheSection>
+            <SectionTitle>Cache</SectionTitle>
+
+            <TorrentCache isMini cache={cache} cacheMap={cacheMap} />
+
+            <Button
+              style={{ alignSelf: 'flex-end', marginTop: '30px' }}
+              variant='contained'
+              color='primary'
+              size='large'
+              onClick={() => setIsDetailedCacheView(true)}
+            >
+              Detailed cache view
+            </Button>
+          </CacheSection>
 
           <ButtonSection>
             <CopyToClipboard text={hash}>
-              <ButtonSectionButton>copy hash</ButtonSectionButton>
+              <ButtonSectionButton>
+                <div className='hash-group'>
+                  <div>copy hash</div>
+                  <div className='hash-text'>{hash}</div>
+                </div>
+              </ButtonSectionButton>
             </CopyToClipboard>
 
             <ButtonSectionButton>remove views</ButtonSectionButton>
@@ -187,7 +224,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
           </ButtonSection>
 
           <TorrentFilesSection />
-        </DialogContent>
+        </DialogContentGrid>
       )}
     </>
   )
