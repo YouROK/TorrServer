@@ -20,7 +20,8 @@ import TorrentCache from './TorrentCache'
 import {
   DetailedTorrentCacheViewWrapper,
   DialogContentGrid,
-  TorrentMainSection,
+  MainSection,
+  MainSectionButtonGroup,
   Poster,
   SectionTitle,
   SectionSubName,
@@ -31,6 +32,8 @@ import {
   CacheSection,
   ButtonSectionButton,
   TorrentFilesSection,
+  Divider,
+  SmallLabel,
 } from './style'
 import StatisticsField from './StatisticsField'
 
@@ -112,7 +115,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
         </DetailedTorrentCacheViewWrapper>
       ) : (
         <DialogContentGrid>
-          <TorrentMainSection>
+          <MainSection>
             <Poster poster={poster}>{poster ? <img alt='poster' src={poster} /> : <NoImageIcon />}</Poster>
 
             <div>
@@ -158,8 +161,51 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                   icon={ViewAgendaIcon}
                 />
               </StatisticsWrapper>
+
+              <Divider />
+
+              <SmallLabel>Download Playlist</SmallLabel>
+              <MainSectionButtonGroup>
+                <Button variant='contained' color='primary' size='large'>
+                  full
+                </Button>
+                <Button variant='contained' color='primary' size='large'>
+                  latest
+                </Button>
+              </MainSectionButtonGroup>
+
+              <SmallLabel>More</SmallLabel>
+              <MainSectionButtonGroup>
+                <Button variant='contained' color='primary' size='large'>
+                  copy hash
+                </Button>
+                <Button variant='contained' color='primary' size='large'>
+                  remove views
+                </Button>
+                <Button variant='contained' color='primary' size='large'>
+                  drop torrent
+                </Button>
+              </MainSectionButtonGroup>
+
+              {/* <MainSectionButtonGroup>
+                <Button variant='contained' color='primary' size='large'>
+                  copy hash
+                </Button>
+                <Button variant='contained' color='primary' size='large'>
+                  remove views
+                </Button>
+                <Button variant='contained' color='primary' size='large'>
+                  drop torrent
+                </Button>
+                <Button variant='contained' color='primary' size='large'>
+                  download full playlist
+                </Button>
+                <Button variant='contained' color='primary' size='large'>
+                  download playlist after last view
+                </Button>
+              </MainSectionButtonGroup> */}
             </div>
-          </TorrentMainSection>
+          </MainSection>
 
           <CacheSection>
             <SectionHeader>
@@ -200,7 +246,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
 
             <ButtonSectionButton onClick={() => dropTorrent()}>drop torrent</ButtonSectionButton>
 
-            <ButtonSectionButton>download playlist</ButtonSectionButton>
+            <ButtonSectionButton>download full playlist</ButtonSectionButton>
 
             <ButtonSectionButton>download playlist after last view</ButtonSectionButton>
           </ButtonSection>

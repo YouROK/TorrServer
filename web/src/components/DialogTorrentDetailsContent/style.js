@@ -14,6 +14,7 @@ export const Poster = styled.div`
     height: 400px;
     border-radius: 5px;
     overflow: hidden;
+    align-self: center;
 
     ${poster
       ? css`
@@ -34,13 +35,23 @@ export const Poster = styled.div`
         `}
   `}
 `
-export const TorrentMainSection = styled.section`
+export const MainSection = styled.section`
   grid-area: main;
   padding: 40px;
   display: grid;
   grid-template-columns: min-content 1fr;
   gap: 30px;
   background: linear-gradient(145deg, #e4f6ed, #b5dec9);
+`
+
+export const MainSectionButtonGroup = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+
+  :not(:last-child) {
+    margin-bottom: 30px;
+  }
 `
 
 export const CacheSection = styled.section`
@@ -120,7 +131,7 @@ export const DetailedTorrentCacheViewWrapper = styled.div`
 
 export const StatisticsWrapper = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, min-content));
+  grid-template-columns: repeat(auto-fit, minmax(210px, min-content));
   gap: 20px;
 `
 
@@ -157,7 +168,7 @@ export const StatisticsFieldIcon = styled.div`
 export const StatisticsFieldValue = styled.div`
   ${({ bgColor }) => css`
     grid-area: value;
-    min-width: 150px;
+    min-width: 170px;
     padding: 0 20px;
     color: #fff;
     font-size: 25px;
@@ -188,4 +199,17 @@ export const LoadingProgress = styled.div.attrs(({ value, fullAmount }) => {
       font-size: 20px;
     }
   `}
+`
+
+export const Divider = styled.div`
+  height: 1px;
+  background-color: rgba(0, 0, 0, 0.12);
+  margin: 30px 0;
+`
+
+export const SmallLabel = styled.div`
+  font-size: 20px;
+  margin-bottom: 10px;
+  font-weight: 300;
+  line-height: 1;
 `
