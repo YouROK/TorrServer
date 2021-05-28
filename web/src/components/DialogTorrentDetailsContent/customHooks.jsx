@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { cacheHost } from 'utils/Hosts'
+import { cacheHost, settingsHost } from 'utils/Hosts'
 import axios from 'axios'
 
 export const useUpdateCache = hash => {
@@ -70,4 +70,13 @@ export const useCreateCacheMap = cache => {
   }, [cache])
 
   return cacheMap
+}
+
+export const useGetSettings = cache => {
+  const [settings, setSettings] = useState()
+  useEffect(() => {
+    axios.post(settingsHost(), { action: 'get' }).then(({ data }) => setSettings(data))
+  }, [cache])
+
+  return settings
 }
