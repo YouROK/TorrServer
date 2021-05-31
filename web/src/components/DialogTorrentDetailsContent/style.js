@@ -2,7 +2,6 @@ import styled, { css } from 'styled-components'
 
 export const DialogContentGrid = styled.div`
   display: grid;
-  overflow: auto;
   grid-template-columns: 70% 1fr;
   grid-template-rows: repeat(2, min-content);
   grid-template-areas:
@@ -135,10 +134,6 @@ export const SectionTitle = styled.div`
 
 export const SectionHeader = styled.div`
   margin-bottom: 20px;
-`
-
-export const DetailedViewWrapper = styled.div`
-  overflow: auto;
 `
 
 export const WidgetWrapper = styled.div`
