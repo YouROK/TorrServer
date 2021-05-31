@@ -7,6 +7,7 @@ import ptt from 'parse-torrent-title'
 import axios from 'axios'
 import { playlistTorrHost, streamHost, torrentsHost, viewedHost } from 'utils/Hosts'
 import { GETTING_INFO, IN_DB } from 'torrentStates'
+import CircularProgress from '@material-ui/core/CircularProgress'
 
 import { useUpdateCache, useCreateCacheMap, useGetSettings } from './customHooks'
 import DialogHeader from './DialogHeader'
@@ -115,197 +116,201 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
         {...(isDetailedCacheView && { onBack: () => setIsDetailedCacheView(false) })}
       />
 
-      {isLoading ? (
-        'loading'
-      ) : isDetailedCacheView ? (
-        <DetailedTorrentCacheViewWrapper>
-          <div>
-            <SectionTitle mb={20}>Data</SectionTitle>
-            <WidgetWrapper>
-              <DownlodSpeedWidget data={downloadSpeed} />
-              <UploadSpeedWidget data={uploadSpeed} />
-              <PeersWidget data={torrent} />
-              <SizeWidget data={torrentSize} />
-              <PiecesCountWidget data={PiecesCount} />
-              <PiecesLengthWidget data={PiecesLength} />
-              <StatusWidget data={statString} />
-            </WidgetWrapper>
+      <div style={{ minHeight: '80vh' }}>
+        {isLoading ? (
+          <div style={{ minHeight: '80vh', display: 'grid', placeItems: 'center' }}>
+            <CircularProgress />
           </div>
-
-          <div>
-            <SectionTitle mb={20}>Cache</SectionTitle>
-            <TorrentCache cache={cache} cacheMap={cacheMap} />
-          </div>
-        </DetailedTorrentCacheViewWrapper>
-      ) : (
-        <DialogContentGrid>
-          <MainSection>
-            <Poster poster={poster}>{poster ? <img alt='poster' src={poster} /> : <NoImageIcon />}</Poster>
-
+        ) : isDetailedCacheView ? (
+          <DetailedTorrentCacheViewWrapper>
             <div>
-              {name && name !== title ? (
-                <>
-                  <SectionTitle>{shortenText(name, 50)}</SectionTitle>
-                  <SectionSubName mb={20}>{shortenText(title, 160)}</SectionSubName>
-                </>
-              ) : (
-                <SectionTitle mb={20}>{shortenText(title, 50)}</SectionTitle>
-              )}
-
+              <SectionTitle mb={20}>Data</SectionTitle>
               <WidgetWrapper>
                 <DownlodSpeedWidget data={downloadSpeed} />
                 <UploadSpeedWidget data={uploadSpeed} />
                 <PeersWidget data={torrent} />
                 <SizeWidget data={torrentSize} />
+                <PiecesCountWidget data={PiecesCount} />
+                <PiecesLengthWidget data={PiecesLength} />
+                <StatusWidget data={statString} />
               </WidgetWrapper>
+            </div>
 
-              <Divider />
+            <div>
+              <SectionTitle mb={20}>Cache</SectionTitle>
+              <TorrentCache cache={cache} cacheMap={cacheMap} />
+            </div>
+          </DetailedTorrentCacheViewWrapper>
+        ) : (
+          <DialogContentGrid>
+            <MainSection>
+              <Poster poster={poster}>{poster ? <img alt='poster' src={poster} /> : <NoImageIcon />}</Poster>
 
-              {!isOnlyOnePlayableFile && !!viewedFileList?.length && (
-                <>
-                  <SmallLabel>Download Playlist</SmallLabel>
-                  <SectionSubName mb={10}>
-                    <strong>Latest file played:</strong> {latestViewedFileData.title}.
-                    {latestViewedFileData.season && (
-                      <>
-                        {' '}
-                        Season: {latestViewedFileData.season}. Episode: {latestViewedFileData.episode}.
-                      </>
-                    )}
-                  </SectionSubName>
+              <div>
+                {name && name !== title ? (
+                  <>
+                    <SectionTitle>{shortenText(name, 50)}</SectionTitle>
+                    <SectionSubName mb={20}>{shortenText(title, 160)}</SectionSubName>
+                  </>
+                ) : (
+                  <SectionTitle mb={20}>{shortenText(title, 50)}</SectionTitle>
+                )}
 
-                  <MainSectionButtonGroup>
+                <WidgetWrapper>
+                  <DownlodSpeedWidget data={downloadSpeed} />
+                  <UploadSpeedWidget data={uploadSpeed} />
+                  <PeersWidget data={torrent} />
+                  <SizeWidget data={torrentSize} />
+                </WidgetWrapper>
+
+                <Divider />
+
+                {!isOnlyOnePlayableFile && !!viewedFileList?.length && (
+                  <>
+                    <SmallLabel>Download Playlist</SmallLabel>
+                    <SectionSubName mb={10}>
+                      <strong>Latest file played:</strong> {latestViewedFileData.title}.
+                      {latestViewedFileData.season && (
+                        <>
+                          {' '}
+                          Season: {latestViewedFileData.season}. Episode: {latestViewedFileData.episode}.
+                        </>
+                      )}
+                    </SectionSubName>
+
+                    <MainSectionButtonGroup>
+                      <a style={{ textDecoration: 'none' }} href={fullPlaylistLink}>
+                        <Button style={{ width: '100%' }} variant='contained' color='primary' size='large'>
+                          full
+                        </Button>
+                      </a>
+
+                      <a style={{ textDecoration: 'none' }} href={partialPlaylistLink}>
+                        <Button style={{ width: '100%' }} variant='contained' color='primary' size='large'>
+                          from latest file
+                        </Button>
+                      </a>
+                    </MainSectionButtonGroup>
+                  </>
+                )}
+
+                <SmallLabel mb={10}>Torrent State</SmallLabel>
+
+                <MainSectionButtonGroup>
+                  <Button onClick={() => removeTorrentViews()} variant='contained' color='primary' size='large'>
+                    remove views
+                  </Button>
+                  <Button onClick={() => dropTorrent()} variant='contained' color='primary' size='large'>
+                    drop torrent
+                  </Button>
+                </MainSectionButtonGroup>
+
+                <SmallLabel mb={10}>Info</SmallLabel>
+
+                <MainSectionButtonGroup>
+                  {(isOnlyOnePlayableFile || !viewedFileList?.length) && (
                     <a style={{ textDecoration: 'none' }} href={fullPlaylistLink}>
                       <Button style={{ width: '100%' }} variant='contained' color='primary' size='large'>
-                        full
+                        download playlist
                       </Button>
                     </a>
+                  )}
+                  <CopyToClipboard text={hash}>
+                    <Button variant='contained' color='primary' size='large'>
+                      copy hash
+                    </Button>
+                  </CopyToClipboard>
+                </MainSectionButtonGroup>
+              </div>
+            </MainSection>
 
-                    <a style={{ textDecoration: 'none' }} href={partialPlaylistLink}>
-                      <Button style={{ width: '100%' }} variant='contained' color='primary' size='large'>
-                        from latest file
-                      </Button>
-                    </a>
-                  </MainSectionButtonGroup>
+            <CacheSection>
+              <SectionHeader>
+                <SectionTitle mb={20}>Buffer</SectionTitle>
+                {!settings?.PreloadBuffer && (
+                  <SectionSubName>Enable &quot;Preload Buffer&quot; in settings to change buffer size</SectionSubName>
+                )}
+                <LoadingProgress
+                  value={Filled}
+                  fullAmount={bufferSize}
+                  label={`${humanizeSize(Filled) || '0 B'} / ${humanizeSize(bufferSize)}`}
+                />
+              </SectionHeader>
+
+              <TorrentCache isMini cache={cache} cacheMap={cacheMap} />
+              <Button
+                style={{ marginTop: '30px' }}
+                variant='contained'
+                color='primary'
+                size='large'
+                onClick={() => setIsDetailedCacheView(true)}
+              >
+                Detailed cache view
+              </Button>
+            </CacheSection>
+
+            <TorrentFilesSection>
+              <SectionTitle mb={20}>Torrent Content</SectionTitle>
+
+              {!playableFileList?.length ? (
+                'No playable files in this torrent'
+              ) : (
+                <>
+                  <Table>
+                    <thead>
+                      <tr>
+                        <th style={{ width: '0' }}>viewed</th>
+                        <th>name</th>
+                        {fileHasSeasonText && <th style={{ width: '0' }}>season</th>}
+                        {fileHasEpisodeText && <th style={{ width: '0' }}>episode</th>}
+                        {fileHasResolutionText && <th style={{ width: '0' }}>resolution</th>}
+                        <th style={{ width: '100px' }}>size</th>
+                        <th style={{ width: '400px' }}>actions</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {playableFileList.map(({ id, path, length }) => {
+                        const { title, resolution, episode, season } = ptt.parse(path)
+                        const isViewed = viewedFileList?.includes(id)
+                        const link = getFileLink(path, id)
+
+                        return (
+                          <tr key={id} className={isViewed ? 'viewed-file-row' : null}>
+                            <td className={isViewed ? 'viewed-file-indicator' : null} />
+                            <td>{title}</td>
+                            {fileHasSeasonText && <td>{season}</td>}
+                            {fileHasEpisodeText && <td>{episode}</td>}
+                            {fileHasResolutionText && <td>{resolution}</td>}
+                            <td>{humanizeSize(length)}</td>
+                            <td className='button-cell'>
+                              <Button onClick={() => preloadBuffer(id)} variant='outlined' color='primary' size='small'>
+                                Preload
+                              </Button>
+
+                              <a style={{ textDecoration: 'none' }} href={link} target='_blank' rel='noreferrer'>
+                                <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
+                                  Open link
+                                </Button>
+                              </a>
+
+                              <CopyToClipboard text={link}>
+                                <Button variant='outlined' color='primary' size='small'>
+                                  Copy link
+                                </Button>
+                              </CopyToClipboard>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </Table>
                 </>
               )}
-
-              <SmallLabel mb={10}>Torrent State</SmallLabel>
-
-              <MainSectionButtonGroup>
-                <Button onClick={() => removeTorrentViews()} variant='contained' color='primary' size='large'>
-                  remove views
-                </Button>
-                <Button onClick={() => dropTorrent()} variant='contained' color='primary' size='large'>
-                  drop torrent
-                </Button>
-              </MainSectionButtonGroup>
-
-              <SmallLabel mb={10}>Info</SmallLabel>
-
-              <MainSectionButtonGroup>
-                {(isOnlyOnePlayableFile || !viewedFileList?.length) && (
-                  <a style={{ textDecoration: 'none' }} href={fullPlaylistLink}>
-                    <Button style={{ width: '100%' }} variant='contained' color='primary' size='large'>
-                      download playlist
-                    </Button>
-                  </a>
-                )}
-                <CopyToClipboard text={hash}>
-                  <Button variant='contained' color='primary' size='large'>
-                    copy hash
-                  </Button>
-                </CopyToClipboard>
-              </MainSectionButtonGroup>
-            </div>
-          </MainSection>
-
-          <CacheSection>
-            <SectionHeader>
-              <SectionTitle mb={20}>Buffer</SectionTitle>
-              {!settings?.PreloadBuffer && (
-                <SectionSubName>Enable &quot;Preload Buffer&quot; in settings to change buffer size</SectionSubName>
-              )}
-              <LoadingProgress
-                value={Filled}
-                fullAmount={bufferSize}
-                label={`${humanizeSize(Filled) || '0 B'} / ${humanizeSize(bufferSize)}`}
-              />
-            </SectionHeader>
-
-            <TorrentCache isMini cache={cache} cacheMap={cacheMap} />
-            <Button
-              style={{ marginTop: '30px' }}
-              variant='contained'
-              color='primary'
-              size='large'
-              onClick={() => setIsDetailedCacheView(true)}
-            >
-              Detailed cache view
-            </Button>
-          </CacheSection>
-
-          <TorrentFilesSection>
-            <SectionTitle mb={20}>Torrent Content</SectionTitle>
-
-            {!playableFileList?.length ? (
-              'No playable files in this torrent'
-            ) : (
-              <>
-                <Table>
-                  <thead>
-                    <tr>
-                      <th style={{ width: '0' }}>viewed</th>
-                      <th>name</th>
-                      {fileHasSeasonText && <th style={{ width: '0' }}>season</th>}
-                      {fileHasEpisodeText && <th style={{ width: '0' }}>episode</th>}
-                      {fileHasResolutionText && <th style={{ width: '0' }}>resolution</th>}
-                      <th style={{ width: '100px' }}>size</th>
-                      <th style={{ width: '400px' }}>actions</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {playableFileList.map(({ id, path, length }) => {
-                      const { title, resolution, episode, season } = ptt.parse(path)
-                      const isViewed = viewedFileList?.includes(id)
-                      const link = getFileLink(path, id)
-
-                      return (
-                        <tr key={id} className={isViewed ? 'viewed-file-row' : null}>
-                          <td className={isViewed ? 'viewed-file-indicator' : null} />
-                          <td>{title}</td>
-                          {fileHasSeasonText && <td>{season}</td>}
-                          {fileHasEpisodeText && <td>{episode}</td>}
-                          {fileHasResolutionText && <td>{resolution}</td>}
-                          <td>{humanizeSize(length)}</td>
-                          <td className='button-cell'>
-                            <Button onClick={() => preloadBuffer(id)} variant='outlined' color='primary' size='small'>
-                              Preload
-                            </Button>
-
-                            <a style={{ textDecoration: 'none' }} href={link} target='_blank' rel='noreferrer'>
-                              <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
-                                Open link
-                              </Button>
-                            </a>
-
-                            <CopyToClipboard text={link}>
-                              <Button variant='outlined' color='primary' size='small'>
-                                Copy link
-                              </Button>
-                            </CopyToClipboard>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </Table>
-              </>
-            )}
-          </TorrentFilesSection>
-        </DialogContentGrid>
-      )}
+            </TorrentFilesSection>
+          </DialogContentGrid>
+        )}
+      </div>
     </>
   )
 }

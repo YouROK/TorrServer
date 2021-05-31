@@ -92,7 +92,6 @@ export const SectionHeader = styled.div`
 
 export const DetailedTorrentCacheViewWrapper = styled.div`
   overflow: auto;
-  min-height: 80vh;
   padding: 40px;
   > :not(:last-child) {
     padding-bottom: 50px;

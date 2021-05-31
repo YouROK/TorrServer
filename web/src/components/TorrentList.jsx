@@ -4,6 +4,7 @@ import { Typography } from '@material-ui/core'
 import { torrentsHost } from 'utils/Hosts'
 import TorrentCard from 'components/TorrentCard'
 import axios from 'axios'
+import CircularProgress from '@material-ui/core/CircularProgress'
 
 const TorrentListWrapper = styled.div`
   display: grid;
@@ -20,9 +21,16 @@ const TorrentListWrapper = styled.div`
   }
 `
 
+const CenteredGrid = styled.div`
+  height: 75vh;
+  display: grid;
+  place-items: center;
+`
+
 export default function TorrentList() {
   const [torrents, setTorrents] = useState([])
-  const [offline, setOffline] = useState(true)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isOffline, setIsOffline] = useState(true)
   const timerID = useRef(-1)
 
   useEffect(() => {
@@ -33,27 +41,34 @@ export default function TorrentList() {
         .then(({ data }) => {
           // updating torrent list
           setTorrents(data)
-          setOffline(false)
+          setIsOffline(false)
         })
         .catch(() => {
           // resetting torrent list
           setTorrents([])
-          setOffline(true)
+          setIsOffline(true)
         })
+        .finally(() => setIsLoading(false))
     }, 1000)
 
     return () => clearInterval(timerID.current)
   }, [])
 
-  return (
+  return isLoading ? (
+    <CenteredGrid>
+      <CircularProgress />
+    </CenteredGrid>
+  ) : isOffline ? (
+    <CenteredGrid>
+      <Typography>Offline</Typography>
+    </CenteredGrid>
+  ) : !torrents.length ? (
+    <Typography>No torrents added</Typography>
+  ) : (
     <TorrentListWrapper>
-      {offline ? (
-        <Typography>Offline</Typography>
-      ) : !torrents.length ? (
-        <Typography>No torrents added</Typography>
-      ) : (
-        torrents.map(torrent => <TorrentCard key={torrent.hash} torrent={torrent} />)
-      )}
+      {torrents.map(torrent => (
+        <TorrentCard key={torrent.hash} torrent={torrent} />
+      ))}
     </TorrentListWrapper>
   )
 }
