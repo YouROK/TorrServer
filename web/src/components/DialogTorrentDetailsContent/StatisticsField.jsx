@@ -1,14 +1,14 @@
-import { StatisticsFieldWrapper, StatisticsFieldIcon, StatisticsFieldValue, StatisticsFieldTitle } from './style'
+import { WidgetFieldWrapper, WidgetFieldIcon, WidgetFieldValue, WidgetFieldTitle } from './style'
 
 export default function StatisticsField({ icon: Icon, title, value, iconBg, valueBg }) {
   return (
-    <StatisticsFieldWrapper>
-      <StatisticsFieldTitle>{title}</StatisticsFieldTitle>
-      <StatisticsFieldIcon bgColor={iconBg}>
+    <WidgetFieldWrapper>
+      <WidgetFieldTitle>{title}</WidgetFieldTitle>
+      <WidgetFieldIcon bgColor={iconBg}>
         <Icon />
-      </StatisticsFieldIcon>
+      </WidgetFieldIcon>
 
-      <StatisticsFieldValue bgColor={valueBg}>{value}</StatisticsFieldValue>
-    </StatisticsFieldWrapper>
+      <WidgetFieldValue bgColor={valueBg}>{value}</WidgetFieldValue>
+    </WidgetFieldWrapper>
   )
 }

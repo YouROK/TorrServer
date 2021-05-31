@@ -127,7 +127,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
           <DetailedViewWrapper>
             <DetailedViewWidgetSection>
               <SectionTitle mb={20}>Data</SectionTitle>
-              <WidgetWrapper>
+              <WidgetWrapper detailedView>
                 <DownlodSpeedWidget data={downloadSpeed} />
                 <UploadSpeedWidget data={uploadSpeed} />
                 <PeersWidget data={torrent} />

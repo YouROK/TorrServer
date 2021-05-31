@@ -98,9 +98,22 @@ export const WidgetWrapper = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(max-content, 220px));
   gap: 20px;
+
+  ${({ detailedView }) =>
+    detailedView &&
+    css`
+      @media (max-width: 800px) {
+        gap: 15px;
+        grid-template-columns: repeat(2, 1fr);
+      }
+      @media (max-width: 410px) {
+        gap: 10px;
+        grid-template-columns: 1fr;
+      }
+    `}
 `
 
-export const StatisticsFieldWrapper = styled.div`
+export const WidgetFieldWrapper = styled.div`
   display: grid;
   grid-template-columns: 40px 1fr;
   grid-template-rows: min-content 50px;
@@ -112,8 +125,13 @@ export const StatisticsFieldWrapper = styled.div`
     display: grid;
     place-items: center;
   }
+
+  @media (max-width: 800px) {
+    grid-template-columns: 30px 1fr;
+    grid-template-rows: min-content 40px;
+  }
 `
-export const StatisticsFieldTitle = styled.div`
+export const WidgetFieldTitle = styled.div`
   grid-area: title;
   justify-self: start;
   text-transform: uppercase;
@@ -122,23 +140,33 @@ export const StatisticsFieldTitle = styled.div`
   font-weight: 500;
 `
 
-export const StatisticsFieldIcon = styled.div`
+export const WidgetFieldIcon = styled.div`
   ${({ bgColor }) => css`
     grid-area: icon;
     color: rgba(255, 255, 255, 0.8);
     background: ${bgColor};
     border-radius: 5px 0 0 5px;
+
+    @media (max-width: 800px) {
+      > svg {
+        width: 50%;
+      }
+    }
   `}
 `
-export const StatisticsFieldValue = styled.div`
+export const WidgetFieldValue = styled.div`
   ${({ bgColor }) => css`
     grid-area: value;
-    min-width: 170px;
     padding: 0 20px;
     color: #fff;
     font-size: 25px;
     background: ${bgColor};
     border-radius: 0 5px 5px 0;
+
+    @media (max-width: 800px) {
+      font-size: 18px;
+      padding: 0 4px;
+    }
   `}
 `
 
@@ -241,9 +269,17 @@ export const Table = styled.table`
 export const DetailedViewWidgetSection = styled.section`
   padding: 40px;
   background: linear-gradient(145deg, #e4f6ed, #b5dec9);
+
+  @media (max-width: 800px) {
+    padding: 20px;
+  }
 `
 
 export const DetailedViewCacheSection = styled.section`
   padding: 40px;
   box-shadow: inset 3px 25px 8px -25px rgba(0, 0, 0, 0.5);
+
+  @media (max-width: 800px) {
+    padding: 20px;
+  }
 `
