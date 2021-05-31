@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import 'fontsource-roboto'
 import { forwardRef, useState } from 'react'
 import HeightIcon from '@material-ui/icons/Height'
@@ -38,7 +37,7 @@ export default function Torrent({ torrent }) {
   const openDeleteTorrentAlert = () => setIsDeleteTorrentOpened(true)
   const closeDeleteTorrentAlert = () => setIsDeleteTorrentOpened(false)
 
-  const { title, name, poster, torrent_size, download_speed, hash } = torrent
+  const { title, name, poster, torrent_size: torrentSize, download_speed: downloadSpeed, hash } = torrent
 
   const dropTorrent = () => axios.post(torrentsHost(), { action: 'drop', hash })
   const deleteTorrent = () => axios.post(torrentsHost(), { action: 'rem', hash })
@@ -77,14 +76,14 @@ export default function Torrent({ torrent }) {
             <span>
               <TorrentCardDescriptionLabel>Size</TorrentCardDescriptionLabel>
               <TorrentCardDescriptionContent>
-                {torrent_size > 0 && humanizeSize(torrent_size)}
+                {torrentSize > 0 && humanizeSize(torrentSize)}
               </TorrentCardDescriptionContent>
             </span>
 
             <span>
               <TorrentCardDescriptionLabel>Speed</TorrentCardDescriptionLabel>
               <TorrentCardDescriptionContent>
-                {download_speed > 0 ? humanizeSize(download_speed) : '---'}
+                {downloadSpeed > 0 ? humanizeSize(downloadSpeed) : '---'}
               </TorrentCardDescriptionContent>
             </span>
 

@@ -91,20 +91,20 @@ export const SectionHeader = styled.div`
 `
 
 export const DetailedTorrentCacheViewWrapper = styled.div`
-  padding-top: 50px;
+  padding: 40px;
   overflow: auto;
   min-height: 80vh;
 `
 
 export const StatisticsWrapper = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, min-content));
+  grid-template-columns: repeat(auto-fit, minmax(max-content, 220px));
   gap: 20px;
 `
 
 export const StatisticsFieldWrapper = styled.div`
   display: grid;
-  grid-template-columns: 40px max-content;
+  grid-template-columns: 40px 1fr;
   grid-template-rows: min-content 50px;
   grid-template-areas:
     'title title'

@@ -9,6 +9,9 @@ import {
   ArrowUpward as ArrowUpwardIcon,
   SwapVerticalCircle as SwapVerticalCircleIcon,
   ViewAgenda as ViewAgendaIcon,
+  Widgets as WidgetsIcon,
+  PhotoSizeSelectSmall as PhotoSizeSelectSmallIcon,
+  Build as BuildIcon,
 } from '@material-ui/icons'
 import axios from 'axios'
 import { playlistTorrHost, streamHost, torrentsHost, viewedHost } from 'utils/Hosts'
@@ -117,9 +120,63 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
         'loading'
       ) : isDetailedCacheView ? (
         <DetailedTorrentCacheViewWrapper>
-          <div>PiecesCount: {PiecesCount}</div>
-          <div>PiecesLength: {humanizeSize(PiecesLength)}</div>
-          <div>status: {statString}</div>
+          <StatisticsWrapper>
+            <StatisticsField
+              title='Download speed'
+              value={humanizeSize(downloadSpeed) || '0 B'}
+              iconBg='#118f00'
+              valueBg='#13a300'
+              icon={ArrowDownwardIcon}
+            />
+
+            <StatisticsField
+              title='Upload speed'
+              value={humanizeSize(uploadSpeed) || '0 B'}
+              iconBg='#0146ad'
+              valueBg='#0058db'
+              icon={ArrowUpwardIcon}
+            />
+
+            <StatisticsField
+              title='Peers'
+              value={getPeerString(torrent)}
+              iconBg='#cdc118'
+              valueBg='#d8cb18'
+              icon={SwapVerticalCircleIcon}
+            />
+
+            <StatisticsField
+              title='Torrent size'
+              value={humanizeSize(torrentSize)}
+              iconBg='#01a292'
+              valueBg='#01ad9b'
+              icon={ViewAgendaIcon}
+            />
+
+            <StatisticsField
+              title='Pieces count'
+              value={PiecesCount}
+              iconBg='#b6c95e'
+              valueBg='#c0d076'
+              icon={WidgetsIcon}
+            />
+
+            <StatisticsField
+              title='Pieces length'
+              value={humanizeSize(PiecesLength)}
+              iconBg='#0982c8'
+              valueBg='#098cd7'
+              icon={PhotoSizeSelectSmallIcon}
+            />
+
+            <StatisticsField
+              title='Torrent status'
+              value={statString}
+              iconBg='#aea25b'
+              valueBg='#b4aa6e'
+              icon={BuildIcon}
+            />
+          </StatisticsWrapper>
           <TorrentCache cache={cache} cacheMap={cacheMap} />
         </DetailedTorrentCacheViewWrapper>
       ) : (
