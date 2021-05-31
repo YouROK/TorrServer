@@ -11,7 +11,7 @@ import {
   ViewAgenda as ViewAgendaIcon,
 } from '@material-ui/icons'
 import axios from 'axios'
-import { streamHost, torrentsHost, viewedHost } from 'utils/Hosts'
+import { playlistTorrHost, streamHost, torrentsHost, viewedHost } from 'utils/Hosts'
 import { GETTING_INFO, IN_DB } from 'torrentStates'
 
 import { useUpdateCache, useCreateCacheMap, useGetSettings } from './customHooks'
@@ -72,6 +72,8 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
   const preloadBuffer = fileId => fetch(`${streamHost()}?link=${hash}&index=${fileId}&preload`)
   const getFileLink = (path, id) =>
     `${streamHost()}/${encodeURIComponent(path.split('\\').pop().split('/').pop())}?link=${hash}&index=${id}&play`
+  const fullPlaylistLink = `${playlistTorrHost()}/${encodeURIComponent(name || title || 'file')}.m3u?link=${hash}&m3u`
+  const partialPlaylistLink = `${fullPlaylistLink}&fromlast`
 
   const fileHasEpisodeText = !!playableFileList?.find(({ path }) => ptt.parse(path).episode)
   const fileHasSeasonText = !!playableFileList?.find(({ path }) => ptt.parse(path).season)
@@ -185,12 +187,17 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                   </SectionSubName>
 
                   <MainSectionButtonGroup>
-                    <Button variant='contained' color='primary' size='large'>
-                      full
-                    </Button>
-                    <Button variant='contained' color='primary' size='large'>
-                      from latest file
-                    </Button>
+                    <a style={{ textDecoration: 'none' }} href={fullPlaylistLink}>
+                      <Button style={{ width: '100%' }} variant='contained' color='primary' size='large'>
+                        full
+                      </Button>
+                    </a>
+
+                    <a style={{ textDecoration: 'none' }} href={partialPlaylistLink}>
+                      <Button style={{ width: '100%' }} variant='contained' color='primary' size='large'>
+                        from latest file
+                      </Button>
+                    </a>
                   </MainSectionButtonGroup>
                 </>
               )}
@@ -210,9 +217,11 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
 
               <MainSectionButtonGroup>
                 {(isOnlyOnePlayableFile || !viewedFileList?.length) && (
-                  <Button variant='contained' color='primary' size='large'>
-                    download playlist
-                  </Button>
+                  <a style={{ textDecoration: 'none' }} href={fullPlaylistLink}>
+                    <Button style={{ width: '100%' }} variant='contained' color='primary' size='large'>
+                      download playlist
+                    </Button>
+                  </a>
                 )}
                 <CopyToClipboard text={hash}>
                   <Button variant='contained' color='primary' size='large'>
