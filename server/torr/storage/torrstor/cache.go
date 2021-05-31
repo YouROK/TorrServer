@@ -137,28 +137,33 @@ func (c *Cache) GetState() *state.CacheState {
 
 	piecesState := make(map[int]state.ItemState, 0)
 	var fill int64 = 0
-	for _, p := range c.pieces {
-		if p.Size > 0 {
-			fill += p.Size
-			piecesState[p.Id] = state.ItemState{
-				Id:        p.Id,
-				Size:      p.Size,
-				Length:    c.pieceLength,
-				Completed: p.Complete,
+
+	if len(c.pieces) > 0 {
+		for _, p := range c.pieces {
+			if p.Size > 0 {
+				fill += p.Size
+				piecesState[p.Id] = state.ItemState{
+					Id:        p.Id,
+					Size:      p.Size,
+					Length:    c.pieceLength,
+					Completed: p.Complete,
+				}
 			}
 		}
 	}
 
 	readersState := make([]*state.ReaderState, 0)
 	c.muReaders.Lock()
-	for r, _ := range c.readers {
-		rng := r.getPiecesRange()
-		pc := r.getReaderPiece()
-		readersState = append(readersState, &state.ReaderState{
-			Start:  rng.Start,
-			End:    rng.End,
-			Reader: pc,
-		})
+	if len(c.readers) > 0 {
+		for r, _ := range c.readers {
+			rng := r.getPiecesRange()
+			pc := r.getReaderPiece()
+			readersState = append(readersState, &state.ReaderState{
+				Start:  rng.Start,
+				End:    rng.End,
+				Reader: pc,
+			})
+		}
 	}
 	c.muReaders.Unlock()
 
