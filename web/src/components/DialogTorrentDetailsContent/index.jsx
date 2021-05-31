@@ -251,7 +251,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
               </Button>
             </CacheSection>
 
-            <TorrentFilesSection>
+            {/* <TorrentFilesSection>
               <SectionTitle mb={20}>Torrent Content</SectionTitle>
 
               {!playableFileList?.length ? (
@@ -309,7 +309,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                   </Table>
                 </>
               )}
-            </TorrentFilesSection>
+            </TorrentFilesSection> */}
           </DialogContentGrid>
         )}
       </div>

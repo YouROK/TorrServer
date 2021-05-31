@@ -25,8 +25,9 @@ export default function TorrentCache({ cache, cacheMap, isMini }) {
 
   useEffect(() => {
     // initializing stageSettings
-    isMini ? updateStageSettings(24, 4) : updateStageSettings(12, 2)
-  }, [isMini])
+    if (isMini) return dimensions.width < 500 ? updateStageSettings(20, 3) : updateStageSettings(24, 4)
+    updateStageSettings(12, 2)
+  }, [isMini, dimensions.width])
 
   const { boxHeight, strokeWidth, marginBetweenBlocks, stageOffset } = stageSettings
   const preloadPiecesAmount = Math.round(cache.Capacity / cache.PiecesLength - 1)
@@ -40,7 +41,7 @@ export default function TorrentCache({ cache, cacheMap, isMini }) {
   let activeId = null
 
   return (
-    <Measure bounds onResize={contentRect => setDimensions(contentRect.bounds)}>
+    <Measure bounds onResize={({ bounds }) => setDimensions(bounds)}>
       {({ measureRef }) => (
         <div ref={measureRef}>
           <DialogContent style={{ padding: 0 }}>

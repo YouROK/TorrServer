@@ -8,6 +8,15 @@ export const DialogContentGrid = styled.div`
   grid-template-areas:
     'main cache'
     'file-list file-list';
+
+  @media (max-width: 1450px) {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(3, min-content);
+    grid-template-areas:
+      'main'
+      'cache'
+      'file-list';
+  }
 `
 export const Poster = styled.div`
   ${({ poster }) => css`
@@ -33,6 +42,22 @@ export const Poster = styled.div`
             transform: scale(2.5) translateY(-3px);
           }
         `}
+
+    @media (max-width: 1280px) {
+      align-self: start;
+    }
+
+    @media (max-width: 840px) {
+      height: 200px;
+
+      ${!poster &&
+      css`
+        width: 150px;
+        svg {
+          transform: translateY(-3px);
+        }
+      `}
+    }
   `}
 `
 export const MainSection = styled.section`
@@ -42,6 +67,10 @@ export const MainSection = styled.section`
   grid-template-columns: min-content 1fr;
   gap: 30px;
   background: linear-gradient(145deg, #e4f6ed, #b5dec9);
+
+  @media (max-width: 840px) {
+    grid-template-columns: 1fr;
+  }
 `
 
 export const MainSectionButtonGroup = styled.div`
@@ -51,6 +80,14 @@ export const MainSectionButtonGroup = styled.div`
 
   :not(:last-child) {
     margin-bottom: 30px;
+  }
+
+  @media (max-width: 1045px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 880px) {
+    grid-template-columns: 1fr;
   }
 `
 
@@ -73,6 +110,11 @@ export const SectionSubName = styled.div`
   ${({ mb }) => css`
     ${mb && `margin-bottom: ${mb}px`};
     color: #7c7b7c;
+
+    @media (max-width: 800px) {
+      ${mb && `margin-bottom: ${mb / 2}px`};
+      font-size: 11px;
+    }
   `}
 `
 
@@ -83,6 +125,11 @@ export const SectionTitle = styled.div`
     font-weight: 200;
     line-height: 1;
     word-break: break-word;
+
+    @media (max-width: 800px) {
+      font-size: 25px;
+      ${mb && `margin-bottom: ${mb / 2}px`};
+    }
   `}
 `
 
@@ -99,18 +146,28 @@ export const WidgetWrapper = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(max-content, 220px));
   gap: 20px;
 
+  @media (max-width: 800px) {
+    gap: 15px;
+  }
+  @media (max-width: 410px) {
+    gap: 10px;
+  }
+
   ${({ detailedView }) =>
-    detailedView &&
-    css`
-      @media (max-width: 800px) {
-        gap: 15px;
-        grid-template-columns: repeat(2, 1fr);
-      }
-      @media (max-width: 410px) {
-        gap: 10px;
-        grid-template-columns: 1fr;
-      }
-    `}
+    detailedView
+      ? css`
+          @media (max-width: 800px) {
+            grid-template-columns: repeat(2, 1fr);
+          }
+          @media (max-width: 410px) {
+            grid-template-columns: 1fr;
+          }
+        `
+      : css`
+          @media (max-width: 840px) {
+            grid-template-columns: 1fr;
+          }
+        `}
 `
 
 export const WidgetFieldWrapper = styled.div`
@@ -206,6 +263,11 @@ export const SmallLabel = styled.div`
     font-size: 20px;
     font-weight: 300;
     line-height: 1;
+
+    @media (max-width: 800px) {
+      font-size: 18px;
+      ${mb && `margin-bottom: ${mb / 1.5}px`};
+    }
   `}
 `
 
