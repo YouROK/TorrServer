@@ -90,12 +90,8 @@ export const SectionHeader = styled.div`
   margin-bottom: 20px;
 `
 
-export const DetailedTorrentCacheViewWrapper = styled.div`
+export const DetailedViewWrapper = styled.div`
   overflow: auto;
-  padding: 40px;
-  > :not(:last-child) {
-    padding-bottom: 50px;
-  }
 `
 
 export const WidgetWrapper = styled.div`
@@ -240,4 +236,14 @@ export const Table = styled.table`
       gap: 10px;
     }
   }
+`
+
+export const DetailedViewWidgetSection = styled.section`
+  padding: 40px;
+  background: linear-gradient(145deg, #e4f6ed, #b5dec9);
+`
+
+export const DetailedViewCacheSection = styled.section`
+  padding: 40px;
+  box-shadow: inset 3px 25px 8px -25px rgba(0, 0, 0, 0.5);
 `

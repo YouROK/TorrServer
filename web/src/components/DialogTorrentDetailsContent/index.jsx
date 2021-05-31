@@ -13,7 +13,9 @@ import { useUpdateCache, useCreateCacheMap, useGetSettings } from './customHooks
 import DialogHeader from './DialogHeader'
 import TorrentCache from './TorrentCache'
 import {
-  DetailedTorrentCacheViewWrapper,
+  DetailedViewWrapper,
+  DetailedViewWidgetSection,
+  DetailedViewCacheSection,
   DialogContentGrid,
   MainSection,
   MainSectionButtonGroup,
@@ -122,8 +124,8 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
             <CircularProgress />
           </div>
         ) : isDetailedCacheView ? (
-          <DetailedTorrentCacheViewWrapper>
-            <div>
+          <DetailedViewWrapper>
+            <DetailedViewWidgetSection>
               <SectionTitle mb={20}>Data</SectionTitle>
               <WidgetWrapper>
                 <DownlodSpeedWidget data={downloadSpeed} />
@@ -134,13 +136,13 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                 <PiecesLengthWidget data={PiecesLength} />
                 <StatusWidget data={statString} />
               </WidgetWrapper>
-            </div>
+            </DetailedViewWidgetSection>
 
-            <div>
+            <DetailedViewCacheSection>
               <SectionTitle mb={20}>Cache</SectionTitle>
               <TorrentCache cache={cache} cacheMap={cacheMap} />
-            </div>
-          </DetailedTorrentCacheViewWrapper>
+            </DetailedViewCacheSection>
+          </DetailedViewWrapper>
         ) : (
           <DialogContentGrid>
             <MainSection>
