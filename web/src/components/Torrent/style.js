@@ -88,6 +88,7 @@ export const TorrentCardDescriptionLabel = styled.div`
 export const TorrentCardDescriptionContent = styled.div`
   margin-left: 5px;
   margin-bottom: 10px;
+  word-break: break-all;
 
   @media (max-width: 600px), (max-height: 500px) {
     font-size: 11px;
@@ -103,7 +104,7 @@ export const TorrentCardDescriptionContent = styled.div`
   }
 
   @media (max-width: 410px) {
-    height: 100%;
+    font-size: 10px;
   }
 `
 
@@ -158,7 +159,7 @@ export const TorrentCardDetails = styled.div`
     grid-template-columns: repeat(3, 1fr);
   }
 
-  @media (max-width: 410px) {
+  /* @media (max-width: 410px) {
     display: none;
-  }
+  } */
 `
