@@ -3,10 +3,9 @@ import styled, { css } from 'styled-components'
 export const DialogContentGrid = styled.div`
   display: grid;
   grid-template-columns: 70% 1fr;
-  grid-template-rows: min-content 80px min-content;
+  grid-template-rows: repeat(2, min-content);
   grid-template-areas:
     'main cache'
-    'buttons buttons'
     'file-list file-list';
 `
 export const Poster = styled.div`
@@ -60,48 +59,13 @@ export const CacheSection = styled.section`
   display: grid;
   align-content: start;
   grid-template-rows: min-content 1fr min-content;
+  background: #88cdaa;
 `
 
-export const ButtonSection = styled.section`
-  grid-area: buttons;
-  box-shadow: 0px 4px 4px -1px rgb(0 0 0 / 30%);
-  display: flex;
-  justify-content: space-evenly;
-  align-items: center;
-  text-transform: uppercase;
-`
-
-export const ButtonSectionButton = styled.div`
-  background: lightblue;
-  height: 100%;
-  flex: 1;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  font-size: 15px;
-
-  :not(:last-child) {
-    border-right: 1px solid blue;
-  }
-
-  :hover {
-    background: red;
-  }
-
-  .hash-group {
-    display: grid;
-    place-items: center;
-  }
-
-  .hash-text {
-    font-size: 10px;
-    color: #7c7b7c;
-  }
-`
-
-export const TorrentFilesSection = styled.div`
+export const TorrentFilesSection = styled.section`
   grid-area: file-list;
   padding: 40px;
+  box-shadow: inset 3px 25px 8px -25px rgba(0, 0, 0, 0.5);
 `
 
 export const SectionSubName = styled.div`
@@ -208,8 +172,72 @@ export const Divider = styled.div`
 `
 
 export const SmallLabel = styled.div`
-  font-size: 20px;
-  margin-bottom: 10px;
-  font-weight: 300;
-  line-height: 1;
+  ${({ mb }) => css`
+    ${mb && `margin-bottom: ${mb}px`};
+    font-size: 20px;
+    font-weight: 300;
+    line-height: 1;
+  `}
+`
+
+export const Table = styled.table`
+  border-collapse: collapse;
+  margin: 25px 0;
+  font-size: 0.9em;
+  width: 100%;
+  border-radius: 5px 5px 0 0;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+
+  thead tr {
+    background: #009879;
+    color: #fff;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  th,
+  td {
+    padding: 12px 15px;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid #ddd;
+
+    /* :nth-of-type(even) {
+      background: #f3f3f3;
+    } */
+
+    :last-of-type {
+      border-bottom: 2px solid #009879;
+    }
+
+    &.viewed-file-row {
+      color: lightgray;
+      background: #f3f3f3;
+    }
+  }
+
+  td {
+    &.viewed-file-indicator {
+      position: relative;
+      :before {
+        content: '';
+        width: 10px;
+        height: 10px;
+        background: #15d5af;
+        border-radius: 50%;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+    }
+
+    &.button-cell {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+  }
 `

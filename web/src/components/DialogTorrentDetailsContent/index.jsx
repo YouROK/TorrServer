@@ -3,6 +3,7 @@ import { getPeerString, humanizeSize } from 'utils/Utils'
 import { CopyToClipboard } from 'react-copy-to-clipboard'
 import { useEffect, useState } from 'react'
 import { Button, ButtonGroup, Typography } from '@material-ui/core'
+import ptt from 'parse-torrent-title'
 import {
   ArrowDownward as ArrowDownwardIcon,
   ArrowUpward as ArrowUpwardIcon,
@@ -26,16 +27,17 @@ import {
   SectionTitle,
   SectionSubName,
   StatisticsWrapper,
-  ButtonSection,
   LoadingProgress,
   SectionHeader,
   CacheSection,
-  ButtonSectionButton,
   TorrentFilesSection,
   Divider,
   SmallLabel,
+  Table,
 } from './style'
 import StatisticsField from './StatisticsField'
+
+ptt.addHandler('part', /Part[. ]([0-9])/i, { type: 'integer' })
 
 const shortenText = (text, count) => text.slice(0, count) + (text.length > count ? '...' : '')
 
@@ -44,6 +46,11 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
   const [isDetailedCacheView, setIsDetailedCacheView] = useState(false)
   const [viewedFileList, setViewedFileList] = useState()
   const [playableFileList, setPlayableFileList] = useState()
+
+  const isOnlyOnePlayableFile = playableFileList?.length === 1
+  const latestViewedFileId = viewedFileList?.[viewedFileList?.length - 1]
+  const latestViewedFile = playableFileList?.find(({ id }) => id === latestViewedFileId)?.path
+  const latestViewedFileData = latestViewedFile && ptt.parse(latestViewedFile)
 
   const {
     poster,
@@ -87,7 +94,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
     // getting viewed file list
     axios.post(viewedHost(), { action: 'list', hash }).then(({ data }) => {
       if (data) {
-        const lst = data.map(itm => itm.file_index)
+        const lst = data.map(itm => itm.file_index).sort((a, b) => a - b)
         setViewedFileList(lst)
       } else setViewedFileList()
     })
@@ -148,43 +155,70 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                 <StatisticsField
                   title='Peers'
                   value={getPeerString(torrent)}
-                  iconBg='#0146ad'
-                  valueBg='#0058db'
+                  iconBg='#cdc118'
+                  valueBg='#d8cb18'
                   icon={SwapVerticalCircleIcon}
                 />
 
                 <StatisticsField
                   title='Torrent size'
                   value={humanizeSize(torrentSize)}
-                  iconBg='#0146ad'
-                  valueBg='#0058db'
+                  iconBg='#9b01ad'
+                  valueBg='#ac03bf'
                   icon={ViewAgendaIcon}
                 />
               </StatisticsWrapper>
 
               <Divider />
 
-              <SmallLabel>Download Playlist</SmallLabel>
+              {!isOnlyOnePlayableFile && !!viewedFileList?.length && (
+                <>
+                  <SmallLabel>Download Playlist</SmallLabel>
+                  <SectionSubName mb={10}>
+                    <strong>Latest file played:</strong> {latestViewedFileData.title}.
+                    {latestViewedFileData.season && (
+                      <>
+                        {' '}
+                        Season: {latestViewedFileData.season}. Episode: {latestViewedFileData.episode}.
+                      </>
+                    )}
+                  </SectionSubName>
+
+                  <MainSectionButtonGroup>
+                    <Button variant='contained' color='primary' size='large'>
+                      full
+                    </Button>
+                    <Button variant='contained' color='primary' size='large'>
+                      from latest file
+                    </Button>
+                  </MainSectionButtonGroup>
+                </>
+              )}
+
+              <SmallLabel mb={10}>Torrent State</SmallLabel>
+
               <MainSectionButtonGroup>
-                <Button variant='contained' color='primary' size='large'>
-                  full
+                <Button onClick={() => removeTorrentViews()} variant='contained' color='primary' size='large'>
+                  remove views
                 </Button>
-                <Button variant='contained' color='primary' size='large'>
-                  latest
+                <Button onClick={() => dropTorrent()} variant='contained' color='primary' size='large'>
+                  drop torrent
                 </Button>
               </MainSectionButtonGroup>
 
-              <SmallLabel>More</SmallLabel>
+              <SmallLabel mb={10}>Info</SmallLabel>
+
               <MainSectionButtonGroup>
-                <Button variant='contained' color='primary' size='large'>
-                  copy hash
-                </Button>
-                <Button variant='contained' color='primary' size='large'>
-                  remove views
-                </Button>
-                <Button variant='contained' color='primary' size='large'>
-                  drop torrent
-                </Button>
+                {(isOnlyOnePlayableFile || !viewedFileList?.length) && (
+                  <Button variant='contained' color='primary' size='large'>
+                    download playlist
+                  </Button>
+                )}
+                <CopyToClipboard text={hash}>
+                  <Button variant='contained' color='primary' size='large'>
+                    copy hash
+                  </Button>
+                </CopyToClipboard>
               </MainSectionButtonGroup>
 
               {/* <MainSectionButtonGroup>
@@ -232,47 +266,116 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
             </Button>
           </CacheSection>
 
-          <ButtonSection>
-            <CopyToClipboard text={hash}>
-              <ButtonSectionButton>
-                <div className='hash-group'>
-                  <div>copy hash</div>
-                  <div className='hash-text'>{hash}</div>
-                </div>
-              </ButtonSectionButton>
-            </CopyToClipboard>
-
-            <ButtonSectionButton onClick={() => removeTorrentViews()}>remove views</ButtonSectionButton>
-
-            <ButtonSectionButton onClick={() => dropTorrent()}>drop torrent</ButtonSectionButton>
-
-            <ButtonSectionButton>download full playlist</ButtonSectionButton>
-
-            <ButtonSectionButton>download playlist after last view</ButtonSectionButton>
-          </ButtonSection>
-
           <TorrentFilesSection>
             <SectionTitle mb={20}>Torrent Content</SectionTitle>
 
+            <Table>
+              <thead>
+                <tr>
+                  <th style={{ width: '0' }}>viewed</th>
+                  <th>name</th>
+                  <th style={{ width: '0' }}>season</th>
+                  <th style={{ width: '0' }}>episode</th>
+                  <th style={{ width: '0' }}>resolution</th>
+                  <th style={{ width: '100px' }}>size</th>
+                  <th style={{ width: '400px' }}>actions</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr className='viewed-file-row'>
+                  <td className='viewed-file-indicator' />
+                  <td>Jupiters Legacy</td>
+                  <td>3</td>
+                  <td>1</td>
+                  <td>1080p</td>
+                  <td>945,41 MB</td>
+                  <td className='button-cell'>
+                    <Button variant='outlined' color='primary' size='small'>
+                      Preload
+                    </Button>
+                    <Button variant='outlined' color='primary' size='small'>
+                      Open link
+                    </Button>
+                    <Button variant='outlined' color='primary' size='small'>
+                      Copy link
+                    </Button>
+                  </td>
+                </tr>
+
+                <tr className='viewed-file-row'>
+                  <td className='viewed-file-indicator' />
+                  <td>Jupiters Legacy</td>
+                  <td>3</td>
+                  <td>2</td>
+                  <td>1080p</td>
+                  <td>712,47 MB</td>
+                  <td className='button-cell'>
+                    <Button variant='outlined' color='primary' size='small'>
+                      Preload
+                    </Button>
+                    <Button variant='outlined' color='primary' size='small'>
+                      Open link
+                    </Button>
+                    <Button variant='outlined' color='primary' size='small'>
+                      Copy link
+                    </Button>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td />
+                  <td>Jupiters Legacy</td>
+                  <td>3</td>
+                  <td>3</td>
+                  <td>1080p</td>
+                  <td>687,44 MB</td>
+                  <td className='button-cell'>
+                    <Button variant='outlined' color='primary' size='small'>
+                      Preload
+                    </Button>
+                    <Button variant='outlined' color='primary' size='small'>
+                      Open link
+                    </Button>
+                    <Button variant='outlined' color='primary' size='small'>
+                      Copy link
+                    </Button>
+                  </td>
+                </tr>
+              </tbody>
+            </Table>
+
             {!playableFileList?.length
               ? 'No playable files in this torrent'
-              : playableFileList.map(({ id, path, length }) => (
-                  <ButtonGroup key={id} disableElevation variant='contained' color='primary'>
-                    <Button>
-                      <a href={getFileLink(path, id)}>
-                        <Typography>
-                          {path.split('\\').pop().split('/').pop()} | {humanizeSize(length)}{' '}
-                          {viewedFileList && viewedFileList?.indexOf(id) !== -1 && '| ✓'}
-                        </Typography>
-                      </a>
-                    </Button>
+              : playableFileList.map(({ id, path, length }) => {
+                  {
+                    /* console.log(ptt.parse(path)) */
+                  }
+                  {
+                    /* console.log({ title: ptt.parse(path).title })
+                  console.log({ resolution: ptt.parse(path).resolution })
+                  console.log({ episode: ptt.parse(path).episode })
+                  console.log({ season: ptt.parse(path).season }) */
+                  }
 
-                    <Button onClick={() => preloadBuffer(id)}>
-                      <CachedIcon />
-                      <Typography>Preload</Typography>
-                    </Button>
-                  </ButtonGroup>
-                ))}
+                  return (
+                    <ButtonGroup key={id} disableElevation variant='contained' color='primary'>
+                      <Button>
+                        <a href={getFileLink(path, id)}>
+                          <Typography>
+                            {path.split('\\').pop().split('/').pop()} | {humanizeSize(length)}{' '}
+                            {viewedFileList && viewedFileList?.indexOf(id) !== -1 && '| ✓'}
+                          </Typography>
+                        </a>
+                      </Button>
+
+                      <Button onClick={() => preloadBuffer(id)}>
+                        <CachedIcon />
+                        <Typography>Preload</Typography>
+                      </Button>
+                    </ButtonGroup>
+                  )
+                })}
           </TorrentFilesSection>
         </DialogContentGrid>
       )}
