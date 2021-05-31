@@ -91,12 +91,15 @@ export const SectionHeader = styled.div`
 `
 
 export const DetailedTorrentCacheViewWrapper = styled.div`
-  padding: 40px;
   overflow: auto;
   min-height: 80vh;
+  padding: 40px;
+  > :not(:last-child) {
+    padding-bottom: 50px;
+  }
 `
 
-export const StatisticsWrapper = styled.div`
+export const WidgetWrapper = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(max-content, 220px));
   gap: 20px;

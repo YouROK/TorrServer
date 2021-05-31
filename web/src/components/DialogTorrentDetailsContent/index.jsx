@@ -1,18 +1,9 @@
 import { NoImageIcon } from 'icons'
-import { getPeerString, humanizeSize } from 'utils/Utils'
+import { humanizeSize } from 'utils/Utils'
 import { CopyToClipboard } from 'react-copy-to-clipboard'
 import { useEffect, useState } from 'react'
 import { Button } from '@material-ui/core'
 import ptt from 'parse-torrent-title'
-import {
-  ArrowDownward as ArrowDownwardIcon,
-  ArrowUpward as ArrowUpwardIcon,
-  SwapVerticalCircle as SwapVerticalCircleIcon,
-  ViewAgenda as ViewAgendaIcon,
-  Widgets as WidgetsIcon,
-  PhotoSizeSelectSmall as PhotoSizeSelectSmallIcon,
-  Build as BuildIcon,
-} from '@material-ui/icons'
 import axios from 'axios'
 import { playlistTorrHost, streamHost, torrentsHost, viewedHost } from 'utils/Hosts'
 import { GETTING_INFO, IN_DB } from 'torrentStates'
@@ -28,7 +19,7 @@ import {
   Poster,
   SectionTitle,
   SectionSubName,
-  StatisticsWrapper,
+  WidgetWrapper,
   LoadingProgress,
   SectionHeader,
   CacheSection,
@@ -37,7 +28,15 @@ import {
   SmallLabel,
   Table,
 } from './style'
-import StatisticsField from './StatisticsField'
+import {
+  DownlodSpeedWidget,
+  UploadSpeedWidget,
+  PeersWidget,
+  SizeWidget,
+  PiecesCountWidget,
+  PiecesLengthWidget,
+  StatusWidget,
+} from './widgets'
 
 const shortenText = (text, count) => text.slice(0, count) + (text.length > count ? '...' : '')
 
@@ -120,64 +119,23 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
         'loading'
       ) : isDetailedCacheView ? (
         <DetailedTorrentCacheViewWrapper>
-          <StatisticsWrapper>
-            <StatisticsField
-              title='Download speed'
-              value={humanizeSize(downloadSpeed) || '0 B'}
-              iconBg='#118f00'
-              valueBg='#13a300'
-              icon={ArrowDownwardIcon}
-            />
+          <div>
+            <SectionTitle mb={20}>Data</SectionTitle>
+            <WidgetWrapper>
+              <DownlodSpeedWidget data={downloadSpeed} />
+              <UploadSpeedWidget data={uploadSpeed} />
+              <PeersWidget data={torrent} />
+              <SizeWidget data={torrentSize} />
+              <PiecesCountWidget data={PiecesCount} />
+              <PiecesLengthWidget data={PiecesLength} />
+              <StatusWidget data={statString} />
+            </WidgetWrapper>
+          </div>
 
-            <StatisticsField
-              title='Upload speed'
-              value={humanizeSize(uploadSpeed) || '0 B'}
-              iconBg='#0146ad'
-              valueBg='#0058db'
-              icon={ArrowUpwardIcon}
-            />
-
-            <StatisticsField
-              title='Peers'
-              value={getPeerString(torrent)}
-              iconBg='#cdc118'
-              valueBg='#d8cb18'
-              icon={SwapVerticalCircleIcon}
-            />
-
-            <StatisticsField
-              title='Torrent size'
-              value={humanizeSize(torrentSize)}
-              iconBg='#01a292'
-              valueBg='#01ad9b'
-              icon={ViewAgendaIcon}
-            />
-
-            <StatisticsField
-              title='Pieces count'
-              value={PiecesCount}
-              iconBg='#b6c95e'
-              valueBg='#c0d076'
-              icon={WidgetsIcon}
-            />
-
-            <StatisticsField
-              title='Pieces length'
-              value={humanizeSize(PiecesLength)}
-              iconBg='#0982c8'
-              valueBg='#098cd7'
-              icon={PhotoSizeSelectSmallIcon}
-            />
-
-            <StatisticsField
-              title='Torrent status'
-              value={statString}
-              iconBg='#aea25b'
-              valueBg='#b4aa6e'
-              icon={BuildIcon}
-            />
-          </StatisticsWrapper>
-          <TorrentCache cache={cache} cacheMap={cacheMap} />
+          <div>
+            <SectionTitle mb={20}>Cache</SectionTitle>
+            <TorrentCache cache={cache} cacheMap={cacheMap} />
+          </div>
         </DetailedTorrentCacheViewWrapper>
       ) : (
         <DialogContentGrid>
@@ -194,39 +152,12 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                 <SectionTitle mb={20}>{shortenText(title, 50)}</SectionTitle>
               )}
 
-              <StatisticsWrapper>
-                <StatisticsField
-                  title='Download speed'
-                  value={humanizeSize(downloadSpeed) || '0 B'}
-                  iconBg='#118f00'
-                  valueBg='#13a300'
-                  icon={ArrowDownwardIcon}
-                />
-
-                <StatisticsField
-                  title='Upload speed'
-                  value={humanizeSize(uploadSpeed) || '0 B'}
-                  iconBg='#0146ad'
-                  valueBg='#0058db'
-                  icon={ArrowUpwardIcon}
-                />
-
-                <StatisticsField
-                  title='Peers'
-                  value={getPeerString(torrent)}
-                  iconBg='#cdc118'
-                  valueBg='#d8cb18'
-                  icon={SwapVerticalCircleIcon}
-                />
-
-                <StatisticsField
-                  title='Torrent size'
-                  value={humanizeSize(torrentSize)}
-                  iconBg='#9b01ad'
-                  valueBg='#ac03bf'
-                  icon={ViewAgendaIcon}
-                />
-              </StatisticsWrapper>
+              <WidgetWrapper>
+                <DownlodSpeedWidget data={downloadSpeed} />
+                <UploadSpeedWidget data={uploadSpeed} />
+                <PeersWidget data={torrent} />
+                <SizeWidget data={torrentSize} />
+              </WidgetWrapper>
 
               <Divider />
 
