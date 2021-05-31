@@ -37,8 +37,6 @@ import {
 } from './style'
 import StatisticsField from './StatisticsField'
 
-ptt.addHandler('part', /Part[. ]([0-9])/i, { type: 'integer' })
-
 const shortenText = (text, count) => text.slice(0, count) + (text.length > count ? '...' : '')
 
 export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
@@ -75,6 +73,10 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
   const preloadBuffer = fileId => fetch(`${streamHost()}?link=${hash}&index=${fileId}&preload`)
   const getFileLink = (path, id) =>
     `${streamHost()}/${encodeURIComponent(path.split('\\').pop().split('/').pop())}?link=${hash}&index=${id}&play`
+
+  const fileHasEpisodeText = !!playableFileList?.find(({ path }) => ptt.parse(path).episode)
+  const fileHasSeasonText = !!playableFileList?.find(({ path }) => ptt.parse(path).season)
+  const fileHasResolutionText = !!playableFileList?.find(({ path }) => ptt.parse(path).resolution)
 
   const { Capacity, PiecesCount, PiecesLength, Filled } = cache
 
@@ -220,24 +222,6 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                   </Button>
                 </CopyToClipboard>
               </MainSectionButtonGroup>
-
-              {/* <MainSectionButtonGroup>
-                <Button variant='contained' color='primary' size='large'>
-                  copy hash
-                </Button>
-                <Button variant='contained' color='primary' size='large'>
-                  remove views
-                </Button>
-                <Button variant='contained' color='primary' size='large'>
-                  drop torrent
-                </Button>
-                <Button variant='contained' color='primary' size='large'>
-                  download full playlist
-                </Button>
-                <Button variant='contained' color='primary' size='large'>
-                  download playlist after last view
-                </Button>
-              </MainSectionButtonGroup> */}
             </div>
           </MainSection>
 
@@ -269,113 +253,61 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
           <TorrentFilesSection>
             <SectionTitle mb={20}>Torrent Content</SectionTitle>
 
-            <Table>
-              <thead>
-                <tr>
-                  <th style={{ width: '0' }}>viewed</th>
-                  <th>name</th>
-                  <th style={{ width: '0' }}>season</th>
-                  <th style={{ width: '0' }}>episode</th>
-                  <th style={{ width: '0' }}>resolution</th>
-                  <th style={{ width: '100px' }}>size</th>
-                  <th style={{ width: '400px' }}>actions</th>
-                </tr>
-              </thead>
+            {!playableFileList?.length ? (
+              'No playable files in this torrent'
+            ) : (
+              <>
+                <Table>
+                  <thead>
+                    <tr>
+                      <th style={{ width: '0' }}>viewed</th>
+                      <th>name</th>
+                      {fileHasSeasonText && <th style={{ width: '0' }}>season</th>}
+                      {fileHasEpisodeText && <th style={{ width: '0' }}>episode</th>}
+                      {fileHasResolutionText && <th style={{ width: '0' }}>resolution</th>}
+                      <th style={{ width: '100px' }}>size</th>
+                      <th style={{ width: '400px' }}>actions</th>
+                    </tr>
+                  </thead>
 
-              <tbody>
-                <tr className='viewed-file-row'>
-                  <td className='viewed-file-indicator' />
-                  <td>Jupiters Legacy</td>
-                  <td>3</td>
-                  <td>1</td>
-                  <td>1080p</td>
-                  <td>945,41 MB</td>
-                  <td className='button-cell'>
-                    <Button variant='outlined' color='primary' size='small'>
-                      Preload
-                    </Button>
-                    <Button variant='outlined' color='primary' size='small'>
-                      Open link
-                    </Button>
-                    <Button variant='outlined' color='primary' size='small'>
-                      Copy link
-                    </Button>
-                  </td>
-                </tr>
+                  <tbody>
+                    {playableFileList.map(({ id, path, length }) => {
+                      const { title, resolution, episode, season } = ptt.parse(path)
+                      const isViewed = viewedFileList?.includes(id)
+                      const link = getFileLink(path, id)
 
-                <tr className='viewed-file-row'>
-                  <td className='viewed-file-indicator' />
-                  <td>Jupiters Legacy</td>
-                  <td>3</td>
-                  <td>2</td>
-                  <td>1080p</td>
-                  <td>712,47 MB</td>
-                  <td className='button-cell'>
-                    <Button variant='outlined' color='primary' size='small'>
-                      Preload
-                    </Button>
-                    <Button variant='outlined' color='primary' size='small'>
-                      Open link
-                    </Button>
-                    <Button variant='outlined' color='primary' size='small'>
-                      Copy link
-                    </Button>
-                  </td>
-                </tr>
+                      return (
+                        <tr key={id} className={isViewed ? 'viewed-file-row' : null}>
+                          <td className={isViewed ? 'viewed-file-indicator' : null} />
+                          <td>{title}</td>
+                          {fileHasSeasonText && <td>{season}</td>}
+                          {fileHasEpisodeText && <td>{episode}</td>}
+                          {fileHasResolutionText && <td>{resolution}</td>}
+                          <td>{humanizeSize(length)}</td>
+                          <td className='button-cell'>
+                            <Button onClick={() => preloadBuffer(id)} variant='outlined' color='primary' size='small'>
+                              Preload
+                            </Button>
 
-                <tr>
-                  <td />
-                  <td>Jupiters Legacy</td>
-                  <td>3</td>
-                  <td>3</td>
-                  <td>1080p</td>
-                  <td>687,44 MB</td>
-                  <td className='button-cell'>
-                    <Button variant='outlined' color='primary' size='small'>
-                      Preload
-                    </Button>
-                    <Button variant='outlined' color='primary' size='small'>
-                      Open link
-                    </Button>
-                    <Button variant='outlined' color='primary' size='small'>
-                      Copy link
-                    </Button>
-                  </td>
-                </tr>
-              </tbody>
-            </Table>
+                            <a style={{ textDecoration: 'none' }} href={link} target='_blank' rel='noreferrer'>
+                              <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
+                                Open link
+                              </Button>
+                            </a>
 
-            {!playableFileList?.length
-              ? 'No playable files in this torrent'
-              : playableFileList.map(({ id, path, length }) => {
-                  {
-                    /* console.log(ptt.parse(path)) */
-                  }
-                  {
-                    /* console.log({ title: ptt.parse(path).title })
-                  console.log({ resolution: ptt.parse(path).resolution })
-                  console.log({ episode: ptt.parse(path).episode })
-                  console.log({ season: ptt.parse(path).season }) */
-                  }
-
-                  return (
-                    <ButtonGroup key={id} disableElevation variant='contained' color='primary'>
-                      <Button>
-                        <a href={getFileLink(path, id)}>
-                          <Typography>
-                            {path.split('\\').pop().split('/').pop()} | {humanizeSize(length)}{' '}
-                            {viewedFileList && viewedFileList?.indexOf(id) !== -1 && '| ✓'}
-                          </Typography>
-                        </a>
-                      </Button>
-
-                      <Button onClick={() => preloadBuffer(id)}>
-                        <CachedIcon />
-                        <Typography>Preload</Typography>
-                      </Button>
-                    </ButtonGroup>
-                  )
-                })}
+                            <CopyToClipboard text={link}>
+                              <Button variant='outlined' color='primary' size='small'>
+                                Copy link
+                              </Button>
+                            </CopyToClipboard>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </Table>
+              </>
+            )}
           </TorrentFilesSection>
         </DialogContentGrid>
       )}

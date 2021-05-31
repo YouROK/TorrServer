@@ -213,7 +213,6 @@ export const Table = styled.table`
     }
 
     &.viewed-file-row {
-      color: lightgray;
       background: #f3f3f3;
     }
   }
