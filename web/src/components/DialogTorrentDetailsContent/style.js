@@ -204,10 +204,6 @@ export const Table = styled.table`
   tbody tr {
     border-bottom: 1px solid #ddd;
 
-    /* :nth-of-type(even) {
-      background: #f3f3f3;
-    } */
-
     :last-of-type {
       border-bottom: 2px solid #009879;
     }

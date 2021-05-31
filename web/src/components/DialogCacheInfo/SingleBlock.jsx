@@ -34,7 +34,6 @@ export default function SingleBlock({
       width={boxHeight}
       fillAfterStrokeEnabled
       preventDefault={false}
-      // eslint-disable-next-line react/jsx-props-no-spreading
       {...(isComplete
         ? { fill: processCompletedColor }
         : inProgress && {

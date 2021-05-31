@@ -63,7 +63,7 @@ export default function AddDialog({ handleClose }) {
           Cancel
         </Button>
 
-        <Button disabled={!magnet} onClick={handleCloseSave} color='primary' variant='outlined'>
+        <Button variant='contained' disabled={!magnet} onClick={handleCloseSave} color='primary'>
           Add
         </Button>
       </DialogActions>

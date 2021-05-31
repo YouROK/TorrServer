@@ -28,9 +28,7 @@ export const useUpdateCache = hash => {
       }, 100)
     } else clearInterval(timerID.current)
 
-    return () => {
-      clearInterval(timerID.current)
-    }
+    return () => clearInterval(timerID.current)
   }, [hash])
 
   return cache

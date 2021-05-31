@@ -2,7 +2,8 @@ import styled from 'styled-components'
 import { useEffect, useRef, useState } from 'react'
 import { Typography } from '@material-ui/core'
 import { torrentsHost } from 'utils/Hosts'
-import Torrent from 'components/Torrent'
+import TorrentCard from 'components/TorrentCard'
+import axios from 'axios'
 
 const TorrentListWrapper = styled.div`
   display: grid;
@@ -19,43 +20,29 @@ const TorrentListWrapper = styled.div`
   }
 `
 
-const getTorrentList = (callback, errorCallback) => {
-  fetch(torrentsHost(), {
-    method: 'post',
-    body: JSON.stringify({ action: 'list' }),
-    headers: {
-      Accept: 'application/json, text/plain, */*',
-      'Content-Type': 'application/json',
-    },
-  })
-    .then(res => res.json())
-    .then(callback)
-    .catch(() => errorCallback())
-}
-
 export default function TorrentList() {
   const [torrents, setTorrents] = useState([])
   const [offline, setOffline] = useState(true)
   const timerID = useRef(-1)
 
-  const updateTorrentList = torrs => {
-    setTorrents(torrs)
-    setOffline(false)
-  }
-
-  const resetTorrentList = () => {
-    setTorrents([])
-    setOffline(true)
-  }
-
   useEffect(() => {
     timerID.current = setInterval(() => {
-      getTorrentList(updateTorrentList, resetTorrentList)
+      // getting torrent list
+      axios
+        .post(torrentsHost(), { action: 'list' })
+        .then(({ data }) => {
+          // updating torrent list
+          setTorrents(data)
+          setOffline(false)
+        })
+        .catch(() => {
+          // resetting torrent list
+          setTorrents([])
+          setOffline(true)
+        })
     }, 1000)
 
-    return () => {
-      clearInterval(timerID.current)
-    }
+    return () => clearInterval(timerID.current)
   }, [])
 
   return (
@@ -65,7 +52,7 @@ export default function TorrentList() {
       ) : !torrents.length ? (
         <Typography>No torrents added</Typography>
       ) : (
-        torrents && torrents.map(torrent => <Torrent key={torrent.hash} torrent={torrent} />)
+        torrents.map(torrent => <TorrentCard key={torrent.hash} torrent={torrent} />)
       )}
     </TorrentListWrapper>
   )

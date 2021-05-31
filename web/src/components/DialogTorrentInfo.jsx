@@ -126,7 +126,7 @@ export default function DialogTorrentInfo({ torrent, open }) {
                     fetch(`${streamHost()}?link=${torrentLocalComponentValue.hash}&index=${file.id}&preload`)
                   }
                 >
-                  <CachedIcon />
+                  {/* <CachedIcon /> */}
                   <Typography>Preload</Typography>
                 </Button>
               </ButtonGroup>

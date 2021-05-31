@@ -2,14 +2,13 @@ import { NoImageIcon } from 'icons'
 import { getPeerString, humanizeSize } from 'utils/Utils'
 import { CopyToClipboard } from 'react-copy-to-clipboard'
 import { useEffect, useState } from 'react'
-import { Button, ButtonGroup, Typography } from '@material-ui/core'
+import { Button } from '@material-ui/core'
 import ptt from 'parse-torrent-title'
 import {
   ArrowDownward as ArrowDownwardIcon,
   ArrowUpward as ArrowUpwardIcon,
   SwapVerticalCircle as SwapVerticalCircleIcon,
   ViewAgenda as ViewAgendaIcon,
-  Cached as CachedIcon,
 } from '@material-ui/icons'
 import axios from 'axios'
 import { streamHost, torrentsHost, viewedHost } from 'utils/Hosts'
@@ -109,7 +108,6 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
       <DialogHeader
         onClose={closeDialog}
         title={isDetailedCacheView ? 'Detailed Cache View' : 'Torrent Details'}
-        // eslint-disable-next-line react/jsx-props-no-spreading
         {...(isDetailedCacheView && { onBack: () => setIsDetailedCacheView(false) })}
       />
 
