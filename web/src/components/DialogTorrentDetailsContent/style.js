@@ -2,6 +2,7 @@ import styled, { css } from 'styled-components'
 
 export const DialogContentGrid = styled.div`
   display: grid;
+  overflow: auto;
   grid-template-columns: 70% 1fr;
   grid-template-rows: repeat(2, min-content);
   grid-template-areas:
@@ -91,6 +92,8 @@ export const SectionHeader = styled.div`
 
 export const DetailedTorrentCacheViewWrapper = styled.div`
   padding-top: 50px;
+  overflow: auto;
+  min-height: 80vh;
 `
 
 export const StatisticsWrapper = styled.div`
