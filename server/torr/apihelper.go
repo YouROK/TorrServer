@@ -2,6 +2,7 @@ package torr
 
 import (
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -125,22 +126,19 @@ func SetTorrent(hashHex, title, poster, data string) *Torrent {
 
 func RemTorrent(hashHex string) {
 	hash := metainfo.NewHashFromHex(hashHex)
-	bts.RemoveTorrent(hash)
-	RemTorrentDB(hash)
-	if sets.BTsets.UseDisk &&
-		hashHex != "" &&
-		hashHex != "/" &&
-		sets.BTsets.TorrentsSavePath != "" &&
-		sets.BTsets.TorrentsSavePath != "/" {
-
+	if sets.BTsets.UseDisk && hashHex != "" && hashHex != "/" {
 		name := filepath.Join(sets.BTsets.TorrentsSavePath, hashHex)
-		err := os.RemoveAll(name)
+		ff, _ := ioutil.ReadDir(name)
+		for _, f := range ff {
+			os.Remove(filepath.Join(name, f.Name()))
+		}
+		err := os.Remove(name)
 		if err != nil {
 			log.TLogln("Error remove cache:", err)
-		} else {
-			log.TLogln("Remove cache from disk:", hashHex)
 		}
 	}
+	bts.RemoveTorrent(hash)
+	RemTorrentDB(hash)
 }
 
 func ListTorrent() []*Torrent {

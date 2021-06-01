@@ -109,7 +109,6 @@ func (t *Torrent) WaitInfo() bool {
 	case <-t.Torrent.GotInfo():
 		t.cache = t.bt.storage.GetCache(t.Hash())
 		t.cache.SetTorrent(t.Torrent)
-		go t.cache.LoadPiecesOnDisk()
 		return true
 	case <-t.closed:
 		return false
@@ -314,21 +313,31 @@ func (t *Torrent) Preload(index int, size int64) {
 
 			isComplete := true
 			if readerPieceBefore >= pieceFileStart {
+				limit := 5
 				for i := pieceFileStart; i < readerPieceBefore; i++ {
 					if !t.PieceState(i).Complete {
 						isComplete = false
 						if t.PieceState(i).Priority == torrent.PiecePriorityNone {
 							t.Piece(i).SetPriority(torrent.PiecePriorityNormal)
 						}
+						limit--
+						if limit <= 0 {
+							break
+						}
 					}
 				}
 			}
 			if readerPieceAfter <= pieceFileEnd {
+				limit := 5
 				for i := readerPieceAfter; i <= pieceFileEnd; i++ {
 					if !t.PieceState(i).Complete {
 						isComplete = false
 						if t.PieceState(i).Priority == torrent.PiecePriorityNone {
 							t.Piece(i).SetPriority(torrent.PiecePriorityNormal)
+						}
+						limit--
+						if limit <= 0 {
+							break
 						}
 					}
 				}

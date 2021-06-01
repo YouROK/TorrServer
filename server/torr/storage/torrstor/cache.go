@@ -1,11 +1,9 @@
 package torrstor
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"sync"
 	"time"
 
@@ -75,21 +73,6 @@ func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
 
 	for i := 0; i < c.pieceCount; i++ {
 		c.pieces[i] = NewPiece(i, c)
-	}
-
-	if settings.BTsets.UseDisk {
-		name := filepath.Join(settings.BTsets.TorrentsSavePath, hash.HexString())
-		fs, err := ioutil.ReadDir(name)
-		if err == nil {
-			for _, f := range fs {
-				id, err := strconv.Atoi(f.Name())
-				if err == nil {
-					c.pieces[id].Size = f.Size()
-					c.pieces[id].Complete = f.Size() == c.pieceLength
-					c.pieces[id].Accessed = f.ModTime().Unix()
-				}
-			}
-		}
 	}
 }
 
@@ -272,68 +255,6 @@ func (c *Cache) isIdInFileBE(ranges []Range, id int) bool {
 		}
 	}
 	return false
-}
-
-// run only in cache on disk
-func (c *Cache) LoadPiecesOnDisk() {
-	if c.torrent == nil || !settings.BTsets.UseDisk {
-		return
-	}
-
-	if c.isRemove {
-		return
-	}
-	c.muRemove.Lock()
-	if c.isRemove {
-		c.muRemove.Unlock()
-		return
-	}
-	c.isRemove = true
-	defer func() { c.isRemove = false }()
-	c.muRemove.Unlock()
-
-	ranges := make([]Range, 0)
-	c.muReaders.Lock()
-	for r, _ := range c.readers {
-		ranges = append(ranges, r.getPiecesRange())
-	}
-	c.muReaders.Unlock()
-	ranges = mergeRange(ranges)
-
-	for r, _ := range c.readers {
-		pc := r.getReaderPiece()
-		limit := 5
-
-		for limit > 0 {
-			if c.pieces != nil && c.pieces[pc] != nil && !c.pieces[pc].Complete {
-				if c.torrent.PieceState(pc).Priority == torrent.PiecePriorityNone {
-					c.torrent.Piece(pc).SetPriority(torrent.PiecePriorityNormal)
-				}
-				limit--
-			}
-			pc++
-		}
-	}
-	if len(c.readers) == 0 {
-		limit := 5
-		pc := 0
-		end := c.pieceCount
-		for pc <= end {
-			if c.pieces != nil && c.pieces[pc] != nil && !c.pieces[pc].Complete {
-				break
-			}
-			pc++
-		}
-		for pc <= end && limit > 0 {
-			if c.pieces != nil && c.pieces[pc] != nil && !c.pieces[pc].Complete {
-				if c.torrent.PieceState(pc).Priority == torrent.PiecePriorityNone {
-					c.torrent.Piece(pc).SetPriority(torrent.PiecePriorityNormal)
-				}
-				limit--
-			}
-			pc++
-		}
-	}
 }
 
 //////////////////
