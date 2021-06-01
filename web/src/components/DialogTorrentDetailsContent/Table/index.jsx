@@ -73,6 +73,7 @@ const Table = memo(
             })}
           </tbody>
         </TableStyle>
+
         <ShortTableWrapper>
           {playableFileList.map(({ id, path, length }) => {
             const { title, resolution, episode, season } = ptt.parse(path)
@@ -84,12 +85,14 @@ const Table = memo(
                 <ShortTable key={id} isViewed={isViewed}>
                   <div className='short-table-name'>{title}</div>
                   <div className='short-table-data'>
-                    <div className='short-table-field'>
-                      <div className='short-table-field-name'>viewed</div>
-                      <div className='short-table-field-value'>
-                        <div className='short-table-viewed-indicator' />
+                    {isViewed && (
+                      <div className='short-table-field'>
+                        <div className='short-table-field-name'>viewed</div>
+                        <div className='short-table-field-value'>
+                          <div className='short-table-viewed-indicator' />
+                        </div>
                       </div>
-                    </div>
+                    )}
                     {fileHasSeasonText && seasonAmount?.length === 1 && (
                       <div className='short-table-field'>
                         <div className='short-table-field-name'>season</div>

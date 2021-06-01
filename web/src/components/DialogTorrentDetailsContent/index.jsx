@@ -12,9 +12,8 @@ import { useUpdateCache, useGetSettings } from './customHooks'
 import DialogHeader from './DialogHeader'
 import TorrentCache from './TorrentCache'
 import Table from './Table'
+import DetailedView from './DetailedView'
 import {
-  DetailedViewWidgetSection,
-  DetailedViewCacheSection,
   DialogContentGrid,
   MainSection,
   Poster,
@@ -27,19 +26,17 @@ import {
   TorrentFilesSection,
   Divider,
 } from './style'
-import {
-  DownlodSpeedWidget,
-  UploadSpeedWidget,
-  PeersWidget,
-  SizeWidget,
-  PiecesCountWidget,
-  PiecesLengthWidget,
-  StatusWidget,
-} from './widgets'
+import { DownlodSpeedWidget, UploadSpeedWidget, PeersWidget, SizeWidget } from './widgets'
 import TorrentFunctions from './TorrentFunctions'
 import { isFilePlayable } from './helpers'
 
 const shortenText = (text, count) => text.slice(0, count) + (text.length > count ? '...' : '')
+
+const Loader = () => (
+  <div style={{ minHeight: '80vh', display: 'grid', placeItems: 'center' }}>
+    <CircularProgress />
+  </div>
+)
 
 export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
   const [isLoading, setIsLoading] = useState(true)
@@ -115,29 +112,18 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
 
       <div style={{ minHeight: '80vh', overflow: 'auto' }}>
         {isLoading ? (
-          <div style={{ minHeight: '80vh', display: 'grid', placeItems: 'center' }}>
-            <CircularProgress />
-          </div>
+          <Loader />
         ) : isDetailedCacheView ? (
-          <>
-            <DetailedViewWidgetSection>
-              <SectionTitle mb={20}>Data</SectionTitle>
-              <WidgetWrapper detailedView>
-                <DownlodSpeedWidget data={downloadSpeed} />
-                <UploadSpeedWidget data={uploadSpeed} />
-                <PeersWidget data={torrent} />
-                <SizeWidget data={torrentSize} />
-                <PiecesCountWidget data={PiecesCount} />
-                <PiecesLengthWidget data={PiecesLength} />
-                <StatusWidget data={statString} />
-              </WidgetWrapper>
-            </DetailedViewWidgetSection>
-
-            <DetailedViewCacheSection>
-              <SectionTitle mb={20}>Cache</SectionTitle>
-              <TorrentCache cache={cache} />
-            </DetailedViewCacheSection>
-          </>
+          <DetailedView
+            downloadSpeed={downloadSpeed}
+            uploadSpeed={uploadSpeed}
+            torrent={torrent}
+            torrentSize={torrentSize}
+            PiecesCount={PiecesCount}
+            PiecesLength={PiecesLength}
+            statString={statString}
+            cache={cache}
+          />
         ) : (
           <DialogContentGrid>
             <MainSection>
