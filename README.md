@@ -186,7 +186,7 @@ local:127.0.0.1\
 [PayPal](https://www.paypal.me/yourok)
 
 [YooMoney](https://yoomoney.ru/to/410013733697114/200)  
-YooMoney card: 5599 0050 6424 4747
+YooMoney card: 4048 4150 1812 8179
 
 SberBank card: 4276 4000 6707 2919
 
