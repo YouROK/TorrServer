@@ -1,23 +1,22 @@
 import { NoImageIcon } from 'icons'
 import { humanizeSize } from 'utils/Utils'
-import { CopyToClipboard } from 'react-copy-to-clipboard'
 import { useEffect, useState } from 'react'
-import { Button } from '@material-ui/core'
+import { Button, ButtonGroup } from '@material-ui/core'
 import ptt from 'parse-torrent-title'
 import axios from 'axios'
-import { playlistTorrHost, streamHost, torrentsHost, viewedHost } from 'utils/Hosts'
+import { viewedHost } from 'utils/Hosts'
 import { GETTING_INFO, IN_DB } from 'torrentStates'
 import CircularProgress from '@material-ui/core/CircularProgress'
 
-import { useUpdateCache, useCreateCacheMap, useGetSettings } from './customHooks'
+import { useUpdateCache, useGetSettings } from './customHooks'
 import DialogHeader from './DialogHeader'
 import TorrentCache from './TorrentCache'
+import Table from './Table'
 import {
   DetailedViewWidgetSection,
   DetailedViewCacheSection,
   DialogContentGrid,
   MainSection,
-  MainSectionButtonGroup,
   Poster,
   SectionTitle,
   SectionSubName,
@@ -27,8 +26,6 @@ import {
   CacheSection,
   TorrentFilesSection,
   Divider,
-  SmallLabel,
-  Table,
 } from './style'
 import {
   DownlodSpeedWidget,
@@ -39,6 +36,8 @@ import {
   PiecesLengthWidget,
   StatusWidget,
 } from './widgets'
+import TorrentFunctions from './TorrentFunctions'
+import { isFilePlayable } from './helpers'
 
 const shortenText = (text, count) => text.slice(0, count) + (text.length > count ? '...' : '')
 
@@ -47,11 +46,8 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
   const [isDetailedCacheView, setIsDetailedCacheView] = useState(false)
   const [viewedFileList, setViewedFileList] = useState()
   const [playableFileList, setPlayableFileList] = useState()
-
-  const isOnlyOnePlayableFile = playableFileList?.length === 1
-  const latestViewedFileId = viewedFileList?.[viewedFileList?.length - 1]
-  const latestViewedFile = playableFileList?.find(({ id }) => id === latestViewedFileId)?.path
-  const latestViewedFileData = latestViewedFile && ptt.parse(latestViewedFile)
+  const [seasonAmount, setSeasonAmount] = useState(null)
+  const [selectedSeason, setSelectedSeason] = useState()
 
   const {
     poster,
@@ -67,26 +63,26 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
   } = torrent
 
   const cache = useUpdateCache(hash)
-  const cacheMap = useCreateCacheMap(cache)
   const settings = useGetSettings(cache)
-
-  const dropTorrent = () => axios.post(torrentsHost(), { action: 'drop', hash })
-  const removeTorrentViews = () =>
-    axios.post(viewedHost(), { action: 'rem', hash, file_index: -1 }).then(() => setViewedFileList())
-  const preloadBuffer = fileId => fetch(`${streamHost()}?link=${hash}&index=${fileId}&preload`)
-  const getFileLink = (path, id) =>
-    `${streamHost()}/${encodeURIComponent(path.split('\\').pop().split('/').pop())}?link=${hash}&index=${id}&play`
-  const fullPlaylistLink = `${playlistTorrHost()}/${encodeURIComponent(name || title || 'file')}.m3u?link=${hash}&m3u`
-  const partialPlaylistLink = `${fullPlaylistLink}&fromlast`
-
-  const fileHasEpisodeText = !!playableFileList?.find(({ path }) => ptt.parse(path).episode)
-  const fileHasSeasonText = !!playableFileList?.find(({ path }) => ptt.parse(path).season)
-  const fileHasResolutionText = !!playableFileList?.find(({ path }) => ptt.parse(path).resolution)
 
   const { Capacity, PiecesCount, PiecesLength, Filled } = cache
 
   useEffect(() => {
-    setPlayableFileList(torrentFileList?.filter(file => playableExtList.includes(getExt(file.path))))
+    if (playableFileList && seasonAmount === null) {
+      const seasons = []
+      playableFileList.forEach(({ path }) => {
+        const currentSeason = ptt.parse(path).season
+        if (currentSeason) {
+          !seasons.includes(currentSeason) && seasons.push(currentSeason)
+        }
+      })
+      seasons.length && setSelectedSeason(seasons[0])
+      setSeasonAmount(seasons.sort((a, b) => a - b))
+    }
+  }, [playableFileList, seasonAmount])
+
+  useEffect(() => {
+    setPlayableFileList(torrentFileList?.filter(({ path }) => isFilePlayable(path)))
   }, [torrentFileList])
 
   useEffect(() => {
@@ -139,7 +135,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
 
             <DetailedViewCacheSection>
               <SectionTitle mb={20}>Cache</SectionTitle>
-              <TorrentCache cache={cache} cacheMap={cacheMap} />
+              <TorrentCache cache={cache} />
             </DetailedViewCacheSection>
           </>
         ) : (
@@ -166,62 +162,14 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
 
                 <Divider />
 
-                {!isOnlyOnePlayableFile && !!viewedFileList?.length && (
-                  <>
-                    <SmallLabel>Download Playlist</SmallLabel>
-                    <SectionSubName mb={10}>
-                      <strong>Latest file played:</strong> {latestViewedFileData.title}.
-                      {latestViewedFileData.season && (
-                        <>
-                          {' '}
-                          Season: {latestViewedFileData.season}. Episode: {latestViewedFileData.episode}.
-                        </>
-                      )}
-                    </SectionSubName>
-
-                    <MainSectionButtonGroup>
-                      <a style={{ textDecoration: 'none' }} href={fullPlaylistLink}>
-                        <Button style={{ width: '100%' }} variant='contained' color='primary' size='large'>
-                          full
-                        </Button>
-                      </a>
-
-                      <a style={{ textDecoration: 'none' }} href={partialPlaylistLink}>
-                        <Button style={{ width: '100%' }} variant='contained' color='primary' size='large'>
-                          from latest file
-                        </Button>
-                      </a>
-                    </MainSectionButtonGroup>
-                  </>
-                )}
-
-                <SmallLabel mb={10}>Torrent State</SmallLabel>
-
-                <MainSectionButtonGroup>
-                  <Button onClick={() => removeTorrentViews()} variant='contained' color='primary' size='large'>
-                    remove views
-                  </Button>
-                  <Button onClick={() => dropTorrent()} variant='contained' color='primary' size='large'>
-                    drop torrent
-                  </Button>
-                </MainSectionButtonGroup>
-
-                <SmallLabel mb={10}>Info</SmallLabel>
-
-                <MainSectionButtonGroup>
-                  {(isOnlyOnePlayableFile || !viewedFileList?.length) && (
-                    <a style={{ textDecoration: 'none' }} href={fullPlaylistLink}>
-                      <Button style={{ width: '100%' }} variant='contained' color='primary' size='large'>
-                        download playlist
-                      </Button>
-                    </a>
-                  )}
-                  <CopyToClipboard text={hash}>
-                    <Button variant='contained' color='primary' size='large'>
-                      copy hash
-                    </Button>
-                  </CopyToClipboard>
-                </MainSectionButtonGroup>
+                <TorrentFunctions
+                  hash={hash}
+                  viewedFileList={viewedFileList}
+                  playableFileList={playableFileList}
+                  name={name}
+                  title={title}
+                  setViewedFileList={setViewedFileList}
+                />
               </div>
             </MainSection>
 
@@ -238,7 +186,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                 />
               </SectionHeader>
 
-              <TorrentCache isMini cache={cache} cacheMap={cacheMap} />
+              <TorrentCache isMini cache={cache} />
               <Button
                 style={{ marginTop: '30px' }}
                 variant='contained'
@@ -250,134 +198,37 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
               </Button>
             </CacheSection>
 
-            {/* <TorrentFilesSection>
+            <TorrentFilesSection>
               <SectionTitle mb={20}>Torrent Content</SectionTitle>
 
-              {!playableFileList?.length ? (
-                'No playable files in this torrent'
-              ) : (
+              {seasonAmount?.length > 1 && (
                 <>
-                  <Table>
-                    <thead>
-                      <tr>
-                        <th style={{ width: '0' }}>viewed</th>
-                        <th>name</th>
-                        {fileHasSeasonText && <th style={{ width: '0' }}>season</th>}
-                        {fileHasEpisodeText && <th style={{ width: '0' }}>episode</th>}
-                        {fileHasResolutionText && <th style={{ width: '0' }}>resolution</th>}
-                        <th style={{ width: '100px' }}>size</th>
-                        <th style={{ width: '400px' }}>actions</th>
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      {playableFileList.map(({ id, path, length }) => {
-                        const { title, resolution, episode, season } = ptt.parse(path)
-                        const isViewed = viewedFileList?.includes(id)
-                        const link = getFileLink(path, id)
-
-                        return (
-                          <tr key={id} className={isViewed ? 'viewed-file-row' : null}>
-                            <td className={isViewed ? 'viewed-file-indicator' : null} />
-                            <td>{title}</td>
-                            {fileHasSeasonText && <td>{season}</td>}
-                            {fileHasEpisodeText && <td>{episode}</td>}
-                            {fileHasResolutionText && <td>{resolution}</td>}
-                            <td>{humanizeSize(length)}</td>
-                            <td className='button-cell'>
-                              <Button onClick={() => preloadBuffer(id)} variant='outlined' color='primary' size='small'>
-                                Preload
-                              </Button>
-
-                              <a style={{ textDecoration: 'none' }} href={link} target='_blank' rel='noreferrer'>
-                                <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
-                                  Open link
-                                </Button>
-                              </a>
-
-                              <CopyToClipboard text={link}>
-                                <Button variant='outlined' color='primary' size='small'>
-                                  Copy link
-                                </Button>
-                              </CopyToClipboard>
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </Table>
+                  <SectionSubName>Select Season</SectionSubName>
+                  <ButtonGroup style={{ marginBottom: '10px' }} color='primary'>
+                    {seasonAmount.map(season => (
+                      <Button
+                        key={season}
+                        variant={selectedSeason === season ? 'contained' : 'outlined'}
+                        onClick={() => setSelectedSeason(season)}
+                      >
+                        {season}
+                      </Button>
+                    ))}
+                  </ButtonGroup>
                 </>
               )}
-            </TorrentFilesSection> */}
+
+              <Table
+                hash={hash}
+                playableFileList={playableFileList}
+                viewedFileList={viewedFileList}
+                selectedSeason={selectedSeason}
+                seasonAmount={seasonAmount}
+              />
+            </TorrentFilesSection>
           </DialogContentGrid>
         )}
       </div>
     </>
   )
 }
-
-function getExt(filename) {
-  const ext = filename.split('.').pop()
-  if (ext === filename) return ''
-  return ext.toLowerCase()
-}
-const playableExtList = [
-  // video
-  '3g2',
-  '3gp',
-  'aaf',
-  'asf',
-  'avchd',
-  'avi',
-  'drc',
-  'flv',
-  'iso',
-  'm2v',
-  'm2ts',
-  'm4p',
-  'm4v',
-  'mkv',
-  'mng',
-  'mov',
-  'mp2',
-  'mp4',
-  'mpe',
-  'mpeg',
-  'mpg',
-  'mpv',
-  'mxf',
-  'nsv',
-  'ogg',
-  'ogv',
-  'ts',
-  'qt',
-  'rm',
-  'rmvb',
-  'roq',
-  'svi',
-  'vob',
-  'webm',
-  'wmv',
-  'yuv',
-  // audio
-  'aac',
-  'aiff',
-  'ape',
-  'au',
-  'flac',
-  'gsm',
-  'it',
-  'm3u',
-  'm4a',
-  'mid',
-  'mod',
-  'mp3',
-  'mpa',
-  'pls',
-  'ra',
-  's3m',
-  'sid',
-  'wav',
-  'wma',
-  'xm',
-]
