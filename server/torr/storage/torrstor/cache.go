@@ -91,7 +91,9 @@ func (c *Cache) Close() error {
 	log.TLogln("Close cache for:", c.hash)
 	delete(c.storage.caches, c.hash)
 	for _, v := range c.pieces {
-		v.Release()
+		if v.dPiece != nil {
+			os.Remove(v.dPiece.name)
+		}
 	}
 	c.pieces = nil
 
