@@ -1,5 +1,5 @@
 import { NoImageIcon } from 'icons'
-import { humanizeSize } from 'utils/Utils'
+import { humanizeSize, shortenText } from 'utils/Utils'
 import { useEffect, useState } from 'react'
 import { Button, ButtonGroup } from '@material-ui/core'
 import ptt from 'parse-torrent-title'
@@ -29,8 +29,6 @@ import {
 import { DownlodSpeedWidget, UploadSpeedWidget, PeersWidget, SizeWidget } from './widgets'
 import TorrentFunctions from './TorrentFunctions'
 import { isFilePlayable } from './helpers'
-
-const shortenText = (text, count) => text.slice(0, count) + (text.length > count ? '...' : '')
 
 const Loader = () => (
   <div style={{ minHeight: '80vh', display: 'grid', placeItems: 'center' }}>

@@ -5,24 +5,10 @@ import { torrentsHost } from 'utils/Hosts'
 import TorrentCard from 'components/TorrentCard'
 import axios from 'axios'
 import CircularProgress from '@material-ui/core/CircularProgress'
-
-const TorrentListWrapper = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, 350px);
-  gap: 30px;
-
-  @media (max-width: 600px), (max-height: 500px) {
-    gap: 10px;
-    grid-template-columns: repeat(auto-fit, 310px);
-  }
-
-  @media (max-width: 410px) {
-    grid-template-columns: minmax(min-content, 290px);
-  }
-`
+import { TorrentListWrapper } from 'App/style'
 
 const CenteredGrid = styled.div`
-  height: 75vh;
+  height: 100%;
   display: grid;
   place-items: center;
 `
@@ -63,7 +49,9 @@ export default function TorrentList() {
       <Typography>Offline</Typography>
     </CenteredGrid>
   ) : !torrents.length ? (
-    <Typography>No torrents added</Typography>
+    <CenteredGrid>
+      <Typography>No torrents added</Typography>
+    </CenteredGrid>
   ) : (
     <TorrentListWrapper>
       {torrents.map(torrent => (

@@ -1,9 +1,7 @@
 import 'fontsource-roboto'
 import { forwardRef, useState } from 'react'
-import HeightIcon from '@material-ui/icons/Height'
-import CloseIcon from '@material-ui/icons/Close'
-import DeleteIcon from '@material-ui/icons/Delete'
-import { getPeerString, humanizeSize } from 'utils/Utils'
+import { UnfoldMore as UnfoldMoreIcon, Close as CloseIcon, Delete as DeleteIcon } from '@material-ui/icons'
+import { getPeerString, humanizeSize, shortenText } from 'utils/Utils'
 import { torrentsHost } from 'utils/Hosts'
 import { NoImageIcon } from 'icons'
 import DialogTorrentDetailsContent from 'components/DialogTorrentDetailsContent'
@@ -12,16 +10,7 @@ import Slide from '@material-ui/core/Slide'
 import { Button, DialogActions, DialogTitle, useMediaQuery, useTheme } from '@material-ui/core'
 import axios from 'axios'
 
-import {
-  StyledButton,
-  TorrentCard,
-  TorrentCardButtons,
-  TorrentCardDescription,
-  TorrentCardDescriptionContent,
-  TorrentCardDescriptionLabel,
-  TorrentCardPoster,
-  TorrentCardDetails,
-} from './style'
+import { StyledButton, TorrentCard, TorrentCardButtons, TorrentCardDescription, TorrentCardPoster } from './style'
 
 const Transition = forwardRef((props, ref) => <Slide direction='up' ref={ref} {...props} />)
 
@@ -51,7 +40,7 @@ export default function Torrent({ torrent }) {
 
         <TorrentCardButtons>
           <StyledButton onClick={openDetailedInfo}>
-            <HeightIcon />
+            <UnfoldMoreIcon />
             <span>Details</span>
           </StyledButton>
 
@@ -67,31 +56,29 @@ export default function Torrent({ torrent }) {
         </TorrentCardButtons>
 
         <TorrentCardDescription>
-          <span>
-            <TorrentCardDescriptionLabel>Name</TorrentCardDescriptionLabel>
-            <TorrentCardDescriptionContent isTitle>{title || name}</TorrentCardDescriptionContent>
-          </span>
+          <div className='description-title-wrapper'>
+            <div className='description-section-name'>Name</div>
+            <div className='description-torrent-title'>{shortenText(title || name, 100)}</div>
+          </div>
 
-          <TorrentCardDetails>
-            <span>
-              <TorrentCardDescriptionLabel>Size</TorrentCardDescriptionLabel>
-              <TorrentCardDescriptionContent>
-                {torrentSize > 0 && humanizeSize(torrentSize)}
-              </TorrentCardDescriptionContent>
-            </span>
+          <div className='description-statistics-wrapper'>
+            <div className='description-statistics-element-wrapper'>
+              <div className='description-section-name'>Size</div>
+              <div className='description-statistics-element-value'>{torrentSize > 0 && humanizeSize(torrentSize)}</div>
+            </div>
 
-            <span>
-              <TorrentCardDescriptionLabel>Speed</TorrentCardDescriptionLabel>
-              <TorrentCardDescriptionContent>
+            <div className='description-statistics-element-wrapper'>
+              <div className='description-section-name'>Speed</div>
+              <div className='description-statistics-element-value'>
                 {downloadSpeed > 0 ? humanizeSize(downloadSpeed) : '---'}
-              </TorrentCardDescriptionContent>
-            </span>
+              </div>
+            </div>
 
-            <span>
-              <TorrentCardDescriptionLabel>Peers</TorrentCardDescriptionLabel>
-              <TorrentCardDescriptionContent>{getPeerString(torrent) || '---'}</TorrentCardDescriptionContent>
-            </span>
-          </TorrentCardDetails>
+            <div className='description-statistics-element-wrapper'>
+              <div className='description-section-name'>Peers</div>
+              <div className='description-statistics-element-value'>{getPeerString(torrent) || '---'}</div>
+            </div>
+          </div>
         </TorrentCardDescription>
       </TorrentCard>
 
