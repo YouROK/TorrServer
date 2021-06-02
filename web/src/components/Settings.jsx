@@ -26,7 +26,6 @@ export default function SettingsDialog() {
     setOpen(false)
     const sets = JSON.parse(JSON.stringify(settings))
     sets.CacheSize *= 1024 * 1024
-    sets.PreloadBufferSize *= 1024 * 1024
     fetch(settingsHost(), {
       method: 'post',
       body: JSON.stringify({ action: 'set', sets }),
@@ -51,8 +50,6 @@ export default function SettingsDialog() {
         json => {
           // eslint-disable-next-line no-param-reassign
           json.CacheSize /= 1024 * 1024
-          // eslint-disable-next-line no-param-reassign
-          json.PreloadBufferSize /= 1024 * 1024
           setSets(json)
           setShow(true)
         },
@@ -135,13 +132,7 @@ export default function SettingsDialog() {
               <br />
               <br />
               <InputLabel htmlFor='RetrackersMode'>Retracker mode</InputLabel>
-              <Select
-                onChange={inputForm}
-                type='number'
-                native='true'
-                id='RetrackersMode'
-                value={settings.RetrackersMode}
-              >
+              <Select onChange={inputForm} type='number' native id='RetrackersMode' value={settings.RetrackersMode}>
                 <option value={0}>Don&apos;t add retrackers</option>
                 <option value={1}>Add retrackers</option>
                 <option value={2}>Remove retrackers</option>
