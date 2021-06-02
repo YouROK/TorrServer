@@ -9,6 +9,7 @@ import Dialog from '@material-ui/core/Dialog'
 import Slide from '@material-ui/core/Slide'
 import { Button, DialogActions, DialogTitle, useMediaQuery, useTheme } from '@material-ui/core'
 import axios from 'axios'
+import ptt from 'parse-torrent-title'
 
 import { StyledButton, TorrentCard, TorrentCardButtons, TorrentCardDescription, TorrentCardPoster } from './style'
 
@@ -30,6 +31,8 @@ export default function Torrent({ torrent }) {
 
   const dropTorrent = () => axios.post(torrentsHost(), { action: 'drop', hash })
   const deleteTorrent = () => axios.post(torrentsHost(), { action: 'rem', hash })
+
+  const parsedTitle = (title || name) && ptt.parse(title || name).title
 
   return (
     <>
@@ -58,7 +61,7 @@ export default function Torrent({ torrent }) {
         <TorrentCardDescription>
           <div className='description-title-wrapper'>
             <div className='description-section-name'>Name</div>
-            <div className='description-torrent-title'>{shortenText(title || name, 100)}</div>
+            <div className='description-torrent-title'>{shortenText(parsedTitle, 100)}</div>
           </div>
 
           <div className='description-statistics-wrapper'>
