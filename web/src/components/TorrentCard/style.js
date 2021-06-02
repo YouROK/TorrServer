@@ -107,20 +107,6 @@ export const TorrentCardDescription = styled.div`
   .description-torrent-title {
     overflow: auto;
     word-break: break-all;
-
-    @media (max-width: 770px) {
-      font-size: 0.6rem;
-    }
-
-    @media (max-width: 600px), (max-height: 500px) {
-      font-size: 11px;
-      margin-bottom: 3px;
-      margin-left: 0;
-    }
-
-    @media (max-width: 410px) {
-      font-size: 10px;
-    }
   }
 
   .description-statistics-wrapper {
@@ -155,7 +141,10 @@ export const TorrentCardDescription = styled.div`
       margin-bottom: 0;
       margin-left: 0;
     }
+  }
 
+  .description-torrent-title,
+  .description-statistics-element-value {
     @media (max-width: 770px) {
       font-size: 0.6rem;
     }
@@ -163,7 +152,6 @@ export const TorrentCardDescription = styled.div`
     @media (max-width: 600px), (max-height: 500px) {
       font-size: 11px;
       margin-bottom: 3px;
-      margin-left: 0;
     }
 
     @media (max-width: 410px) {
@@ -204,7 +192,7 @@ export const StyledButton = styled.button`
     }
   }
 
-  @media (max-width: 500px) {
+  @media (max-width: 770px) {
     font-size: 0.7rem;
 
     svg {
