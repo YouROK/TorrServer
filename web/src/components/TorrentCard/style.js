@@ -122,7 +122,7 @@ export const TorrentCardDescription = styled.div`
       grid-template-columns: 65px 65px 1fr;
     }
 
-    @media (max-width: 600px), (max-height: 500px) {
+    @media (max-width: 700px) {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
     }
@@ -147,11 +147,6 @@ export const TorrentCardDescription = styled.div`
   .description-statistics-element-value {
     @media (max-width: 770px) {
       font-size: 0.6rem;
-    }
-
-    @media (max-width: 600px), (max-height: 500px) {
-      font-size: 11px;
-      margin-bottom: 3px;
     }
 
     @media (max-width: 410px) {
