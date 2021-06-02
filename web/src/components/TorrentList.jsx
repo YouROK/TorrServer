@@ -1,17 +1,10 @@
-import styled from 'styled-components'
 import { useEffect, useRef, useState } from 'react'
 import { Typography } from '@material-ui/core'
 import { torrentsHost } from 'utils/Hosts'
 import TorrentCard from 'components/TorrentCard'
 import axios from 'axios'
 import CircularProgress from '@material-ui/core/CircularProgress'
-import { TorrentListWrapper } from 'App/style'
-
-const CenteredGrid = styled.div`
-  height: 100%;
-  display: grid;
-  place-items: center;
-`
+import { TorrentListWrapper, CenteredGrid } from 'App/style'
 
 export default function TorrentList() {
   const [torrents, setTorrents] = useState([])
@@ -40,19 +33,21 @@ export default function TorrentList() {
     return () => clearInterval(timerID.current)
   }, [])
 
-  return isLoading ? (
-    <CenteredGrid>
-      <CircularProgress />
-    </CenteredGrid>
-  ) : isOffline ? (
-    <CenteredGrid>
-      <Typography>Offline</Typography>
-    </CenteredGrid>
-  ) : !torrents.length ? (
-    <CenteredGrid>
-      <Typography>No torrents added</Typography>
-    </CenteredGrid>
-  ) : (
+  if (isLoading || isOffline || !torrents.length) {
+    return (
+      <CenteredGrid>
+        {isLoading ? (
+          <CircularProgress />
+        ) : isOffline ? (
+          <Typography>Offline</Typography>
+        ) : (
+          !torrents.length && <Typography>No torrents added</Typography>
+        )}
+      </CenteredGrid>
+    )
+  }
+
+  return (
     <TorrentListWrapper>
       {torrents.map(torrent => (
         <TorrentCard key={torrent.hash} torrent={torrent} />

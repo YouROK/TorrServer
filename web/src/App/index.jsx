@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react'
 import Typography from '@material-ui/core/Typography'
 import IconButton from '@material-ui/core/IconButton'
 import { Menu as MenuIcon, Close as CloseIcon } from '@material-ui/icons'
-import { getTorrServerHost } from 'utils/Hosts'
+import { echoHost } from 'utils/Hosts'
 import TorrentList from 'components/TorrentList'
 import DonateSnackbar from 'components/Donate'
 import DonateDialog from 'components/Donate/DonateDialog'
 import Div100vh from 'react-div-100vh'
+import axios from 'axios'
 
 import { AppWrapper, AppHeader } from './style'
 import Sidebar from './Sidebar'
@@ -21,15 +22,11 @@ const baseTheme = createMuiTheme({
 export default function App() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [isDonationDialogOpen, setIsDonationDialogOpen] = useState(false)
-  const [tsVersion, setTSVersion] = useState('')
+  const [torrServerVersion, setTorrServerVersion] = useState('')
 
   useEffect(() => {
-    fetch(`${getTorrServerHost()}/echo`)
-      .then(resp => resp.text())
-      .then(txt => {
-        if (!txt.startsWith('<!DOCTYPE html>')) setTSVersion(txt)
-      })
-  }, [isDrawerOpen])
+    axios.get(echoHost()).then(({ data }) => setTorrServerVersion(data))
+  }, [])
 
   return (
     <MuiThemeProvider theme={baseTheme}>
@@ -49,7 +46,7 @@ export default function App() {
             </IconButton>
 
             <Typography variant='h6' noWrap>
-              TorrServer {tsVersion}
+              TorrServer {torrServerVersion}
             </Typography>
           </AppHeader>
 

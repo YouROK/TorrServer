@@ -9,6 +9,13 @@ export const AppWrapper = styled.div`
     'head head'
     'side content';
 `
+
+export const CenteredGrid = styled.div`
+  height: 100%;
+  display: grid;
+  place-items: center;
+`
+
 export const AppHeader = styled.div`
   background: #3fb57a;
   color: rgba(0, 0, 0, 0.87);
