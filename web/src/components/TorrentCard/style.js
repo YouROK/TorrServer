@@ -1,7 +1,6 @@
 import styled, { css } from 'styled-components'
 
 export const TorrentCard = styled.div`
-  border: 1px solid;
   border-radius: 5px;
   display: grid;
   grid-template-columns: 120px 260px 1fr;
@@ -64,7 +63,7 @@ export const TorrentCardPoster = styled.div`
 export const TorrentCardButtons = styled.div`
   grid-area: buttons;
   display: grid;
-  gap: 5px;
+  gap: 10px;
 
   @media (max-width: 1260px), (max-height: 500px) {
     grid-template-columns: repeat(3, 1fr);
@@ -181,7 +180,7 @@ export const StyledButton = styled.button`
   display: flex;
   align-items: center;
   text-transform: uppercase;
-  background: #216e47;
+  background: #268757;
   color: #fff;
   font-size: 1rem;
   font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;

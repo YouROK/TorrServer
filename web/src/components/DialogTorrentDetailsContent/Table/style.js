@@ -108,7 +108,8 @@ export const ShortTable = styled.div`
       &-data {
         display: grid;
         grid-auto-flow: column;
-        grid-template-columns: max-content;
+        grid-template-columns: ${isViewed ? 'max-content' : '1fr'};
+        grid-auto-columns: 1fr;
       }
       &-field {
         display: grid;
