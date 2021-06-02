@@ -6,38 +6,19 @@ import DialogActions from '@material-ui/core/DialogActions'
 import DialogContent from '@material-ui/core/DialogContent'
 import DialogTitle from '@material-ui/core/DialogTitle'
 import { torrentsHost } from 'utils/Hosts'
+import axios from 'axios'
 
 export default function AddDialog({ handleClose }) {
-  const [magnet, setMagnet] = useState('')
+  const [link, setLink] = useState('')
   const [title, setTitle] = useState('')
   const [poster, setPoster] = useState('')
 
-  const inputMagnet = ({ target: { value } }) => setMagnet(value)
+  const inputMagnet = ({ target: { value } }) => setLink(value)
   const inputTitle = ({ target: { value } }) => setTitle(value)
   const inputPoster = ({ target: { value } }) => setPoster(value)
 
-  const handleCloseSave = () => {
-    try {
-      if (!magnet) return
-
-      fetch(torrentsHost(), {
-        method: 'post',
-        body: JSON.stringify({
-          action: 'add',
-          link: magnet,
-          title,
-          poster,
-          save_to_db: true,
-        }),
-        headers: {
-          Accept: 'application/json, text/plain, */*',
-          'Content-Type': 'application/json',
-        },
-      })
-      handleClose()
-    } catch (e) {
-      console.log(e)
-    }
+  const handleSave = () => {
+    axios.post(torrentsHost(), { action: 'add', link, title, poster, save_to_db: true }).finally(() => handleClose())
   }
 
   return (
@@ -63,7 +44,7 @@ export default function AddDialog({ handleClose }) {
           Cancel
         </Button>
 
-        <Button variant='contained' disabled={!magnet} onClick={handleCloseSave} color='primary'>
+        <Button variant='contained' disabled={!link} onClick={handleSave} color='primary'>
           Add
         </Button>
       </DialogActions>

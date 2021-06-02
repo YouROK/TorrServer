@@ -9,6 +9,7 @@ export default function UploadDialog() {
   const handleCapture = ({ target: { files } }) => {
     const [file] = files
     const data = new FormData()
+    data.append('save', 'true')
     data.append('file', file)
     axios.post(torrentUploadHost(), data)
   }

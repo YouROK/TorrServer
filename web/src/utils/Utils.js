@@ -10,4 +10,4 @@ export function getPeerString(torrent) {
 }
 
 export const shortenText = (text, sympolAmount) =>
-  text.slice(0, sympolAmount) + (text.length > sympolAmount ? '...' : '')
+  text ? text.slice(0, sympolAmount) + (text.length > sympolAmount ? '...' : '') : ''

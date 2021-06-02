@@ -11,6 +11,7 @@ import DialogActions from '@material-ui/core/DialogActions'
 import Button from '@material-ui/core/Button'
 import { FormControlLabel, InputLabel, Select, Switch } from '@material-ui/core'
 import { settingsHost, setTorrServerHost, getTorrServerHost } from 'utils/Hosts'
+import axios from 'axios'
 
 export default function SettingsDialog() {
   const [open, setOpen] = useState(false)
@@ -22,18 +23,11 @@ export default function SettingsDialog() {
 
   const handleClickOpen = () => setOpen(true)
   const handleClose = () => setOpen(false)
-  const handleCloseSave = () => {
+  const handleSave = () => {
     setOpen(false)
     const sets = JSON.parse(JSON.stringify(settings))
     sets.CacheSize *= 1024 * 1024
-    fetch(settingsHost(), {
-      method: 'post',
-      body: JSON.stringify({ action: 'set', sets }),
-      headers: {
-        Accept: 'application/json, text/plain, */*',
-        'Content-Type': 'application/json',
-      },
-    })
+    axios.post(settingsHost(), { action: 'set', sets })
   }
 
   useEffect(() => {
@@ -262,7 +256,7 @@ export default function SettingsDialog() {
             Cancel
           </Button>
 
-          <Button onClick={handleCloseSave} color='primary' variant='outlined'>
+          <Button onClick={handleSave} color='primary' variant='outlined'>
             Save
           </Button>
         </DialogActions>
