@@ -102,6 +102,17 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
 
   const bufferSize = settings?.PreloadBuffer ? Capacity : 33554432 // Default is 32mb if PreloadBuffer is false
 
+  const getTitle = value => {
+    const torrentParsedName = value && ptt.parse(value)
+    const newNameStrings = []
+
+    if (torrentParsedName?.title) newNameStrings.push(` ${torrentParsedName?.title}`)
+    if (torrentParsedName?.year) newNameStrings.push(`. ${torrentParsedName?.year}.`)
+    if (torrentParsedName?.resolution) newNameStrings.push(` (${torrentParsedName?.resolution})`)
+
+    return newNameStrings.join(' ')
+  }
+
   return (
     <>
       <DialogHeader
@@ -132,11 +143,11 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
               <div>
                 {name && name !== title ? (
                   <>
-                    <SectionTitle>{shortenText(name, 50)}</SectionTitle>
+                    <SectionTitle>{shortenText(getTitle(name), 50)}</SectionTitle>
                     <SectionSubName mb={20}>{shortenText(title, 160)}</SectionSubName>
                   </>
                 ) : (
-                  <SectionTitle mb={20}>{shortenText(title, 50)}</SectionTitle>
+                  <SectionTitle mb={20}>{shortenText(getTitle(title), 50)}</SectionTitle>
                 )}
 
                 <WidgetWrapper>
@@ -189,8 +200,8 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
 
               {seasonAmount?.length > 1 && (
                 <>
-                  <SectionSubName>Select Season</SectionSubName>
-                  <ButtonGroup style={{ marginBottom: '10px' }} color='primary'>
+                  <SectionSubName mb={7}>Select Season</SectionSubName>
+                  <ButtonGroup style={{ marginBottom: '30px' }} color='primary'>
                     {seasonAmount.map(season => (
                       <Button
                         key={season}
@@ -201,6 +212,8 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                       </Button>
                     ))}
                   </ButtonGroup>
+
+                  <SectionTitle mb={20}>Season {selectedSeason}</SectionTitle>
                 </>
               )}
 
