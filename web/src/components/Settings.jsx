@@ -31,31 +31,13 @@ export default function SettingsDialog() {
   }
 
   useEffect(() => {
-    fetch(settingsHost(), {
-      method: 'post',
-      body: JSON.stringify({ action: 'get' }),
-      headers: {
-        Accept: 'application/json, text/plain, */*',
-        'Content-Type': 'application/json',
-      },
-    })
-      .then(res => res.json())
-      .then(
-        json => {
-          // eslint-disable-next-line no-param-reassign
-          json.CacheSize /= 1024 * 1024
-          setSets(json)
-          setShow(true)
-        },
-        error => {
-          setShow(false)
-          console.log(error)
-        },
-      )
-      .catch(e => {
-        setShow(false)
-        console.log(e)
+    axios
+      .post(settingsHost(), { action: 'get' })
+      .then(({ data }) => {
+        setSets({ ...data, CacheSize: data.CacheSize / (1024 * 1024) })
+        setShow(true)
       })
+      .catch(() => setShow(false))
   }, [tsHost])
 
   const onInputHost = event => {
@@ -64,17 +46,40 @@ export default function SettingsDialog() {
     setTSHost(host)
   }
 
-  const inputForm = event => {
+  const inputForm = ({ target: { type, value, checked, id } }) => {
     const sets = JSON.parse(JSON.stringify(settings))
-    if (event.target.type === 'number' || event.target.type === 'select-one') {
-      sets[event.target.id] = Number(event.target.value)
-    } else if (event.target.type === 'checkbox') {
-      sets[event.target.id] = Boolean(event.target.checked)
-    } else if (event.target.type === 'url') {
-      sets[event.target.id] = event.target.value
+    if (type === 'number' || type === 'select-one') {
+      sets[id] = Number(value)
+    } else if (type === 'checkbox') {
+      sets[id] = Boolean(checked)
+    } else if (type === 'url') {
+      sets[id] = value
     }
     setSets(sets)
   }
+
+  const {
+    CacheSize,
+    PreloadBuffer,
+    ReaderReadAHead,
+    RetrackersMode,
+    TorrentDisconnectTimeout,
+    EnableIPv6,
+    ForceEncrypt,
+    DisableTCP,
+    DisableUTP,
+    DisableUPNP,
+    DisableDHT,
+    DisablePEX,
+    DisableUpload,
+    DownloadRateLimit,
+    UploadRateLimit,
+    ConnectionsLimit,
+    DhtConnectionLimit,
+    PeersListenPort,
+    UseDisk,
+    TorrentsSavePath,
+  } = settings
 
   return (
     <div>
@@ -104,14 +109,12 @@ export default function SettingsDialog() {
                 margin='dense'
                 id='CacheSize'
                 label='Cache size'
-                value={settings.CacheSize}
+                value={CacheSize}
                 type='number'
                 fullWidth
               />
               <FormControlLabel
-                control={
-                  <Switch checked={settings.PreloadBuffer} onChange={inputForm} id='PreloadBuffer' color='primary' />
-                }
+                control={<Switch checked={PreloadBuffer} onChange={inputForm} id='PreloadBuffer' color='primary' />}
                 label='Preload buffer'
               />
               <TextField
@@ -119,14 +122,14 @@ export default function SettingsDialog() {
                 margin='dense'
                 id='ReaderReadAHead'
                 label='Reader readahead'
-                value={settings.ReaderReadAHead}
+                value={ReaderReadAHead}
                 type='number'
                 fullWidth
               />
               <br />
               <br />
               <InputLabel htmlFor='RetrackersMode'>Retracker mode</InputLabel>
-              <Select onChange={inputForm} type='number' native id='RetrackersMode' value={settings.RetrackersMode}>
+              <Select onChange={inputForm} type='number' native id='RetrackersMode' value={RetrackersMode}>
                 <option value={0}>Don&apos;t add retrackers</option>
                 <option value={1}>Add retrackers</option>
                 <option value={2}>Remove retrackers</option>
@@ -137,53 +140,47 @@ export default function SettingsDialog() {
                 margin='dense'
                 id='TorrentDisconnectTimeout'
                 label='Torrent disconnect timeout'
-                value={settings.TorrentDisconnectTimeout}
+                value={TorrentDisconnectTimeout}
                 type='number'
                 fullWidth
               />
               <FormControlLabel
-                control={<Switch checked={settings.EnableIPv6} onChange={inputForm} id='EnableIPv6' color='primary' />}
+                control={<Switch checked={EnableIPv6} onChange={inputForm} id='EnableIPv6' color='primary' />}
                 label='Enable IPv6'
               />
               <br />
               <FormControlLabel
-                control={
-                  <Switch checked={settings.ForceEncrypt} onChange={inputForm} id='ForceEncrypt' color='primary' />
-                }
+                control={<Switch checked={ForceEncrypt} onChange={inputForm} id='ForceEncrypt' color='primary' />}
                 label='Force encrypt'
               />
               <br />
               <FormControlLabel
-                control={<Switch checked={settings.DisableTCP} onChange={inputForm} id='DisableTCP' color='primary' />}
+                control={<Switch checked={DisableTCP} onChange={inputForm} id='DisableTCP' color='primary' />}
                 label='Disable TCP'
               />
               <br />
               <FormControlLabel
-                control={<Switch checked={settings.DisableUTP} onChange={inputForm} id='DisableUTP' color='primary' />}
+                control={<Switch checked={DisableUTP} onChange={inputForm} id='DisableUTP' color='primary' />}
                 label='Disable UTP'
               />
               <br />
               <FormControlLabel
-                control={
-                  <Switch checked={settings.DisableUPNP} onChange={inputForm} id='DisableUPNP' color='primary' />
-                }
+                control={<Switch checked={DisableUPNP} onChange={inputForm} id='DisableUPNP' color='primary' />}
                 label='Disable UPNP'
               />
               <br />
               <FormControlLabel
-                control={<Switch checked={settings.DisableDHT} onChange={inputForm} id='DisableDHT' color='primary' />}
+                control={<Switch checked={DisableDHT} onChange={inputForm} id='DisableDHT' color='primary' />}
                 label='Disable DHT'
               />
               <br />
               <FormControlLabel
-                control={<Switch checked={settings.DisablePEX} onChange={inputForm} id='DisablePEX' color='primary' />}
+                control={<Switch checked={DisablePEX} onChange={inputForm} id='DisablePEX' color='primary' />}
                 label='Disable PEX'
               />
               <br />
               <FormControlLabel
-                control={
-                  <Switch checked={settings.DisableUpload} onChange={inputForm} id='DisableUpload' color='primary' />
-                }
+                control={<Switch checked={DisableUpload} onChange={inputForm} id='DisableUpload' color='primary' />}
                 label='Disable upload'
               />
               <br />
@@ -192,7 +189,7 @@ export default function SettingsDialog() {
                 margin='dense'
                 id='DownloadRateLimit'
                 label='Download rate limit'
-                value={settings.DownloadRateLimit}
+                value={DownloadRateLimit}
                 type='number'
                 fullWidth
               />
@@ -201,7 +198,7 @@ export default function SettingsDialog() {
                 margin='dense'
                 id='UploadRateLimit'
                 label='Upload rate limit'
-                value={settings.UploadRateLimit}
+                value={UploadRateLimit}
                 type='number'
                 fullWidth
               />
@@ -210,7 +207,7 @@ export default function SettingsDialog() {
                 margin='dense'
                 id='ConnectionsLimit'
                 label='Connections limit'
-                value={settings.ConnectionsLimit}
+                value={ConnectionsLimit}
                 type='number'
                 fullWidth
               />
@@ -219,7 +216,7 @@ export default function SettingsDialog() {
                 margin='dense'
                 id='DhtConnectionLimit'
                 label='Dht connection limit'
-                value={settings.DhtConnectionLimit}
+                value={DhtConnectionLimit}
                 type='number'
                 fullWidth
               />
@@ -228,13 +225,13 @@ export default function SettingsDialog() {
                 margin='dense'
                 id='PeersListenPort'
                 label='Peers listen port'
-                value={settings.PeersListenPort}
+                value={PeersListenPort}
                 type='number'
                 fullWidth
               />
               <br />
               <FormControlLabel
-                control={<Switch checked={settings.UseDisk} onChange={inputForm} id='UseDisk' color='primary' />}
+                control={<Switch checked={UseDisk} onChange={inputForm} id='UseDisk' color='primary' />}
                 label='Use disk'
               />
               <br />
@@ -243,7 +240,7 @@ export default function SettingsDialog() {
                 margin='dense'
                 id='TorrentsSavePath'
                 label='Torrents save path'
-                value={settings.TorrentsSavePath}
+                value={TorrentsSavePath}
                 type='url'
                 fullWidth
               />
