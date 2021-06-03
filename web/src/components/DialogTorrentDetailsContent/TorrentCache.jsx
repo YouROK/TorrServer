@@ -13,6 +13,7 @@ const ScrollNotification = styled.div`
   margin-top: 10px;
   text-transform: uppercase;
   color: rgba(0, 0, 0, 0.5);
+  align-self: center;
 `
 
 const TorrentCache = memo(
@@ -65,7 +66,7 @@ const TorrentCache = memo(
     return (
       <Measure bounds onResize={({ bounds }) => setDimensions(bounds)}>
         {({ measureRef }) => (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }} ref={measureRef}>
+          <div style={{ display: 'flex', flexDirection: 'column' }} ref={measureRef}>
             <DialogContent
               {...(isMini
                 ? { style: { padding: 0, maxHeight: `${miniCacheMaxHeight}px`, overflow: 'auto' } }
