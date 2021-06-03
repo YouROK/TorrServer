@@ -17,9 +17,7 @@ export default function SettingsDialog() {
   const [open, setOpen] = useState(false)
   const [settings, setSets] = useState({})
   const [show, setShow] = useState(false)
-
-  const { protocol, hostname, port } = window.location
-  const [tsHost, setTSHost] = useState(getTorrServerHost() || `${protocol}//${hostname}${port ? `:${port}` : ''}`)
+  const [tsHost, setTSHost] = useState(getTorrServerHost())
 
   const handleClickOpen = () => setOpen(true)
   const handleClose = () => setOpen(false)

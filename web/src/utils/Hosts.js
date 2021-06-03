@@ -1,4 +1,6 @@
-let torrserverHost = process.env.REACT_APP_SERVER_HOST || ''
+const { protocol, hostname, port } = window.location
+
+let torrserverHost = process.env.REACT_APP_SERVER_HOST || `${protocol}//${hostname}${port ? `:${port}` : ''}`
 
 export const torrentsHost = () => `${torrserverHost}/torrents`
 export const viewedHost = () => `${torrserverHost}/viewed`
