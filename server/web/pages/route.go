@@ -33,6 +33,7 @@ func getTorrents(c *gin.Context) {
 			AnnounceList: ts.Trackers,
 		}
 		mag := mi.Magnet(ts.DisplayName, ts.InfoHash)
+		// mag := mi.Magnet(&ts.InfoHash, &metainfo.Info{Name: ts.DisplayName})
 		http += "<p><a href='" + mag.String() + "'>magnet:?xt=urn:btih:" + mag.InfoHash.HexString() + "</a></p>"
 	}
 	http += "</div>"
