@@ -124,7 +124,9 @@ const TorrentCache = memo(
               </Stage>
             </DialogContent>
 
-            {isMini && dimensions.height >= miniCacheMaxHeight && <ScrollNotification>scroll down</ScrollNotification>}
+            {isMini &&
+              (stageOffset + blockSizeWithMargin * amountOfRows || 0) >= miniCacheMaxHeight &&
+              dimensions.height >= miniCacheMaxHeight && <ScrollNotification>scroll down</ScrollNotification>}
           </div>
         )}
       </Measure>
