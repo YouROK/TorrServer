@@ -43,8 +43,6 @@ const TorrentCache = memo(
       updateStageSettings(12, 2)
     }, [isMini, dimensions.width])
 
-    console.log(dimensions.height)
-
     const miniCacheMaxHeight = 340
 
     const { boxHeight, strokeWidth, marginBetweenBlocks, stageOffset } = stageSettings
