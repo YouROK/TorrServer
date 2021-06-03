@@ -237,10 +237,12 @@ export default function SettingsDialog() {
               />
               <br />
               <FormControlLabel
-                  control={<Switch checked={RemoveCacheOnDrop} onChange={inputForm} id='RemoveCacheOnDrop' color='primary' />}
-                  label='Remove cache from disk on drop torrent'
+                control={
+                  <Switch checked={RemoveCacheOnDrop} onChange={inputForm} id='RemoveCacheOnDrop' color='primary' />
+                }
+                label='Remove cache from disk on drop torrent'
               />
-              <br/>
+              <br />
               <small>If disabled, remove cache on delete torrent</small>
               <br />
               <TextField
