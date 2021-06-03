@@ -2,10 +2,12 @@ package torr
 
 import (
 	"errors"
-	"fmt"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/metainfo"
 
 	"server/log"
 	"server/settings"
@@ -13,10 +15,6 @@ import (
 	cacheSt "server/torr/storage/state"
 	"server/torr/storage/torrstor"
 	"server/torr/utils"
-	utils2 "server/utils"
-
-	"github.com/anacrolix/torrent"
-	"github.com/anacrolix/torrent/metainfo"
 )
 
 type Torrent struct {
@@ -247,115 +245,6 @@ func (t *Torrent) GetCache() *torrstor.Cache {
 	return t.cache
 }
 
-func (t *Torrent) Preload(index int, size int64) {
-	if size <= 0 {
-		return
-	}
-	t.PreloadSize = size
-
-	if t.Stat == state.TorrentGettingInfo {
-		if !t.WaitInfo() {
-			return
-		}
-		// wait change status
-		time.Sleep(100 * time.Millisecond)
-	}
-
-	t.muTorrent.Lock()
-	if t.Stat != state.TorrentWorking {
-		t.muTorrent.Unlock()
-		return
-	}
-
-	t.Stat = state.TorrentPreload
-	t.muTorrent.Unlock()
-
-	defer func() {
-		if t.Stat == state.TorrentPreload {
-			t.Stat = state.TorrentWorking
-		}
-	}()
-
-	file := t.findFileIndex(index)
-	if file == nil {
-		file = t.Files()[0]
-	}
-
-	if size > file.Length() {
-		size = file.Length()
-	}
-
-	if t.Info() != nil {
-		pieceLength := t.Info().PieceLength
-		mb5 := int64(5 * 1024 * 1024)
-
-		pieceFileStart := int(file.Offset() / pieceLength)
-		pieceFileEnd := int((file.Offset() + file.Length()) / pieceLength)
-		readerPieceBefore := int((file.Offset() + size - mb5) / pieceLength)
-		readerPieceAfter := int((file.Offset() + file.Length() - mb5) / pieceLength)
-
-		lastStat := time.Now().Add(-time.Second)
-
-		for true {
-			t.muTorrent.Lock()
-			if t.Torrent == nil {
-				return
-			}
-
-			t.PreloadedBytes = t.cache.GetState().Filled
-			t.muTorrent.Unlock()
-
-			stat := fmt.Sprint(file.Torrent().InfoHash().HexString(), " ", utils2.Format(float64(t.PreloadedBytes)), "/", utils2.Format(float64(t.PreloadSize)), " Speed:", utils2.Format(t.DownloadSpeed), " Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
-			if time.Since(lastStat) > time.Second {
-				log.TLogln("Preload:", stat)
-				lastStat = time.Now()
-			}
-
-			isComplete := true
-			if readerPieceBefore >= pieceFileStart {
-				limit := 5
-				for i := pieceFileStart; i < readerPieceBefore; i++ {
-					if !t.PieceState(i).Complete {
-						isComplete = false
-						if t.PieceState(i).Priority == torrent.PiecePriorityNone {
-							t.Piece(i).SetPriority(torrent.PiecePriorityNormal)
-						}
-						limit--
-						if limit <= 0 {
-							break
-						}
-					}
-				}
-			}
-			if readerPieceAfter <= pieceFileEnd {
-				limit := 5
-				for i := readerPieceAfter; i <= pieceFileEnd; i++ {
-					if !t.PieceState(i).Complete {
-						isComplete = false
-						if t.PieceState(i).Priority == torrent.PiecePriorityNone {
-							t.Piece(i).SetPriority(torrent.PiecePriorityNormal)
-						}
-						limit--
-						if limit <= 0 {
-							break
-						}
-					}
-				}
-			}
-			if t.PreloadedBytes >= size-pieceLength {
-				isComplete = true
-			}
-
-			t.AddExpiredTime(time.Second * time.Duration(settings.BTsets.TorrentDisconnectTimeout))
-			if isComplete {
-				break
-			}
-			time.Sleep(time.Second)
-		}
-	}
-	log.TLogln("End preload:", file.Torrent().InfoHash().HexString(), "Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
-}
-
 func (t *Torrent) drop() {
 	t.muTorrent.Lock()
 	if t.Torrent != nil {
@@ -445,26 +334,6 @@ func (t *Torrent) CacheState() *cacheSt.CacheState {
 		st := t.cache.GetState()
 		st.Torrent = t.Status()
 		return st
-	}
-	return nil
-}
-
-func (t *Torrent) findFileIndex(index int) *torrent.File {
-	st := t.Status()
-	var stFile *state.TorrentFileStat
-	for _, f := range st.FileStats {
-		if index == f.Id {
-			stFile = f
-			break
-		}
-	}
-	if stFile == nil {
-		return nil
-	}
-	for _, file := range t.Files() {
-		if file.Path() == stFile.Path {
-			return file
-		}
 	}
 	return nil
 }
