@@ -3,10 +3,17 @@ import DialogContent from '@material-ui/core/DialogContent'
 import { Stage, Layer } from 'react-konva'
 import Measure from 'react-measure'
 import isEqual from 'lodash/isEqual'
+import styled from 'styled-components'
 import { v4 as uuidv4 } from 'uuid'
 
 import SingleBlock from './SingleBlock'
 import { useCreateCacheMap } from './customHooks'
+
+const ScrollNotification = styled.div`
+  margin-top: 10px;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.5);
+`
 
 const TorrentCache = memo(
   ({ cache, isMini }) => {
@@ -35,6 +42,8 @@ const TorrentCache = memo(
       updateStageSettings(12, 2)
     }, [isMini, dimensions.width])
 
+    const miniCacheMaxHeight = 340
+
     const { boxHeight, strokeWidth, marginBetweenBlocks, stageOffset } = stageSettings
     const preloadPiecesAmount = Math.round(cache.Capacity / cache.PiecesLength - 1)
     const blockSizeWithMargin = boxHeight + strokeWidth + marginBetweenBlocks
@@ -56,10 +65,10 @@ const TorrentCache = memo(
     return (
       <Measure bounds onResize={({ bounds }) => setDimensions(bounds)}>
         {({ measureRef }) => (
-          <div ref={measureRef}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }} ref={measureRef}>
             <DialogContent
               {...(isMini
-                ? { style: { padding: 0, maxHeight: '340px', overflow: 'auto' } }
+                ? { style: { padding: 0, maxHeight: `${miniCacheMaxHeight}px`, overflow: 'auto' } }
                 : { style: { padding: 0 } })}
             >
               <Stage
@@ -112,6 +121,8 @@ const TorrentCache = memo(
                 </Layer>
               </Stage>
             </DialogContent>
+
+            {dimensions.height >= miniCacheMaxHeight && <ScrollNotification>scroll down</ScrollNotification>}
           </div>
         )}
       </Measure>
