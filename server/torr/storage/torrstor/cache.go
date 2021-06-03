@@ -90,11 +90,19 @@ func (c *Cache) Piece(m metainfo.Piece) storage.PieceImpl {
 func (c *Cache) Close() error {
 	log.TLogln("Close cache for:", c.hash)
 	delete(c.storage.caches, c.hash)
-	//for _, v := range c.pieces {
-	//	if v.dPiece != nil {
-	//		os.Remove(v.dPiece.name)
-	//	}
-	//}
+
+	if settings.BTsets.RemoveCacheOnDrop {
+		name := filepath.Join(settings.BTsets.TorrentsSavePath, c.hash.HexString())
+		if name != "" && name != "/" {
+			for _, v := range c.pieces {
+				if v.dPiece != nil {
+					os.Remove(v.dPiece.name)
+				}
+			}
+			os.Remove(name)
+		}
+	}
+
 	c.pieces = nil
 
 	c.muReaders.Lock()
