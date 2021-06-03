@@ -66,8 +66,9 @@ const TorrentCache = memo(
     return (
       <Measure bounds onResize={({ bounds }) => setDimensions(bounds)}>
         {({ measureRef }) => (
-          <div style={{ display: 'flex', flexDirection: 'column' }} ref={measureRef}>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
             <DialogContent
+              ref={measureRef}
               {...(isMini
                 ? { style: { padding: 0, maxHeight: `${miniCacheMaxHeight}px`, overflow: 'auto' } }
                 : { style: { padding: 0 } })}
