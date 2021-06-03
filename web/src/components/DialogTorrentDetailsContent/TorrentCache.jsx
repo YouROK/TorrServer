@@ -43,6 +43,8 @@ const TorrentCache = memo(
       updateStageSettings(12, 2)
     }, [isMini, dimensions.width])
 
+    console.log(dimensions.height)
+
     const miniCacheMaxHeight = 340
 
     const { boxHeight, strokeWidth, marginBetweenBlocks, stageOffset } = stageSettings
@@ -66,8 +68,9 @@ const TorrentCache = memo(
     return (
       <Measure bounds onResize={({ bounds }) => setDimensions(bounds)}>
         {({ measureRef }) => (
-          <div style={{ display: 'flex', flexDirection: 'column' }} ref={measureRef}>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
             <DialogContent
+              ref={measureRef}
               {...(isMini
                 ? { style: { padding: 0, maxHeight: `${miniCacheMaxHeight}px`, overflow: 'auto' } }
                 : { style: { padding: 0 } })}
