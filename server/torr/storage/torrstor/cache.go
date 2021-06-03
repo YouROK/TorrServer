@@ -225,6 +225,19 @@ func (c *Cache) getRemPieces() []*Piece {
 					piecesRemove = append(piecesRemove, p)
 				}
 			}
+		} else {
+			// on preload clean
+			//TODO проверить
+			if p.Size > 0 && !c.isIdInFileBE(ranges, id) {
+				piecesRemove = append(piecesRemove, p)
+			}
+		}
+		if c.torrent.PieceState(id).Complete != c.pieces[id].Complete {
+			if c.pieces[id].Complete {
+				c.torrent.Piece(id).Storage().MarkComplete()
+			} else {
+				c.torrent.Piece(id).Storage().MarkNotComplete()
+			}
 		}
 	}
 
