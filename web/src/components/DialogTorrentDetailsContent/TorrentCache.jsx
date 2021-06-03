@@ -3,13 +3,14 @@ import DialogContent from '@material-ui/core/DialogContent'
 import { Stage, Layer } from 'react-konva'
 import Measure from 'react-measure'
 import isEqual from 'lodash/isEqual'
+import { v4 as uuidv4 } from 'uuid'
 
 import SingleBlock from './SingleBlock'
 import { useCreateCacheMap } from './customHooks'
 
 const TorrentCache = memo(
   ({ cache, isMini }) => {
-    const [dimensions, setDimensions] = useState({ width: -1, height: -1 })
+    const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
     const [stageSettings, setStageSettings] = useState({
       boxHeight: null,
       strokeWidth: null,
@@ -41,9 +42,16 @@ const TorrentCache = memo(
     const amountOfBlocksToRenderInShortView =
       preloadPiecesAmount === piecesInOneRow
         ? preloadPiecesAmount - 1
-        : preloadPiecesAmount + piecesInOneRow - (preloadPiecesAmount % piecesInOneRow) - 1
+        : preloadPiecesAmount + piecesInOneRow - (preloadPiecesAmount % piecesInOneRow) - 1 || 0
     const amountOfRows = Math.ceil((isMini ? amountOfBlocksToRenderInShortView : cacheMap.length) / piecesInOneRow)
-    let activeId = null
+    const activeId = null
+
+    const cacheMapWithoutEmptyBlocks = cacheMap.filter(({ isComplete, inProgress }) => inProgress || isComplete)
+    const extraEmptyBlocksForFillingLine =
+      cacheMapWithoutEmptyBlocks.length < amountOfBlocksToRenderInShortView
+        ? new Array(amountOfBlocksToRenderInShortView - cacheMapWithoutEmptyBlocks.length + 1).fill({})
+        : []
+    const shortCacheMap = [...cacheMapWithoutEmptyBlocks, ...extraEmptyBlocksForFillingLine]
 
     return (
       <Measure bounds onResize={({ bounds }) => setDimensions(bounds)}>
@@ -57,45 +65,46 @@ const TorrentCache = memo(
                 height={stageOffset + blockSizeWithMargin * amountOfRows || 0}
               >
                 <Layer>
-                  {cacheMap.map(({ id, percentage, isComplete, inProgress, isActive, isReaderRange }) => {
-                    const currentRow = Math.floor((isMini ? id - activeId : id) / piecesInOneRow)
+                  {isMini
+                    ? shortCacheMap.map(({ percentage, isComplete, inProgress, isActive, isReaderRange }, i) => {
+                        const currentRow = Math.floor(i / piecesInOneRow)
+                        const shouldBeRendered = inProgress || isComplete || i <= amountOfBlocksToRenderInShortView
 
-                    // -------- related only for short view -------
-                    if (isActive) activeId = id
-                    const shouldBeRendered =
-                      isActive || (id - activeId <= amountOfBlocksToRenderInShortView && id - activeId >= 0)
-                    // --------------------------------------------
+                        return (
+                          shouldBeRendered && (
+                            <SingleBlock
+                              key={uuidv4()}
+                              x={(i % piecesInOneRow) * blockSizeWithMargin}
+                              y={currentRow * blockSizeWithMargin}
+                              percentage={percentage}
+                              inProgress={inProgress}
+                              isComplete={isComplete}
+                              isReaderRange={isReaderRange}
+                              isActive={isActive}
+                              boxHeight={boxHeight}
+                              strokeWidth={strokeWidth}
+                            />
+                          )
+                        )
+                      })
+                    : cacheMap.map(({ id, percentage, isComplete, inProgress, isActive, isReaderRange }) => {
+                        const currentRow = Math.floor((isMini ? id - activeId : id) / piecesInOneRow)
 
-                    return isMini ? (
-                      shouldBeRendered && (
-                        <SingleBlock
-                          key={id}
-                          x={((id - activeId) % piecesInOneRow) * blockSizeWithMargin}
-                          y={currentRow * blockSizeWithMargin}
-                          percentage={percentage}
-                          inProgress={inProgress}
-                          isComplete={isComplete}
-                          isReaderRange={isReaderRange}
-                          isActive={isActive}
-                          boxHeight={boxHeight}
-                          strokeWidth={strokeWidth}
-                        />
-                      )
-                    ) : (
-                      <SingleBlock
-                        key={id}
-                        x={(id % piecesInOneRow) * blockSizeWithMargin}
-                        y={currentRow * blockSizeWithMargin}
-                        percentage={percentage}
-                        inProgress={inProgress}
-                        isComplete={isComplete}
-                        isReaderRange={isReaderRange}
-                        isActive={isActive}
-                        boxHeight={boxHeight}
-                        strokeWidth={strokeWidth}
-                      />
-                    )
-                  })}
+                        return (
+                          <SingleBlock
+                            key={uuidv4()}
+                            x={(id % piecesInOneRow) * blockSizeWithMargin}
+                            y={currentRow * blockSizeWithMargin}
+                            percentage={percentage}
+                            inProgress={inProgress}
+                            isComplete={isComplete}
+                            isReaderRange={isReaderRange}
+                            isActive={isActive}
+                            boxHeight={boxHeight}
+                            strokeWidth={strokeWidth}
+                          />
+                        )
+                      })}
                 </Layer>
               </Stage>
             </DialogContent>
