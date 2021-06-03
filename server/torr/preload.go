@@ -83,9 +83,9 @@ func (t *Torrent) Preload(index int, size int64) {
 		readerEndStart := file.Length() - mb5
 		readerEndEnd := file.Length()
 
-		offset := int64(0)
 		var wa sync.WaitGroup
 		go func() {
+			offset := int64(0)
 			if readerEndStart > readerStartEnd {
 				// Если конечный ридер не входит в диапозон начального
 				wa.Add(1)
@@ -99,9 +99,7 @@ func (t *Torrent) Preload(index int, size int64) {
 				for offset+int64(len(tmp)) < readerEndEnd {
 					n, err := readerEnd.Read(tmp)
 					if err != nil {
-						log.TLogln("Error preload:", err)
-						readerEnd.Close()
-						return
+						break
 					}
 					offset += int64(n)
 				}
@@ -115,7 +113,7 @@ func (t *Torrent) Preload(index int, size int64) {
 			readahead = 0
 		}
 		readerStart.SetReadahead(readahead)
-		offset = 0
+		offset := int64(0)
 		tmp := make([]byte, 32768, 32768)
 		for offset+int64(len(tmp)) < readerStartEnd {
 			n, err := readerStart.Read(tmp)
