@@ -79,6 +79,7 @@ export default function SettingsDialog() {
     PeersListenPort,
     UseDisk,
     TorrentsSavePath,
+    RemoveCacheOnDrop,
   } = settings
 
   return (
@@ -234,6 +235,13 @@ export default function SettingsDialog() {
                 control={<Switch checked={UseDisk} onChange={inputForm} id='UseDisk' color='primary' />}
                 label='Use disk'
               />
+              <br />
+              <FormControlLabel
+                  control={<Switch checked={RemoveCacheOnDrop} onChange={inputForm} id='RemoveCacheOnDrop' color='primary' />}
+                  label='Remove cache from disk on drop torrent'
+              />
+              <br/>
+              <small>If disabled, remove cache on delete torrent</small>
               <br />
               <TextField
                 onChange={inputForm}
