@@ -2,7 +2,7 @@ import { memo, useEffect, useState } from 'react'
 import DialogContent from '@material-ui/core/DialogContent'
 import { Stage, Layer } from 'react-konva'
 import Measure from 'react-measure'
-import { isEqual } from 'lodash'
+import isEqual from 'lodash/isEqual'
 
 import SingleBlock from './SingleBlock'
 import { useCreateCacheMap } from './customHooks'

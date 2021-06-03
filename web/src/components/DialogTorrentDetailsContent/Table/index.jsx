@@ -1,5 +1,5 @@
 import { streamHost } from 'utils/Hosts'
-import { isEqual } from 'lodash'
+import isEqual from 'lodash/isEqual'
 import { humanizeSize } from 'utils/Utils'
 import ptt from 'parse-torrent-title'
 import { Button } from '@material-ui/core'
