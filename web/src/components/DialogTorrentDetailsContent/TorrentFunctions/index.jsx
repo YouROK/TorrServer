@@ -56,7 +56,7 @@ const TorrentFunctions = memo(
             remove views
           </Button>
           <Button onClick={() => dropTorrent()} variant='contained' color='primary' size='large'>
-            drop torrent
+            reset torrent
           </Button>
         </MainSectionButtonGroup>
         <SmallLabel mb={10}>Info</SmallLabel>
