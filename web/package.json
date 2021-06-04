@@ -8,6 +8,7 @@
     "axios": "^0.21.1",
     "clsx": "^1.1.1",
     "fontsource-roboto": "^4.0.0",
+    "husky": "^6.0.0",
     "konva": "^8.0.1",
     "lodash": "^4.17.21",
     "material-ui-image": "^3.3.2",
@@ -32,6 +33,11 @@
     "eject": "react-scripts eject",
     "lint": "eslint --ext .js,.jsx src --color",
     "fix": "yarn lint --fix"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "yarn lint --quiet"
+    }
   },
   "browserslist": {
     "production": [

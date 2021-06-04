@@ -97,7 +97,7 @@ export default function DefaultSnake({ isMini, cacheMap, preloadPiecesAmount }) 
                       const { x, y } = getItemCoordinates(id)
 
                       return (
-                        <SingleBlock
+                        {/* <SingleBlock */}
                           key={uuidv4()}
                           x={x}
                           y={y}
