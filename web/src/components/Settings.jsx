@@ -12,6 +12,7 @@ import Button from '@material-ui/core/Button'
 import { FormControlLabel, InputLabel, Select, Switch } from '@material-ui/core'
 import { settingsHost, setTorrServerHost, getTorrServerHost } from 'utils/Hosts'
 import axios from 'axios'
+import { useTranslation } from 'react-i18next'
 
 export default function SettingsDialog() {
   const [open, setOpen] = useState(false)
@@ -27,6 +28,8 @@ export default function SettingsDialog() {
     sets.CacheSize *= 1024 * 1024
     axios.post(settingsHost(), { action: 'set', sets })
   }
+  // eslint-disable-next-line no-unused-vars
+  const { t, i18n } = useTranslation('translations')
 
   useEffect(() => {
     axios
@@ -82,21 +85,21 @@ export default function SettingsDialog() {
 
   return (
     <div>
-      <ListItem button key='Settings' onClick={handleClickOpen}>
+      <ListItem button key={t('Settings')} onClick={handleClickOpen}>
         <ListItemIcon>
           <SettingsIcon />
         </ListItemIcon>
-        <ListItemText primary='Settings' />
+        <ListItemText primary={t('Settings')} />
       </ListItem>
 
       <Dialog open={open} onClose={handleClose} aria-labelledby='form-dialog-title' fullWidth>
-        <DialogTitle id='form-dialog-title'>Settings</DialogTitle>
+        <DialogTitle id='form-dialog-title'>{t('Settings')}</DialogTitle>
         <DialogContent>
           <TextField
             onChange={onInputHost}
             margin='dense'
             id='TorrServerHost'
-            label='Host'
+            label={t('Host')}
             value={tsHost}
             type='url'
             fullWidth
@@ -107,87 +110,87 @@ export default function SettingsDialog() {
                 onChange={inputForm}
                 margin='dense'
                 id='CacheSize'
-                label='Cache size'
+                label={t('CacheSize')}
                 value={CacheSize}
                 type='number'
                 fullWidth
               />
               <FormControlLabel
                 control={<Switch checked={PreloadBuffer} onChange={inputForm} id='PreloadBuffer' color='primary' />}
-                label='Preload buffer'
+                label={t('PreloadBuffer')}
               />
               <TextField
                 onChange={inputForm}
                 margin='dense'
                 id='ReaderReadAHead'
-                label='Reader readahead'
+                label={t('ReaderReadAHead')}
                 value={ReaderReadAHead}
                 type='number'
                 fullWidth
               />
               <br />
               <br />
-              <InputLabel htmlFor='RetrackersMode'>Retracker mode</InputLabel>
+              <InputLabel htmlFor='RetrackersMode'>{t('RetrackersMode')}</InputLabel>
               <Select onChange={inputForm} type='number' native id='RetrackersMode' value={RetrackersMode}>
-                <option value={0}>Don&apos;t add retrackers</option>
-                <option value={1}>Add retrackers</option>
-                <option value={2}>Remove retrackers</option>
-                <option value={3}>Replace retrackers</option>
+                <option value={0}>{t('DontAddRetrackers')}</option>
+                <option value={1}>{t('AddRetrackers')}</option>
+                <option value={2}>{t('RemoveRetrackers')}</option>
+                <option value={3}>{t('ReplaceRetrackers')}</option>
               </Select>
               <TextField
                 onChange={inputForm}
                 margin='dense'
                 id='TorrentDisconnectTimeout'
-                label='Torrent disconnect timeout'
+                label={t('TorrentDisconnectTimeout')}
                 value={TorrentDisconnectTimeout}
                 type='number'
                 fullWidth
               />
               <FormControlLabel
                 control={<Switch checked={EnableIPv6} onChange={inputForm} id='EnableIPv6' color='primary' />}
-                label='Enable IPv6'
+                label={t('EnableIPv6')}
               />
               <br />
               <FormControlLabel
                 control={<Switch checked={ForceEncrypt} onChange={inputForm} id='ForceEncrypt' color='primary' />}
-                label='Force encrypt'
+                label={t('ForceEncrypt')}
               />
               <br />
               <FormControlLabel
                 control={<Switch checked={DisableTCP} onChange={inputForm} id='DisableTCP' color='primary' />}
-                label='Disable TCP'
+                label={t('DisableTCP')}
               />
               <br />
               <FormControlLabel
                 control={<Switch checked={DisableUTP} onChange={inputForm} id='DisableUTP' color='primary' />}
-                label='Disable UTP'
+                label={t('DisableUTP')}
               />
               <br />
               <FormControlLabel
                 control={<Switch checked={DisableUPNP} onChange={inputForm} id='DisableUPNP' color='primary' />}
-                label='Disable UPNP'
+                label={t('DisableUPNP')}
               />
               <br />
               <FormControlLabel
                 control={<Switch checked={DisableDHT} onChange={inputForm} id='DisableDHT' color='primary' />}
-                label='Disable DHT'
+                label={t('DisableDHT')}
               />
               <br />
               <FormControlLabel
                 control={<Switch checked={DisablePEX} onChange={inputForm} id='DisablePEX' color='primary' />}
-                label='Disable PEX'
+                label={t('DisablePEX')}
               />
               <br />
               <FormControlLabel
                 control={<Switch checked={DisableUpload} onChange={inputForm} id='DisableUpload' color='primary' />}
-                label='Disable upload'
+                label={t('DisableUpload')}
               />
               <br />
               <TextField
                 onChange={inputForm}
                 margin='dense'
                 id='DownloadRateLimit'
-                label='Download rate limit'
+                label={t('DownloadRateLimit')}
                 value={DownloadRateLimit}
                 type='number'
                 fullWidth
@@ -196,7 +199,7 @@ export default function SettingsDialog() {
                 onChange={inputForm}
                 margin='dense'
                 id='UploadRateLimit'
-                label='Upload rate limit'
+                label={t('UploadRateLimit')}
                 value={UploadRateLimit}
                 type='number'
                 fullWidth
@@ -205,7 +208,7 @@ export default function SettingsDialog() {
                 onChange={inputForm}
                 margin='dense'
                 id='ConnectionsLimit'
-                label='Connections limit'
+                label={t('ConnectionsLimit')}
                 value={ConnectionsLimit}
                 type='number'
                 fullWidth
@@ -214,7 +217,7 @@ export default function SettingsDialog() {
                 onChange={inputForm}
                 margin='dense'
                 id='DhtConnectionLimit'
-                label='Dht connection limit'
+                label={t('DhtConnectionLimit')}
                 value={DhtConnectionLimit}
                 type='number'
                 fullWidth
@@ -223,7 +226,7 @@ export default function SettingsDialog() {
                 onChange={inputForm}
                 margin='dense'
                 id='PeersListenPort'
-                label='Peers listen port'
+                label={t('PeersListenPort')}
                 value={PeersListenPort}
                 type='number'
                 fullWidth
@@ -231,23 +234,23 @@ export default function SettingsDialog() {
               <br />
               <FormControlLabel
                 control={<Switch checked={UseDisk} onChange={inputForm} id='UseDisk' color='primary' />}
-                label='Use disk'
+                label={t('UseDisk')}
               />
               <br />
               <FormControlLabel
                 control={
                   <Switch checked={RemoveCacheOnDrop} onChange={inputForm} id='RemoveCacheOnDrop' color='primary' />
                 }
-                label='Remove cache from disk on drop torrent'
+                label={t('RemoveCacheOnDrop')}
               />
               <br />
-              <small>If disabled, remove cache on delete torrent</small>
+              <small>{t('RemoveCacheOnDropDesc')}</small>
               <br />
               <TextField
                 onChange={inputForm}
                 margin='dense'
                 id='TorrentsSavePath'
-                label='Torrents save path'
+                label={t('TorrentsSavePath')}
                 value={TorrentsSavePath}
                 type='url'
                 fullWidth
@@ -258,11 +261,11 @@ export default function SettingsDialog() {
 
         <DialogActions>
           <Button onClick={handleClose} color='primary' variant='outlined'>
-            Cancel
+            {t('Cancel')}
           </Button>
 
           <Button onClick={handleSave} color='primary' variant='outlined'>
-            Save
+            {t('Save')}
           </Button>
         </DialogActions>
       </Dialog>

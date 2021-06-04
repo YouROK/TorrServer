@@ -14,21 +14,24 @@ import {
   PowerSettingsNew as PowerSettingsNewIcon,
 } from '@material-ui/icons'
 import List from '@material-ui/core/List'
+import { useTranslation } from 'react-i18next'
 
 import { AppSidebarStyle } from './style'
 
 export default function Sidebar({ isDrawerOpen, setIsDonationDialogOpen }) {
+  // eslint-disable-next-line no-unused-vars
+  const { t, i18n } = useTranslation('translations')
   return (
     <AppSidebarStyle isDrawerOpen={isDrawerOpen}>
       <List>
         <AddDialogButton />
         <UploadDialog />
         <RemoveAll />
-        <ListItem button component='a' key='Playlist all torrents' target='_blank' href={playlistAllHost()}>
+        <ListItem button component='a' key={t('PlaylistAll')} target='_blank' href={playlistAllHost()}>
           <ListItemIcon>
             <ListIcon />
           </ListItemIcon>
-          <ListItemText primary='Playlist all torrents' />
+          <ListItemText primary={t('PlaylistAll')} />
         </ListItem>
       </List>
 
@@ -37,11 +40,11 @@ export default function Sidebar({ isDrawerOpen, setIsDonationDialogOpen }) {
       <List>
         <SettingsDialog />
         <AboutDialog />
-        <ListItem button key='Close server' onClick={() => fetch(shutdownHost())}>
+        <ListItem button key={t('CloseServer')} onClick={() => fetch(shutdownHost())}>
           <ListItemIcon>
             <PowerSettingsNewIcon />
           </ListItemIcon>
-          <ListItemText primary='Close server' />
+          <ListItemText primary={t('CloseServer')} />
         </ListItem>
       </List>
 
@@ -52,7 +55,7 @@ export default function Sidebar({ isDrawerOpen, setIsDonationDialogOpen }) {
           <ListItemIcon>
             <CreditCardIcon />
           </ListItemIcon>
-          <ListItemText primary='Donate' />
+          <ListItemText primary={t('Donate')} />
         </ListItem>
       </List>
     </AppSidebarStyle>
