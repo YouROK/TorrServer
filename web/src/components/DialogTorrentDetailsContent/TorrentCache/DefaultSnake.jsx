@@ -98,7 +98,7 @@ export default function DefaultSnake({ isMini, cacheMap, preloadPiecesAmount }) 
 
                       return (
                         {/* <SingleBlock */}
-                          key={uuidv4()}
+                          {/* key={uuidv4()} */}
                           x={x}
                           y={y}
                           percentage={percentage}
