@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid'
 import styled from 'styled-components'
 
 import SingleBlock from './SingleBlock'
+import getShortCacheMap from './getShortCacheMap'
 
 const ScrollNotification = styled.div`
   margin-top: 10px;
@@ -43,19 +44,18 @@ export default function DefaultSnake({ isMini, cacheMap, preloadPiecesAmount }) 
 
   const blockSizeWithMargin = boxHeight + strokeWidth + marginBetweenBlocks
   const piecesInOneRow = Math.floor((dimensions.width * 0.9) / blockSizeWithMargin)
-  const amountOfBlocksToRenderInShortView =
-    preloadPiecesAmount === piecesInOneRow
-      ? preloadPiecesAmount - 1
-      : preloadPiecesAmount + piecesInOneRow - (preloadPiecesAmount % piecesInOneRow) - 1 || 0
-  const amountOfRows = Math.ceil((isMini ? amountOfBlocksToRenderInShortView : cacheMap.length) / piecesInOneRow)
-  const activeId = null
 
-  const cacheMapWithoutEmptyBlocks = cacheMap.filter(({ isComplete, inProgress }) => inProgress || isComplete)
-  const extraEmptyBlocksForFillingLine =
-    cacheMapWithoutEmptyBlocks.length < amountOfBlocksToRenderInShortView
-      ? new Array(amountOfBlocksToRenderInShortView - cacheMapWithoutEmptyBlocks.length + 1).fill({})
-      : []
-  const shortCacheMap = [...cacheMapWithoutEmptyBlocks, ...extraEmptyBlocksForFillingLine]
+  const shortCacheMap = isMini ? getShortCacheMap({ cacheMap, preloadPiecesAmount, piecesInOneRow }) : []
+
+  const amountOfRows = Math.ceil((isMini ? shortCacheMap.length : cacheMap.length) / piecesInOneRow)
+
+  const getItemCoordinates = blockOrder => {
+    const currentRow = Math.floor(blockOrder / piecesInOneRow)
+    const x = (blockOrder % piecesInOneRow) * blockSizeWithMargin || 0
+    const y = currentRow * blockSizeWithMargin || 0
+
+    return { x, y }
+  }
 
   return (
     <Measure bounds onResize={({ bounds }) => setDimensions(bounds)}>
@@ -76,34 +76,31 @@ export default function DefaultSnake({ isMini, cacheMap, preloadPiecesAmount }) 
               <Layer>
                 {isMini
                   ? shortCacheMap.map(({ percentage, isComplete, inProgress, isActive, isReaderRange }, i) => {
-                      const currentRow = Math.floor(i / piecesInOneRow)
-                      const shouldBeRendered = inProgress || isComplete || i <= amountOfBlocksToRenderInShortView
-
-                      return (
-                        shouldBeRendered && (
-                          <SingleBlock
-                            key={uuidv4()}
-                            x={(i % piecesInOneRow) * blockSizeWithMargin}
-                            y={currentRow * blockSizeWithMargin}
-                            percentage={percentage}
-                            inProgress={inProgress}
-                            isComplete={isComplete}
-                            isReaderRange={isReaderRange}
-                            isActive={isActive}
-                            boxHeight={boxHeight}
-                            strokeWidth={strokeWidth}
-                          />
-                        )
-                      )
-                    })
-                  : cacheMap.map(({ id, percentage, isComplete, inProgress, isActive, isReaderRange }) => {
-                      const currentRow = Math.floor((isMini ? id - activeId : id) / piecesInOneRow)
+                      const { x, y } = getItemCoordinates(i)
 
                       return (
                         <SingleBlock
                           key={uuidv4()}
-                          x={(id % piecesInOneRow) * blockSizeWithMargin}
-                          y={currentRow * blockSizeWithMargin}
+                          x={x}
+                          y={y}
+                          percentage={percentage}
+                          inProgress={inProgress}
+                          isComplete={isComplete}
+                          isReaderRange={isReaderRange}
+                          isActive={isActive}
+                          boxHeight={boxHeight}
+                          strokeWidth={strokeWidth}
+                        />
+                      )
+                    })
+                  : cacheMap.map(({ id, percentage, isComplete, inProgress, isActive, isReaderRange }) => {
+                      const { x, y } = getItemCoordinates(id)
+
+                      return (
+                        <SingleBlock
+                          key={uuidv4()}
+                          x={x}
+                          y={y}
                           percentage={percentage}
                           inProgress={inProgress}
                           isComplete={isComplete}
