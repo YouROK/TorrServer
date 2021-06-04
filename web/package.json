@@ -36,7 +36,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "yarn lint --quiet"
+      "pre-push": "yarn lint --quiet"
     }
   },
   "browserslist": {
