@@ -140,16 +140,6 @@ export default function SettingsDialog() {
                 label={t('PreloadBuffer')}
               />
               <br />
-              <TextField
-                onChange={inputForm}
-                margin='dense'
-                id='TorrentDisconnectTimeout'
-                label={t('TorrentDisconnectTimeout')}
-                value={TorrentDisconnectTimeout}
-                type='number'
-                fullWidth
-              />
-              <br />
               <FormControlLabel
                 control={<Switch checked={UseDisk} onChange={inputForm} id='UseDisk' color='primary' />}
                 label={t('UseDisk')}
@@ -202,9 +192,34 @@ export default function SettingsDialog() {
               <TextField
                 onChange={inputForm}
                 margin='dense'
+                id='TorrentDisconnectTimeout'
+                label={t('TorrentDisconnectTimeout')}
+                value={TorrentDisconnectTimeout}
+                type='number'
+                fullWidth
+              />
+              <br />
+              <TextField
+                onChange={inputForm}
+                margin='dense'
                 id='ConnectionsLimit'
                 label={t('ConnectionsLimit')}
                 value={ConnectionsLimit}
+                type='number'
+                fullWidth
+              />
+              <br />
+              <FormControlLabel
+                control={<Switch checked={!DisableDHT} onChange={inputForm} id='DisableDHT' color='primary' />}
+                label={t('DHT')}
+              />
+              <br />
+              <TextField
+                onChange={inputForm}
+                margin='dense'
+                id='DhtConnectionLimit'
+                label={t('DhtConnectionLimit')}
+                value={DhtConnectionLimit}
                 type='number'
                 fullWidth
               />
@@ -230,21 +245,6 @@ export default function SettingsDialog() {
                 id='UploadRateLimit'
                 label={t('UploadRateLimit')}
                 value={UploadRateLimit}
-                type='number'
-                fullWidth
-              />
-              <br />
-              <FormControlLabel
-                control={<Switch checked={!DisableDHT} onChange={inputForm} id='DisableDHT' color='primary' />}
-                label={t('DHT')}
-              />
-              <br />
-              <TextField
-                onChange={inputForm}
-                margin='dense'
-                id='DhtConnectionLimit'
-                label={t('DhtConnectionLimit')}
-                value={DhtConnectionLimit}
                 type='number'
                 fullWidth
               />
