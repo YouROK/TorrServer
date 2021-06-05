@@ -34,10 +34,10 @@ export default function AboutDialog() {
         <DialogTitle id='form-dialog-title'>{t('About')}</DialogTitle>
 
         <DialogContent>
-            <center>
-              <h2>TorrServer {torrServerVersion}</h2>
-              <a href='https://github.com/YouROK/TorrServer'>https://github.com/YouROK/TorrServer</a>
-            </center>
+          <center>
+            <h2>TorrServer {torrServerVersion}</h2>
+            <a href='https://github.com/YouROK/TorrServer'>https://github.com/YouROK/TorrServer</a>
+          </center>
           <DialogContent>
             <center>
               <h2>{t('ThanksToEveryone')}</h2>
