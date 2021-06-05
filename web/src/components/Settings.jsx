@@ -1,3 +1,4 @@
+import axios from 'axios'
 import ListItem from '@material-ui/core/ListItem'
 import ListItemIcon from '@material-ui/core/ListItemIcon'
 import ListItemText from '@material-ui/core/ListItemText'
@@ -11,7 +12,6 @@ import DialogActions from '@material-ui/core/DialogActions'
 import Button from '@material-ui/core/Button'
 import { FormControlLabel, InputLabel, Select, Switch } from '@material-ui/core'
 import { settingsHost, setTorrServerHost, getTorrServerHost } from 'utils/Hosts'
-import axios from 'axios'
 import { useTranslation } from 'react-i18next'
 
 export default function SettingsDialog() {
@@ -52,7 +52,16 @@ export default function SettingsDialog() {
     if (type === 'number' || type === 'select-one') {
       sets[id] = Number(value)
     } else if (type === 'checkbox') {
-      sets[id] = Boolean(checked)
+      if (
+        id === 'DisableTCP' ||
+        id === 'DisableUTP' ||
+        id === 'DisableUPNP' ||
+        id === 'DisableDHT' ||
+        id === 'DisablePEX' ||
+        id === 'DisableUpload'
+      )
+        sets[id] = Boolean(!checked)
+      else sets[id] = Boolean(checked)
     } else if (type === 'url') {
       sets[id] = value
     }
@@ -115,10 +124,7 @@ export default function SettingsDialog() {
                 type='number'
                 fullWidth
               />
-              <FormControlLabel
-                control={<Switch checked={PreloadBuffer} onChange={inputForm} id='PreloadBuffer' color='primary' />}
-                label={t('PreloadBuffer')}
-              />
+              <br />
               <TextField
                 onChange={inputForm}
                 margin='dense'
@@ -129,105 +135,17 @@ export default function SettingsDialog() {
                 fullWidth
               />
               <br />
+              <FormControlLabel
+                control={<Switch checked={PreloadBuffer} onChange={inputForm} id='PreloadBuffer' color='primary' />}
+                label={t('PreloadBuffer')}
+              />
               <br />
-              <InputLabel htmlFor='RetrackersMode'>{t('RetrackersMode')}</InputLabel>
-              <Select onChange={inputForm} type='number' native id='RetrackersMode' value={RetrackersMode}>
-                <option value={0}>{t('DontAddRetrackers')}</option>
-                <option value={1}>{t('AddRetrackers')}</option>
-                <option value={2}>{t('RemoveRetrackers')}</option>
-                <option value={3}>{t('ReplaceRetrackers')}</option>
-              </Select>
               <TextField
                 onChange={inputForm}
                 margin='dense'
                 id='TorrentDisconnectTimeout'
                 label={t('TorrentDisconnectTimeout')}
                 value={TorrentDisconnectTimeout}
-                type='number'
-                fullWidth
-              />
-              <FormControlLabel
-                control={<Switch checked={EnableIPv6} onChange={inputForm} id='EnableIPv6' color='primary' />}
-                label={t('EnableIPv6')}
-              />
-              <br />
-              <FormControlLabel
-                control={<Switch checked={ForceEncrypt} onChange={inputForm} id='ForceEncrypt' color='primary' />}
-                label={t('ForceEncrypt')}
-              />
-              <br />
-              <FormControlLabel
-                control={<Switch checked={DisableTCP} onChange={inputForm} id='DisableTCP' color='primary' />}
-                label={t('DisableTCP')}
-              />
-              <br />
-              <FormControlLabel
-                control={<Switch checked={DisableUTP} onChange={inputForm} id='DisableUTP' color='primary' />}
-                label={t('DisableUTP')}
-              />
-              <br />
-              <FormControlLabel
-                control={<Switch checked={DisableUPNP} onChange={inputForm} id='DisableUPNP' color='primary' />}
-                label={t('DisableUPNP')}
-              />
-              <br />
-              <FormControlLabel
-                control={<Switch checked={DisableDHT} onChange={inputForm} id='DisableDHT' color='primary' />}
-                label={t('DisableDHT')}
-              />
-              <br />
-              <FormControlLabel
-                control={<Switch checked={DisablePEX} onChange={inputForm} id='DisablePEX' color='primary' />}
-                label={t('DisablePEX')}
-              />
-              <br />
-              <FormControlLabel
-                control={<Switch checked={DisableUpload} onChange={inputForm} id='DisableUpload' color='primary' />}
-                label={t('DisableUpload')}
-              />
-              <br />
-              <TextField
-                onChange={inputForm}
-                margin='dense'
-                id='DownloadRateLimit'
-                label={t('DownloadRateLimit')}
-                value={DownloadRateLimit}
-                type='number'
-                fullWidth
-              />
-              <TextField
-                onChange={inputForm}
-                margin='dense'
-                id='UploadRateLimit'
-                label={t('UploadRateLimit')}
-                value={UploadRateLimit}
-                type='number'
-                fullWidth
-              />
-              <TextField
-                onChange={inputForm}
-                margin='dense'
-                id='ConnectionsLimit'
-                label={t('ConnectionsLimit')}
-                value={ConnectionsLimit}
-                type='number'
-                fullWidth
-              />
-              <TextField
-                onChange={inputForm}
-                margin='dense'
-                id='DhtConnectionLimit'
-                label={t('DhtConnectionLimit')}
-                value={DhtConnectionLimit}
-                type='number'
-                fullWidth
-              />
-              <TextField
-                onChange={inputForm}
-                margin='dense'
-                id='PeersListenPort'
-                label={t('PeersListenPort')}
-                value={PeersListenPort}
                 type='number'
                 fullWidth
               />
@@ -255,6 +173,105 @@ export default function SettingsDialog() {
                 type='url'
                 fullWidth
               />
+              <br />
+              <FormControlLabel
+                control={<Switch checked={EnableIPv6} onChange={inputForm} id='EnableIPv6' color='primary' />}
+                label={t('EnableIPv6')}
+              />
+              <br />
+              <FormControlLabel
+                control={<Switch checked={!DisableTCP} onChange={inputForm} id='DisableTCP' color='primary' />}
+                label={t('TCP')}
+              />
+              <br />
+              <FormControlLabel
+                control={<Switch checked={!DisableUTP} onChange={inputForm} id='DisableUTP' color='primary' />}
+                label={t('UTP')}
+              />
+              <br />
+              <FormControlLabel
+                control={<Switch checked={!DisablePEX} onChange={inputForm} id='DisablePEX' color='primary' />}
+                label={t('PEX')}
+              />
+              <br />
+              <FormControlLabel
+                control={<Switch checked={ForceEncrypt} onChange={inputForm} id='ForceEncrypt' color='primary' />}
+                label={t('ForceEncrypt')}
+              />
+              <br />
+              <TextField
+                onChange={inputForm}
+                margin='dense'
+                id='ConnectionsLimit'
+                label={t('ConnectionsLimit')}
+                value={ConnectionsLimit}
+                type='number'
+                fullWidth
+              />
+              <br />
+              <TextField
+                onChange={inputForm}
+                margin='dense'
+                id='DownloadRateLimit'
+                label={t('DownloadRateLimit')}
+                value={DownloadRateLimit}
+                type='number'
+                fullWidth
+              />
+              <br />
+              <FormControlLabel
+                control={<Switch checked={!DisableUpload} onChange={inputForm} id='DisableUpload' color='primary' />}
+                label={t('Upload')}
+              />
+              <br />
+              <TextField
+                onChange={inputForm}
+                margin='dense'
+                id='UploadRateLimit'
+                label={t('UploadRateLimit')}
+                value={UploadRateLimit}
+                type='number'
+                fullWidth
+              />
+              <br />
+              <FormControlLabel
+                control={<Switch checked={!DisableDHT} onChange={inputForm} id='DisableDHT' color='primary' />}
+                label={t('DHT')}
+              />
+              <br />
+              <TextField
+                onChange={inputForm}
+                margin='dense'
+                id='DhtConnectionLimit'
+                label={t('DhtConnectionLimit')}
+                value={DhtConnectionLimit}
+                type='number'
+                fullWidth
+              />
+              <br />
+              <TextField
+                onChange={inputForm}
+                margin='dense'
+                id='PeersListenPort'
+                label={t('PeersListenPort')}
+                value={PeersListenPort}
+                type='number'
+                fullWidth
+              />
+              <br />
+              <FormControlLabel
+                control={<Switch checked={!DisableUPNP} onChange={inputForm} id='DisableUPNP' color='primary' />}
+                label={t('UPNP')}
+              />
+              <br />
+              <InputLabel htmlFor='RetrackersMode'>{t('RetrackersMode')}</InputLabel>
+              <Select onChange={inputForm} type='number' native id='RetrackersMode' value={RetrackersMode}>
+                <option value={0}>{t('DontAddRetrackers')}</option>
+                <option value={1}>{t('AddRetrackers')}</option>
+                <option value={2}>{t('RemoveRetrackers')}</option>
+                <option value={3}>{t('ReplaceRetrackers')}</option>
+              </Select>
+              <br />
             </>
           )}
         </DialogContent>
