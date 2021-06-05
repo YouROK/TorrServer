@@ -13,7 +13,7 @@ const donateFrame =
 
 export default function DonateDialog({ onClose }) {
   // eslint-disable-next-line no-unused-vars
-  const { t, i18n } = useTranslation('translations')
+  const { t } = useTranslation()
   return (
     <Dialog open onClose={onClose} aria-labelledby='form-dialog-title' fullWidth>
       <DialogTitle id='form-dialog-title'>{t('Donate')}</DialogTitle>

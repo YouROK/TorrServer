@@ -12,7 +12,7 @@ export default function AddDialogButton() {
   const handleClickOpen = () => setIsDialogOpen(true)
   const handleClose = () => setIsDialogOpen(false)
   // eslint-disable-next-line no-unused-vars
-  const { t, i18n } = useTranslation('translations')
+  const { t } = useTranslation()
   return (
     <div>
       <ListItem button key='Add' onClick={handleClickOpen}>

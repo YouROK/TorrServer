@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next'
 export default function AboutDialog() {
   const [open, setOpen] = useState(false)
   // eslint-disable-next-line no-unused-vars
-  const { t, i18n } = useTranslation('translations')
+  const { t } = useTranslation()
   return (
     <div>
       <ListItem button key='Settings' onClick={() => setOpen(true)}>

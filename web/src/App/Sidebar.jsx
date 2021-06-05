@@ -20,7 +20,7 @@ import { AppSidebarStyle } from './style'
 
 export default function Sidebar({ isDrawerOpen, setIsDonationDialogOpen }) {
   // eslint-disable-next-line no-unused-vars
-  const { t, i18n } = useTranslation('translations')
+  const { t } = useTranslation()
   return (
     <AppSidebarStyle isDrawerOpen={isDrawerOpen}>
       <List>

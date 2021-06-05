@@ -18,7 +18,7 @@ const Transition = forwardRef((props, ref) => <Slide direction='up' ref={ref} {.
 
 export default function Torrent({ torrent }) {
   // eslint-disable-next-line no-unused-vars
-  const { t, i18n } = useTranslation('translations')
+  const { t } = useTranslation()
   const [isDetailedInfoOpened, setIsDetailedInfoOpened] = useState(false)
   const [isDeleteTorrentOpened, setIsDeleteTorrentOpened] = useState(false)
 

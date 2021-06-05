@@ -29,7 +29,7 @@ export default function SettingsDialog() {
     axios.post(settingsHost(), { action: 'set', sets })
   }
   // eslint-disable-next-line no-unused-vars
-  const { t, i18n } = useTranslation('translations')
+  const { t } = useTranslation()
 
   useEffect(() => {
     axios

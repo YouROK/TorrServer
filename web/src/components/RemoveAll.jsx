@@ -36,7 +36,7 @@ export default function RemoveAll() {
   const closeDialog = () => setOpen(false)
   const openDialog = () => setOpen(true)
   // eslint-disable-next-line no-unused-vars
-  const { t, i18n } = useTranslation('translations')
+  const { t } = useTranslation()
   return (
     <>
       <ListItem button key={t('RemoveAll')} onClick={openDialog}>

@@ -15,7 +15,7 @@ export default function UploadDialog() {
     axios.post(torrentUploadHost(), data)
   }
   // eslint-disable-next-line no-unused-vars
-  const { t, i18n } = useTranslation('translations')
+  const { t } = useTranslation()
   return (
     <div>
       <label htmlFor='raised-button-file'>
