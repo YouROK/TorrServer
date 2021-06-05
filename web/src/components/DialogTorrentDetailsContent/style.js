@@ -47,15 +47,13 @@ export const Poster = styled.div`
     }
 
     @media (max-width: 840px) {
-      height: 200px;
-
-      ${!poster &&
-      css`
-        width: 150px;
-        svg {
-          transform: translateY(-3px);
-        }
-      `}
+      ${poster
+        ? css`
+            height: 200px;
+          `
+        : css`
+            display: none;
+          `}
     }
   `}
 `

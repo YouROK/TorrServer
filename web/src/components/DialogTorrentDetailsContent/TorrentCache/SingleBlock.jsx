@@ -1,5 +1,7 @@
 import { Rect } from 'react-konva'
 
+import { activeColor, completeColor, defaultBorderColor, progressColor, rangeColor } from './colors'
+
 export default function SingleBlock({
   x,
   y,
@@ -12,17 +14,17 @@ export default function SingleBlock({
   strokeWidth,
 }) {
   const strokeColor = isActive
-    ? '#000'
+    ? activeColor
     : isComplete
-    ? '#3fb57a'
+    ? completeColor
     : inProgress
-    ? '#00d0d0'
+    ? progressColor
     : isReaderRange
-    ? '#9a9aff'
-    : '#eef2f4'
-  const backgroundColor = inProgress ? '#00d0d0' : '#eef2f4'
-  const percentageProgressColor = '#3fb57a'
-  const processCompletedColor = '#3fb57a'
+    ? rangeColor
+    : defaultBorderColor
+  const backgroundColor = inProgress ? progressColor : defaultBorderColor
+  const percentageProgressColor = completeColor
+  const processCompletedColor = completeColor
 
   return (
     <Rect

@@ -34,7 +34,7 @@ export const UploadSpeedWidget = ({ data }) => (
 export const PeersWidget = ({ data }) => (
   <StatisticsField
     title='Peers'
-    value={getPeerString(data)}
+    value={getPeerString(data) || '[0] 0 / 0'}
     iconBg='#cdc118'
     valueBg='#d8cb18'
     icon={SwapVerticalCircleIcon}
