@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import axios from 'axios'
+import { useEffect, useState } from 'react'
 import Button from '@material-ui/core/Button'
 import Dialog from '@material-ui/core/Dialog'
 import DialogActions from '@material-ui/core/DialogActions'
@@ -9,11 +10,17 @@ import ListItem from '@material-ui/core/ListItem'
 import ListItemIcon from '@material-ui/core/ListItemIcon'
 import ListItemText from '@material-ui/core/ListItemText'
 import { useTranslation } from 'react-i18next'
+import { echoHost } from 'utils/Hosts'
 
 export default function AboutDialog() {
   const [open, setOpen] = useState(false)
   // eslint-disable-next-line no-unused-vars
   const { t } = useTranslation()
+  const [torrServerVersion, setTorrServerVersion] = useState('')
+  useEffect(() => {
+    axios.get(echoHost()).then(({ data }) => setTorrServerVersion(data))
+  }, [])
+
   return (
     <div>
       <ListItem button key='Settings' onClick={() => setOpen(true)}>
@@ -27,6 +34,10 @@ export default function AboutDialog() {
         <DialogTitle id='form-dialog-title'>{t('About')}</DialogTitle>
 
         <DialogContent>
+            <center>
+              <h2>TorrServer {torrServerVersion}</h2>
+              <a href='https://github.com/YouROK/TorrServer'>https://github.com/YouROK/TorrServer</a>
+            </center>
           <DialogContent>
             <center>
               <h2>{t('ThanksToEveryone')}</h2>
