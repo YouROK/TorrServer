@@ -10,7 +10,6 @@
     "fontsource-roboto": "^4.0.0",
     "i18next": "^20.3.1",
     "i18next-browser-languagedetector": "^6.1.1",
-    "i18next-xhr-backend": "^3.2.2",
     "konva": "^8.0.1",
     "lodash": "^4.17.21",
     "material-ui-image": "^3.3.2",
