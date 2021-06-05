@@ -16,7 +16,7 @@ import Sidebar from './Sidebar'
 
 const baseTheme = createMuiTheme({
   overrides: { MuiCssBaseline: { '@global': { html: { WebkitFontSmoothing: 'auto' } } } },
-  palette: { primary: { main: '#3fb57a' }, secondary: { main: '#FFA724' }, tonalOffset: 0.2 },
+  palette: { primary: { main: '#00a572' }, secondary: { main: '#ffa724' }, tonalOffset: 0.2 },
 })
 
 export default function App() {

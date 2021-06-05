@@ -17,7 +17,7 @@ export const CenteredGrid = styled.div`
 `
 
 export const AppHeader = styled.div`
-  background: #3fb57a;
+  background: #00a572;
   color: rgba(0, 0, 0, 0.87);
   grid-area: head;
   display: flex;

@@ -8,7 +8,7 @@ export const TorrentCard = styled.div`
   grid-template-areas: 'poster description buttons';
   gap: 10px;
   padding: 10px;
-  background: #3fb57a;
+  background: #00a572;
   box-shadow: 0px 2px 4px -1px rgb(0 0 0 / 20%), 0px 4px 5px 0px rgb(0 0 0 / 14%), 0px 1px 10px 0px rgb(0 0 0 / 12%);
 
   @media (max-width: 1260px), (max-height: 500px) {
