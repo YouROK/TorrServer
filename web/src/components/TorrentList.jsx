@@ -5,12 +5,15 @@ import TorrentCard from 'components/TorrentCard'
 import axios from 'axios'
 import CircularProgress from '@material-ui/core/CircularProgress'
 import { TorrentListWrapper, CenteredGrid } from 'App/style'
+import { useTranslation } from 'react-i18next'
 
 export default function TorrentList() {
   const [torrents, setTorrents] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [isOffline, setIsOffline] = useState(true)
   const timerID = useRef(-1)
+  // eslint-disable-next-line no-unused-vars
+  const { t } = useTranslation()
 
   useEffect(() => {
     timerID.current = setInterval(() => {
@@ -39,9 +42,9 @@ export default function TorrentList() {
         {isLoading ? (
           <CircularProgress />
         ) : isOffline ? (
-          <Typography>Offline</Typography>
+          <Typography>{t('Offline')}</Typography>
         ) : (
-          !torrents.length && <Typography>No torrents added</Typography>
+          !torrents.length && <Typography>{t('NoTorrentsAdded')}</Typography>
         )}
       </CenteredGrid>
     )

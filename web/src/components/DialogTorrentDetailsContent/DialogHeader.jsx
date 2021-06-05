@@ -2,6 +2,7 @@ import Button from '@material-ui/core/Button'
 import { AppBar, IconButton, makeStyles, Toolbar, Typography } from '@material-ui/core'
 import CloseIcon from '@material-ui/icons/Close'
 import { ArrowBack } from '@material-ui/icons'
+import { useTranslation } from 'react-i18next'
 
 const useStyles = makeStyles(theme => ({
   appBar: { position: 'relative' },
@@ -10,6 +11,8 @@ const useStyles = makeStyles(theme => ({
 
 export default function DialogHeader({ title, onClose, onBack }) {
   const classes = useStyles()
+  // eslint-disable-next-line no-unused-vars
+  const { t } = useTranslation()
 
   return (
     <AppBar className={classes.appBar}>
@@ -24,7 +27,7 @@ export default function DialogHeader({ title, onClose, onBack }) {
 
         {onBack && (
           <Button autoFocus color='inherit' onClick={onClose}>
-            close
+            {t('Close')}
           </Button>
         )}
       </Toolbar>
