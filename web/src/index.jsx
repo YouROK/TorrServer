@@ -8,7 +8,7 @@ import './index.css'
 import App from './App'
 
 i18n.use(LanguageDetector).init({
-  lng: 'ru', // default
+  lng: 'en', // default
   fallbackLng: 'en', // use en if detected lng is not available
   keySeparator: false, // we do not use keys in form messages.welcome
   interpolation: {
