@@ -1,4 +1,4 @@
-import { playlistAllHost, shutdownHost } from 'utils/Hosts'
+import { playlistAllHost } from 'utils/Hosts'
 import Divider from '@material-ui/core/Divider'
 import ListItem from '@material-ui/core/ListItem'
 import ListItemIcon from '@material-ui/core/ListItemIcon'
@@ -8,12 +8,9 @@ import RemoveAll from 'components/RemoveAll'
 import SettingsDialog from 'components/Settings'
 import AboutDialog from 'components/About'
 import UploadDialog from 'components/Upload'
-import {
-  CreditCard as CreditCardIcon,
-  List as ListIcon,
-  PowerSettingsNew as PowerSettingsNewIcon,
-} from '@material-ui/icons'
+import { CreditCard as CreditCardIcon, List as ListIcon } from '@material-ui/icons'
 import List from '@material-ui/core/List'
+import CloseServer from 'components/CloseServer'
 import { useTranslation } from 'react-i18next'
 
 import { AppSidebarStyle } from './style'
@@ -39,12 +36,7 @@ export default function Sidebar({ isDrawerOpen, setIsDonationDialogOpen }) {
       <List>
         <SettingsDialog />
         <AboutDialog />
-        <ListItem button key={t('CloseServer')} onClick={() => fetch(shutdownHost())}>
-          <ListItemIcon>
-            <PowerSettingsNewIcon />
-          </ListItemIcon>
-          <ListItemText primary={t('CloseServer')} />
-        </ListItem>
+        <CloseServer />
       </List>
 
       <Divider />
