@@ -8,22 +8,26 @@ import RemoveAll from 'components/RemoveAll'
 import SettingsDialog from 'components/Settings'
 import AboutDialog from 'components/About'
 import UploadDialog from 'components/Upload'
-import { CreditCard as CreditCardIcon, List as ListIcon } from '@material-ui/icons'
+import { CreditCard as CreditCardIcon, List as ListIcon, Language as LanguageIcon } from '@material-ui/icons'
 import List from '@material-ui/core/List'
 import CloseServer from 'components/CloseServer'
 import { useTranslation } from 'react-i18next'
+import useChangeLanguage from 'utils/useChangeLanguage'
 
 import { AppSidebarStyle } from './style'
 
 export default function Sidebar({ isDrawerOpen, setIsDonationDialogOpen }) {
+  const [currentLang, changeLang] = useChangeLanguage()
+
   const { t } = useTranslation()
+
   return (
     <AppSidebarStyle isDrawerOpen={isDrawerOpen}>
       <List>
         <AddDialogButton />
         <UploadDialog />
         <RemoveAll />
-        <ListItem button component='a' key={t('PlaylistAll')} target='_blank' href={playlistAllHost()}>
+        <ListItem button component='a' target='_blank' href={playlistAllHost()}>
           <ListItemIcon>
             <ListIcon />
           </ListItemIcon>
@@ -35,6 +39,14 @@ export default function Sidebar({ isDrawerOpen, setIsDonationDialogOpen }) {
 
       <List>
         <SettingsDialog />
+
+        <ListItem button onClick={() => (currentLang === 'en' ? changeLang('ru') : changeLang('en'))}>
+          <ListItemIcon>
+            <LanguageIcon />
+          </ListItemIcon>
+          <ListItemText primary={t('ChooseLanguage')} />
+        </ListItem>
+
         <AboutDialog />
         <CloseServer />
       </List>
@@ -42,7 +54,7 @@ export default function Sidebar({ isDrawerOpen, setIsDonationDialogOpen }) {
       <Divider />
 
       <List>
-        <ListItem button key='Donation' onClick={() => setIsDonationDialogOpen(true)}>
+        <ListItem button onClick={() => setIsDonationDialogOpen(true)}>
           <ListItemIcon>
             <CreditCardIcon />
           </ListItemIcon>
