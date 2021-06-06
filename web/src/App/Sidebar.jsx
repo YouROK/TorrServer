@@ -18,7 +18,6 @@ import { AppSidebarStyle } from './style'
 
 export default function Sidebar({ isDrawerOpen, setIsDonationDialogOpen }) {
   const [currentLang, changeLang] = useChangeLanguage()
-
   const { t } = useTranslation()
 
   return (
