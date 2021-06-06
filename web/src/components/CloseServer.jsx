@@ -2,27 +2,29 @@ import { useState } from 'react'
 import { Button, Dialog, DialogActions, DialogTitle, ListItem, ListItemIcon, ListItemText } from '@material-ui/core'
 import { PowerSettingsNew as PowerSettingsNewIcon } from '@material-ui/icons'
 import { shutdownHost } from 'utils/Hosts'
+import { useTranslation } from 'react-i18next'
 
 export default function CloseServer() {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const closeDialog = () => setOpen(false)
   const openDialog = () => setOpen(true)
 
   return (
     <>
-      <ListItem button key='Close server' onClick={openDialog}>
+      <ListItem button key={t('CloseServer')} onClick={openDialog}>
         <ListItemIcon>
           <PowerSettingsNewIcon />
         </ListItemIcon>
 
-        <ListItemText primary='Close server' />
+        <ListItemText primary={t('CloseServer')} />
       </ListItem>
 
       <Dialog open={open} onClose={closeDialog}>
-        <DialogTitle>Close server?</DialogTitle>
+        <DialogTitle>{t('CloseServer?')}</DialogTitle>
         <DialogActions>
           <Button variant='outlined' onClick={closeDialog} color='primary'>
-            Cancel
+            {t('Cancel')}
           </Button>
 
           <Button
@@ -34,7 +36,7 @@ export default function CloseServer() {
             color='primary'
             autoFocus
           >
-            Ok
+            {t('OK')}
           </Button>
         </DialogActions>
       </Dialog>
