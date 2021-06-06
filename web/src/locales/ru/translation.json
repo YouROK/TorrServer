@@ -49,7 +49,7 @@
   "RemoveCacheOnDrop": "Очищать кеш на диске при отключении торрента",
   "RemoveCacheOnDropDesc": "Если отключено, кэш очищается при удалении торрента.",
   "RemoveRetrackers": "Удалять",
-  "RemoveViews": "Удалить отметки просмотра",
+  "RemoveViews": "Очистить просмотры",
   "ReplaceRetrackers": "Заменять",
   "RetrackersMode": "Ретрекеры",
   "Save": "Сохранить",
