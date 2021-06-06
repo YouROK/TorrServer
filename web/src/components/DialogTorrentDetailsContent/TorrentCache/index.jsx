@@ -10,7 +10,7 @@ const TorrentCache = memo(
     const cacheMap = useCreateCacheMap(cache)
 
     const preloadPiecesAmount = Math.round(cache.Capacity / cache.PiecesLength - 1)
-    const isSnakeLarge = cacheMap.length > 7000
+    const isSnakeLarge = cacheMap.length > 5000
 
     return isMini ? (
       <DefaultSnake isMini cacheMap={cacheMap} preloadPiecesAmount={preloadPiecesAmount} />
