@@ -5,6 +5,7 @@ import ListItemText from '@material-ui/core/ListItemText'
 import DeleteIcon from '@material-ui/icons/Delete'
 import { useState } from 'react'
 import { torrentsHost } from 'utils/Hosts'
+import { useTranslation } from 'react-i18next'
 
 const fnRemoveAll = () => {
   fetch(torrentsHost(), {
@@ -31,25 +32,25 @@ const fnRemoveAll = () => {
 }
 
 export default function RemoveAll() {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const closeDialog = () => setOpen(false)
   const openDialog = () => setOpen(true)
-
   return (
     <>
-      <ListItem button key='Remove all' onClick={openDialog}>
+      <ListItem button key={t('RemoveAll')} onClick={openDialog}>
         <ListItemIcon>
           <DeleteIcon />
         </ListItemIcon>
 
-        <ListItemText primary='Remove all' />
+        <ListItemText primary={t('RemoveAll')} />
       </ListItem>
 
       <Dialog open={open} onClose={closeDialog}>
-        <DialogTitle>Delete Torrent?</DialogTitle>
+        <DialogTitle>{t('DeleteTorrents?')}</DialogTitle>
         <DialogActions>
           <Button variant='outlined' onClick={closeDialog} color='primary'>
-            Cancel
+            {t('Cancel')}
           </Button>
 
           <Button
@@ -61,7 +62,7 @@ export default function RemoveAll() {
             color='primary'
             autoFocus
           >
-            Ok
+            {t('OK')}
           </Button>
         </DialogActions>
       </Dialog>

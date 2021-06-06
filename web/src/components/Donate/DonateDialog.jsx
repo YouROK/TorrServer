@@ -6,22 +6,23 @@ import DialogActions from '@material-ui/core/DialogActions'
 import List from '@material-ui/core/List'
 import ButtonGroup from '@material-ui/core/ButtonGroup'
 import Button from '@material-ui/core/Button'
+import { useTranslation } from 'react-i18next'
 
 const donateFrame =
-  '<iframe src="https://yoomoney.ru/quickpay/shop-widget?writer=seller&targets=TorrServer Donate&targets-hint=&default-sum=200&button-text=14&payment-type-choice=on&mobile-payment-type-choice=on&comment=on&hint=&successURL=&quickpay=shop&account=410013733697114" width="100%" height="302" frameborder="0" allowtransparency="true" scrolling="no"></iframe>'
+  '<iframe src="https://yoomoney.ru/quickpay/shop-widget?writer=seller&targets=TorrServer Donate&targets-hint=&default-sum=200&button-text=14&payment-type-choice=on&mobile-payment-type-choice=on&comment=on&hint=&successURL=&quickpay=shop&account=410013733697114" width="320" height="320" frameborder="0" allowtransparency="true" scrolling="no"></iframe>'
 
 export default function DonateDialog({ onClose }) {
+  const { t } = useTranslation()
+
   return (
     <Dialog open onClose={onClose} aria-labelledby='form-dialog-title' fullWidth>
-      <DialogTitle id='form-dialog-title'>Donate</DialogTitle>
+      <DialogTitle id='form-dialog-title'>{t('Donate')}</DialogTitle>
       <DialogContent>
         <List>
           <ListItem key='DonateLinks'>
             <ButtonGroup variant='outlined' color='primary' aria-label='contained primary button group'>
               <Button onClick={() => window.open('https://www.paypal.com/paypalme/yourok', '_blank')}>PayPal</Button>
-              <Button onClick={() => window.open('https://yoomoney.ru/to/410013733697114', '_blank')}>
-                Yandex.Money
-              </Button>
+              <Button onClick={() => window.open('https://yoomoney.ru/to/410013733697114', '_blank')}>IO.Money</Button>
             </ButtonGroup>
           </ListItem>
           <ListItem key='DonateForm'>

@@ -5,8 +5,10 @@ import TorrentCard from 'components/TorrentCard'
 import axios from 'axios'
 import CircularProgress from '@material-ui/core/CircularProgress'
 import { TorrentListWrapper, CenteredGrid } from 'App/style'
+import { useTranslation } from 'react-i18next'
 
 export default function TorrentList() {
+  const { t } = useTranslation()
   const [torrents, setTorrents] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [isOffline, setIsOffline] = useState(true)
@@ -39,9 +41,9 @@ export default function TorrentList() {
         {isLoading ? (
           <CircularProgress />
         ) : isOffline ? (
-          <Typography>Offline</Typography>
+          <Typography>{t('Offline')}</Typography>
         ) : (
-          !torrents.length && <Typography>No torrents added</Typography>
+          !torrents.length && <Typography>{t('NoTorrentsAdded')}</Typography>
         )}
       </CenteredGrid>
     )

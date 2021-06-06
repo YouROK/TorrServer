@@ -4,12 +4,14 @@ import { playlistTorrHost, torrentsHost, viewedHost } from 'utils/Hosts'
 import { CopyToClipboard } from 'react-copy-to-clipboard'
 import { Button } from '@material-ui/core'
 import ptt from 'parse-torrent-title'
+import { useTranslation } from 'react-i18next'
 
 import { SmallLabel, MainSectionButtonGroup } from './style'
 import { SectionSubName } from '../style'
 
 const TorrentFunctions = memo(
   ({ hash, viewedFileList, playableFileList, name, title, setViewedFileList }) => {
+    const { t } = useTranslation()
     const latestViewedFileId = viewedFileList?.[viewedFileList?.length - 1]
     const latestViewedFile = playableFileList?.find(({ id }) => id === latestViewedFileId)?.path
     const isOnlyOnePlayableFile = playableFileList?.length === 1
@@ -24,13 +26,13 @@ const TorrentFunctions = memo(
       <>
         {!isOnlyOnePlayableFile && !!viewedFileList?.length && (
           <>
-            <SmallLabel>Download Playlist</SmallLabel>
+            <SmallLabel>{t('DownloadPlaylist')}</SmallLabel>
             <SectionSubName mb={10}>
-              <strong>Latest file played:</strong> {latestViewedFileData?.title}.
+              <strong>{t('LatestFilePlayed')}</strong> {latestViewedFileData?.title}.
               {latestViewedFileData?.season && (
                 <>
                   {' '}
-                  Season: {latestViewedFileData?.season}. Episode: {latestViewedFileData?.episode}.
+                  {t('Season')}: {latestViewedFileData?.season}. {t('Episode')}: {latestViewedFileData?.episode}.
                 </>
               )}
             </SectionSubName>
@@ -38,39 +40,39 @@ const TorrentFunctions = memo(
             <MainSectionButtonGroup>
               <a style={{ textDecoration: 'none' }} href={fullPlaylistLink}>
                 <Button style={{ width: '100%' }} variant='contained' color='primary' size='large'>
-                  full
+                  {t('Full')}
                 </Button>
               </a>
 
               <a style={{ textDecoration: 'none' }} href={partialPlaylistLink}>
                 <Button style={{ width: '100%' }} variant='contained' color='primary' size='large'>
-                  from latest file
+                  {t('FromLatestFile')}
                 </Button>
               </a>
             </MainSectionButtonGroup>
           </>
         )}
-        <SmallLabel mb={10}>Torrent State</SmallLabel>
+        <SmallLabel mb={10}>{t('TorrentState')}</SmallLabel>
         <MainSectionButtonGroup>
           <Button onClick={() => removeTorrentViews()} variant='contained' color='primary' size='large'>
-            remove views
+            {t('RemoveViews')}
           </Button>
           <Button onClick={() => dropTorrent()} variant='contained' color='primary' size='large'>
-            reset torrent
+            {t('DropTorrent')}
           </Button>
         </MainSectionButtonGroup>
-        <SmallLabel mb={10}>Info</SmallLabel>
+        <SmallLabel mb={10}>{t('Info')}</SmallLabel>
         <MainSectionButtonGroup>
           {(isOnlyOnePlayableFile || !viewedFileList?.length) && (
             <a style={{ textDecoration: 'none' }} href={fullPlaylistLink}>
               <Button style={{ width: '100%' }} variant='contained' color='primary' size='large'>
-                download playlist
+                {t('DownloadPlaylist')}
               </Button>
             </a>
           )}
           <CopyToClipboard text={hash}>
             <Button variant='contained' color='primary' size='large'>
-              copy hash
+              {t('CopyHash')}
             </Button>
           </CopyToClipboard>
         </MainSectionButtonGroup>

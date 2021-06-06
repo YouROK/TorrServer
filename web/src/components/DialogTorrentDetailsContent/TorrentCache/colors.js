@@ -1,7 +1,7 @@
 export const defaultBorderColor = '#eef2f4'
 export const defaultBackgroundColor = '#fff'
-export const completeColor = '#3fb57a'
-export const progressColor = '#00d0d0'
+export const completeColor = '#00a572'
+export const progressColor = '#ffa724'
 export const activeColor = '#000'
 export const rangeColor = '#9a9aff'
 

@@ -7,6 +7,7 @@ import axios from 'axios'
 import { viewedHost } from 'utils/Hosts'
 import { GETTING_INFO, IN_DB } from 'torrentStates'
 import CircularProgress from '@material-ui/core/CircularProgress'
+import { useTranslation } from 'react-i18next'
 
 import { useUpdateCache, useGetSettings } from './customHooks'
 import DialogHeader from './DialogHeader'
@@ -37,6 +38,7 @@ const Loader = () => (
 )
 
 export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
+  const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(true)
   const [isDetailedCacheView, setIsDetailedCacheView] = useState(false)
   const [viewedFileList, setViewedFileList] = useState()
@@ -99,6 +101,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
   }, [hash])
 
   const bufferSize = settings?.PreloadBuffer ? Capacity : 33554432 // Default is 32mb if PreloadBuffer is false
+  // const bufferSize = Capacity
 
   const getTitle = value => {
     const torrentParsedName = value && ptt.parse(value)
@@ -115,7 +118,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
     <>
       <DialogHeader
         onClose={closeDialog}
-        title={isDetailedCacheView ? 'Detailed Cache View' : 'Torrent Details'}
+        title={isDetailedCacheView ? t('DetailedCacheView') : t('TorrentDetails')}
         {...(isDetailedCacheView && { onBack: () => setIsDetailedCacheView(false) })}
       />
 
@@ -171,10 +174,8 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
 
             <CacheSection>
               <SectionHeader>
-                <SectionTitle mb={20}>Buffer</SectionTitle>
-                {!settings?.PreloadBuffer && (
-                  <SectionSubName>Enable &quot;Preload Buffer&quot; in settings to change buffer size</SectionSubName>
-                )}
+                <SectionTitle mb={20}>{t('Buffer')}</SectionTitle>
+                {!settings?.PreloadBuffer && <SectionSubName>{t('BufferNote')}</SectionSubName>}
                 <LoadingProgress
                   value={Filled}
                   fullAmount={bufferSize}
@@ -190,16 +191,16 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                 size='large'
                 onClick={() => setIsDetailedCacheView(true)}
               >
-                Detailed cache view
+                {t('DetailedCacheView')}
               </Button>
             </CacheSection>
 
             <TorrentFilesSection>
-              <SectionTitle mb={20}>Torrent Content</SectionTitle>
+              <SectionTitle mb={20}>{t('TorrentContent')}</SectionTitle>
 
               {seasonAmount?.length > 1 && (
                 <>
-                  <SectionSubName mb={7}>Select Season</SectionSubName>
+                  <SectionSubName mb={7}>{t('SelectSeason')}</SectionSubName>
                   <ButtonGroup style={{ marginBottom: '30px' }} color='primary'>
                     {seasonAmount.map(season => (
                       <Button
@@ -212,7 +213,9 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                     ))}
                   </ButtonGroup>
 
-                  <SectionTitle mb={20}>Season {selectedSeason}</SectionTitle>
+                  <SectionTitle mb={20}>
+                    {t('Season')} {selectedSeason}
+                  </SectionTitle>
                 </>
               )}
 

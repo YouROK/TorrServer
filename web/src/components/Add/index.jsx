@@ -3,12 +3,13 @@ import ListItemIcon from '@material-ui/core/ListItemIcon'
 import LibraryAddIcon from '@material-ui/icons/LibraryAdd'
 import ListItemText from '@material-ui/core/ListItemText'
 import ListItem from '@material-ui/core/ListItem'
+import { useTranslation } from 'react-i18next'
 
 import AddDialog from './AddDialog'
 
 export default function AddDialogButton() {
+  const { t } = useTranslation()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-
   const handleClickOpen = () => setIsDialogOpen(true)
   const handleClose = () => setIsDialogOpen(false)
 
@@ -18,7 +19,7 @@ export default function AddDialogButton() {
         <ListItemIcon>
           <LibraryAddIcon />
         </ListItemIcon>
-        <ListItemText primary='Add from link' />
+        <ListItemText primary={t('AddFromLink')} />
       </ListItem>
 
       {isDialogOpen && <AddDialog handleClose={handleClose} />}

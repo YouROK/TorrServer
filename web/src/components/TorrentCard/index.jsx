@@ -10,12 +10,14 @@ import Slide from '@material-ui/core/Slide'
 import { Button, DialogActions, DialogTitle, useMediaQuery, useTheme } from '@material-ui/core'
 import axios from 'axios'
 import ptt from 'parse-torrent-title'
+import { useTranslation } from 'react-i18next'
 
 import { StyledButton, TorrentCard, TorrentCardButtons, TorrentCardDescription, TorrentCardPoster } from './style'
 
 const Transition = forwardRef((props, ref) => <Slide direction='up' ref={ref} {...props} />)
 
 export default function Torrent({ torrent }) {
+  const { t } = useTranslation()
   const [isDetailedInfoOpened, setIsDetailedInfoOpened] = useState(false)
   const [isDeleteTorrentOpened, setIsDeleteTorrentOpened] = useState(false)
 
@@ -44,41 +46,41 @@ export default function Torrent({ torrent }) {
         <TorrentCardButtons>
           <StyledButton onClick={openDetailedInfo}>
             <UnfoldMoreIcon />
-            <span>Details</span>
+            <span>{t('Details')}</span>
           </StyledButton>
 
           <StyledButton onClick={() => dropTorrent(torrent)}>
             <CloseIcon />
-            <span>Drop</span>
+            <span>{t('Drop')}</span>
           </StyledButton>
 
           <StyledButton onClick={openDeleteTorrentAlert}>
             <DeleteIcon />
-            <span>Delete</span>
+            <span>{t('Delete')}</span>
           </StyledButton>
         </TorrentCardButtons>
 
         <TorrentCardDescription>
           <div className='description-title-wrapper'>
-            <div className='description-section-name'>Name</div>
+            <div className='description-section-name'>{t('Name')}</div>
             <div className='description-torrent-title'>{shortenText(parsedTitle, 100)}</div>
           </div>
 
           <div className='description-statistics-wrapper'>
             <div className='description-statistics-element-wrapper'>
-              <div className='description-section-name'>Size</div>
+              <div className='description-section-name'>{t('Size')}</div>
               <div className='description-statistics-element-value'>{torrentSize > 0 && humanizeSize(torrentSize)}</div>
             </div>
 
             <div className='description-statistics-element-wrapper'>
-              <div className='description-section-name'>Speed</div>
+              <div className='description-section-name'>{t('Speed')}</div>
               <div className='description-statistics-element-value'>
                 {downloadSpeed > 0 ? humanizeSize(downloadSpeed) : '---'}
               </div>
             </div>
 
             <div className='description-statistics-element-wrapper'>
-              <div className='description-section-name'>Peers</div>
+              <div className='description-section-name'>{t('Peers')}</div>
               <div className='description-statistics-element-value'>{getPeerString(torrent) || '---'}</div>
             </div>
           </div>
@@ -97,10 +99,10 @@ export default function Torrent({ torrent }) {
       </Dialog>
 
       <Dialog open={isDeleteTorrentOpened} onClose={closeDeleteTorrentAlert}>
-        <DialogTitle>Delete Torrent?</DialogTitle>
+        <DialogTitle>{t('DeleteTorrent?')}</DialogTitle>
         <DialogActions>
           <Button variant='outlined' onClick={closeDeleteTorrentAlert} color='primary'>
-            Cancel
+            {t('Cancel')}
           </Button>
 
           <Button
@@ -112,7 +114,7 @@ export default function Torrent({ torrent }) {
             color='primary'
             autoFocus
           >
-            Ok
+            {t('OK')}
           </Button>
         </DialogActions>
       </Dialog>
