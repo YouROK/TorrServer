@@ -11,6 +11,7 @@ import { SectionSubName } from '../style'
 
 const TorrentFunctions = memo(
   ({ hash, viewedFileList, playableFileList, name, title, setViewedFileList }) => {
+    const { t } = useTranslation()
     const latestViewedFileId = viewedFileList?.[viewedFileList?.length - 1]
     const latestViewedFile = playableFileList?.find(({ id }) => id === latestViewedFileId)?.path
     const isOnlyOnePlayableFile = playableFileList?.length === 1
@@ -20,8 +21,6 @@ const TorrentFunctions = memo(
       axios.post(viewedHost(), { action: 'rem', hash, file_index: -1 }).then(() => setViewedFileList())
     const fullPlaylistLink = `${playlistTorrHost()}/${encodeURIComponent(name || title || 'file')}.m3u?link=${hash}&m3u`
     const partialPlaylistLink = `${fullPlaylistLink}&fromlast`
-    // eslint-disable-next-line no-unused-vars
-    const { t } = useTranslation()
 
     return (
       <>

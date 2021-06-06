@@ -10,9 +10,8 @@ const useStyles = makeStyles(theme => ({
 }))
 
 export default function DialogHeader({ title, onClose, onBack }) {
-  const classes = useStyles()
-  // eslint-disable-next-line no-unused-vars
   const { t } = useTranslation()
+  const classes = useStyles()
 
   return (
     <AppBar className={classes.appBar}>

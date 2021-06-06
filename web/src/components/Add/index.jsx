@@ -12,6 +12,7 @@ export default function AddDialogButton() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const handleClickOpen = () => setIsDialogOpen(true)
   const handleClose = () => setIsDialogOpen(false)
+
   return (
     <div>
       <ListItem button key='Add' onClick={handleClickOpen}>

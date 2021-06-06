@@ -38,15 +38,13 @@ const Loader = () => (
 )
 
 export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
+  const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(true)
   const [isDetailedCacheView, setIsDetailedCacheView] = useState(false)
   const [viewedFileList, setViewedFileList] = useState()
   const [playableFileList, setPlayableFileList] = useState()
   const [seasonAmount, setSeasonAmount] = useState(null)
   const [selectedSeason, setSelectedSeason] = useState()
-
-  // eslint-disable-next-line no-unused-vars
-  const { t } = useTranslation()
 
   const {
     poster,

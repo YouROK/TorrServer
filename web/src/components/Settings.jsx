@@ -15,6 +15,7 @@ import { settingsHost, setTorrServerHost, getTorrServerHost } from 'utils/Hosts'
 import { useTranslation } from 'react-i18next'
 
 export default function SettingsDialog() {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [settings, setSets] = useState({})
   const [show, setShow] = useState(false)
@@ -28,8 +29,6 @@ export default function SettingsDialog() {
     sets.CacheSize *= 1024 * 1024
     axios.post(settingsHost(), { action: 'set', sets })
   }
-  // eslint-disable-next-line no-unused-vars
-  const { t } = useTranslation()
 
   useEffect(() => {
     axios
