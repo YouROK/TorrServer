@@ -4,6 +4,7 @@ import { humanizeSize } from 'utils/Utils'
 import ptt from 'parse-torrent-title'
 import { Button } from '@material-ui/core'
 import CopyToClipboard from 'react-copy-to-clipboard'
+import { useTranslation } from 'react-i18next'
 
 import { TableStyle, ShortTableWrapper, ShortTable } from './style'
 
@@ -17,6 +18,8 @@ const Table = memo(
     const fileHasEpisodeText = !!playableFileList?.find(({ path }) => ptt.parse(path).episode)
     const fileHasSeasonText = !!playableFileList?.find(({ path }) => ptt.parse(path).season)
     const fileHasResolutionText = !!playableFileList?.find(({ path }) => ptt.parse(path).resolution)
+    // eslint-disable-next-line no-unused-vars
+    const { t } = useTranslation()
 
     return !playableFileList?.length ? (
       'No playable files in this torrent'
@@ -25,13 +28,13 @@ const Table = memo(
         <TableStyle>
           <thead>
             <tr>
-              <th style={{ width: '0' }}>viewed</th>
-              <th>name</th>
-              {fileHasSeasonText && seasonAmount?.length === 1 && <th style={{ width: '0' }}>season</th>}
-              {fileHasEpisodeText && <th style={{ width: '0' }}>episode</th>}
-              {fileHasResolutionText && <th style={{ width: '0' }}>resolution</th>}
-              <th style={{ width: '100px' }}>size</th>
-              <th style={{ width: '400px' }}>actions</th>
+              <th style={{ width: '0' }}>{t('Viewed')}</th>
+              <th>{t('Name')}</th>
+              {fileHasSeasonText && seasonAmount?.length === 1 && <th style={{ width: '0' }}>{t('Season')}</th>}
+              {fileHasEpisodeText && <th style={{ width: '0' }}>{t('Episode')}</th>}
+              {fileHasResolutionText && <th style={{ width: '0' }}>{t('Resolution')}</th>}
+              <th style={{ width: '100px' }}>{t('Size')}</th>
+              <th style={{ width: '400px' }}>{t('Actions')}</th>
             </tr>
           </thead>
 
@@ -52,18 +55,18 @@ const Table = memo(
                     <td data-label='size'>{humanizeSize(length)}</td>
                     <td className='button-cell'>
                       <Button onClick={() => preloadBuffer(id)} variant='outlined' color='primary' size='small'>
-                        Preload
+                        {t('Preload')}
                       </Button>
 
                       <a style={{ textDecoration: 'none' }} href={link} target='_blank' rel='noreferrer'>
                         <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
-                          Open link
+                          {t('OpenLink')}
                         </Button>
                       </a>
 
                       <CopyToClipboard text={link}>
                         <Button variant='outlined' color='primary' size='small'>
-                          Copy link
+                          {t('CopyLink')}
                         </Button>
                       </CopyToClipboard>
                     </td>
@@ -87,7 +90,7 @@ const Table = memo(
                   <div className='short-table-data'>
                     {isViewed && (
                       <div className='short-table-field'>
-                        <div className='short-table-field-name'>viewed</div>
+                        <div className='short-table-field-name'>{t('Viewed')}</div>
                         <div className='short-table-field-value'>
                           <div className='short-table-viewed-indicator' />
                         </div>
@@ -95,41 +98,41 @@ const Table = memo(
                     )}
                     {fileHasSeasonText && seasonAmount?.length === 1 && (
                       <div className='short-table-field'>
-                        <div className='short-table-field-name'>season</div>
+                        <div className='short-table-field-name'>{t('Season')}</div>
                         <div className='short-table-field-value'>{season}</div>
                       </div>
                     )}
                     {fileHasEpisodeText && (
                       <div className='short-table-field'>
-                        <div className='short-table-field-name'>epoisode</div>
+                        <div className='short-table-field-name'>{t('Episode')}</div>
                         <div className='short-table-field-value'>{episode}</div>
                       </div>
                     )}
                     {fileHasResolutionText && (
                       <div className='short-table-field'>
-                        <div className='short-table-field-name'>resolution</div>
+                        <div className='short-table-field-name'>{t('Resolution')}</div>
                         <div className='short-table-field-value'>{resolution}</div>
                       </div>
                     )}
                     <div className='short-table-field'>
-                      <div className='short-table-field-name'>size</div>
+                      <div className='short-table-field-name'>{t('Size')}</div>
                       <div className='short-table-field-value'>{humanizeSize(length)}</div>
                     </div>
                   </div>
                   <div className='short-table-buttons'>
                     <Button onClick={() => preloadBuffer(id)} variant='outlined' color='primary' size='small'>
-                      Preload
+                      {t('Preload')}
                     </Button>
 
                     <a style={{ textDecoration: 'none' }} href={link} target='_blank' rel='noreferrer'>
                       <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
-                        Open link
+                        {t('OpenLink')}
                       </Button>
                     </a>
 
                     <CopyToClipboard text={link}>
                       <Button variant='outlined' color='primary' size='small'>
-                        Copy link
+                        {t('CopyLink')}
                       </Button>
                     </CopyToClipboard>
                   </div>

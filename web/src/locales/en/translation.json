@@ -1,5 +1,6 @@
 {
   "About": "About",
+  "Actions": "Actions",
   "Add": "Add",
   "AddFromLink": "Add from Link",
   "AddMagnetOrLink": "Add magnet or link to torrent file",
@@ -12,6 +13,7 @@
   "CloseServer": "Close Server",
   "ConnectionsLimit": "Connections Limit",
   "CopyHash": "Copy Hash",
+  "CopyLink": "Copy link",
   "Delete": "Delete",
   "DeleteTorrent?": "Delete Torrent?",
   "DeleteTorrents?": "Delete All Torrents?",
@@ -38,11 +40,13 @@
   "NoTorrentsAdded": "No torrents added",
   "Offline": "Offline",
   "OK": "OK",
+  "OpenLink": "Open link",
   "Peers": "Peers",
   "PeersListenPort": "Peers Listen Port",
   "PEX": "PEX (Peer Exchange)",
   "PlaylistAll": "Playlist All",
   "Poster": "Poster",
+  "Preload": "Preload",
   "PreloadBuffer": "Preload Buffer",
   "ReaderReadAHead": "Reader Read Ahead (5-100%)",
   "RemoveAll": "Remove All",
@@ -51,6 +55,7 @@
   "RemoveRetrackers": "Remove retrackers",
   "RemoveViews": "Remove View States",
   "ReplaceRetrackers": "Replace retrackers",
+  "Resolution": "Resolution",
   "RetrackersMode": "Retrackers Mode",  
   "Save": "Save",
   "Season": "Season",
@@ -72,5 +77,6 @@
   "UploadRateLimit": "Upload Rate Limit (Kilobytes)",
   "UPNP": "UPnP (Universal Plug and Play)",
   "UseDisk": "Use Disk",
-  "UTP": "μTP (Micro Transport Protocol)"
+  "UTP": "μTP (Micro Transport Protocol)",
+  "Viewed": "Viewed"
 }

@@ -177,7 +177,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
             <CacheSection>
               <SectionHeader>
                 <SectionTitle mb={20}>{t('Buffer')}</SectionTitle>
-                {!settings?.PreloadBuffer && (<SectionSubName>{t('BufferNote')}</SectionSubName>)}
+                {!settings?.PreloadBuffer && <SectionSubName>{t('BufferNote')}</SectionSubName>}
                 <LoadingProgress
                   value={Filled}
                   fullAmount={bufferSize}
