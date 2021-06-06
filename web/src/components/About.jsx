@@ -13,9 +13,8 @@ import { useTranslation } from 'react-i18next'
 import { echoHost } from 'utils/Hosts'
 
 export default function AboutDialog() {
-  const [open, setOpen] = useState(false)
-  // eslint-disable-next-line no-unused-vars
   const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
   const [torrServerVersion, setTorrServerVersion] = useState('')
   useEffect(() => {
     axios.get(echoHost()).then(({ data }) => setTorrServerVersion(data))

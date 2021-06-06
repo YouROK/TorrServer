@@ -19,7 +19,6 @@ import { useTranslation } from 'react-i18next'
 import { AppSidebarStyle } from './style'
 
 export default function Sidebar({ isDrawerOpen, setIsDonationDialogOpen }) {
-  // eslint-disable-next-line no-unused-vars
   const { t } = useTranslation()
   return (
     <AppSidebarStyle isDrawerOpen={isDrawerOpen}>

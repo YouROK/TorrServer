@@ -7,6 +7,7 @@ import axios from 'axios'
 import { useTranslation } from 'react-i18next'
 
 export default function UploadDialog() {
+  const { t } = useTranslation()
   const handleCapture = ({ target: { files } }) => {
     const [file] = files
     const data = new FormData()
@@ -14,8 +15,6 @@ export default function UploadDialog() {
     data.append('file', file)
     axios.post(torrentUploadHost(), data)
   }
-  // eslint-disable-next-line no-unused-vars
-  const { t } = useTranslation()
   return (
     <div>
       <label htmlFor='raised-button-file'>

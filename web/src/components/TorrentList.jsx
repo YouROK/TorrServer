@@ -8,12 +8,11 @@ import { TorrentListWrapper, CenteredGrid } from 'App/style'
 import { useTranslation } from 'react-i18next'
 
 export default function TorrentList() {
+  const { t } = useTranslation()
   const [torrents, setTorrents] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [isOffline, setIsOffline] = useState(true)
   const timerID = useRef(-1)
-  // eslint-disable-next-line no-unused-vars
-  const { t } = useTranslation()
 
   useEffect(() => {
     timerID.current = setInterval(() => {

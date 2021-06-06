@@ -10,6 +10,7 @@ import axios from 'axios'
 import { useTranslation } from 'react-i18next'
 
 export default function AddDialog({ handleClose }) {
+  const { t } = useTranslation()
   const [link, setLink] = useState('')
   const [title, setTitle] = useState('')
   const [poster, setPoster] = useState('')
@@ -17,9 +18,6 @@ export default function AddDialog({ handleClose }) {
   const inputMagnet = ({ target: { value } }) => setLink(value)
   const inputTitle = ({ target: { value } }) => setTitle(value)
   const inputPoster = ({ target: { value } }) => setPoster(value)
-
-  // eslint-disable-next-line no-unused-vars
-  const { t } = useTranslation()
 
   const handleSave = () => {
     axios.post(torrentsHost(), { action: 'add', link, title, poster, save_to_db: true }).finally(() => handleClose())
