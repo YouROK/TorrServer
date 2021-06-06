@@ -2,6 +2,7 @@ import styled, { css } from 'styled-components'
 
 export const AppWrapper = styled.div`
   height: 100%;
+  background: #cbe8d9;
   display: grid;
   grid-template-columns: 60px 1fr;
   grid-template-rows: 60px 1fr;
@@ -34,7 +35,7 @@ export const AppSidebarStyle = styled.div`
     overflow-x: hidden;
     transition: width 195ms cubic-bezier(0.4, 0, 0.6, 1) 0ms;
     border-right: 1px solid rgba(0, 0, 0, 0.12);
-    background: #fff;
+    background: #eee;
     white-space: nowrap;
   `}
 `

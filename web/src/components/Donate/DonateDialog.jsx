@@ -9,7 +9,7 @@ import Button from '@material-ui/core/Button'
 import { useTranslation } from 'react-i18next'
 
 const donateFrame =
-  '<iframe src="https://yoomoney.ru/quickpay/shop-widget?writer=seller&targets=TorrServer Donate&targets-hint=&default-sum=200&button-text=14&payment-type-choice=on&mobile-payment-type-choice=on&comment=on&hint=&successURL=&quickpay=shop&account=410013733697114" width="100%" height="302" frameborder="0" allowtransparency="true" scrolling="no"></iframe>'
+  '<iframe src="https://yoomoney.ru/quickpay/shop-widget?writer=seller&targets=TorrServer Donate&targets-hint=&default-sum=200&button-text=14&payment-type-choice=on&mobile-payment-type-choice=on&comment=on&hint=&successURL=&quickpay=shop&account=410013733697114" width="320" height="320" frameborder="0" allowtransparency="true" scrolling="no"></iframe>'
 
 export default function DonateDialog({ onClose }) {
   // eslint-disable-next-line no-unused-vars
@@ -22,9 +22,7 @@ export default function DonateDialog({ onClose }) {
           <ListItem key='DonateLinks'>
             <ButtonGroup variant='outlined' color='primary' aria-label='contained primary button group'>
               <Button onClick={() => window.open('https://www.paypal.com/paypalme/yourok', '_blank')}>PayPal</Button>
-              <Button onClick={() => window.open('https://yoomoney.ru/to/410013733697114', '_blank')}>
-                Yandex.Money
-              </Button>
+              <Button onClick={() => window.open('https://yoomoney.ru/to/410013733697114', '_blank')}>IO.Money</Button>
             </ButtonGroup>
           </ListItem>
           <ListItem key='DonateForm'>
