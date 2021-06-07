@@ -59,6 +59,11 @@ func SetBTSets(sets *BTSets) {
 	if sets.ReaderReadAHead > 100 {
 		sets.ReaderReadAHead = 100
 	}
+
+	if sets.TorrentsSavePath == "" {
+		sets.UseDisk = false
+	}
+
 	BTsets = sets
 	buf, err := json.Marshal(BTsets)
 	if err != nil {
