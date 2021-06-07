@@ -144,6 +144,8 @@ export default function SettingsDialog() {
                 label={t('UseDisk')}
               />
               <br />
+              <small>{t('UseDiskDesc')}</small>
+              <br />
               <FormControlLabel
                 control={
                   <Switch checked={RemoveCacheOnDrop} onChange={inputForm} id='RemoveCacheOnDrop' color='primary' />

@@ -36,7 +36,7 @@ export default function CloseServer() {
             color='primary'
             autoFocus
           >
-            {t('OK')}
+            {t('TurnOff')}
           </Button>
         </DialogActions>
       </Dialog>
