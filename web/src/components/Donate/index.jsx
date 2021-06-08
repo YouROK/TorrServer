@@ -4,10 +4,12 @@ import Snackbar from '@material-ui/core/Snackbar'
 import IconButton from '@material-ui/core/IconButton'
 import CreditCardIcon from '@material-ui/icons/CreditCard'
 import CloseIcon from '@material-ui/icons/Close'
+import { useTranslation } from 'react-i18next'
 
 import DonateDialog from './DonateDialog'
 
 export default function DonateSnackbar() {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [snackbarOpen, setSnackbarOpen] = useState(true)
 
@@ -27,7 +29,7 @@ export default function DonateSnackbar() {
         }}
         open={snackbarOpen}
         onClose={disableSnackbar}
-        message='Donate?'
+        message={t('Donate?')}
         action={
           <>
             <Button
@@ -40,7 +42,7 @@ export default function DonateSnackbar() {
               }}
             >
               <CreditCardIcon style={{ marginRight: '10px' }} fontSize='small' />
-              Support
+              {t('Support')}
             </Button>
 
             <IconButton size='small' aria-label='close' color='inherit' onClick={disableSnackbar}>
