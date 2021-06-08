@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import Button from '@material-ui/core/Button'
 import TextField from '@material-ui/core/TextField'
 import Dialog from '@material-ui/core/Dialog'
@@ -11,6 +11,7 @@ import debounce from 'lodash/debounce'
 import { v4 as uuidv4 } from 'uuid'
 import useChangeLanguage from 'utils/useChangeLanguage'
 import { Cancel as CancelIcon } from '@material-ui/icons'
+import { useDropzone } from 'react-dropzone'
 
 const Header = styled.div`
   background: #00a572;
@@ -46,7 +47,7 @@ const RightSide = styled.div`
 `
 
 const RightSideBottomSectionBasicStyles = css`
-  transition: all 0.3s;
+  transition: transform 0.3s;
   padding: 20px;
   height: 100%;
   display: grid;
@@ -54,6 +55,9 @@ const RightSideBottomSectionBasicStyles = css`
 
 const RightSideBottomSectionNoFile = styled.div`
   ${RightSideBottomSectionBasicStyles}
+  border: 4px dashed transparent;
+
+  ${({ isDragActive }) => isDragActive && `border: 4px dashed green`};
 
   justify-items: center;
   grid-template-rows: 100px 1fr;
@@ -103,11 +107,6 @@ const IconWrapper = styled.div`
   }
 `
 
-const FileUploadLabel = styled.label`
-  transition: all 0.3s;
-  flex: 1;
-`
-
 const RightSideTopSection = styled.div`
   background: #fff;
   padding: 0 20px 20px 20px;
@@ -115,7 +114,7 @@ const RightSideTopSection = styled.div`
   ${({ active }) =>
     active &&
     css`
-      + ${FileUploadLabel} {
+      + ${RightSideBottomSectionNoFile} {
         box-shadow: inset 3px 25px 8px -25px rgba(0, 0, 0, 0.5);
       }
     `};
@@ -238,6 +237,16 @@ export default function AddDialog({ handleClose }) {
   const [currentLang] = useChangeLanguage()
   const [selectedFile, setSelectedFile] = useState()
 
+  const handleCapture = useCallback(files => {
+    const [file] = files
+    if (!file) return
+
+    setSelectedFile(file)
+    setTorrentSource(file.name)
+  }, [])
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop: handleCapture, accept: '.torrent' })
+
   const removePoster = () => {
     setIsPosterUrlCorrect(false)
     setPosterUrl('')
@@ -294,14 +303,6 @@ export default function AddDialog({ handleClose }) {
         .post(torrentsHost(), { action: 'add', link: torrentSource, title, poster: posterUrl, save_to_db: true })
         .finally(() => handleClose())
     }
-  }
-
-  const handleCapture = ({ target: { files } }) => {
-    const [file] = files
-    if (!file) return
-
-    setSelectedFile(file)
-    setTorrentSource(file.name)
   }
 
   const clearSelectedFile = () => {
@@ -396,24 +397,15 @@ export default function AddDialog({ handleClose }) {
                 </TorrentIconWrapper>
               </RightSideBottomSectionFileSelected>
             ) : (
-              <FileUploadLabel htmlFor='upload-file'>
-                <input
-                  onChange={handleCapture}
-                  accept='.torrent'
-                  type='file'
-                  style={{ display: 'none' }}
-                  id='upload-file'
-                />
+              <RightSideBottomSectionNoFile isDragActive={isDragActive} {...getRootProps()}>
+                <input {...getInputProps()} />
+                <div>{t('AppendFile.Or')}</div>
 
-                <RightSideBottomSectionNoFile selectedFile={selectedFile} type='submit'>
-                  <div>{t('AppendFile.Or')}</div>
-
-                  <IconWrapper>
-                    <AddItemIcon color='primary' />
-                    <div>{t('AppendFile.ClickOrDrag')}</div>
-                  </IconWrapper>
-                </RightSideBottomSectionNoFile>
-              </FileUploadLabel>
+                <IconWrapper>
+                  <AddItemIcon color='primary' />
+                  <div>{t('AppendFile.ClickOrDrag')}</div>
+                </IconWrapper>
+              </RightSideBottomSectionNoFile>
             )}
           </RightSide>
         </Content>

@@ -18,6 +18,7 @@
     "react-copy-to-clipboard": "^5.0.3",
     "react-div-100vh": "^0.6.0",
     "react-dom": "^17.0.2",
+    "react-dropzone": "^11.3.2",
     "react-i18next": "^11.10.0",
     "react-konva": "^17.0.2-4",
     "react-measure": "^2.5.2",

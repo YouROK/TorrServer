@@ -99,7 +99,7 @@
   "Viewed": "Viewed",
   "AppendFile": {
     "Or": "OR",
-    "ClickOrDrag": "CLICK / DRAG & DROP"
+    "ClickOrDrag": "CLICK / DRAG & DROP (.torrent)"
   },
   "TorrentSourceOptions": "magnet / hash / .torrent file link",
   "Clear": "Clear"

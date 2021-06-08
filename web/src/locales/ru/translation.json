@@ -99,7 +99,7 @@
   "Viewed": "Просм.",
   "AppendFile": {
     "Or": "ИЛИ",
-    "ClickOrDrag": "НАЖМИТЕ / ПЕРЕТАЩИТЕ ФАЙЛ"
+    "ClickOrDrag": "НАЖМИТЕ / ПЕРЕТАЩИТЕ ФАЙЛ (.torrent)"
   },
   "TorrentSourceOptions": "магнитная ссылка / хэш / ссылка на .torrent файл",
   "Clear": "Очистить"
