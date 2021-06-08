@@ -7,7 +7,6 @@ import AddDialogButton from 'components/Add'
 import RemoveAll from 'components/RemoveAll'
 import SettingsDialog from 'components/Settings'
 import AboutDialog from 'components/About'
-import UploadDialog from 'components/Upload'
 import { CreditCard as CreditCardIcon, List as ListIcon, Language as LanguageIcon } from '@material-ui/icons'
 import List from '@material-ui/core/List'
 import CloseServer from 'components/CloseServer'
@@ -24,7 +23,6 @@ export default function Sidebar({ isDrawerOpen, setIsDonationDialogOpen }) {
     <AppSidebarStyle isDrawerOpen={isDrawerOpen}>
       <List>
         <AddDialogButton />
-        <UploadDialog />
         <RemoveAll />
         <ListItem button component='a' target='_blank' href={playlistAllHost()}>
           <ListItemIcon>

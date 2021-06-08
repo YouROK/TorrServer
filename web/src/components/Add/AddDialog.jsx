@@ -1,14 +1,10 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import Button from '@material-ui/core/Button'
 import TextField from '@material-ui/core/TextField'
 import Dialog from '@material-ui/core/Dialog'
-import DialogActions from '@material-ui/core/DialogActions'
-import DialogContent from '@material-ui/core/DialogContent'
-import DialogTitle from '@material-ui/core/DialogTitle'
 import { torrentsHost, torrentUploadHost } from 'utils/Hosts'
 import axios from 'axios'
 import { useTranslation } from 'react-i18next'
-import { Input, ListItem, ListItemIcon, ListItemText } from '@material-ui/core'
 import styled, { css } from 'styled-components'
 import { NoImageIcon, AddItemIcon, TorrentIcon } from 'icons'
 import debounce from 'lodash/debounce'
@@ -16,8 +12,7 @@ import { v4 as uuidv4 } from 'uuid'
 import useChangeLanguage from 'utils/useChangeLanguage'
 import { Cancel as CancelIcon } from '@material-ui/icons'
 
-const AddDialogStyle = styled.div``
-const TitleSection = styled.div`
+const Header = styled.div`
   background: #00a572;
   color: rgba(0, 0, 0, 0.87);
   font-size: 20px;
@@ -27,14 +22,14 @@ const TitleSection = styled.div`
   padding: 15px 24px;
   position: relative;
 `
-const MainSection = styled.div`
+const ContentWrapper = styled.div`
   background: linear-gradient(145deg, #e4f6ed, #b5dec9);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 `
 
-const MainSectionContentWrapper = styled.div`
+const Content = styled.div`
   flex: 1;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -110,6 +105,7 @@ const IconWrapper = styled.div`
 
 const FileUploadLabel = styled.label`
   transition: all 0.3s;
+  flex: 1;
 `
 
 const RightSideTopSection = styled.div`
@@ -290,6 +286,7 @@ export default function AddDialog({ handleClose }) {
       const data = new FormData()
       data.append('save', 'true')
       data.append('file', selectedFile)
+      title && data.append('title', title)
       posterUrl && data.append('poster', posterUrl)
       axios.post(torrentUploadHost(), data).finally(() => handleClose())
     } else {
@@ -307,8 +304,7 @@ export default function AddDialog({ handleClose }) {
     setTorrentSource(file.name)
   }
 
-  const clearSelectedFile = e => {
-    e.stopPropagation()
+  const clearSelectedFile = () => {
     setSelectedFile()
     setTorrentSource('')
   }
@@ -320,163 +316,118 @@ export default function AddDialog({ handleClose }) {
   }
 
   return (
-    <>
-      <Dialog open onClose={handleClose} aria-labelledby='form-dialog-title' fullWidth maxWidth='md'>
-        <AddDialogStyle>
-          <TitleSection>Add new torrent</TitleSection>
-          <MainSection>
-            <MainSectionContentWrapper>
-              <LeftSide>
-                <TextField
-                  onChange={handleTitleChange}
-                  value={title}
-                  margin='dense'
-                  label={t('Title')}
-                  type='text'
-                  fullWidth
-                />
-                <TextField
-                  onChange={handlePosterUrlChange}
-                  value={posterUrl}
-                  margin='dense'
-                  label={t('AddPosterLinkInput')}
-                  type='url'
-                  fullWidth
-                />
+    <Dialog open onClose={handleClose} aria-labelledby='form-dialog-title' fullWidth maxWidth='md'>
+      <Header>{t('AddNewTorrent')}</Header>
 
-                <PosterWrapper>
-                  <Poster poster={+isPosterUrlCorrect}>
-                    {isPosterUrlCorrect ? <img src={posterUrl} alt='poster' /> : <NoImageIcon />}
-                  </Poster>
+      <ContentWrapper>
+        <Content>
+          <LeftSide>
+            <TextField
+              onChange={handleTitleChange}
+              value={title}
+              margin='dense'
+              label={t('Title')}
+              type='text'
+              fullWidth
+            />
+            <TextField
+              onChange={handlePosterUrlChange}
+              value={posterUrl}
+              margin='dense'
+              label={t('AddPosterLinkInput')}
+              type='url'
+              fullWidth
+            />
 
-                  <PosterSuggestions>
-                    {posterList
-                      ?.filter(url => url !== posterUrl)
-                      .slice(0, 12)
-                      .map(url => (
-                        <PosterSuggestionsItem onClick={() => userChangesPosterUrl(url)} key={uuidv4()}>
-                          <img src={url} alt='poster' />
-                        </PosterSuggestionsItem>
-                      ))}
-                  </PosterSuggestions>
+            <PosterWrapper>
+              <Poster poster={+isPosterUrlCorrect}>
+                {isPosterUrlCorrect ? <img src={posterUrl} alt='poster' /> : <NoImageIcon />}
+              </Poster>
 
-                  <Button
-                    style={{ justifySelf: 'center' }}
-                    onClick={removePoster}
-                    color='primary'
-                    variant='outlined'
-                    size='small'
-                    disabled={!posterUrl}
-                  >
-                    Clear
-                  </Button>
-                </PosterWrapper>
-              </LeftSide>
+              <PosterSuggestions>
+                {posterList
+                  ?.filter(url => url !== posterUrl)
+                  .slice(0, 12)
+                  .map(url => (
+                    <PosterSuggestionsItem onClick={() => userChangesPosterUrl(url)} key={uuidv4()}>
+                      <img src={url} alt='poster' />
+                    </PosterSuggestionsItem>
+                  ))}
+              </PosterSuggestions>
 
-              <RightSide>
-                <RightSideTopSection active={torrentSourceSelected}>
-                  <TextField
-                    onChange={handleTorrentSourceChange}
-                    value={torrentSource}
-                    margin='dense'
-                    label={t('TorrentSourceLink')}
-                    helperText='magnet / hash / .torrent file link'
-                    type='text'
-                    fullWidth
-                    onFocus={() => setTorrentSourceSelected(true)}
-                    onBlur={() => setTorrentSourceSelected(false)}
-                    inputProps={{ autoComplete: 'off' }}
-                    disabled={selectedFile}
-                  />
-                </RightSideTopSection>
-
-                {selectedFile ? (
-                  <RightSideBottomSectionFileSelected>
-                    <TorrentIconWrapper>
-                      <TorrentIcon />
-
-                      <CancelIconWrapper onClick={clearSelectedFile}>
-                        <CancelIcon />
-                      </CancelIconWrapper>
-                    </TorrentIconWrapper>
-                  </RightSideBottomSectionFileSelected>
-                ) : (
-                  <FileUploadLabel htmlFor='upload-file' style={{ flex: 1 }}>
-                    <input
-                      onChange={handleCapture}
-                      accept='.torrent'
-                      type='file'
-                      style={{ display: 'none' }}
-                      id='upload-file'
-                    />
-
-                    <RightSideBottomSectionNoFile selectedFile={selectedFile} type='submit'>
-                      <div>OR</div>
-
-                      <IconWrapper>
-                        <AddItemIcon color='primary' />
-                        <div>CLICK / DRAG & DROP</div>
-                      </IconWrapper>
-                    </RightSideBottomSectionNoFile>
-                  </FileUploadLabel>
-                )}
-              </RightSide>
-            </MainSectionContentWrapper>
-            <ButtonWrapper>
-              <Button onClick={handleClose} color='primary' variant='outlined'>
-                {t('Cancel')}
+              <Button
+                style={{ justifySelf: 'center' }}
+                onClick={removePoster}
+                color='primary'
+                variant='outlined'
+                size='small'
+                disabled={!posterUrl}
+              >
+                {t('Clear')}
               </Button>
+            </PosterWrapper>
+          </LeftSide>
 
-              <Button variant='contained' disabled={!torrentSource} onClick={handleSave} color='primary'>
-                {t('Add')}
-              </Button>
-            </ButtonWrapper>
-          </MainSection>
-        </AddDialogStyle>
-        {/* <DialogTitle id='form-dialog-title'>{t('AddMagnetOrLink')}</DialogTitle>
-  
-        <DialogContent>
-          <TextField onChange={inputTitle} margin='dense' id='title' label={t('Title')} type='text' fullWidth />
-          <TextField onChange={inputPoster} margin='dense' id='poster' label={t('Poster')} type='url' fullWidth />
-          <TextField
-            onChange={inputMagnet}
-            autoFocus
-            margin='dense'
-            id='magnet'
-            label={t('MagnetOrTorrentFileLink')}
-            type='text'
-            fullWidth
-          />
-  
-          <Button color='primary' variant='outlined' component='label'>
-            {t('UploadFile')}
-            <input onChange={handleCapture} type='file' accept='.torrent' hidden />
-          </Button> */}
-        {/* <label htmlFor='upload-file'>
-          <Input onChange={handleCapture} accept='.torrent' type='file' id='upload-file' />
-          <Button htmlFor='upload-file' type='submit' color='primary' variant='outlined'>
-            {t('UploadFile')}
-          </Button>
-          <ListItem button variant='raised' type='submit' component='span' key={t('UploadFile')}>
-            <ListItemIcon>
-              <PublishIcon />
-            </ListItemIcon>
+          <RightSide>
+            <RightSideTopSection active={torrentSourceSelected}>
+              <TextField
+                onChange={handleTorrentSourceChange}
+                value={torrentSource}
+                margin='dense'
+                label={t('TorrentSourceLink')}
+                helperText={t('TorrentSourceOptions')}
+                type='text'
+                fullWidth
+                onFocus={() => setTorrentSourceSelected(true)}
+                onBlur={() => setTorrentSourceSelected(false)}
+                inputProps={{ autoComplete: 'off' }}
+                disabled={!!selectedFile}
+              />
+            </RightSideTopSection>
 
-            <ListItemText primary={t('UploadFile')} />
-          </ListItem>
-        </label> */}
-        {/* </DialogContent>
-  
-        <DialogActions>
+            {selectedFile ? (
+              <RightSideBottomSectionFileSelected>
+                <TorrentIconWrapper>
+                  <TorrentIcon />
+
+                  <CancelIconWrapper onClick={clearSelectedFile}>
+                    <CancelIcon />
+                  </CancelIconWrapper>
+                </TorrentIconWrapper>
+              </RightSideBottomSectionFileSelected>
+            ) : (
+              <FileUploadLabel htmlFor='upload-file'>
+                <input
+                  onChange={handleCapture}
+                  accept='.torrent'
+                  type='file'
+                  style={{ display: 'none' }}
+                  id='upload-file'
+                />
+
+                <RightSideBottomSectionNoFile selectedFile={selectedFile} type='submit'>
+                  <div>{t('AppendFile.Or')}</div>
+
+                  <IconWrapper>
+                    <AddItemIcon color='primary' />
+                    <div>{t('AppendFile.ClickOrDrag')}</div>
+                  </IconWrapper>
+                </RightSideBottomSectionNoFile>
+              </FileUploadLabel>
+            )}
+          </RightSide>
+        </Content>
+
+        <ButtonWrapper>
           <Button onClick={handleClose} color='primary' variant='outlined'>
             {t('Cancel')}
           </Button>
-  
-          <Button variant='contained' disabled={!link} onClick={handleSave} color='primary'>
+
+          <Button variant='contained' disabled={!torrentSource} onClick={handleSave} color='primary'>
             {t('Add')}
           </Button>
-        </DialogActions> */}
-      </Dialog>
-    </>
+        </ButtonWrapper>
+      </ContentWrapper>
+    </Dialog>
   )
 }
