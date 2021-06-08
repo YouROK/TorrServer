@@ -1,17 +1,19 @@
-export var torrserverHost = ''
-// export var torrserverHost = 'http://127.0.0.1:8090'
+const { protocol, hostname, port } = window.location
 
-export const torrentsHost = () => torrserverHost + '/torrents'
-export const viewedHost = () => torrserverHost + '/viewed'
-export const cacheHost = () => torrserverHost + '/cache'
-export const torrentUploadHost = () => torrserverHost + '/torrent/upload'
-export const settingsHost = () => torrserverHost + '/settings'
-export const streamHost = () => torrserverHost + '/stream'
-export const shutdownHost = () => torrserverHost + '/shutdown'
-export const echoHost = () => torrserverHost + '/echo'
-export const playlistAllHost = () => torrserverHost + '/playlistall/all.m3u'
-export const playlistTorrHost = () => torrserverHost + '/stream'
+let torrserverHost = process.env.REACT_APP_SERVER_HOST || `${protocol}//${hostname}${port ? `:${port}` : ''}`
 
-export const setTorrServerHost = (host) => {
-    torrserverHost = host
+export const torrentsHost = () => `${torrserverHost}/torrents`
+export const viewedHost = () => `${torrserverHost}/viewed`
+export const cacheHost = () => `${torrserverHost}/cache`
+export const torrentUploadHost = () => `${torrserverHost}/torrent/upload`
+export const settingsHost = () => `${torrserverHost}/settings`
+export const streamHost = () => `${torrserverHost}/stream`
+export const shutdownHost = () => `${torrserverHost}/shutdown`
+export const echoHost = () => `${torrserverHost}/echo`
+export const playlistAllHost = () => `${torrserverHost}/playlistall/all.m3u`
+export const playlistTorrHost = () => `${torrserverHost}/stream`
+
+export const getTorrServerHost = () => torrserverHost
+export const setTorrServerHost = host => {
+  torrserverHost = host
 }

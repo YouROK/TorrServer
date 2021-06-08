@@ -1,11 +1,9 @@
 package torrstor
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"sync"
 	"time"
 
@@ -76,21 +74,6 @@ func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
 	for i := 0; i < c.pieceCount; i++ {
 		c.pieces[i] = NewPiece(i, c)
 	}
-
-	if settings.BTsets.UseDisk {
-		name := filepath.Join(settings.BTsets.TorrentsSavePath, hash.HexString())
-		fs, err := ioutil.ReadDir(name)
-		if err == nil {
-			for _, f := range fs {
-				id, err := strconv.Atoi(f.Name())
-				if err == nil {
-					c.pieces[id].Size = f.Size()
-					c.pieces[id].Complete = f.Size() == c.pieceLength
-					c.pieces[id].Accessed = f.ModTime().Unix()
-				}
-			}
-		}
-	}
 }
 
 func (c *Cache) SetTorrent(torr *torrent.Torrent) {
@@ -107,6 +90,19 @@ func (c *Cache) Piece(m metainfo.Piece) storage.PieceImpl {
 func (c *Cache) Close() error {
 	log.TLogln("Close cache for:", c.hash)
 	delete(c.storage.caches, c.hash)
+
+	if settings.BTsets.RemoveCacheOnDrop {
+		name := filepath.Join(settings.BTsets.TorrentsSavePath, c.hash.HexString())
+		if name != "" && name != "/" {
+			for _, v := range c.pieces {
+				if v.dPiece != nil {
+					os.Remove(v.dPiece.name)
+				}
+			}
+			os.Remove(name)
+		}
+	}
+
 	c.pieces = nil
 
 	c.muReaders.Lock()
@@ -137,28 +133,33 @@ func (c *Cache) GetState() *state.CacheState {
 
 	piecesState := make(map[int]state.ItemState, 0)
 	var fill int64 = 0
-	for _, p := range c.pieces {
-		if p.Size > 0 {
-			fill += p.Size
-			piecesState[p.Id] = state.ItemState{
-				Id:        p.Id,
-				Size:      p.Size,
-				Length:    c.pieceLength,
-				Completed: p.Complete,
+
+	if len(c.pieces) > 0 {
+		for _, p := range c.pieces {
+			if p.Size > 0 {
+				fill += p.Size
+				piecesState[p.Id] = state.ItemState{
+					Id:        p.Id,
+					Size:      p.Size,
+					Length:    c.pieceLength,
+					Completed: p.Complete,
+				}
 			}
 		}
 	}
 
 	readersState := make([]*state.ReaderState, 0)
 	c.muReaders.Lock()
-	for r, _ := range c.readers {
-		rng := r.getPiecesRange()
-		pc := r.getReaderPiece()
-		readersState = append(readersState, &state.ReaderState{
-			Start:  rng.Start,
-			End:    rng.End,
-			Reader: pc,
-		})
+	if len(c.readers) > 0 {
+		for r, _ := range c.readers {
+			rng := r.getPiecesRange()
+			pc := r.getReaderPiece()
+			readersState = append(readersState, &state.ReaderState{
+				Start:  rng.Start,
+				End:    rng.End,
+				Reader: pc,
+			})
+		}
 	}
 	c.muReaders.Unlock()
 
@@ -224,6 +225,12 @@ func (c *Cache) getRemPieces() []*Piece {
 					piecesRemove = append(piecesRemove, p)
 				}
 			}
+		} else {
+			// on preload clean
+			//TODO проверить
+			if p.Size > 0 && !c.isIdInFileBE(ranges, id) {
+				piecesRemove = append(piecesRemove, p)
+			}
 		}
 	}
 
@@ -267,68 +274,6 @@ func (c *Cache) isIdInFileBE(ranges []Range, id int) bool {
 		}
 	}
 	return false
-}
-
-// run only in cache on disk
-func (c *Cache) LoadPiecesOnDisk() {
-	if c.torrent == nil {
-		return
-	}
-
-	if c.isRemove {
-		return
-	}
-	c.muRemove.Lock()
-	if c.isRemove {
-		c.muRemove.Unlock()
-		return
-	}
-	c.isRemove = true
-	defer func() { c.isRemove = false }()
-	c.muRemove.Unlock()
-
-	ranges := make([]Range, 0)
-	c.muReaders.Lock()
-	for r, _ := range c.readers {
-		ranges = append(ranges, r.getPiecesRange())
-	}
-	c.muReaders.Unlock()
-	ranges = mergeRange(ranges)
-
-	for r, _ := range c.readers {
-		pc := r.getReaderPiece()
-		limit := 5
-
-		for limit > 0 {
-			if !c.pieces[pc].Complete {
-				if c.torrent.PieceState(pc).Priority == torrent.PiecePriorityNone {
-					c.torrent.Piece(pc).SetPriority(torrent.PiecePriorityNormal)
-				}
-				limit--
-			}
-			pc++
-		}
-	}
-	if len(c.readers) == 0 {
-		limit := 5
-		pc := 0
-		end := c.pieceCount
-		for pc <= end {
-			if !c.pieces[pc].Complete {
-				break
-			}
-			pc++
-		}
-		for pc <= end && limit > 0 {
-			if !c.pieces[pc].Complete {
-				if c.torrent.PieceState(pc).Priority == torrent.PiecePriorityNone {
-					c.torrent.Piece(pc).SetPriority(torrent.PiecePriorityNormal)
-				}
-				limit--
-			}
-			pc++
-		}
-	}
 }
 
 //////////////////

@@ -64,6 +64,7 @@ func BasicAuth(accounts gin.Accounts) gin.HandlerFunc {
 		user, found := pairs.searchCredential(c.Request.Header.Get("Authorization"))
 		if !found {
 			if strings.HasPrefix(c.FullPath(), "/stream") ||
+				strings.HasPrefix(c.FullPath(), "/play") ||
 				(strings.HasPrefix(c.FullPath(), "/playlist") && c.FullPath() != "/playlistall/all.m3u") {
 				c.Set("not_auth", true)
 				return

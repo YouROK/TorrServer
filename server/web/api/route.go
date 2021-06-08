@@ -30,6 +30,9 @@ func SetupRoute(route *gin.RouterGroup) {
 	route.GET("/stream", stream)
 	route.GET("/stream/*fname", stream)
 
+	route.HEAD("/play/:hash/:id", play)
+	route.GET("/play/:hash/:id", play)
+
 	route.POST("/viewed", viewed)
 
 	route.GET("/playlistall/all.m3u", allPlayList)

@@ -12,7 +12,8 @@ On linux systems you need to set the environment variable before run \
 Install golang 1.16+ by instruction: https://golang.org/doc/install \
 Goto dir to source\
 Run build script under linux build-all.sh\
-For build web page need install npm\
+For build web page need install npm and yarn\
+For instal yarn: _npm i -g yarn_ after install npm\
 For build android server need android toolchain\
 Download android ndk and copy android-ndk-XXX/toolchains/llvm/prebuilt/linux-x86_64 dir to source, rename it to toolchain
 
@@ -74,6 +75,11 @@ TorrServer [--port PORT] [--path PATH] [--logpath LOGPATH] [--rdb] [--httpauth] 
 >**only save**
 >
 >http://127.0.0.1:8090/stream/fname?link=...&save&title=...&poster=...
+
+###### /play/:hash/:id
+#### params:
+* hash - hash of torrent
+* index - index of file
 
 ###### /playlistall/all.m3u
 *Get all http links of all torrents in m3u list*
@@ -180,7 +186,7 @@ local:127.0.0.1\
 [PayPal](https://www.paypal.me/yourok)
 
 [YooMoney](https://yoomoney.ru/to/410013733697114/200)  
-YooMoney card: 5599 0050 6424 4747
+YooMoney card: 4048 4150 1812 8179
 
 SberBank card: 4276 4000 6707 2919
 
@@ -191,6 +197,8 @@ SberBank card: 4276 4000 6707 2919
 ###### **Anacrolix Matt Joiner** [github.com/anacrolix](https://github.com/anacrolix/)
 
 ###### **tsynik** [github.com/tsynik](https://github.com/tsynik)
+
+###### **dancheskus** [github.com/dancheskus](https://github.com/dancheskus)
 
 ###### **Tw1cker Руслан Пахнев** [github.com/Nemiroff](https://github.com/Nemiroff)
 
