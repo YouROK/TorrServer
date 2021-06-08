@@ -50,7 +50,7 @@
   "PiecesCount": "Кол-во блоков",
   "PiecesLength": "Размер блока",
   "PlaylistAll": "Плейлист всех",
-  "Poster": "Постер",
+  "AddPosterLinkInput": "Ссылка на постер",
   "Preload": "Предзагр.",
   "PreloadBuffer": "Наполнять кеш перед началом воспроизведения",
   "ReaderReadAHead": "Кеш предзагрузки (5-100%, рек. 95%)",

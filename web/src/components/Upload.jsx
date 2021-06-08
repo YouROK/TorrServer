@@ -17,8 +17,8 @@ export default function UploadDialog() {
   }
   return (
     <div>
-      <label htmlFor='raised-button-file'>
-        <input onChange={handleCapture} accept='*/*' type='file' style={{ display: 'none' }} id='raised-button-file' />
+      <label htmlFor='upload-file'>
+        <input onChange={handleCapture} accept='.torrent' type='file' style={{ display: 'none' }} id='upload-file' />
 
         <ListItem button variant='raised' type='submit' component='span' key={t('UploadFile')}>
           <ListItemIcon>
