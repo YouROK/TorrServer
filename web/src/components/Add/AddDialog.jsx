@@ -10,7 +10,7 @@ import axios from 'axios'
 import { useTranslation } from 'react-i18next'
 import { Input } from '@material-ui/core'
 import styled, { css } from 'styled-components'
-import { NoImageIcon } from 'icons'
+import { NoImageIcon, AddItemIcon } from 'icons'
 import debounce from 'lodash/debounce'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -44,13 +44,58 @@ const LeftSide = styled.div`
   border-right: 1px solid rgba(0, 0, 0, 0.12);
 `
 const RightSide = styled.div`
+  display: flex;
+  flex-direction: column;
+`
+
+const RightSideBottomSection = styled.div`
+  transition: all 0.3s;
   padding: 20px;
+  flex: 1;
+  display: grid;
+  grid-template-rows: 100px 1fr;
+  justify-items: center;
+  cursor: pointer;
+
+  :hover {
+    svg {
+      transform: translateY(-4%);
+    }
+  }
+`
+
+const IconWrapper = styled.div`
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 10px;
+
+  svg {
+    transition: all 0.3s;
+  }
+`
+
+const RightSideTopSection = styled.div`
+  background: #fff;
+  padding: 0 20px 20px 20px;
+
+  ${({ active }) =>
+    active &&
+    css`
+      + ${RightSideBottomSection} {
+        box-shadow: inset 3px 25px 8px -25px rgba(0, 0, 0, 0.5);
+      }
+    `};
 `
 
 const PosterWrapper = styled.div`
   margin-top: 20px;
-  height: 300px;
-  display: flex;
+  /* height: 300px;
+  display: flex; */
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  grid-template-rows: 300px max-content;
+  gap: 5px;
 `
 const PosterSuggestions = styled.div`
   display: grid;
@@ -58,7 +103,7 @@ const PosterSuggestions = styled.div`
   grid-template-rows: repeat(4, calc(25% - 4px));
   grid-auto-flow: column;
   gap: 5px;
-  margin-left: 5px;
+  /* margin-left: 5px; */
 `
 const PosterSuggestionsItem = styled.div`
   cursor: pointer;
@@ -120,7 +165,7 @@ export const Poster = styled.div`
 `
 
 const getMoviePosters = movieName => {
-  const request = `${`http://api.themoviedb.org/3/search/movie?api_key=${process.env.REACT_APP_TMDB_API_KEY}`}&query=${movieName}`
+  const request = `${`http://api.themoviedb.org/3/search/multi?api_key=${process.env.REACT_APP_TMDB_API_KEY}`}&query=${movieName}`
 
   return axios
     .get(request)
@@ -156,6 +201,7 @@ const checkImageURL = async url => {
 export default function AddDialog({ handleClose }) {
   const { t } = useTranslation()
   const [torrentSource, setTorrentSource] = useState('')
+  const [torrentSourceSelected, setTorrentSourceSelected] = useState(false)
   const [title, setTitle] = useState('')
   const [posterUrl, setPosterUrl] = useState('')
   const [isPosterUrlCorrect, setIsPosterUrlCorrect] = useState(false)
@@ -193,10 +239,9 @@ export default function AddDialog({ handleClose }) {
     [isUserInteractedWithPoster],
   )
 
-  const inputMagnet = ({ target: { value } }) => setTorrentSource(value)
+  const handleTorrentSourceChange = ({ target: { value } }) => setTorrentSource(value)
   const handleTitleChange = ({ target: { value } }) => {
     setTitle(value)
-
     delayedPosterSearch(value)
   }
   const handlePosterUrlChange = ({ target: { value } }) => {
@@ -223,6 +268,7 @@ export default function AddDialog({ handleClose }) {
 
   const userChangesPosterUrl = url => {
     setPosterUrl(url)
+    checkImageURL(url).then(setIsPosterUrlCorrect)
     setIsUserInteractedWithPoster(true)
   }
 
@@ -266,9 +312,44 @@ export default function AddDialog({ handleClose }) {
                         </PosterSuggestionsItem>
                       ))}
                   </PosterSuggestions>
+
+                  <Button
+                    style={{ justifySelf: 'center' }}
+                    onClick={removePoster}
+                    color='primary'
+                    variant='outlined'
+                    size='small'
+                    disabled={!posterUrl}
+                  >
+                    Clear
+                  </Button>
                 </PosterWrapper>
               </LeftSide>
-              <RightSide>RightSide</RightSide>
+
+              <RightSide>
+                <RightSideTopSection active={torrentSourceSelected}>
+                  <TextField
+                    onChange={handleTorrentSourceChange}
+                    value={torrentSource}
+                    margin='dense'
+                    label={t('TorrentSourceLink')}
+                    helperText='magnet / hash / torrent'
+                    type='text'
+                    fullWidth
+                    onFocus={() => setTorrentSourceSelected(true)}
+                    onBlur={() => setTorrentSourceSelected(false)}
+                    inputProps={{ autoComplete: 'off' }}
+                  />
+                </RightSideTopSection>
+                <RightSideBottomSection>
+                  <div>OR</div>
+
+                  <IconWrapper>
+                    <AddItemIcon color='primary' />
+                    <div>CLICK / DRAG & DROP</div>
+                  </IconWrapper>
+                </RightSideBottomSection>
+              </RightSide>
             </MainSectionContentWrapper>
             <ButtonWrapper>
               <Button onClick={handleClose} color='primary' variant='outlined'>

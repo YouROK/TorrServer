@@ -38,7 +38,7 @@
   "Host": "Хост",
   "Info": "Инфо",
   "LatestFilePlayed": "Последний воспроизведенный файл:",
-  "MagnetOrTorrentFileLink": "Ссылка на файл торрента или magnet-ссылка",
+  "TorrentSourceLink": "Ссылка на источник торрента",
   "Name": "Название",
   "NoTorrentsAdded": "Нет торрентов",
   "Offline": "Сервер не доступен",
