@@ -71,7 +71,20 @@ export const PiecesLengthWidget = ({ data }) => {
 
 export const StatusWidget = ({ data }) => {
   const { t } = useTranslation()
-  return <StatisticsField title={t('TorrentStatus')} value={data} iconBg='#aea25b' valueBg='#b4aa6e' icon={BuildIcon} />
+  let i18nd = data
+  if (data.toLowerCase() === 'torrent added')
+    i18nd = t('TorrentAdded')
+  else if (data.toLowerCase() === 'torrent getting info')
+    i18nd = t('TorrentGettingInfo')
+  else if (data.toLowerCase() === 'torrent preload')
+    i18nd = t('TorrentPreload')
+  else if (data.toLowerCase() === 'torrent working')
+    i18nd = t('TorrentWorking')
+  else if (data.toLowerCase() === 'torrent closed')
+    i18nd = t('TorrentClosed')
+  else if (data.toLowerCase() === 'torrent in db')
+    i18nd = t('TorrentInDb')
+  return <StatisticsField title={t('TorrentStatus')} value={i18nd} iconBg='#aea25b' valueBg='#b4aa6e' icon={BuildIcon} />
 }
 
 export const SizeWidget = ({ data }) => {
