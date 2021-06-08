@@ -110,14 +110,9 @@ const IconWrapper = styled.div`
 const RightSideTopSection = styled.div`
   background: #fff;
   padding: 0 20px 20px 20px;
+  transition: all 0.3s;
 
-  ${({ active }) =>
-    active &&
-    css`
-      + ${RightSideBottomSectionNoFile} {
-        box-shadow: inset 3px 25px 8px -25px rgba(0, 0, 0, 0.5);
-      }
-    `};
+  ${({ active }) => active && 'box-shadow: 0 8px 10px -9px rgba(0, 0, 0, 0.5)'};
 `
 
 const PosterWrapper = styled.div`
@@ -125,7 +120,7 @@ const PosterWrapper = styled.div`
   display: grid;
   grid-template-columns: max-content 1fr;
   grid-template-rows: 300px max-content;
-  gap: 5px;
+  gap: 10px 5px;
 `
 const PosterSuggestions = styled.div`
   display: grid;
