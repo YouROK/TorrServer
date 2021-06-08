@@ -8,11 +8,13 @@ import DialogTitle from '@material-ui/core/DialogTitle'
 import { torrentsHost, torrentUploadHost } from 'utils/Hosts'
 import axios from 'axios'
 import { useTranslation } from 'react-i18next'
-import { Input } from '@material-ui/core'
+import { Input, ListItem, ListItemIcon, ListItemText } from '@material-ui/core'
 import styled, { css } from 'styled-components'
-import { NoImageIcon, AddItemIcon } from 'icons'
+import { NoImageIcon, AddItemIcon, TorrentIcon } from 'icons'
 import debounce from 'lodash/debounce'
 import { v4 as uuidv4 } from 'uuid'
+import useChangeLanguage from 'utils/useChangeLanguage'
+import { Cancel as CancelIcon } from '@material-ui/icons'
 
 const AddDialogStyle = styled.div``
 const TitleSection = styled.div`
@@ -48,18 +50,49 @@ const RightSide = styled.div`
   flex-direction: column;
 `
 
-const RightSideBottomSection = styled.div`
+const RightSideBottomSectionBasicStyles = css`
   transition: all 0.3s;
   padding: 20px;
-  flex: 1;
+  height: 100%;
   display: grid;
-  grid-template-rows: 100px 1fr;
+`
+
+const RightSideBottomSectionNoFile = styled.div`
+  ${RightSideBottomSectionBasicStyles}
+
   justify-items: center;
+  grid-template-rows: 100px 1fr;
   cursor: pointer;
 
   :hover {
+    background-color: rgba(0, 0, 0, 0.04);
     svg {
       transform: translateY(-4%);
+    }
+  }
+`
+
+const RightSideBottomSectionFileSelected = styled.div`
+  ${RightSideBottomSectionBasicStyles}
+  place-items: center;
+`
+
+const TorrentIconWrapper = styled.div`
+  position: relative;
+`
+
+const CancelIconWrapper = styled.div`
+  position: absolute;
+  top: -9px;
+  left: 10px;
+  cursor: pointer;
+
+  > svg {
+    transition: all 0.3s;
+    fill: rgba(0, 0, 0, 0.7);
+
+    :hover {
+      fill: rgba(0, 0, 0, 0.6);
     }
   }
 `
@@ -75,6 +108,10 @@ const IconWrapper = styled.div`
   }
 `
 
+const FileUploadLabel = styled.label`
+  transition: all 0.3s;
+`
+
 const RightSideTopSection = styled.div`
   background: #fff;
   padding: 0 20px 20px 20px;
@@ -82,7 +119,7 @@ const RightSideTopSection = styled.div`
   ${({ active }) =>
     active &&
     css`
-      + ${RightSideBottomSection} {
+      + ${FileUploadLabel} {
         box-shadow: inset 3px 25px 8px -25px rgba(0, 0, 0, 0.5);
       }
     `};
@@ -90,8 +127,6 @@ const RightSideTopSection = styled.div`
 
 const PosterWrapper = styled.div`
   margin-top: 20px;
-  /* height: 300px;
-  display: flex; */
   display: grid;
   grid-template-columns: max-content 1fr;
   grid-template-rows: 300px max-content;
@@ -103,7 +138,6 @@ const PosterSuggestions = styled.div`
   grid-template-rows: repeat(4, calc(25% - 4px));
   grid-auto-flow: column;
   gap: 5px;
-  /* margin-left: 5px; */
 `
 const PosterSuggestionsItem = styled.div`
   cursor: pointer;
@@ -164,17 +198,6 @@ export const Poster = styled.div`
   `}
 `
 
-const getMoviePosters = movieName => {
-  const request = `${`http://api.themoviedb.org/3/search/multi?api_key=${process.env.REACT_APP_TMDB_API_KEY}`}&query=${movieName}`
-
-  return axios
-    .get(request)
-    .then(({ data: { results } }) =>
-      results.filter(el => el.poster_path).map(el => `https://image.tmdb.org/t/p/w300${el.poster_path}`),
-    )
-    .catch(() => null)
-}
-
 const ButtonWrapper = styled.div`
   padding: 20px;
   display: flex;
@@ -185,10 +208,19 @@ const ButtonWrapper = styled.div`
   }
 `
 
-const checkImageURL = async url => {
-  if (!url) return false
+const getMoviePosters = (movieName, language = 'en') => {
+  const request = `${`http://api.themoviedb.org/3/search/multi?api_key=${process.env.REACT_APP_TMDB_API_KEY}`}&language=${language}&include_image_language=${language},null&query=${movieName}`
 
-  if (!url.match(/.(jpg|jpeg|png|gif)$/i)) return false
+  return axios
+    .get(request)
+    .then(({ data: { results } }) =>
+      results.filter(el => el.poster_path).map(el => `https://image.tmdb.org/t/p/w300${el.poster_path}`),
+    )
+    .catch(() => null)
+}
+
+const checkImageURL = async url => {
+  if (!url || !url.match(/.(jpg|jpeg|png|gif)$/i)) return false
 
   try {
     await fetch(url)
@@ -207,6 +239,8 @@ export default function AddDialog({ handleClose }) {
   const [isPosterUrlCorrect, setIsPosterUrlCorrect] = useState(false)
   const [posterList, setPosterList] = useState()
   const [isUserInteractedWithPoster, setIsUserInteractedWithPoster] = useState(false)
+  const [currentLang] = useChangeLanguage()
+  const [selectedFile, setSelectedFile] = useState()
 
   const removePoster = () => {
     setIsPosterUrlCorrect(false)
@@ -216,7 +250,7 @@ export default function AddDialog({ handleClose }) {
   const delayedPosterSearch = useMemo(
     () =>
       debounce(movieName => {
-        getMoviePosters(movieName).then(urlList => {
+        getMoviePosters(movieName, currentLang === 'ru' ? 'ru' : 'en').then(urlList => {
           if (urlList) {
             setPosterList(urlList)
             if (isUserInteractedWithPoster) return
@@ -236,7 +270,7 @@ export default function AddDialog({ handleClose }) {
           }
         })
       }, 700),
-    [isUserInteractedWithPoster],
+    [isUserInteractedWithPoster, currentLang],
   )
 
   const handleTorrentSourceChange = ({ target: { value } }) => setTorrentSource(value)
@@ -252,18 +286,31 @@ export default function AddDialog({ handleClose }) {
   }
 
   const handleSave = () => {
-    axios
-      .post(torrentsHost(), { action: 'add', link: torrentSource, title, poster: posterUrl, save_to_db: true })
-      .finally(() => handleClose())
+    if (selectedFile) {
+      const data = new FormData()
+      data.append('save', 'true')
+      data.append('file', selectedFile)
+      posterUrl && data.append('poster', posterUrl)
+      axios.post(torrentUploadHost(), data).finally(() => handleClose())
+    } else {
+      axios
+        .post(torrentsHost(), { action: 'add', link: torrentSource, title, poster: posterUrl, save_to_db: true })
+        .finally(() => handleClose())
+    }
   }
 
   const handleCapture = ({ target: { files } }) => {
-    console.log(files)
     const [file] = files
-    const data = new FormData()
-    data.append('save', 'true')
-    data.append('file', file)
-    axios.post(torrentUploadHost(), data)
+    if (!file) return
+
+    setSelectedFile(file)
+    setTorrentSource(file.name)
+  }
+
+  const clearSelectedFile = e => {
+    e.stopPropagation()
+    setSelectedFile()
+    setTorrentSource('')
   }
 
   const userChangesPosterUrl = url => {
@@ -333,22 +380,46 @@ export default function AddDialog({ handleClose }) {
                     value={torrentSource}
                     margin='dense'
                     label={t('TorrentSourceLink')}
-                    helperText='magnet / hash / torrent'
+                    helperText='magnet / hash / .torrent file link'
                     type='text'
                     fullWidth
                     onFocus={() => setTorrentSourceSelected(true)}
                     onBlur={() => setTorrentSourceSelected(false)}
                     inputProps={{ autoComplete: 'off' }}
+                    disabled={selectedFile}
                   />
                 </RightSideTopSection>
-                <RightSideBottomSection>
-                  <div>OR</div>
 
-                  <IconWrapper>
-                    <AddItemIcon color='primary' />
-                    <div>CLICK / DRAG & DROP</div>
-                  </IconWrapper>
-                </RightSideBottomSection>
+                {selectedFile ? (
+                  <RightSideBottomSectionFileSelected>
+                    <TorrentIconWrapper>
+                      <TorrentIcon />
+
+                      <CancelIconWrapper onClick={clearSelectedFile}>
+                        <CancelIcon />
+                      </CancelIconWrapper>
+                    </TorrentIconWrapper>
+                  </RightSideBottomSectionFileSelected>
+                ) : (
+                  <FileUploadLabel htmlFor='upload-file' style={{ flex: 1 }}>
+                    <input
+                      onChange={handleCapture}
+                      accept='.torrent'
+                      type='file'
+                      style={{ display: 'none' }}
+                      id='upload-file'
+                    />
+
+                    <RightSideBottomSectionNoFile selectedFile={selectedFile} type='submit'>
+                      <div>OR</div>
+
+                      <IconWrapper>
+                        <AddItemIcon color='primary' />
+                        <div>CLICK / DRAG & DROP</div>
+                      </IconWrapper>
+                    </RightSideBottomSectionNoFile>
+                  </FileUploadLabel>
+                )}
               </RightSide>
             </MainSectionContentWrapper>
             <ButtonWrapper>
@@ -381,19 +452,19 @@ export default function AddDialog({ handleClose }) {
             {t('UploadFile')}
             <input onChange={handleCapture} type='file' accept='.torrent' hidden />
           </Button> */}
-        {/* <label htmlFor='upload-file'> */}
-        {/* <Input onChange={handleCapture} accept='.torrent' type='file' id='upload-file' /> */}
-        {/* <Button htmlFor='upload-file' type='submit' color='primary' variant='outlined'>
-              {t('UploadFile')}
-            </Button> */}
-        {/* <ListItem button variant='raised' type='submit' component='span' key={t('UploadFile')}>
-              <ListItemIcon>
-                <PublishIcon />
-              </ListItemIcon>
-  
-              <ListItemText primary={t('UploadFile')} />
-            </ListItem> */}
-        {/* </label> */}
+        {/* <label htmlFor='upload-file'>
+          <Input onChange={handleCapture} accept='.torrent' type='file' id='upload-file' />
+          <Button htmlFor='upload-file' type='submit' color='primary' variant='outlined'>
+            {t('UploadFile')}
+          </Button>
+          <ListItem button variant='raised' type='submit' component='span' key={t('UploadFile')}>
+            <ListItemIcon>
+              <PublishIcon />
+            </ListItemIcon>
+
+            <ListItemText primary={t('UploadFile')} />
+          </ListItem>
+        </label> */}
         {/* </DialogContent>
   
         <DialogActions>

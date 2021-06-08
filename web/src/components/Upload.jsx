@@ -17,7 +17,7 @@ export default function UploadDialog() {
   }
   return (
     <div>
-      <label htmlFor='upload-file'>
+      {/* <label htmlFor='upload-file'>
         <input onChange={handleCapture} accept='.torrent' type='file' style={{ display: 'none' }} id='upload-file' />
 
         <ListItem button variant='raised' type='submit' component='span' key={t('UploadFile')}>
@@ -27,7 +27,7 @@ export default function UploadDialog() {
 
           <ListItemText primary={t('UploadFile')} />
         </ListItem>
-      </label>
+      </label> */}
     </div>
   )
 }
