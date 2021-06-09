@@ -25,24 +25,56 @@ export const Content = styled.div`
   }
 `
 
-export const LeftSide = styled.div`
-  padding: 0 20px 20px 20px;
-  border-right: 1px solid rgba(0, 0, 0, 0.12);
-`
 export const RightSide = styled.div`
-  display: flex;
-  flex-direction: column;
+  padding: 0 20px 20px 20px;
 `
 
-export const RightSideBottomSectionBasicStyles = css`
+export const RightSideContainer = styled.div`
+  ${({ isHidden, notificationMessage }) => css`
+    height: 455px;
+
+    ${notificationMessage &&
+    css`
+      position: relative;
+      white-space: nowrap;
+
+      :before {
+        font-size: 20px;
+        font-weight: 300;
+        content: '${notificationMessage}';
+        display: grid;
+        place-items: center;
+        background: #84cda7;
+        padding: 10px 15px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        border-radius: 5px;
+      }
+    `};
+
+    ${isHidden &&
+    css`
+      display: none;
+    `};
+  `}
+`
+export const LeftSide = styled.div`
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(0, 0, 0, 0.12);
+`
+
+export const LeftSideBottomSectionBasicStyles = css`
   transition: transform 0.3s;
   padding: 20px;
   height: 100%;
   display: grid;
 `
 
-export const RightSideBottomSectionNoFile = styled.div`
-  ${RightSideBottomSectionBasicStyles}
+export const LeftSideBottomSectionNoFile = styled.div`
+  ${LeftSideBottomSectionBasicStyles}
   border: 4px dashed transparent;
   text-align: center;
 
@@ -66,8 +98,8 @@ export const RightSideBottomSectionNoFile = styled.div`
   }
 `
 
-export const RightSideBottomSectionFileSelected = styled.div`
-  ${RightSideBottomSectionBasicStyles}
+export const LeftSideBottomSectionFileSelected = styled.div`
+  ${LeftSideBottomSectionBasicStyles}
   place-items: center;
 
   @media (max-width: 930px) {
@@ -107,7 +139,7 @@ export const IconWrapper = styled.div`
   }
 `
 
-export const RightSideTopSection = styled.div`
+export const LeftSideTopSection = styled.div`
   background: #e3f2eb;
   padding: 0 20px 20px 20px;
   transition: all 0.3s;
@@ -141,11 +173,13 @@ export const PosterWrapper = styled.div`
 export const PosterSuggestions = styled.div`
   display: grid;
   grid-area: suggestions;
+  grid-auto-flow: column;
   grid-template-columns: repeat(3, max-content);
   grid-template-rows: repeat(4, max-content);
   gap: 5px;
 
   @media (max-width: 540px) {
+    grid-auto-flow: row;
     grid-template-columns: repeat(5, max-content);
   }
   @media (max-width: 375px) {
@@ -228,8 +262,6 @@ export const ClearPosterButton = styled(Button)`
 export const PosterLanguageSwitch = styled.div`
   grid-area: poster;
   z-index: 5;
-  /* justify-self: center; */
-  /* transform: translateY(-50%); */
   position: absolute;
   top: 0;
   left: 50%;
@@ -244,13 +276,8 @@ export const PosterLanguageSwitch = styled.div`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s;
-  /* padding: 0; */
 
   ${({ showbutton }) => !showbutton && 'display: none'};
-
-  /* @media (max-width: 540px) {
-    transform: translateY(-140%);
-  } */
 
   :hover {
     filter: brightness(1.1);

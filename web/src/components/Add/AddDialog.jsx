@@ -23,16 +23,17 @@ import {
   Content,
   Header,
   IconWrapper,
-  LeftSide,
+  RightSide,
   Poster,
   PosterSuggestions,
   PosterSuggestionsItem,
   PosterWrapper,
-  RightSide,
-  RightSideBottomSectionFileSelected,
-  RightSideBottomSectionNoFile,
-  RightSideTopSection,
+  LeftSide,
+  LeftSideBottomSectionFileSelected,
+  LeftSideBottomSectionNoFile,
+  LeftSideTopSection,
   TorrentIconWrapper,
+  RightSideContainer,
 } from './style'
 import { checkImageURL, getMoviePosters } from './helpers'
 
@@ -173,72 +174,7 @@ export default function AddDialog({ handleClose }) {
 
       <Content>
         <LeftSide>
-          <TextField
-            onChange={handleTitleChange}
-            value={title}
-            margin='dense'
-            label={t('Title')}
-            type='text'
-            fullWidth
-          />
-          <TextField
-            onChange={handlePosterUrlChange}
-            value={posterUrl}
-            margin='dense'
-            label={t('AddPosterLinkInput')}
-            type='url'
-            fullWidth
-          />
-
-          <PosterWrapper>
-            <Poster poster={+isPosterUrlCorrect}>
-              {isPosterUrlCorrect ? <img src={posterUrl} alt='poster' /> : <NoImageIcon />}
-            </Poster>
-
-            <PosterSuggestions>
-              {posterList
-                ?.filter(url => url !== posterUrl)
-                .slice(0, 12)
-                .map(url => (
-                  <PosterSuggestionsItem onClick={() => userChangesPosterUrl(url)} key={uuidv4()}>
-                    <img src={url} alt='poster' />
-                  </PosterSuggestionsItem>
-                ))}
-            </PosterSuggestions>
-
-            {currentLang !== 'en' && (
-              <PosterLanguageSwitch
-                onClick={() => {
-                  const newLanguage = posterSearchLanguage === 'en' ? 'ru' : 'en'
-                  setPosterSearchLanguage(newLanguage)
-                  posterSearch(title, newLanguage, { shouldRefreshMainPoster: true })
-                }}
-                showbutton={+isPosterUrlCorrect}
-                color='primary'
-                variant='contained'
-                size='small'
-              >
-                {posterSearchLanguage === 'en' ? 'EN' : 'RU'}
-              </PosterLanguageSwitch>
-            )}
-
-            <ClearPosterButton
-              showbutton={+isPosterUrlCorrect}
-              onClick={() => {
-                removePoster()
-                setIsUserInteractedWithPoster(true)
-              }}
-              color='primary'
-              variant='contained'
-              size='small'
-            >
-              {t('Clear')}
-            </ClearPosterButton>
-          </PosterWrapper>
-        </LeftSide>
-
-        <RightSide>
-          <RightSideTopSection active={isTorrentSourceActive}>
+          <LeftSideTopSection active={isTorrentSourceActive}>
             <TextField
               onChange={handleTorrentSourceChange}
               value={torrentSource}
@@ -252,10 +188,10 @@ export default function AddDialog({ handleClose }) {
               inputProps={{ autoComplete: 'off' }}
               disabled={!!selectedFile}
             />
-          </RightSideTopSection>
+          </LeftSideTopSection>
 
           {selectedFile ? (
-            <RightSideBottomSectionFileSelected>
+            <LeftSideBottomSectionFileSelected>
               <TorrentIconWrapper>
                 <TorrentIcon />
 
@@ -263,9 +199,9 @@ export default function AddDialog({ handleClose }) {
                   <CancelIcon />
                 </CancelIconWrapper>
               </TorrentIconWrapper>
-            </RightSideBottomSectionFileSelected>
+            </LeftSideBottomSectionFileSelected>
           ) : (
-            <RightSideBottomSectionNoFile isDragActive={isDragActive} {...getRootProps()}>
+            <LeftSideBottomSectionNoFile isDragActive={isDragActive} {...getRootProps()}>
               <input {...getInputProps()} />
               <div>{t('AppendFile.Or')}</div>
 
@@ -273,8 +209,77 @@ export default function AddDialog({ handleClose }) {
                 <AddItemIcon color='primary' />
                 <div>{t('AppendFile.ClickOrDrag')}</div>
               </IconWrapper>
-            </RightSideBottomSectionNoFile>
+            </LeftSideBottomSectionNoFile>
           )}
+        </LeftSide>
+
+        <RightSide>
+          <RightSideContainer isHidden={!torrentSource}>
+            <TextField
+              onChange={handleTitleChange}
+              value={title}
+              margin='dense'
+              label={t('Title')}
+              type='text'
+              fullWidth
+            />
+            <TextField
+              onChange={handlePosterUrlChange}
+              value={posterUrl}
+              margin='dense'
+              label={t('AddPosterLinkInput')}
+              type='url'
+              fullWidth
+            />
+
+            <PosterWrapper>
+              <Poster poster={+isPosterUrlCorrect}>
+                {isPosterUrlCorrect ? <img src={posterUrl} alt='poster' /> : <NoImageIcon />}
+              </Poster>
+
+              <PosterSuggestions>
+                {posterList
+                  ?.filter(url => url !== posterUrl)
+                  .slice(0, 12)
+                  .map(url => (
+                    <PosterSuggestionsItem onClick={() => userChangesPosterUrl(url)} key={uuidv4()}>
+                      <img src={url} alt='poster' />
+                    </PosterSuggestionsItem>
+                  ))}
+              </PosterSuggestions>
+
+              {currentLang !== 'en' && (
+                <PosterLanguageSwitch
+                  onClick={() => {
+                    const newLanguage = posterSearchLanguage === 'en' ? 'ru' : 'en'
+                    setPosterSearchLanguage(newLanguage)
+                    posterSearch(title, newLanguage, { shouldRefreshMainPoster: true })
+                  }}
+                  showbutton={+isPosterUrlCorrect}
+                  color='primary'
+                  variant='contained'
+                  size='small'
+                >
+                  {posterSearchLanguage === 'en' ? 'EN' : 'RU'}
+                </PosterLanguageSwitch>
+              )}
+
+              <ClearPosterButton
+                showbutton={+isPosterUrlCorrect}
+                onClick={() => {
+                  removePoster()
+                  setIsUserInteractedWithPoster(true)
+                }}
+                color='primary'
+                variant='contained'
+                size='small'
+              >
+                {t('Clear')}
+              </ClearPosterButton>
+            </PosterWrapper>
+          </RightSideContainer>
+
+          <RightSideContainer notificationMessage={t('AddTorrentSourceNotification')} isHidden={torrentSource} />
         </RightSide>
       </Content>
 

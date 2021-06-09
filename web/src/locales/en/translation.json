@@ -102,5 +102,6 @@
     "ClickOrDrag": "CLICK / DRAG & DROP (.torrent)"
   },
   "TorrentSourceOptions": "magnet / hash / .torrent file link",
-  "Clear": "Clear"
+  "Clear": "Clear",
+  "AddTorrentSourceNotification": "First add your torrent source"
 }

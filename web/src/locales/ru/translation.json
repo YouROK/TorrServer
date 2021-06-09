@@ -102,5 +102,6 @@
     "ClickOrDrag": "НАЖМИТЕ / ПЕРЕТАЩИТЕ ФАЙЛ (.torrent)"
   },
   "TorrentSourceOptions": "магнитная ссылка / хеш / ссылка на .torrent файл",
-  "Clear": "Очистить"
+  "Clear": "Очистить",
+  "AddTorrentSourceNotification": "Сначала добавьте торрент источник"
 }
