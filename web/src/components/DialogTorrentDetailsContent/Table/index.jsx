@@ -10,6 +10,11 @@ import { TableStyle, ShortTableWrapper, ShortTable } from './style'
 
 const { memo } = require('react')
 
+// russian episode detection support
+ptt.addHandler('episode', /(\d{1,4})[- |. ]серия|серия[- |. ](\d{1,4})/i, { type: 'integer' })
+ptt.addHandler('season', /sezon[- |. ](\d{1,3})|(\d{1,3})[- |. ]sezon/i, { type: 'integer' })
+ptt.addHandler('season', /сезон[- |. ](\d{1,3})|(\d{1,3})[- |. ]сезон/i, { type: 'integer' })
+
 const Table = memo(
   ({ playableFileList, viewedFileList, selectedSeason, seasonAmount, hash }) => {
     const { t } = useTranslation()
@@ -19,6 +24,9 @@ const Table = memo(
     const fileHasEpisodeText = !!playableFileList?.find(({ path }) => ptt.parse(path).episode)
     const fileHasSeasonText = !!playableFileList?.find(({ path }) => ptt.parse(path).season)
     const fileHasResolutionText = !!playableFileList?.find(({ path }) => ptt.parse(path).resolution)
+
+    // if files in list is more then 1 and no season text detected by ptt.parse, show full name
+    const shouldDisplayFullFileName = playableFileList.length > 1 && !fileHasEpisodeText
 
     return !playableFileList?.length ? (
       'No playable files in this torrent'
@@ -47,7 +55,7 @@ const Table = memo(
                 (season === selectedSeason || !seasonAmount?.length) && (
                   <tr key={id} className={isViewed ? 'viewed-file-row' : null}>
                     <td data-label='viewed' className={isViewed ? 'viewed-file-indicator' : null} />
-                    <td data-label='name'>{title}</td>
+                    <td data-label='name'>{shouldDisplayFullFileName ? path : title}</td>
                     {fileHasSeasonText && seasonAmount?.length === 1 && <td data-label='season'>{season}</td>}
                     {fileHasEpisodeText && <td data-label='episode'>{episode}</td>}
                     {fileHasResolutionText && <td data-label='resolution'>{resolution}</td>}
