@@ -3,7 +3,7 @@
   "Actions": "Действия",
   "Add": "Добавить",
   "AddFromLink": "Добавить",
-  "AddMagnetOrLink": "Добавьте magnet или ссылку на торрент",
+  "AddNewTorrent": "Добавить новый торрент",
   "AddRetrackers": "Добавлять",
   "Buffer": "Предзагрузка / Кеш",
   "BufferNote": "Включите «Наполнять кеш перед началом воспроизведения» в настройках для показа заполнения кеша",
@@ -39,7 +39,7 @@
   "Host": "Хост",
   "Info": "Инфо",
   "LatestFilePlayed": "Последний воспроизведенный файл:",
-  "MagnetOrTorrentFileLink": "Ссылка на файл торрента или magnet-ссылка",
+  "TorrentSourceLink": "Ссылка на источник торрента",
   "Name": "Название",
   "NoTorrentsAdded": "Нет торрентов",
   "Offline": "Сервер не доступен",
@@ -51,7 +51,7 @@
   "PiecesCount": "Кол-во блоков",
   "PiecesLength": "Размер блока",
   "PlaylistAll": "Плейлист всех",
-  "Poster": "Постер",
+  "AddPosterLinkInput": "Ссылка на постер",
   "Preload": "Предзагр.",
   "PreloadBuffer": "Наполнять кеш перед началом воспроизведения",
   "ReaderReadAHead": "Кеш предзагрузки (5-100%, рек. 95%)",
@@ -96,5 +96,13 @@
   "UseDisk": "Использовать диск для кеша",
   "UseDiskDesc": "Рекомендуется использовать внешние носители на устройствах с flash-памятью",
   "UTP": "μTP (Micro Transport Protocol)",
-  "Viewed": "Просм."
+  "Viewed": "Просм.",
+  "AppendFile": {
+    "Or": "ИЛИ",
+    "ClickOrDrag": "НАЖМИТЕ / ПЕРЕТАЩИТЕ ФАЙЛ (.torrent)"
+  },
+  "TorrentSourceOptions": "magnet ссылка / хеш / ссылка на .torrent файл",
+  "Clear": "Очистить",
+  "AddTorrentSourceNotification": "Сначала добавьте торрент источник",
+  "WrongTorrentSource": "Неправильный torrent источник"
 }

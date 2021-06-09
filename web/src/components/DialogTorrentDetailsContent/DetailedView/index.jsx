@@ -11,14 +11,14 @@ import {
   DownlodSpeedWidget,
 } from '../widgets'
 
-export default function Test({
+export default function DetailedView({
   downloadSpeed,
   uploadSpeed,
   torrent,
   torrentSize,
   PiecesCount,
   PiecesLength,
-  statString,
+  stat,
   cache,
 }) {
   return (
@@ -32,7 +32,7 @@ export default function Test({
           <SizeWidget data={torrentSize} />
           <PiecesCountWidget data={PiecesCount} />
           <PiecesLengthWidget data={PiecesLength} />
-          <StatusWidget data={statString} />
+          <StatusWidget stat={stat} />
         </WidgetWrapper>
       </DetailedViewWidgetSection>
 

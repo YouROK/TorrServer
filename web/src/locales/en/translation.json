@@ -3,7 +3,7 @@
   "Actions": "Actions",
   "Add": "Add",
   "AddFromLink": "Add from Link",
-  "AddMagnetOrLink": "Add magnet or link to torrent file",
+  "AddNewTorrent": "Add new torrent",
   "AddRetrackers": "Add retrackers",
   "Buffer": "Preload Buffer / Cache",
   "BufferNote": "Enable “Preload Buffer” in settings to see cache loading progress",
@@ -39,7 +39,7 @@
   "Host": "Host",
   "Info": "Info",
   "LatestFilePlayed": "Latest file played:",
-  "MagnetOrTorrentFileLink": "Magnet or torrent file link",
+  "TorrentSourceLink": "Torrent source link",
   "Name": "Name",
   "NoTorrentsAdded": "No torrents added",
   "Offline": "Offline",
@@ -51,7 +51,7 @@
   "PiecesCount": "Pieces count",
   "PiecesLength": "Pieces length",
   "PlaylistAll": "Playlist All",
-  "Poster": "Poster",
+  "AddPosterLinkInput": "Poster link",
   "Preload": "Preload",
   "PreloadBuffer": "Preload Buffer",
   "ReaderReadAHead": "Reader Read Ahead (5-100%)",
@@ -62,7 +62,7 @@
   "RemoveViews": "Remove View States",
   "ReplaceRetrackers": "Replace retrackers",
   "Resolution": "Resolution",
-  "RetrackersMode": "Retrackers Mode",  
+  "RetrackersMode": "Retrackers Mode",
   "Save": "Save",
   "Season": "Season",
   "SelectSeason": "Select Season",
@@ -96,5 +96,13 @@
   "UseDisk": "Use Disk for Cache",
   "UseDiskDesc": "Better use external media on flash-based devices",
   "UTP": "μTP (Micro Transport Protocol)",
-  "Viewed": "Viewed"
+  "Viewed": "Viewed",
+  "AppendFile": {
+    "Or": "OR",
+    "ClickOrDrag": "CLICK / DRAG & DROP (.torrent)"
+  },
+  "TorrentSourceOptions": "magnet / hash / .torrent file link",
+  "Clear": "Clear",
+  "AddTorrentSourceNotification": "First add your torrent source",
+  "WrongTorrentSource": "Wrong torrent source"
 }

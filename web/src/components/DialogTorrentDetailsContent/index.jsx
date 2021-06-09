@@ -54,7 +54,6 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
     stat,
     download_speed: downloadSpeed,
     upload_speed: uploadSpeed,
-    stat_string: statString,
     torrent_size: torrentSize,
     file_stats: torrentFileList,
   } = torrent
@@ -133,7 +132,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
             torrentSize={torrentSize}
             PiecesCount={PiecesCount}
             PiecesLength={PiecesLength}
-            statString={statString}
+            stat={stat}
             cache={cache}
           />
         ) : (
@@ -156,7 +155,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                   <UploadSpeedWidget data={uploadSpeed} />
                   <PeersWidget data={torrent} />
                   <SizeWidget data={torrentSize} />
-                  <StatusWidget data={statString} />
+                  <StatusWidget stat={stat} />
                 </WidgetWrapper>
 
                 <Divider />
