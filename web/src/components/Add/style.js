@@ -30,7 +30,7 @@ export const RightSide = styled.div`
 `
 
 export const RightSideContainer = styled.div`
-  ${({ isHidden, notificationMessage }) => css`
+  ${({ isHidden, notificationMessage, isError }) => css`
     height: 455px;
 
     ${notificationMessage &&
@@ -44,7 +44,7 @@ export const RightSideContainer = styled.div`
         content: '${notificationMessage}';
         display: grid;
         place-items: center;
-        background: #84cda7;
+        background: ${isError ? '#cda184' : '#84cda7'};
         padding: 10px 15px;
         position: absolute;
         top: 50%;

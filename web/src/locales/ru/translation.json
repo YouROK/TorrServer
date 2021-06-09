@@ -101,7 +101,8 @@
     "Or": "ИЛИ",
     "ClickOrDrag": "НАЖМИТЕ / ПЕРЕТАЩИТЕ ФАЙЛ (.torrent)"
   },
-  "TorrentSourceOptions": "магнитная ссылка / хеш / ссылка на .torrent файл",
+  "TorrentSourceOptions": "magnet ссылка / хеш / ссылка на .torrent файл",
   "Clear": "Очистить",
-  "AddTorrentSourceNotification": "Сначала добавьте торрент источник"
+  "AddTorrentSourceNotification": "Сначала добавьте торрент источник",
+  "WrongTorrentSource": "Неправильный torrent источник"
 }

@@ -35,7 +35,7 @@ import {
   TorrentIconWrapper,
   RightSideContainer,
 } from './style'
-import { checkImageURL, getMoviePosters } from './helpers'
+import { checkImageURL, getMoviePosters, chechTorrentSource } from './helpers'
 
 export default function AddDialog({ handleClose }) {
   const { t } = useTranslation()
@@ -44,6 +44,7 @@ export default function AddDialog({ handleClose }) {
   const [title, setTitle] = useState('')
   const [posterUrl, setPosterUrl] = useState('')
   const [isPosterUrlCorrect, setIsPosterUrlCorrect] = useState(false)
+  const [isTorrentSourceCorrect, setIsTorrentSourceCorrect] = useState(false)
   const [posterList, setPosterList] = useState()
   const [isUserInteractedWithPoster, setIsUserInteractedWithPoster] = useState(false)
   const [isUserInteractedWithTitle, setIsUserInteractedWithTitle] = useState(false)
@@ -101,6 +102,10 @@ export default function AddDialog({ handleClose }) {
       delayedPosterSearch(value, posterSearchLanguage)
     })
   }, [selectedFile, delayedPosterSearch, torrentSource, posterSearchLanguage, isUserInteractedWithTitle])
+
+  useEffect(() => {
+    setIsTorrentSourceCorrect(chechTorrentSource(torrentSource))
+  }, [torrentSource])
 
   const handleCapture = files => {
     const [file] = files
@@ -214,7 +219,7 @@ export default function AddDialog({ handleClose }) {
         </LeftSide>
 
         <RightSide>
-          <RightSideContainer isHidden={!torrentSource}>
+          <RightSideContainer isHidden={!isTorrentSourceCorrect}>
             <TextField
               onChange={handleTitleChange}
               value={title}
@@ -279,7 +284,13 @@ export default function AddDialog({ handleClose }) {
             </PosterWrapper>
           </RightSideContainer>
 
-          <RightSideContainer notificationMessage={t('AddTorrentSourceNotification')} isHidden={torrentSource} />
+          <RightSideContainer
+            isError={torrentSource && !isTorrentSourceCorrect}
+            notificationMessage={
+              !torrentSource ? t('AddTorrentSourceNotification') : !isTorrentSourceCorrect && t('WrongTorrentSource')
+            }
+            isHidden={isTorrentSourceCorrect}
+          />
         </RightSide>
       </Content>
 
