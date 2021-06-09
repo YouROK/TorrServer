@@ -225,6 +225,38 @@ export const ClearPosterButton = styled(Button)`
   }
 `
 
+export const PosterLanguageSwitch = styled.div`
+  grid-area: poster;
+  z-index: 5;
+  /* justify-self: center; */
+  /* transform: translateY(-50%); */
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 30px;
+  background: #74c39c;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #e1f4eb;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  /* padding: 0; */
+
+  ${({ showbutton }) => !showbutton && 'display: none'};
+
+  /* @media (max-width: 540px) {
+    transform: translateY(-140%);
+  } */
+
+  :hover {
+    filter: brightness(1.1);
+  }
+`
+
 export const ButtonWrapper = styled.div`
   padding: 20px;
   display: flex;
