@@ -9,6 +9,7 @@ import {
 } from '@material-ui/icons'
 import { getPeerString, humanizeSize } from 'utils/Utils'
 import { useTranslation } from 'react-i18next'
+import { GETTING_INFO, IN_DB, CLOSED, PRELOAD, WORKING } from 'torrentStates'
 
 import StatisticsField from './StatisticsField'
 
@@ -69,17 +70,25 @@ export const PiecesLengthWidget = ({ data }) => {
   )
 }
 
-export const StatusWidget = ({ data }) => {
+export const StatusWidget = ({ stat }) => {
   const { t } = useTranslation()
-  let i18nd = data
-  if (data.toLowerCase() === 'torrent added') i18nd = t('TorrentAdded')
-  else if (data.toLowerCase() === 'torrent getting info') i18nd = t('TorrentGettingInfo')
-  else if (data.toLowerCase() === 'torrent preload') i18nd = t('TorrentPreload')
-  else if (data.toLowerCase() === 'torrent working') i18nd = t('TorrentWorking')
-  else if (data.toLowerCase() === 'torrent closed') i18nd = t('TorrentClosed')
-  else if (data.toLowerCase() === 'torrent in db') i18nd = t('TorrentInDb')
+
+  const values = {
+    [GETTING_INFO]: t('TorrentGettingInfo'),
+    [PRELOAD]: t('TorrentPreload'),
+    [WORKING]: t('TorrentWorking'),
+    [CLOSED]: t('TorrentClosed'),
+    [IN_DB]: t('TorrentInDb'),
+  }
+
   return (
-    <StatisticsField title={t('TorrentStatus')} value={i18nd} iconBg='#aea25b' valueBg='#b4aa6e' icon={BuildIcon} />
+    <StatisticsField
+      title={t('TorrentStatus')}
+      value={values[stat]}
+      iconBg='#aea25b'
+      valueBg='#b4aa6e'
+      icon={BuildIcon}
+    />
   )
 }
 
