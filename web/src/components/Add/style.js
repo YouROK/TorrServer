@@ -75,7 +75,7 @@ export const LeftSideBottomSectionBasicStyles = css`
 
 export const LeftSideBottomSectionNoFile = styled.div`
   ${LeftSideBottomSectionBasicStyles}
-  border: 4px dashed transparent;
+  border: 4px dashed rgba(0,0,0,0.1);
   text-align: center;
 
   ${({ isDragActive }) => isDragActive && `border: 4px dashed green`};
@@ -92,6 +92,7 @@ export const LeftSideBottomSectionNoFile = styled.div`
   }
 
   @media (max-width: 930px) {
+    border: 4px dashed transparent;
     height: 400px;
     place-items: center;
     grid-template-rows: 40% 1fr;
