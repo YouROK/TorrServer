@@ -45,6 +45,7 @@ export default function AddDialog({ handleClose }) {
   const [isPosterUrlCorrect, setIsPosterUrlCorrect] = useState(false)
   const [posterList, setPosterList] = useState()
   const [isUserInteractedWithPoster, setIsUserInteractedWithPoster] = useState(false)
+  const [isUserInteractedWithTitle, setIsUserInteractedWithTitle] = useState(false)
   const [currentLang] = useChangeLanguage()
   const [selectedFile, setSelectedFile] = useState()
   const [posterSearchLanguage, setPosterSearchLanguage] = useState(currentLang === 'ru' ? 'ru' : 'en')
@@ -52,33 +53,37 @@ export default function AddDialog({ handleClose }) {
   const fullScreen = useMediaQuery('@media (max-width:930px)')
 
   const posterSearch = useMemo(
-    () => (movieName, language) => {
-      getMoviePosters(movieName, language).then(urlList => {
-        if (urlList) {
-          setPosterList(urlList)
-          if (isUserInteractedWithPoster) return
+    () =>
+      (movieName, language, settings = {}) => {
+        const { shouldRefreshMainPoster = false } = settings
+        getMoviePosters(movieName, language).then(urlList => {
+          if (urlList) {
+            setPosterList(urlList)
+            if (!shouldRefreshMainPoster && isUserInteractedWithPoster) return
 
-          const [firstPoster] = urlList
-          checkImageURL(firstPoster).then(correctImage => {
-            if (correctImage) {
-              setIsPosterUrlCorrect(true)
-              setPosterUrl(firstPoster)
-            } else removePoster()
-          })
-        } else {
-          setPosterList()
-          if (isUserInteractedWithPoster) return
+            const [firstPoster] = urlList
+            checkImageURL(firstPoster).then(correctImage => {
+              if (correctImage) {
+                setIsPosterUrlCorrect(true)
+                setPosterUrl(firstPoster)
+              } else removePoster()
+            })
+          } else {
+            setPosterList()
+            if (isUserInteractedWithPoster) return
 
-          removePoster()
-        }
-      })
-    },
+            removePoster()
+          }
+        })
+      },
     [isUserInteractedWithPoster],
   )
 
   const delayedPosterSearch = useMemo(() => debounce(posterSearch, 700), [posterSearch])
 
   useEffect(() => {
+    if (isUserInteractedWithTitle) return
+
     parseTorrent.remote(selectedFile || torrentSource, (err, parsedTorrent) => {
       if (err) throw err
       if (!parsedTorrent.name) return
@@ -94,7 +99,7 @@ export default function AddDialog({ handleClose }) {
       setTitle(value)
       delayedPosterSearch(value, posterSearchLanguage)
     })
-  }, [selectedFile, delayedPosterSearch, torrentSource, posterSearchLanguage])
+  }, [selectedFile, delayedPosterSearch, torrentSource, posterSearchLanguage, isUserInteractedWithTitle])
 
   const handleCapture = files => {
     const [file] = files
@@ -116,6 +121,8 @@ export default function AddDialog({ handleClose }) {
   const handleTitleChange = ({ target: { value } }) => {
     setTitle(value)
     delayedPosterSearch(value, posterSearchLanguage)
+
+    torrentSource && setIsUserInteractedWithTitle(true)
   }
   const handlePosterUrlChange = ({ target: { value } }) => {
     setPosterUrl(value)
@@ -144,6 +151,7 @@ export default function AddDialog({ handleClose }) {
   const clearSelectedFile = () => {
     setSelectedFile()
     setTorrentSource('')
+    setIsUserInteractedWithTitle(false)
   }
 
   const userChangesPosterUrl = url => {
@@ -201,9 +209,9 @@ export default function AddDialog({ handleClose }) {
             {currentLang !== 'en' && (
               <PosterLanguageSwitch
                 onClick={() => {
-                  setPosterSearchLanguage(posterSearchLanguage === 'en' ? 'ru' : 'en')
-                  posterSearch(title, posterSearchLanguage === 'en' ? 'ru' : 'en')
-                  setIsUserInteractedWithPoster(false)
+                  const newLanguage = posterSearchLanguage === 'en' ? 'ru' : 'en'
+                  setPosterSearchLanguage(newLanguage)
+                  posterSearch(title, newLanguage, { shouldRefreshMainPoster: true })
                 }}
                 showbutton={+isPosterUrlCorrect}
                 color='primary'
