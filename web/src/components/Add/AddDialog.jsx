@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from 'uuid'
 import useChangeLanguage from 'utils/useChangeLanguage'
 import { Cancel as CancelIcon } from '@material-ui/icons'
 import { useDropzone } from 'react-dropzone'
+import { useMediaQuery } from '@material-ui/core'
 
 const Header = styled.div`
   background: #00a572;
@@ -23,18 +24,18 @@ const Header = styled.div`
   padding: 15px 24px;
   position: relative;
 `
-const ContentWrapper = styled.div`
-  background: linear-gradient(145deg, #e4f6ed, #b5dec9);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-`
 
 const Content = styled.div`
+  background: linear-gradient(145deg, #e4f6ed, #b5dec9);
   flex: 1;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  overflow: auto;
+
+  @media (max-width: 930px) {
+    grid-template-columns: 1fr;
+  }
 `
 
 const LeftSide = styled.div`
@@ -69,11 +70,21 @@ const RightSideBottomSectionNoFile = styled.div`
       transform: translateY(-4%);
     }
   }
+
+  @media (max-width: 930px) {
+    height: 400px;
+    place-items: center;
+    grid-template-rows: 40% 1fr;
+  }
 `
 
 const RightSideBottomSectionFileSelected = styled.div`
   ${RightSideBottomSectionBasicStyles}
   place-items: center;
+
+  @media (max-width: 930px) {
+    height: 400px;
+  }
 `
 
 const TorrentIconWrapper = styled.div`
@@ -101,6 +112,7 @@ const IconWrapper = styled.div`
   justify-items: center;
   align-content: start;
   gap: 10px;
+  align-self: start;
 
   svg {
     transition: all 0.3s;
@@ -108,7 +120,7 @@ const IconWrapper = styled.div`
 `
 
 const RightSideTopSection = styled.div`
-  background: #fff;
+  background: #e3f2eb;
   padding: 0 20px 20px 20px;
   transition: all 0.3s;
 
@@ -120,17 +132,57 @@ const PosterWrapper = styled.div`
   display: grid;
   grid-template-columns: max-content 1fr;
   grid-template-rows: 300px max-content;
-  gap: 10px 5px;
+  column-gap: 5px;
+  position: relative;
+  margin-bottom: 20px;
+
+  grid-template-areas:
+    'poster suggestions'
+    'clear empty';
+
+  @media (max-width: 540px) {
+    grid-template-columns: 1fr;
+    gap: 5px 0;
+    justify-items: center;
+    grid-template-areas:
+      'poster'
+      'clear'
+      'suggestions';
+  }
 `
 const PosterSuggestions = styled.div`
   display: grid;
-  grid-template-columns: repeat(3, 70px);
-  grid-template-rows: repeat(4, calc(25% - 4px));
-  grid-auto-flow: column;
+  grid-area: suggestions;
+  grid-template-columns: repeat(3, max-content);
+  grid-template-rows: repeat(4, max-content);
   gap: 5px;
+
+  @media (max-width: 540px) {
+    grid-template-columns: repeat(5, max-content);
+  }
+  @media (max-width: 375px) {
+    grid-template-columns: repeat(4, max-content);
+  }
 `
 const PosterSuggestionsItem = styled.div`
   cursor: pointer;
+  width: 71px;
+  height: 71px;
+
+  @media (max-width: 430px) {
+    width: 60px;
+    height: 60px;
+  }
+
+  @media (max-width: 375px) {
+    width: 71px;
+    height: 71px;
+  }
+
+  @media (max-width: 355px) {
+    width: 60px;
+    height: 60px;
+  }
 
   img {
     transition: all 0.3s;
@@ -150,6 +202,7 @@ export const Poster = styled.div`
     border-radius: 5px;
     overflow: hidden;
     width: 200px;
+    grid-area: poster;
 
     ${poster
       ? css`
@@ -169,23 +222,19 @@ export const Poster = styled.div`
             transform: scale(1.5) translateY(-3px);
           }
         `}
-
-    ${
-      '' /* @media (max-width: 1280px) {
-      align-self: start;
-    }
-
-    @media (max-width: 840px) {
-      ${poster
-        ? css`
-            height: 200px;
-          `
-        : css`
-            display: none;
-          `}
-    } */
-    }
   `}
+`
+
+const ClearPosterButton = styled(Button)`
+  grid-area: clear;
+  justify-self: center;
+  transform: translateY(-50%);
+  position: absolute;
+  ${({ showbutton }) => !showbutton && 'display: none'};
+
+  @media (max-width: 540px) {
+    transform: translateY(-140%);
+  }
 `
 
 const ButtonWrapper = styled.div`
@@ -231,6 +280,8 @@ export default function AddDialog({ handleClose }) {
   const [isUserInteractedWithPoster, setIsUserInteractedWithPoster] = useState(false)
   const [currentLang] = useChangeLanguage()
   const [selectedFile, setSelectedFile] = useState()
+
+  const fullScreen = useMediaQuery('@media (max-width:930px)')
 
   const handleCapture = useCallback(files => {
     const [file] = files
@@ -312,109 +363,116 @@ export default function AddDialog({ handleClose }) {
   }
 
   return (
-    <Dialog open onClose={handleClose} aria-labelledby='form-dialog-title' fullWidth maxWidth='md'>
+    <Dialog
+      open
+      onClose={handleClose}
+      aria-labelledby='form-dialog-title'
+      fullScreen={fullScreen}
+      fullWidth
+      maxWidth='md'
+    >
       <Header>{t('AddNewTorrent')}</Header>
 
-      <ContentWrapper>
-        <Content>
-          <LeftSide>
+      <Content>
+        <LeftSide>
+          <TextField
+            onChange={handleTitleChange}
+            value={title}
+            margin='dense'
+            label={t('Title')}
+            type='text'
+            fullWidth
+          />
+          <TextField
+            onChange={handlePosterUrlChange}
+            value={posterUrl}
+            margin='dense'
+            label={t('AddPosterLinkInput')}
+            type='url'
+            fullWidth
+          />
+
+          <PosterWrapper>
+            <Poster poster={+isPosterUrlCorrect}>
+              {isPosterUrlCorrect ? <img src={posterUrl} alt='poster' /> : <NoImageIcon />}
+            </Poster>
+            <PosterSuggestions>
+              {posterList
+                ?.filter(url => url !== posterUrl)
+                .slice(0, 12)
+                .map(url => (
+                  <PosterSuggestionsItem onClick={() => userChangesPosterUrl(url)} key={uuidv4()}>
+                    <img src={url} alt='poster' />
+                  </PosterSuggestionsItem>
+                ))}
+            </PosterSuggestions>
+
+            <ClearPosterButton
+              showbutton={+isPosterUrlCorrect}
+              onClick={() => {
+                removePoster()
+                setIsUserInteractedWithPoster(true)
+              }}
+              color='primary'
+              variant='contained'
+              size='small'
+              disabled={!posterUrl}
+            >
+              {t('Clear')}
+            </ClearPosterButton>
+          </PosterWrapper>
+        </LeftSide>
+
+        <RightSide>
+          <RightSideTopSection active={torrentSourceSelected}>
             <TextField
-              onChange={handleTitleChange}
-              value={title}
+              onChange={handleTorrentSourceChange}
+              value={torrentSource}
               margin='dense'
-              label={t('Title')}
+              label={t('TorrentSourceLink')}
+              helperText={t('TorrentSourceOptions')}
               type='text'
               fullWidth
+              onFocus={() => setTorrentSourceSelected(true)}
+              onBlur={() => setTorrentSourceSelected(false)}
+              inputProps={{ autoComplete: 'off' }}
+              disabled={!!selectedFile}
             />
-            <TextField
-              onChange={handlePosterUrlChange}
-              value={posterUrl}
-              margin='dense'
-              label={t('AddPosterLinkInput')}
-              type='url'
-              fullWidth
-            />
+          </RightSideTopSection>
 
-            <PosterWrapper>
-              <Poster poster={+isPosterUrlCorrect}>
-                {isPosterUrlCorrect ? <img src={posterUrl} alt='poster' /> : <NoImageIcon />}
-              </Poster>
+          {selectedFile ? (
+            <RightSideBottomSectionFileSelected>
+              <TorrentIconWrapper>
+                <TorrentIcon />
 
-              <PosterSuggestions>
-                {posterList
-                  ?.filter(url => url !== posterUrl)
-                  .slice(0, 12)
-                  .map(url => (
-                    <PosterSuggestionsItem onClick={() => userChangesPosterUrl(url)} key={uuidv4()}>
-                      <img src={url} alt='poster' />
-                    </PosterSuggestionsItem>
-                  ))}
-              </PosterSuggestions>
+                <CancelIconWrapper onClick={clearSelectedFile}>
+                  <CancelIcon />
+                </CancelIconWrapper>
+              </TorrentIconWrapper>
+            </RightSideBottomSectionFileSelected>
+          ) : (
+            <RightSideBottomSectionNoFile isDragActive={isDragActive} {...getRootProps()}>
+              <input {...getInputProps()} />
+              <div>{t('AppendFile.Or')}</div>
 
-              <Button
-                style={{ justifySelf: 'center' }}
-                onClick={removePoster}
-                color='primary'
-                variant='outlined'
-                size='small'
-                disabled={!posterUrl}
-              >
-                {t('Clear')}
-              </Button>
-            </PosterWrapper>
-          </LeftSide>
+              <IconWrapper>
+                <AddItemIcon color='primary' />
+                <div>{t('AppendFile.ClickOrDrag')}</div>
+              </IconWrapper>
+            </RightSideBottomSectionNoFile>
+          )}
+        </RightSide>
+      </Content>
 
-          <RightSide>
-            <RightSideTopSection active={torrentSourceSelected}>
-              <TextField
-                onChange={handleTorrentSourceChange}
-                value={torrentSource}
-                margin='dense'
-                label={t('TorrentSourceLink')}
-                helperText={t('TorrentSourceOptions')}
-                type='text'
-                fullWidth
-                onFocus={() => setTorrentSourceSelected(true)}
-                onBlur={() => setTorrentSourceSelected(false)}
-                inputProps={{ autoComplete: 'off' }}
-                disabled={!!selectedFile}
-              />
-            </RightSideTopSection>
+      <ButtonWrapper>
+        <Button onClick={handleClose} color='primary' variant='outlined'>
+          {t('Cancel')}
+        </Button>
 
-            {selectedFile ? (
-              <RightSideBottomSectionFileSelected>
-                <TorrentIconWrapper>
-                  <TorrentIcon />
-
-                  <CancelIconWrapper onClick={clearSelectedFile}>
-                    <CancelIcon />
-                  </CancelIconWrapper>
-                </TorrentIconWrapper>
-              </RightSideBottomSectionFileSelected>
-            ) : (
-              <RightSideBottomSectionNoFile isDragActive={isDragActive} {...getRootProps()}>
-                <input {...getInputProps()} />
-                <div>{t('AppendFile.Or')}</div>
-
-                <IconWrapper>
-                  <AddItemIcon color='primary' />
-                  <div>{t('AppendFile.ClickOrDrag')}</div>
-                </IconWrapper>
-              </RightSideBottomSectionNoFile>
-            )}
-          </RightSide>
-        </Content>
-
-        <ButtonWrapper>
-          <Button onClick={handleClose} color='primary' variant='outlined'>
-            {t('Cancel')}
-          </Button>
-
-          <Button variant='contained' disabled={!torrentSource} onClick={handleSave} color='primary'>
-            {t('Add')}
-          </Button>
-        </ButtonWrapper>
-      </ContentWrapper>
+        <Button variant='contained' disabled={!torrentSource} onClick={handleSave} color='primary'>
+          {t('Add')}
+        </Button>
+      </ButtonWrapper>
     </Dialog>
   )
 }
