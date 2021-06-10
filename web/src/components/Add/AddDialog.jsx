@@ -12,12 +12,10 @@ import useChangeLanguage from 'utils/useChangeLanguage'
 import { Cancel as CancelIcon } from '@material-ui/icons'
 import { useDropzone } from 'react-dropzone'
 import { useMediaQuery } from '@material-ui/core'
-import parseTorrent from 'parse-torrent'
-import ptt from 'parse-torrent-title'
 import CircularProgress from '@material-ui/core/CircularProgress'
 import usePreviousState from 'utils/usePreviousState'
 
-import { checkImageURL, getMoviePosters, chechTorrentSource } from './helpers'
+import { checkImageURL, getMoviePosters, chechTorrentSource, parseTorrentTitle } from './helpers'
 import {
   ButtonWrapper,
   CancelIconWrapper,
@@ -39,23 +37,6 @@ import {
   RightSideContainer,
 } from './style'
 
-const parseTorrentTitle = (parsingSource, callback) => {
-  parseTorrent.remote(parsingSource, (err, { name, files } = {}) => {
-    if (!name || err) return callback(null)
-
-    const torrentName = ptt.parse(name).title
-    const nameOfFileInsideTorrent = files ? ptt.parse(files[0].name).title : null
-
-    let newTitle = torrentName
-    if (nameOfFileInsideTorrent) {
-      // taking shorter title because in most cases it is more accurate
-      newTitle = torrentName.length < nameOfFileInsideTorrent.length ? torrentName : nameOfFileInsideTorrent
-    }
-
-    callback(newTitle)
-  })
-}
-
 export default function AddDialog({ handleClose }) {
   const { t } = useTranslation()
   const [torrentSource, setTorrentSource] = useState('')
@@ -76,13 +57,12 @@ export default function AddDialog({ handleClose }) {
 
   const posterSearch = useMemo(
     () =>
-      (movieName, language, settings = {}) => {
+      (movieName, language, { shouldRefreshMainPoster = false } = {}) => {
         if (!movieName) {
           setPosterList()
           removePoster()
           return
         }
-        const { shouldRefreshMainPoster = false } = settings
 
         getMoviePosters(movieName, language).then(urlList => {
           if (urlList) {
