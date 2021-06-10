@@ -117,7 +117,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
     <>
       <DialogHeader
         onClose={closeDialog}
-        title={isDetailedCacheView ? t('DetailedCacheView') : t('TorrentDetails')}
+        title={isDetailedCacheView ? t('DetailedCacheView.header') : t('TorrentDetails')}
         {...(isDetailedCacheView && { onBack: () => setIsDetailedCacheView(false) })}
       />
 
@@ -190,7 +190,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                 size='large'
                 onClick={() => setIsDetailedCacheView(true)}
               >
-                {t('DetailedCacheView')}
+                {t('DetailedCacheView.button')}
               </Button>
             </CacheSection>
 

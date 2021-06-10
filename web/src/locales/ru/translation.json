@@ -19,7 +19,10 @@
   "Delete": "Удалить",
   "DeleteTorrent?": "Удалить торрент?",
   "DeleteTorrents?": "Удалить все торренты?",
-  "DetailedCacheView": "Информация о заполнении кеша",
+  "DetailedCacheView": {
+    "button": "Информация о заполнении кеша",
+    "header": "Заполнение кеша"
+  },
   "Details": "Инфо",
   "DHT": "DHT (Distributed Hash Table)",
   "DhtConnectionLimit": "Лимит подключений DHT",

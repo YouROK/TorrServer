@@ -19,7 +19,10 @@
   "Delete": "Delete",
   "DeleteTorrent?": "Delete Torrent?",
   "DeleteTorrents?": "Delete All Torrents?",
-  "DetailedCacheView": "Detailed Cache View",
+  "DetailedCacheView": {
+    "button": "Detailed Cache View",
+    "header": "$t(DetailedCacheView.button)"
+  },
   "Details": "Details",
   "DHT": "DHT (Distributed Hash Table)",
   "DhtConnectionLimit": "DHT Connection Limit",
