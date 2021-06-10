@@ -15,6 +15,7 @@ import { useMediaQuery } from '@material-ui/core'
 import parseTorrent from 'parse-torrent'
 import ptt from 'parse-torrent-title'
 import CircularProgress from '@material-ui/core/CircularProgress'
+import usePreviousState from 'utils/usePreviousState'
 
 import { checkImageURL, getMoviePosters, chechTorrentSource } from './helpers'
 import {
@@ -38,6 +39,23 @@ import {
   RightSideContainer,
 } from './style'
 
+const parseTorrentTitle = (parsingSource, callback) => {
+  parseTorrent.remote(parsingSource, (err, { name, files } = {}) => {
+    if (!name || err) return callback(null)
+
+    const torrentName = ptt.parse(name).title
+    const nameOfFileInsideTorrent = files ? ptt.parse(files[0].name).title : null
+
+    let newTitle = torrentName
+    if (nameOfFileInsideTorrent) {
+      // taking shorter title because in most cases it is more accurate
+      newTitle = torrentName.length < nameOfFileInsideTorrent.length ? torrentName : nameOfFileInsideTorrent
+    }
+
+    callback(newTitle)
+  })
+}
+
 export default function AddDialog({ handleClose }) {
   const { t } = useTranslation()
   const [torrentSource, setTorrentSource] = useState('')
@@ -48,11 +66,11 @@ export default function AddDialog({ handleClose }) {
   const [isTorrentSourceCorrect, setIsTorrentSourceCorrect] = useState(false)
   const [posterList, setPosterList] = useState()
   const [isUserInteractedWithPoster, setIsUserInteractedWithPoster] = useState(false)
-  const [isUserInteractedWithTitle, setIsUserInteractedWithTitle] = useState(false)
   const [currentLang] = useChangeLanguage()
   const [selectedFile, setSelectedFile] = useState()
   const [posterSearchLanguage, setPosterSearchLanguage] = useState(currentLang === 'ru' ? 'ru' : 'en')
   const [isLoadingButton, setIsLoadingButton] = useState(false)
+  const [skipDebounce, setSkipDebounce] = useState(false)
 
   const fullScreen = useMediaQuery('@media (max-width:930px)')
 
@@ -60,6 +78,7 @@ export default function AddDialog({ handleClose }) {
     () =>
       (movieName, language, settings = {}) => {
         const { shouldRefreshMainPoster = false } = settings
+
         getMoviePosters(movieName, language).then(urlList => {
           if (urlList) {
             setPosterList(urlList)
@@ -83,37 +102,51 @@ export default function AddDialog({ handleClose }) {
     [isUserInteractedWithPoster],
   )
 
-  const delayedPosterSearch = useMemo(() => debounce(posterSearch, 700), [posterSearch])
+  const delayedPosterSearch = useMemo(() => debounce(posterSearch, 2700), [posterSearch])
+
+  const prevTitleState = usePreviousState(title)
+  const prevTorrentSourceState = usePreviousState(torrentSource)
 
   useEffect(() => {
-    if (isUserInteractedWithTitle) return
+    // if torrentSource is updated then we are checking that source is valid and getting title from the source
+    const torrentSourceChanged = torrentSource !== prevTorrentSourceState
 
-    parseTorrent.remote(selectedFile || torrentSource, (err, parsedTorrent) => {
-      if (err) throw err
-      if (!parsedTorrent.name) return
+    const isCorrectSource = chechTorrentSource(torrentSource)
+    if (!isCorrectSource) return
 
-      const torrentName = ptt.parse(parsedTorrent.name).title
-      const fileInsideTorrentName = parsedTorrent.files ? ptt.parse(parsedTorrent.files[0].name).title : null
+    setIsTorrentSourceCorrect(true)
 
-      let value = torrentName
-      if (fileInsideTorrentName) {
-        value = torrentName.length < fileInsideTorrentName.length ? torrentName : fileInsideTorrentName
-      }
+    if (torrentSourceChanged) {
+      parseTorrentTitle(selectedFile || torrentSource, newTitle => {
+        if (!newTitle) return
 
-      setTitle(value)
-      delayedPosterSearch(value, posterSearchLanguage)
-    })
-  }, [selectedFile, delayedPosterSearch, torrentSource, posterSearchLanguage, isUserInteractedWithTitle])
+        setSkipDebounce(true)
+        setTitle(newTitle)
+      })
+    }
+  }, [prevTorrentSourceState, selectedFile, torrentSource])
 
   useEffect(() => {
-    setIsTorrentSourceCorrect(chechTorrentSource(torrentSource))
+    // if title exists and title was changed then search poster.
+    const titleChanged = title !== prevTitleState
+    if (!titleChanged || !title) return
 
-    if (!torrentSource) {
+    if (skipDebounce) {
+      posterSearch(title, posterSearchLanguage)
+      setSkipDebounce(false)
+    } else {
+      delayedPosterSearch(title, posterSearchLanguage)
+    }
+  }, [title, prevTitleState, delayedPosterSearch, posterSearch, posterSearchLanguage, skipDebounce])
+
+  useEffect(() => {
+    if (!selectedFile && !torrentSource) {
+      setTitle('')
       setPosterUrl('')
       setPosterList()
       setIsPosterUrlCorrect(false)
     }
-  }, [torrentSource])
+  }, [selectedFile, torrentSource])
 
   const handleCapture = files => {
     const [file] = files
@@ -132,12 +165,7 @@ export default function AddDialog({ handleClose }) {
   }
 
   const handleTorrentSourceChange = ({ target: { value } }) => setTorrentSource(value)
-  const handleTitleChange = ({ target: { value } }) => {
-    setTitle(value)
-    delayedPosterSearch(value, posterSearchLanguage)
-
-    torrentSource && setIsUserInteractedWithTitle(true)
-  }
+  const handleTitleChange = ({ target: { value } }) => setTitle(value)
   const handlePosterUrlChange = ({ target: { value } }) => {
     setPosterUrl(value)
     checkImageURL(value).then(setIsPosterUrlCorrect)
@@ -155,10 +183,7 @@ export default function AddDialog({ handleClose }) {
       data.append('file', selectedFile)
       title && data.append('title', title)
       posterUrl && data.append('poster', posterUrl)
-      axios
-        .post(torrentUploadHost(), data)
-        // .then(res => console.log(res))
-        .finally(handleClose)
+      axios.post(torrentUploadHost(), data).finally(handleClose)
     } else {
       // link save
       axios
@@ -170,7 +195,6 @@ export default function AddDialog({ handleClose }) {
   const clearSelectedFile = () => {
     setSelectedFile()
     setTorrentSource('')
-    setIsUserInteractedWithTitle(false)
   }
 
   const userChangesPosterUrl = url => {
@@ -232,7 +256,8 @@ export default function AddDialog({ handleClose }) {
         </LeftSide>
 
         <RightSide>
-          <RightSideContainer isHidden={!isTorrentSourceCorrect}>
+          {/* <RightSideContainer isHidden={!isTorrentSourceCorrect}> */}
+          <RightSideContainer isHidden={false}>
             <TextField
               onChange={handleTitleChange}
               value={title}
@@ -272,6 +297,7 @@ export default function AddDialog({ handleClose }) {
                     const newLanguage = posterSearchLanguage === 'en' ? 'ru' : 'en'
                     setPosterSearchLanguage(newLanguage)
                     posterSearch(title, newLanguage, { shouldRefreshMainPoster: true })
+                    console.log(':334')
                   }}
                   showbutton={+isPosterUrlCorrect}
                   color='primary'
@@ -302,7 +328,8 @@ export default function AddDialog({ handleClose }) {
             notificationMessage={
               !torrentSource ? t('AddTorrentSourceNotification') : !isTorrentSourceCorrect && t('WrongTorrentSource')
             }
-            isHidden={isTorrentSourceCorrect}
+            // isHidden={isTorrentSourceCorrect}
+            isHidden
           />
         </RightSide>
       </Content>
