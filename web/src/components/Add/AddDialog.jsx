@@ -107,7 +107,7 @@ export default function AddDialog({ handleClose }) {
     [isUserInteractedWithPoster],
   )
 
-  const delayedPosterSearch = useMemo(() => debounce(posterSearch, 2700), [posterSearch])
+  const delayedPosterSearch = useMemo(() => debounce(posterSearch, 700), [posterSearch])
 
   const prevTitleState = usePreviousState(title)
   const prevTorrentSourceState = usePreviousState(torrentSource)
@@ -117,7 +117,7 @@ export default function AddDialog({ handleClose }) {
     const torrentSourceChanged = torrentSource !== prevTorrentSourceState
 
     const isCorrectSource = chechTorrentSource(torrentSource)
-    if (!isCorrectSource) return
+    if (!isCorrectSource) return setIsTorrentSourceCorrect(false)
 
     setIsTorrentSourceCorrect(true)
 
@@ -144,12 +144,17 @@ export default function AddDialog({ handleClose }) {
     }
   }, [title, prevTitleState, delayedPosterSearch, posterSearch, posterSearchLanguage, skipDebounce])
 
+  const removePoster = () => {
+    setIsPosterUrlCorrect(false)
+    setPosterUrl('')
+  }
+
   useEffect(() => {
     if (!selectedFile && !torrentSource) {
       setTitle('')
-      setPosterUrl('')
       setPosterList()
-      setIsPosterUrlCorrect(false)
+      removePoster()
+      setIsUserInteractedWithPoster(false)
     }
   }, [selectedFile, torrentSource])
 
@@ -163,11 +168,6 @@ export default function AddDialog({ handleClose }) {
   }
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop: handleCapture, accept: '.torrent' })
-
-  const removePoster = () => {
-    setIsPosterUrlCorrect(false)
-    setPosterUrl('')
-  }
 
   const handleTorrentSourceChange = ({ target: { value } }) => setTorrentSource(value)
   const handleTitleChange = ({ target: { value } }) => setTitle(value)
@@ -261,8 +261,7 @@ export default function AddDialog({ handleClose }) {
         </LeftSide>
 
         <RightSide>
-          {/* <RightSideContainer isHidden={!isTorrentSourceCorrect}> */}
-          <RightSideContainer isHidden={false}>
+          <RightSideContainer isHidden={!isTorrentSourceCorrect}>
             <TextField
               onChange={handleTitleChange}
               value={title}
@@ -332,8 +331,7 @@ export default function AddDialog({ handleClose }) {
             notificationMessage={
               !torrentSource ? t('AddTorrentSourceNotification') : !isTorrentSourceCorrect && t('WrongTorrentSource')
             }
-            // isHidden={isTorrentSourceCorrect}
-            isHidden
+            isHidden={isTorrentSourceCorrect}
           />
         </RightSide>
       </Content>
