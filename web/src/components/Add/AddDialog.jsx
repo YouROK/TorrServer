@@ -129,7 +129,7 @@ export default function AddDialog({ handleClose }) {
   useEffect(() => {
     // if title exists and title was changed then search poster.
     const titleChanged = title !== prevTitleState
-    if (!titleChanged) return
+    if (!titleChanged || !title) return
 
     if (skipDebounce) {
       posterSearch(title, posterSearchLanguage)
