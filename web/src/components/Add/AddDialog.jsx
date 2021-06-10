@@ -105,6 +105,12 @@ export default function AddDialog({ handleClose }) {
 
   useEffect(() => {
     setIsTorrentSourceCorrect(chechTorrentSource(torrentSource))
+
+    if (!torrentSource) {
+      setPosterUrl('')
+      setPosterList()
+      setIsPosterUrlCorrect(false)
+    }
   }, [torrentSource])
 
   const handleCapture = files => {
