@@ -302,7 +302,6 @@ export default function AddDialog({ handleClose }) {
                     const newLanguage = posterSearchLanguage === 'en' ? 'ru' : 'en'
                     setPosterSearchLanguage(newLanguage)
                     posterSearch(title, newLanguage, { shouldRefreshMainPoster: true })
-                    console.log(':334')
                   }}
                   showbutton={+isPosterUrlCorrect}
                   color='primary'
