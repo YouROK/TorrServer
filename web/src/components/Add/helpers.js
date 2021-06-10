@@ -1,11 +1,17 @@
 import axios from 'axios'
 
 export const getMoviePosters = (movieName, language = 'en') => {
-  if (!movieName) return new Promise(resolve => resolve(null))
-  const request = `${`http://api.themoviedb.org/3/search/multi?api_key=${process.env.REACT_APP_TMDB_API_KEY}`}&language=${language}&include_image_language=${language},null&query=${movieName}`
+  const url = 'http://api.themoviedb.org/3/search/multi'
 
   return axios
-    .get(request)
+    .get(url, {
+      params: {
+        api_key: process.env.REACT_APP_TMDB_API_KEY,
+        language,
+        include_image_language: `${language},null`,
+        query: movieName,
+      },
+    })
     .then(({ data: { results } }) =>
       results.filter(el => el.poster_path).map(el => `https://image.tmdb.org/t/p/w300${el.poster_path}`),
     )

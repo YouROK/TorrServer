@@ -77,6 +77,11 @@ export default function AddDialog({ handleClose }) {
   const posterSearch = useMemo(
     () =>
       (movieName, language, settings = {}) => {
+        if (!movieName) {
+          setPosterList()
+          removePoster()
+          return
+        }
         const { shouldRefreshMainPoster = false } = settings
 
         getMoviePosters(movieName, language).then(urlList => {
