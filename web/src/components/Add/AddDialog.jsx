@@ -14,7 +14,9 @@ import { useDropzone } from 'react-dropzone'
 import { useMediaQuery } from '@material-ui/core'
 import parseTorrent from 'parse-torrent'
 import ptt from 'parse-torrent-title'
+import CircularProgress from '@material-ui/core/CircularProgress'
 
+import { checkImageURL, getMoviePosters, chechTorrentSource } from './helpers'
 import {
   ButtonWrapper,
   CancelIconWrapper,
@@ -35,7 +37,6 @@ import {
   TorrentIconWrapper,
   RightSideContainer,
 } from './style'
-import { checkImageURL, getMoviePosters, chechTorrentSource } from './helpers'
 
 export default function AddDialog({ handleClose }) {
   const { t } = useTranslation()
@@ -51,6 +52,7 @@ export default function AddDialog({ handleClose }) {
   const [currentLang] = useChangeLanguage()
   const [selectedFile, setSelectedFile] = useState()
   const [posterSearchLanguage, setPosterSearchLanguage] = useState(currentLang === 'ru' ? 'ru' : 'en')
+  const [isLoadingButton, setIsLoadingButton] = useState(false)
 
   const fullScreen = useMediaQuery('@media (max-width:930px)')
 
@@ -144,6 +146,8 @@ export default function AddDialog({ handleClose }) {
   }
 
   const handleSave = () => {
+    setIsLoadingButton(true)
+
     if (selectedFile) {
       // file save
       const data = new FormData()
@@ -151,7 +155,10 @@ export default function AddDialog({ handleClose }) {
       data.append('file', selectedFile)
       title && data.append('title', title)
       posterUrl && data.append('poster', posterUrl)
-      axios.post(torrentUploadHost(), data).finally(handleClose)
+      axios
+        .post(torrentUploadHost(), data)
+        // .then(res => console.log(res))
+        .finally(handleClose)
     } else {
       // link save
       axios
@@ -305,8 +312,14 @@ export default function AddDialog({ handleClose }) {
           {t('Cancel')}
         </Button>
 
-        <Button variant='contained' disabled={!torrentSource} onClick={handleSave} color='primary'>
-          {t('Add')}
+        <Button
+          variant='contained'
+          style={{ minWidth: '110px' }}
+          disabled={!torrentSource}
+          onClick={handleSave}
+          color='primary'
+        >
+          {isLoadingButton ? <CircularProgress style={{ color: 'white' }} size={20} /> : t('Add')}
         </Button>
       </ButtonWrapper>
     </Dialog>
