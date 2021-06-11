@@ -10,7 +10,7 @@ export const getMoviePosters = (movieName, language = 'en') => {
       params: {
         api_key: process.env.REACT_APP_TMDB_API_KEY,
         language,
-        include_image_language: `${language},null`,
+        include_image_language: `${language},null,en`,
         query: movieName,
       },
     })
