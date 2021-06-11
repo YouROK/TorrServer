@@ -107,5 +107,6 @@
   "TorrentSourceOptions": "magnet ссылка / хеш / ссылка на .torrent файл",
   "Clear": "Очистить",
   "AddTorrentSourceNotification": "Сначала добавьте торрент источник",
-  "WrongTorrentSource": "Неправильный torrent источник"
+  "WrongTorrentSource": "Неправильный torrent источник",
+  "ScrollDown": "прокрутить вниз"
 }

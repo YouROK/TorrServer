@@ -107,5 +107,6 @@
   "TorrentSourceOptions": "magnet / hash / .torrent file link",
   "Clear": "Clear",
   "AddTorrentSourceNotification": "First add your torrent source",
-  "WrongTorrentSource": "Wrong torrent source"
+  "WrongTorrentSource": "Wrong torrent source",
+  "ScrollDown": "scroll down"
 }

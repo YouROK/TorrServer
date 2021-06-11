@@ -4,6 +4,7 @@ import { Stage, Layer } from 'react-konva'
 import Measure from 'react-measure'
 import { v4 as uuidv4 } from 'uuid'
 import styled from 'styled-components'
+import { useTranslation } from 'react-i18next'
 
 import SingleBlock from './SingleBlock'
 import getShortCacheMap from './getShortCacheMap'
@@ -16,6 +17,7 @@ const ScrollNotification = styled.div`
 `
 
 export default function DefaultSnake({ isMini, cacheMap, preloadPiecesAmount }) {
+  const { t } = useTranslation()
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
   const [stageSettings, setStageSettings] = useState({
     boxHeight: null,
@@ -117,7 +119,7 @@ export default function DefaultSnake({ isMini, cacheMap, preloadPiecesAmount }) 
 
           {isMini &&
             (stageOffset + blockSizeWithMargin * amountOfRows || 0) >= miniCacheMaxHeight &&
-            dimensions.height >= miniCacheMaxHeight && <ScrollNotification>scroll down</ScrollNotification>}
+            dimensions.height >= miniCacheMaxHeight && <ScrollNotification>{t('ScrollDown')}</ScrollNotification>}
         </div>
       )}
     </Measure>
