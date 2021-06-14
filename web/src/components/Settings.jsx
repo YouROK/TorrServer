@@ -40,8 +40,8 @@ export default function SettingsDialog() {
       .catch(() => setShow(false))
   }, [tsHost])
 
-  const onInputHost = event => {
-    const host = event.target.value
+  const onInputHost = ({ target: { value } }) => {
+    const host = value.replace(/\/$/gi, '')
     setTorrServerHost(host)
     setTSHost(host)
   }
