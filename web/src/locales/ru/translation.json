@@ -108,5 +108,7 @@
   "Clear": "Очистить",
   "AddTorrentSourceNotification": "Сначала добавьте торрент источник",
   "WrongTorrentSource": "Неправильный torrent источник",
-  "ScrollDown": "прокрутить вниз"
+  "ScrollDown": "прокрутить вниз",
+  "Cache": "Кеш",
+  "Data": "Данные"
 }

@@ -108,5 +108,7 @@
   "Clear": "Clear",
   "AddTorrentSourceNotification": "First add your torrent source",
   "WrongTorrentSource": "Wrong torrent source",
-  "ScrollDown": "scroll down"
+  "ScrollDown": "scroll down",
+  "Cache": "Cache",
+  "Data": "Data"
 }
