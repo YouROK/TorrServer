@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Typography } from '@material-ui/core'
 import { torrentsHost } from 'utils/Hosts'
 import TorrentCard from 'components/TorrentCard'
@@ -6,34 +6,26 @@ import axios from 'axios'
 import CircularProgress from '@material-ui/core/CircularProgress'
 import { TorrentListWrapper, CenteredGrid } from 'components/App/style'
 import { useTranslation } from 'react-i18next'
+import { useQuery } from 'react-query'
+
+const getTorrents = async () => {
+  try {
+    const { data } = await axios.post(torrentsHost(), { action: 'list' })
+    return data
+  } catch (error) {
+    throw new Error(null)
+  }
+}
 
 export default function TorrentList() {
   const { t } = useTranslation()
-  const [torrents, setTorrents] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
   const [isOffline, setIsOffline] = useState(true)
-  const timerID = useRef(-1)
-
-  useEffect(() => {
-    timerID.current = setInterval(() => {
-      // getting torrent list
-      axios
-        .post(torrentsHost(), { action: 'list' })
-        .then(({ data }) => {
-          // updating torrent list
-          setTorrents(data)
-          setIsOffline(false)
-        })
-        .catch(() => {
-          // resetting torrent list
-          setTorrents([])
-          setIsOffline(true)
-        })
-        .finally(() => setIsLoading(false))
-    }, 1000)
-
-    return () => clearInterval(timerID.current)
-  }, [])
+  const { data: torrents, isLoading } = useQuery('torrents', getTorrents, {
+    retry: 1,
+    refetchInterval: 1000,
+    onError: () => setIsOffline(true),
+    onSuccess: () => setIsOffline(false),
+  })
 
   if (isLoading || isOffline || !torrents.length) {
     return (

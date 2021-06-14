@@ -1,9 +1,10 @@
 import { FixedSizeGrid as Grid } from 'react-window'
 import AutoSizer from 'react-virtualized-auto-sizer'
+import { memo } from 'react'
 
 import { getLargeSnakeColors } from './colors'
 
-const Cell = ({ columnIndex, rowIndex, style, data }) => {
+const Cell = memo(({ columnIndex, rowIndex, style, data }) => {
   const { columnCount, cacheMap, gutterSize, borderSize, pieces } = data
   const itemIndex = rowIndex * columnCount + columnIndex
 
@@ -21,7 +22,7 @@ const Cell = ({ columnIndex, rowIndex, style, data }) => {
   }
 
   return <div style={newStyle} />
-}
+})
 
 const gutterSize = 2
 const borderSize = 1

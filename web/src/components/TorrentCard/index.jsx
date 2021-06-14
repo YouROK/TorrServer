@@ -1,5 +1,5 @@
 import 'fontsource-roboto'
-import { forwardRef, useState } from 'react'
+import { forwardRef, memo, useState } from 'react'
 import { UnfoldMore as UnfoldMoreIcon, Close as CloseIcon, Delete as DeleteIcon } from '@material-ui/icons'
 import { getPeerString, humanizeSize, shortenText } from 'utils/Utils'
 import { torrentsHost } from 'utils/Hosts'
@@ -16,7 +16,7 @@ import { StyledButton, TorrentCard, TorrentCardButtons, TorrentCardDescription, 
 
 const Transition = forwardRef((props, ref) => <Slide direction='up' ref={ref} {...props} />)
 
-export default function Torrent({ torrent }) {
+const Torrent = ({ torrent }) => {
   const { t } = useTranslation()
   const [isDetailedInfoOpened, setIsDetailedInfoOpened] = useState(false)
   const [isDeleteTorrentOpened, setIsDeleteTorrentOpened] = useState(false)
@@ -121,3 +121,5 @@ export default function Torrent({ torrent }) {
     </>
   )
 }
+
+export default memo(Torrent)
