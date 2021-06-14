@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import { v4 as uuidv4 } from 'uuid'
 import { NoImageIcon } from 'icons'
 import { TextField } from '@material-ui/core'
 
@@ -71,7 +70,7 @@ export default function RightSideComponent({
               ?.filter(url => url !== posterUrl)
               .slice(0, 12)
               .map(url => (
-                <PosterSuggestionsItem onClick={() => userChangesPosterUrl(url)} key={uuidv4()}>
+                <PosterSuggestionsItem onClick={() => userChangesPosterUrl(url)} key={url}>
                   <img src={url} alt='poster' />
                 </PosterSuggestionsItem>
               ))}

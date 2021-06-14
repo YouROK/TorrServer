@@ -15,11 +15,11 @@ import { ButtonWrapper, Content, Header } from './style'
 import RightSideComponent from './RightSideComponent'
 import LeftSideComponent from './LeftSideComponent'
 
-export default function AddDialog({ handleClose }) {
+export default function AddDialog({ handleClose, hash: originalHash, title: originalTitle, poster: originalPoster }) {
   const { t } = useTranslation()
-  const [torrentSource, setTorrentSource] = useState('')
-  const [title, setTitle] = useState('')
-  const [posterUrl, setPosterUrl] = useState('')
+  const [torrentSource, setTorrentSource] = useState(originalHash || '')
+  const [title, setTitle] = useState(originalTitle || '')
+  const [posterUrl, setPosterUrl] = useState(originalPoster || '')
   const [isPosterUrlCorrect, setIsPosterUrlCorrect] = useState(false)
   const [isTorrentSourceCorrect, setIsTorrentSourceCorrect] = useState(false)
   const [posterList, setPosterList] = useState()
@@ -29,8 +29,21 @@ export default function AddDialog({ handleClose }) {
   const [posterSearchLanguage, setPosterSearchLanguage] = useState(currentLang === 'ru' ? 'ru' : 'en')
   const [isLoadingButton, setIsLoadingButton] = useState(false)
   const [skipDebounce, setSkipDebounce] = useState(false)
+  const [isEditMode, setIsEditMode] = useState(false)
 
   const fullScreen = useMediaQuery('@media (max-width:930px)')
+
+  useEffect(() => {
+    if (originalHash) {
+      setIsEditMode(true)
+
+      checkImageURL(posterUrl).then(correctImage => {
+        correctImage ? setIsPosterUrlCorrect(true) : removePoster()
+      })
+    }
+    // This is needed only on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const posterSearch = useMemo(
     () =>
@@ -118,7 +131,9 @@ export default function AddDialog({ handleClose }) {
   const handleSave = () => {
     setIsLoadingButton(true)
 
-    if (selectedFile) {
+    if (isEditMode) {
+      axios.post(torrentsHost(), { action: 'set', hash: originalHash, title, poster: posterUrl }).finally(handleClose)
+    } else if (selectedFile) {
       // file save
       const data = new FormData()
       data.append('save', 'true')
@@ -143,16 +158,18 @@ export default function AddDialog({ handleClose }) {
       fullWidth
       maxWidth='md'
     >
-      <Header>{t('AddNewTorrent')}</Header>
+      <Header>{t(isEditMode ? 'EditTorrent' : 'AddNewTorrent')}</Header>
 
-      <Content>
-        <LeftSideComponent
-          setIsUserInteractedWithPoster={setIsUserInteractedWithPoster}
-          setSelectedFile={setSelectedFile}
-          torrentSource={torrentSource}
-          setTorrentSource={setTorrentSource}
-          selectedFile={selectedFile}
-        />
+      <Content isEditMode={isEditMode}>
+        {!isEditMode && (
+          <LeftSideComponent
+            setIsUserInteractedWithPoster={setIsUserInteractedWithPoster}
+            setSelectedFile={setSelectedFile}
+            torrentSource={torrentSource}
+            setTorrentSource={setTorrentSource}
+            selectedFile={selectedFile}
+          />
+        )}
 
         <RightSideComponent
           setTitle={setTitle}
@@ -186,7 +203,7 @@ export default function AddDialog({ handleClose }) {
           onClick={handleSave}
           color='primary'
         >
-          {isLoadingButton ? <CircularProgress style={{ color: 'white' }} size={20} /> : t('Add')}
+          {isLoadingButton ? <CircularProgress style={{ color: 'white' }} size={20} /> : t(isEditMode ? 'Save' : 'Add')}
         </Button>
       </ButtonWrapper>
     </Dialog>
