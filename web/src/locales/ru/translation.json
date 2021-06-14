@@ -6,7 +6,7 @@
   "AddNewTorrent": "Добавить новый торрент",
   "AddPosterLinkInput": "Ссылка на постер",
   "AddRetrackers": "Добавлять",
-  "AddTorrentSourceNotification": "Сначала добавьте торрент источник",
+  "AddTorrentSourceNotification": "Сначала добавьте torrent-источник",
   "AppendFile": {
     "Or": "ИЛИ",
     "ClickOrDrag": "НАЖМИТЕ / ПЕРЕТАЩИТЕ ФАЙЛ (.torrent)"
