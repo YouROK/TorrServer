@@ -100,17 +100,20 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
   }, [hash])
 
   const bufferSize = settings?.PreloadBuffer ? Capacity : 33554432 // Default is 32mb if PreloadBuffer is false
-  // const bufferSize = Capacity
 
-  const getTitle = value => {
-    const torrentParsedName = value && ptt.parse(value)
+  const getParsedTitle = () => {
     const newNameStrings = []
 
-    if (torrentParsedName?.title) newNameStrings.push(` ${torrentParsedName?.title}`)
-    if (torrentParsedName?.year) newNameStrings.push(`. ${torrentParsedName?.year}.`)
-    if (torrentParsedName?.resolution) newNameStrings.push(` (${torrentParsedName?.resolution})`)
+    const torrentParsedName = name && ptt.parse(name)
 
-    return newNameStrings.join(' ')
+    if (title !== name) {
+      newNameStrings.push(title)
+    } else if (torrentParsedName?.title) newNameStrings.push(torrentParsedName?.title)
+
+    if (torrentParsedName?.year) newNameStrings.push(torrentParsedName?.year)
+    if (torrentParsedName?.resolution) newNameStrings.push(torrentParsedName?.resolution)
+
+    return newNameStrings.join('. ')
   }
 
   return (
@@ -141,13 +144,13 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
               <Poster poster={poster}>{poster ? <img alt='poster' src={poster} /> : <NoImageIcon />}</Poster>
 
               <div>
-                {name && name !== title ? (
+                {title && name !== title ? (
                   <>
-                    <SectionTitle>{shortenText(getTitle(name), 50)}</SectionTitle>
-                    <SectionSubName mb={20}>{shortenText(title, 160)}</SectionSubName>
+                    <SectionTitle>{shortenText(getParsedTitle(), 55)}</SectionTitle>
+                    <SectionSubName mb={20}>{shortenText(ptt.parse(name).title, 110)}</SectionSubName>
                   </>
                 ) : (
-                  <SectionTitle mb={20}>{shortenText(getTitle(title), 50)}</SectionTitle>
+                  <SectionTitle mb={20}>{shortenText(getParsedTitle(), 55)}</SectionTitle>
                 )}
 
                 <WidgetWrapper>

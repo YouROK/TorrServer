@@ -15,7 +15,13 @@ import { ButtonWrapper, Content, Header } from './style'
 import RightSideComponent from './RightSideComponent'
 import LeftSideComponent from './LeftSideComponent'
 
-export default function AddDialog({ handleClose, hash: originalHash, title: originalTitle, poster: originalPoster }) {
+export default function AddDialog({
+  handleClose,
+  hash: originalHash,
+  title: originalTitle,
+  name: originalName,
+  poster: originalPoster,
+}) {
   const { t } = useTranslation()
   const [torrentSource, setTorrentSource] = useState(originalHash || '')
   const [title, setTitle] = useState(originalTitle || '')
@@ -110,7 +116,7 @@ export default function AddDialog({ handleClose, hash: originalHash, title: orig
       posterSearch(title, posterSearchLanguage)
       setSkipDebounce(false)
     } else {
-      delayedPosterSearch(title, posterSearchLanguage)
+      title === '' ? removePoster() : delayedPosterSearch(title, posterSearchLanguage)
     }
   }, [title, prevTitleState, delayedPosterSearch, posterSearch, posterSearchLanguage, skipDebounce])
 
@@ -132,7 +138,14 @@ export default function AddDialog({ handleClose, hash: originalHash, title: orig
     setIsLoadingButton(true)
 
     if (isEditMode) {
-      axios.post(torrentsHost(), { action: 'set', hash: originalHash, title, poster: posterUrl }).finally(handleClose)
+      axios
+        .post(torrentsHost(), {
+          action: 'set',
+          hash: originalHash,
+          title: title === '' ? originalName : title,
+          poster: posterUrl,
+        })
+        .finally(handleClose)
     } else if (selectedFile) {
       // file save
       const data = new FormData()
