@@ -4,7 +4,7 @@ import { torrentsHost } from 'utils/Hosts'
 import TorrentCard from 'components/TorrentCard'
 import axios from 'axios'
 import CircularProgress from '@material-ui/core/CircularProgress'
-import { TorrentListWrapper, CenteredGrid } from 'App/style'
+import { TorrentListWrapper, CenteredGrid } from 'components/App/style'
 import { useTranslation } from 'react-i18next'
 
 export default function TorrentList() {
