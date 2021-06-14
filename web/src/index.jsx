@@ -1,13 +1,19 @@
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom'
+import { QueryClientProvider, QueryClient } from 'react-query'
+
+import App from './components/App'
 import 'i18n'
 
 import './index.css'
-import App from './components/App'
+
+const queryClient = new QueryClient()
 
 ReactDOM.render(
   <StrictMode>
-    <App />
+    <QueryClientProvider client={queryClient}>
+      <App />
+    </QueryClientProvider>
   </StrictMode>,
   document.getElementById('root'),
 )

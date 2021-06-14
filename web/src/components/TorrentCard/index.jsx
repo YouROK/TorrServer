@@ -1,6 +1,11 @@
 import 'fontsource-roboto'
-import { forwardRef, useState } from 'react'
-import { UnfoldMore as UnfoldMoreIcon, Close as CloseIcon, Delete as DeleteIcon } from '@material-ui/icons'
+import { forwardRef, memo, useState } from 'react'
+import {
+  UnfoldMore as UnfoldMoreIcon,
+  Edit as EditIcon,
+  Close as CloseIcon,
+  Delete as DeleteIcon,
+} from '@material-ui/icons'
 import { getPeerString, humanizeSize, shortenText } from 'utils/Utils'
 import { torrentsHost } from 'utils/Hosts'
 import { NoImageIcon } from 'icons'
@@ -11,12 +16,13 @@ import { Button, DialogActions, DialogTitle, useMediaQuery, useTheme } from '@ma
 import axios from 'axios'
 import ptt from 'parse-torrent-title'
 import { useTranslation } from 'react-i18next'
+import AddDialog from 'components/Add/AddDialog'
 
 import { StyledButton, TorrentCard, TorrentCardButtons, TorrentCardDescription, TorrentCardPoster } from './style'
 
 const Transition = forwardRef((props, ref) => <Slide direction='up' ref={ref} {...props} />)
 
-export default function Torrent({ torrent }) {
+const Torrent = ({ torrent }) => {
   const { t } = useTranslation()
   const [isDetailedInfoOpened, setIsDetailedInfoOpened] = useState(false)
   const [isDeleteTorrentOpened, setIsDeleteTorrentOpened] = useState(false)
@@ -36,6 +42,10 @@ export default function Torrent({ torrent }) {
 
   const parsedTitle = (title || name) && ptt.parse(title || name).title
 
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const handleClickOpenEditDialog = () => setIsEditDialogOpen(true)
+  const handleCloseEditDialog = () => setIsEditDialogOpen(false)
+
   return (
     <>
       <TorrentCard>
@@ -47,6 +57,11 @@ export default function Torrent({ torrent }) {
           <StyledButton onClick={openDetailedInfo}>
             <UnfoldMoreIcon />
             <span>{t('Details')}</span>
+          </StyledButton>
+
+          <StyledButton onClick={handleClickOpenEditDialog}>
+            <EditIcon />
+            <span>{t('Edit')}</span>
           </StyledButton>
 
           <StyledButton onClick={() => dropTorrent(torrent)}>
@@ -118,6 +133,12 @@ export default function Torrent({ torrent }) {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {isEditDialogOpen && (
+        <AddDialog hash={hash} title={title} name={name} poster={poster} handleClose={handleCloseEditDialog} />
+      )}
     </>
   )
 }
+
+export default memo(Torrent)

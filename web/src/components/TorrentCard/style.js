@@ -66,7 +66,11 @@ export const TorrentCardButtons = styled.div`
   gap: 10px;
 
   @media (max-width: 1260px), (max-height: 500px) {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  @media (max-width: 340px) {
+    gap: 5px;
   }
 `
 export const TorrentCardDescription = styled.div`
@@ -165,10 +169,13 @@ export const StyledButton = styled.button`
   text-transform: uppercase;
   background: #268757;
   color: #fff;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
   letter-spacing: 0.009em;
-  padding: 10px 20px;
+  padding: 0 12px;
+  svg {
+    width: 20px;
+  }
 
   :hover {
     background: #2a7e54;
@@ -179,28 +186,21 @@ export const StyledButton = styled.button`
   }
 
   @media (max-width: 1260px), (max-height: 500px) {
-    padding: 5px 10px;
+    padding: 7px 10px;
+    justify-content: center;
     font-size: 0.8rem;
 
     svg {
-      width: 20px;
+      display: none;
     }
   }
 
   @media (max-width: 770px) {
     font-size: 0.7rem;
-
-    svg {
-      width: 15px;
-    }
   }
 
   @media (max-width: 420px) {
-    padding: 7px 10px;
-    justify-content: center;
-
-    svg {
-      display: none;
-    }
+    font-size: 0.6rem;
+    padding: 7px 5px;
   }
 `

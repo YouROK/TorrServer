@@ -13,16 +13,23 @@ export const Header = styled.div`
 `
 
 export const Content = styled.div`
-  background: linear-gradient(145deg, #e4f6ed, #b5dec9);
-  flex: 1;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-  overflow: auto;
+  ${({ isEditMode }) => css`
+    background: linear-gradient(145deg, #e4f6ed, #b5dec9);
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(${isEditMode ? '1' : '2'}, 1fr);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    overflow: auto;
 
-  @media (max-width: 930px) {
-    grid-template-columns: 1fr;
-  }
+    @media (max-width: 540px) {
+      ${'' /* Just for bug fixing on small screens */}
+      overflow: scroll;
+    }
+
+    @media (max-width: 930px) {
+      grid-template-columns: 1fr;
+    }
+  `}
 `
 
 export const RightSide = styled.div`

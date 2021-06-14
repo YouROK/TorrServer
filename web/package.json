@@ -23,6 +23,7 @@
     "react-i18next": "^11.10.0",
     "react-konva": "^17.0.2-4",
     "react-measure": "^2.5.2",
+    "react-query": "^3.17.0",
     "react-scripts": "4.0.3",
     "react-virtualized-auto-sizer": "^1.0.5",
     "react-window": "^1.8.6",

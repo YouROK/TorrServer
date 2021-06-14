@@ -4,6 +4,7 @@
   "Add": "Add",
   "AddFromLink": "Add from Link",
   "AddNewTorrent": "Add new torrent",
+  "EditTorrent": "Edit torrent",
   "AddRetrackers": "Add retrackers",
   "Buffer": "Preload Buffer / Cache",
   "BufferNote": "Enable “Preload Buffer” in settings to see cache loading progress",
@@ -110,5 +111,6 @@
   "WrongTorrentSource": "Wrong torrent source",
   "ScrollDown": "scroll down",
   "Cache": "Cache",
-  "Data": "Data"
+  "Data": "Data",
+  "Edit": "Edit"
 }
