@@ -38,32 +38,32 @@ export const useCreateCacheMap = cache => {
   const [cacheMap, setCacheMap] = useState([])
 
   useEffect(() => {
-    if (!cache.PiecesCount || !cache.Pieces) return
-
-    const { Pieces, PiecesCount, Readers } = cache
+    const { PiecesCount, Pieces, Readers } = cache
 
     const map = []
 
     for (let i = 0; i < PiecesCount; i++) {
       const newPiece = { id: i }
 
-      const currentPiece = Pieces[i]
-      if (currentPiece) {
-        if (currentPiece.Completed && currentPiece.Size === currentPiece.Length) newPiece.isComplete = true
-        else {
-          newPiece.inProgress = true
-          newPiece.percentage = (currentPiece.Size / currentPiece.Length).toFixed(2)
-        }
+      const activeBlock = Pieces[i]
+      const className = ['piece']
+
+      if (activeBlock) {
+        const { Completed, Size, Length } = activeBlock
+        className.push(Completed && Size >= Length ? 'piece-complete' : 'piece-loading')
+        newPiece.percentage = ((Size / Length) * 100).toFixed(2)
       }
 
       Readers.forEach(r => {
-        if (i === r.Reader) newPiece.isActive = true
-        if (i >= r.Start && i <= r.End) newPiece.isReaderRange = true
+        if (i === r.Reader) {
+          className.push('piece-reader')
+        } else if (i >= r.Start && i <= r.End) className.push('reader-range')
       })
+
+      newPiece.className = className.join(' ')
 
       map.push(newPiece)
     }
-
     setCacheMap(map)
   }, [cache])
 

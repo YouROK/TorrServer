@@ -1,59 +1,95 @@
-import { FixedSizeGrid as Grid } from 'react-window'
-import AutoSizer from 'react-virtualized-auto-sizer'
-import { memo } from 'react'
+import styled, { css } from 'styled-components'
+import Measure from 'react-measure'
+import { useState } from 'react'
+import { v4 as uuidv4 } from 'uuid'
 
-import { getLargeSnakeColors } from './colors'
+import {
+  defaultBackgroundColor,
+  defaultBorderColor,
+  progressColor,
+  completeColor,
+  activeColor,
+  rangeColor,
+} from './colors'
+import getShortCacheMap from './getShortCacheMap'
 
-const Cell = memo(({ columnIndex, rowIndex, style, data }) => {
-  const { columnCount, cacheMap, gutterSize, borderSize, pieces } = data
-  const itemIndex = rowIndex * columnCount + columnIndex
+const borderWidth = 1
+const defaultPieceSize = 14
+const pieceSizeForMiniMap = 23
+const gapBetweenPieces = 3
 
-  const { borderColor, backgroundColor } = getLargeSnakeColors(cacheMap[itemIndex] || {})
+const SnakeWrapper = styled.div`
+  ${({ pieceSize, piecesInOneRow }) => css`
+    display: grid;
+    gap: ${gapBetweenPieces}px;
+    grid-template-columns: repeat(${piecesInOneRow || 'auto-fit'}, ${pieceSize}px);
+    grid-auto-rows: max-content;
+    justify-content: center;
 
-  const newStyle = {
-    ...style,
-    left: style.left + gutterSize,
-    top: style.top + gutterSize,
-    width: style.width - gutterSize,
-    height: style.height - gutterSize,
-    border: `${borderSize}px solid ${borderColor}`,
-    display: itemIndex >= pieces ? 'none' : null,
-    background: backgroundColor,
+    .piece {
+      width: ${pieceSize}px;
+      height: ${pieceSize}px;
+      background: ${defaultBackgroundColor};
+      border: ${borderWidth}px solid ${defaultBorderColor};
+      display: grid;
+      align-items: end;
+
+      &-loading {
+        background: ${progressColor};
+        border-color: ${progressColor};
+      }
+      &-complete {
+        background: ${completeColor};
+        border-color: ${completeColor};
+      }
+      &-reader {
+        border-color: ${activeColor};
+      }
+    }
+
+    .reader-range {
+      border-color: ${rangeColor};
+    }
+  `}
+`
+
+const PercentagePiece = styled.div`
+  background: ${completeColor};
+  height: ${({ percentage }) => (percentage / 100) * 12}px;
+`
+
+export default function LargeSnake({ cacheMap, isMini, preloadPiecesAmount }) {
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
+
+  const pieceSize = isMini ? pieceSizeForMiniMap : defaultPieceSize
+
+  let piecesInOneRow
+  let shotCacheMap
+  if (isMini) {
+    const pieceSizeWithGap = pieceSize + gapBetweenPieces
+    piecesInOneRow = Math.floor(dimensions.width / pieceSizeWithGap)
+    shotCacheMap = isMini && getShortCacheMap({ cacheMap, preloadPiecesAmount, piecesInOneRow })
   }
 
-  return <div style={newStyle} />
-})
-
-const gutterSize = 2
-const borderSize = 1
-const pieceSize = 12
-const pieceSizeWithSpacing = pieceSize + gutterSize
-
-export default function LargeSnake({ cacheMap }) {
-  const pieces = cacheMap.length
-
-  return (
-    <div style={{ height: '60vh', overflow: 'hidden' }}>
-      <AutoSizer>
-        {({ height, width }) => {
-          const columnCount = Math.floor(width / (gutterSize + pieceSize)) - 1
-          const rowCount = pieces / columnCount + 1
-
-          return (
-            <Grid
-              columnCount={columnCount}
-              rowCount={rowCount}
-              columnWidth={pieceSizeWithSpacing}
-              rowHeight={pieceSizeWithSpacing}
-              height={height}
-              width={width}
-              itemData={{ columnCount, cacheMap, gutterSize, borderSize, pieces }}
-            >
-              {Cell}
-            </Grid>
-          )
-        }}
-      </AutoSizer>
-    </div>
+  return isMini ? (
+    <Measure bounds onResize={({ bounds }) => setDimensions(bounds)}>
+      {({ measureRef }) => (
+        <SnakeWrapper ref={measureRef} pieceSize={pieceSize} piecesInOneRow={piecesInOneRow}>
+          {shotCacheMap.map(({ className, id, percentage }) => (
+            <span key={id || uuidv4()} className={className}>
+              {percentage > 0 && percentage <= 100 && <PercentagePiece percentage={percentage} />}
+            </span>
+          ))}
+        </SnakeWrapper>
+      )}
+    </Measure>
+  ) : (
+    <SnakeWrapper pieceSize={pieceSize}>
+      {cacheMap.map(({ className, id, percentage }) => (
+        <span key={id || uuidv4()} className={className}>
+          {percentage > 0 && percentage <= 100 && <PercentagePiece percentage={percentage} />}
+        </span>
+      ))}
+    </SnakeWrapper>
   )
 }
