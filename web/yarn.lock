@@ -7938,11 +7938,6 @@ klona@^2.0.4:
   resolved "https://registry.yarnpkg.com/klona/-/klona-2.0.4.tgz#7bb1e3affb0cb8624547ef7e8f6708ea2e39dfc0"
   integrity sha512-ZRbnvdg/NxqzC7L9Uyqzf4psi1OM4Cuc+sJAkQPjO6XkQIJTNbfK2Rsmbw8fx1p2mkZdp2FZYo2+LwXYY/uwIA==
 
-konva@^8.0.1:
-  version "8.0.1"
-  resolved "https://registry.yarnpkg.com/konva/-/konva-8.0.1.tgz#f34f483cdf62c36f966addc1a7484ed694313c2b"
-  integrity sha512-QDppGS1L5Dhod1zjwy9GVVjeyfPBHnPncL5oRh1NyjR1mEvhrLjzflrkdW+p73uFIW9hwCDZVLGxzzjQre9izw==
-
 language-subtag-registry@~0.3.2:
   version "0.3.21"
   resolved "https://registry.yarnpkg.com/language-subtag-registry/-/language-subtag-registry-0.3.21.tgz#04ac218bea46f04cb039084602c6da9e788dd45a"
@@ -10472,14 +10467,6 @@ react-is@^16.7.0, react-is@^16.8.1:
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-17.0.2.tgz#e691d4a8e9c789365655539ab372762b0efb54f0"
   integrity sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==
 
-react-konva@^17.0.2-4:
-  version "17.0.2-4"
-  resolved "https://registry.yarnpkg.com/react-konva/-/react-konva-17.0.2-4.tgz#afd0968e1295b624bf2a7a154ba294e0d5be55cd"
-  integrity sha512-YvRVPT81y8sMQV1SY1/tIDetGxBK+7Rk86u4LmiyDBLLE17vD78F01b8EC3AuP3nI3hUaTblfBugUF35cm6Etg==
-  dependencies:
-    react-reconciler "~0.26.2"
-    scheduler "^0.20.2"
-
 react-measure@^2.5.2:
   version "2.5.2"
   resolved "https://registry.yarnpkg.com/react-measure/-/react-measure-2.5.2.tgz#4ffc410e8b9cb836d9455a9ff18fc1f0fca67f89"
@@ -10498,15 +10485,6 @@ react-query@^3.17.0:
     "@babel/runtime" "^7.5.5"
     broadcast-channel "^3.4.1"
     match-sorter "^6.0.2"
-
-react-reconciler@~0.26.2:
-  version "0.26.2"
-  resolved "https://registry.yarnpkg.com/react-reconciler/-/react-reconciler-0.26.2.tgz#bbad0e2d1309423f76cf3c3309ac6c96e05e9d91"
-  integrity sha512-nK6kgY28HwrMNwDnMui3dvm3rCFjZrcGiuwLc5COUipBK5hWHLOxMJhSnSomirqWwjPBJKV1QcbkI0VJr7Gl1Q==
-  dependencies:
-    loose-envify "^1.1.0"
-    object-assign "^4.1.1"
-    scheduler "^0.20.2"
 
 react-refresh@^0.8.3:
   version "0.8.3"
