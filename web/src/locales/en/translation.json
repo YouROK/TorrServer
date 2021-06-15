@@ -2,6 +2,7 @@
   "About": "About",
   "Actions": "Actions",
   "Add": "Add",
+  "AddDialogTorrentTitle": "Title (empty for default torrent name)",
   "AddFromLink": "Add from Link",
   "AddNewTorrent": "Add new torrent",
   "AddPosterLinkInput": "Poster link",

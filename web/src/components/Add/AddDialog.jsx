@@ -25,6 +25,7 @@ export default function AddDialog({
   const { t } = useTranslation()
   const [torrentSource, setTorrentSource] = useState(originalHash || '')
   const [title, setTitle] = useState(originalTitle || '')
+  const [parsedTitle, setParsedTitle] = useState('')
   const [posterUrl, setPosterUrl] = useState(originalPoster || '')
   const [isPosterUrlCorrect, setIsPosterUrlCorrect] = useState(false)
   const [isTorrentSourceCorrect, setIsTorrentSourceCorrect] = useState(false)
@@ -85,7 +86,7 @@ export default function AddDialog({
 
   const delayedPosterSearch = useMemo(() => debounce(posterSearch, 700), [posterSearch])
 
-  const prevTitleState = usePreviousState(title)
+  const prevParsedTitleState = usePreviousState(parsedTitle)
   const prevTorrentSourceState = usePreviousState(torrentSource)
 
   useEffect(() => {
@@ -98,27 +99,28 @@ export default function AddDialog({
     setIsTorrentSourceCorrect(true)
 
     if (torrentSourceChanged) {
-      parseTorrentTitle(selectedFile || torrentSource, newTitle => {
-        if (!newTitle) return
+      parseTorrentTitle(selectedFile || torrentSource, ({ parsedTitle, originalName }) => {
+        if (!parsedTitle) return
 
         setSkipDebounce(true)
-        setTitle(newTitle)
+        setTitle(originalName)
+        setParsedTitle(parsedTitle)
       })
     }
   }, [prevTorrentSourceState, selectedFile, torrentSource])
 
   useEffect(() => {
     // if title exists and title was changed then search poster.
-    const titleChanged = title !== prevTitleState
+    const titleChanged = parsedTitle !== prevParsedTitleState
     if (!titleChanged) return
 
     if (skipDebounce) {
-      posterSearch(title, posterSearchLanguage)
+      posterSearch(parsedTitle, posterSearchLanguage)
       setSkipDebounce(false)
     } else {
-      title === '' ? removePoster() : delayedPosterSearch(title, posterSearchLanguage)
+      parsedTitle === '' ? removePoster() : delayedPosterSearch(parsedTitle, posterSearchLanguage)
     }
-  }, [title, prevTitleState, delayedPosterSearch, posterSearch, posterSearchLanguage, skipDebounce])
+  }, [parsedTitle, prevParsedTitleState, delayedPosterSearch, posterSearch, posterSearchLanguage, skipDebounce])
 
   const removePoster = () => {
     setIsPosterUrlCorrect(false)
@@ -128,6 +130,7 @@ export default function AddDialog({
   useEffect(() => {
     if (!selectedFile && !torrentSource) {
       setTitle('')
+      setParsedTitle('')
       setPosterList()
       removePoster()
       setIsUserInteractedWithPoster(false)
@@ -186,12 +189,14 @@ export default function AddDialog({
 
         <RightSideComponent
           setTitle={setTitle}
+          setParsedTitle={setParsedTitle}
           setPosterUrl={setPosterUrl}
           setIsPosterUrlCorrect={setIsPosterUrlCorrect}
           setIsUserInteractedWithPoster={setIsUserInteractedWithPoster}
           setPosterList={setPosterList}
           isTorrentSourceCorrect={isTorrentSourceCorrect}
           title={title}
+          parsedTitle={parsedTitle}
           posterUrl={posterUrl}
           isPosterUrlCorrect={isPosterUrlCorrect}
           posterList={posterList}

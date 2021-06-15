@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { NoImageIcon } from 'icons'
-import { TextField } from '@material-ui/core'
+import { IconButton, InputAdornment, TextField } from '@material-ui/core'
+import { HighlightOff as HighlightOffIcon } from '@material-ui/icons'
 
 import {
   ClearPosterButton,
@@ -12,16 +13,18 @@ import {
   PosterWrapper,
   RightSideContainer,
 } from './style'
-import { checkImageURL } from './helpers'
+import { checkImageURL, hashRegex } from './helpers'
 
 export default function RightSideComponent({
   setTitle,
+  setParsedTitle,
   setPosterUrl,
   setIsPosterUrlCorrect,
   setIsUserInteractedWithPoster,
   setPosterList,
   isTorrentSourceCorrect,
   title,
+  parsedTitle,
   posterUrl,
   isPosterUrlCorrect,
   posterList,
@@ -34,7 +37,10 @@ export default function RightSideComponent({
 }) {
   const { t } = useTranslation()
 
-  const handleTitleChange = ({ target: { value } }) => setTitle(value)
+  const handleTitleChange = ({ target: { value } }) => {
+    setTitle(value)
+    setParsedTitle(value)
+  }
   const handlePosterUrlChange = ({ target: { value } }) => {
     setPosterUrl(value)
     checkImageURL(value).then(setIsPosterUrlCorrect)
@@ -47,10 +53,35 @@ export default function RightSideComponent({
     setIsUserInteractedWithPoster(true)
   }
 
+  const sourceIsHash = torrentSource.match(hashRegex) !== null
+
   return (
     <RightSide>
       <RightSideContainer isHidden={!isTorrentSourceCorrect}>
-        <TextField onChange={handleTitleChange} value={title} margin='dense' label={t('Title')} type='text' fullWidth />
+        <TextField
+          onChange={handleTitleChange}
+          value={title}
+          margin='dense'
+          label={t(sourceIsHash ? 'AddDialogTorrentTitle' : 'Title')}
+          type='text'
+          fullWidth
+          InputProps={{
+            endAdornment:
+              title === '' ? null : (
+                <InputAdornment position='end'>
+                  <IconButton
+                    aria-label='clear input'
+                    onClick={() => {
+                      setTitle('')
+                      setParsedTitle('')
+                    }}
+                  >
+                    <HighlightOffIcon />
+                  </IconButton>
+                </InputAdornment>
+              ),
+          }}
+        />
         <TextField
           onChange={handlePosterUrlChange}
           value={posterUrl}
@@ -81,7 +112,7 @@ export default function RightSideComponent({
               onClick={() => {
                 const newLanguage = posterSearchLanguage === 'en' ? 'ru' : 'en'
                 setPosterSearchLanguage(newLanguage)
-                posterSearch(title, newLanguage, { shouldRefreshMainPoster: true })
+                posterSearch(parsedTitle, newLanguage, { shouldRefreshMainPoster: true })
               }}
               showbutton={+isPosterUrlCorrect}
               color='primary'
