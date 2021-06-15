@@ -19,7 +19,7 @@ const getTorrents = async () => {
 
 export default function TorrentList() {
   const { t } = useTranslation()
-  const [isOffline, setIsOffline] = useState(true)
+  const [isOffline, setIsOffline] = useState(false)
   const { data: torrents, isLoading } = useQuery('torrents', getTorrents, {
     retry: 1,
     refetchInterval: 1000,
@@ -30,10 +30,10 @@ export default function TorrentList() {
   if (isLoading || isOffline || !torrents.length) {
     return (
       <CenteredGrid>
-        {isLoading ? (
-          <CircularProgress />
-        ) : isOffline ? (
+        {isOffline ? (
           <Typography>{t('Offline')}</Typography>
+        ) : isLoading ? (
+          <CircularProgress />
         ) : (
           !torrents.length && <Typography>{t('NoTorrentsAdded')}</Typography>
         )}
