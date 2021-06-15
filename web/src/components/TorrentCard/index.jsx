@@ -1,5 +1,6 @@
 import 'fontsource-roboto'
 import { forwardRef, memo, useState } from 'react'
+import ptt from 'parse-torrent-title'
 import {
   UnfoldMore as UnfoldMoreIcon,
   Edit as EditIcon,
@@ -14,9 +15,9 @@ import Dialog from '@material-ui/core/Dialog'
 import Slide from '@material-ui/core/Slide'
 import { Button, DialogActions, DialogTitle, useMediaQuery, useTheme } from '@material-ui/core'
 import axios from 'axios'
-import ptt from 'parse-torrent-title'
 import { useTranslation } from 'react-i18next'
 import AddDialog from 'components/Add/AddDialog'
+import { isFilePlayable } from 'components/DialogTorrentDetailsContent/helpers'
 
 import { StyledButton, TorrentCard, TorrentCardButtons, TorrentCardDescription, TorrentCardPoster } from './style'
 
@@ -40,7 +41,19 @@ const Torrent = ({ torrent }) => {
   const dropTorrent = () => axios.post(torrentsHost(), { action: 'drop', hash })
   const deleteTorrent = () => axios.post(torrentsHost(), { action: 'rem', hash })
 
-  const parsedTitle = (title || name) && ptt.parse(title || name).title
+  const getParsedData = () => {
+    const parse = key => ptt.parse(title || '')?.[key] || ptt.parse(name || '')?.[key]
+
+    const parsedYear = parse('year')
+    const parsedResolution = parse('resolution')
+    const parsedTitle = parse('title')
+
+    return { parsedResolution, parsedYear, parsedTitle }
+  }
+
+  const { parsedResolution, parsedYear, parsedTitle } = getParsedData()
+
+  const playableFileAmount = torrent.file_stats?.filter(({ path }) => isFilePlayable(path))?.length
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const handleClickOpenEditDialog = () => setIsEditDialogOpen(true)
@@ -79,6 +92,29 @@ const Torrent = ({ torrent }) => {
           <div className='description-title-wrapper'>
             <div className='description-section-name'>{t('Name')}</div>
             <div className='description-torrent-title'>{shortenText(parsedTitle, 100)}</div>
+          </div>
+
+          <div className='description-statistics-wrapper'>
+            {parsedResolution && (
+              <div className='description-statistics-element-wrapper'>
+                <div className='description-section-name'>{t('Resolution')}</div>
+                <div className='description-statistics-element-value'>{parsedResolution}</div>
+              </div>
+            )}
+
+            {parsedYear && (
+              <div className='description-statistics-element-wrapper'>
+                <div className='description-section-name'>{t('Year')}</div>
+                <div className='description-statistics-element-value'>{parsedYear}</div>
+              </div>
+            )}
+
+            {playableFileAmount > 1 && (
+              <div className='description-statistics-element-wrapper'>
+                <div className='description-section-name'>{t('Files')}</div>
+                <div className='description-statistics-element-value'>{playableFileAmount}</div>
+              </div>
+            )}
           </div>
 
           <div className='description-statistics-wrapper'>

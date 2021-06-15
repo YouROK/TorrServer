@@ -47,6 +47,7 @@
   "EditTorrent": "Edit torrent",
   "EnableIPv6": "IPv6",
   "Episode": "Episode",
+  "Files": "Files",
   "ForceEncrypt": "Force Encrypt Headers",
   "FromLatestFile": "From Latest File",
   "Full": "Full",
@@ -112,5 +113,6 @@
   "UseDiskDesc": "Better use external media on flash-based devices",
   "UTP": "μTP (Micro Transport Protocol)",
   "Viewed": "Viewed",
-  "WrongTorrentSource": "Wrong torrent source"
+  "WrongTorrentSource": "Wrong torrent source",
+  "Year": "Year"
 }

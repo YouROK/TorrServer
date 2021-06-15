@@ -47,6 +47,7 @@
   "EditTorrent": "Изменить торрент",
   "EnableIPv6": "IPv6",
   "Episode": "Серия",
+  "Files": "Файлы",
   "ForceEncrypt": "Принудительное шифрование заголовков",
   "FromLatestFile": "C последнего файла",
   "Full": "Полный",
@@ -112,5 +113,6 @@
   "UseDiskDesc": "Рекомендуется использовать внешние носители на устройствах с flash-памятью",
   "UTP": "μTP (Micro Transport Protocol)",
   "Viewed": "Просм.",
-  "WrongTorrentSource": "Неправильный torrent-источник"
+  "WrongTorrentSource": "Неправильный torrent-источник",
+  "Year": "Год"
 }
