@@ -1,5 +1,7 @@
 export default ({ cacheMap, preloadPiecesAmount, piecesInOneRow }) => {
-  const cacheMapWithoutEmptyBlocks = cacheMap.filter(({ isComplete, inProgress }) => inProgress || isComplete)
+  const cacheMapWithoutEmptyBlocks = cacheMap.filter(
+    ({ className }) => className.includes('piece-complete') || className.includes('piece-loading'),
+  )
 
   const getFullAmountOfBlocks = amountOfBlocks =>
     // this function counts existed amount of blocks with extra "empty blocks" to fill the row till the end
@@ -21,7 +23,9 @@ export default ({ cacheMap, preloadPiecesAmount, piecesInOneRow }) => {
   const extraBlocksAmount = finalAmountOfBlocksToRenderInShortView - cacheMapWithoutEmptyBlocks.length + 1
   // amount of blocks needed to fill the line till the end
 
-  const extraEmptyBlocksForFillingLine = extraBlocksAmount ? new Array(extraBlocksAmount).fill({}) : []
+  const extraEmptyBlocksForFillingLine = extraBlocksAmount
+    ? new Array(extraBlocksAmount).fill({ className: 'piece' })
+    : []
 
   return [...cacheMapWithoutEmptyBlocks, ...extraEmptyBlocksForFillingLine]
 }
