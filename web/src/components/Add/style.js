@@ -14,6 +14,7 @@ export const Header = styled.div`
 
 export const Content = styled.div`
   ${({ isEditMode }) => css`
+    height: 550px;
     background: linear-gradient(145deg, #e4f6ed, #b5dec9);
     flex: 1;
     display: grid;
@@ -38,7 +39,7 @@ export const RightSide = styled.div`
 
 export const RightSideContainer = styled.div`
   ${({ isHidden, notificationMessage, isError }) => css`
-    height: 455px;
+    height: 530px;
 
     ${notificationMessage &&
     css`
@@ -54,7 +55,7 @@ export const RightSideContainer = styled.div`
         background: ${isError ? '#cda184' : '#84cda7'};
         padding: 10px 15px;
         position: absolute;
-        top: 50%;
+        top: 52%;
         left: 50%;
         transform: translate(-50%, -50%);
         border-radius: 5px;
@@ -88,7 +89,7 @@ export const LeftSideBottomSectionNoFile = styled.div`
   ${({ isDragActive }) => isDragActive && `border: 4px dashed green`};
 
   justify-items: center;
-  grid-template-rows: 100px 1fr;
+  grid-template-rows: 130px 1fr;
   cursor: pointer;
 
   :hover {

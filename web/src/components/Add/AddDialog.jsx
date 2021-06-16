@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Button from '@material-ui/core/Button'
 import Dialog from '@material-ui/core/Dialog'
 import { torrentsHost, torrentUploadHost } from 'utils/Hosts'
@@ -9,6 +9,8 @@ import useChangeLanguage from 'utils/useChangeLanguage'
 import { useMediaQuery } from '@material-ui/core'
 import CircularProgress from '@material-ui/core/CircularProgress'
 import usePreviousState from 'utils/usePreviousState'
+import parseTorrent from 'parse-torrent'
+import ptt from 'parse-torrent-title'
 
 import { checkImageURL, getMoviePosters, chechTorrentSource, parseTorrentTitle } from './helpers'
 import { ButtonWrapper, Content, Header } from './style'
@@ -25,6 +27,7 @@ export default function AddDialog({
   const { t } = useTranslation()
   const [torrentSource, setTorrentSource] = useState(originalHash || '')
   const [title, setTitle] = useState(originalTitle || '')
+  const [originalTorrentTitle, setOriginalTorrentTitle] = useState('')
   const [parsedTitle, setParsedTitle] = useState('')
   const [posterUrl, setPosterUrl] = useState(originalPoster || '')
   const [isPosterUrlCorrect, setIsPosterUrlCorrect] = useState(false)
@@ -37,20 +40,36 @@ export default function AddDialog({
   const [isLoadingButton, setIsLoadingButton] = useState(false)
   const [skipDebounce, setSkipDebounce] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
+  const [isCustomTitleEnabled, setIsCustomTitleEnabled] = useState(false)
 
   const fullScreen = useMediaQuery('@media (max-width:930px)')
 
-  useEffect(() => {
-    if (originalHash) {
-      setIsEditMode(true)
+  const updateTitleFromSource = useCallback(() => {
+    parseTorrentTitle(selectedFile || torrentSource, ({ parsedTitle, originalName }) => {
+      if (!originalName) return
 
-      checkImageURL(posterUrl).then(correctImage => {
-        correctImage ? setIsPosterUrlCorrect(true) : removePoster()
-      })
-    }
-    // This is needed only on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+      setSkipDebounce(true)
+      setOriginalTorrentTitle(originalName)
+      setParsedTitle(parsedTitle)
+    })
+  }, [selectedFile, torrentSource])
+
+  const removePoster = () => {
+    setIsPosterUrlCorrect(false)
+    setPosterUrl('')
+  }
+
+  // useEffect(() => {
+  //   if (originalHash) {
+  //     setIsEditMode(true)
+
+  //     checkImageURL(posterUrl).then(correctImage => {
+  //       correctImage ? setIsPosterUrlCorrect(true) : removePoster()
+  //     })
+  //   }
+  //   // This is needed only on mount
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [])
 
   const posterSearch = useMemo(
     () =>
@@ -86,51 +105,50 @@ export default function AddDialog({
 
   const delayedPosterSearch = useMemo(() => debounce(posterSearch, 700), [posterSearch])
 
-  const prevParsedTitleState = usePreviousState(parsedTitle)
   const prevTorrentSourceState = usePreviousState(torrentSource)
 
   useEffect(() => {
-    // if torrentSource is updated then we are checking that source is valid and getting title from the source
-    const torrentSourceChanged = torrentSource !== prevTorrentSourceState
-
     const isCorrectSource = chechTorrentSource(torrentSource)
     if (!isCorrectSource) return setIsTorrentSourceCorrect(false)
 
     setIsTorrentSourceCorrect(true)
 
-    if (torrentSourceChanged) {
-      parseTorrentTitle(selectedFile || torrentSource, ({ parsedTitle, originalName }) => {
-        if (!parsedTitle) return
+    // if torrentSource is updated then we are getting title from the source
+    const torrentSourceChanged = torrentSource !== prevTorrentSourceState
+    if (!torrentSourceChanged) return
 
-        setSkipDebounce(true)
-        setTitle(originalName)
-        setParsedTitle(parsedTitle)
-      })
-    }
-  }, [prevTorrentSourceState, selectedFile, torrentSource])
+    updateTitleFromSource()
+  }, [prevTorrentSourceState, selectedFile, torrentSource, updateTitleFromSource])
+
+  const prevTitleState = usePreviousState(title)
 
   useEffect(() => {
     // if title exists and title was changed then search poster.
-    const titleChanged = parsedTitle !== prevParsedTitleState
-    if (!titleChanged) return
+    const titleChanged = title !== prevTitleState
+    if (!titleChanged && !parsedTitle) return
 
     if (skipDebounce) {
-      posterSearch(parsedTitle, posterSearchLanguage)
+      posterSearch(title || parsedTitle, posterSearchLanguage)
       setSkipDebounce(false)
+    } else if (title === '') {
+      if (parsedTitle) {
+        posterSearch(parsedTitle, posterSearchLanguage)
+      } else {
+        removePoster()
+      }
     } else {
-      parsedTitle === '' ? removePoster() : delayedPosterSearch(parsedTitle, posterSearchLanguage)
+      delayedPosterSearch(title, posterSearchLanguage)
     }
-  }, [parsedTitle, prevParsedTitleState, delayedPosterSearch, posterSearch, posterSearchLanguage, skipDebounce])
-
-  const removePoster = () => {
-    setIsPosterUrlCorrect(false)
-    setPosterUrl('')
-  }
+    // title === '' && !parsedTitle
+    //   ? removePoster()
+    //   : title === '' && parsedTitle
+    //   ? posterSearch(parsedTitle, posterSearchLanguage)
+    //   : delayedPosterSearch(title, posterSearchLanguage)
+  }, [title, parsedTitle, prevTitleState, delayedPosterSearch, posterSearch, posterSearchLanguage, skipDebounce])
 
   useEffect(() => {
     if (!selectedFile && !torrentSource) {
       setTitle('')
-      setParsedTitle('')
       setPosterList()
       removePoster()
       setIsUserInteractedWithPoster(false)
@@ -188,8 +206,8 @@ export default function AddDialog({
         )}
 
         <RightSideComponent
+          originalTorrentTitle={originalTorrentTitle}
           setTitle={setTitle}
-          setParsedTitle={setParsedTitle}
           setPosterUrl={setPosterUrl}
           setIsPosterUrlCorrect={setIsPosterUrlCorrect}
           setIsUserInteractedWithPoster={setIsUserInteractedWithPoster}
@@ -205,7 +223,10 @@ export default function AddDialog({
           setPosterSearchLanguage={setPosterSearchLanguage}
           posterSearch={posterSearch}
           removePoster={removePoster}
+          updateTitleFromSource={updateTitleFromSource}
           torrentSource={torrentSource}
+          isCustomTitleEnabled={isCustomTitleEnabled}
+          setIsCustomTitleEnabled={setIsCustomTitleEnabled}
         />
       </Content>
 
