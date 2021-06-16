@@ -48,7 +48,6 @@
   "EditTorrent": "Edit torrent",
   "EnableIPv6": "IPv6",
   "Episode": "Episode",
-  "Files": "Files",
   "ForceEncrypt": "Force Encrypt Headers",
   "FromLatestFile": "From Latest File",
   "Full": "Full",
@@ -60,7 +59,7 @@
   "Offline": "Offline",
   "OK": "OK",
   "OpenLink": "Open link",
-  "Peers": "Peers",
+  "Peers": "[Connected] Peers",
   "PeersListenPort": "Peers Listen Port",
   "PEX": "PEX (Peer Exchange)",
   "PiecesCount": "Pieces count",
@@ -114,6 +113,5 @@
   "UseDiskDesc": "Better use external media on flash-based devices",
   "UTP": "μTP (Micro Transport Protocol)",
   "Viewed": "Viewed",
-  "WrongTorrentSource": "Wrong torrent source",
-  "Year": "Year"
+  "WrongTorrentSource": "Wrong torrent source"
 }

@@ -1,7 +1,7 @@
 export function humanizeSize(size) {
   if (!size) return ''
   const i = Math.floor(Math.log(size) / Math.log(1024))
-  return `${(size / Math.pow(1024, i)).toFixed(2) * 1} ${['B', 'kB', 'MB', 'GB', 'TB'][i]}`
+  return `${(size / Math.pow(1024, i)).toFixed(2) * 1} ${['B', 'KB', 'MB', 'GB', 'TB'][i]}`
 }
 
 export function getPeerString(torrent) {
@@ -10,4 +10,4 @@ export function getPeerString(torrent) {
 }
 
 export const shortenText = (text, sympolAmount) =>
-  text ? text.slice(0, sympolAmount) + (text.length > sympolAmount ? '...' : '') : ''
+  text ? text.slice(0, sympolAmount) + (text.length > sympolAmount ? '…' : '') : ''
