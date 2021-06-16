@@ -59,7 +59,7 @@
   "Offline": "Offline",
   "OK": "OK",
   "OpenLink": "Open link",
-  "Peers": "Peers",
+  "Peers": "[Connected] Peers",
   "PeersListenPort": "Peers Listen Port",
   "PEX": "PEX (Peer Exchange)",
   "PiecesCount": "Pieces count",
