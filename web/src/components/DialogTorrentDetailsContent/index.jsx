@@ -110,8 +110,11 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
       newNameStrings.push(title)
     } else if (torrentParsedName?.title) newNameStrings.push(torrentParsedName?.title)
 
-    // if (torrentParsedName?.year) newNameStrings.push(torrentParsedName?.year)
-    // if (torrentParsedName?.resolution) newNameStrings.push(torrentParsedName?.resolution)
+    // These 2 checks are needed to get year and resolution from torrent name if title does not have this info
+    if (torrentParsedName?.year && !title.includes(torrentParsedName?.year))
+      newNameStrings.push(torrentParsedName?.year)
+    if (torrentParsedName?.resolution && !title.includes(torrentParsedName?.resolution))
+      newNameStrings.push(torrentParsedName?.resolution)
 
     return newNameStrings.join(' ')
   }
@@ -145,10 +148,17 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
 
               <div>
                 {title && name !== title ? (
-                  <>
-                    <SectionTitle>{ptt.parse(name).title}</SectionTitle>
-                    <SectionSubName mb={20}>{getParsedTitle()}</SectionSubName>
-                  </>
+                  getParsedTitle().length > 90 ? (
+                    <>
+                      <SectionTitle>{ptt.parse(name).title}</SectionTitle>
+                      <SectionSubName mb={20}>{getParsedTitle()}</SectionSubName>
+                    </>
+                  ) : (
+                    <>
+                      <SectionTitle>{getParsedTitle()}</SectionTitle>
+                      <SectionSubName mb={20}>{ptt.parse(name).title}</SectionSubName>
+                    </>
+                  )
                 ) : (
                   <SectionTitle mb={20}>{getParsedTitle()}</SectionTitle>
                 )}

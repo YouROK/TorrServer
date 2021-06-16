@@ -6,7 +6,7 @@ import {
   Close as CloseIcon,
   Delete as DeleteIcon,
 } from '@material-ui/icons'
-import { getPeerString, humanizeSize, shortenText } from 'utils/Utils'
+import { getPeerString, humanizeSize } from 'utils/Utils'
 import { torrentsHost } from 'utils/Hosts'
 import { NoImageIcon } from 'icons'
 import DialogTorrentDetailsContent from 'components/DialogTorrentDetailsContent'
@@ -42,7 +42,9 @@ const Torrent = ({ torrent }) => {
 
   const getParsedTitle = () => {
     const parse = key => ptt.parse(title || '')?.[key] || ptt.parse(name || '')?.[key]
+
     const titleStrings = []
+
     let parsedTitle = parse('title')
     const parsedYear = parse('year')
     const parsedResolution = parse('resolution')
@@ -90,7 +92,7 @@ const Torrent = ({ torrent }) => {
         <TorrentCardDescription>
           <div className='description-title-wrapper'>
             <div className='description-section-name'>{t('Name')}</div>
-            <div className='description-torrent-title'>{shortenText(parsedTitle, 255)}</div>
+            <div className='description-torrent-title'>{parsedTitle}</div>
           </div>
 
           <div className='description-statistics-wrapper'>

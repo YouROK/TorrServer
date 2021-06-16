@@ -62,5 +62,5 @@ export const SnakeWrapper = styled.div`
 
 export const PercentagePiece = styled.div`
   background: ${completeColor};
-  height: ${({ percentage }) => (percentage)}%;
+  height: ${({ percentage }) => percentage}%;
 `
