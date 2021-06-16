@@ -116,7 +116,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
     if (torrentParsedName?.resolution && !title.includes(torrentParsedName?.resolution))
       newNameStrings.push(torrentParsedName?.resolution)
 
-    return newNameStrings.join(' ')
+    return newNameStrings.join('. ')
   }
 
   return (
