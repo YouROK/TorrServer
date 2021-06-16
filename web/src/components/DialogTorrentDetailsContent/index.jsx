@@ -1,5 +1,5 @@
 import { NoImageIcon } from 'icons'
-import { humanizeSize } from 'utils/Utils'
+import { humanizeSize, removeRedundantCharacters } from 'utils/Utils'
 import { useEffect, useState } from 'react'
 import { Button, ButtonGroup } from '@material-ui/core'
 import ptt from 'parse-torrent-title'
@@ -102,21 +102,27 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
   const bufferSize = settings?.PreloadBuffer ? Capacity : 33554432 // Default is 32mb if PreloadBuffer is false
 
   const getParsedTitle = () => {
-    const newNameStrings = []
+    const newNameStringArr = []
 
     const torrentParsedName = name && ptt.parse(name)
 
     if (title !== name) {
-      newNameStrings.push(title)
-    } else if (torrentParsedName?.title) newNameStrings.push(torrentParsedName?.title)
+      newNameStringArr.push(removeRedundantCharacters(title))
+    } else if (torrentParsedName?.title) newNameStringArr.push(torrentParsedName?.title)
 
     // These 2 checks are needed to get year and resolution from torrent name if title does not have this info
     if (torrentParsedName?.year && !title.includes(torrentParsedName?.year))
-      newNameStrings.push(torrentParsedName?.year)
+      newNameStringArr.push(torrentParsedName?.year)
     if (torrentParsedName?.resolution && !title.includes(torrentParsedName?.resolution))
-      newNameStrings.push(torrentParsedName?.resolution)
+      newNameStringArr.push(torrentParsedName?.resolution)
 
-    return newNameStrings.join('. ')
+    const newNameString = newNameStringArr.join('. ')
+
+    // removeRedundantCharacters is returning ".." if it was "..."
+    const lastDotShouldBeAdded =
+      newNameString[newNameString.length - 1] === '.' && newNameString[newNameString.length - 2] === '.'
+
+    return lastDotShouldBeAdded ? `${newNameString}.` : newNameString
   }
 
   return (

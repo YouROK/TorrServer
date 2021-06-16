@@ -6,7 +6,7 @@ import {
   Close as CloseIcon,
   Delete as DeleteIcon,
 } from '@material-ui/icons'
-import { getPeerString, humanizeSize } from 'utils/Utils'
+import { getPeerString, humanizeSize, removeRedundantCharacters } from 'utils/Utils'
 import { torrentsHost } from 'utils/Hosts'
 import { NoImageIcon } from 'icons'
 import DialogTorrentDetailsContent from 'components/DialogTorrentDetailsContent'
@@ -45,7 +45,7 @@ const Torrent = ({ torrent }) => {
 
     const titleStrings = []
 
-    let parsedTitle = parse('title')
+    let parsedTitle = removeRedundantCharacters(parse('title'))
     const parsedYear = parse('year')
     const parsedResolution = parse('resolution')
     if (parsedTitle) titleStrings.push(parsedTitle)

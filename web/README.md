@@ -8,7 +8,8 @@
 > `http://192.168.78.4:8090` - correct
 >
 > `http://192.168.78.4:8090/` - wrong
-3. `yarn start`
+3. in `.env` file add TMDB api key
+4. `yarn start`
 
 ### Eslint
 > Prettier will fix the code every time the code is saved

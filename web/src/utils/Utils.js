@@ -11,3 +11,33 @@ export function getPeerString(torrent) {
 
 export const shortenText = (text, sympolAmount) =>
   text ? text.slice(0, sympolAmount) + (text.length > sympolAmount ? '…' : '') : ''
+
+export const removeRedundantCharacters = string => {
+  let newString = string
+  const brackets = [
+    ['(', ')'],
+    ['[', ']'],
+    ['{', '}'],
+  ]
+
+  brackets.forEach(el => {
+    const leftBracketRegexFormula = `\\${el[0]}`
+    const leftBracketRegex = new RegExp(leftBracketRegexFormula, 'g')
+    const leftBracketAmount = [...newString.matchAll(leftBracketRegex)].length
+    const rightBracketRegexFormula = `\\${el[1]}`
+    const rightBracketRegex = new RegExp(rightBracketRegexFormula, 'g')
+    const rightBracketAmount = [...newString.matchAll(rightBracketRegex)].length
+
+    if (leftBracketAmount !== rightBracketAmount) {
+      const removeFormula = `(\\${el[0]})(?!.*\\1).*`
+      const removeRegex = new RegExp(removeFormula, 'g')
+      newString = newString.replace(removeRegex, '')
+    }
+  })
+
+  const hasThreeDotsAtTheEnd = !!newString.match(/\.{3}$/g)
+
+  const trimmedString = newString.replace(/[\\.| ]+$/g, '').trim()
+
+  return hasThreeDotsAtTheEnd ? `${trimmedString}..` : trimmedString
+}
