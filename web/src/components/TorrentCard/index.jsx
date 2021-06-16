@@ -40,7 +40,19 @@ const Torrent = ({ torrent }) => {
   const dropTorrent = () => axios.post(torrentsHost(), { action: 'drop', hash })
   const deleteTorrent = () => axios.post(torrentsHost(), { action: 'rem', hash })
 
-  const parsedTitle = (title || name) && ptt.parse(title || name).title
+  const getParsedTitle = () => {
+    const parse = key => ptt.parse(title || '')?.[key] || ptt.parse(name || '')?.[key]
+    const titleStrings = []
+    let parsedTitle = parse('title')
+    const parsedYear = parse('year')
+    const parsedResolution = parse('resolution')
+    if (parsedTitle) titleStrings.push(parsedTitle)
+    if (parsedYear) titleStrings.push(`(${parsedYear})`)
+    if (parsedResolution) titleStrings.push(`[${parsedResolution}]`)
+    parsedTitle = titleStrings.join(' ')
+    return { parsedTitle }
+  }
+  const { parsedTitle } = getParsedTitle()
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const handleClickOpenEditDialog = () => setIsEditDialogOpen(true)
@@ -78,7 +90,7 @@ const Torrent = ({ torrent }) => {
         <TorrentCardDescription>
           <div className='description-title-wrapper'>
             <div className='description-section-name'>{t('Name')}</div>
-            <div className='description-torrent-title'>{shortenText(parsedTitle, 100)}</div>
+            <div className='description-torrent-title'>{shortenText(parsedTitle, 255)}</div>
           </div>
 
           <div className='description-statistics-wrapper'>

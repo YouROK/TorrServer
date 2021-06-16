@@ -1,5 +1,5 @@
 import { NoImageIcon } from 'icons'
-import { humanizeSize, shortenText } from 'utils/Utils'
+import { humanizeSize } from 'utils/Utils'
 import { useEffect, useState } from 'react'
 import { Button, ButtonGroup } from '@material-ui/core'
 import ptt from 'parse-torrent-title'
