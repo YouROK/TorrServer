@@ -2,7 +2,7 @@
   "About": "О сервере",
   "Actions": "Действия",
   "Add": "Добавить",
-  "AddDialogTorrentTitle": "Имя (пустой для имени из торрента)",
+  "AddDialogTorrentTitle": "Название (оставьте пустым для имени из торрента)",
   "AddFromLink": "Добавить",
   "AddNewTorrent": "Добавить новый торрент",
   "AddPosterLinkInput": "Ссылка на постер",
@@ -48,7 +48,6 @@
   "EditTorrent": "Изменить торрент",
   "EnableIPv6": "IPv6",
   "Episode": "Серия",
-  "Files": "Файлы",
   "ForceEncrypt": "Принудительное шифрование заголовков",
   "FromLatestFile": "C последнего файла",
   "Full": "Полный",
@@ -60,7 +59,7 @@
   "Offline": "Сервер не доступен",
   "OK": "OK",
   "OpenLink": "Открыть",
-  "Peers": "Подкл./Пиры",
+  "Peers": "[Подкл.] Пиры",
   "PeersListenPort": "Порт для входящих подключений",
   "PEX": "PEX (Peer Exchange)",
   "PiecesCount": "Кол-во блоков",
@@ -114,6 +113,5 @@
   "UseDiskDesc": "Рекомендуется использовать внешние носители на устройствах с flash-памятью",
   "UTP": "μTP (Micro Transport Protocol)",
   "Viewed": "Просм.",
-  "WrongTorrentSource": "Неправильный torrent-источник",
-  "Year": "Год"
+  "WrongTorrentSource": "Неправильный torrent-источник"
 }

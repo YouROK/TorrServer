@@ -1,5 +1,5 @@
 import { NoImageIcon } from 'icons'
-import { humanizeSize, shortenText } from 'utils/Utils'
+import { humanizeSize } from 'utils/Utils'
 import { useEffect, useState } from 'react'
 import { Button, ButtonGroup } from '@material-ui/core'
 import ptt from 'parse-torrent-title'
@@ -110,10 +110,10 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
       newNameStrings.push(title)
     } else if (torrentParsedName?.title) newNameStrings.push(torrentParsedName?.title)
 
-    if (torrentParsedName?.year) newNameStrings.push(torrentParsedName?.year)
-    if (torrentParsedName?.resolution) newNameStrings.push(torrentParsedName?.resolution)
+    // if (torrentParsedName?.year) newNameStrings.push(torrentParsedName?.year)
+    // if (torrentParsedName?.resolution) newNameStrings.push(torrentParsedName?.resolution)
 
-    return newNameStrings.join('. ')
+    return newNameStrings.join(' ')
   }
 
   return (
@@ -146,11 +146,11 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
               <div>
                 {title && name !== title ? (
                   <>
-                    <SectionTitle>{shortenText(getParsedTitle(), 55)}</SectionTitle>
-                    <SectionSubName mb={20}>{shortenText(ptt.parse(name).title, 110)}</SectionSubName>
+                    <SectionTitle>{ptt.parse(name).title}</SectionTitle>
+                    <SectionSubName mb={20}>{getParsedTitle()}</SectionSubName>
                   </>
                 ) : (
-                  <SectionTitle mb={20}>{shortenText(getParsedTitle(), 55)}</SectionTitle>
+                  <SectionTitle mb={20}>{getParsedTitle()}</SectionTitle>
                 )}
 
                 <WidgetWrapper>
