@@ -2,7 +2,6 @@ import { useTranslation } from 'react-i18next'
 import { NoImageIcon } from 'icons'
 import { IconButton, InputAdornment, TextField } from '@material-ui/core'
 import { CheckBox as CheckBoxIcon } from '@material-ui/icons'
-import { useState } from 'react'
 
 import {
   ClearPosterButton,
@@ -57,43 +56,56 @@ export default function RightSideComponent({
   return (
     <RightSide>
       <RightSideContainer isHidden={!isTorrentSourceCorrect}>
-        <TextField
-          value={originalTorrentTitle}
-          margin='dense'
-          // label={t('Title')}
-          label='Оригинальное название торрента'
-          type='text'
-          fullWidth
-          disabled={isCustomTitleEnabled}
-          InputProps={{ readOnly: true }}
-        />
-        <TextField
-          onChange={handleTitleChange}
-          onFocus={() => setIsCustomTitleEnabled(true)}
-          onBlur={({ target: { value } }) => !value && setIsCustomTitleEnabled(false)}
-          value={title}
-          margin='dense'
-          label='Использовать свое название (не обязательно)'
-          type='text'
-          fullWidth
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position='end'>
-                <IconButton
-                  style={{ padding: '0 0 0 7px' }}
-                  onClick={() => {
-                    setTitle('')
-                    setIsCustomTitleEnabled(!isCustomTitleEnabled)
-                    updateTitleFromSource()
-                    setIsUserInteractedWithPoster(false)
-                  }}
-                >
-                  <CheckBoxIcon style={{ color: isCustomTitleEnabled ? 'green' : 'gray' }} />
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-        />
+        {originalTorrentTitle ? (
+          <>
+            <TextField
+              value={originalTorrentTitle}
+              margin='dense'
+              // label={t('Title')}
+              label='Оригинальное название торрента'
+              type='text'
+              fullWidth
+              disabled={isCustomTitleEnabled}
+              InputProps={{ readOnly: true }}
+            />
+            <TextField
+              onChange={handleTitleChange}
+              onFocus={() => setIsCustomTitleEnabled(true)}
+              onBlur={({ target: { value } }) => !value && setIsCustomTitleEnabled(false)}
+              value={title}
+              margin='dense'
+              label='Использовать свое название (не обязательно)'
+              type='text'
+              fullWidth
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position='end'>
+                    <IconButton
+                      style={{ padding: '0 0 0 7px' }}
+                      onClick={() => {
+                        setTitle('')
+                        setIsCustomTitleEnabled(!isCustomTitleEnabled)
+                        updateTitleFromSource()
+                        setIsUserInteractedWithPoster(false)
+                      }}
+                    >
+                      <CheckBoxIcon style={{ color: isCustomTitleEnabled ? 'green' : 'gray' }} />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </>
+        ) : (
+          <TextField
+            onChange={handleTitleChange}
+            value={title}
+            margin='dense'
+            label='Использовать свое название (не обязательно)'
+            type='text'
+            fullWidth
+          />
+        )}
         <TextField
           onChange={handlePosterUrlChange}
           value={posterUrl}
@@ -124,7 +136,9 @@ export default function RightSideComponent({
               onClick={() => {
                 const newLanguage = posterSearchLanguage === 'en' ? 'ru' : 'en'
                 setPosterSearchLanguage(newLanguage)
-                posterSearch(isCustomTitleEnabled ? title : parsedTitle, newLanguage, { shouldRefreshMainPoster: true })
+                posterSearch(isCustomTitleEnabled ? title : originalTorrentTitle ? parsedTitle : title, newLanguage, {
+                  shouldRefreshMainPoster: true,
+                })
               }}
               showbutton={+isPosterUrlCorrect}
               color='primary'

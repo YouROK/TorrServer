@@ -9,8 +9,6 @@ import useChangeLanguage from 'utils/useChangeLanguage'
 import { useMediaQuery } from '@material-ui/core'
 import CircularProgress from '@material-ui/core/CircularProgress'
 import usePreviousState from 'utils/usePreviousState'
-import parseTorrent from 'parse-torrent'
-import ptt from 'parse-torrent-title'
 
 import { checkImageURL, getMoviePosters, chechTorrentSource, parseTorrentTitle } from './helpers'
 import { ButtonWrapper, Content, Header } from './style'
@@ -25,6 +23,7 @@ export default function AddDialog({
   poster: originalPoster,
 }) {
   const { t } = useTranslation()
+  const isEditMode = !!originalHash
   const [torrentSource, setTorrentSource] = useState(originalHash || '')
   const [title, setTitle] = useState(originalTitle || '')
   const [originalTorrentTitle, setOriginalTorrentTitle] = useState('')
@@ -33,13 +32,12 @@ export default function AddDialog({
   const [isPosterUrlCorrect, setIsPosterUrlCorrect] = useState(false)
   const [isTorrentSourceCorrect, setIsTorrentSourceCorrect] = useState(false)
   const [posterList, setPosterList] = useState()
-  const [isUserInteractedWithPoster, setIsUserInteractedWithPoster] = useState(false)
+  const [isUserInteractedWithPoster, setIsUserInteractedWithPoster] = useState(isEditMode)
   const [currentLang] = useChangeLanguage()
   const [selectedFile, setSelectedFile] = useState()
   const [posterSearchLanguage, setPosterSearchLanguage] = useState(currentLang === 'ru' ? 'ru' : 'en')
   const [isLoadingButton, setIsLoadingButton] = useState(false)
   const [skipDebounce, setSkipDebounce] = useState(false)
-  const [isEditMode, setIsEditMode] = useState(false)
   const [isCustomTitleEnabled, setIsCustomTitleEnabled] = useState(false)
 
   const fullScreen = useMediaQuery('@media (max-width:930px)')
@@ -49,9 +47,22 @@ export default function AddDialog({
       if (!originalName) return
 
       setSkipDebounce(true)
+      setTitle('')
+      setIsCustomTitleEnabled(false)
       setOriginalTorrentTitle(originalName)
       setParsedTitle(parsedTitle)
     })
+  }, [selectedFile, torrentSource])
+
+  useEffect(() => {
+    if (!selectedFile && !torrentSource) {
+      setTitle('')
+      setOriginalTorrentTitle('')
+      setIsCustomTitleEnabled(false)
+      setPosterList()
+      removePoster()
+      setIsUserInteractedWithPoster(false)
+    }
   }, [selectedFile, torrentSource])
 
   const removePoster = () => {
@@ -59,17 +70,15 @@ export default function AddDialog({
     setPosterUrl('')
   }
 
-  // useEffect(() => {
-  //   if (originalHash) {
-  //     setIsEditMode(true)
-
-  //     checkImageURL(posterUrl).then(correctImage => {
-  //       correctImage ? setIsPosterUrlCorrect(true) : removePoster()
-  //     })
-  //   }
-  //   // This is needed only on mount
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [])
+  useEffect(() => {
+    if (originalHash) {
+      checkImageURL(posterUrl).then(correctImage => {
+        correctImage ? setIsPosterUrlCorrect(true) : removePoster()
+      })
+    }
+    // This is needed only on mount. Do not remove line below
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const posterSearch = useMemo(
     () =>
@@ -130,30 +139,25 @@ export default function AddDialog({
     if (skipDebounce) {
       posterSearch(title || parsedTitle, posterSearchLanguage)
       setSkipDebounce(false)
-    } else if (title === '') {
+    } else if (!title) {
       if (parsedTitle) {
         posterSearch(parsedTitle, posterSearchLanguage)
       } else {
-        removePoster()
+        !isUserInteractedWithPoster && removePoster()
       }
     } else {
       delayedPosterSearch(title, posterSearchLanguage)
     }
-    // title === '' && !parsedTitle
-    //   ? removePoster()
-    //   : title === '' && parsedTitle
-    //   ? posterSearch(parsedTitle, posterSearchLanguage)
-    //   : delayedPosterSearch(title, posterSearchLanguage)
-  }, [title, parsedTitle, prevTitleState, delayedPosterSearch, posterSearch, posterSearchLanguage, skipDebounce])
-
-  useEffect(() => {
-    if (!selectedFile && !torrentSource) {
-      setTitle('')
-      setPosterList()
-      removePoster()
-      setIsUserInteractedWithPoster(false)
-    }
-  }, [selectedFile, torrentSource])
+  }, [
+    title,
+    parsedTitle,
+    prevTitleState,
+    delayedPosterSearch,
+    posterSearch,
+    posterSearchLanguage,
+    skipDebounce,
+    isUserInteractedWithPoster,
+  ])
 
   const handleSave = () => {
     setIsLoadingButton(true)
@@ -163,7 +167,7 @@ export default function AddDialog({
         .post(torrentsHost(), {
           action: 'set',
           hash: originalHash,
-          title: title === '' ? originalName : title,
+          title: title || originalName,
           poster: posterUrl,
         })
         .finally(handleClose)
