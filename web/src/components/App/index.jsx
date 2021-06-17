@@ -24,6 +24,7 @@ export const darkTheme = createMuiTheme({
     primary: { main: '#00a572' },
     background: { paper: '#575757' },
   },
+  typography: { fontFamily: 'Open Sans, sans-serif' },
 })
 export const lightTheme = createMuiTheme({
   palette: {
@@ -31,6 +32,7 @@ export const lightTheme = createMuiTheme({
     primary: { main: '#00a572' },
     background: { paper: '#cbe8d9' },
   },
+  typography: { fontFamily: 'Open Sans, sans-serif' },
 })
 
 export default function App() {

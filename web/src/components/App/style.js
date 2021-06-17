@@ -19,7 +19,7 @@ export const CenteredGrid = styled.div`
 
 export const AppHeader = styled.div`
   background: #00a572;
-  color: #1a1a1a;
+  color: #eee;
   grid-area: head;
   display: grid;
   grid-auto-flow: column;
