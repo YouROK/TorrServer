@@ -11,6 +11,8 @@ import TorrentList from 'components/TorrentList'
 import DonateSnackbar from 'components/Donate'
 import DonateDialog from 'components/Donate/DonateDialog'
 import useChangeLanguage from 'utils/useChangeLanguage'
+import { useQuery } from 'react-query'
+import { getTorrents } from 'utils/Utils'
 
 import { AppWrapper, AppHeader, LanguageSwitch } from './style'
 import Sidebar from './Sidebar'
@@ -25,6 +27,13 @@ export default function App() {
   const [isDonationDialogOpen, setIsDonationDialogOpen] = useState(false)
   const [torrServerVersion, setTorrServerVersion] = useState('')
   const [currentLang, changeLang] = useChangeLanguage()
+  const [isOffline, setIsOffline] = useState(false)
+  const { data: torrents, isLoading } = useQuery('torrents', getTorrents, {
+    retry: 1,
+    refetchInterval: 1000,
+    onError: () => setIsOffline(true),
+    onSuccess: () => setIsOffline(false),
+  })
 
   useEffect(() => {
     axios.get(echoHost()).then(({ data }) => setTorrServerVersion(data))
@@ -58,9 +67,14 @@ export default function App() {
             </div>
           </AppHeader>
 
-          <Sidebar isDrawerOpen={isDrawerOpen} setIsDonationDialogOpen={setIsDonationDialogOpen} />
+          <Sidebar
+            isOffline={isOffline}
+            isLoading={isLoading}
+            isDrawerOpen={isDrawerOpen}
+            setIsDonationDialogOpen={setIsDonationDialogOpen}
+          />
 
-          <TorrentList />
+          <TorrentList isOffline={isOffline} torrents={torrents} isLoading={isLoading} />
 
           {isDonationDialogOpen && <DonateDialog onClose={() => setIsDonationDialogOpen(false)} />}
           {!JSON.parse(localStorage.getItem('snackbarIsClosed')) && <DonateSnackbar />}

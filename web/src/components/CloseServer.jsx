@@ -4,7 +4,7 @@ import { PowerSettingsNew as PowerSettingsNewIcon } from '@material-ui/icons'
 import { shutdownHost } from 'utils/Hosts'
 import { useTranslation } from 'react-i18next'
 
-export default function CloseServer() {
+export default function CloseServer({ isOffline, isLoading }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const closeDialog = () => setOpen(false)
@@ -12,7 +12,7 @@ export default function CloseServer() {
 
   return (
     <>
-      <ListItem button key={t('CloseServer')} onClick={openDialog}>
+      <ListItem disabled={isOffline || isLoading} button key={t('CloseServer')} onClick={openDialog}>
         <ListItemIcon>
           <PowerSettingsNewIcon />
         </ListItemIcon>
