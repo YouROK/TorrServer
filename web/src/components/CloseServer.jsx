@@ -3,6 +3,8 @@ import { Button, Dialog, DialogActions, DialogTitle, ListItem, ListItemIcon, Lis
 import { PowerSettingsNew as PowerSettingsNewIcon } from '@material-ui/icons'
 import { shutdownHost } from 'utils/Hosts'
 import { useTranslation } from 'react-i18next'
+import { ThemeProvider } from '@material-ui/core/styles'
+import { lightTheme } from 'components/App'
 
 export default function CloseServer() {
   const { t } = useTranslation()
@@ -20,26 +22,28 @@ export default function CloseServer() {
         <ListItemText primary={t('CloseServer')} />
       </ListItem>
 
-      <Dialog open={open} onClose={closeDialog}>
-        <DialogTitle>{t('CloseServer?')}</DialogTitle>
-        <DialogActions>
-          <Button variant='outlined' onClick={closeDialog} color='primary'>
-            {t('Cancel')}
-          </Button>
+      <ThemeProvider theme={lightTheme}>
+        <Dialog open={open} onClose={closeDialog}>
+          <DialogTitle>{t('CloseServer?')}</DialogTitle>
+          <DialogActions>
+            <Button variant='outlined' onClick={closeDialog} color='primary'>
+              {t('Cancel')}
+            </Button>
 
-          <Button
-            variant='contained'
-            onClick={() => {
-              fetch(shutdownHost())
-              closeDialog()
-            }}
-            color='primary'
-            autoFocus
-          >
-            {t('TurnOff')}
-          </Button>
-        </DialogActions>
-      </Dialog>
+            <Button
+              variant='contained'
+              onClick={() => {
+                fetch(shutdownHost())
+                closeDialog()
+              }}
+              color='primary'
+              autoFocus
+            >
+              {t('TurnOff')}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </ThemeProvider>
     </>
   )
 }
