@@ -50,8 +50,8 @@ export default function LeftSideComponent({
           onChange={handleTorrentSourceChange}
           value={torrentSource}
           margin='dense'
-          label={t('TorrentSourceLink')}
-          helperText={t('TorrentSourceOptions')}
+          label={t('AddDialog.TorrentSourceLink')}
+          helperText={t('AddDialog.TorrentSourceOptions')}
           type='text'
           fullWidth
           onFocus={() => setIsTorrentSourceActive(true)}
@@ -74,11 +74,11 @@ export default function LeftSideComponent({
       ) : (
         <LeftSideBottomSectionNoFile isDragActive={isDragActive} {...getRootProps()}>
           <input {...getInputProps()} />
-          <div>{t('AppendFile.Or')}</div>
+          <div>{t('AddDialog.AppendFile.Or')}</div>
 
           <IconWrapper>
             <AddItemIcon color='primary' />
-            <div>{t('AppendFile.ClickOrDrag')}</div>
+            <div>{t('AddDialog.AppendFile.ClickOrDrag')}</div>
           </IconWrapper>
         </LeftSideBottomSectionNoFile>
       )}

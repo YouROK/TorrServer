@@ -32,14 +32,14 @@ export const checkImageURL = async url => {
 }
 
 const magnetRegex = /^magnet:\?xt=urn:[a-z0-9].*/i
-const hashRegex = /^\b[0-9a-f]{32}\b$|^\b[0-9a-f]{40}\b$|^\b[0-9a-f]{64}\b$/i
+export const hashRegex = /^\b[0-9a-f]{32}\b$|^\b[0-9a-f]{40}\b$|^\b[0-9a-f]{64}\b$/i
 const torrentRegex = /^.*\.(torrent)$/i
 export const chechTorrentSource = source =>
   source.match(hashRegex) !== null || source.match(magnetRegex) !== null || source.match(torrentRegex) !== null
 
 export const parseTorrentTitle = (parsingSource, callback) => {
   parseTorrent.remote(parsingSource, (err, { name, files } = {}) => {
-    if (!name || err) return callback(null)
+    if (!name || err) return callback({ parsedTitle: null, originalName: null })
 
     const torrentName = ptt.parse(name).title
     const nameOfFileInsideTorrent = files ? ptt.parse(files[0].name).title : null
@@ -50,6 +50,6 @@ export const parseTorrentTitle = (parsingSource, callback) => {
       newTitle = torrentName.length < nameOfFileInsideTorrent.length ? torrentName : nameOfFileInsideTorrent
     }
 
-    callback(newTitle)
+    callback({ parsedTitle: newTitle, originalName: name })
   })
 }

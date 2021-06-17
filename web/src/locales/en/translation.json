@@ -2,21 +2,29 @@
   "About": "About",
   "Actions": "Actions",
   "Add": "Add",
+  "AddDialog": {
+    "AddPosterLinkInput": "Poster link",
+    "AddTorrentSourceNotification": "First add your torrent source",
+    "AppendFile": {
+      "Or": "OR",
+      "ClickOrDrag": "CLICK / DRAG & DROP (.torrent)"
+    },
+    "CustomTorrentTitle": "Custom title (optional)",
+    "HashExists": "This torrent is already in database",
+    "OriginalTorrentTitle": "Original torrent title",
+    "TitleBlank": "Title (blank for orig. torrent title)",
+    "TorrentSourceLink": "Torrent source link",
+    "TorrentSourceOptions": "magnet / hash / .torrent file link",
+    "WrongTorrentSource": "Wrong torrent source"
+  },
   "AddFromLink": "Add from Link",
   "AddNewTorrent": "Add new torrent",
-  "AddPosterLinkInput": "Poster link",
   "AddRetrackers": "Add retrackers",
-  "AddTorrentSourceNotification": "First add your torrent source",
-  "AppendFile": {
-    "Or": "OR",
-    "ClickOrDrag": "CLICK / DRAG & DROP (.torrent)"
-  },
   "Buffer": "Preload Buffer / Cache",
   "BufferNote": "Enable “Preload Buffer” in settings to see cache loading progress",
   "Cache": "Cache",
   "CacheSize": "Cache Size (Megabytes)",
   "Cancel": "Cancel",
-  "ChooseLanguage": "Russian",
   "Clear": "Clear",
   "Close": "Close",
   "CloseServer?": "Do you want to turn off server?",
@@ -63,7 +71,6 @@
   "PEX": "PEX (Peer Exchange)",
   "PiecesCount": "Pieces count",
   "PiecesLength": "Pieces length",
-  "PlaylistAll": "Playlist All",
   "Preload": "Preload",
   "PreloadBuffer": "Preload Buffer",
   "ReaderReadAHead": "Reader Read Ahead (5-100%)",
@@ -86,7 +93,6 @@
   "Support": "Support",
   "TCP": "TCP (Transmission Control Protocol)",
   "ThanksToEveryone": "Thanks to everyone who tested and helped.",
-  "Title": "Title",
   "TorrentAdded": "Added",
   "TorrentClosed": "Сlosed",
   "TorrentContent": "Torrent Content",
@@ -96,8 +102,6 @@
   "TorrentInDb": "In DB",
   "TorrentPreload": "Preload",
   "TorrentSize": "Torrent size",
-  "TorrentSourceLink": "Torrent source link",
-  "TorrentSourceOptions": "magnet / hash / .torrent file link",
   "TorrentsSavePath": "Torrents Save Path",
   "TorrentState": "Torrent State",
   "TorrentStatus": "Torrent Status",
@@ -111,6 +115,5 @@
   "UseDisk": "Use Disk for Cache",
   "UseDiskDesc": "Better use external media on flash-based devices",
   "UTP": "μTP (Micro Transport Protocol)",
-  "Viewed": "Viewed",
-  "WrongTorrentSource": "Wrong torrent source"
+  "Viewed": "Viewed"
 }

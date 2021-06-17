@@ -87,10 +87,6 @@ export const TorrentCardDescription = styled.div`
     gap: 3px;
   }
 
-  @media (max-width: 770px) {
-    grid-template-rows: 56% 1fr;
-  }
-
   .description-title-wrapper {
     display: flex;
     flex-direction: column;
@@ -99,7 +95,7 @@ export const TorrentCardDescription = styled.div`
   .description-section-name {
     text-transform: uppercase;
     font-size: 10px;
-    font-weight: 500;
+    font-weight: 600;
     letter-spacing: 0.4px;
     color: #216e47;
 
@@ -170,7 +166,6 @@ export const StyledButton = styled.button`
   background: #268757;
   color: #fff;
   font-size: 0.9rem;
-  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
   letter-spacing: 0.009em;
   padding: 0 12px;
   svg {

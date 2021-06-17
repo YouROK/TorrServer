@@ -1,4 +1,3 @@
-import 'fontsource-roboto'
 import { forwardRef, memo, useState } from 'react'
 import {
   UnfoldMore as UnfoldMoreIcon,
@@ -6,7 +5,7 @@ import {
   Close as CloseIcon,
   Delete as DeleteIcon,
 } from '@material-ui/icons'
-import { getPeerString, humanizeSize, shortenText } from 'utils/Utils'
+import { getPeerString, humanizeSize, removeRedundantCharacters } from 'utils/Utils'
 import { torrentsHost } from 'utils/Hosts'
 import { NoImageIcon } from 'icons'
 import DialogTorrentDetailsContent from 'components/DialogTorrentDetailsContent'
@@ -40,7 +39,21 @@ const Torrent = ({ torrent }) => {
   const dropTorrent = () => axios.post(torrentsHost(), { action: 'drop', hash })
   const deleteTorrent = () => axios.post(torrentsHost(), { action: 'rem', hash })
 
-  const parsedTitle = (title || name) && ptt.parse(title || name).title
+  const getParsedTitle = () => {
+    const parse = key => ptt.parse(title || '')?.[key] || ptt.parse(name || '')?.[key]
+
+    const titleStrings = []
+
+    let parsedTitle = removeRedundantCharacters(parse('title'))
+    const parsedYear = parse('year')
+    const parsedResolution = parse('resolution')
+    if (parsedTitle) titleStrings.push(parsedTitle)
+    if (parsedYear) titleStrings.push(`(${parsedYear})`)
+    if (parsedResolution) titleStrings.push(`[${parsedResolution}]`)
+    parsedTitle = titleStrings.join(' ')
+    return { parsedTitle }
+  }
+  const { parsedTitle } = getParsedTitle()
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const handleClickOpenEditDialog = () => setIsEditDialogOpen(true)
@@ -78,7 +91,7 @@ const Torrent = ({ torrent }) => {
         <TorrentCardDescription>
           <div className='description-title-wrapper'>
             <div className='description-section-name'>{t('Name')}</div>
-            <div className='description-torrent-title'>{shortenText(parsedTitle, 100)}</div>
+            <div className='description-torrent-title'>{parsedTitle}</div>
           </div>
 
           <div className='description-statistics-wrapper'>
