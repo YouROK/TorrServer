@@ -30,6 +30,10 @@ export const Content = styled.div`
     @media (max-width: 930px) {
       grid-template-columns: 1fr;
     }
+
+    @media (max-width: 500px) {
+      align-content: start;
+    }
   `}
 `
 
@@ -66,6 +70,10 @@ export const RightSideContainer = styled.div`
     css`
       display: none;
     `};
+
+    @media (max-width: 500px) {
+      height: 170px;
+    }
   `}
 `
 export const LeftSide = styled.div`
@@ -105,6 +113,15 @@ export const LeftSideBottomSectionNoFile = styled.div`
     place-items: center;
     grid-template-rows: 40% 1fr;
   }
+
+  @media (max-width: 500px) {
+    height: 170px;
+    grid-template-rows: 1fr;
+
+    > div:first-of-type {
+      display: none;
+    }
+  }
 `
 
 export const LeftSideBottomSectionFileSelected = styled.div`
@@ -113,6 +130,10 @@ export const LeftSideBottomSectionFileSelected = styled.div`
 
   @media (max-width: 930px) {
     height: 400px;
+  }
+
+  @media (max-width: 500px) {
+    height: 170px;
   }
 `
 

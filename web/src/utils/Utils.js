@@ -1,3 +1,7 @@
+import axios from 'axios'
+
+import { torrentsHost } from './Hosts'
+
 export function humanizeSize(size) {
   if (!size) return ''
   const i = Math.floor(Math.log(size) / Math.log(1024))
@@ -40,4 +44,13 @@ export const removeRedundantCharacters = string => {
   const trimmedString = newString.replace(/[\\.| ]+$/g, '').trim()
 
   return hasThreeDotsAtTheEnd ? `${trimmedString}..` : trimmedString
+}
+
+export const getTorrents = async () => {
+  try {
+    const { data } = await axios.post(torrentsHost(), { action: 'list' })
+    return data
+  } catch (error) {
+    throw new Error(null)
+  }
 }

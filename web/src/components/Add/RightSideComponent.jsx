@@ -22,6 +22,7 @@ export default function RightSideComponent({
   setIsUserInteractedWithPoster,
   setPosterList,
   isTorrentSourceCorrect,
+  isHashAlreadyExists,
   title,
   parsedTitle,
   posterUrl,
@@ -37,6 +38,7 @@ export default function RightSideComponent({
   updateTitleFromSource,
   isCustomTitleEnabled,
   setIsCustomTitleEnabled,
+  isEditMode,
 }) {
   const { t } = useTranslation()
 
@@ -55,14 +57,13 @@ export default function RightSideComponent({
 
   return (
     <RightSide>
-      <RightSideContainer isHidden={!isTorrentSourceCorrect}>
+      <RightSideContainer isHidden={!isTorrentSourceCorrect || (isHashAlreadyExists && !isEditMode)}>
         {originalTorrentTitle ? (
           <>
             <TextField
               value={originalTorrentTitle}
               margin='dense'
-              // label={t('Title')}
-              label='Оригинальное название торрента'
+              label={t('AddDialog.OriginalTorrentTitle')}
               type='text'
               fullWidth
               disabled={isCustomTitleEnabled}
@@ -74,7 +75,7 @@ export default function RightSideComponent({
               onBlur={({ target: { value } }) => !value && setIsCustomTitleEnabled(false)}
               value={title}
               margin='dense'
-              label='Использовать свое название (не обязательно)'
+              label={t('AddDialog.CustomTorrentTitle')}
               type='text'
               fullWidth
               InputProps={{
@@ -101,7 +102,7 @@ export default function RightSideComponent({
             onChange={handleTitleChange}
             value={title}
             margin='dense'
-            label='Использовать свое название (не обязательно)'
+            label={t('AddDialog.TitleBlank')}
             type='text'
             fullWidth
           />
@@ -110,7 +111,7 @@ export default function RightSideComponent({
           onChange={handlePosterUrlChange}
           value={posterUrl}
           margin='dense'
-          label={t('AddPosterLinkInput')}
+          label={t('AddDialog.AddPosterLinkInput')}
           type='url'
           fullWidth
         />
@@ -165,11 +166,15 @@ export default function RightSideComponent({
       </RightSideContainer>
 
       <RightSideContainer
-        isError={torrentSource && !isTorrentSourceCorrect}
+        isError={torrentSource && (!isTorrentSourceCorrect || isHashAlreadyExists)}
         notificationMessage={
-          !torrentSource ? t('AddTorrentSourceNotification') : !isTorrentSourceCorrect && t('WrongTorrentSource')
+          !torrentSource
+            ? t('AddDialog.AddTorrentSourceNotification')
+            : !isTorrentSourceCorrect
+            ? t('AddDialog.WrongTorrentSource')
+            : isHashAlreadyExists && t('AddDialog.HashExists')
         }
-        isHidden={isTorrentSourceCorrect}
+        isHidden={isEditMode || (isTorrentSourceCorrect && !isHashAlreadyExists)}
       />
     </RightSide>
   )

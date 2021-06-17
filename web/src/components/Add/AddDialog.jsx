@@ -9,6 +9,9 @@ import useChangeLanguage from 'utils/useChangeLanguage'
 import { useMediaQuery } from '@material-ui/core'
 import CircularProgress from '@material-ui/core/CircularProgress'
 import usePreviousState from 'utils/usePreviousState'
+import { useQuery } from 'react-query'
+import { getTorrents } from 'utils/Utils'
+import parseTorrent from 'parse-torrent'
 
 import { checkImageURL, getMoviePosters, chechTorrentSource, parseTorrentTitle } from './helpers'
 import { ButtonWrapper, Content, Header } from './style'
@@ -31,6 +34,7 @@ export default function AddDialog({
   const [posterUrl, setPosterUrl] = useState(originalPoster || '')
   const [isPosterUrlCorrect, setIsPosterUrlCorrect] = useState(false)
   const [isTorrentSourceCorrect, setIsTorrentSourceCorrect] = useState(false)
+  const [isHashAlreadyExists, setIsHashAlreadyExists] = useState(false)
   const [posterList, setPosterList] = useState()
   const [isUserInteractedWithPoster, setIsUserInteractedWithPoster] = useState(isEditMode)
   const [currentLang] = useChangeLanguage()
@@ -39,6 +43,19 @@ export default function AddDialog({
   const [isLoadingButton, setIsLoadingButton] = useState(false)
   const [skipDebounce, setSkipDebounce] = useState(false)
   const [isCustomTitleEnabled, setIsCustomTitleEnabled] = useState(false)
+
+  const { data: torrents } = useQuery('torrents', getTorrents, {
+    retry: 1,
+    refetchInterval: 1000,
+  })
+
+  useEffect(() => {
+    const allHashes = torrents.map(({ hash }) => hash)
+
+    parseTorrent.remote(selectedFile || torrentSource, (err, { infoHash } = {}) => {
+      setIsHashAlreadyExists(allHashes.includes(infoHash))
+    })
+  }, [selectedFile, torrentSource, torrents])
 
   const fullScreen = useMediaQuery('@media (max-width:930px)')
 
@@ -58,6 +75,7 @@ export default function AddDialog({
     if (!selectedFile && !torrentSource) {
       setTitle('')
       setOriginalTorrentTitle('')
+      setParsedTitle('')
       setIsCustomTitleEnabled(false)
       setPosterList()
       removePoster()
@@ -143,6 +161,7 @@ export default function AddDialog({
       if (parsedTitle) {
         posterSearch(parsedTitle, posterSearchLanguage)
       } else {
+        delayedPosterSearch.cancel()
         !isUserInteractedWithPoster && removePoster()
       }
     } else {
@@ -217,6 +236,7 @@ export default function AddDialog({
           setIsUserInteractedWithPoster={setIsUserInteractedWithPoster}
           setPosterList={setPosterList}
           isTorrentSourceCorrect={isTorrentSourceCorrect}
+          isHashAlreadyExists={isHashAlreadyExists}
           title={title}
           parsedTitle={parsedTitle}
           posterUrl={posterUrl}
@@ -231,6 +251,7 @@ export default function AddDialog({
           torrentSource={torrentSource}
           isCustomTitleEnabled={isCustomTitleEnabled}
           setIsCustomTitleEnabled={setIsCustomTitleEnabled}
+          isEditMode={isEditMode}
         />
       </Content>
 
@@ -242,7 +263,7 @@ export default function AddDialog({
         <Button
           variant='contained'
           style={{ minWidth: '110px' }}
-          disabled={!torrentSource}
+          disabled={!torrentSource || isHashAlreadyExists || !isTorrentSourceCorrect}
           onClick={handleSave}
           color='primary'
         >

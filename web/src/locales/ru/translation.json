@@ -2,15 +2,24 @@
   "About": "О сервере",
   "Actions": "Действия",
   "Add": "Добавить",
+  "AddDialog": {
+    "AddPosterLinkInput": "Ссылка на постер",
+    "AddTorrentSourceNotification": "Сначала добавьте torrent-источник",
+    "AppendFile": {
+      "Or": "ИЛИ",
+      "ClickOrDrag": "НАЖМИТЕ / ПЕРЕТАЩИТЕ ФАЙЛ (.torrent)"
+    },
+    "CustomTorrentTitle": "Cвое имя (не обязательно)",
+    "HashExists": "Этот торрент уже есть в базе данных",
+    "OriginalTorrentTitle": "Оригинальное имя торрента",
+    "TitleBlank": "Имя (пустое - ориг. имя торрента)",
+    "TorrentSourceLink": "Ссылка на источник торрента",
+    "TorrentSourceOptions": "magnet-ссылка / хеш / ссылка на .torrent файл",
+    "WrongTorrentSource": "Неправильный torrent-источник"
+  },
   "AddFromLink": "Добавить",
   "AddNewTorrent": "Добавить новый торрент",
-  "AddPosterLinkInput": "Ссылка на постер",
   "AddRetrackers": "Добавлять",
-  "AddTorrentSourceNotification": "Сначала добавьте torrent-источник",
-  "AppendFile": {
-    "Or": "ИЛИ",
-    "ClickOrDrag": "НАЖМИТЕ / ПЕРЕТАЩИТЕ ФАЙЛ (.torrent)"
-  },
   "Buffer": "Предзагрузка / Кеш",
   "BufferNote": "Включите «Наполнять кеш перед началом воспроизведения» в настройках для показа заполнения кеша",
   "Cache": "Кеш",
@@ -85,7 +94,6 @@
   "Support": "Поддержать",
   "TCP": "TCP (Transmission Control Protocol)",
   "ThanksToEveryone": "Спасибо всем, кто тестировал и помогал!",
-  "Title": "Название",
   "TorrentAdded": "Добавлен",
   "TorrentClosed": "Закрыт",
   "TorrentContent": "Содержимое торрента",
@@ -95,8 +103,6 @@
   "TorrentInDb": "Торрент в БД",
   "TorrentPreload": "Предзагрузка",
   "TorrentSize": "Размер торрента",
-  "TorrentSourceLink": "Ссылка на источник торрента",
-  "TorrentSourceOptions": "magnet-ссылка / хеш / ссылка на .torrent файл",
   "TorrentsSavePath": "Путь хранения кеша",
   "TorrentState": "Данные торрента",
   "TorrentStatus": "Состояние торрента",
@@ -110,6 +116,5 @@
   "UseDisk": "Использовать диск для кеша",
   "UseDiskDesc": "Рекомендуется использовать внешние носители на устройствах с flash-памятью",
   "UTP": "μTP (Micro Transport Protocol)",
-  "Viewed": "Просм.",
-  "WrongTorrentSource": "Неправильный torrent-источник"
+  "Viewed": "Просм."
 }

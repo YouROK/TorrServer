@@ -1,21 +1,11 @@
 import { useState } from 'react'
 import { Typography } from '@material-ui/core'
-import { torrentsHost } from 'utils/Hosts'
 import TorrentCard from 'components/TorrentCard'
-import axios from 'axios'
 import CircularProgress from '@material-ui/core/CircularProgress'
 import { TorrentListWrapper, CenteredGrid } from 'components/App/style'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from 'react-query'
-
-const getTorrents = async () => {
-  try {
-    const { data } = await axios.post(torrentsHost(), { action: 'list' })
-    return data
-  } catch (error) {
-    throw new Error(null)
-  }
-}
+import { getTorrents } from 'utils/Utils'
 
 export default function TorrentList() {
   const { t } = useTranslation()
