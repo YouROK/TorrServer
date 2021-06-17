@@ -19,14 +19,14 @@ export const CenteredGrid = styled.div`
 
 export const AppHeader = styled.div`
   background: #00a572;
-  color: #eee;
+  color: #fff;
   grid-area: head;
   display: grid;
   grid-auto-flow: column;
   align-items: center;
   grid-template-columns: repeat(2, max-content) 1fr;
   box-shadow: 0px 2px 4px -1px rgb(0 0 0 / 20%), 0px 4px 5px 0px rgb(0 0 0 / 14%), 0px 1px 10px 0px rgb(0 0 0 / 12%);
-  padding: 0 24px;
+  padding: 0 16px;
   z-index: 3;
 `
 export const AppSidebarStyle = styled.div`
@@ -77,7 +77,7 @@ export const LanguageSwitch = styled.div`
   font-weight: 600;
   display: grid;
   place-items: center;
-  color: #eee;
+  color: #fff;
 
   :hover {
     background: #7ec9a3;

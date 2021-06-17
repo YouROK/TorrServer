@@ -26,8 +26,6 @@ const Sidebar = ({ isDrawerOpen, setIsDonationDialogOpen, isOffline, isLoading }
       <Divider />
       <List>
         <SettingsDialog />
-      </List>
-      <List>
         <AboutDialog />
         <ListItem button onClick={() => setIsDonationDialogOpen(true)}>
           <ListItemIcon>
