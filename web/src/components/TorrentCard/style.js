@@ -166,7 +166,6 @@ export const StyledButton = styled.button`
   background: #268757;
   color: #fff;
   font-size: 0.9rem;
-  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
   letter-spacing: 0.009em;
   padding: 0 12px;
   svg {

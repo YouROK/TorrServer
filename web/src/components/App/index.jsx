@@ -11,8 +11,9 @@ import axios from 'axios'
 import TorrentList from 'components/TorrentList'
 import DonateSnackbar from 'components/Donate'
 import DonateDialog from 'components/Donate/DonateDialog'
+import useChangeLanguage from 'utils/useChangeLanguage'
 
-import { AppWrapper, AppHeader } from './style'
+import { AppWrapper, AppHeader, LanguageSwitch } from './style'
 import Sidebar from './Sidebar'
 
 export default function App() {
@@ -34,6 +35,7 @@ export default function App() {
       }),
     [prefersDarkMode],
   )
+  const [currentLang, changeLang] = useChangeLanguage()
 
   useEffect(() => {
     axios.get(echoHost()).then(({ data }) => setTorrServerVersion(data))
@@ -59,6 +61,12 @@ export default function App() {
             <Typography variant='h6' noWrap>
               TorrServer {torrServerVersion}
             </Typography>
+
+            <div style={{ justifySelf: 'end' }}>
+              <LanguageSwitch onClick={() => (currentLang === 'en' ? changeLang('ru') : changeLang('en'))}>
+                {currentLang === 'en' ? 'RU' : 'EN'}
+              </LanguageSwitch>
+            </div>
           </AppHeader>
 
           <Sidebar isDrawerOpen={isDrawerOpen} setIsDonationDialogOpen={setIsDonationDialogOpen} />

@@ -21,8 +21,10 @@ export const AppHeader = styled.div`
   background: #00a572;
   color: rgba(0, 0, 0, 0.87);
   grid-area: head;
-  display: flex;
+  display: grid;
+  grid-auto-flow: column;
   align-items: center;
+  grid-template-columns: repeat(2, max-content) 1fr;
   box-shadow: 0px 2px 4px -1px rgb(0 0 0 / 20%), 0px 4px 5px 0px rgb(0 0 0 / 14%), 0px 1px 10px 0px rgb(0 0 0 / 12%);
   padding: 0 24px;
   z-index: 3;
@@ -61,5 +63,28 @@ export const TorrentListWrapper = styled.div`
 
   @media (max-width: 700px) {
     grid-template-columns: 1fr;
+  }
+`
+
+export const LanguageSwitch = styled.div`
+  cursor: pointer;
+  border-radius: 50%;
+  background: #56b887;
+  height: 35px;
+  width: 35px;
+  transition: all 0.2s;
+  font-weight: 500;
+  display: grid;
+  place-items: center;
+  color: #44795e;
+
+  :hover {
+    background: #7ec9a3;
+  }
+
+  @media (max-width: 700px) {
+    height: 28px;
+    width: 28px;
+    font-size: 12px;
   }
 `
