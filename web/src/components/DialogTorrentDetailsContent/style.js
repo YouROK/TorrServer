@@ -113,7 +113,7 @@ export const SectionTitle = styled.div`
   ${({ mb }) => css`
     ${mb && `margin-bottom: ${mb}px`};
     font-size: 35px;
-    font-weight: 200;
+    font-weight: 300;
     line-height: 1;
     word-break: break-word;
 
@@ -187,7 +187,7 @@ export const WidgetFieldTitle = styled.div`
   text-transform: uppercase;
   font-size: 11px;
   margin-bottom: 2px;
-  font-weight: 500;
+  font-weight: 600;
 `
 
 export const WidgetFieldIcon = styled.div`

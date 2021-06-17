@@ -49,6 +49,7 @@ export default function App() {
           secondary: { main: '#ffa724' },
           tonalOffset: 0.2,
         },
+        typography: { fontFamily: 'Open Sans, sans-serif' },
       }),
     [prefersDarkMode],
   )

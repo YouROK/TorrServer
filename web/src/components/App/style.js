@@ -74,7 +74,7 @@ export const LanguageSwitch = styled.div`
   height: 35px;
   width: 35px;
   transition: all 0.2s;
-  font-weight: 500;
+  font-weight: 600;
   display: grid;
   place-items: center;
   color: #eee;
