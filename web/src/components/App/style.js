@@ -86,5 +86,6 @@ export const LanguageSwitch = styled.div`
   @media (max-width: 700px) {
     height: 28px;
     width: 28px;
+    font-size: 12px;
   }
 `

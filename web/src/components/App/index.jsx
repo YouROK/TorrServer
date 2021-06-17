@@ -93,14 +93,19 @@ export default function App() {
 
             <div style={{ justifySelf: 'end' }}>
               <LanguageSwitch onClick={() => (currentLang === 'en' ? changeLang('ru') : changeLang('en'))}>
-                {currentLang === 'en' ? 'ru' : 'en'}
+                {currentLang === 'en' ? 'RU' : 'EN'}
               </LanguageSwitch>
             </div>
           </AppHeader>
           <ThemeProvider theme={darkTheme}>
-            <Sidebar isDrawerOpen={isDrawerOpen} setIsDonationDialogOpen={setIsDonationDialogOpen} />
+            <Sidebar
+              isOffline={isOffline}
+              isLoading={isLoading}
+              isDrawerOpen={isDrawerOpen}
+              setIsDonationDialogOpen={setIsDonationDialogOpen}
+            />
           </ThemeProvider>
-          <TorrentList />
+          <TorrentList isOffline={isOffline} torrents={torrents} isLoading={isLoading} />
           <ThemeProvider theme={lightTheme}>
             {isDonationDialogOpen && <DonateDialog onClose={() => setIsDonationDialogOpen(false)} />}
           </ThemeProvider>

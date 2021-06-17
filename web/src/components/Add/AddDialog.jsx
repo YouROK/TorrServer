@@ -270,7 +270,7 @@ export default function AddDialog({
             {isLoadingButton ? (
               <CircularProgress style={{ color: 'white' }} size={20} />
             ) : (
-              t(isEditMode ? 'Save' : 'Add' )
+              t(isEditMode ? 'Save' : 'Add')
             )}
           </Button>
         </ButtonWrapper>
