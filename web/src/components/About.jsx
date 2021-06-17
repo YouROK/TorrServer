@@ -61,22 +61,22 @@ export default function AboutDialog() {
               </center>
               <br />
               <h2>{t('SpecialThanks')}</h2>
-              <b>anacrolix Matt Joiner</b>
+              <b>anacrolix Matt Joiner</b>&nbsp;
               <a style={{ color: '#00a572' }} href='https://github.com/anacrolix/'>
                 github.com/anacrolix
               </a>
               <br />
-              <b>nikk</b>
+              <b>nikk</b>&nbsp;
               <a style={{ color: '#00a572' }} href='https://github.com/tsynik'>
                 github.com/tsynik
               </a>
               <br />
-              <b>dancheskus</b>
+              <b>dancheskus</b>&nbsp;
               <a style={{ color: '#00a572' }} href='https://github.com/dancheskus'>
                 github.com/dancheskus
               </a>
               <br />
-              <b>tw1cker Руслан Пахнев</b>
+              <b>tw1cker Руслан Пахнев</b>&nbsp;
               <a style={{ color: '#00a572' }} href='https://github.com/Nemiroff'>
                 github.com/Nemiroff
               </a>
