@@ -33,7 +33,7 @@ export default function AboutDialog() {
         open={open}
         onClose={() => setOpen(false)}
         aria-labelledby='form-dialog-title'
-        fullWidth='true'
+        fullWidth
         maxWidth='sm'
       >
         <DialogTitle id='form-dialog-title'>{t('About')}</DialogTitle>
