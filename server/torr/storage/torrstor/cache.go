@@ -194,11 +194,9 @@ func (c *Cache) cleanPieces() {
 			c.removePiece(p)
 			rems--
 			if rems <= 0 {
-				break
+				utils.FreeOSMemGC()
+				return
 			}
-		}
-		if rems <= 0 {
-			utils.FreeOSMemGC()
 		}
 	}
 }
