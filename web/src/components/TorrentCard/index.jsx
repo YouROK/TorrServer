@@ -1,4 +1,3 @@
-import 'fontsource-roboto'
 import { forwardRef, memo, useState } from 'react'
 import {
   UnfoldMore as UnfoldMoreIcon,
