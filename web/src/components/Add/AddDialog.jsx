@@ -263,7 +263,7 @@ export default function AddDialog({
         <Button
           variant='contained'
           style={{ minWidth: '110px' }}
-          disabled={!torrentSource || isHashAlreadyExists || !isTorrentSourceCorrect}
+          disabled={!torrentSource || (isHashAlreadyExists && !isEditMode) || !isTorrentSourceCorrect}
           onClick={handleSave}
           color='primary'
         >
