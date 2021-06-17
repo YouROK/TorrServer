@@ -16,7 +16,6 @@ import { AppWrapper, AppHeader, LanguageSwitch } from './style'
 import Sidebar from './Sidebar'
 
 const baseTheme = createMuiTheme({
-  overrides: { MuiCssBaseline: { '@global': { html: { WebkitFontSmoothing: 'auto' } } } },
   palette: { primary: { main: '#00a572' }, secondary: { main: '#ffa724' }, tonalOffset: 0.2 },
   typography: { fontFamily: 'Open Sans, sans-serif' },
 })
