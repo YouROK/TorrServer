@@ -64,7 +64,7 @@ export default function App() {
 
             <div style={{ justifySelf: 'end' }}>
               <LanguageSwitch onClick={() => (currentLang === 'en' ? changeLang('ru') : changeLang('en'))}>
-                {currentLang === 'en' ? 'RU' : 'EN'}
+                {currentLang === 'en' ? 'ru' : 'en'}
               </LanguageSwitch>
             </div>
           </AppHeader>

@@ -76,7 +76,7 @@ export const LanguageSwitch = styled.div`
   font-weight: 500;
   display: grid;
   place-items: center;
-  color: #44795e;
+  color: #eee;
 
   :hover {
     background: #7ec9a3;
@@ -85,6 +85,5 @@ export const LanguageSwitch = styled.div`
   @media (max-width: 700px) {
     height: 28px;
     width: 28px;
-    font-size: 12px;
   }
 `
