@@ -15,7 +15,14 @@ import { echoHost } from 'utils/Hosts'
 
 export default function AboutDialog() {
   const { t } = useTranslation()
-  const darkTheme = createMuiTheme({ palette: { type: 'dark', primary: { main: '#00a572' } } })
+  // https://material-ui.com/ru/customization/default-theme/
+  const darkTheme = createMuiTheme({
+    palette: {
+      type: 'dark',
+      primary: { main: '#00a572' },
+      background: { paper: '#575757' },
+    },
+  })
   const [open, setOpen] = useState(false)
   const [torrServerVersion, setTorrServerVersion] = useState('')
   useEffect(() => {
