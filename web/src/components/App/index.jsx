@@ -30,7 +30,7 @@ export const lightTheme = createMuiTheme({
   palette: {
     type: 'light',
     primary: { main: '#00a572' },
-    background: { paper: '#cbe8d9' },
+    background: { paper: '#f1f1f1' },
   },
   typography: { fontFamily: 'Open Sans, sans-serif' },
 })
@@ -92,7 +92,7 @@ export default function App() {
             <Sidebar isDrawerOpen={isDrawerOpen} setIsDonationDialogOpen={setIsDonationDialogOpen} />
           </ThemeProvider>
           <TorrentList />
-          <ThemeProvider theme={darkTheme}>
+          <ThemeProvider theme={lightTheme}>
             {isDonationDialogOpen && <DonateDialog onClose={() => setIsDonationDialogOpen(false)} />}
           </ThemeProvider>
           {!JSON.parse(localStorage.getItem('snackbarIsClosed')) && <DonateSnackbar />}

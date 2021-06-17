@@ -6,6 +6,8 @@ import DeleteIcon from '@material-ui/icons/Delete'
 import { useState } from 'react'
 import { torrentsHost } from 'utils/Hosts'
 import { useTranslation } from 'react-i18next'
+import { ThemeProvider } from '@material-ui/core/styles'
+import { lightTheme } from 'components/App'
 
 const fnRemoveAll = () => {
   fetch(torrentsHost(), {
@@ -46,26 +48,28 @@ export default function RemoveAll() {
         <ListItemText primary={t('RemoveAll')} />
       </ListItem>
 
-      <Dialog open={open} onClose={closeDialog}>
-        <DialogTitle>{t('DeleteTorrents?')}</DialogTitle>
-        <DialogActions>
-          <Button variant='outlined' onClick={closeDialog} color='primary'>
-            {t('Cancel')}
-          </Button>
+      <ThemeProvider theme={lightTheme}>
+        <Dialog open={open} onClose={closeDialog}>
+          <DialogTitle>{t('DeleteTorrents?')}</DialogTitle>
+          <DialogActions>
+            <Button variant='outlined' onClick={closeDialog} color='primary'>
+              {t('Cancel')}
+            </Button>
 
-          <Button
-            variant='contained'
-            onClick={() => {
-              fnRemoveAll()
-              closeDialog()
-            }}
-            color='primary'
-            autoFocus
-          >
-            {t('OK')}
-          </Button>
-        </DialogActions>
-      </Dialog>
+            <Button
+              variant='contained'
+              onClick={() => {
+                fnRemoveAll()
+                closeDialog()
+              }}
+              color='primary'
+              autoFocus
+            >
+              {t('OK')}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </ThemeProvider>
     </>
   )
 }

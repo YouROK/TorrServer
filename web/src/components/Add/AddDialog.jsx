@@ -270,7 +270,11 @@ export default function AddDialog({
             onClick={handleSave}
             color='primary'
           >
-            {isLoadingButton ? <CircularProgress style={{ color: 'white' }} size={20} /> : t(isEditMode ? 'Save' : 'Add')}
+            {isLoadingButton ? (
+              <CircularProgress style={{ color: 'white' }} size={20} />
+            ) : (
+              t(isEditMode ? 'Save' : 'Add' )
+            )}
           </Button>
         </ButtonWrapper>
       </Dialog>
