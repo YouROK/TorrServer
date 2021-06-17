@@ -12,9 +12,26 @@ import TorrentList from 'components/TorrentList'
 import DonateSnackbar from 'components/Donate'
 import DonateDialog from 'components/Donate/DonateDialog'
 import useChangeLanguage from 'utils/useChangeLanguage'
+import { ThemeProvider } from '@material-ui/core/styles'
 
 import { AppWrapper, AppHeader, LanguageSwitch } from './style'
 import Sidebar from './Sidebar'
+
+// https://material-ui.com/ru/customization/default-theme/
+export const darkTheme = createMuiTheme({
+  palette: {
+    type: 'dark',
+    primary: { main: '#00a572' },
+    background: { paper: '#575757' },
+  },
+})
+export const lightTheme = createMuiTheme({
+  palette: {
+    type: 'light',
+    primary: { main: '#00a572' },
+    background: { paper: '#cbe8d9' },
+  },
+})
 
 export default function App() {
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)')
@@ -68,12 +85,13 @@ export default function App() {
               </LanguageSwitch>
             </div>
           </AppHeader>
-
-          <Sidebar isDrawerOpen={isDrawerOpen} setIsDonationDialogOpen={setIsDonationDialogOpen} />
-
+          <ThemeProvider theme={darkTheme}>
+            <Sidebar isDrawerOpen={isDrawerOpen} setIsDonationDialogOpen={setIsDonationDialogOpen} />
+          </ThemeProvider>
           <TorrentList />
-
-          {isDonationDialogOpen && <DonateDialog onClose={() => setIsDonationDialogOpen(false)} />}
+          <ThemeProvider theme={darkTheme}>
+            {isDonationDialogOpen && <DonateDialog onClose={() => setIsDonationDialogOpen(false)} />}
+          </ThemeProvider>
           {!JSON.parse(localStorage.getItem('snackbarIsClosed')) && <DonateSnackbar />}
         </AppWrapper>
       </Div100vh>

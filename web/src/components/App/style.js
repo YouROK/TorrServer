@@ -19,7 +19,7 @@ export const CenteredGrid = styled.div`
 
 export const AppHeader = styled.div`
   background: #00a572;
-  color: rgba(0, 0, 0, 0.87);
+  color: #1a1a1a;
   grid-area: head;
   display: grid;
   grid-auto-flow: column;
@@ -37,7 +37,8 @@ export const AppSidebarStyle = styled.div`
     overflow-x: hidden;
     transition: width 195ms cubic-bezier(0.4, 0, 0.6, 1) 0ms;
     border-right: 1px solid rgba(0, 0, 0, 0.12);
-    background: #eee;
+    background: #575757;
+    color: #eee;
     white-space: nowrap;
   `}
 `

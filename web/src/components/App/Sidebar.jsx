@@ -27,7 +27,6 @@ export default function Sidebar({ isDrawerOpen, setIsDonationDialogOpen }) {
 
       <List>
         <SettingsDialog />
-
         <CloseServer />
       </List>
 
