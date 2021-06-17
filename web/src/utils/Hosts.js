@@ -10,7 +10,6 @@ export const settingsHost = () => `${torrserverHost}/settings`
 export const streamHost = () => `${torrserverHost}/stream`
 export const shutdownHost = () => `${torrserverHost}/shutdown`
 export const echoHost = () => `${torrserverHost}/echo`
-export const playlistAllHost = () => `${torrserverHost}/playlistall/all.m3u`
 export const playlistTorrHost = () => `${torrserverHost}/stream`
 
 export const getTorrServerHost = () => torrserverHost

@@ -6,7 +6,7 @@ export const Header = styled.div`
   color: rgba(0, 0, 0, 0.87);
   font-size: 20px;
   color: #fff;
-  font-weight: 500;
+  font-weight: 600;
   box-shadow: 0px 2px 4px -1px rgb(0 0 0 / 20%), 0px 4px 5px 0px rgb(0 0 0 / 14%), 0px 1px 10px 0px rgb(0 0 0 / 12%);
   padding: 15px 24px;
   position: relative;
@@ -14,6 +14,7 @@ export const Header = styled.div`
 
 export const Content = styled.div`
   ${({ isEditMode }) => css`
+    height: 550px;
     background: linear-gradient(145deg, #e4f6ed, #b5dec9);
     flex: 1;
     display: grid;
@@ -29,6 +30,10 @@ export const Content = styled.div`
     @media (max-width: 930px) {
       grid-template-columns: 1fr;
     }
+
+    @media (max-width: 500px) {
+      align-content: start;
+    }
   `}
 `
 
@@ -38,7 +43,7 @@ export const RightSide = styled.div`
 
 export const RightSideContainer = styled.div`
   ${({ isHidden, notificationMessage, isError }) => css`
-    height: 455px;
+    height: 530px;
 
     ${notificationMessage &&
     css`
@@ -54,7 +59,7 @@ export const RightSideContainer = styled.div`
         background: ${isError ? '#cda184' : '#84cda7'};
         padding: 10px 15px;
         position: absolute;
-        top: 50%;
+        top: 52%;
         left: 50%;
         transform: translate(-50%, -50%);
         border-radius: 5px;
@@ -65,6 +70,10 @@ export const RightSideContainer = styled.div`
     css`
       display: none;
     `};
+
+    @media (max-width: 500px) {
+      height: 170px;
+    }
   `}
 `
 export const LeftSide = styled.div`
@@ -88,7 +97,7 @@ export const LeftSideBottomSectionNoFile = styled.div`
   ${({ isDragActive }) => isDragActive && `border: 4px dashed green`};
 
   justify-items: center;
-  grid-template-rows: 100px 1fr;
+  grid-template-rows: 130px 1fr;
   cursor: pointer;
 
   :hover {
@@ -104,6 +113,15 @@ export const LeftSideBottomSectionNoFile = styled.div`
     place-items: center;
     grid-template-rows: 40% 1fr;
   }
+
+  @media (max-width: 500px) {
+    height: 170px;
+    grid-template-rows: 1fr;
+
+    > div:first-of-type {
+      display: none;
+    }
+  }
 `
 
 export const LeftSideBottomSectionFileSelected = styled.div`
@@ -112,6 +130,10 @@ export const LeftSideBottomSectionFileSelected = styled.div`
 
   @media (max-width: 930px) {
     height: 400px;
+  }
+
+  @media (max-width: 500px) {
+    height: 170px;
   }
 `
 
@@ -281,7 +303,7 @@ export const PosterLanguageSwitch = styled.div`
   display: grid;
   place-items: center;
   color: #e1f4eb;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
 

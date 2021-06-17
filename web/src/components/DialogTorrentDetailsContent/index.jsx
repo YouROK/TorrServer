@@ -1,5 +1,5 @@
 import { NoImageIcon } from 'icons'
-import { humanizeSize, shortenText } from 'utils/Utils'
+import { humanizeSize, removeRedundantCharacters } from 'utils/Utils'
 import { useEffect, useState } from 'react'
 import { Button, ButtonGroup } from '@material-ui/core'
 import ptt from 'parse-torrent-title'
@@ -102,18 +102,27 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
   const bufferSize = settings?.PreloadBuffer ? Capacity : 33554432 // Default is 32mb if PreloadBuffer is false
 
   const getParsedTitle = () => {
-    const newNameStrings = []
+    const newNameStringArr = []
 
     const torrentParsedName = name && ptt.parse(name)
 
     if (title !== name) {
-      newNameStrings.push(title)
-    } else if (torrentParsedName?.title) newNameStrings.push(torrentParsedName?.title)
+      newNameStringArr.push(removeRedundantCharacters(title))
+    } else if (torrentParsedName?.title) newNameStringArr.push(removeRedundantCharacters(torrentParsedName?.title))
 
-    if (torrentParsedName?.year) newNameStrings.push(torrentParsedName?.year)
-    if (torrentParsedName?.resolution) newNameStrings.push(torrentParsedName?.resolution)
+    // These 2 checks are needed to get year and resolution from torrent name if title does not have this info
+    if (torrentParsedName?.year && !newNameStringArr[0].includes(torrentParsedName?.year))
+      newNameStringArr.push(torrentParsedName?.year)
+    if (torrentParsedName?.resolution && !newNameStringArr[0].includes(torrentParsedName?.resolution))
+      newNameStringArr.push(torrentParsedName?.resolution)
 
-    return newNameStrings.join('. ')
+    const newNameString = newNameStringArr.join('. ')
+
+    // removeRedundantCharacters is returning ".." if it was "..."
+    const lastDotShouldBeAdded =
+      newNameString[newNameString.length - 1] === '.' && newNameString[newNameString.length - 2] === '.'
+
+    return lastDotShouldBeAdded ? `${newNameString}.` : newNameString
   }
 
   return (
@@ -145,12 +154,19 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
 
               <div>
                 {title && name !== title ? (
-                  <>
-                    <SectionTitle>{shortenText(getParsedTitle(), 55)}</SectionTitle>
-                    <SectionSubName mb={20}>{shortenText(ptt.parse(name).title, 110)}</SectionSubName>
-                  </>
+                  getParsedTitle().length > 90 ? (
+                    <>
+                      <SectionTitle>{ptt.parse(name).title}</SectionTitle>
+                      <SectionSubName mb={20}>{getParsedTitle()}</SectionSubName>
+                    </>
+                  ) : (
+                    <>
+                      <SectionTitle>{getParsedTitle()}</SectionTitle>
+                      <SectionSubName mb={20}>{ptt.parse(name).title}</SectionSubName>
+                    </>
+                  )
                 ) : (
-                  <SectionTitle mb={20}>{shortenText(getParsedTitle(), 55)}</SectionTitle>
+                  <SectionTitle mb={20}>{getParsedTitle()}</SectionTitle>
                 )}
 
                 <WidgetWrapper>
