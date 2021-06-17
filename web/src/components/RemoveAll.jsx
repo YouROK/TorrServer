@@ -33,14 +33,15 @@ const fnRemoveAll = () => {
     })
 }
 
-export default function RemoveAll() {
+export default function RemoveAll({ isOffline, isLoading }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const closeDialog = () => setOpen(false)
   const openDialog = () => setOpen(true)
+
   return (
     <>
-      <ListItem button key={t('RemoveAll')} onClick={openDialog}>
+      <ListItem disabled={isOffline || isLoading} button key={t('RemoveAll')} onClick={openDialog}>
         <ListItemIcon>
           <DeleteIcon />
         </ListItemIcon>

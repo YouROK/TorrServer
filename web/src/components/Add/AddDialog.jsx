@@ -46,10 +46,7 @@ export default function AddDialog({
   const [skipDebounce, setSkipDebounce] = useState(false)
   const [isCustomTitleEnabled, setIsCustomTitleEnabled] = useState(false)
 
-  const { data: torrents } = useQuery('torrents', getTorrents, {
-    retry: 1,
-    refetchInterval: 1000,
-  })
+  const { data: torrents } = useQuery('torrents', getTorrents, { retry: 1, refetchInterval: 1000 })
 
   useEffect(() => {
     const allHashes = torrents.map(({ hash }) => hash)

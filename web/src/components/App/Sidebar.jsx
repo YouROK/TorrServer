@@ -10,24 +10,26 @@ import SettingsDialog from 'components/Settings'
 import RemoveAll from 'components/RemoveAll'
 import AboutDialog from 'components/About'
 import CloseServer from 'components/CloseServer'
+import { memo } from 'react'
 
 import { AppSidebarStyle } from './style'
 
-export default function Sidebar({ isDrawerOpen, setIsDonationDialogOpen }) {
+const Sidebar = ({ isDrawerOpen, setIsDonationDialogOpen, isOffline, isLoading }) => {
   const { t } = useTranslation()
 
   return (
     <AppSidebarStyle isDrawerOpen={isDrawerOpen}>
       <List>
-        <AddDialogButton />
-        <RemoveAll />
+        <AddDialogButton isOffline={isOffline} isLoading={isLoading} />
+
+        <RemoveAll isOffline={isOffline} isLoading={isLoading} />
       </List>
 
       <Divider />
 
       <List>
         <SettingsDialog />
-        <CloseServer />
+        <CloseServer isOffline={isOffline} isLoading={isLoading} />
       </List>
 
       <Divider />
@@ -45,3 +47,5 @@ export default function Sidebar({ isDrawerOpen, setIsDonationDialogOpen }) {
     </AppSidebarStyle>
   )
 }
+
+export default memo(Sidebar)

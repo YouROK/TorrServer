@@ -13,6 +13,8 @@ import DonateSnackbar from 'components/Donate'
 import DonateDialog from 'components/Donate/DonateDialog'
 import useChangeLanguage from 'utils/useChangeLanguage'
 import { ThemeProvider } from '@material-ui/core/styles'
+import { useQuery } from 'react-query'
+import { getTorrents } from 'utils/Utils'
 
 import { AppWrapper, AppHeader, LanguageSwitch } from './style'
 import Sidebar from './Sidebar'
@@ -56,6 +58,13 @@ export default function App() {
     [prefersDarkMode],
   )
   const [currentLang, changeLang] = useChangeLanguage()
+  const [isOffline, setIsOffline] = useState(false)
+  const { data: torrents, isLoading } = useQuery('torrents', getTorrents, {
+    retry: 1,
+    refetchInterval: 1000,
+    onError: () => setIsOffline(true),
+    onSuccess: () => setIsOffline(false),
+  })
 
   useEffect(() => {
     axios.get(echoHost()).then(({ data }) => setTorrServerVersion(data))
