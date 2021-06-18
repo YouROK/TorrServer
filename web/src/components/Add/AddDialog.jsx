@@ -12,6 +12,8 @@ import usePreviousState from 'utils/usePreviousState'
 import { useQuery } from 'react-query'
 import { getTorrents } from 'utils/Utils'
 import parseTorrent from 'parse-torrent'
+import { ThemeProvider } from '@material-ui/core/styles'
+import { lightTheme } from 'components/App'
 
 import { checkImageURL, getMoviePosters, chechTorrentSource, parseTorrentTitle } from './helpers'
 import { ButtonWrapper, Content, Header } from './style'
@@ -204,69 +206,75 @@ export default function AddDialog({
   }
 
   return (
-    <Dialog
-      open
-      onClose={handleClose}
-      aria-labelledby='form-dialog-title'
-      fullScreen={fullScreen}
-      fullWidth
-      maxWidth='md'
-    >
-      <Header>{t(isEditMode ? 'EditTorrent' : 'AddNewTorrent')}</Header>
+    <ThemeProvider theme={lightTheme}>
+      <Dialog
+        open
+        onClose={handleClose}
+        aria-labelledby='form-dialog-title'
+        fullScreen={fullScreen}
+        fullWidth
+        maxWidth='md'
+      >
+        <Header>{t(isEditMode ? 'EditTorrent' : 'AddNewTorrent')}</Header>
 
-      <Content isEditMode={isEditMode}>
-        {!isEditMode && (
-          <LeftSideComponent
+        <Content isEditMode={isEditMode}>
+          {!isEditMode && (
+            <LeftSideComponent
+              setIsUserInteractedWithPoster={setIsUserInteractedWithPoster}
+              setSelectedFile={setSelectedFile}
+              torrentSource={torrentSource}
+              setTorrentSource={setTorrentSource}
+              selectedFile={selectedFile}
+            />
+          )}
+
+          <RightSideComponent
+            originalTorrentTitle={originalTorrentTitle}
+            setTitle={setTitle}
+            setPosterUrl={setPosterUrl}
+            setIsPosterUrlCorrect={setIsPosterUrlCorrect}
             setIsUserInteractedWithPoster={setIsUserInteractedWithPoster}
-            setSelectedFile={setSelectedFile}
+            setPosterList={setPosterList}
+            isTorrentSourceCorrect={isTorrentSourceCorrect}
+            isHashAlreadyExists={isHashAlreadyExists}
+            title={title}
+            parsedTitle={parsedTitle}
+            posterUrl={posterUrl}
+            isPosterUrlCorrect={isPosterUrlCorrect}
+            posterList={posterList}
+            currentLang={currentLang}
+            posterSearchLanguage={posterSearchLanguage}
+            setPosterSearchLanguage={setPosterSearchLanguage}
+            posterSearch={posterSearch}
+            removePoster={removePoster}
+            updateTitleFromSource={updateTitleFromSource}
             torrentSource={torrentSource}
-            setTorrentSource={setTorrentSource}
-            selectedFile={selectedFile}
+            isCustomTitleEnabled={isCustomTitleEnabled}
+            setIsCustomTitleEnabled={setIsCustomTitleEnabled}
+            isEditMode={isEditMode}
           />
-        )}
+        </Content>
 
-        <RightSideComponent
-          originalTorrentTitle={originalTorrentTitle}
-          setTitle={setTitle}
-          setPosterUrl={setPosterUrl}
-          setIsPosterUrlCorrect={setIsPosterUrlCorrect}
-          setIsUserInteractedWithPoster={setIsUserInteractedWithPoster}
-          setPosterList={setPosterList}
-          isTorrentSourceCorrect={isTorrentSourceCorrect}
-          isHashAlreadyExists={isHashAlreadyExists}
-          title={title}
-          parsedTitle={parsedTitle}
-          posterUrl={posterUrl}
-          isPosterUrlCorrect={isPosterUrlCorrect}
-          posterList={posterList}
-          currentLang={currentLang}
-          posterSearchLanguage={posterSearchLanguage}
-          setPosterSearchLanguage={setPosterSearchLanguage}
-          posterSearch={posterSearch}
-          removePoster={removePoster}
-          updateTitleFromSource={updateTitleFromSource}
-          torrentSource={torrentSource}
-          isCustomTitleEnabled={isCustomTitleEnabled}
-          setIsCustomTitleEnabled={setIsCustomTitleEnabled}
-          isEditMode={isEditMode}
-        />
-      </Content>
+        <ButtonWrapper>
+          <Button onClick={handleClose} color='primary' variant='outlined'>
+            {t('Cancel')}
+          </Button>
 
-      <ButtonWrapper>
-        <Button onClick={handleClose} color='primary' variant='outlined'>
-          {t('Cancel')}
-        </Button>
-
-        <Button
-          variant='contained'
-          style={{ minWidth: '110px' }}
-          disabled={!torrentSource || (isHashAlreadyExists && !isEditMode) || !isTorrentSourceCorrect}
-          onClick={handleSave}
-          color='primary'
-        >
-          {isLoadingButton ? <CircularProgress style={{ color: 'white' }} size={20} /> : t(isEditMode ? 'Save' : 'Add')}
-        </Button>
-      </ButtonWrapper>
-    </Dialog>
+          <Button
+            variant='contained'
+            style={{ minWidth: '110px' }}
+            disabled={!torrentSource || (isHashAlreadyExists && !isEditMode) || !isTorrentSourceCorrect}
+            onClick={handleSave}
+            color='primary'
+          >
+            {isLoadingButton ? (
+              <CircularProgress style={{ color: 'white' }} size={20} />
+            ) : (
+              t(isEditMode ? 'Save' : 'Add')
+            )}
+          </Button>
+        </ButtonWrapper>
+      </Dialog>
+    </ThemeProvider>
   )
 }

@@ -19,14 +19,14 @@ export const CenteredGrid = styled.div`
 
 export const AppHeader = styled.div`
   background: #00a572;
-  color: rgba(0, 0, 0, 0.87);
+  color: #fff;
   grid-area: head;
   display: grid;
   grid-auto-flow: column;
   align-items: center;
   grid-template-columns: repeat(2, max-content) 1fr;
   box-shadow: 0px 2px 4px -1px rgb(0 0 0 / 20%), 0px 4px 5px 0px rgb(0 0 0 / 14%), 0px 1px 10px 0px rgb(0 0 0 / 12%);
-  padding: 0 24px;
+  padding: 0 16px;
   z-index: 3;
 `
 export const AppSidebarStyle = styled.div`
@@ -37,7 +37,8 @@ export const AppSidebarStyle = styled.div`
     overflow-x: hidden;
     transition: width 195ms cubic-bezier(0.4, 0, 0.6, 1) 0ms;
     border-right: 1px solid rgba(0, 0, 0, 0.12);
-    background: #eee;
+    background: #575757;
+    color: #eee;
     white-space: nowrap;
   `}
 `
@@ -76,7 +77,7 @@ export const LanguageSwitch = styled.div`
   font-weight: 600;
   display: grid;
   place-items: center;
-  color: #44795e;
+  color: #fff;
 
   :hover {
     background: #7ec9a3;
