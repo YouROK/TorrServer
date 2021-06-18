@@ -96,6 +96,7 @@ export default function App() {
               </LanguageSwitch>
             </div>
           </AppHeader>
+
           <ThemeProvider theme={darkTheme}>
             <Sidebar
               isOffline={isOffline}
@@ -104,10 +105,13 @@ export default function App() {
               setIsDonationDialogOpen={setIsDonationDialogOpen}
             />
           </ThemeProvider>
+
           <TorrentList isOffline={isOffline} torrents={torrents} isLoading={isLoading} />
+
           <ThemeProvider theme={lightTheme}>
             {isDonationDialogOpen && <DonateDialog onClose={() => setIsDonationDialogOpen(false)} />}
           </ThemeProvider>
+
           {!JSON.parse(localStorage.getItem('snackbarIsClosed')) && <DonateSnackbar />}
         </AppWrapper>
       </Div100vh>
