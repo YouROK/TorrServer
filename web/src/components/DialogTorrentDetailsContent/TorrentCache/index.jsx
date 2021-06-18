@@ -75,7 +75,7 @@ const TorrentCache = ({ cache, isMini }) => {
 
       ctx.lineWidth = borderWidth
       ctx.fillStyle = inProgress
-        ? createGradient(ctx, percentage)
+        ? createGradient(ctx, percentage, pieceSize)
         : isCompleted
         ? completeColor
         : isMini

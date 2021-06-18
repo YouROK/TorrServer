@@ -16,8 +16,8 @@ export const progressColor = '#86beee'
 export const activeColor = '#000'
 export const rangeColor = '#afa6e3'
 
-export const createGradient = (ctx, percentage) => {
-  const gradient = ctx.createLinearGradient(0, 12, 0, 0)
+export const createGradient = (ctx, percentage, pieceSize) => {
+  const gradient = ctx.createLinearGradient(0, pieceSize, 0, 0)
   gradient.addColorStop(0, completeColor)
   gradient.addColorStop(percentage / 100, completeColor)
   gradient.addColorStop(percentage / 100, progressColor)
