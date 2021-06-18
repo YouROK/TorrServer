@@ -46,7 +46,6 @@ export default function App() {
   const baseTheme = useMemo(
     () =>
       createMuiTheme({
-        overrides: { MuiCssBaseline: { '@global': { html: { WebkitFontSmoothing: 'auto' } } } },
         palette: {
           type: prefersDarkMode ? 'dark' : 'light',
           primary: { main: '#00a572' },
