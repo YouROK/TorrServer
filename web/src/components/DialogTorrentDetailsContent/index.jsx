@@ -162,7 +162,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                   ) : (
                     <>
                       <SectionTitle>{getParsedTitle()}</SectionTitle>
-                      <SectionSubName mb={20}>{ptt.parse(name).title}</SectionSubName>
+                      <SectionSubName mb={20}>{ptt.parse(name || '')?.title}</SectionSubName>
                     </>
                   )
                 ) : (

@@ -29,6 +29,7 @@ export default function DetailedView({
     <>
       <DetailedViewWidgetSection>
         <SectionTitle mb={20}>{t('Data')}</SectionTitle>
+
         <WidgetWrapper detailedView>
           <DownlodSpeedWidget data={downloadSpeed} />
           <UploadSpeedWidget data={uploadSpeed} />
