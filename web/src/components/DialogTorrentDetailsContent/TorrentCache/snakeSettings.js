@@ -6,9 +6,9 @@ export const snakeSettings = {
     borderWidth: 1,
     pieceSize: 14,
     gapBetweenPieces: 3,
-    backgroundColor: '#fff',
     borderColor: '#dbf2e8',
     completeColor: '#00a572',
+    backgroundColor: '#fff',
     progressColor: '#b3dfc9',
   },
   mini: {
