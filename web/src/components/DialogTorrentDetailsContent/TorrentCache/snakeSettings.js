@@ -16,10 +16,10 @@ export const snakeSettings = {
     borderWidth: 2,
     pieceSize: 23,
     gapBetweenPieces: 6,
-    backgroundColor: '#dbf2e8',
-    borderColor: '#6cc196',
+    borderColor: '#4db380',
     completeColor: '#4db380',
-    progressColor: '#b3dfc9',
+    backgroundColor: '#dbf2e8',
+    progressColor: '#dbf2e8',
   },
 }
 
