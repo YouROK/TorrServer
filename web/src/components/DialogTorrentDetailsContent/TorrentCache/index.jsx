@@ -6,22 +6,7 @@ import isEqual from 'lodash/isEqual'
 import { useCreateCacheMap } from '../customHooks'
 import getShortCacheMap from './getShortCacheMap'
 import { SnakeWrapper, ScrollNotification } from './style'
-import {
-  defaultBorderWidth,
-  miniCacheMaxHeight,
-  pieceSizeForMiniMap,
-  defaultPieceSize,
-  defaultBackgroundColor,
-  defaultBorderColor,
-  completeColor,
-  activeColor,
-  rangeColor,
-  defaultGapBetweenPieces,
-  miniBackgroundColor,
-  miniBorderWidth,
-  miniGapBetweenPieces,
-  createGradient,
-} from './snakeSettings'
+import { readerColor, rangeColor, createGradient, snakeSettings } from './snakeSettings'
 
 const TorrentCache = ({ cache, isMini }) => {
   const { t } = useTranslation()
@@ -30,10 +15,11 @@ const TorrentCache = ({ cache, isMini }) => {
   const canvasRef = useRef(null)
   const ctxRef = useRef(null)
   const cacheMap = useCreateCacheMap(cache)
+  const settingsTarget = isMini ? 'mini' : 'default'
+  const { borderWidth, pieceSize, gapBetweenPieces, backgroundColor, borderColor, cacheMaxHeight, completeColor } =
+    snakeSettings[settingsTarget]
 
   const canvasWidth = isMini ? width * 0.93 : width
-  const pieceSize = isMini ? pieceSizeForMiniMap : defaultPieceSize
-  const gapBetweenPieces = isMini ? miniGapBetweenPieces : defaultGapBetweenPieces
 
   const pieceSizeWithGap = pieceSize + gapBetweenPieces
   const piecesInOneRow = Math.floor(canvasWidth / pieceSizeWithGap)
@@ -67,7 +53,6 @@ const TorrentCache = ({ cache, isMini }) => {
       const isCompleted = percentage === 100
       const currentRow = i % piecesInOneRow
       const currentColumn = Math.floor(i / piecesInOneRow)
-      const borderWidth = isMini ? miniBorderWidth : defaultBorderWidth
       const fixBlurStroke = borderWidth % 2 === 0 ? 0 : 0.5
       const requiredFix = Math.ceil(borderWidth / 2) + 1 + fixBlurStroke
       const x = currentRow * pieceSize + currentRow * gapBetweenPieces + startingXPoint + requiredFix
@@ -75,26 +60,38 @@ const TorrentCache = ({ cache, isMini }) => {
 
       ctx.lineWidth = borderWidth
       ctx.fillStyle = inProgress
-        ? createGradient(ctx, percentage, pieceSize)
+        ? createGradient(ctx, percentage, settingsTarget)
         : isCompleted
         ? completeColor
-        : isMini
-        ? miniBackgroundColor
-        : defaultBackgroundColor
+        : backgroundColor
       ctx.strokeStyle = isReader
-        ? activeColor
+        ? readerColor
         : inProgress || isCompleted
         ? completeColor
         : isReaderRange
         ? rangeColor
-        : defaultBorderColor
+        : borderColor
 
       ctx.translate(x, y)
       ctx.fillRect(0, 0, pieceSize, pieceSize)
       ctx.strokeRect(0, 0, pieceSize, pieceSize)
       ctx.setTransform(1, 0, 0, 1, 0, 0)
     })
-  }, [cacheMap, height, canvasWidth, piecesInOneRow, isMini, startingXPoint, pieceSize, gapBetweenPieces, source])
+  }, [
+    cacheMap,
+    height,
+    canvasWidth,
+    piecesInOneRow,
+    startingXPoint,
+    pieceSize,
+    gapBetweenPieces,
+    source,
+    backgroundColor,
+    borderColor,
+    borderWidth,
+    settingsTarget,
+    completeColor,
+  ])
 
   return (
     <Measure bounds onResize={({ bounds }) => setDimensions(bounds)}>
@@ -104,7 +101,7 @@ const TorrentCache = ({ cache, isMini }) => {
             <canvas ref={canvasRef} />
           </SnakeWrapper>
 
-          {isMini && height >= miniCacheMaxHeight && <ScrollNotification>{t('ScrollDown')}</ScrollNotification>}
+          {isMini && height >= cacheMaxHeight && <ScrollNotification>{t('ScrollDown')}</ScrollNotification>}
         </div>
       )}
     </Measure>

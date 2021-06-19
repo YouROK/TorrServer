@@ -74,14 +74,13 @@ export const MainSection = styled.section`
   }
 `
 
-export const cacheBackground = '#88cdaa'
 export const CacheSection = styled.section`
   grid-area: cache;
   padding: 40px;
   display: grid;
   align-content: start;
   grid-template-rows: min-content 1fr min-content;
-  background: ${cacheBackground};
+  background: #88cdaa;
 
   @media (max-width: 800px) {
     padding: 20px;

@@ -1,22 +1,30 @@
-import { cacheBackground } from '../style'
-
-export const defaultBorderWidth = 1
-export const miniBorderWidth = 2
-export const defaultPieceSize = 14
-export const pieceSizeForMiniMap = 23
-export const defaultGapBetweenPieces = 3
-export const miniGapBetweenPieces = 6
-export const miniCacheMaxHeight = 340
-
-export const defaultBorderColor = '#dbf2e8'
-export const defaultBackgroundColor = '#fff'
-export const miniBackgroundColor = cacheBackground
-export const completeColor = '#00a572'
-export const progressColor = '#86beee'
-export const activeColor = '#000'
+export const readerColor = '#000'
 export const rangeColor = '#afa6e3'
 
-export const createGradient = (ctx, percentage, pieceSize) => {
+export const snakeSettings = {
+  default: {
+    borderWidth: 1,
+    pieceSize: 14,
+    gapBetweenPieces: 3,
+    backgroundColor: '#fff',
+    borderColor: '#dbf2e8',
+    completeColor: '#00a572',
+    progressColor: '#b3dfc9',
+  },
+  mini: {
+    cacheMaxHeight: 340,
+    borderWidth: 2,
+    pieceSize: 23,
+    gapBetweenPieces: 6,
+    backgroundColor: '#dbf2e8',
+    borderColor: '#6cc196',
+    completeColor: '#4db380',
+    progressColor: '#b3dfc9',
+  },
+}
+
+export const createGradient = (ctx, percentage, snakeType) => {
+  const { pieceSize, completeColor, progressColor } = snakeSettings[snakeType]
   const gradient = ctx.createLinearGradient(0, pieceSize, 0, 0)
   gradient.addColorStop(0, completeColor)
   gradient.addColorStop(percentage / 100, completeColor)

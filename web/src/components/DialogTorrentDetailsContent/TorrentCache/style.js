@@ -1,6 +1,6 @@
 import styled, { css } from 'styled-components'
 
-import { miniCacheMaxHeight } from './snakeSettings'
+import { snakeSettings } from './snakeSettings'
 
 export const ScrollNotification = styled.div`
   margin-top: 10px;
@@ -15,7 +15,7 @@ export const SnakeWrapper = styled.div`
     css`
       display: grid;
       justify-content: center;
-      max-height: ${miniCacheMaxHeight}px;
+      max-height: ${snakeSettings.mini.cacheMaxHeight}px;
       overflow: auto;
     `}
 
