@@ -12,11 +12,11 @@ import ListItemText from '@material-ui/core/ListItemText'
 import { useTranslation } from 'react-i18next'
 import { echoHost } from 'utils/Hosts'
 import { ThemeProvider } from '@material-ui/core/styles'
-import { themeColors } from 'style/colors'
+import { mainColors } from 'style/colors'
 
 import { lightTheme } from '../style/materialUISetup'
 
-const { primary } = themeColors
+const { primary } = mainColors
 
 export default function AboutDialog() {
   const { t } = useTranslation()
