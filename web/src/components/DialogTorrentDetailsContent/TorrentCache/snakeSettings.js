@@ -1,6 +1,3 @@
-export const readerColor = '#000'
-export const rangeColor = '#afa6e3'
-
 export const snakeSettings = {
   default: {
     borderWidth: 1,
@@ -10,6 +7,8 @@ export const snakeSettings = {
     completeColor: '#00a572',
     backgroundColor: '#fff',
     progressColor: '#b3dfc9',
+    readerColor: '#000',
+    rangeColor: '#afa6e3',
   },
   mini: {
     cacheMaxHeight: 340,
@@ -20,11 +19,14 @@ export const snakeSettings = {
     completeColor: '#4db380',
     backgroundColor: '#dbf2e8',
     progressColor: '#dbf2e8',
+    readerColor: '#2d714f',
+    rangeColor: '#afa6e3',
   },
 }
 
 export const createGradient = (ctx, percentage, snakeType) => {
   const { pieceSize, completeColor, progressColor } = snakeSettings[snakeType]
+
   const gradient = ctx.createLinearGradient(0, pieceSize, 0, 0)
   gradient.addColorStop(0, completeColor)
   gradient.addColorStop(percentage / 100, completeColor)

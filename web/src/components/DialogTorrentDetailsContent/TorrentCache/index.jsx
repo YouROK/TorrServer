@@ -6,7 +6,7 @@ import isEqual from 'lodash/isEqual'
 import { useCreateCacheMap } from '../customHooks'
 import getShortCacheMap from './getShortCacheMap'
 import { SnakeWrapper, ScrollNotification } from './style'
-import { readerColor, rangeColor, createGradient, snakeSettings } from './snakeSettings'
+import { createGradient, snakeSettings } from './snakeSettings'
 
 const TorrentCache = ({ cache, isMini }) => {
   const { t } = useTranslation()
@@ -16,8 +16,17 @@ const TorrentCache = ({ cache, isMini }) => {
   const ctxRef = useRef(null)
   const cacheMap = useCreateCacheMap(cache)
   const settingsTarget = isMini ? 'mini' : 'default'
-  const { borderWidth, pieceSize, gapBetweenPieces, backgroundColor, borderColor, cacheMaxHeight, completeColor } =
-    snakeSettings[settingsTarget]
+  const {
+    readerColor,
+    rangeColor,
+    borderWidth,
+    pieceSize,
+    gapBetweenPieces,
+    backgroundColor,
+    borderColor,
+    cacheMaxHeight,
+    completeColor,
+  } = snakeSettings[settingsTarget]
 
   const canvasWidth = isMini ? width * 0.93 : width
 
@@ -91,6 +100,8 @@ const TorrentCache = ({ cache, isMini }) => {
     borderWidth,
     settingsTarget,
     completeColor,
+    readerColor,
+    rangeColor,
   ])
 
   return (
