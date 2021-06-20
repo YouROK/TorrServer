@@ -42,19 +42,33 @@ export default function AddDialog({
   const [currentLang] = useChangeLanguage()
   const [selectedFile, setSelectedFile] = useState()
   const [posterSearchLanguage, setPosterSearchLanguage] = useState(currentLang === 'ru' ? 'ru' : 'en')
-  const [isLoadingButton, setIsLoadingButton] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [skipDebounce, setSkipDebounce] = useState(false)
   const [isCustomTitleEnabled, setIsCustomTitleEnabled] = useState(false)
+  const [currentSourceHash, setCurrentSourceHash] = useState()
 
   const { data: torrents } = useQuery('torrents', getTorrents, { retry: 1, refetchInterval: 1000 })
 
   useEffect(() => {
-    const allHashes = torrents.map(({ hash }) => hash)
+    // getting hash from added torrent source
+    parseTorrent.remote(selectedFile || torrentSource, (_, { infoHash } = {}) => setCurrentSourceHash(infoHash))
+  }, [selectedFile, torrentSource])
 
-    parseTorrent.remote(selectedFile || torrentSource, (err, { infoHash } = {}) => {
-      setIsHashAlreadyExists(allHashes.includes(infoHash))
-    })
-  }, [selectedFile, torrentSource, torrents])
+  useEffect(() => {
+    // checking if torrent already exists in DB
+    if (!setCurrentSourceHash) return
+
+    const allHashes = torrents.map(({ hash }) => hash)
+    setIsHashAlreadyExists(allHashes.includes(currentSourceHash))
+  }, [currentSourceHash, torrents])
+
+  useEffect(() => {
+    // closing dialog when torrent successfully added in DB
+    if (!isSaving) return
+
+    const allHashes = torrents.map(({ hash }) => hash)
+    allHashes.includes(currentSourceHash) && handleClose()
+  }, [isSaving, torrents, currentSourceHash, handleClose])
 
   const fullScreen = useMediaQuery('@media (max-width:930px)')
 
@@ -179,7 +193,7 @@ export default function AddDialog({
   ])
 
   const handleSave = () => {
-    setIsLoadingButton(true)
+    setIsSaving(true)
 
     if (isEditMode) {
       axios
@@ -197,12 +211,12 @@ export default function AddDialog({
       data.append('file', selectedFile)
       title && data.append('title', title)
       posterUrl && data.append('poster', posterUrl)
-      axios.post(torrentUploadHost(), data).finally(handleClose)
+      axios.post(torrentUploadHost(), data).catch(handleClose)
     } else {
       // link save
       axios
         .post(torrentsHost(), { action: 'add', link: torrentSource, title, poster: posterUrl, save_to_db: true })
-        .finally(handleClose)
+        .catch(handleClose)
     }
   }
 
@@ -268,11 +282,7 @@ export default function AddDialog({
             onClick={handleSave}
             color='primary'
           >
-            {isLoadingButton ? (
-              <CircularProgress style={{ color: 'white' }} size={20} />
-            ) : (
-              t(isEditMode ? 'Save' : 'Add')
-            )}
+            {isSaving ? <CircularProgress style={{ color: 'white' }} size={20} /> : t(isEditMode ? 'Save' : 'Add')}
           </Button>
         </ButtonWrapper>
       </Dialog>
