@@ -200,6 +200,7 @@ export const PosterWrapper = styled.div`
       'suggestions';
   }
 `
+
 export const PosterSuggestions = styled.div`
   display: grid;
   grid-area: suggestions;
@@ -216,6 +217,7 @@ export const PosterSuggestions = styled.div`
     grid-template-columns: repeat(4, max-content);
   }
 `
+
 export const PosterSuggestionsItem = styled.div`
   cursor: pointer;
   width: 71px;

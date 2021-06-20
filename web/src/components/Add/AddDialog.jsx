@@ -157,10 +157,11 @@ export default function AddDialog({
       posterSearch(title || parsedTitle, posterSearchLanguage)
       setSkipDebounce(false)
     } else if (!title) {
+      delayedPosterSearch.cancel()
+
       if (parsedTitle) {
         posterSearch(parsedTitle, posterSearchLanguage)
       } else {
-        delayedPosterSearch.cancel()
         !isUserInteractedWithPoster && removePoster()
       }
     } else {
