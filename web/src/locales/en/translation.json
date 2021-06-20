@@ -10,6 +10,7 @@
       "ClickOrDrag": "CLICK / DRAG & DROP (.torrent)"
     },
     "CustomTorrentTitle": "Custom title (optional)",
+    "CustomTorrentTitleHelperText": "Write custom title to find poster",
     "HashExists": "This torrent is already in database",
     "OriginalTorrentTitle": "Original torrent title",
     "TitleBlank": "Title (blank for orig. torrent title)",

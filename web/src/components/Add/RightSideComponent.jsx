@@ -78,6 +78,7 @@ export default function RightSideComponent({
               label={t('AddDialog.CustomTorrentTitle')}
               type='text'
               fullWidth
+              helperText={t('AddDialog.CustomTorrentTitleHelperText')}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position='end'>
