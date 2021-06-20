@@ -1,10 +1,12 @@
+import { themeColors } from 'style/colors'
+
 export const snakeSettings = {
   default: {
     borderWidth: 1,
     pieceSize: 14,
     gapBetweenPieces: 3,
     borderColor: '#dbf2e8',
-    completeColor: '#00a572',
+    completeColor: themeColors.primary,
     backgroundColor: '#fff',
     progressColor: '#b3dfc9',
     readerColor: '#000',

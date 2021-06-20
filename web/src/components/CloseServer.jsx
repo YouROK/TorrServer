@@ -4,7 +4,8 @@ import { PowerSettingsNew as PowerSettingsNewIcon } from '@material-ui/icons'
 import { shutdownHost } from 'utils/Hosts'
 import { useTranslation } from 'react-i18next'
 import { ThemeProvider } from '@material-ui/core/styles'
-import { lightTheme } from 'components/App'
+
+import { lightTheme } from '../style/materialUISetup'
 
 export default function CloseServer({ isOffline, isLoading }) {
   const { t } = useTranslation()

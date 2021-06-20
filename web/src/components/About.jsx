@@ -12,7 +12,11 @@ import ListItemText from '@material-ui/core/ListItemText'
 import { useTranslation } from 'react-i18next'
 import { echoHost } from 'utils/Hosts'
 import { ThemeProvider } from '@material-ui/core/styles'
-import { lightTheme } from 'components/App'
+import { themeColors } from 'style/colors'
+
+import { lightTheme } from '../style/materialUISetup'
+
+const { primary } = themeColors
 
 export default function AboutDialog() {
   const { t } = useTranslation()
@@ -38,7 +42,7 @@ export default function AboutDialog() {
           <DialogContent>
             <center>
               <h2>TorrServer {torrServerVersion}</h2>
-              <a style={{ color: '#00a572' }} href='https://github.com/YouROK/TorrServer'>
+              <a style={{ color: primary }} href='https://github.com/YouROK/TorrServer'>
                 https://github.com/YouROK/TorrServer
               </a>
             </center>
@@ -49,22 +53,22 @@ export default function AboutDialog() {
               <br />
               <h2>{t('SpecialThanks')}</h2>
               <b>anacrolix Matt Joiner</b>&nbsp;
-              <a style={{ color: '#00a572' }} href='https://github.com/anacrolix/'>
+              <a style={{ color: primary }} href='https://github.com/anacrolix/'>
                 github.com/anacrolix
               </a>
               <br />
               <b>nikk</b>&nbsp;
-              <a style={{ color: '#00a572' }} href='https://github.com/tsynik'>
+              <a style={{ color: primary }} href='https://github.com/tsynik'>
                 github.com/tsynik
               </a>
               <br />
               <b>dancheskus</b>&nbsp;
-              <a style={{ color: '#00a572' }} href='https://github.com/dancheskus'>
+              <a style={{ color: primary }} href='https://github.com/dancheskus'>
                 github.com/dancheskus
               </a>
               <br />
               <b>tw1cker Руслан Пахнев</b>&nbsp;
-              <a style={{ color: '#00a572' }} href='https://github.com/Nemiroff'>
+              <a style={{ color: primary }} href='https://github.com/Nemiroff'>
                 github.com/Nemiroff
               </a>
               <br />

@@ -14,7 +14,8 @@ import { FormControlLabel, InputLabel, Select, Switch } from '@material-ui/core'
 import { settingsHost, setTorrServerHost, getTorrServerHost } from 'utils/Hosts'
 import { useTranslation } from 'react-i18next'
 import { ThemeProvider } from '@material-ui/core/styles'
-import { lightTheme } from 'components/App'
+
+import { lightTheme } from '../style/materialUISetup'
 
 export default function SettingsDialog() {
   const { t } = useTranslation()

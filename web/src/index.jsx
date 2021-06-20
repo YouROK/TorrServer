@@ -5,8 +5,6 @@ import { QueryClientProvider, QueryClient } from 'react-query'
 import App from './components/App'
 import 'i18n'
 
-import './index.css'
-
 const queryClient = new QueryClient()
 
 ReactDOM.render(
