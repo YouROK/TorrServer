@@ -1,4 +1,4 @@
-import { themeColors } from 'style/colors'
+import { mainColors } from 'style/colors'
 
 export const snakeSettings = {
   default: {
@@ -6,7 +6,7 @@ export const snakeSettings = {
     pieceSize: 14,
     gapBetweenPieces: 3,
     borderColor: '#dbf2e8',
-    completeColor: themeColors.primary,
+    completeColor: mainColors.primary,
     backgroundColor: '#fff',
     progressColor: '#b3dfc9',
     readerColor: '#000',
