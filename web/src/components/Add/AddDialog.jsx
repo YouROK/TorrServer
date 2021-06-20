@@ -13,7 +13,7 @@ import { useQuery } from 'react-query'
 import { getTorrents } from 'utils/Utils'
 import parseTorrent from 'parse-torrent'
 import { ThemeProvider } from '@material-ui/core/styles'
-import { lightTheme } from 'components/App/materialUISetup'
+import { lightTheme } from 'style/materialUISetup'
 
 import { checkImageURL, getMoviePosters, chechTorrentSource, parseTorrentTitle } from './helpers'
 import { ButtonWrapper, Content, Header } from './style'

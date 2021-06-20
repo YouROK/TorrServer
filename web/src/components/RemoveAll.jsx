@@ -8,7 +8,7 @@ import { torrentsHost } from 'utils/Hosts'
 import { useTranslation } from 'react-i18next'
 import { ThemeProvider } from '@material-ui/core/styles'
 
-import { lightTheme } from './App/materialUISetup'
+import { lightTheme } from '../style/materialUISetup'
 
 const fnRemoveAll = () => {
   fetch(torrentsHost(), {

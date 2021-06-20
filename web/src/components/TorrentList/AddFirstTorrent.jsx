@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { themeColors } from 'style/colors'
 
 import AddDialog from '../Add/AddDialog'
 import IconWrapper from './style'
@@ -16,7 +17,7 @@ export default function AddFirstTorrent() {
         <lord-icon
           src='https://cdn.lordicon.com/bbnkwdur.json'
           trigger='loop'
-          colors='primary:#121331,secondary:#00A572'
+          colors={`primary:#121331,secondary:${themeColors.primary}`}
           stroke='26'
           scale='60'
         />

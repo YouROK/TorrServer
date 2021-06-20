@@ -2,6 +2,8 @@ import useMediaQuery from '@material-ui/core/useMediaQuery'
 import { createMuiTheme } from '@material-ui/core'
 import { useMemo } from 'react'
 
+import { mainColors } from './colors'
+
 // https://material-ui.com/ru/customization/default-theme/
 export const darkTheme = createMuiTheme({
   palette: {
@@ -17,19 +19,19 @@ export const lightTheme = createMuiTheme({
 })
 
 export const useMaterialUITheme = () => {
-  const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)')
+  const isDarkMode = useMediaQuery('(prefers-color-scheme: dark)')
 
-  const materialUITheme = useMemo(
+  const muiTheme = useMemo(
     () =>
       createMuiTheme({
         palette: {
-          type: prefersDarkMode ? 'dark' : 'light',
-          primary: { main: '#00a572' },
+          type: isDarkMode ? 'dark' : 'light',
+          primary: { main: mainColors.primary },
         },
         typography: { fontFamily: 'Open Sans, sans-serif' },
       }),
-    [prefersDarkMode],
+    [isDarkMode],
   )
 
-  return materialUITheme
+  return [isDarkMode, muiTheme]
 }

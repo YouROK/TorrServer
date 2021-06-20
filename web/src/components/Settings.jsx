@@ -15,7 +15,7 @@ import { settingsHost, setTorrServerHost, getTorrServerHost } from 'utils/Hosts'
 import { useTranslation } from 'react-i18next'
 import { ThemeProvider } from '@material-ui/core/styles'
 
-import { lightTheme } from './App/materialUISetup'
+import { lightTheme } from '../style/materialUISetup'
 
 export default function SettingsDialog() {
   const { t } = useTranslation()
