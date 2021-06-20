@@ -12,7 +12,8 @@ import ListItemText from '@material-ui/core/ListItemText'
 import { useTranslation } from 'react-i18next'
 import { echoHost } from 'utils/Hosts'
 import { ThemeProvider } from '@material-ui/core/styles'
-import { lightTheme } from 'components/App'
+
+import { lightTheme } from './App/materialUISetup'
 
 export default function AboutDialog() {
   const { t } = useTranslation()

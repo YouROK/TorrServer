@@ -1,7 +1,6 @@
-import useMediaQuery from '@material-ui/core/useMediaQuery'
-import { createMuiTheme, MuiThemeProvider } from '@material-ui/core'
+import { MuiThemeProvider } from '@material-ui/core'
 import CssBaseline from '@material-ui/core/CssBaseline'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Typography from '@material-ui/core/Typography'
 import IconButton from '@material-ui/core/IconButton'
 import { Menu as MenuIcon, Close as CloseIcon } from '@material-ui/icons'
@@ -18,44 +17,15 @@ import { getTorrents } from 'utils/Utils'
 
 import { AppWrapper, AppHeader, LanguageSwitch } from './style'
 import Sidebar from './Sidebar'
-
-// https://material-ui.com/ru/customization/default-theme/
-export const darkTheme = createMuiTheme({
-  palette: {
-    type: 'dark',
-    primary: { main: '#00a572' },
-    background: { paper: '#575757' },
-  },
-  typography: { fontFamily: 'Open Sans, sans-serif' },
-})
-export const lightTheme = createMuiTheme({
-  palette: {
-    type: 'light',
-    primary: { main: '#00a572' },
-    background: { paper: '#f1f1f1' },
-  },
-  typography: { fontFamily: 'Open Sans, sans-serif' },
-})
+import { darkTheme, lightTheme, useMaterialUITheme } from './materialUISetup'
 
 export default function App() {
-  const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)')
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [isDonationDialogOpen, setIsDonationDialogOpen] = useState(false)
   const [torrServerVersion, setTorrServerVersion] = useState('')
+
   // https://material-ui.com/ru/customization/palette/
-  const baseTheme = useMemo(
-    () =>
-      createMuiTheme({
-        palette: {
-          type: prefersDarkMode ? 'dark' : 'light',
-          primary: { main: '#00a572' },
-          secondary: { main: '#ffa724' },
-          tonalOffset: 0.2,
-        },
-        typography: { fontFamily: 'Open Sans, sans-serif' },
-      }),
-    [prefersDarkMode],
-  )
+  const materialUITheme = useMaterialUITheme()
   const [currentLang, changeLang] = useChangeLanguage()
   const [isOffline, setIsOffline] = useState(false)
   const { data: torrents, isLoading } = useQuery('torrents', getTorrents, {
@@ -70,7 +40,7 @@ export default function App() {
   }, [])
 
   return (
-    <MuiThemeProvider theme={baseTheme}>
+    <MuiThemeProvider theme={materialUITheme}>
       <CssBaseline />
 
       {/* Div100vh - iOS WebKit fix  */}
