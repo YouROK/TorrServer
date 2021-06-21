@@ -99,7 +99,7 @@ export const TorrentCardDescription = styled.div`
     font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.4px;
-    color: #216e47;
+    color: #337a57;
 
     @media (max-width: 770px) {
       font-size: 0.4rem;
@@ -175,7 +175,7 @@ export const StyledButton = styled.button`
   }
 
   :hover {
-    background: #2a7e54;
+    background: #337a57;
   }
 
   > :first-child {
