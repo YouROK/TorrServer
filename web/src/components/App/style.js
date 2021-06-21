@@ -82,7 +82,7 @@ export const LanguageSwitch = styled.div`
   color: #fff;
 
   :hover {
-    background: #7ec9a3;
+    background: #4db380;
   }
 
   @media (max-width: 700px) {

@@ -9,12 +9,12 @@ export default styled.div`
 
     ${isButton &&
     css`
-      background: #93d7b4;
+      background: #88cdaa;
       transition: 0.2s;
-
       cursor: pointer;
+
       :hover {
-        background: #71cc9d;
+        background: #74c39c;
       }
     `}
 

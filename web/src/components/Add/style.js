@@ -58,7 +58,7 @@ export const RightSideContainer = styled.div`
         content: '${notificationMessage}';
         display: grid;
         place-items: center;
-        background: ${isError ? '#cda184' : '#84cda7'};
+        background: ${isError ? '#cda184' : '#88cdaa'};
         padding: 10px 15px;
         position: absolute;
         top: 52%;
@@ -172,7 +172,7 @@ export const IconWrapper = styled.div`
 `
 
 export const LeftSideTopSection = styled.div`
-  background: #e3f2eb;
+  background: #e4f6ed;
   padding: 0 20px 20px 20px;
   transition: all 0.3s;
 
@@ -306,7 +306,7 @@ export const PosterLanguageSwitch = styled.div`
   border-radius: 50%;
   display: grid;
   place-items: center;
-  color: #e1f4eb;
+  color: #e4f6ed;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;

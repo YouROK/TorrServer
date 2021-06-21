@@ -5,7 +5,7 @@ const viewedIndicator = css`
     content: '';
     width: 10px;
     height: 10px;
-    background: #15d5af;
+    background: #009879;
     border-radius: 50%;
     position: absolute;
     top: 50%;
@@ -116,7 +116,7 @@ export const ShortTable = styled.div`
         grid-template-rows: 30px 1fr;
         background: black;
         :not(:last-child) {
-          border-right: 1px solid ${isViewed ? '#bdbdbd' : '#019376'};
+          border-right: 1px solid ${isViewed ? '#bdbdbd' : '#009879'};
         }
 
         &-name {
