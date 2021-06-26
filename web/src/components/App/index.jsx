@@ -35,7 +35,7 @@ export default function App() {
   const [torrServerVersion, setTorrServerVersion] = useState('')
 
   // https://material-ui.com/ru/customization/palette/
-  const [isDarkMode, currentThemeMode, setCurrentThemeMode, muiTheme] = useMaterialUITheme()
+  const [isDarkMode, currentThemeMode, updateThemeMode, muiTheme] = useMaterialUITheme()
   const [currentLang, changeLang] = useChangeLanguage()
   const [isOffline, setIsOffline] = useState(false)
   const { data: torrents, isLoading } = useQuery('torrents', getTorrents, {
@@ -82,11 +82,6 @@ export default function App() {
                   >
                     <HeaderToggle
                       onClick={() => {
-                        const updateThemeMode = mode => {
-                          setCurrentThemeMode(mode)
-                          localStorage.setItem('themeMode', mode)
-                        }
-
                         if (currentThemeMode === THEME_MODES.LIGHT) updateThemeMode(THEME_MODES.DARK)
                         if (currentThemeMode === THEME_MODES.DARK) updateThemeMode(THEME_MODES.AUTO)
                         if (currentThemeMode === THEME_MODES.AUTO) updateThemeMode(THEME_MODES.LIGHT)

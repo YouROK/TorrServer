@@ -4,7 +4,7 @@ export const themeColors = {
   light: {
     app: {
       headerToggleColor: '#4db380',
-      appSecondaryColor: '#f1eff3',
+      appSecondaryColor: '#CBE8D9',
       sidebarBGColor: '#575757',
       sidebarFillColor: '#dee3e5',
     },

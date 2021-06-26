@@ -28,6 +28,11 @@ export const useMaterialUITheme = () => {
   const [isDarkMode, setIsDarkMode] = useState(savedThemeMode === 'dark' || isSystemModeDark)
   const [currentThemeMode, setCurrentThemeMode] = useState(savedThemeMode || THEME_MODES.LIGHT)
 
+  const updateThemeMode = mode => {
+    setCurrentThemeMode(mode)
+    localStorage.setItem('themeMode', mode)
+  }
+
   useEffect(() => {
     currentThemeMode === THEME_MODES.LIGHT && setIsDarkMode(false)
     currentThemeMode === THEME_MODES.DARK && setIsDarkMode(true)
@@ -48,5 +53,5 @@ export const useMaterialUITheme = () => {
     [theme],
   )
 
-  return [isDarkMode, currentThemeMode, setCurrentThemeMode, muiTheme]
+  return [isDarkMode, currentThemeMode, updateThemeMode, muiTheme]
 }
