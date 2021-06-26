@@ -33,11 +33,12 @@ export const useMaterialUITheme = () => {
       createMuiTheme({
         typography,
         palette: {
-          type: isDarkMode ? 'dark' : 'light',
+          // type: isDarkMode ? 'dark' : 'light',
+          type: 'light',
           primary,
         },
       }),
-    [isDarkMode],
+    [],
   )
 
   return [isDarkMode, muiTheme]

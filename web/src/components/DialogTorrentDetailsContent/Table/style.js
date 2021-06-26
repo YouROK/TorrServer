@@ -1,11 +1,20 @@
 import styled, { css } from 'styled-components'
 
+const bigTableDividerColor = '#ddd'
+const bigTableViewedColor = '#f3f3f3'
+const defaultPrimaryColor = '#009879'
+const defaultSecondaryColor = '#00a383'
+const defaultTertiaryColor = '#03aa89'
+const viewedPrimaryColor = '#bdbdbd'
+const viewedSecondaryColor = '#c4c4c4'
+const viewedTertiaryColor = '#c9c9c9'
+
 const viewedIndicator = css`
   :before {
     content: '';
     width: 10px;
     height: 10px;
-    background: #009879;
+    background: ${defaultPrimaryColor};
     border-radius: 50%;
     position: absolute;
     top: 50%;
@@ -23,7 +32,7 @@ export const TableStyle = styled.table`
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
 
   thead tr {
-    background: #009879;
+    background: ${defaultPrimaryColor};
     color: #fff;
     text-align: left;
     text-transform: uppercase;
@@ -35,14 +44,14 @@ export const TableStyle = styled.table`
   }
 
   tbody tr {
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid ${bigTableDividerColor};
 
     :last-of-type {
-      border-bottom: 2px solid #009879;
+      border-bottom: 2px solid ${defaultPrimaryColor};
     }
 
     &.viewed-file-row {
-      background: #f3f3f3;
+      background: ${bigTableViewedColor};
     }
   }
 
@@ -52,12 +61,12 @@ export const TableStyle = styled.table`
 
       ${viewedIndicator}
     }
+  }
 
-    &.button-cell {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
+  .button-cell {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
   }
 
   @media (max-width: 970px) {
@@ -91,7 +100,7 @@ export const ShortTable = styled.div`
 
     .short-table {
       &-name {
-        background: ${isViewed ? '#bdbdbd' : '#009879'};
+        background: ${isViewed ? viewedPrimaryColor : defaultPrimaryColor};
         display: grid;
         place-items: center;
         padding: 15px;
@@ -116,11 +125,11 @@ export const ShortTable = styled.div`
         grid-template-rows: 30px 1fr;
         background: black;
         :not(:last-child) {
-          border-right: 1px solid ${isViewed ? '#bdbdbd' : '#009879'};
+          border-right: 1px solid ${isViewed ? viewedPrimaryColor : defaultPrimaryColor};
         }
 
         &-name {
-          background: ${isViewed ? '#c4c4c4' : '#00a383'};
+          background: ${isViewed ? viewedSecondaryColor : defaultSecondaryColor};
           color: #fff;
           text-transform: uppercase;
           font-size: 12px;
@@ -135,7 +144,7 @@ export const ShortTable = styled.div`
         }
 
         &-value {
-          background: ${isViewed ? '#c9c9c9' : '#03aa89'};
+          background: ${isViewed ? viewedTertiaryColor : defaultTertiaryColor};
           display: grid;
           place-items: center;
           color: #fff;
@@ -156,7 +165,7 @@ export const ShortTable = styled.div`
 
       &-buttons {
         padding: 20px;
-        border-bottom: 2px solid ${isViewed ? '#bdbdbd' : '#009879'};
+        border-bottom: 2px solid ${isViewed ? viewedPrimaryColor : defaultPrimaryColor};
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         align-items: center;

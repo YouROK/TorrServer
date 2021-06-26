@@ -60,22 +60,24 @@ const Table = memo(
                     {fileHasEpisodeText && <td data-label='episode'>{episode}</td>}
                     {fileHasResolutionText && <td data-label='resolution'>{resolution}</td>}
                     <td data-label='size'>{humanizeSize(length)}</td>
-                    <td className='button-cell'>
-                      <Button onClick={() => preloadBuffer(id)} variant='outlined' color='primary' size='small'>
-                        {t('Preload')}
-                      </Button>
-
-                      <a style={{ textDecoration: 'none' }} href={link} target='_blank' rel='noreferrer'>
-                        <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
-                          {t('OpenLink')}
+                    <td>
+                      <div className='button-cell'>
+                        <Button onClick={() => preloadBuffer(id)} variant='outlined' color='primary' size='small'>
+                          {t('Preload')}
                         </Button>
-                      </a>
 
-                      <CopyToClipboard text={link}>
-                        <Button variant='outlined' color='primary' size='small'>
-                          {t('CopyLink')}
-                        </Button>
-                      </CopyToClipboard>
+                        <a style={{ textDecoration: 'none' }} href={link} target='_blank' rel='noreferrer'>
+                          <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
+                            {t('OpenLink')}
+                          </Button>
+                        </a>
+
+                        <CopyToClipboard text={link}>
+                          <Button variant='outlined' color='primary' size='small'>
+                            {t('CopyLink')}
+                          </Button>
+                        </CopyToClipboard>
+                      </div>
                     </td>
                   </tr>
                 )
