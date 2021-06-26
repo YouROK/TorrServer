@@ -3,6 +3,7 @@ import { useState, memo, useRef, useEffect, useContext } from 'react'
 import { useTranslation } from 'react-i18next'
 import isEqual from 'lodash/isEqual'
 import { DarkModeContext } from 'components/App'
+import { THEME_MODES } from 'style/materialUISetup'
 
 import { useCreateCacheMap } from '../customHooks'
 import getShortCacheMap from './getShortCacheMap'
@@ -18,7 +19,7 @@ const TorrentCache = ({ cache, isMini }) => {
   const cacheMap = useCreateCacheMap(cache)
   const settingsTarget = isMini ? 'mini' : 'default'
   const { isDarkMode } = useContext(DarkModeContext)
-  const theme = isDarkMode ? 'dark' : 'light'
+  const theme = isDarkMode ? THEME_MODES.DARK : THEME_MODES.LIGHT
 
   const {
     readerColor,

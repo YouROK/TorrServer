@@ -82,9 +82,14 @@ export default function App() {
                   >
                     <HeaderToggle
                       onClick={() => {
-                        currentThemeMode === THEME_MODES.LIGHT && setCurrentThemeMode(THEME_MODES.DARK)
-                        currentThemeMode === THEME_MODES.DARK && setCurrentThemeMode(THEME_MODES.AUTO)
-                        currentThemeMode === THEME_MODES.AUTO && setCurrentThemeMode(THEME_MODES.LIGHT)
+                        const updateThemeMode = mode => {
+                          setCurrentThemeMode(mode)
+                          localStorage.setItem('themeMode', mode)
+                        }
+
+                        if (currentThemeMode === THEME_MODES.LIGHT) updateThemeMode(THEME_MODES.DARK)
+                        if (currentThemeMode === THEME_MODES.DARK) updateThemeMode(THEME_MODES.AUTO)
+                        if (currentThemeMode === THEME_MODES.AUTO) updateThemeMode(THEME_MODES.LIGHT)
                       }}
                     >
                       {currentThemeMode === THEME_MODES.LIGHT ? (
