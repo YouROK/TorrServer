@@ -12,7 +12,7 @@ export default function TorrentList({ isOffline, isLoading, torrents }) {
         {isOffline ? (
           <NoServerConnection />
         ) : isLoading ? (
-          <CircularProgress />
+          <CircularProgress color='secondary' />
         ) : (
           !torrents.length && <AddFirstTorrent />
         )}

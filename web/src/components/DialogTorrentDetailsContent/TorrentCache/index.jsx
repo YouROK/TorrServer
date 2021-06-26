@@ -1,7 +1,9 @@
 import Measure from 'react-measure'
-import { useState, memo, useRef, useEffect } from 'react'
+import { useState, memo, useRef, useEffect, useContext } from 'react'
 import { useTranslation } from 'react-i18next'
 import isEqual from 'lodash/isEqual'
+import { DarkModeContext } from 'components/App'
+import { THEME_MODES } from 'style/materialUISetup'
 
 import { useCreateCacheMap } from '../customHooks'
 import getShortCacheMap from './getShortCacheMap'
@@ -16,6 +18,9 @@ const TorrentCache = ({ cache, isMini }) => {
   const ctxRef = useRef(null)
   const cacheMap = useCreateCacheMap(cache)
   const settingsTarget = isMini ? 'mini' : 'default'
+  const { isDarkMode } = useContext(DarkModeContext)
+  const theme = isDarkMode ? THEME_MODES.DARK : THEME_MODES.LIGHT
+
   const {
     readerColor,
     rangeColor,
@@ -26,7 +31,7 @@ const TorrentCache = ({ cache, isMini }) => {
     borderColor,
     cacheMaxHeight,
     completeColor,
-  } = snakeSettings[settingsTarget]
+  } = snakeSettings[theme][settingsTarget]
 
   const canvasWidth = isMini ? width * 0.93 : width
 
@@ -69,7 +74,7 @@ const TorrentCache = ({ cache, isMini }) => {
 
       ctx.lineWidth = borderWidth
       ctx.fillStyle = inProgress
-        ? createGradient(ctx, percentage, settingsTarget)
+        ? createGradient(ctx, percentage, theme, settingsTarget)
         : isCompleted
         ? completeColor
         : backgroundColor
@@ -102,13 +107,14 @@ const TorrentCache = ({ cache, isMini }) => {
     completeColor,
     readerColor,
     rangeColor,
+    theme,
   ])
 
   return (
     <Measure bounds onResize={({ bounds }) => setDimensions(bounds)}>
       {({ measureRef }) => (
         <div style={{ display: 'flex', flexDirection: 'column' }} ref={measureRef}>
-          <SnakeWrapper isMini={isMini}>
+          <SnakeWrapper themeType={theme} isMini={isMini}>
             <canvas ref={canvasRef} />
           </SnakeWrapper>
 

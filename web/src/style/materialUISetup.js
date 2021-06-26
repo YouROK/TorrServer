@@ -1,44 +1,60 @@
-import useMediaQuery from '@material-ui/core/useMediaQuery'
-import { createMuiTheme } from '@material-ui/core'
-import { useMemo } from 'react'
+import { createMuiTheme, useMediaQuery } from '@material-ui/core'
+import { useEffect, useMemo, useState } from 'react'
 
 import { mainColors } from './colors'
 
-const primary = { main: mainColors.primary }
+export const THEME_MODES = { LIGHT: 'light', DARK: 'dark', AUTO: 'auto' }
+
 const typography = { fontFamily: 'Open Sans, sans-serif' }
 
-// https://material-ui.com/ru/customization/default-theme/
 export const darkTheme = createMuiTheme({
   typography,
   palette: {
-    type: 'dark',
-    background: { paper: '#575757' },
-    primary,
+    type: THEME_MODES.DARK,
+    primary: { main: mainColors.dark.primary },
+    secondary: { main: mainColors.dark.secondary },
   },
 })
 export const lightTheme = createMuiTheme({
   typography,
   palette: {
-    type: 'light',
-    background: { paper: '#f1f1f1' },
-    primary,
+    type: THEME_MODES.LIGHT,
+    primary: { main: mainColors.light.primary },
+    secondary: { main: mainColors.light.secondary },
   },
 })
 
 export const useMaterialUITheme = () => {
-  const isDarkMode = useMediaQuery('(prefers-color-scheme: dark)')
+  const savedThemeMode = localStorage.getItem('themeMode')
+  const isSystemModeDark = useMediaQuery('(prefers-color-scheme: dark)')
+  const [isDarkMode, setIsDarkMode] = useState(savedThemeMode === 'dark' || isSystemModeDark)
+  const [currentThemeMode, setCurrentThemeMode] = useState(savedThemeMode || THEME_MODES.LIGHT)
+
+  const updateThemeMode = mode => {
+    setCurrentThemeMode(mode)
+    localStorage.setItem('themeMode', mode)
+  }
+
+  useEffect(() => {
+    currentThemeMode === THEME_MODES.LIGHT && setIsDarkMode(false)
+    currentThemeMode === THEME_MODES.DARK && setIsDarkMode(true)
+    currentThemeMode === THEME_MODES.AUTO && setIsDarkMode(isSystemModeDark)
+  }, [isSystemModeDark, currentThemeMode])
+
+  const theme = isDarkMode ? THEME_MODES.DARK : THEME_MODES.LIGHT
 
   const muiTheme = useMemo(
     () =>
       createMuiTheme({
         typography,
         palette: {
-          type: isDarkMode ? 'dark' : 'light',
-          primary,
+          type: theme,
+          primary: { main: mainColors[theme].primary },
+          secondary: { main: mainColors[theme].secondary },
         },
       }),
-    [isDarkMode],
+    [theme],
   )
 
-  return [isDarkMode, muiTheme]
+  return [isDarkMode, currentThemeMode, updateThemeMode, muiTheme]
 }

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { NoImageIcon } from 'icons'
-import { IconButton, InputAdornment, TextField } from '@material-ui/core'
+import { IconButton, InputAdornment, TextField, useTheme } from '@material-ui/core'
 import { CheckBox as CheckBoxIcon } from '@material-ui/icons'
 
 import {
@@ -41,6 +41,7 @@ export default function RightSideComponent({
   isEditMode,
 }) {
   const { t } = useTranslation()
+  const primary = useTheme().palette.primary.main
 
   const handleTitleChange = ({ target: { value } }) => setTitle(value)
   const handlePosterUrlChange = ({ target: { value } }) => {
@@ -91,7 +92,7 @@ export default function RightSideComponent({
                         setIsUserInteractedWithPoster(false)
                       }}
                     >
-                      <CheckBoxIcon style={{ color: isCustomTitleEnabled ? 'green' : 'gray' }} />
+                      <CheckBoxIcon style={{ color: isCustomTitleEnabled ? primary : 'gray' }} />
                     </IconButton>
                   </InputAdornment>
                 ),

@@ -10,12 +10,12 @@ export const ScrollNotification = styled.div`
 `
 
 export const SnakeWrapper = styled.div`
-  ${({ isMini }) => css`
+  ${({ isMini, themeType }) => css`
     ${isMini &&
     css`
       display: grid;
       justify-content: center;
-      max-height: ${snakeSettings.mini.cacheMaxHeight}px;
+      max-height: ${snakeSettings[themeType].mini.cacheMaxHeight}px;
       overflow: auto;
     `}
 

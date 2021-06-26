@@ -11,12 +11,9 @@ import ListItemIcon from '@material-ui/core/ListItemIcon'
 import ListItemText from '@material-ui/core/ListItemText'
 import { useTranslation } from 'react-i18next'
 import { echoHost } from 'utils/Hosts'
-import { ThemeProvider } from '@material-ui/core/styles'
-import { mainColors } from 'style/colors'
+import { ThemeProvider, useTheme } from '@material-ui/core/styles'
 
 import { lightTheme } from '../style/materialUISetup'
-
-const { primary } = mainColors
 
 export default function AboutDialog() {
   const { t } = useTranslation()
@@ -25,6 +22,8 @@ export default function AboutDialog() {
   useEffect(() => {
     axios.get(echoHost()).then(({ data }) => setTorrServerVersion(data))
   }, [])
+
+  const primary = useTheme().palette.primary.main
 
   return (
     <div>

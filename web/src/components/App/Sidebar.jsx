@@ -21,18 +21,24 @@ const Sidebar = ({ isDrawerOpen, setIsDonationDialogOpen, isOffline, isLoading }
     <AppSidebarStyle isDrawerOpen={isDrawerOpen}>
       <List>
         <AddDialogButton isOffline={isOffline} isLoading={isLoading} />
+
         <RemoveAll isOffline={isOffline} isLoading={isLoading} />
       </List>
+
       <Divider />
+
       <List>
         <SettingsDialog />
+
         <AboutDialog />
+
         <ListItem button onClick={() => setIsDonationDialogOpen(true)}>
           <ListItemIcon>
             <CreditCardIcon />
           </ListItemIcon>
           <ListItemText primary={t('Donate')} />
         </ListItem>
+
         <CloseServer isOffline={isOffline} isLoading={isLoading} />
       </List>
     </AppSidebarStyle>
