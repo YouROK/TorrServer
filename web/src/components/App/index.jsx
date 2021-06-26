@@ -34,7 +34,6 @@ export default function App() {
   const [isDonationDialogOpen, setIsDonationDialogOpen] = useState(false)
   const [torrServerVersion, setTorrServerVersion] = useState('')
 
-  // https://material-ui.com/ru/customization/palette/
   const [isDarkMode, currentThemeMode, updateThemeMode, muiTheme] = useMaterialUITheme()
   const [currentLang, changeLang] = useChangeLanguage()
   const [isOffline, setIsOffline] = useState(false)
