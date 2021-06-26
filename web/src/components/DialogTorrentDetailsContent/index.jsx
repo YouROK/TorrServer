@@ -133,7 +133,13 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
         {...(isDetailedCacheView && { onBack: () => setIsDetailedCacheView(false) })}
       />
 
-      <div style={{ minHeight: '80vh', overflow: 'auto' }}>
+      <div
+        style={{
+          minHeight: '80vh',
+          overflow: 'auto',
+          ...(isDetailedCacheView && { display: 'flex', flexDirection: 'column' }),
+        }}
+      >
         {isLoading ? (
           <Loader />
         ) : isDetailedCacheView ? (

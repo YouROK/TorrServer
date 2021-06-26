@@ -1,33 +1,60 @@
 import { mainColors } from 'style/colors'
 
 export const snakeSettings = {
-  default: {
-    borderWidth: 1,
-    pieceSize: 14,
-    gapBetweenPieces: 3,
-    borderColor: '#dbf2e8',
-    completeColor: mainColors.primary,
-    backgroundColor: '#fff',
-    progressColor: '#b3dfc9',
-    readerColor: '#000',
-    rangeColor: '#afa6e3',
+  dark: {
+    default: {
+      borderWidth: 1,
+      pieceSize: 14,
+      gapBetweenPieces: 3,
+      borderColor: mainColors.dark.primary,
+      completeColor: mainColors.dark.primary,
+      backgroundColor: '#fff',
+      progressColor: '#545a5e',
+      readerColor: '#fff',
+      rangeColor: '#cda184',
+    },
+    mini: {
+      cacheMaxHeight: 340,
+      borderWidth: 2,
+      pieceSize: 23,
+      gapBetweenPieces: 6,
+      borderColor: '#545a5e',
+      completeColor: '#545a5e',
+      backgroundColor: '#dee3e5',
+      progressColor: '#dee3e5',
+      readerColor: '#000',
+      rangeColor: '#cda184',
+    },
   },
-  mini: {
-    cacheMaxHeight: 340,
-    borderWidth: 2,
-    pieceSize: 23,
-    gapBetweenPieces: 6,
-    borderColor: '#4db380',
-    completeColor: '#4db380',
-    backgroundColor: '#dbf2e8',
-    progressColor: '#dbf2e8',
-    readerColor: '#2d714f',
-    rangeColor: '#afa6e3',
+  light: {
+    default: {
+      borderWidth: 1,
+      pieceSize: 14,
+      gapBetweenPieces: 3,
+      borderColor: '#dbf2e8',
+      completeColor: mainColors.light.primary,
+      backgroundColor: '#fff',
+      progressColor: '#b3dfc9',
+      readerColor: '#000',
+      rangeColor: '#afa6e3',
+    },
+    mini: {
+      cacheMaxHeight: 340,
+      borderWidth: 2,
+      pieceSize: 23,
+      gapBetweenPieces: 6,
+      borderColor: '#4db380',
+      completeColor: '#4db380',
+      backgroundColor: '#dbf2e8',
+      progressColor: '#dbf2e8',
+      readerColor: '#2d714f',
+      rangeColor: '#afa6e3',
+    },
   },
 }
 
-export const createGradient = (ctx, percentage, snakeType) => {
-  const { pieceSize, completeColor, progressColor } = snakeSettings[snakeType]
+export const createGradient = (ctx, percentage, theme, snakeType) => {
+  const { pieceSize, completeColor, progressColor } = snakeSettings[theme][snakeType]
 
   const gradient = ctx.createLinearGradient(0, pieceSize, 0, 0)
   gradient.addColorStop(0, completeColor)

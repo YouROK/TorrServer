@@ -1,3 +1,4 @@
+import { rgba } from 'polished'
 import styled, { css } from 'styled-components'
 
 export const DialogContentGrid = styled.div`
@@ -18,7 +19,12 @@ export const DialogContentGrid = styled.div`
   }
 `
 export const Poster = styled.div`
-  ${({ poster }) => css`
+  ${({
+    poster,
+    theme: {
+      dialogTorrentDetailsContent: { posterBGColor },
+    },
+  }) => css`
     height: 400px;
     border-radius: 5px;
     overflow: hidden;
@@ -35,7 +41,7 @@ export const Poster = styled.div`
           width: 300px;
           display: grid;
           place-items: center;
-          background: #74c39c;
+          background: ${posterBGColor};
 
           svg {
             transform: scale(2.5) translateY(-3px);
@@ -58,69 +64,101 @@ export const Poster = styled.div`
   `}
 `
 export const MainSection = styled.section`
-  grid-area: main;
-  padding: 40px;
-  display: grid;
-  grid-template-columns: min-content 1fr;
-  gap: 30px;
-  background: linear-gradient(145deg, #e4f6ed, #b5dec9);
+  ${({
+    theme: {
+      dialogTorrentDetailsContent: { gradientStartColor, gradientEndColor },
+    },
+  }) => css`
+    grid-area: main;
+    padding: 40px;
+    display: grid;
+    grid-template-columns: min-content 1fr;
+    gap: 30px;
+    background: linear-gradient(145deg, ${gradientStartColor}, ${gradientEndColor});
 
-  @media (max-width: 840px) {
-    grid-template-columns: 1fr;
-  }
-
-  @media (max-width: 800px) {
-    padding: 20px;
-  }
-`
-
-export const CacheSection = styled.section`
-  grid-area: cache;
-  padding: 40px;
-  display: grid;
-  align-content: start;
-  grid-template-rows: min-content 1fr min-content;
-  background: #88cdaa;
-
-  @media (max-width: 800px) {
-    padding: 20px;
-  }
-`
-
-export const TorrentFilesSection = styled.section`
-  grid-area: file-list;
-  padding: 40px;
-  box-shadow: inset 3px 25px 8px -25px rgba(0, 0, 0, 0.5);
-
-  @media (max-width: 800px) {
-    padding: 20px;
-  }
-`
-
-export const SectionSubName = styled.div`
-  ${({ mb }) => css`
-    ${mb && `margin-bottom: ${mb}px`};
-    color: #7c7b7c;
+    @media (max-width: 840px) {
+      grid-template-columns: 1fr;
+    }
 
     @media (max-width: 800px) {
-      ${mb && `margin-bottom: ${mb / 2}px`};
-      font-size: 11px;
+      padding: 20px;
     }
   `}
 `
 
-export const SectionTitle = styled.div`
-  ${({ mb }) => css`
-    ${mb && `margin-bottom: ${mb}px`};
-    font-size: 35px;
-    font-weight: 300;
-    line-height: 1;
-    word-break: break-word;
+export const CacheSection = styled.section`
+  ${({
+    theme: {
+      dialogTorrentDetailsContent: { chacheSectionBGColor },
+    },
+  }) => css`
+    grid-area: cache;
+    padding: 40px;
+    display: grid;
+    align-content: start;
+    grid-template-rows: min-content 1fr min-content;
+    background: ${chacheSectionBGColor};
 
     @media (max-width: 800px) {
-      font-size: 25px;
-      ${mb && `margin-bottom: ${mb / 2}px`};
+      padding: 20px;
     }
+  `}
+`
+
+export const TorrentFilesSection = styled.section`
+  ${({
+    theme: {
+      dialogTorrentDetailsContent: { torrentFilesSectionBGColor },
+    },
+  }) => css`
+    grid-area: file-list;
+    padding: 40px;
+    box-shadow: inset 3px 25px 8px -25px rgba(0, 0, 0, 0.5);
+    background: ${torrentFilesSectionBGColor};
+
+    @media (max-width: 800px) {
+      padding: 20px;
+    }
+  `}
+`
+
+export const SectionSubName = styled.div`
+  ${({
+    theme: {
+      dialogTorrentDetailsContent: { subNameFontColor },
+    },
+  }) => css`
+    ${({ mb }) => css`
+      ${mb && `margin-bottom: ${mb}px`};
+      color: ${subNameFontColor};
+
+      @media (max-width: 800px) {
+        ${mb && `margin-bottom: ${mb / 2}px`};
+        font-size: 11px;
+      }
+    `}
+  `}
+`
+
+export const SectionTitle = styled.div`
+  ${({
+    theme: {
+      dialogTorrentDetailsContent: { fontColor },
+    },
+  }) => css`
+    ${({ mb }) => css`
+      ${mb && `margin-bottom: ${mb}px`};
+      font-size: 35px;
+      font-weight: 300;
+      line-height: 1;
+      word-break: break-word;
+      color: ${fontColor};
+
+      @media (max-width: 800px) {
+        font-size: 25px;
+        ${mb && `margin-bottom: ${mb / 2}px`};
+      }
+    `}
   `}
 `
 
@@ -182,18 +220,25 @@ export const WidgetFieldWrapper = styled.div`
   }
 `
 export const WidgetFieldTitle = styled.div`
-  grid-area: title;
-  justify-self: start;
-  text-transform: uppercase;
-  font-size: 11px;
-  margin-bottom: 2px;
-  font-weight: 600;
+  ${({
+    theme: {
+      dialogTorrentDetailsContent: { fontColor },
+    },
+  }) => css`
+    grid-area: title;
+    justify-self: start;
+    text-transform: uppercase;
+    font-size: 11px;
+    margin-bottom: 2px;
+    font-weight: 600;
+    color: ${fontColor};
+  `}
 `
 
 export const WidgetFieldIcon = styled.div`
   ${({ bgColor }) => css`
     grid-area: icon;
-    color: rgba(255, 255, 255, 0.8);
+    color: ${rgba('#fff', 0.8)};
     background: ${bgColor};
     border-radius: 5px 0 0 5px;
 
@@ -220,20 +265,29 @@ export const WidgetFieldValue = styled.div`
   `}
 `
 
-export const LoadingProgress = styled.div.attrs(({ value, fullAmount }) => {
-  const percentage = Math.min(100, (value * 100) / fullAmount)
-
-  return {
-    // this block is here according to styled-components recomendation about fast changable components
-    style: {
-      background: `linear-gradient(to right, #b5dec9 0%, #b5dec9 ${percentage}%, #fff ${percentage}%, #fff 100%)`,
+export const LoadingProgress = styled.div.attrs(
+  ({
+    value,
+    fullAmount,
+    theme: {
+      dialogTorrentDetailsContent: { gradientEndColor },
     },
-  }
-})`
+  }) => {
+    const percentage = Math.min(100, (value * 100) / fullAmount)
+
+    return {
+      // this block is here according to styled-components recomendation about fast changable components
+      style: {
+        background: `linear-gradient(to right, ${gradientEndColor} 0%, ${gradientEndColor} ${percentage}%, #fff ${percentage}%, #fff 100%)`,
+      },
+    }
+  },
+)`
   ${({ label }) => css`
     border: 1px solid;
     padding: 10px 20px;
     border-radius: 5px;
+    color: #000;
 
     :before {
       content: '${label}';

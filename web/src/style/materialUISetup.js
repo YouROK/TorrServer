@@ -1,45 +1,51 @@
-import useMediaQuery from '@material-ui/core/useMediaQuery'
-import { createMuiTheme } from '@material-ui/core'
-import { useMemo } from 'react'
+import { createMuiTheme, useMediaQuery } from '@material-ui/core'
+import { useEffect, useMemo, useState } from 'react'
 
 import { mainColors } from './colors'
 
-const primary = { main: mainColors.primary }
 const typography = { fontFamily: 'Open Sans, sans-serif' }
 
-// https://material-ui.com/ru/customization/default-theme/
 export const darkTheme = createMuiTheme({
   typography,
   palette: {
     type: 'dark',
-    background: { paper: '#575757' },
-    primary,
+    primary: { main: mainColors.dark.primary },
   },
 })
 export const lightTheme = createMuiTheme({
   typography,
   palette: {
     type: 'light',
-    background: { paper: '#f1f1f1' },
-    primary,
+    primary: { main: mainColors.light.primary },
   },
 })
 
+export const THEME_MODES = { LIGHT: 'light', DARK: 'dark', AUTO: 'auto' }
+
 export const useMaterialUITheme = () => {
-  const isDarkMode = useMediaQuery('(prefers-color-scheme: dark)')
+  const currentModeState = useMediaQuery('(prefers-color-scheme: dark)')
+  const [isDarkMode, setIsDarkMode] = useState(currentModeState)
+  const [currentThemeMode, setCurrentThemeMode] = useState(THEME_MODES.LIGHT)
+
+  useEffect(() => {
+    currentThemeMode === THEME_MODES.LIGHT && setIsDarkMode(false)
+    currentThemeMode === THEME_MODES.DARK && setIsDarkMode(true)
+    currentThemeMode === THEME_MODES.AUTO && setIsDarkMode(currentModeState)
+  }, [currentModeState, currentThemeMode])
+
+  const theme = isDarkMode ? THEME_MODES.DARK : THEME_MODES.LIGHT
 
   const muiTheme = useMemo(
     () =>
       createMuiTheme({
         typography,
         palette: {
-          // type: isDarkMode ? 'dark' : 'light',
-          type: 'light',
-          primary,
+          type: theme,
+          primary: { main: mainColors[theme].primary },
         },
       }),
-    [],
+    [theme],
   )
 
-  return [isDarkMode, muiTheme]
+  return [isDarkMode, currentThemeMode, setCurrentThemeMode, muiTheme]
 }

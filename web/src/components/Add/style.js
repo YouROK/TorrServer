@@ -15,14 +15,20 @@ export const Header = styled.div`
 `
 
 export const Content = styled.div`
-  ${({ isEditMode }) => css`
+  ${({
+    isEditMode,
+    theme: {
+      addDialog: { gradientStartColor, gradientEndColor, fontColor },
+    },
+  }) => css`
     height: 550px;
-    background: linear-gradient(145deg, #e4f6ed, #b5dec9);
+    background: linear-gradient(145deg, ${gradientStartColor}, ${gradientEndColor});
     flex: 1;
     display: grid;
     grid-template-columns: repeat(${isEditMode ? '1' : '2'}, 1fr);
     border-bottom: 1px solid rgba(0, 0, 0, 0.12);
     overflow: auto;
+    color: ${fontColor};
 
     @media (max-width: 540px) {
       ${'' /* Just for bug fixing on small screens */}
@@ -44,7 +50,14 @@ export const RightSide = styled.div`
 `
 
 export const RightSideContainer = styled.div`
-  ${({ isHidden, notificationMessage, isError }) => css`
+  ${({
+    isHidden,
+    notificationMessage,
+    isError,
+    theme: {
+      addDialog: { notificationErrorBGColor, notificationSuccessBGColor },
+    },
+  }) => css`
     height: 530px;
 
     ${notificationMessage &&
@@ -58,7 +71,7 @@ export const RightSideContainer = styled.div`
         content: '${notificationMessage}';
         display: grid;
         place-items: center;
-        background: ${isError ? '#cda184' : '#88cdaa'};
+        background: ${isError ? notificationErrorBGColor : notificationSuccessBGColor};
         padding: 10px 15px;
         position: absolute;
         top: 52%;
@@ -172,11 +185,18 @@ export const IconWrapper = styled.div`
 `
 
 export const LeftSideTopSection = styled.div`
-  background: #e4f6ed;
-  padding: 0 20px 20px 20px;
-  transition: all 0.3s;
+  ${({
+    active,
+    theme: {
+      addDialog: { gradientStartColor },
+    },
+  }) => css`
+    background: ${gradientStartColor};
+    padding: 0 20px 20px 20px;
+    transition: all 0.3s;
 
-  ${({ active }) => active && 'box-shadow: 0 8px 10px -9px rgba(0, 0, 0, 0.5)'};
+    ${active && 'box-shadow: 0 8px 10px -9px rgba(0, 0, 0, 0.5)'};
+  `}
 `
 
 export const PosterWrapper = styled.div`
@@ -254,7 +274,12 @@ export const PosterSuggestionsItem = styled.div`
 `
 
 export const Poster = styled.div`
-  ${({ poster }) => css`
+  ${({
+    poster,
+    theme: {
+      addDialog: { posterBGColor },
+    },
+  }) => css`
     border-radius: 5px;
     overflow: hidden;
     width: 200px;
@@ -272,7 +297,7 @@ export const Poster = styled.div`
       : css`
           display: grid;
           place-items: center;
-          background: #74c39c;
+          background: ${posterBGColor};
 
           svg {
             transform: scale(1.5) translateY(-3px);
@@ -294,28 +319,35 @@ export const ClearPosterButton = styled(Button)`
 `
 
 export const PosterLanguageSwitch = styled.div`
-  grid-area: poster;
-  z-index: 5;
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 30px;
-  height: 30px;
-  background: #74c39c;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  color: #e4f6ed;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
+  ${({
+    showbutton,
+    theme: {
+      addDialog: { languageSwitchBGColor, languageSwitchFontColor },
+    },
+  }) => css`
+    grid-area: poster;
+    z-index: 5;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 30px;
+    height: 30px;
+    background: ${languageSwitchBGColor};
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: ${languageSwitchFontColor};
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
 
-  ${({ showbutton }) => !showbutton && 'display: none'};
+    ${!showbutton && 'display: none'};
 
-  :hover {
-    filter: brightness(1.1);
-  }
+    :hover {
+      filter: brightness(1.1);
+    }
+  `}
 `
 
 export const ButtonWrapper = styled.div`
