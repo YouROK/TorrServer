@@ -33,7 +33,7 @@ import { isFilePlayable } from './helpers'
 
 const Loader = () => (
   <div style={{ minHeight: '80vh', display: 'grid', placeItems: 'center' }}>
-    <CircularProgress />
+    <CircularProgress color='secondary' />
   </div>
 )
 
@@ -225,7 +225,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
               {seasonAmount?.length > 1 && (
                 <>
                   <SectionSubName mb={7}>{t('SelectSeason')}</SectionSubName>
-                  <ButtonGroup style={{ marginBottom: '30px' }} color='primary'>
+                  <ButtonGroup style={{ marginBottom: '30px' }} color='secondary'>
                     {seasonAmount.map(season => (
                       <Button
                         key={season}

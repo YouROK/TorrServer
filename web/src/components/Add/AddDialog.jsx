@@ -268,7 +268,7 @@ export default function AddDialog({
       </Content>
 
       <ButtonWrapper>
-        <Button onClick={handleClose} color='primary' variant='outlined'>
+        <Button onClick={handleClose} color='secondary' variant='outlined'>
           {t('Cancel')}
         </Button>
 

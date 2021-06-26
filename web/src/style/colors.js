@@ -72,7 +72,7 @@ export const themeColors = {
     detailedView: {
       gradientStartColor: '#656f76',
       gradientEndColor: '#545a5e',
-      cacheSectionBGColor: rgba('#545a5e', 0.7),
+      cacheSectionBGColor: '#dee3e5',
     },
     addDialog: {
       gradientStartColor: '#656f76',
@@ -98,8 +98,10 @@ export const themeColors = {
 export const mainColors = {
   light: {
     primary: '#00a572',
+    secondary: '#00a572',
   },
   dark: {
     primary: '#323637',
+    secondary: '#dee3e5',
   },
 }

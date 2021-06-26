@@ -12,6 +12,7 @@ export const darkTheme = createMuiTheme({
   palette: {
     type: THEME_MODES.DARK,
     primary: { main: mainColors.dark.primary },
+    secondary: { main: mainColors.dark.secondary },
   },
 })
 export const lightTheme = createMuiTheme({
@@ -19,6 +20,7 @@ export const lightTheme = createMuiTheme({
   palette: {
     type: THEME_MODES.LIGHT,
     primary: { main: mainColors.light.primary },
+    secondary: { main: mainColors.light.secondary },
   },
 })
 
@@ -48,6 +50,7 @@ export const useMaterialUITheme = () => {
         palette: {
           type: theme,
           primary: { main: mainColors[theme].primary },
+          secondary: { main: mainColors[theme].secondary },
         },
       }),
     [theme],

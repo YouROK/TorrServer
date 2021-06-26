@@ -42,7 +42,9 @@ export default function DetailedView({
       </DetailedViewWidgetSection>
 
       <DetailedViewCacheSection>
-        <SectionTitle mb={20}>{t('Cache')}</SectionTitle>
+        <SectionTitle color='#000' mb={20}>
+          {t('Cache')}
+        </SectionTitle>
         <TorrentCache cache={cache} />
       </DetailedViewCacheSection>
     </>

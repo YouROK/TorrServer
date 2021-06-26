@@ -1,16 +1,17 @@
+import { rgba } from 'polished'
 import { mainColors } from 'style/colors'
 
 export const snakeSettings = {
   dark: {
     default: {
-      borderWidth: 1,
+      borderWidth: 2,
       pieceSize: 14,
       gapBetweenPieces: 3,
-      borderColor: mainColors.dark.primary,
-      completeColor: mainColors.dark.primary,
-      backgroundColor: '#fff',
-      progressColor: '#545a5e',
-      readerColor: '#fff',
+      borderColor: mainColors.dark.secondary,
+      completeColor: rgba(mainColors.dark.primary, 0.65),
+      backgroundColor: '#f1eff3',
+      progressColor: mainColors.dark.secondary,
+      readerColor: '#000',
       rangeColor: '#cda184',
     },
     mini: {

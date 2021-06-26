@@ -142,6 +142,7 @@ export const SectionSubName = styled.div`
 
 export const SectionTitle = styled.div`
   ${({
+    color,
     theme: {
       dialogTorrentDetailsContent: { fontColor },
     },
@@ -152,7 +153,7 @@ export const SectionTitle = styled.div`
       font-weight: 300;
       line-height: 1;
       word-break: break-word;
-      color: ${fontColor};
+      color: ${color || fontColor};
 
       @media (max-width: 800px) {
         font-size: 25px;
