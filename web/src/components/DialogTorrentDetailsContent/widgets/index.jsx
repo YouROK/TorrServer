@@ -11,16 +11,19 @@ import { getPeerString, humanizeSize } from 'utils/Utils'
 import { useTranslation } from 'react-i18next'
 import { GETTING_INFO, IN_DB, CLOSED, PRELOAD, WORKING } from 'torrentStates'
 
-import StatisticsField from './StatisticsField'
+import StatisticsField from '../StatisticsField'
+import useGetWidgetColors from './useGetWidgetColors'
 
 export const DownlodSpeedWidget = ({ data }) => {
   const { t } = useTranslation()
+  const { iconBGColor, valueBGColor } = useGetWidgetColors('downloadSpeed')
+
   return (
     <StatisticsField
       title={t('DownloadSpeed')}
       value={humanizeSize(data) || '0 B'}
-      iconBg='#118f00'
-      valueBg='#13a300'
+      iconBg={iconBGColor}
+      valueBg={valueBGColor}
       icon={ArrowDownwardIcon}
     />
   )
@@ -28,12 +31,14 @@ export const DownlodSpeedWidget = ({ data }) => {
 
 export const UploadSpeedWidget = ({ data }) => {
   const { t } = useTranslation()
+  const { iconBGColor, valueBGColor } = useGetWidgetColors('uploadSpeed')
+
   return (
     <StatisticsField
       title={t('UploadSpeed')}
       value={humanizeSize(data) || '0 B'}
-      iconBg='#0146ad'
-      valueBg='#0058db'
+      iconBg={iconBGColor}
+      valueBg={valueBGColor}
       icon={ArrowUpwardIcon}
     />
   )
@@ -41,12 +46,14 @@ export const UploadSpeedWidget = ({ data }) => {
 
 export const PeersWidget = ({ data }) => {
   const { t } = useTranslation()
+  const { iconBGColor, valueBGColor } = useGetWidgetColors('peers')
+
   return (
     <StatisticsField
       title={t('Peers')}
       value={getPeerString(data) || '[0] 0 / 0'}
-      iconBg='#cdc118'
-      valueBg='#d8cb18'
+      iconBg={iconBGColor}
+      valueBg={valueBGColor}
       icon={SwapVerticalCircleIcon}
     />
   )
@@ -54,17 +61,29 @@ export const PeersWidget = ({ data }) => {
 
 export const PiecesCountWidget = ({ data }) => {
   const { t } = useTranslation()
-  return <StatisticsField title={t('PiecesCount')} value={data} iconBg='#b6c95e' valueBg='#c0d076' icon={WidgetsIcon} />
+  const { iconBGColor, valueBGColor } = useGetWidgetColors('piecesCount')
+
+  return (
+    <StatisticsField
+      title={t('PiecesCount')}
+      value={data}
+      iconBg={iconBGColor}
+      valueBg={valueBGColor}
+      icon={WidgetsIcon}
+    />
+  )
 }
 
 export const PiecesLengthWidget = ({ data }) => {
   const { t } = useTranslation()
+  const { iconBGColor, valueBGColor } = useGetWidgetColors('piecesLength')
+
   return (
     <StatisticsField
       title={t('PiecesLength')}
       value={humanizeSize(data)}
-      iconBg='#0982c8'
-      valueBg='#098cd7'
+      iconBg={iconBGColor}
+      valueBg={valueBGColor}
       icon={PhotoSizeSelectSmallIcon}
     />
   )
@@ -80,13 +99,14 @@ export const StatusWidget = ({ stat }) => {
     [CLOSED]: t('TorrentClosed'),
     [IN_DB]: t('TorrentInDb'),
   }
+  const { iconBGColor, valueBGColor } = useGetWidgetColors('status')
 
   return (
     <StatisticsField
       title={t('TorrentStatus')}
       value={values[stat]}
-      iconBg='#aea25b'
-      valueBg='#b4aa6e'
+      iconBg={iconBGColor}
+      valueBg={valueBGColor}
       icon={BuildIcon}
     />
   )
@@ -94,12 +114,14 @@ export const StatusWidget = ({ stat }) => {
 
 export const SizeWidget = ({ data }) => {
   const { t } = useTranslation()
+  const { iconBGColor, valueBGColor } = useGetWidgetColors('size')
+
   return (
     <StatisticsField
       title={t('TorrentSize')}
       value={humanizeSize(data)}
-      iconBg='#9b01ad'
-      valueBg='#ac03bf'
+      iconBg={iconBGColor}
+      valueBg={valueBGColor}
       icon={ViewAgendaIcon}
     />
   )

@@ -36,6 +36,7 @@ const Sidebar = ({ isDrawerOpen, setIsDonationDialogOpen, isOffline, isLoading }
           <ListItemIcon>
             <CreditCardIcon />
           </ListItemIcon>
+
           <ListItemText primary={t('Donate')} />
         </ListItem>
 

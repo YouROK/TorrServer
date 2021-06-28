@@ -144,7 +144,7 @@ export const SectionTitle = styled.div`
   ${({
     color,
     theme: {
-      dialogTorrentDetailsContent: { fontColor },
+      dialogTorrentDetailsContent: { titleFontColor },
     },
   }) => css`
     ${({ mb }) => css`
@@ -153,7 +153,7 @@ export const SectionTitle = styled.div`
       font-weight: 300;
       line-height: 1;
       word-break: break-word;
-      color: ${color || fontColor};
+      color: ${color || titleFontColor};
 
       @media (max-width: 800px) {
         font-size: 25px;
@@ -223,7 +223,7 @@ export const WidgetFieldWrapper = styled.div`
 export const WidgetFieldTitle = styled.div`
   ${({
     theme: {
-      dialogTorrentDetailsContent: { fontColor },
+      dialogTorrentDetailsContent: { titleFontColor },
     },
   }) => css`
     grid-area: title;
@@ -232,7 +232,7 @@ export const WidgetFieldTitle = styled.div`
     font-size: 11px;
     margin-bottom: 2px;
     font-weight: 600;
-    color: ${fontColor};
+    color: ${titleFontColor};
   `}
 `
 
@@ -251,10 +251,15 @@ export const WidgetFieldIcon = styled.div`
   `}
 `
 export const WidgetFieldValue = styled.div`
-  ${({ bgColor }) => css`
+  ${({
+    bgColor,
+    theme: {
+      dialogTorrentDetailsContent: { widgetFontColor },
+    },
+  }) => css`
     grid-area: value;
     padding: 0 20px;
-    color: #fff;
+    color: ${widgetFontColor};
     font-size: 25px;
     background: ${bgColor};
     border-radius: 0 5px 5px 0;
