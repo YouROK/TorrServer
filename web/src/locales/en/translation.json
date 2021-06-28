@@ -74,6 +74,7 @@
   "PiecesLength": "Pieces length",
   "Preload": "Preload",
   "PreloadBuffer": "Preload Buffer",
+  "ProjectSource": "Project source",
   "ReaderReadAHead": "Reader Read Ahead (5-100%)",
   "RemoveAll": "Remove All",
   "RemoveCacheOnDrop": "Remove Cache from Disk on Drop Torrent",
