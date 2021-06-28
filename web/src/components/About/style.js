@@ -92,7 +92,7 @@ export const NameWrapper = styled.a`
   ${({ isLink }) => css`
     display: inline-flex;
     align-items: center;
-    justify-content: center;
+    justify-content: start;
     border: 1px solid;
     padding: 10px;
     border-radius: 5px;
@@ -101,10 +101,6 @@ export const NameWrapper = styled.a`
     background: #545a5e;
     color: #f1eff3;
     transition: 0.2s;
-
-    @media (max-width: 550px) {
-      justify-content: start;
-    }
 
     > * {
       transition: 0.2s;

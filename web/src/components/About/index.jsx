@@ -51,7 +51,7 @@ export default function AboutDialog() {
                 <NameComponent name='Matt Joiner' link='https://github.com/anacrolix' />
                 <NameComponent name='nikk' link='https://github.com/tsynik' />
                 <NameComponent name='tw1cker Руслан Пахнев' link='https://github.com/Nemiroff' />
-                <NameComponent name='SpAwN_LMG' />
+                <NameComponent name='SpAwN_LMG' link='https://github.com/spawnlmg' />
               </div>
             </SpecialThanksSection>
           </div>
