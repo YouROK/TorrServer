@@ -6,12 +6,11 @@ import ListItem from '@material-ui/core/ListItem'
 import ListItemIcon from '@material-ui/core/ListItemIcon'
 import ListItemText from '@material-ui/core/ListItemText'
 import { useTranslation } from 'react-i18next'
-import { GitHub as GitHubIcon } from '@material-ui/icons'
 import { useMediaQuery } from '@material-ui/core'
 
-import NameComponent from './NameComponent'
+import LinkComponent from './LinkComponent'
 import tsIcon from './ts-icon-192x192.png'
-import { DialogWrapper, HeaderSection, ThanksSection, SpecialThanksSection, FooterSection } from './style'
+import { DialogWrapper, HeaderSection, ThanksSection, Section, FooterSection } from './style'
 
 export default function AboutDialog() {
   const { t } = useTranslation()
@@ -43,27 +42,30 @@ export default function AboutDialog() {
           <div style={{ overflow: 'auto' }}>
             <ThanksSection>{t('ThanksToEveryone')}</ThanksSection>
 
-            <SpecialThanksSection>
+            <Section>
+              <span>{t('Links')}</span>
+
+              <div>
+                <LinkComponent name={t('ProjectSource')} link='https://github.com/YouROK/TorrServer' />
+                <LinkComponent name={t('Releases')} link='https://github.com/YouROK/TorrServer/releases' />
+                <LinkComponent name='API' link='https://github.com/YouROK/TorrServer/blob/master/README.md' />
+              </div>
+            </Section>
+
+            <Section>
               <span>{t('SpecialThanks')}</span>
 
               <div>
-                <NameComponent name='Daniel Shleifman' link='https://github.com/dancheskus' />
-                <NameComponent name='Matt Joiner' link='https://github.com/anacrolix' />
-                <NameComponent name='nikk' link='https://github.com/tsynik' />
-                <NameComponent name='tw1cker Руслан Пахнев' link='https://github.com/Nemiroff' />
-                <NameComponent name='SpAwN_LMG' link='https://github.com/spawnlmg' />
+                <LinkComponent name='Daniel Shleifman' link='https://github.com/dancheskus' />
+                <LinkComponent name='Matt Joiner' link='https://github.com/anacrolix' />
+                <LinkComponent name='nikk' link='https://github.com/tsynik' />
+                <LinkComponent name='tw1cker Руслан Пахнев' link='https://github.com/Nemiroff' />
+                <LinkComponent name='SpAwN_LMG' link='https://github.com/spawnlmg' />
               </div>
-            </SpecialThanksSection>
+            </Section>
           </div>
 
           <FooterSection>
-            <a href='https://github.com/YouROK/TorrServer' target='_blank' rel='noreferrer'>
-              <Button color='primary' variant='outlined'>
-                <GitHubIcon style={{ marginRight: '10px' }} />
-                {t('ProjectSource')}
-              </Button>
-            </a>
-
             <Button onClick={() => setOpen(false)} color='primary' variant='contained' autoFocus>
               {t('Close')}
             </Button>

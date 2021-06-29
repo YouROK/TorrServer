@@ -44,14 +44,18 @@ export const ThanksSection = styled.section`
   }
 `
 
-export const SpecialThanksSection = styled.section`
-  padding: 40px 20px;
+export const Section = styled.section`
+  padding: 20px;
   color: #323637;
 
   > span {
     font-size: 20px;
     display: block;
     margin-bottom: 15px;
+  }
+
+  a {
+    text-decoration: none;
   }
 
   > div {
@@ -75,20 +79,12 @@ export const SpecialThanksSection = styled.section`
 
 export const FooterSection = styled.div`
   padding: 20px;
-  display: grid;
-  grid-auto-flow: column;
-  grid-template-columns: repeat(2, max-content);
-  justify-content: end;
-  gap: 15px;
-  align-self: end;
+  display: flex;
+  justify-content: flex-end;
   background: #e8e5eb;
-
-  a {
-    text-decoration: none;
-  }
 `
 
-export const NameWrapper = styled.a`
+export const LinkWrapper = styled.a`
   ${({ isLink }) => css`
     display: inline-flex;
     align-items: center;
@@ -122,7 +118,7 @@ export const NameWrapper = styled.a`
   `}
 `
 
-export const NameIcon = styled.div`
+export const LinkIcon = styled.div`
   display: grid;
   margin-right: 10px;
 `
