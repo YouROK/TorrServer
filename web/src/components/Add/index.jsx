@@ -15,7 +15,7 @@ export default function AddDialogButton({ isOffline, isLoading }) {
 
   return (
     <div>
-      <ListItem disabled={isOffline || isLoading} button key='Add' onClick={handleClickOpen}>
+      <ListItem disabled={isOffline || isLoading} button onClick={handleClickOpen}>
         <ListItemIcon>
           <LibraryAddIcon />
         </ListItemIcon>

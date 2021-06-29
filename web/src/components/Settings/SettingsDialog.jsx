@@ -1,9 +1,4 @@
 import axios from 'axios'
-import ListItem from '@material-ui/core/ListItem'
-import ListItemIcon from '@material-ui/core/ListItemIcon'
-import ListItemText from '@material-ui/core/ListItemText'
-import { useEffect, useState } from 'react'
-import SettingsIcon from '@material-ui/icons/Settings'
 import Dialog from '@material-ui/core/Dialog'
 import DialogTitle from '@material-ui/core/DialogTitle'
 import DialogContent from '@material-ui/core/DialogContent'
@@ -12,9 +7,10 @@ import DialogActions from '@material-ui/core/DialogActions'
 import Button from '@material-ui/core/Button'
 import { FormControlLabel, InputLabel, Select, Switch } from '@material-ui/core'
 import { settingsHost, setTorrServerHost, getTorrServerHost } from 'utils/Hosts'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-const SettingsDialog = ({ handleClose }) => {
+export default function SettingsDialog({ handleClose }) {
   const { t } = useTranslation()
 
   const [settings, setSets] = useState({})
@@ -275,26 +271,5 @@ const SettingsDialog = ({ handleClose }) => {
         </Button>
       </DialogActions>
     </Dialog>
-  )
-}
-
-export default function Settings() {
-  const { t } = useTranslation()
-  const [open, setOpen] = useState(false)
-
-  const handleClickOpen = () => setOpen(true)
-  const handleClose = () => setOpen(false)
-
-  return (
-    <div>
-      <ListItem button key={t('Settings')} onClick={handleClickOpen}>
-        <ListItemIcon>
-          <SettingsIcon />
-        </ListItemIcon>
-        <ListItemText primary={t('Settings')} />
-      </ListItem>
-
-      {open && <SettingsDialog handleClose={handleClose} />}
-    </div>
   )
 }
