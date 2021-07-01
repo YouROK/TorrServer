@@ -12,9 +12,10 @@ import usePreviousState from 'utils/usePreviousState'
 import { useQuery } from 'react-query'
 import { getTorrents } from 'utils/Utils'
 import parseTorrent from 'parse-torrent'
+import { ButtonWrapper, Header } from 'style/DialogStyles'
 
 import { checkImageURL, getMoviePosters, chechTorrentSource, parseTorrentTitle } from './helpers'
-import { ButtonWrapper, Content, Header } from './style'
+import { Content } from './style'
 import RightSideComponent from './RightSideComponent'
 import LeftSideComponent from './LeftSideComponent'
 
@@ -219,14 +220,7 @@ export default function AddDialog({
   }
 
   return (
-    <Dialog
-      open
-      onClose={handleClose}
-      aria-labelledby='form-dialog-title'
-      fullScreen={fullScreen}
-      fullWidth
-      maxWidth='md'
-    >
+    <Dialog open onClose={handleClose} fullScreen={fullScreen} fullWidth maxWidth='md'>
       <Header>{t(isEditMode ? 'EditTorrent' : 'AddNewTorrent')}</Header>
 
       <Content isEditMode={isEditMode}>
