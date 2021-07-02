@@ -43,6 +43,9 @@ import {
 import defaultSettings from './defaultSettings'
 import { a11yProps, TabPanel } from './tabComponents'
 
+// {t('UseDisk')}
+// {t('UseDiskDesc')}
+
 const SliderInput = ({
   isProMode,
   title,
@@ -118,6 +121,7 @@ export default function SettingsDialog({ handleClose }) {
 
   const inputForm = ({ target: { type, value, checked, id } }) => {
     const sets = JSON.parse(JSON.stringify(settings))
+
     if (type === 'number' || type === 'select-one') {
       sets[id] = Number(value)
     } else if (type === 'checkbox') {
@@ -174,29 +178,29 @@ export default function SettingsDialog({ handleClose }) {
 
   return (
     <Dialog open onClose={handleClose} fullScreen={fullScreen} fullWidth maxWidth='md'>
-      <Header>{t('Settings')}</Header>
+      <Header>{t('SettingsDialog.Settings')}</Header>
+
+      <AppBar position='static' color='default'>
+        <Tabs
+          value={selectedTab}
+          onChange={handleChange}
+          indicatorColor='primary'
+          textColor='primary'
+          variant='fullWidth'
+        >
+          <Tab label={t('SettingsDialog.Tabs.Main')} {...a11yProps(0)} />
+
+          <Tab
+            disabled={!isProMode}
+            label={isProMode ? t('SettingsDialog.Tabs.Additional') : t('SettingsDialog.Tabs.AdditionalDisabled')}
+            {...a11yProps(1)}
+          />
+        </Tabs>
+      </AppBar>
 
       <Content isLoading={!settings}>
         {settings ? (
           <>
-            <AppBar position='static' color='default'>
-              <Tabs
-                value={selectedTab}
-                onChange={handleChange}
-                indicatorColor='primary'
-                textColor='primary'
-                variant='fullWidth'
-              >
-                <Tab label='Основные' {...a11yProps(0)} />
-
-                <Tab
-                  disabled={!isProMode}
-                  label={isProMode ? 'Дополнительные' : 'Дополнительные (включите pro mode)'}
-                  {...a11yProps(1)}
-                />
-              </Tabs>
-            </AppBar>
-
             <SwipeableViews
               axis={direction === 'rtl' ? 'x-reverse' : 'x'}
               index={selectedTab}
@@ -205,11 +209,11 @@ export default function SettingsDialog({ handleClose }) {
               <TabPanel value={selectedTab} index={0} dir={direction}>
                 <MainSettingsContent>
                   <div>
-                    <SettingSectionLabel>Настройки кеша</SettingSectionLabel>
+                    <SettingSectionLabel>{t('SettingsDialog.CacheSettings')}</SettingSectionLabel>
 
                     <PreloadCachePercentage
                       value={100 - cachePercentage}
-                      label={`Кеш ${cacheSize} МБ`}
+                      label={t('SettingsDialog.CacheSizeLabel', { cacheSize })}
                       isPreloadEnabled={PreloadBuffer}
                     />
 
@@ -233,7 +237,7 @@ export default function SettingsDialog({ handleClose }) {
 
                     <SliderInput
                       isProMode={isProMode}
-                      title='Размер кеша'
+                      title={t('SettingsDialog.CacheSize')}
                       value={cacheSize}
                       setValue={setCacheSize}
                       sliderMin={32}
@@ -246,7 +250,7 @@ export default function SettingsDialog({ handleClose }) {
 
                     <SliderInput
                       isProMode={isProMode}
-                      title='Кеш предзагрузки'
+                      title={t('SettingsDialog.ReaderReadAHead')}
                       value={cachePercentage}
                       setValue={setCachePercentage}
                       sliderMin={40}
@@ -259,7 +263,7 @@ export default function SettingsDialog({ handleClose }) {
                       control={
                         <Switch checked={!!PreloadBuffer} onChange={inputForm} id='PreloadBuffer' color='primary' />
                       }
-                      label={t('PreloadBuffer')}
+                      label={t('SettingsDialog.PreloadBuffer')}
                     />
                   </div>
 
@@ -294,15 +298,15 @@ export default function SettingsDialog({ handleClose }) {
                             color='primary'
                           />
                         }
-                        label={t('RemoveCacheOnDrop')}
+                        label={t('SettingsDialog.RemoveCacheOnDrop')}
                       />
-                      <small>{t('RemoveCacheOnDropDesc')}</small>
+                      <small>{t('SettingsDialog.RemoveCacheOnDropDesc')}</small>
 
                       <TextField
                         onChange={inputForm}
                         margin='dense'
                         id='TorrentsSavePath'
-                        label={t('TorrentsSavePath')}
+                        label={t('SettingsDialog.TorrentsSavePath')}
                         value={TorrentsSavePath}
                         type='url'
                         fullWidth
@@ -340,34 +344,34 @@ export default function SettingsDialog({ handleClose }) {
 
                   <FormControlLabel
                     control={<Switch checked={EnableIPv6} onChange={inputForm} id='EnableIPv6' color='primary' />}
-                    label={t('EnableIPv6')}
+                    label='IPv6'
                   />
                   <br />
                   <FormControlLabel
                     control={<Switch checked={!DisableTCP} onChange={inputForm} id='DisableTCP' color='primary' />}
-                    label={t('TCP')}
+                    label='TCP (Transmission Control Protocol)'
                   />
                   <br />
                   <FormControlLabel
                     control={<Switch checked={!DisableUTP} onChange={inputForm} id='DisableUTP' color='primary' />}
-                    label={t('UTP')}
+                    label='μTP (Micro Transport Protocol)'
                   />
                   <br />
                   <FormControlLabel
                     control={<Switch checked={!DisablePEX} onChange={inputForm} id='DisablePEX' color='primary' />}
-                    label={t('PEX')}
+                    label='PEX (Peer Exchange)'
                   />
                   <br />
                   <FormControlLabel
                     control={<Switch checked={ForceEncrypt} onChange={inputForm} id='ForceEncrypt' color='primary' />}
-                    label={t('ForceEncrypt')}
+                    label={t('SettingsDialog.ForceEncrypt')}
                   />
                   <br />
                   <TextField
                     onChange={inputForm}
                     margin='dense'
                     id='TorrentDisconnectTimeout'
-                    label={t('TorrentDisconnectTimeout')}
+                    label={t('SettingsDialog.TorrentDisconnectTimeout')}
                     value={TorrentDisconnectTimeout}
                     type='number'
                     fullWidth
@@ -377,7 +381,7 @@ export default function SettingsDialog({ handleClose }) {
                     onChange={inputForm}
                     margin='dense'
                     id='ConnectionsLimit'
-                    label={t('ConnectionsLimit')}
+                    label={t('SettingsDialog.ConnectionsLimit')}
                     value={ConnectionsLimit}
                     type='number'
                     fullWidth
@@ -385,14 +389,14 @@ export default function SettingsDialog({ handleClose }) {
                   <br />
                   <FormControlLabel
                     control={<Switch checked={!DisableDHT} onChange={inputForm} id='DisableDHT' color='primary' />}
-                    label={t('DHT')}
+                    label={t('SettingsDialog.DHT')}
                   />
                   <br />
                   <TextField
                     onChange={inputForm}
                     margin='dense'
                     id='DhtConnectionLimit'
-                    label={t('DhtConnectionLimit')}
+                    label={t('SettingsDialog.DhtConnectionLimit')}
                     value={DhtConnectionLimit}
                     type='number'
                     fullWidth
@@ -402,7 +406,7 @@ export default function SettingsDialog({ handleClose }) {
                     onChange={inputForm}
                     margin='dense'
                     id='DownloadRateLimit'
-                    label={t('DownloadRateLimit')}
+                    label={t('SettingsDialog.DownloadRateLimit')}
                     value={DownloadRateLimit}
                     type='number'
                     fullWidth
@@ -412,14 +416,14 @@ export default function SettingsDialog({ handleClose }) {
                     control={
                       <Switch checked={!DisableUpload} onChange={inputForm} id='DisableUpload' color='primary' />
                     }
-                    label={t('Upload')}
+                    label={t('SettingsDialog.Upload')}
                   />
                   <br />
                   <TextField
                     onChange={inputForm}
                     margin='dense'
                     id='UploadRateLimit'
-                    label={t('UploadRateLimit')}
+                    label={t('SettingsDialog.UploadRateLimit')}
                     value={UploadRateLimit}
                     type='number'
                     fullWidth
@@ -429,7 +433,7 @@ export default function SettingsDialog({ handleClose }) {
                     onChange={inputForm}
                     margin='dense'
                     id='PeersListenPort'
-                    label={t('PeersListenPort')}
+                    label={t('SettingsDialog.PeersListenPort')}
                     value={PeersListenPort}
                     type='number'
                     fullWidth
@@ -437,15 +441,15 @@ export default function SettingsDialog({ handleClose }) {
                   <br />
                   <FormControlLabel
                     control={<Switch checked={!DisableUPNP} onChange={inputForm} id='DisableUPNP' color='primary' />}
-                    label={t('UPNP')}
+                    label='UPnP (Universal Plug and Play)'
                   />
                   <br />
-                  <InputLabel htmlFor='RetrackersMode'>{t('RetrackersMode')}</InputLabel>
+                  <InputLabel htmlFor='RetrackersMode'>{t('SettingsDialog.RetrackersMode')}</InputLabel>
                   <Select onChange={inputForm} type='number' native id='RetrackersMode' value={RetrackersMode}>
-                    <option value={0}>{t('DontAddRetrackers')}</option>
-                    <option value={1}>{t('AddRetrackers')}</option>
-                    <option value={2}>{t('RemoveRetrackers')}</option>
-                    <option value={3}>{t('ReplaceRetrackers')}</option>
+                    <option value={0}>{t('SettingsDialog.DontAddRetrackers')}</option>
+                    <option value={1}>{t('SettingsDialog.AddRetrackers')}</option>
+                    <option value={2}>{t('SettingsDialog.RemoveRetrackers')}</option>
+                    <option value={3}>{t('SettingsDialog.ReplaceRetrackers')}</option>
                   </Select>
                   <br />
                 </SecondarySettingsContent>
@@ -456,191 +460,7 @@ export default function SettingsDialog({ handleClose }) {
           <CircularProgress color='secondary' />
         )}
       </Content>
-      {/* <DialogTitle id='form-dialog-title'>{t('Settings')}</DialogTitle>
-      <DialogContent>
-        <TextField
-          onChange={onInputHost}
-          margin='dense'
-          id='TorrServerHost'
-          label={t('Host')}
-          value={tsHost}
-          type='url'
-          fullWidth
-        />
-        {show && (
-          <>
-            <TextField
-              onChange={inputForm}
-              margin='dense'
-              id='CacheSize'
-              label={t('CacheSize')}
-              value={CacheSize}
-              type='number'
-              fullWidth
-            />
-            <br />
-            <TextField
-              onChange={inputForm}
-              margin='dense'
-              id='ReaderReadAHead'
-              label={t('ReaderReadAHead')}
-              value={ReaderReadAHead}
-              type='number'
-              fullWidth
-            />
-            <br />
-            <FormControlLabel
-              control={<Switch checked={PreloadBuffer} onChange={inputForm} id='PreloadBuffer' color='primary' />}
-              label={t('PreloadBuffer')}
-            />
-            <br />
-            <FormControlLabel
-              control={<Switch checked={UseDisk} onChange={inputForm} id='UseDisk' color='primary' />}
-              label={t('UseDisk')}
-            />
-            <br />
-            <small>{t('UseDiskDesc')}</small>
-            <br />
-            <FormControlLabel
-              control={
-                <Switch checked={RemoveCacheOnDrop} onChange={inputForm} id='RemoveCacheOnDrop' color='primary' />
-              }
-              label={t('RemoveCacheOnDrop')}
-            />
-            <br />
-            <small>{t('RemoveCacheOnDropDesc')}</small>
-            <br />
-            <TextField
-              onChange={inputForm}
-              margin='dense'
-              id='TorrentsSavePath'
-              label={t('TorrentsSavePath')}
-              value={TorrentsSavePath}
-              type='url'
-              fullWidth
-            />
-            <br />
-            <FormControlLabel
-              control={<Switch checked={EnableIPv6} onChange={inputForm} id='EnableIPv6' color='primary' />}
-              label={t('EnableIPv6')}
-            />
-            <br />
-            <FormControlLabel
-              control={<Switch checked={!DisableTCP} onChange={inputForm} id='DisableTCP' color='primary' />}
-              label={t('TCP')}
-            />
-            <br />
-            <FormControlLabel
-              control={<Switch checked={!DisableUTP} onChange={inputForm} id='DisableUTP' color='primary' />}
-              label={t('UTP')}
-            />
-            <br />
-            <FormControlLabel
-              control={<Switch checked={!DisablePEX} onChange={inputForm} id='DisablePEX' color='primary' />}
-              label={t('PEX')}
-            />
-            <br />
-            <FormControlLabel
-              control={<Switch checked={ForceEncrypt} onChange={inputForm} id='ForceEncrypt' color='primary' />}
-              label={t('ForceEncrypt')}
-            />
-            <br />
-            <TextField
-              onChange={inputForm}
-              margin='dense'
-              id='TorrentDisconnectTimeout'
-              label={t('TorrentDisconnectTimeout')}
-              value={TorrentDisconnectTimeout}
-              type='number'
-              fullWidth
-            />
-            <br />
-            <TextField
-              onChange={inputForm}
-              margin='dense'
-              id='ConnectionsLimit'
-              label={t('ConnectionsLimit')}
-              value={ConnectionsLimit}
-              type='number'
-              fullWidth
-            />
-            <br />
-            <FormControlLabel
-              control={<Switch checked={!DisableDHT} onChange={inputForm} id='DisableDHT' color='primary' />}
-              label={t('DHT')}
-            />
-            <br />
-            <TextField
-              onChange={inputForm}
-              margin='dense'
-              id='DhtConnectionLimit'
-              label={t('DhtConnectionLimit')}
-              value={DhtConnectionLimit}
-              type='number'
-              fullWidth
-            />
-            <br />
-            <TextField
-              onChange={inputForm}
-              margin='dense'
-              id='DownloadRateLimit'
-              label={t('DownloadRateLimit')}
-              value={DownloadRateLimit}
-              type='number'
-              fullWidth
-            />
-            <br />
-            <FormControlLabel
-              control={<Switch checked={!DisableUpload} onChange={inputForm} id='DisableUpload' color='primary' />}
-              label={t('Upload')}
-            />
-            <br />
-            <TextField
-              onChange={inputForm}
-              margin='dense'
-              id='UploadRateLimit'
-              label={t('UploadRateLimit')}
-              value={UploadRateLimit}
-              type='number'
-              fullWidth
-            />
-            <br />
-            <TextField
-              onChange={inputForm}
-              margin='dense'
-              id='PeersListenPort'
-              label={t('PeersListenPort')}
-              value={PeersListenPort}
-              type='number'
-              fullWidth
-            />
-            <br />
-            <FormControlLabel
-              control={<Switch checked={!DisableUPNP} onChange={inputForm} id='DisableUPNP' color='primary' />}
-              label={t('UPNP')}
-            />
-            <br />
-            <InputLabel htmlFor='RetrackersMode'>{t('RetrackersMode')}</InputLabel>
-            <Select onChange={inputForm} type='number' native id='RetrackersMode' value={RetrackersMode}>
-              <option value={0}>{t('DontAddRetrackers')}</option>
-              <option value={1}>{t('AddRetrackers')}</option>
-              <option value={2}>{t('RemoveRetrackers')}</option>
-              <option value={3}>{t('ReplaceRetrackers')}</option>
-            </Select>
-            <br />
-          </>
-        )}
-      </DialogContent>
 
-      <DialogActions>
-        <Button onClick={handleClose} color='primary' variant='outlined'>
-          {t('Cancel')}
-        </Button>
-
-        <Button onClick={handleSave} color='primary' variant='outlined'>
-          {t('Save')}
-        </Button>
-      </DialogActions> */}
       <FooterSection>
         <FormControlLabel
           control={
@@ -654,7 +474,7 @@ export default function SettingsDialog({ handleClose }) {
               color='primary'
             />
           }
-          label='Pro mode'
+          label={t('SettingsDialog.ProMode')}
         />
 
         <div>

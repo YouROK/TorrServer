@@ -25,6 +25,7 @@ export const Content = styled.div`
   ${({ isLoading }) => css`
     background: #f1eff3;
     min-height: 500px;
+    overflow: auto;
 
     ${isLoading &&
     css`
