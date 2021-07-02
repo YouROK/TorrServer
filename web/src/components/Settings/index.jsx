@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 
 import SettingsDialog from './SettingsDialog'
 
-export default function SettingsDialogButton() {
+export default function SettingsDialogButton({ isOffline, isLoading }) {
   const { t } = useTranslation()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
@@ -16,7 +16,7 @@ export default function SettingsDialogButton() {
 
   return (
     <div>
-      <ListItem button onClick={handleClickOpen}>
+      <ListItem disabled={isOffline || isLoading} button onClick={handleClickOpen}>
         <ListItemIcon>
           <SettingsIcon />
         </ListItemIcon>
