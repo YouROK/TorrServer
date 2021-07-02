@@ -21,6 +21,19 @@ export const Divider = styled.div`
   margin: 30px 0;
 `
 
+export const Content = styled.div`
+  ${({ isLoading }) => css`
+    background: #f1eff3;
+    min-height: 500px;
+
+    ${isLoading &&
+    css`
+      display: grid;
+      place-items: center;
+    `}
+  `}
+`
+
 export const PreloadCacheValue = styled.div`
   ${({ color }) => css`
     display: grid;
@@ -43,7 +56,6 @@ export const PreloadCacheValue = styled.div`
 `
 
 export const MainSettingsContent = styled.div`
-  min-height: 500px;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 40px;
@@ -54,7 +66,6 @@ export const MainSettingsContent = styled.div`
   }
 `
 export const SecondarySettingsContent = styled.div`
-  min-height: 500px;
   padding: 20px;
 `
 
@@ -101,7 +112,6 @@ export const StorageIconWrapper = styled.div`
   `}
 `
 
-export const CacheSizeSettings = styled.div``
 export const CacheStorageSelector = styled.div`
   display: grid;
   grid-template-rows: max-content 1fr;
@@ -115,10 +125,6 @@ export const CacheStorageSelector = styled.div`
   }
 `
 
-export const CacheStorageSettings = styled.div``
-
-export const SettingSection = styled.section``
-export const SettingLabel = styled.div``
 export const SettingSectionLabel = styled.div`
   font-size: 25px;
   padding-bottom: 20px;
