@@ -43,6 +43,54 @@ import {
 import defaultSettings from './defaultSettings'
 import { a11yProps, TabPanel } from './tabComponents'
 
+const SliderInput = ({
+  isProMode,
+  title,
+  value,
+  setValue,
+  sliderMin,
+  sliderMax,
+  inputMin,
+  inputMax,
+  step = 1,
+  onBlurCallback,
+}) => {
+  const onBlur = ({ target: { value } }) => {
+    if (value < inputMin) return setValue(inputMin)
+    if (value > inputMax) return setValue(inputMax)
+
+    onBlurCallback && onBlurCallback(value)
+  }
+
+  const onInputChange = ({ target: { value } }) => setValue(value === '' ? '' : Number(value))
+  const onSliderChange = (_, newValue) => setValue(newValue)
+
+  return (
+    <>
+      <div>{title}</div>
+
+      <Grid container spacing={2} alignItems='center'>
+        <Grid item xs>
+          <Slider min={sliderMin} max={sliderMax} value={value} onChange={onSliderChange} step={step} />
+        </Grid>
+
+        {isProMode && (
+          <Grid item>
+            <Input
+              value={value}
+              margin='dense'
+              onChange={onInputChange}
+              onBlur={onBlur}
+              style={{ width: '65px' }}
+              inputProps={{ step, min: inputMin, max: inputMax, type: 'number' }}
+            />
+          </Grid>
+        )}
+      </Grid>
+    </>
+  )
+}
+
 export default function SettingsDialog({ handleClose }) {
   const { t } = useTranslation()
   const fullScreen = useMediaQuery('@media (max-width:930px)')
@@ -123,13 +171,6 @@ export default function SettingsDialog({ handleClose }) {
   const updateSettings = newProps => setSettings({ ...settings, ...newProps })
   const handleChange = (_, newValue) => setSelectedTab(newValue)
   const handleChangeIndex = index => setSelectedTab(index)
-  const handleBlur = ({ target: { value } }) => {
-    if (value < 32) return setCacheSize(32)
-    if (value > 20000) return setCacheSize(20000)
-
-    setCacheSize(Math.round(value / 8) * 8)
-  }
-  const handleInputChange = ({ target: { value } }) => setCacheSize(value === '' ? '' : Number(value))
 
   return (
     <Dialog open onClose={handleClose} fullScreen={fullScreen} fullWidth maxWidth='md'>
@@ -190,67 +231,29 @@ export default function SettingsDialog({ handleClose }) {
 
                     <Divider />
 
-                    <section>
-                      <div>Размер кеша</div>
+                    <SliderInput
+                      isProMode={isProMode}
+                      title='Размер кеша'
+                      value={cacheSize}
+                      setValue={setCacheSize}
+                      sliderMin={32}
+                      sliderMax={1024}
+                      inputMin={32}
+                      inputMax={20000}
+                      step={8}
+                      onBlurCallback={value => setCacheSize(Math.round(value / 8) * 8)}
+                    />
 
-                      <Grid container spacing={2} alignItems='center'>
-                        <Grid item xs>
-                          <Slider
-                            min={32}
-                            max={1024}
-                            value={cacheSize}
-                            onChange={(_, newValue) => setCacheSize(newValue)}
-                            step={8}
-                          />
-                        </Grid>
-
-                        {isProMode && (
-                          <Grid item>
-                            <Input
-                              value={cacheSize}
-                              margin='dense'
-                              onChange={handleInputChange}
-                              onBlur={handleBlur}
-                              style={{ width: '65px' }}
-                              inputProps={{ step: 8, min: 32, max: 20000, type: 'number' }}
-                            />
-                          </Grid>
-                        )}
-                      </Grid>
-                    </section>
-
-                    <section>
-                      <div>Кеш предзагрузки</div>
-
-                      <Grid container spacing={2} alignItems='center'>
-                        <Grid item xs>
-                          <Slider
-                            min={40}
-                            max={95}
-                            value={cachePercentage}
-                            onChange={(_, newValue) => setCachePercentage(newValue)}
-                          />
-                        </Grid>
-
-                        {isProMode && (
-                          <Grid item>
-                            <Input
-                              value={cachePercentage}
-                              margin='dense'
-                              onChange={({ target: { value } }) =>
-                                setCachePercentage(value === '' ? '' : Number(value))
-                              }
-                              onBlur={({ target: { value } }) => {
-                                if (value < 0) return setCachePercentage(0)
-                                if (value > 100) return setCachePercentage(100)
-                              }}
-                              style={{ width: '65px' }}
-                              inputProps={{ min: 0, max: 100, type: 'number' }}
-                            />
-                          </Grid>
-                        )}
-                      </Grid>
-                    </section>
+                    <SliderInput
+                      isProMode={isProMode}
+                      title='Кеш предзагрузки'
+                      value={cachePercentage}
+                      setValue={setCachePercentage}
+                      sliderMin={40}
+                      sliderMax={95}
+                      inputMin={0}
+                      inputMax={100}
+                    />
 
                     <FormControlLabel
                       control={
