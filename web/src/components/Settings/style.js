@@ -129,6 +129,11 @@ export const CacheStorageSelector = styled.div`
 export const SettingSectionLabel = styled.div`
   font-size: 25px;
   padding-bottom: 20px;
+
+  small {
+    display: block;
+    font-size: 11px;
+  }
 `
 
 export const PreloadCachePercentage = styled.div.attrs(({ value }) => ({

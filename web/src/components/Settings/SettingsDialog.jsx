@@ -43,8 +43,16 @@ import {
 import defaultSettings from './defaultSettings'
 import { a11yProps, TabPanel } from './tabComponents'
 
-// {t('UseDisk')}
-// {t('UseDiskDesc')}
+const CacheStorageLocationLabel = ({ style }) => {
+  const { t } = useTranslation()
+
+  return (
+    <SettingSectionLabel style={style}>
+      {t('SettingsDialog.CacheStorageLocation')}
+      <small>{t('SettingsDialog.UseDiskDesc')}</small>
+    </SettingSectionLabel>
+  )
+}
 
 const SliderInput = ({
   isProMode,
@@ -213,24 +221,24 @@ export default function SettingsDialog({ handleClose }) {
 
                     <PreloadCachePercentage
                       value={100 - cachePercentage}
-                      label={t('SettingsDialog.CacheSizeLabel', { cacheSize })}
+                      label={`${t('Cache')} ${cacheSize} MB`}
                       isPreloadEnabled={PreloadBuffer}
                     />
 
                     <PreloadCacheValue color={cacheBeforeReaderColor}>
                       <div>
-                        {100 - cachePercentage}% ({Math.round((cacheSize / 100) * (100 - cachePercentage))} МБ)
+                        {100 - cachePercentage}% ({Math.round((cacheSize / 100) * (100 - cachePercentage))} MB)
                       </div>
 
-                      <div>От кеша будет оставаться позади воспроизводимого блока</div>
+                      <div>{t('SettingsDialog.CacheBeforeReaderDesc')}</div>
                     </PreloadCacheValue>
 
                     <PreloadCacheValue color={cacheAfterReaderColor}>
                       <div>
-                        {cachePercentage}% ({Math.round((cacheSize / 100) * cachePercentage)} МБ)
+                        {cachePercentage}% ({Math.round((cacheSize / 100) * cachePercentage)} MB)
                       </div>
 
-                      <div>От кеша будет спереди от воспроизводимого блока</div>
+                      <div>{t('SettingsDialog.CacheAfterReaderDesc')}</div>
                     </PreloadCacheValue>
 
                     <Divider />
@@ -269,7 +277,7 @@ export default function SettingsDialog({ handleClose }) {
 
                   {UseDisk ? (
                     <div>
-                      <SettingSectionLabel>Место хранения кеша</SettingSectionLabel>
+                      <CacheStorageLocationLabel />
 
                       <div style={{ display: 'grid', gridAutoFlow: 'column' }}>
                         <StorageButton small onClick={() => updateSettings({ UseDisk: false })}>
@@ -277,7 +285,7 @@ export default function SettingsDialog({ handleClose }) {
                             <RAMIcon color='#323637' />
                           </StorageIconWrapper>
 
-                          <div>Оперативная память</div>
+                          <div>{t('SettingsDialog.RAM')}</div>
                         </StorageButton>
 
                         <StorageButton small selected>
@@ -285,7 +293,7 @@ export default function SettingsDialog({ handleClose }) {
                             <USBIcon color='#dee3e5' />
                           </StorageIconWrapper>
 
-                          <div>Диск</div>
+                          <div>{t('SettingsDialog.Disk')}</div>
                         </StorageButton>
                       </div>
 
@@ -300,7 +308,9 @@ export default function SettingsDialog({ handleClose }) {
                         }
                         label={t('SettingsDialog.RemoveCacheOnDrop')}
                       />
-                      <small>{t('SettingsDialog.RemoveCacheOnDropDesc')}</small>
+                      <div>
+                        <small>{t('SettingsDialog.RemoveCacheOnDropDesc')}</small>
+                      </div>
 
                       <TextField
                         onChange={inputForm}
@@ -314,16 +324,14 @@ export default function SettingsDialog({ handleClose }) {
                     </div>
                   ) : (
                     <CacheStorageSelector>
-                      <SettingSectionLabel style={{ placeSelf: 'start', gridArea: 'label' }}>
-                        Место хранения кеша
-                      </SettingSectionLabel>
+                      <CacheStorageLocationLabel style={{ placeSelf: 'start', gridArea: 'label' }} />
 
                       <StorageButton selected>
                         <StorageIconWrapper selected>
                           <RAMIcon color='#dee3e5' />
                         </StorageIconWrapper>
 
-                        <div>Оперативная память</div>
+                        <div>{t('SettingsDialog.RAM')}</div>
                       </StorageButton>
 
                       <StorageButton onClick={() => updateSettings({ UseDisk: true })}>
@@ -331,7 +339,7 @@ export default function SettingsDialog({ handleClose }) {
                           <USBIcon color='#323637' />
                         </StorageIconWrapper>
 
-                        <div>Диск</div>
+                        <div>{t('SettingsDialog.Disk')}</div>
                       </StorageButton>
                     </CacheStorageSelector>
                   )}
@@ -340,7 +348,7 @@ export default function SettingsDialog({ handleClose }) {
 
               <TabPanel value={selectedTab} index={1} dir={direction}>
                 <SecondarySettingsContent>
-                  <SettingSectionLabel>Дополнительные настройки</SettingSectionLabel>
+                  <SettingSectionLabel>{t('SettingsDialog.AdditionalSettings')}</SettingSectionLabel>
 
                   <FormControlLabel
                     control={<Switch checked={EnableIPv6} onChange={inputForm} id='EnableIPv6' color='primary' />}
