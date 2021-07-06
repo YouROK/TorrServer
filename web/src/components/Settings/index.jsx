@@ -20,7 +20,7 @@ export default function SettingsDialogButton({ isOffline, isLoading }) {
         <ListItemIcon>
           <SettingsIcon />
         </ListItemIcon>
-        <ListItemText primary={t('Settings')} />
+        <ListItemText primary={t('SettingsDialog.Settings')} />
       </ListItem>
 
       {isDialogOpen && <SettingsDialog handleClose={handleClose} />}
