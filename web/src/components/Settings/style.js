@@ -1,18 +1,33 @@
 import styled, { css } from 'styled-components'
 import { mainColors } from 'style/colors'
+import { Header } from 'style/DialogStyles'
 
 export const cacheBeforeReaderColor = '#b3dfc9'
 export const cacheAfterReaderColor = mainColors.light.primary
 
-export const FooterSection = styled.div`
-  padding: 20px;
-  display: flex;
+export const SettingsHeader = styled(Header)`
+  display: grid;
+  grid-auto-flow: column;
   align-items: center;
   justify-content: space-between;
+
+  @media (max-width: 340px) {
+    grid-auto-flow: row;
+  }
+`
+
+export const FooterSection = styled.div`
+  padding: 20px;
+  display: grid;
+  grid-auto-flow: column;
+  justify-content: end;
+  gap: 10px;
+  align-items: center;
   background: #e8e5eb;
 
-  > :last-child > :not(:last-child) {
-    margin-right: 10px;
+  @media (max-width: 500px) {
+    grid-auto-flow: row;
+    justify-content: stretch;
   }
 `
 export const Divider = styled.div`
@@ -24,11 +39,12 @@ export const Divider = styled.div`
 export const Content = styled.div`
   ${({ isLoading }) => css`
     background: #f1eff3;
-    min-height: 500px;
     overflow: auto;
+    flex: 1;
 
     ${isLoading &&
     css`
+      min-height: 500px;
       display: grid;
       place-items: center;
     `}
@@ -74,6 +90,7 @@ export const StorageButton = styled.div`
   ${({ small, selected }) => css`
     transition: 0.2s;
     cursor: default;
+    text-align: center;
 
     ${!selected &&
     css`
@@ -110,18 +127,22 @@ export const StorageIconWrapper = styled.div`
     svg {
       transform: rotate(-45deg) scale(0.75);
     }
+
+    @media (max-width: 930px) {
+      width: ${small ? '50px' : '90px'};
+      height: ${small ? '50px' : '90px'};
+    }
   `}
 `
 
 export const CacheStorageSelector = styled.div`
   display: grid;
   grid-template-rows: max-content 1fr;
-  grid-template-columns: 1fr 1fr;
   grid-template-areas: 'label label';
   place-items: center;
 
   @media (max-width: 930px) {
-    grid-template-columns: repeat(2, max-content);
+    justify-content: start;
     column-gap: 30px;
   }
 `

@@ -6,14 +6,13 @@ import { FormControlLabel, useMediaQuery, useTheme } from '@material-ui/core'
 import { settingsHost } from 'utils/Hosts'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Header } from 'style/DialogStyles'
 import AppBar from '@material-ui/core/AppBar'
 import Tabs from '@material-ui/core/Tabs'
 import Tab from '@material-ui/core/Tab'
 import SwipeableViews from 'react-swipeable-views'
 import CircularProgress from '@material-ui/core/CircularProgress'
 
-import { FooterSection, Content } from './style'
+import { SettingsHeader, FooterSection, Content } from './style'
 import defaultSettings from './defaultSettings'
 import { a11yProps, TabPanel } from './tabComponents'
 import PrimarySettingsComponent from './PrimarySettingsComponent'
@@ -81,7 +80,23 @@ export default function SettingsDialog({ handleClose }) {
 
   return (
     <Dialog open onClose={handleClose} fullScreen={fullScreen} fullWidth maxWidth='md'>
-      <Header>{t('SettingsDialog.Settings')}</Header>
+      <SettingsHeader>
+        <div>{t('SettingsDialog.Settings')}</div>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={isProMode}
+              onChange={({ target: { checked } }) => {
+                setIsProMode(checked)
+                localStorage.setItem('isProMode', checked)
+                if (!checked) setSelectedTab(0)
+              }}
+              style={{ color: 'white' }}
+            />
+          }
+          label={t('SettingsDialog.ProMode')}
+        />
+      </SettingsHeader>
 
       <AppBar position='static' color='default'>
         <Tabs
@@ -133,42 +148,25 @@ export default function SettingsDialog({ handleClose }) {
       </Content>
 
       <FooterSection>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={isProMode}
-              onChange={({ target: { checked } }) => {
-                setIsProMode(checked)
-                localStorage.setItem('isProMode', checked)
-                if (!checked) setSelectedTab(0)
-              }}
-              color='primary'
-            />
-          }
-          label={t('SettingsDialog.ProMode')}
-        />
+        <Button onClick={handleClose} color='secondary' variant='outlined'>
+          {t('Cancel')}
+        </Button>
 
-        <div>
-          <Button onClick={handleClose} color='secondary' variant='outlined'>
-            {t('Cancel')}
-          </Button>
+        <Button
+          onClick={() => {
+            setCacheSize(defaultSettings.CacheSize)
+            setCachePercentage(defaultSettings.ReaderReadAHead)
+            updateSettings(defaultSettings)
+          }}
+          color='secondary'
+          variant='outlined'
+        >
+          {t('SettingsDialog.ResetToDefault')}
+        </Button>
 
-          <Button
-            onClick={() => {
-              setCacheSize(defaultSettings.CacheSize)
-              setCachePercentage(defaultSettings.ReaderReadAHead)
-              updateSettings(defaultSettings)
-            }}
-            color='secondary'
-            variant='outlined'
-          >
-            Reset to default
-          </Button>
-
-          <Button variant='contained' onClick={handleSave} color='primary'>
-            {t('Save')}
-          </Button>
-        </div>
+        <Button variant='contained' onClick={handleSave} color='primary'>
+          {t('Save')}
+        </Button>
       </FooterSection>
     </Dialog>
   )

@@ -97,6 +97,7 @@
     "RemoveRetrackers": "Удалять",
     "ReplaceRetrackers": "Заменять",
     "RetrackersMode": "Ретрекеры",
+    "ResetToDefault": "Сбросить по умолчанию",
     "Settings": "Настройки",
     "TorrentDisconnectTimeout": "Тайм-аут отключения торрента (секунды)",
     "TorrentsSavePath": "Путь хранения кеша",
