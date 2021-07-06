@@ -49,7 +49,7 @@ export const themeColors = {
     },
     settingsDialog: {
       contentBG: '#f1eff3',
-      footerBG: '#f1eff3',
+      footerBG: '#fff',
     },
   },
   dark: {
