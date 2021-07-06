@@ -107,7 +107,7 @@
     "Tabs": {
       "Main": "Main",
       "Additional": "Additional",
-      "AdditionalDisabled": "Additional (enable PRO mode)"
+      "AdditionalDisabled": "(enable PRO mode)"
     }
   },
   "Size": "Size",

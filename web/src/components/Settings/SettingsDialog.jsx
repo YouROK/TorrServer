@@ -110,7 +110,12 @@ export default function SettingsDialog({ handleClose }) {
 
           <Tab
             disabled={!isProMode}
-            label={isProMode ? t('SettingsDialog.Tabs.Additional') : t('SettingsDialog.Tabs.AdditionalDisabled')}
+            label={
+              <>
+                <div>{t('SettingsDialog.Tabs.Additional')}</div>
+                {!isProMode && <div style={{ fontSize: '9px' }}>{t('SettingsDialog.Tabs.AdditionalDisabled')}</div>}
+              </>
+            }
             {...a11yProps(1)}
           />
         </Tabs>

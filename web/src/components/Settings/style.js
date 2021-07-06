@@ -107,6 +107,7 @@ export const StorageButton = styled.div`
           grid-template-columns: max-content 1fr;
           gap: 20px;
           align-items: center;
+          justify-items: start;
           margin-bottom: 20px;
         `
       : css`

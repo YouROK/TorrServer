@@ -107,7 +107,7 @@
     "Tabs": {
       "Main": "Основные",
       "Additional": "Дополнительные",
-      "AdditionalDisabled": "Дополнительные (включите ПРО режим)"
+      "AdditionalDisabled": "(включите ПРО режим)"
     }
   },
   "Size": "Размер",
