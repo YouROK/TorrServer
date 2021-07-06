@@ -28,7 +28,7 @@ const Sidebar = ({ isDrawerOpen, setIsDonationDialogOpen, isOffline, isLoading }
       <Divider />
 
       <List>
-        <SettingsDialog />
+        <SettingsDialog isOffline={isOffline} isLoading={isLoading} />
 
         <AboutDialog />
 

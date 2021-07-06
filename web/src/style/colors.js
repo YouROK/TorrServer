@@ -47,6 +47,10 @@ export const themeColors = {
       defaultSecondaryColor: '#00a383',
       defaultTertiaryColor: '#03aa89',
     },
+    settingsDialog: {
+      contentBG: '#f1eff3',
+      footerBG: '#f1eff3',
+    },
   },
   dark: {
     app: {
@@ -93,6 +97,10 @@ export const themeColors = {
       defaultPrimaryColor: '#323637',
       defaultSecondaryColor: rgba('#545a5e', 0.9),
       defaultTertiaryColor: '#545a5e',
+    },
+    settingsDialog: {
+      contentBG: '#5A6166',
+      footerBG: '#323637',
     },
   },
 }

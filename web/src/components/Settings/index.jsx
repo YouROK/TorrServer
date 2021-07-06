@@ -1,15 +1,16 @@
-import { useState } from 'react'
-import ListItemIcon from '@material-ui/core/ListItemIcon'
-import LibraryAddIcon from '@material-ui/icons/LibraryAdd'
-import ListItemText from '@material-ui/core/ListItemText'
 import ListItem from '@material-ui/core/ListItem'
+import ListItemIcon from '@material-ui/core/ListItemIcon'
+import ListItemText from '@material-ui/core/ListItemText'
+import { useState } from 'react'
+import SettingsIcon from '@material-ui/icons/Settings'
 import { useTranslation } from 'react-i18next'
 
-import AddDialog from './AddDialog'
+import SettingsDialog from './SettingsDialog'
 
-export default function AddDialogButton({ isOffline, isLoading }) {
+export default function SettingsDialogButton({ isOffline, isLoading }) {
   const { t } = useTranslation()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+
   const handleClickOpen = () => setIsDialogOpen(true)
   const handleClose = () => setIsDialogOpen(false)
 
@@ -17,12 +18,12 @@ export default function AddDialogButton({ isOffline, isLoading }) {
     <div>
       <ListItem disabled={isOffline || isLoading} button onClick={handleClickOpen}>
         <ListItemIcon>
-          <LibraryAddIcon />
+          <SettingsIcon />
         </ListItemIcon>
-        <ListItemText primary={t('AddFromLink')} />
+        <ListItemText primary={t('Settings')} />
       </ListItem>
 
-      {isDialogOpen && <AddDialog handleClose={handleClose} />}
+      {isDialogOpen && <SettingsDialog handleClose={handleClose} />}
     </div>
   )
 }
