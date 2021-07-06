@@ -102,8 +102,8 @@ export default function SettingsDialog({ handleClose }) {
         <Tabs
           value={selectedTab}
           onChange={handleChange}
-          indicatorColor='primary'
-          textColor='primary'
+          indicatorColor='secondary'
+          textColor='secondary'
           variant='fullWidth'
         >
           <Tab label={t('SettingsDialog.Tabs.Main')} {...a11yProps(0)} />
@@ -169,7 +169,7 @@ export default function SettingsDialog({ handleClose }) {
           {t('SettingsDialog.ResetToDefault')}
         </Button>
 
-        <Button variant='contained' onClick={handleSave} color='primary'>
+        <Button variant='contained' onClick={handleSave} color='secondary'>
           {t('Save')}
         </Button>
       </FooterSection>

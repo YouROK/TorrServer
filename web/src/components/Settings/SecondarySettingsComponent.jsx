@@ -30,27 +30,27 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       <SettingSectionLabel>{t('SettingsDialog.AdditionalSettings')}</SettingSectionLabel>
 
       <FormControlLabel
-        control={<Switch checked={EnableIPv6} onChange={inputForm} id='EnableIPv6' color='primary' />}
+        control={<Switch checked={EnableIPv6} onChange={inputForm} id='EnableIPv6' color='secondary' />}
         label='IPv6'
       />
       <br />
       <FormControlLabel
-        control={<Switch checked={!DisableTCP} onChange={inputForm} id='DisableTCP' color='primary' />}
+        control={<Switch checked={!DisableTCP} onChange={inputForm} id='DisableTCP' color='secondary' />}
         label='TCP (Transmission Control Protocol)'
       />
       <br />
       <FormControlLabel
-        control={<Switch checked={!DisableUTP} onChange={inputForm} id='DisableUTP' color='primary' />}
+        control={<Switch checked={!DisableUTP} onChange={inputForm} id='DisableUTP' color='secondary' />}
         label='μTP (Micro Transport Protocol)'
       />
       <br />
       <FormControlLabel
-        control={<Switch checked={!DisablePEX} onChange={inputForm} id='DisablePEX' color='primary' />}
+        control={<Switch checked={!DisablePEX} onChange={inputForm} id='DisablePEX' color='secondary' />}
         label='PEX (Peer Exchange)'
       />
       <br />
       <FormControlLabel
-        control={<Switch checked={ForceEncrypt} onChange={inputForm} id='ForceEncrypt' color='primary' />}
+        control={<Switch checked={ForceEncrypt} onChange={inputForm} id='ForceEncrypt' color='secondary' />}
         label={t('SettingsDialog.ForceEncrypt')}
       />
       <br />
@@ -75,7 +75,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       />
       <br />
       <FormControlLabel
-        control={<Switch checked={!DisableDHT} onChange={inputForm} id='DisableDHT' color='primary' />}
+        control={<Switch checked={!DisableDHT} onChange={inputForm} id='DisableDHT' color='secondary' />}
         label={t('SettingsDialog.DHT')}
       />
       <br />
@@ -100,7 +100,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       />
       <br />
       <FormControlLabel
-        control={<Switch checked={!DisableUpload} onChange={inputForm} id='DisableUpload' color='primary' />}
+        control={<Switch checked={!DisableUpload} onChange={inputForm} id='DisableUpload' color='secondary' />}
         label={t('SettingsDialog.Upload')}
       />
       <br />
@@ -125,7 +125,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       />
       <br />
       <FormControlLabel
-        control={<Switch checked={!DisableUPNP} onChange={inputForm} id='DisableUPNP' color='primary' />}
+        control={<Switch checked={!DisableUPNP} onChange={inputForm} id='DisableUPNP' color='secondary' />}
         label='UPnP (Universal Plug and Play)'
       />
       <br />

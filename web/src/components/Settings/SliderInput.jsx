@@ -28,7 +28,14 @@ export default function SliderInput({
 
       <Grid container spacing={2} alignItems='center'>
         <Grid item xs>
-          <Slider min={sliderMin} max={sliderMax} value={value} onChange={onSliderChange} step={step} />
+          <Slider
+            min={sliderMin}
+            max={sliderMax}
+            value={value}
+            onChange={onSliderChange}
+            step={step}
+            color='secondary'
+          />
         </Grid>
 
         {isProMode && (

@@ -17,18 +17,24 @@ export const SettingsHeader = styled(Header)`
 `
 
 export const FooterSection = styled.div`
-  padding: 20px;
-  display: grid;
-  grid-auto-flow: column;
-  justify-content: end;
-  gap: 10px;
-  align-items: center;
-  background: #e8e5eb;
+  ${({
+    theme: {
+      settingsDialog: { footerBG },
+    },
+  }) => css`
+    padding: 20px;
+    display: grid;
+    grid-auto-flow: column;
+    justify-content: end;
+    gap: 10px;
+    align-items: center;
+    background: ${footerBG};
 
-  @media (max-width: 500px) {
-    grid-auto-flow: row;
-    justify-content: stretch;
-  }
+    @media (max-width: 500px) {
+      grid-auto-flow: row;
+      justify-content: stretch;
+    }
+  `}
 `
 export const Divider = styled.div`
   height: 1px;
@@ -37,8 +43,13 @@ export const Divider = styled.div`
 `
 
 export const Content = styled.div`
-  ${({ isLoading }) => css`
-    background: #f1eff3;
+  ${({
+    isLoading,
+    theme: {
+      settingsDialog: { contentBG },
+    },
+  }) => css`
+    background: ${contentBG};
     overflow: auto;
     flex: 1;
 

@@ -95,7 +95,7 @@ export default function PrimarySettingsComponent({
         />
 
         <FormControlLabel
-          control={<Switch checked={!!PreloadBuffer} onChange={inputForm} id='PreloadBuffer' color='primary' />}
+          control={<Switch checked={!!PreloadBuffer} onChange={inputForm} id='PreloadBuffer' color='secondary' />}
           label={t('SettingsDialog.PreloadBuffer')}
         />
       </div>
@@ -123,7 +123,9 @@ export default function PrimarySettingsComponent({
           </div>
 
           <FormControlLabel
-            control={<Switch checked={RemoveCacheOnDrop} onChange={inputForm} id='RemoveCacheOnDrop' color='primary' />}
+            control={
+              <Switch checked={RemoveCacheOnDrop} onChange={inputForm} id='RemoveCacheOnDrop' color='secondary' />
+            }
             label={t('SettingsDialog.RemoveCacheOnDrop')}
           />
           <div>
