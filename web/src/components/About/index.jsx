@@ -48,7 +48,6 @@ export default function AboutDialog() {
               <div>
                 <LinkComponent name={t('ProjectSource')} link='https://github.com/YouROK/TorrServer' />
                 <LinkComponent name={t('Releases')} link='https://github.com/YouROK/TorrServer/releases' />
-                <LinkComponent name='API' link='https://github.com/YouROK/TorrServer/blob/master/README.md' />
               </div>
             </Section>
 

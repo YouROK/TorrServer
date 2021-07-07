@@ -1,7 +1,6 @@
 import styled, { css } from 'styled-components'
 
 export const DialogWrapper = styled.div`
-  background: #f1eff3;
   height: 100%;
   display: grid;
   grid-template-rows: max-content 1fr max-content;
@@ -11,10 +10,9 @@ export const HeaderSection = styled.section`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 40px;
+  font-size: 36px;
   font-weight: 300;
   padding: 20px;
-  color: #323637;
 
   img {
     width: 80px;
@@ -31,12 +29,12 @@ export const HeaderSection = styled.section`
 `
 
 export const ThanksSection = styled.section`
-  background: #545a5e;
-  color: #f1eff3;
-  padding: 40px 20px;
+  padding: 20px;
   text-align: center;
-  font-size: 30px;
+  font-size: 24px;
   font-weight: 300;
+  background: #e8e5eb;
+  color: #323637;
 
   @media (max-width: 930px) {
     font-size: 20px;
@@ -46,7 +44,6 @@ export const ThanksSection = styled.section`
 
 export const Section = styled.section`
   padding: 20px;
-  color: #323637;
 
   > span {
     font-size: 20px;

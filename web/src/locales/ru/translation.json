@@ -64,7 +64,7 @@
   "PiecesLength": "Размер блока",
   "Preload": "Предзагр.",
   "ProjectSource": "Сайт проекта",
-  "Releases": "Релизы",
+  "Releases": "Релизы TorrServer",
   "RemoveAll": "Удалить все",
   "RemoveViews": "Очистить просмотры",
   "Resolution": "Разреш.",
@@ -75,8 +75,8 @@
   "SettingsDialog": {
     "AddRetrackers": "Добавлять",
     "AdditionalSettings": "Дополнительные настройки",
-    "CacheBeforeReaderDesc": "От кеша будет оставаться позади воспроизводимого кадра",
-    "CacheAfterReaderDesc": "От кеша будет спереди от воспроизводимого кадра",
+    "CacheBeforeReaderDesc": "от кеша будет оставаться позади воспроизводимого кадра",
+    "CacheAfterReaderDesc": "кеша будет спереди от воспроизводимого кадра",
     "CacheSize": "Размер кеша",
     "CacheSettings": "Настройки кеша",
     "CacheStorageLocation": "Место хранения кеша",
@@ -89,7 +89,7 @@
     "ForceEncrypt": "Принудительное шифрование заголовков",
     "PeersListenPort": "Порт для входящих подключений",
     "PreloadBuffer": "Наполнять кеш перед началом воспроизведения",
-    "ProMode": "ПРО режим",
+    "ProMode": "ПРО-режим",
     "RAM": "Оперативная память",
     "ReaderReadAHead": "Кеш предзагрузки (5-100%, рек. 95%)",
     "RemoveCacheOnDrop": "Очищать кеш на диске при отключении торрента",
@@ -97,7 +97,7 @@
     "RemoveRetrackers": "Удалять",
     "ReplaceRetrackers": "Заменять",
     "RetrackersMode": "Ретрекеры",
-    "ResetToDefault": "Сбросить по умолчанию",
+    "ResetToDefault": "Настройки по умолчанию",
     "Settings": "Настройки",
     "TorrentDisconnectTimeout": "Тайм-аут отключения торрента (секунды)",
     "TorrentsSavePath": "Путь хранения кеша",
@@ -107,7 +107,7 @@
     "Tabs": {
       "Main": "Основные",
       "Additional": "Дополнительные",
-      "AdditionalDisabled": "(включите ПРО режим)"
+      "AdditionalDisabled": "(включите ПРО-режим)"
     }
   },
   "Size": "Размер",

@@ -33,7 +33,7 @@ export default function DonateDialog({ onClose }) {
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={onClose} color='primary' variant='outlined'>
+        <Button onClick={onClose} color='secondary' variant='contained'>
           Ok
         </Button>
       </DialogActions>
