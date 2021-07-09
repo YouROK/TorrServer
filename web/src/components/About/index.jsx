@@ -35,10 +35,7 @@ export default function AboutDialog() {
         <DialogWrapper>
           <HeaderSection>
             <div>{t('About')}</div>
-            <img
-              src='/android-chrome-192x192.png'
-              alt='ts-icon'
-            />
+            <img src='/android-chrome-192x192.png' alt='ts-icon' />
           </HeaderSection>
 
           <div style={{ overflow: 'auto' }}>
