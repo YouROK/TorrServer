@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import axios from 'axios'
+import { useEffect, useState } from 'react'
 import Button from '@material-ui/core/Button'
 import Dialog from '@material-ui/core/Dialog'
 import InfoIcon from '@material-ui/icons/Info'
@@ -7,6 +8,7 @@ import ListItemIcon from '@material-ui/core/ListItemIcon'
 import ListItemText from '@material-ui/core/ListItemText'
 import { useTranslation } from 'react-i18next'
 import { useMediaQuery } from '@material-ui/core'
+import { echoHost } from 'utils/Hosts'
 
 import LinkComponent from './LinkComponent'
 import { DialogWrapper, HeaderSection, ThanksSection, Section, FooterSection } from './style'
@@ -14,8 +16,12 @@ import { DialogWrapper, HeaderSection, ThanksSection, Section, FooterSection } f
 export default function AboutDialog() {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
+  const [torrServerVersion, setTorrServerVersion] = useState('')
   const fullScreen = useMediaQuery('@media (max-width:930px)')
-
+  useEffect(() => {
+    axios.get(echoHost()).then(({ data }) => setTorrServerVersion(data))
+  }, [])
+  
   return (
     <>
       <ListItem button key='Settings' onClick={() => setOpen(true)}>
@@ -35,7 +41,8 @@ export default function AboutDialog() {
         <DialogWrapper>
           <HeaderSection>
             <div>{t('About')}</div>
-            <img src='/android-chrome-192x192.png' alt='ts-icon' />
+            {torrServerVersion}
+            <img src='/apple-touch-icon.png' alt='ts-icon' />
           </HeaderSection>
 
           <div style={{ overflow: 'auto' }}>
@@ -64,7 +71,7 @@ export default function AboutDialog() {
           </div>
 
           <FooterSection>
-            <Button onClick={() => setOpen(false)} color='primary' variant='contained' autoFocus>
+            <Button onClick={() => setOpen(false)} color='primary' variant='contained'>
               {t('Close')}
             </Button>
           </FooterSection>
