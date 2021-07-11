@@ -45,32 +45,28 @@ var Indexhtml []byte
 var Mstile150x150png []byte
 
 
-//go:embed pages/safari-pinned-tab.svg
-var Safaripinnedtabsvg []byte
-
-
 //go:embed pages/site.webmanifest
 var Sitewebmanifest []byte
 
 
-//go:embed pages/static/js/2.13abae58.chunk.js
-var Staticjs213abae58chunkjs []byte
+//go:embed pages/static/js/2.c8261c65.chunk.js
+var Staticjs2c8261c65chunkjs []byte
 
 
-//go:embed pages/static/js/2.13abae58.chunk.js.LICENSE.txt
-var Staticjs213abae58chunkjsLICENSEtxt []byte
+//go:embed pages/static/js/2.c8261c65.chunk.js.LICENSE.txt
+var Staticjs2c8261c65chunkjsLICENSEtxt []byte
 
 
-//go:embed pages/static/js/2.13abae58.chunk.js.map
-var Staticjs213abae58chunkjsmap []byte
+//go:embed pages/static/js/2.c8261c65.chunk.js.map
+var Staticjs2c8261c65chunkjsmap []byte
 
 
-//go:embed pages/static/js/main.b3854718.chunk.js
-var Staticjsmainb3854718chunkjs []byte
+//go:embed pages/static/js/main.c71e4ba7.chunk.js
+var Staticjsmainc71e4ba7chunkjs []byte
 
 
-//go:embed pages/static/js/main.b3854718.chunk.js.map
-var Staticjsmainb3854718chunkjsmap []byte
+//go:embed pages/static/js/main.c71e4ba7.chunk.js.map
+var Staticjsmainc71e4ba7chunkjsmap []byte
 
 
 //go:embed pages/static/js/runtime-main.8bda5920.js
