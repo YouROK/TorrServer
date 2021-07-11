@@ -27,6 +27,7 @@ export default function SettingsDialog({ handleClose }) {
   const [selectedTab, setSelectedTab] = useState(0)
   const [cacheSize, setCacheSize] = useState(32)
   const [cachePercentage, setCachePercentage] = useState(40)
+  const [preloadCachePercentage, setPreloadCachePercentage] = useState(0)
   const [isProMode, setIsProMode] = useState(JSON.parse(localStorage.getItem('isProMode')) || false)
 
   useEffect(() => {
@@ -40,6 +41,7 @@ export default function SettingsDialog({ handleClose }) {
     const sets = JSON.parse(JSON.stringify(settings))
     sets.CacheSize = cacheSize * 1024 * 1024
     sets.ReaderReadAHead = cachePercentage
+    sets.PreloadCache = preloadCachePercentage
     axios.post(settingsHost(), { action: 'set', sets })
   }
 
@@ -65,14 +67,15 @@ export default function SettingsDialog({ handleClose }) {
     setSettings(sets)
   }
 
-  const { CacheSize, ReaderReadAHead } = settings || {}
+  const { CacheSize, ReaderReadAHead, PreloadCache } = settings || {}
 
   useEffect(() => {
-    if (!CacheSize || !ReaderReadAHead) return
+    if (!CacheSize || !ReaderReadAHead || !PreloadCache) return
 
     setCacheSize(CacheSize)
     setCachePercentage(ReaderReadAHead)
-  }, [CacheSize, ReaderReadAHead])
+    setPreloadCachePercentage(PreloadCache)
+  }, [CacheSize, ReaderReadAHead, PreloadCache])
 
   const updateSettings = newProps => setSettings({ ...settings, ...newProps })
   const handleChange = (_, newValue) => setSelectedTab(newValue)
@@ -134,10 +137,12 @@ export default function SettingsDialog({ handleClose }) {
                   settings={settings}
                   inputForm={inputForm}
                   cachePercentage={cachePercentage}
+                  preloadCachePercentage={preloadCachePercentage}
                   cacheSize={cacheSize}
                   isProMode={isProMode}
                   setCacheSize={setCacheSize}
                   setCachePercentage={setCachePercentage}
+                  setPreloadCachePercentage={setPreloadCachePercentage}
                   updateSettings={updateSettings}
                 />
               </TabPanel>
@@ -161,6 +166,7 @@ export default function SettingsDialog({ handleClose }) {
           onClick={() => {
             setCacheSize(defaultSettings.CacheSize)
             setCachePercentage(defaultSettings.ReaderReadAHead)
+            setPreloadCachePercentage(defaultSettings.PreloadCache)
             updateSettings(defaultSettings)
           }}
           color='secondary'

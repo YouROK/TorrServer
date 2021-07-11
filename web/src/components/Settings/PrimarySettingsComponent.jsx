@@ -32,10 +32,12 @@ export default function PrimarySettingsComponent({
   settings,
   inputForm,
   cachePercentage,
+  preloadCachePercentage,
   cacheSize,
   isProMode,
   setCacheSize,
   setCachePercentage,
+  setPreloadCachePercentage,
   updateSettings,
 }) {
   const { t } = useTranslation()
@@ -94,10 +96,17 @@ export default function PrimarySettingsComponent({
           inputMax={100}
         />
 
-        <FormControlLabel
-          control={<Switch checked={!!PreloadBuffer} onChange={inputForm} id='PreloadBuffer' color='secondary' />}
-          label={t('SettingsDialog.PreloadBuffer')}
+        <SliderInput
+            isProMode={isProMode}
+            title={t('SettingsDialog.PreloadCache')}
+            value={preloadCachePercentage}
+            setValue={setPreloadCachePercentage}
+            sliderMin={0}
+            sliderMax={100}
+            inputMin={0}
+            inputMax={100}
         />
+
       </div>
 
       {UseDisk ? (
