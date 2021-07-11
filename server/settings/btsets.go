@@ -13,8 +13,8 @@ import (
 type BTSets struct {
 	// Cache
 	CacheSize       int64 // in byte, def 200 mb
-	PreloadBuffer   bool
-	ReaderReadAHead int // in percent, 5%-100%, [...S__X__E...] [S-E] not clean
+	ReaderReadAHead int   // in percent, 5%-100%, [...S__X__E...] [S-E] not clean
+	PreloadCache    int   // in percent
 
 	// Disk
 	UseDisk           bool
@@ -62,6 +62,13 @@ func SetBTSets(sets *BTSets) {
 	}
 	if sets.ReaderReadAHead > 100 {
 		sets.ReaderReadAHead = 100
+	}
+
+	if sets.PreloadCache < 0 {
+		sets.PreloadCache = 0
+	}
+	if sets.PreloadCache > 100 {
+		sets.PreloadCache = 100
 	}
 
 	if sets.TorrentsSavePath == "" {
@@ -115,7 +122,7 @@ func SetDefault() {
 	sets.EnableDebug = false
 	sets.DisableUTP = true
 	sets.CacheSize = 96 * 1024 * 1024 // 100mb
-	sets.PreloadBuffer = false
+	sets.PreloadCache = 0
 	sets.ConnectionsLimit = 23
 	sets.DhtConnectionLimit = 500
 	sets.RetrackersMode = 1
