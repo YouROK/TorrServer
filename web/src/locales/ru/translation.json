@@ -92,7 +92,7 @@
     "ProMode": "ПРО-режим",
     "RAM": "Оперативная память",
     "ReaderReadAHead": "Опережающий кеш (5-100%, рек. 95%)",
-    "RemoveCacheOnDrop": "Очищать кеш на накопителе при отключении торрента",
+    "RemoveCacheOnDrop": "Очищать кеш при отключении торрента",
     "RemoveCacheOnDropDesc": "Если отключено, кеш очищается при удалении торрента.",
     "RemoveRetrackers": "Удалять",
     "ReplaceRetrackers": "Заменять",

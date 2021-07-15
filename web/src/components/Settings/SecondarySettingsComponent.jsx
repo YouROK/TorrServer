@@ -135,6 +135,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         label='UPnP (Universal Plug and Play)'
       />
       <br />
+      <br />
       <InputLabel htmlFor='RetrackersMode'>{t('SettingsDialog.RetrackersMode')}</InputLabel>
       <Select
         onChange={inputForm}

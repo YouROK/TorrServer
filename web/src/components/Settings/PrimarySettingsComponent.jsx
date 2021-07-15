@@ -139,10 +139,10 @@ export default function PrimarySettingsComponent({
           <div>
             <small>{t('SettingsDialog.RemoveCacheOnDropDesc')}</small>
           </div>
-
+          <br />
           <TextField
             onChange={inputForm}
-            margin='dense'
+            margin='normal'
             id='TorrentsSavePath'
             label={t('SettingsDialog.TorrentsSavePath')}
             value={TorrentsSavePath}
