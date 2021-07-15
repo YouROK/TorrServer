@@ -58,7 +58,7 @@ export const useMaterialUITheme = () => {
               color: mainColors[theme].labels,
             },
           },
-          MuiInputLabel: { // MuiFormLabel
+          MuiInputLabel: {
             root: {
               color: mainColors[theme].labels,
               // fontSize: '22px',

@@ -56,7 +56,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       <br />
       <TextField
         onChange={inputForm}
-        margin='dense'
+        margin='normal'
         id='TorrentDisconnectTimeout'
         label={t('SettingsDialog.TorrentDisconnectTimeout')}
         value={TorrentDisconnectTimeout}
@@ -67,7 +67,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       <br />
       <TextField
         onChange={inputForm}
-        margin='dense'
+        margin='normal'
         id='ConnectionsLimit'
         label={t('SettingsDialog.ConnectionsLimit')}
         value={ConnectionsLimit}
@@ -83,7 +83,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       <br />
       <TextField
         onChange={inputForm}
-        margin='dense'
+        margin='normal'
         id='DhtConnectionLimit'
         label={t('SettingsDialog.DhtConnectionLimit')}
         value={DhtConnectionLimit}
@@ -94,7 +94,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       <br />
       <TextField
         onChange={inputForm}
-        margin='dense'
+        margin='normal'
         id='DownloadRateLimit'
         label={t('SettingsDialog.DownloadRateLimit')}
         value={DownloadRateLimit}
@@ -110,7 +110,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       <br />
       <TextField
         onChange={inputForm}
-        margin='dense'
+        margin='normal'
         id='UploadRateLimit'
         label={t('SettingsDialog.UploadRateLimit')}
         value={UploadRateLimit}
@@ -121,7 +121,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       <br />
       <TextField
         onChange={inputForm}
-        margin='dense'
+        margin='normal'
         id='PeersListenPort'
         label={t('SettingsDialog.PeersListenPort')}
         value={PeersListenPort}
@@ -138,7 +138,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       <InputLabel htmlFor='RetrackersMode'>{t('SettingsDialog.RetrackersMode')}</InputLabel>
       <Select
         onChange={inputForm}
-        margin='dense'
+        margin='normal'
         type='number'
         native
         id='RetrackersMode'
