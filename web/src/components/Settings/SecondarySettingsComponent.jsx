@@ -61,6 +61,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         label={t('SettingsDialog.TorrentDisconnectTimeout')}
         value={TorrentDisconnectTimeout}
         type='number'
+        variant='outlined'
         fullWidth
       />
       <br />
@@ -71,6 +72,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         label={t('SettingsDialog.ConnectionsLimit')}
         value={ConnectionsLimit}
         type='number'
+        variant='outlined'
         fullWidth
       />
       <br />
@@ -86,6 +88,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         label={t('SettingsDialog.DhtConnectionLimit')}
         value={DhtConnectionLimit}
         type='number'
+        variant='outlined'
         fullWidth
       />
       <br />
@@ -96,6 +99,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         label={t('SettingsDialog.DownloadRateLimit')}
         value={DownloadRateLimit}
         type='number'
+        variant='outlined'
         fullWidth
       />
       <br />
@@ -111,6 +115,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         label={t('SettingsDialog.UploadRateLimit')}
         value={UploadRateLimit}
         type='number'
+        variant='outlined'
         fullWidth
       />
       <br />
@@ -121,6 +126,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         label={t('SettingsDialog.PeersListenPort')}
         value={PeersListenPort}
         type='number'
+        variant='outlined'
         fullWidth
       />
       <br />
@@ -130,7 +136,15 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       />
       <br />
       <InputLabel htmlFor='RetrackersMode'>{t('SettingsDialog.RetrackersMode')}</InputLabel>
-      <Select onChange={inputForm} type='number' native id='RetrackersMode' value={RetrackersMode}>
+      <Select
+        onChange={inputForm}
+        margin='dense'
+        type='number'
+        native
+        id='RetrackersMode'
+        value={RetrackersMode}
+        variant='outlined'
+      >
         <option value={0}>{t('SettingsDialog.DontAddRetrackers')}</option>
         <option value={1}>{t('SettingsDialog.AddRetrackers')}</option>
         <option value={2}>{t('SettingsDialog.RemoveRetrackers')}</option>

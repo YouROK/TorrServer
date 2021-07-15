@@ -109,9 +109,11 @@ export const mainColors = {
   light: {
     primary: '#00a572',
     secondary: '#00a572',
+    labels: rgba('#000', 0.9),
   },
   dark: {
     primary: '#323637',
     secondary: '#dee3e5',
+    labels: rgba('#fff', 0.9),
   },
 }

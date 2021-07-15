@@ -52,6 +52,23 @@ export const useMaterialUITheme = () => {
           primary: { main: mainColors[theme].primary },
           secondary: { main: mainColors[theme].secondary },
         },
+        overrides: {
+          MuiInputBase: {
+            input: {
+              color: mainColors[theme].labels,
+            },
+          },
+          MuiInputLabel: { // MuiFormLabel
+            root: {
+              color: mainColors[theme].labels,
+              // fontSize: '22px',
+              marginBottom: '10px',
+              '&$focused': {
+                color: mainColors[theme].labels,
+              },
+            },
+          },
+        },
       }),
     [theme],
   )

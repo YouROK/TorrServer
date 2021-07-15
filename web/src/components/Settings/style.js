@@ -67,7 +67,7 @@ export const PreloadCacheValue = styled.div`
     display: grid;
     grid-template-columns: max-content 100px 1fr;
     gap: 10px;
-    align-items: center;
+    align-items: flex-start;
 
     :not(:last-child) {
       margin-bottom: 5px;
@@ -76,9 +76,10 @@ export const PreloadCacheValue = styled.div`
     :before {
       content: '';
       background: ${color};
-      width: 15px;
-      height: 15px;
+      width: 16px;
+      height: 16px;
       border-radius: 50%;
+      margin-top: 2px;
     }
   `}
 `

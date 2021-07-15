@@ -147,6 +147,7 @@ export default function PrimarySettingsComponent({
             label={t('SettingsDialog.TorrentsSavePath')}
             value={TorrentsSavePath}
             type='url'
+            variant='outlined'
             fullWidth
           />
         </div>
