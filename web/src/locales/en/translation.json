@@ -75,8 +75,8 @@
   "SettingsDialog": {
     "AddRetrackers": "Add retrackers",
     "AdditionalSettings": "Additional Settings",
-    "CacheBeforeReaderDesc": "From cache will be saved before currently played frame",
-    "CacheAfterReaderDesc": "From cache will be loaded after currently played frame",
+    "CacheBeforeReaderDesc": "from cache will be saved before currently played frame",
+    "CacheAfterReaderDesc": "from cache will be loaded after currently played frame",
     "CacheSize": "Cache Size",
     "CacheSettings": "Cache Settings",
     "CacheStorageLocation": "Cache Storage Location",
@@ -93,7 +93,7 @@
     "RAM": "RAM",
     "ReaderReadAHead": "Readahead Cache (5-100%, rec. 95%)",
     "RemoveCacheOnDrop": "Remove Cache from Disk on Drop Torrent",
-    "RemoveCacheOnDropDesc": "If disabled, remove cache on delete torrent.",
+    "RemoveCacheOnDropDesc": "If disabled, cache removed on delete torrent.",
     "RemoveRetrackers": "Remove retrackers",
     "ReplaceRetrackers": "Replace retrackers",
     "RetrackersMode": "Retrackers Mode",
@@ -103,7 +103,7 @@
     "TorrentsSavePath": "Torrents Save Path",
     "Upload": "Upload (not recommended to disable)",
     "UploadRateLimit": "Upload Rate Limit (Kilobytes)",
-    "UseDiskDesc": "Better use external media on flash-based devices",
+    "UseDiskDesc": "Better use RAM or external storage on flash-based devices",
     "Tabs": {
       "Main": "Main",
       "Additional": "Additional",
