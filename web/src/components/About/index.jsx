@@ -21,7 +21,7 @@ export default function AboutDialog() {
   useEffect(() => {
     axios.get(echoHost()).then(({ data }) => setTorrServerVersion(data))
   }, [])
-  
+
   return (
     <>
       <ListItem button key='Settings' onClick={() => setOpen(true)}>

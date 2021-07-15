@@ -17,7 +17,7 @@ export default {
   EnableIPv6: false,
   ForceEncrypt: false,
   PeersListenPort: 0,
-  PreloadBuffer: false,
+  PreloadCache: 0,
   RemoveCacheOnDrop: false,
   RetrackersMode: 1,
   Strategy: 0,

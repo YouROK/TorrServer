@@ -4,7 +4,6 @@ import { FormControlLabel, Switch } from '@material-ui/core'
 import TextField from '@material-ui/core/TextField'
 
 import {
-  Divider,
   PreloadCacheValue,
   MainSettingsContent,
   StorageButton,
@@ -41,7 +40,8 @@ export default function PrimarySettingsComponent({
   updateSettings,
 }) {
   const { t } = useTranslation()
-  const { PreloadBuffer, UseDisk, TorrentsSavePath, RemoveCacheOnDrop } = settings || {}
+  const { UseDisk, TorrentsSavePath, RemoveCacheOnDrop } = settings || {}
+  const preloadCacheSize = Math.round((cacheSize / 100) * preloadCachePercentage)
 
   return (
     <MainSettingsContent>
@@ -51,7 +51,7 @@ export default function PrimarySettingsComponent({
         <PreloadCachePercentage
           value={100 - cachePercentage}
           label={`${t('Cache')} ${cacheSize} MB`}
-          isPreloadEnabled={PreloadBuffer}
+          preloadCachePercentage={preloadCachePercentage}
         />
 
         <PreloadCacheValue color={cacheBeforeReaderColor}>
@@ -70,7 +70,7 @@ export default function PrimarySettingsComponent({
           <div>{t('SettingsDialog.CacheAfterReaderDesc')}</div>
         </PreloadCacheValue>
 
-        <Divider />
+        <br />
 
         <SliderInput
           isProMode={isProMode}
@@ -97,16 +97,15 @@ export default function PrimarySettingsComponent({
         />
 
         <SliderInput
-            isProMode={isProMode}
-            title={t('SettingsDialog.PreloadCache')}
-            value={preloadCachePercentage}
-            setValue={setPreloadCachePercentage}
-            sliderMin={0}
-            sliderMax={100}
-            inputMin={0}
-            inputMax={100}
+          isProMode={isProMode}
+          title={`${t('SettingsDialog.PreloadCache')} - ${preloadCachePercentage}% (${preloadCacheSize} MB)`}
+          value={preloadCachePercentage}
+          setValue={setPreloadCachePercentage}
+          sliderMin={0}
+          sliderMax={100}
+          inputMin={0}
+          inputMax={100}
         />
-
       </div>
 
       {UseDisk ? (

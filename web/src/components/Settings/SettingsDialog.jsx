@@ -70,7 +70,7 @@ export default function SettingsDialog({ handleClose }) {
   const { CacheSize, ReaderReadAHead, PreloadCache } = settings || {}
 
   useEffect(() => {
-    if (!CacheSize || !ReaderReadAHead || !PreloadCache) return
+    if (!CacheSize || !ReaderReadAHead) return
 
     setCacheSize(CacheSize)
     setCachePercentage(ReaderReadAHead)

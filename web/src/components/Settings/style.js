@@ -175,7 +175,7 @@ export const PreloadCachePercentage = styled.div.attrs(({ value }) => ({
     background: `linear-gradient(to right, ${cacheBeforeReaderColor} 0%, ${cacheBeforeReaderColor} ${value}%, ${cacheAfterReaderColor} ${value}%, ${cacheAfterReaderColor} 100%)`,
   },
 }))`
-  ${({ label, isPreloadEnabled }) => css`
+  ${({ label, preloadCachePercentage }) => css`
     border: 1px solid #323637;
     padding: 10px 20px;
     border-radius: 5px;
@@ -190,17 +190,16 @@ export const PreloadCachePercentage = styled.div.attrs(({ value }) => ({
       font-size: 20px;
     }
 
-    ${isPreloadEnabled &&
-    css`
-      :after {
-        content: '';
-        width: 100%;
-        height: 2px;
-        background: #323637;
-        position: absolute;
-        bottom: 0;
-        left: 0;
-      }
-    `}
+    :after {
+      content: '';
+      width: ${preloadCachePercentage}%;
+      height: 100%;
+      background: #323637;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      border-radius: 4px;
+      filter: opacity(0.15);
+    }
   `}
 `

@@ -4,7 +4,7 @@ export const themeColors = {
   light: {
     app: {
       headerToggleColor: '#4db380',
-      appSecondaryColor: '#CBE8D9',
+      appSecondaryColor: '#cbe8d9',
       sidebarBGColor: '#575757',
       sidebarFillColor: '#dee3e5',
     },
@@ -99,7 +99,7 @@ export const themeColors = {
       defaultTertiaryColor: '#545a5e',
     },
     settingsDialog: {
-      contentBG: '#5A6166',
+      contentBG: '#5a6166',
       footerBG: '#323637',
     },
   },
