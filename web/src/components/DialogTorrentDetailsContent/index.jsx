@@ -205,7 +205,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                 <LoadingProgress
                   value={Filled}
                   fullAmount={bufferSize}
-                  label={`${humanizeSize(Filled) || '0 B'} / ${humanizeSize(bufferSize)}`}
+                  label={`${humanizeSize(bufferSize)} / ${humanizeSize(Filled) || '0 B'}`}
                 />
               </SectionHeader>
 
