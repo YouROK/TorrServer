@@ -135,6 +135,7 @@ export default function PrimarySettingsComponent({
               <Switch checked={RemoveCacheOnDrop} onChange={inputForm} id='RemoveCacheOnDrop' color='secondary' />
             }
             label={t('SettingsDialog.RemoveCacheOnDrop')}
+            labelPlacement='start'
           />
           <div>
             <small>{t('SettingsDialog.RemoveCacheOnDropDesc')}</small>

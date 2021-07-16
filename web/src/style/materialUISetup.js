@@ -58,11 +58,20 @@ export const useMaterialUITheme = () => {
               color: mainColors[theme].labels,
             },
           },
+          // https://material-ui.com/ru/api/form-control-label/
+          MuiFormControlLabel: {
+            labelPlacementStart: {
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginStart: 0,
+              marginTop: 6,
+              marginBottom: 2,
+            },
+          },
           MuiInputLabel: {
             root: {
               color: mainColors[theme].labels,
-              // fontSize: '22px',
-              marginBottom: '10px',
+              marginBottom: 8,
               '&$focused': {
                 color: mainColors[theme].labels,
               },

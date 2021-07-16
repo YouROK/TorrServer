@@ -32,28 +32,28 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       <FormControlLabel
         control={<Switch checked={EnableIPv6} onChange={inputForm} id='EnableIPv6' color='secondary' />}
         label='IPv6'
+        labelPlacement='start'
       />
-      <br />
       <FormControlLabel
         control={<Switch checked={!DisableTCP} onChange={inputForm} id='DisableTCP' color='secondary' />}
         label='TCP (Transmission Control Protocol)'
+        labelPlacement='start'
       />
-      <br />
       <FormControlLabel
         control={<Switch checked={!DisableUTP} onChange={inputForm} id='DisableUTP' color='secondary' />}
         label='μTP (Micro Transport Protocol)'
+        labelPlacement='start'
       />
-      <br />
       <FormControlLabel
         control={<Switch checked={!DisablePEX} onChange={inputForm} id='DisablePEX' color='secondary' />}
         label='PEX (Peer Exchange)'
+        labelPlacement='start'
       />
-      <br />
       <FormControlLabel
         control={<Switch checked={ForceEncrypt} onChange={inputForm} id='ForceEncrypt' color='secondary' />}
         label={t('SettingsDialog.ForceEncrypt')}
+        labelPlacement='start'
       />
-      <br />
       <TextField
         onChange={inputForm}
         margin='normal'
@@ -79,8 +79,8 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       <FormControlLabel
         control={<Switch checked={!DisableDHT} onChange={inputForm} id='DisableDHT' color='secondary' />}
         label={t('SettingsDialog.DHT')}
+        labelPlacement='start'
       />
-      <br />
       <TextField
         onChange={inputForm}
         margin='normal'
@@ -106,8 +106,8 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       <FormControlLabel
         control={<Switch checked={!DisableUpload} onChange={inputForm} id='DisableUpload' color='secondary' />}
         label={t('SettingsDialog.Upload')}
+        labelPlacement='start'
       />
-      <br />
       <TextField
         onChange={inputForm}
         margin='normal'
@@ -129,12 +129,11 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         variant='outlined'
         fullWidth
       />
-      <br />
       <FormControlLabel
         control={<Switch checked={!DisableUPNP} onChange={inputForm} id='DisableUPNP' color='secondary' />}
         label='UPnP (Universal Plug and Play)'
+        labelPlacement='start'
       />
-      <br />
       <br />
       <InputLabel htmlFor='RetrackersMode'>{t('SettingsDialog.RetrackersMode')}</InputLabel>
       <Select
