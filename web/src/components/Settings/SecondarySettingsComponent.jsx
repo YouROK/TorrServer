@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import TextField from '@material-ui/core/TextField'
-import { FormControlLabel, InputLabel, Select, Switch } from '@material-ui/core'
+import { FormControlLabel, InputAdornment, InputLabel, Select, Switch } from '@material-ui/core'
 
 import { SecondarySettingsContent, SettingSectionLabel } from './style'
 
@@ -59,6 +59,11 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         margin='normal'
         id='TorrentDisconnectTimeout'
         label={t('SettingsDialog.TorrentDisconnectTimeout')}
+        InputProps={{
+          endAdornment: (
+            <InputAdornment position='end'>{t('Seconds')}</InputAdornment>
+          ),
+        }}
         value={TorrentDisconnectTimeout}
         type='number'
         variant='outlined'
@@ -70,6 +75,11 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         margin='normal'
         id='ConnectionsLimit'
         label={t('SettingsDialog.ConnectionsLimit')}
+        InputProps={{
+          endAdornment: (
+            <InputAdornment position='end'>{t('SettingsDialog.ConnectionsLimitHint')}</InputAdornment>
+          ),
+        }}
         value={ConnectionsLimit}
         type='number'
         variant='outlined'
@@ -97,6 +107,11 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         margin='normal'
         id='DownloadRateLimit'
         label={t('SettingsDialog.DownloadRateLimit')}
+        InputProps={{
+          endAdornment: (
+            <InputAdornment position='end'>{t('Kilobytes')}</InputAdornment>
+          ),
+        }}
         value={DownloadRateLimit}
         type='number'
         variant='outlined'
@@ -113,6 +128,11 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         margin='normal'
         id='UploadRateLimit'
         label={t('SettingsDialog.UploadRateLimit')}
+        InputProps={{
+          endAdornment: (
+            <InputAdornment position='end'>{t('Kilobytes')}</InputAdornment>
+          ),
+        }}
         value={UploadRateLimit}
         type='number'
         variant='outlined'

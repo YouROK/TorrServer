@@ -19,7 +19,7 @@ export const HeaderSection = styled.section`
   }
 
   @media (max-width: 930px) {
-    font-size: 30px;
+    font-size: 24px;
     padding: 10px 20px;
 
     img {
