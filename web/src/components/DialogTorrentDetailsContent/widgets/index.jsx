@@ -7,7 +7,7 @@ import {
   PhotoSizeSelectSmall as PhotoSizeSelectSmallIcon,
   Build as BuildIcon,
 } from '@material-ui/icons'
-import { getPeerString, humanizeSize } from 'utils/Utils'
+import { getPeerString, humanizeSize, humanizeSpeed } from 'utils/Utils'
 import { useTranslation } from 'react-i18next'
 import { GETTING_INFO, IN_DB, CLOSED, PRELOAD, WORKING } from 'torrentStates'
 
@@ -21,7 +21,7 @@ export const DownlodSpeedWidget = ({ data }) => {
   return (
     <StatisticsField
       title={t('DownloadSpeed')}
-      value={humanizeSize(data) || '0 B'}
+      value={humanizeSpeed(data) || `0 ${t('bps')}`}
       iconBg={iconBGColor}
       valueBg={valueBGColor}
       icon={ArrowDownwardIcon}
@@ -36,7 +36,7 @@ export const UploadSpeedWidget = ({ data }) => {
   return (
     <StatisticsField
       title={t('UploadSpeed')}
-      value={humanizeSize(data) || '0 B'}
+      value={humanizeSpeed(data) || `0 ${t('bps')}`}
       iconBg={iconBGColor}
       valueBg={valueBGColor}
       icon={ArrowUpwardIcon}
@@ -51,7 +51,7 @@ export const PeersWidget = ({ data }) => {
   return (
     <StatisticsField
       title={t('Peers')}
-      value={getPeerString(data) || '[0] 0 / 0'}
+      value={getPeerString(data) || '0 · 0 / 0'}
       iconBg={iconBGColor}
       valueBg={valueBGColor}
       icon={SwapVerticalCircleIcon}

@@ -5,7 +5,7 @@ import {
   Close as CloseIcon,
   Delete as DeleteIcon,
 } from '@material-ui/icons'
-import { getPeerString, humanizeSize, removeRedundantCharacters } from 'utils/Utils'
+import { getPeerString, humanizeSize, humanizeSpeed, removeRedundantCharacters } from 'utils/Utils'
 import { torrentsHost } from 'utils/Hosts'
 import { NoImageIcon } from 'icons'
 import DialogTorrentDetailsContent from 'components/DialogTorrentDetailsContent'
@@ -103,7 +103,7 @@ const Torrent = ({ torrent }) => {
             <div className='description-statistics-element-wrapper'>
               <div className='description-section-name'>{t('Speed')}</div>
               <div className='description-statistics-element-value'>
-                {downloadSpeed > 0 ? humanizeSize(downloadSpeed) : '---'}
+                {downloadSpeed > 0 ? humanizeSpeed(downloadSpeed) : '---'}
               </div>
             </div>
 

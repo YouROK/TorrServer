@@ -1,16 +1,27 @@
 import axios from 'axios'
 
+import i18n from '../i18n'
 import { torrentsHost } from './Hosts'
 
 export function humanizeSize(size) {
   if (!size) return ''
   const i = Math.floor(Math.log(size) / Math.log(1024))
-  return `${(size / Math.pow(1024, i)).toFixed(2) * 1} ${['B', 'KB', 'MB', 'GB', 'TB'][i]}`
+  return `${(size / Math.pow(1024, i)).toFixed(2) * 1} ${
+    [i18n.t('B'), i18n.t('KB'), i18n.t('MB'), i18n.t('GB'), i18n.t('TB')][i]
+  }`
+}
+
+export function humanizeSpeed(speed) {
+  if (!speed) return ''
+  const i = Math.floor(Math.log(speed * 8) / Math.log(1000))
+  return `${((speed * 8) / Math.pow(1000, i)).toFixed(0) * 1} ${
+    [i18n.t('bps'), i18n.t('kbps'), i18n.t('Mbps'), i18n.t('Gbps'), i18n.t('Tbps')][i]
+  }`
 }
 
 export function getPeerString(torrent) {
   if (!torrent || !torrent.connected_seeders) return null
-  return `[${torrent.connected_seeders}] ${torrent.active_peers} / ${torrent.total_peers}`
+  return `${torrent.connected_seeders} · ${torrent.active_peers} / ${torrent.total_peers}`
 }
 
 export const shortenText = (text, sympolAmount) =>
