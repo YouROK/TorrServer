@@ -64,10 +64,10 @@ export default function App() {
               <AppWrapper>
                 <AppHeader>
                   <IconButton
-                    style={{ marginRight: '6px' }}
+                    edge='start'
                     color='inherit'
                     onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-                    edge='start'
+                    style={{ marginRight: '6px' }}
                   >
                     {isDrawerOpen ? <CloseIcon /> : <MenuIcon />}
                   </IconButton>
