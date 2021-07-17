@@ -33,10 +33,7 @@ OUTPUT="${ROOT}/dist/TorrServer"
 
 #### Build web
 echo "Build web"
-cd "${ROOT}/web" || exit 1
-npm install --silent
-npm run --silent build-js
-cp "${ROOT}/web/dest/index.html" "${ROOT}/server/web/pages/template/pages/"
+$GOBIN run gen_web.go || exit 1
 
 #### Build server
 echo "Build server"
@@ -56,7 +53,6 @@ for PLATFORM in "${PLATFORMS[@]}"; do
   set_goarm "$GOARCH"
   BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}${GOARM}"
   if [[ "${GOOS}" == "windows" ]]; then BIN_FILENAME="${BIN_FILENAME}.exe"; fi
-  # CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GO_ARM} CGO_ENABLED=0 ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
   CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GO_ARM} ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
   echo "${CMD}"
   eval "$CMD" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"

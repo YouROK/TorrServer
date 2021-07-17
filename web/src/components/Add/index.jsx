@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 
 import AddDialog from './AddDialog'
 
-export default function AddDialogButton() {
+export default function AddDialogButton({ isOffline, isLoading }) {
   const { t } = useTranslation()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const handleClickOpen = () => setIsDialogOpen(true)
@@ -15,7 +15,7 @@ export default function AddDialogButton() {
 
   return (
     <div>
-      <ListItem button key='Add' onClick={handleClickOpen}>
+      <ListItem disabled={isOffline || isLoading} button onClick={handleClickOpen}>
         <ListItemIcon>
           <LibraryAddIcon />
         </ListItemIcon>

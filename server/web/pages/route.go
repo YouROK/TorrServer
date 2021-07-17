@@ -10,13 +10,9 @@ import (
 )
 
 func SetupRoute(route *gin.RouterGroup) {
-	route.GET("/", mainPage)
+	template.RouteWebPages(route)
 	route.GET("/stat", statPage)
 	route.GET("/magnets", getTorrents)
-}
-
-func mainPage(c *gin.Context) {
-	c.Data(200, "text/html; charset=utf-8", template.IndexHtml)
 }
 
 func statPage(c *gin.Context) {

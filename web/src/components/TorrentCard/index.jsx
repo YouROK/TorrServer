@@ -1,7 +1,11 @@
-import 'fontsource-roboto'
-import { forwardRef, useState } from 'react'
-import { UnfoldMore as UnfoldMoreIcon, Close as CloseIcon, Delete as DeleteIcon } from '@material-ui/icons'
-import { getPeerString, humanizeSize, shortenText } from 'utils/Utils'
+import { forwardRef, memo, useState } from 'react'
+import {
+  UnfoldMore as UnfoldMoreIcon,
+  Edit as EditIcon,
+  Close as CloseIcon,
+  Delete as DeleteIcon,
+} from '@material-ui/icons'
+import { getPeerString, humanizeSize, humanizeSpeed, removeRedundantCharacters } from 'utils/Utils'
 import { torrentsHost } from 'utils/Hosts'
 import { NoImageIcon } from 'icons'
 import DialogTorrentDetailsContent from 'components/DialogTorrentDetailsContent'
@@ -11,12 +15,13 @@ import { Button, DialogActions, DialogTitle, useMediaQuery, useTheme } from '@ma
 import axios from 'axios'
 import ptt from 'parse-torrent-title'
 import { useTranslation } from 'react-i18next'
+import AddDialog from 'components/Add/AddDialog'
 
 import { StyledButton, TorrentCard, TorrentCardButtons, TorrentCardDescription, TorrentCardPoster } from './style'
 
 const Transition = forwardRef((props, ref) => <Slide direction='up' ref={ref} {...props} />)
 
-export default function Torrent({ torrent }) {
+const Torrent = ({ torrent }) => {
   const { t } = useTranslation()
   const [isDetailedInfoOpened, setIsDetailedInfoOpened] = useState(false)
   const [isDeleteTorrentOpened, setIsDeleteTorrentOpened] = useState(false)
@@ -34,7 +39,25 @@ export default function Torrent({ torrent }) {
   const dropTorrent = () => axios.post(torrentsHost(), { action: 'drop', hash })
   const deleteTorrent = () => axios.post(torrentsHost(), { action: 'rem', hash })
 
-  const parsedTitle = (title || name) && ptt.parse(title || name).title
+  const getParsedTitle = () => {
+    const parse = key => ptt.parse(title || '')?.[key] || ptt.parse(name || '')?.[key]
+
+    const titleStrings = []
+
+    let parsedTitle = removeRedundantCharacters(parse('title'))
+    const parsedYear = parse('year')
+    const parsedResolution = parse('resolution')
+    if (parsedTitle) titleStrings.push(parsedTitle)
+    if (parsedYear) titleStrings.push(`(${parsedYear})`)
+    if (parsedResolution) titleStrings.push(`[${parsedResolution}]`)
+    parsedTitle = titleStrings.join(' ')
+    return { parsedTitle }
+  }
+  const { parsedTitle } = getParsedTitle()
+
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const handleClickOpenEditDialog = () => setIsEditDialogOpen(true)
+  const handleCloseEditDialog = () => setIsEditDialogOpen(false)
 
   return (
     <>
@@ -47,6 +70,11 @@ export default function Torrent({ torrent }) {
           <StyledButton onClick={openDetailedInfo}>
             <UnfoldMoreIcon />
             <span>{t('Details')}</span>
+          </StyledButton>
+
+          <StyledButton onClick={handleClickOpenEditDialog}>
+            <EditIcon />
+            <span>{t('Edit')}</span>
           </StyledButton>
 
           <StyledButton onClick={() => dropTorrent(torrent)}>
@@ -63,7 +91,7 @@ export default function Torrent({ torrent }) {
         <TorrentCardDescription>
           <div className='description-title-wrapper'>
             <div className='description-section-name'>{t('Name')}</div>
-            <div className='description-torrent-title'>{shortenText(parsedTitle, 100)}</div>
+            <div className='description-torrent-title'>{parsedTitle}</div>
           </div>
 
           <div className='description-statistics-wrapper'>
@@ -75,7 +103,7 @@ export default function Torrent({ torrent }) {
             <div className='description-statistics-element-wrapper'>
               <div className='description-section-name'>{t('Speed')}</div>
               <div className='description-statistics-element-value'>
-                {downloadSpeed > 0 ? humanizeSize(downloadSpeed) : '---'}
+                {downloadSpeed > 0 ? humanizeSpeed(downloadSpeed) : '---'}
               </div>
             </div>
 
@@ -118,6 +146,12 @@ export default function Torrent({ torrent }) {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {isEditDialogOpen && (
+        <AddDialog hash={hash} title={title} name={name} poster={poster} handleClose={handleCloseEditDialog} />
+      )}
     </>
   )
 }
+
+export default memo(Torrent)

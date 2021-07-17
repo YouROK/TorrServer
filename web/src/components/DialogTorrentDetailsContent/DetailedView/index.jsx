@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 import { SectionTitle, WidgetWrapper } from '../style'
 import { DetailedViewCacheSection, DetailedViewWidgetSection } from './style'
 import TorrentCache from '../TorrentCache'
@@ -11,20 +13,23 @@ import {
   DownlodSpeedWidget,
 } from '../widgets'
 
-export default function Test({
+export default function DetailedView({
   downloadSpeed,
   uploadSpeed,
   torrent,
   torrentSize,
   PiecesCount,
   PiecesLength,
-  statString,
+  stat,
   cache,
 }) {
+  const { t } = useTranslation()
+
   return (
     <>
       <DetailedViewWidgetSection>
-        <SectionTitle mb={20}>Data</SectionTitle>
+        <SectionTitle mb={20}>{t('Data')}</SectionTitle>
+
         <WidgetWrapper detailedView>
           <DownlodSpeedWidget data={downloadSpeed} />
           <UploadSpeedWidget data={uploadSpeed} />
@@ -32,12 +37,14 @@ export default function Test({
           <SizeWidget data={torrentSize} />
           <PiecesCountWidget data={PiecesCount} />
           <PiecesLengthWidget data={PiecesLength} />
-          <StatusWidget data={statString} />
+          <StatusWidget stat={stat} />
         </WidgetWrapper>
       </DetailedViewWidgetSection>
 
       <DetailedViewCacheSection>
-        <SectionTitle mb={20}>Cache</SectionTitle>
+        <SectionTitle color='#000' mb={20}>
+          {t('Cache')}
+        </SectionTitle>
         <TorrentCache cache={cache} />
       </DetailedViewCacheSection>
     </>

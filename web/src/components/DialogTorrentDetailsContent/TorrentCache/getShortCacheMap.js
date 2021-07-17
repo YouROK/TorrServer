@@ -1,5 +1,5 @@
 export default ({ cacheMap, preloadPiecesAmount, piecesInOneRow }) => {
-  const cacheMapWithoutEmptyBlocks = cacheMap.filter(({ isComplete, inProgress }) => inProgress || isComplete)
+  const cacheMapWithoutEmptyBlocks = cacheMap.filter(({ percentage }) => percentage > 0)
 
   const getFullAmountOfBlocks = amountOfBlocks =>
     // this function counts existed amount of blocks with extra "empty blocks" to fill the row till the end

@@ -31,14 +31,15 @@ const fnRemoveAll = () => {
     })
 }
 
-export default function RemoveAll() {
+export default function RemoveAll({ isOffline, isLoading }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const closeDialog = () => setOpen(false)
   const openDialog = () => setOpen(true)
+
   return (
     <>
-      <ListItem button key={t('RemoveAll')} onClick={openDialog}>
+      <ListItem disabled={isOffline || isLoading} button key={t('RemoveAll')} onClick={openDialog}>
         <ListItemIcon>
           <DeleteIcon />
         </ListItemIcon>
@@ -49,7 +50,7 @@ export default function RemoveAll() {
       <Dialog open={open} onClose={closeDialog}>
         <DialogTitle>{t('DeleteTorrents?')}</DialogTitle>
         <DialogActions>
-          <Button variant='outlined' onClick={closeDialog} color='primary'>
+          <Button variant='outlined' onClick={closeDialog} color='secondary'>
             {t('Cancel')}
           </Button>
 
@@ -59,7 +60,7 @@ export default function RemoveAll() {
               fnRemoveAll()
               closeDialog()
             }}
-            color='primary'
+            color='secondary'
             autoFocus
           >
             {t('OK')}

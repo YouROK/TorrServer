@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 
 const useStyles = makeStyles(theme => ({
   appBar: { position: 'relative' },
-  title: { marginLeft: theme.spacing(2), flex: 1 },
+  title: { marginLeft: '6px', flex: 1 },
 }))
 
 export default function DialogHeader({ title, onClose, onBack }) {

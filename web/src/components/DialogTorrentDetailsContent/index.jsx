@@ -1,5 +1,5 @@
 import { NoImageIcon } from 'icons'
-import { humanizeSize, shortenText } from 'utils/Utils'
+import { humanizeSize, removeRedundantCharacters } from 'utils/Utils'
 import { useEffect, useState } from 'react'
 import { Button, ButtonGroup } from '@material-ui/core'
 import ptt from 'parse-torrent-title'
@@ -33,7 +33,7 @@ import { isFilePlayable } from './helpers'
 
 const Loader = () => (
   <div style={{ minHeight: '80vh', display: 'grid', placeItems: 'center' }}>
-    <CircularProgress />
+    <CircularProgress color='secondary' />
   </div>
 )
 
@@ -54,7 +54,6 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
     stat,
     download_speed: downloadSpeed,
     upload_speed: uploadSpeed,
-    stat_string: statString,
     torrent_size: torrentSize,
     file_stats: torrentFileList,
   } = torrent
@@ -100,29 +99,49 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
     })
   }, [hash])
 
-  const bufferSize = settings?.PreloadBuffer ? Capacity : 33554432 // Default is 32mb if PreloadBuffer is false
-  // const bufferSize = Capacity
+  const preloadPerc = settings?.PreloadCache
+  const preloadSize = (Capacity / 100) * preloadPerc
+  const bufferSize = preloadSize > 33554432 ? preloadSize : 33554432 // Not less than 32MB
 
-  const getTitle = value => {
-    const torrentParsedName = value && ptt.parse(value)
-    const newNameStrings = []
+  const getParsedTitle = () => {
+    const newNameStringArr = []
 
-    if (torrentParsedName?.title) newNameStrings.push(` ${torrentParsedName?.title}`)
-    if (torrentParsedName?.year) newNameStrings.push(`. ${torrentParsedName?.year}.`)
-    if (torrentParsedName?.resolution) newNameStrings.push(` (${torrentParsedName?.resolution})`)
+    const torrentParsedName = name && ptt.parse(name)
 
-    return newNameStrings.join(' ')
+    if (title !== name) {
+      newNameStringArr.push(removeRedundantCharacters(title))
+    } else if (torrentParsedName?.title) newNameStringArr.push(removeRedundantCharacters(torrentParsedName?.title))
+
+    // These 2 checks are needed to get year and resolution from torrent name if title does not have this info
+    if (torrentParsedName?.year && !newNameStringArr[0].includes(torrentParsedName?.year))
+      newNameStringArr.push(torrentParsedName?.year)
+    if (torrentParsedName?.resolution && !newNameStringArr[0].includes(torrentParsedName?.resolution))
+      newNameStringArr.push(torrentParsedName?.resolution)
+
+    const newNameString = newNameStringArr.join('. ')
+
+    // removeRedundantCharacters is returning ".." if it was "..."
+    const lastDotShouldBeAdded =
+      newNameString[newNameString.length - 1] === '.' && newNameString[newNameString.length - 2] === '.'
+
+    return lastDotShouldBeAdded ? `${newNameString}.` : newNameString
   }
 
   return (
     <>
       <DialogHeader
         onClose={closeDialog}
-        title={isDetailedCacheView ? t('DetailedCacheView') : t('TorrentDetails')}
+        title={isDetailedCacheView ? t('DetailedCacheView.header') : t('TorrentDetails')}
         {...(isDetailedCacheView && { onBack: () => setIsDetailedCacheView(false) })}
       />
 
-      <div style={{ minHeight: '80vh', overflow: 'auto' }}>
+      <div
+        style={{
+          minHeight: '80vh',
+          overflow: 'auto',
+          ...(isDetailedCacheView && { display: 'flex', flexDirection: 'column' }),
+        }}
+      >
         {isLoading ? (
           <Loader />
         ) : isDetailedCacheView ? (
@@ -133,7 +152,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
             torrentSize={torrentSize}
             PiecesCount={PiecesCount}
             PiecesLength={PiecesLength}
-            statString={statString}
+            stat={stat}
             cache={cache}
           />
         ) : (
@@ -142,13 +161,20 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
               <Poster poster={poster}>{poster ? <img alt='poster' src={poster} /> : <NoImageIcon />}</Poster>
 
               <div>
-                {name && name !== title ? (
-                  <>
-                    <SectionTitle>{shortenText(getTitle(name), 50)}</SectionTitle>
-                    <SectionSubName mb={20}>{shortenText(title, 160)}</SectionSubName>
-                  </>
+                {title && name !== title ? (
+                  getParsedTitle().length > 90 ? (
+                    <>
+                      <SectionTitle>{ptt.parse(name).title}</SectionTitle>
+                      <SectionSubName mb={20}>{getParsedTitle()}</SectionSubName>
+                    </>
+                  ) : (
+                    <>
+                      <SectionTitle>{getParsedTitle()}</SectionTitle>
+                      <SectionSubName mb={20}>{ptt.parse(name || '')?.title}</SectionSubName>
+                    </>
+                  )
                 ) : (
-                  <SectionTitle mb={20}>{shortenText(getTitle(title), 50)}</SectionTitle>
+                  <SectionTitle mb={20}>{getParsedTitle()}</SectionTitle>
                 )}
 
                 <WidgetWrapper>
@@ -156,7 +182,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                   <UploadSpeedWidget data={uploadSpeed} />
                   <PeersWidget data={torrent} />
                   <SizeWidget data={torrentSize} />
-                  <StatusWidget data={statString} />
+                  <StatusWidget stat={stat} />
                 </WidgetWrapper>
 
                 <Divider />
@@ -175,11 +201,11 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
             <CacheSection>
               <SectionHeader>
                 <SectionTitle mb={20}>{t('Buffer')}</SectionTitle>
-                {!settings?.PreloadBuffer && <SectionSubName>{t('BufferNote')}</SectionSubName>}
+                {bufferSize <= 33554432 && <SectionSubName>{t('BufferNote')}</SectionSubName>}
                 <LoadingProgress
                   value={Filled}
                   fullAmount={bufferSize}
-                  label={`${humanizeSize(Filled) || '0 B'} / ${humanizeSize(bufferSize)}`}
+                  label={`${humanizeSize(bufferSize)} / ${humanizeSize(Filled) || `0 ${t('B')}`}`}
                 />
               </SectionHeader>
 
@@ -191,7 +217,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                 size='large'
                 onClick={() => setIsDetailedCacheView(true)}
               >
-                {t('DetailedCacheView')}
+                {t('DetailedCacheView.button')}
               </Button>
             </CacheSection>
 
@@ -201,7 +227,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
               {seasonAmount?.length > 1 && (
                 <>
                   <SectionSubName mb={7}>{t('SelectSeason')}</SectionSubName>
-                  <ButtonGroup style={{ marginBottom: '30px' }} color='primary'>
+                  <ButtonGroup style={{ marginBottom: '30px' }} color='secondary'>
                     {seasonAmount.map(season => (
                       <Button
                         key={season}

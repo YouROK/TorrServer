@@ -121,11 +121,13 @@ func (c *Cache) AdjustRA(readahead int64) {
 	if settings.BTsets.CacheSize == 0 {
 		c.capacity = readahead * 3
 	}
-	c.muReaders.Lock()
-	for r, _ := range c.readers {
-		r.SetReadahead(readahead)
+	if len(c.readers) > 0 {
+		c.muReaders.Lock()
+		for r, _ := range c.readers {
+			r.SetReadahead(readahead)
+		}
+		c.muReaders.Unlock()
 	}
-	c.muReaders.Unlock()
 }
 
 func (c *Cache) GetState() *state.CacheState {
@@ -194,11 +196,9 @@ func (c *Cache) cleanPieces() {
 			c.removePiece(p)
 			rems--
 			if rems <= 0 {
-				break
+				utils.FreeOSMemGC()
+				return
 			}
-		}
-		if rems <= 0 {
-			utils.FreeOSMemGC()
 		}
 	}
 }

@@ -15,7 +15,7 @@ export default function DonateDialog({ onClose }) {
   const { t } = useTranslation()
 
   return (
-    <Dialog open onClose={onClose} aria-labelledby='form-dialog-title' fullWidth>
+    <Dialog open onClose={onClose} aria-labelledby='form-dialog-title' fullWidth maxWidth='xs'>
       <DialogTitle id='form-dialog-title'>{t('Donate')}</DialogTitle>
       <DialogContent>
         <List>
@@ -33,7 +33,7 @@ export default function DonateDialog({ onClose }) {
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={onClose} color='primary' variant='outlined'>
+        <Button onClick={onClose} color='secondary' variant='contained'>
           Ok
         </Button>
       </DialogActions>
