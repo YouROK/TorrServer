@@ -103,13 +103,17 @@ export const HeaderToggle = styled.div`
     color: #fff;
 
     :hover {
-      background: ${rgba(headerToggleColor, 0.9)};
+      background: ${rgba(headerToggleColor, 0.7)};
     }
 
     @media (max-width: 700px) {
       height: 28px;
       width: 28px;
       font-size: 12px;
+
+      svg {
+        width: 17px;
+      }
     }
   `}
 `

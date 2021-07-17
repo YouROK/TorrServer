@@ -64,7 +64,7 @@ export default function App() {
               <AppWrapper>
                 <AppHeader>
                   <IconButton
-                    style={{ marginRight: '20px' }}
+                    style={{ marginRight: '6px' }}
                     color='inherit'
                     onClick={() => setIsDrawerOpen(!isDrawerOpen)}
                     edge='start'
@@ -96,7 +96,7 @@ export default function App() {
                     </HeaderToggle>
 
                     <HeaderToggle onClick={() => (currentLang === 'en' ? changeLang('ru') : changeLang('en'))}>
-                      {currentLang === 'en' ? 'RU' : 'EN'}
+                      {currentLang === 'en' ? 'EN' : 'RU'}
                     </HeaderToggle>
                   </div>
                 </AppHeader>
