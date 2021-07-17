@@ -1,4 +1,4 @@
-import { Grid, Input, Slider } from '@material-ui/core'
+import { Grid, OutlinedInput, Slider } from '@material-ui/core'
 
 export default function SliderInput({
   isProMode,
@@ -40,12 +40,12 @@ export default function SliderInput({
 
         {isProMode && (
           <Grid item>
-            <Input
+            <OutlinedInput
               value={value}
               margin='dense'
               onChange={onInputChange}
               onBlur={onBlur}
-              style={{ width: '65px' }}
+              style={{ width: '91px', marginTop: '-6px' }}
               inputProps={{ step, min: inputMin, max: inputMax, type: 'number' }}
             />
           </Grid>

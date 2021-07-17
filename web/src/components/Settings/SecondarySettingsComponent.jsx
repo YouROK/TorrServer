@@ -60,9 +60,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         id='TorrentDisconnectTimeout'
         label={t('SettingsDialog.TorrentDisconnectTimeout')}
         InputProps={{
-          endAdornment: (
-            <InputAdornment position='end'>{t('Seconds')}</InputAdornment>
-          ),
+          endAdornment: <InputAdornment position='end'>{t('Seconds')}</InputAdornment>,
         }}
         value={TorrentDisconnectTimeout}
         type='number'
@@ -75,11 +73,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         margin='normal'
         id='ConnectionsLimit'
         label={t('SettingsDialog.ConnectionsLimit')}
-        InputProps={{
-          endAdornment: (
-            <InputAdornment position='end'>{t('SettingsDialog.ConnectionsLimitHint')}</InputAdornment>
-          ),
-        }}
+        helperText={t('SettingsDialog.ConnectionsLimitHint')}
         value={ConnectionsLimit}
         type='number'
         variant='outlined'
@@ -108,9 +102,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         id='DownloadRateLimit'
         label={t('SettingsDialog.DownloadRateLimit')}
         InputProps={{
-          endAdornment: (
-            <InputAdornment position='end'>{t('Kilobytes')}</InputAdornment>
-          ),
+          endAdornment: <InputAdornment position='end'>{t('Kilobytes')}</InputAdornment>,
         }}
         value={DownloadRateLimit}
         type='number'
@@ -129,9 +121,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         id='UploadRateLimit'
         label={t('SettingsDialog.UploadRateLimit')}
         InputProps={{
-          endAdornment: (
-            <InputAdornment position='end'>{t('Kilobytes')}</InputAdornment>
-          ),
+          endAdornment: <InputAdornment position='end'>{t('Kilobytes')}</InputAdornment>,
         }}
         value={UploadRateLimit}
         type='number'
