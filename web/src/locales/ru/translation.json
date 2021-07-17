@@ -88,7 +88,7 @@
     "ConnectionsLimitHint": "рекомендуется 20-25",
     "DHT": "DHT (Distributed Hash Table)",
     "DhtConnectionLimit": "Лимит подключений DHT",
-    "Disk": "Накопитель",
+    "Disk": "ПЗУ / Накопитель",
     "DontAddRetrackers": "Ничего не делать",
     "DownloadRateLimit": "Ограничение скорости загрузки",
     "ForceEncrypt": "Принудительное шифрование заголовков",
