@@ -21,11 +21,6 @@ type BTSets struct {
 	TorrentsSavePath  string
 	RemoveCacheOnDrop bool
 
-	// Disk
-	UseDisk           bool
-	TorrentsSavePath  string
-	RemoveCacheOnDrop bool
-
 	// Torrent
 	ForceEncrypt             bool
 	RetrackersMode           int  // 0 - don`t add, 1 - add retrackers (def), 2 - remove retrackers 3 - replace retrackers
