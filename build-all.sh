@@ -1,7 +1,7 @@
 #!/bin/bash
 
 PLATFORMS=(
-  'linux/arm64'  
+  'linux/arm64'
   'linux/arm7'
   'linux/amd64'
   'linux/arm5'
@@ -40,11 +40,11 @@ ROOT=${PWD}
 OUTPUT="${ROOT}/dist/TorrServer"
 
 #### Build web
-echo "Build web"  
-cd "${ROOT}/web" || exit 1
-npm install --silent
-cd "${ROOT}"
-$GOBIN run gen_web.go || exit 1  
+echo "Build web"
+ cd "${ROOT}/web" || exit 1
+ npm install --silent
+ cd "${ROOT}"
+$GOBIN run gen_web.go || exit 1
 
 #### Build server
 echo "Build server"
