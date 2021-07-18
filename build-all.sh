@@ -1,12 +1,20 @@
 #!/bin/bash
 
 PLATFORMS=(
-  'linux/arm64' 'linux/arm7' 'linux/amd64'
-  'linux/arm5' 'linux/386'
-  'windows/amd64' 'windows/386'
-  'darwin/amd64' 'darwin/arm64'
+  'linux/arm64'  
+  'linux/arm7'
+  'linux/amd64'
+  'linux/arm5'
+  'linux/386'
+  'windows/amd64'
+  'windows/386'
+  'darwin/amd64'
+  'darwin/arm64'
   'freebsd/amd64'
-  'linux/mips' 'linux/mipsle' 'linux/mips64' 'linux/mips64le'
+  'linux/mips'
+  'linux/mipsle'
+  'linux/mips64'
+  'linux/mips64le'
 )
 
 type setopt >/dev/null 2>&1
@@ -32,14 +40,18 @@ ROOT=${PWD}
 OUTPUT="${ROOT}/dist/TorrServer"
 
 #### Build web
-echo "Build web"
-$GOBIN run gen_web.go || exit 1
+echo "Build web"  
+cd "${ROOT}/web" || exit 1
+npm install --silent
+cd "${ROOT}"
+$GOBIN run gen_web.go || exit 1  
 
 #### Build server
 echo "Build server"
 cd "${ROOT}/server" || exit 1
 $GOBIN clean -i -r -cache #--modcache
-$GOBIN mod tidy
+$GOBIN mod tidy -v
+$GOBIN mod download
 
 BUILD_FLAGS="-ldflags=${LDFLAGS}"
 

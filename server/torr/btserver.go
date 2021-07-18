@@ -84,9 +84,10 @@ func (bt *BTServer) configure() {
 		Preferred:        true,
 	}
 
-	if settings.BTsets.DhtConnectionLimit > 0 {
-		bt.config.ConnTracker.SetMaxEntries(settings.BTsets.DhtConnectionLimit)
-	}
+// TODO
+//	if settings.BTsets.DhtConnectionLimit > 0 {  
+//		bt.config.ConnTracker.SetMaxEntries(settings.BTsets.DhtConnectionLimit)  
+//	}  
 	if settings.BTsets.DownloadRateLimit > 0 {
 		bt.config.DownloadRateLimiter = utils.Limit(settings.BTsets.DownloadRateLimit * 1024)
 	}
