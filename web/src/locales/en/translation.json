@@ -85,7 +85,7 @@
   "SelectSeason": "Select Season",
   "SettingsDialog": {
     "AcceptPeerCon": "Accept Peer Connections",
-    "AnnTorrentsToDht": "Periodically Announce Torrents To DHT",
+    "AnnTorrentsToDht": "Periodically Announce Torrents to DHT",
     "AddRetrackers": "Add retrackers",
     "AdditionalSettings": "Additional Settings",
     "CacheBeforeReaderDesc": "from cache will be saved before currently played frame",
