@@ -64,6 +64,8 @@ func (bt *BTServer) configure() {
 	cliVers := userAgent //"uTorrent/2210(25302)"
 
 	bt.config.AcceptPeerConnections = settings.BTsets.AcceptPeerCon
+	bt.config.PeriodicallyAnnounceTorrentsToDht = false
+
 	bt.config.Debug = settings.BTsets.EnableDebug
 	bt.config.DisableIPv6 = settings.BTsets.EnableIPv6 == false
 	bt.config.DisableTCP = settings.BTsets.DisableTCP
