@@ -1,21 +1,19 @@
 module server
 
-replace (
-	github.com/anacrolix/dht v1.0.1 => github.com/YouROK/dht v0.0.0-20210323193211-11c03221cb67
-	github.com/anacrolix/torrent v1.2.6 => github.com/yourok/torrent v0.0.0-20210427182412-1ef78c0fb02c
-)
-
 go 1.16
+
+replace github.com/anacrolix/dht/v2 v2.9.1 => github.com/anacrolix/dht/v2 v2.10.0
 
 require (
 	github.com/alexflint/go-arg v1.3.0
-	github.com/anacrolix/missinggo v1.1.0
-	github.com/anacrolix/torrent v1.2.6
+	github.com/anacrolix/dht/v2 v2.10.0 // indirect
+	github.com/anacrolix/missinggo v1.3.0
+	github.com/anacrolix/torrent v1.29.1
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-contrib/location v0.0.2
-	github.com/gin-gonic/gin v1.6.3
+	github.com/gin-gonic/gin v1.7.1
 	github.com/pkg/browser v0.0.0-20210115035449-ce105d075bb4
-	github.com/pkg/errors v0.8.1
+	github.com/pkg/errors v0.9.1
 	go.etcd.io/bbolt v1.3.5
-	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
+	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
 )

@@ -1,11 +1,12 @@
 export default {
+  AcceptPeerCon: true,
+  AnnTorrentsToDht: true,
   CacheSize: 96,
   ReaderReadAHead: 95,
   UseDisk: false,
   UploadRateLimit: 0,
   TorrentsSavePath: '',
   ConnectionsLimit: 23,
-  DhtConnectionLimit: 500,
   DisableDHT: false,
   DisablePEX: false,
   DisableTCP: false,
@@ -20,6 +21,5 @@ export default {
   PreloadCache: 0,
   RemoveCacheOnDrop: false,
   RetrackersMode: 1,
-  Strategy: 0,
   TorrentDisconnectTimeout: 30,
 }
