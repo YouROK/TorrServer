@@ -84,6 +84,7 @@
   "Seconds": "Seconds",
   "SelectSeason": "Select Season",
   "SettingsDialog": {
+    "AcceptPeerCon": "Accept Peer Connections",
     "AddRetrackers": "Add retrackers",
     "AdditionalSettings": "Additional Settings",
     "CacheBeforeReaderDesc": "from cache will be saved before currently played frame",

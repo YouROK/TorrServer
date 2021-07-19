@@ -12,7 +12,7 @@ import (
 
 type BTSets struct {
 	// Cache
-	CacheSize       int64 // in byte, def 200 mb
+	CacheSize       int64 // in byte, def 96 MB
 	ReaderReadAHead int   // in percent, 5%-100%, [...S__X__E...] [S-E] not clean
 	PreloadCache    int   // in percent
 
@@ -28,6 +28,7 @@ type BTSets struct {
 	EnableDebug              bool // print logs
 
 	// BT Config
+	AcceptPeerCon      bool
 	EnableIPv6         bool
 	DisableTCP         bool
 	DisableUTP         bool
@@ -38,9 +39,9 @@ type BTSets struct {
 	DownloadRateLimit  int // in kb, 0 - inf
 	UploadRateLimit    int // in kb, 0 - inf
 	ConnectionsLimit   int
-	DhtConnectionLimit int // 0 - inf
+	//DhtConnectionLimit int // 0 - inf
 	PeersListenPort    int
-	Strategy           int // 0 - RequestStrategyDuplicateRequestTimeout, 1 - RequestStrategyFuzzing, 2 - RequestStrategyFastest
+	//Strategy           int // 0 - RequestStrategyDuplicateRequestTimeout, 1 - RequestStrategyFuzzing, 2 - RequestStrategyFastest
 }
 
 func (v *BTSets) String() string {
@@ -119,12 +120,13 @@ func loadBTSets() {
 
 func SetDefault() {
 	sets := new(BTSets)
+	sets.AcceptPeerCon = true
 	sets.EnableDebug = false
 	sets.DisableUTP = true
-	sets.CacheSize = 96 * 1024 * 1024 // 100mb
+	sets.CacheSize = 96 * 1024 * 1024 // 96 MB
 	sets.PreloadCache = 0
 	sets.ConnectionsLimit = 23
-	sets.DhtConnectionLimit = 500
+	//sets.DhtConnectionLimit = 500
 	sets.RetrackersMode = 1
 	sets.TorrentDisconnectTimeout = 30
 	sets.ReaderReadAHead = 95 // 95% preload

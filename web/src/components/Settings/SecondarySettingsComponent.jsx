@@ -8,6 +8,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
   const { t } = useTranslation()
 
   const {
+    AcceptPeerCon,
     RetrackersMode,
     TorrentDisconnectTimeout,
     EnableIPv6,
@@ -21,7 +22,6 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
     DownloadRateLimit,
     UploadRateLimit,
     ConnectionsLimit,
-    DhtConnectionLimit,
     PeersListenPort,
   } = settings || {}
 
@@ -85,15 +85,10 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         label={t('SettingsDialog.DHT')}
         labelPlacement='start'
       />
-      <TextField
-        onChange={inputForm}
-        margin='normal'
-        id='DhtConnectionLimit'
-        label={t('SettingsDialog.DhtConnectionLimit')}
-        value={DhtConnectionLimit}
-        type='number'
-        variant='outlined'
-        fullWidth
+      <FormControlLabel
+        control={<Switch checked={AcceptPeerCon} onChange={inputForm} id='AcceptPeerCon' color='secondary' />}
+        label={t('SettingsDialog.AcceptPeerCon')}
+        labelPlacement='start'
       />
       <br />
       <TextField

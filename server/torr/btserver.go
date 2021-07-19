@@ -63,6 +63,7 @@ func (bt *BTServer) configure() {
 	peerID := "-qB4320-"
 	cliVers := userAgent //"uTorrent/2210(25302)"
 
+	bt.config.AcceptPeerConnections = settings.BTsets.AcceptPeerCon
 	bt.config.Debug = settings.BTsets.EnableDebug
 	bt.config.DisableIPv6 = settings.BTsets.EnableIPv6 == false
 	bt.config.DisableTCP = settings.BTsets.DisableTCP
@@ -84,10 +85,6 @@ func (bt *BTServer) configure() {
 		Preferred:        true,
 	}
 
-// TODO
-//	if settings.BTsets.DhtConnectionLimit > 0 {  
-//		bt.config.ConnTracker.SetMaxEntries(settings.BTsets.DhtConnectionLimit)  
-//	}  
 	if settings.BTsets.DownloadRateLimit > 0 {
 		bt.config.DownloadRateLimiter = utils.Limit(settings.BTsets.DownloadRateLimit * 1024)
 	}
