@@ -29,6 +29,7 @@ type BTSets struct {
 
 	// BT Config
 	AcceptPeerCon      bool
+	AnnTorrentsToDht   bool
 	EnableIPv6         bool
 	DisableTCP         bool
 	DisableUTP         bool
@@ -121,6 +122,7 @@ func loadBTSets() {
 func SetDefault() {
 	sets := new(BTSets)
 	sets.AcceptPeerCon = true
+	sets.AnnTorrentsToDht = true
 	sets.EnableDebug = false
 	sets.DisableUTP = true
 	sets.CacheSize = 96 * 1024 * 1024 // 96 MB

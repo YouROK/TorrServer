@@ -9,6 +9,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
 
   const {
     AcceptPeerCon,
+    AnnTorrentsToDht,
     RetrackersMode,
     TorrentDisconnectTimeout,
     EnableIPv6,
@@ -83,6 +84,11 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       <FormControlLabel
         control={<Switch checked={!DisableDHT} onChange={inputForm} id='DisableDHT' color='secondary' />}
         label={t('SettingsDialog.DHT')}
+        labelPlacement='start'
+      />
+      <FormControlLabel
+        control={<Switch checked={AnnTorrentsToDht} onChange={inputForm} id='AnnTorrentsToDht' color='secondary' />}
+        label={t('SettingsDialog.AnnTorrentsToDht')}
         labelPlacement='start'
       />
       <FormControlLabel

@@ -85,6 +85,7 @@
   "SelectSeason": "Выбор сезона",
   "SettingsDialog": {
     "AcceptPeerCon": "Принимать входящие соединения",
+    "AnnTorrentsToDht": "Анонсировать торренты по DHT",
     "AddRetrackers": "Добавлять",
     "AdditionalSettings": "Дополнительные настройки",
     "CacheBeforeReaderDesc": "от кеша будет оставаться позади воспроизводимого кадра",
