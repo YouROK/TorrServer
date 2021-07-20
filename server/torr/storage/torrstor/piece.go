@@ -77,5 +77,7 @@ func (p *Piece) Release() {
 	}
 
 	p.cache.torrent.Piece(p.Id).SetPriority(torrent.PiecePriorityNone)
+	// fix remove pieces hash
 	p.cache.torrent.Piece(p.Id).UpdateCompletion()
+	p.cache.torrent.Piece(p.Id).SetPriority(torrent.PiecePriorityNone)
 }
