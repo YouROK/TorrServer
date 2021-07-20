@@ -28,8 +28,6 @@ type BTSets struct {
 	EnableDebug              bool // print logs
 
 	// BT Config
-	AcceptPeerCon     bool `default:"true"`
-	AnnTorrentsToDht  bool `default:"true"`
 	EnableIPv6        bool
 	DisableTCP        bool
 	DisableUTP        bool
@@ -126,7 +124,7 @@ func SetDefault() {
 	sets.CacheSize = 96 * 1024 * 1024 // 96 MB
 	sets.PreloadCache = 0
 	sets.ConnectionsLimit = 23
-	sets.DhtConnectionLimit = 500
+	//sets.DhtConnectionLimit = 500
 	sets.RetrackersMode = 1
 	sets.TorrentDisconnectTimeout = 30
 	sets.ReaderReadAHead = 95 // 95% preload
