@@ -41,14 +41,13 @@ OUTPUT="${ROOT}/dist/TorrServer"
 
 #### Build web
 echo "Build web"
-$GOBIN run gen_web.go
+$GOBIN run gen_web.go || exit 1
 
 #### Build server
 echo "Build server"
 cd "${ROOT}/server" || exit 1
 $GOBIN clean -i -r -cache #--modcache
 $GOBIN mod tidy
-$GOBIN mod download
 
 BUILD_FLAGS="-ldflags=${LDFLAGS}"
 
