@@ -28,20 +28,20 @@ type BTSets struct {
 	EnableDebug              bool // print logs
 
 	// BT Config
-	AcceptPeerCon      bool
-	AnnTorrentsToDht   bool
-	EnableIPv6         bool
-	DisableTCP         bool
-	DisableUTP         bool
-	DisableUPNP        bool
-	DisableDHT         bool
-	DisablePEX         bool
-	DisableUpload      bool
-	DownloadRateLimit  int // in kb, 0 - inf
-	UploadRateLimit    int // in kb, 0 - inf
-	ConnectionsLimit   int
+	AcceptPeerCon     bool `default:"true"`
+	AnnTorrentsToDht  bool `default:"true"`
+	EnableIPv6        bool
+	DisableTCP        bool
+	DisableUTP        bool
+	DisableUPNP       bool
+	DisableDHT        bool
+	DisablePEX        bool
+	DisableUpload     bool
+	DownloadRateLimit int // in kb, 0 - inf
+	UploadRateLimit   int // in kb, 0 - inf
+	ConnectionsLimit  int
 	//DhtConnectionLimit int // 0 - inf
-	PeersListenPort    int
+	PeersListenPort int
 	//Strategy           int // 0 - RequestStrategyDuplicateRequestTimeout, 1 - RequestStrategyFuzzing, 2 - RequestStrategyFastest
 }
 
