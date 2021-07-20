@@ -38,7 +38,7 @@ type BTSets struct {
 	DownloadRateLimit int // in kb, 0 - inf
 	UploadRateLimit   int // in kb, 0 - inf
 	ConnectionsLimit  int
-	//DhtConnectionLimit int // 0 - inf
+	DhtConnectionLimit int // 0 - inf
 	PeersListenPort int
 	//Strategy           int // 0 - RequestStrategyDuplicateRequestTimeout, 1 - RequestStrategyFuzzing, 2 - RequestStrategyFastest
 }
@@ -124,7 +124,7 @@ func SetDefault() {
 	sets.CacheSize = 96 * 1024 * 1024 // 96 MB
 	sets.PreloadCache = 0
 	sets.ConnectionsLimit = 23
-	//sets.DhtConnectionLimit = 500
+	sets.DhtConnectionLimit = 500
 	sets.RetrackersMode = 1
 	sets.TorrentDisconnectTimeout = 30
 	sets.ReaderReadAHead = 95 // 95% preload
