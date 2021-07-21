@@ -234,6 +234,8 @@ func (c *Cache) getRemPieces() []*Piece {
 		}
 	}
 
+	c.updatePriority()
+
 	for r, _ := range c.readers {
 		if c.isIdInFileBE(ranges, r.getReaderPiece()) {
 			continue
