@@ -80,9 +80,9 @@ export default function PrimarySettingsComponent({
           sliderMin={32}
           sliderMax={1024}
           inputMin={32}
-          inputMax={20000}
-          step={8}
-          onBlurCallback={value => setCacheSize(Math.round(value / 8) * 8)}
+          inputMax={999999}
+          step={4}
+          onBlurCallback={value => setCacheSize(Math.round(value / 4) * 4)}
         />
 
         <SliderInput
