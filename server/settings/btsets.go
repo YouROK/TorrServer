@@ -27,9 +27,10 @@ type BTSets struct {
 	TorrentDisconnectTimeout int  // in seconds
 	EnableDebug              bool // print logs
 
+	// DLNA
+	EnableDLNA bool
+
 	// BT Config
-	AcceptPeerCon     bool `default:"true"`
-	AnnTorrentsToDht  bool `default:"true"`
 	EnableIPv6        bool
 	DisableTCP        bool
 	DisableUTP        bool
@@ -121,8 +122,6 @@ func loadBTSets() {
 
 func SetDefault() {
 	sets := new(BTSets)
-	sets.AcceptPeerCon = true
-	sets.AnnTorrentsToDht = true
 	sets.EnableDebug = false
 	sets.DisableUTP = true
 	sets.CacheSize = 96 * 1024 * 1024 // 96 MB
