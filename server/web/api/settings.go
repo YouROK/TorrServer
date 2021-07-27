@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
+	"server/dlna"
 	sets "server/settings"
 	"server/torr"
 )
@@ -29,10 +30,15 @@ func settings(c *gin.Context) {
 		return
 	} else if req.Action == "set" {
 		torr.SetSettings(req.Sets)
+		dlna.Stop()
+		if req.Sets.EnableDLNA {
+			dlna.Start()
+		}
 		c.Status(200)
 		return
 	} else if req.Action == "def" {
 		torr.SetDefSettings()
+		dlna.Stop()
 		c.Status(200)
 		return
 	}
