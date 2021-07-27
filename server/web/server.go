@@ -6,7 +6,9 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/location"
 	"github.com/gin-gonic/gin"
+
 	"server/dlna"
+	"server/settings"
 
 	"server/log"
 	"server/torr"
@@ -52,7 +54,9 @@ func Start(port string) {
 		api.SetupRoute(&route.RouterGroup)
 		pages.SetupRoute(&route.RouterGroup)
 	}
-	dlna.Start()
+	if settings.BTsets.EnableDLNA {
+		dlna.Start()
+	}
 	log.TLogln("Start web", port)
 	waitChan <- route.Run(":" + port)
 }
