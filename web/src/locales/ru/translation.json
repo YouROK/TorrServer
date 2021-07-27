@@ -84,8 +84,6 @@
   "Seconds": "Секунды",
   "SelectSeason": "Выбор сезона",
   "SettingsDialog": {
-    "AcceptPeerCon": "Принимать входящие соединения",
-    "AnnTorrentsToDht": "Анонсировать торренты по DHT",
     "AddRetrackers": "Добавлять",
     "AdditionalSettings": "Дополнительные настройки",
     "CacheBeforeReaderDesc": "от кеша будет оставаться позади воспроизводимого кадра",
@@ -100,6 +98,7 @@
     "Disk": "ПЗУ / Накопитель",
     "DontAddRetrackers": "Ничего не делать",
     "DownloadRateLimit": "Ограничение скорости загрузки",
+    "EnableDLNA": "Enable DLNA",
     "ForceEncrypt": "Принудительное шифрование заголовков",
     "PeersListenPort": "Порт для входящих подключений",
     "PreloadCache": "Буфер предзагрузки",

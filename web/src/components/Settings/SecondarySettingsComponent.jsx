@@ -8,10 +8,9 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
   const { t } = useTranslation()
 
   const {
-    AcceptPeerCon,
-    AnnTorrentsToDht,
     RetrackersMode,
     TorrentDisconnectTimeout,
+    EnableDLNA,
     EnableIPv6,
     ForceEncrypt,
     DisableTCP,
@@ -86,14 +85,10 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         label={t('SettingsDialog.DHT')}
         labelPlacement='start'
       />
+      <br />
       <FormControlLabel
-        control={<Switch checked={AnnTorrentsToDht} onChange={inputForm} id='AnnTorrentsToDht' color='secondary' />}
-        label={t('SettingsDialog.AnnTorrentsToDht')}
-        labelPlacement='start'
-      />
-      <FormControlLabel
-        control={<Switch checked={AcceptPeerCon} onChange={inputForm} id='AcceptPeerCon' color='secondary' />}
-        label={t('SettingsDialog.AcceptPeerCon')}
+        control={<Switch checked={EnableDLNA} onChange={inputForm} id='EnableDLNA' color='secondary' />}
+        label={t('SettingsDialog.EnableDLNA')}
         labelPlacement='start'
       />
       <br />

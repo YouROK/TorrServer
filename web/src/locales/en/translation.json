@@ -84,8 +84,6 @@
   "Seconds": "Seconds",
   "SelectSeason": "Select Season",
   "SettingsDialog": {
-    "AcceptPeerCon": "Accept Peer Connections",
-    "AnnTorrentsToDht": "Periodically Announce Torrents to DHT",
     "AddRetrackers": "Add retrackers",
     "AdditionalSettings": "Additional Settings",
     "CacheBeforeReaderDesc": "from cache will be saved before currently played frame",
@@ -100,6 +98,7 @@
     "Disk": "Disk",
     "DontAddRetrackers": "Don`t add retrackers",
     "DownloadRateLimit": "Download Rate Limit",
+    "EnableDLNA": "Включить DLNA",
     "ForceEncrypt": "Force Encrypt Headers",
     "PeersListenPort": "Peers Listen Port",
     "PreloadCache": "Preload Cache Before Play",
