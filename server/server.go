@@ -16,6 +16,7 @@ func Start(port string, roSets bool) {
 		port = "8090"
 	}
 	go cleanCache()
+	settings.Port = port
 	web.Start(port)
 }
 
