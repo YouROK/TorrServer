@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/user"
 	"path/filepath"
 	"time"
 
@@ -35,7 +36,7 @@ func Start() {
 			}
 			return conn
 		}(),
-		FriendlyName: "TorrServer",
+		FriendlyName: getDefaultFriendlyName(),
 		NoTranscode:  true,
 		NoProbe:      true,
 		Icons: []dms.Icon{
@@ -102,4 +103,31 @@ func onBrowse(path, rootObjectPath, host, userAgent string) (ret []interface{}, 
 func onBrowseMeta(path string, rootObjectPath string, host, userAgent string) (ret interface{}, err error) {
 	err = fmt.Errorf("not implemented")
 	return
+}
+
+func getDefaultFriendlyName() string {
+	ret := "TorrServer"
+	userName := ""
+	user, err := user.Current()
+	if err != nil {
+		log.TLogln("getDefaultFriendlyName could not get username: %s", err)
+	} else {
+		userName = user.Name
+	}
+	host, err := os.Hostname()
+	if err != nil {
+		log.TLogln("getDefaultFriendlyName could not get hostname: %s", err)
+	}
+
+	if userName == "" && host == "" {
+		return ret
+	}
+
+	if userName != "" && host != "" {
+		if userName == host {
+			return ret + ": " + userName
+		}
+		return ret + ": " + userName + " on " + host
+	}
+	return ret + ": " + userName + host
 }
