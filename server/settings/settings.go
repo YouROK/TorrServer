@@ -10,6 +10,7 @@ import (
 var (
 	tdb      *TDB
 	Path     string
+	Port     string
 	ReadOnly bool
 	HttpAuth bool
 )
