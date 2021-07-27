@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/anacrolix/dms/dlna/dms"
+
 	"server/log"
 	"server/web/pages/template"
 )
@@ -63,7 +64,7 @@ func Start() {
 			return nets
 		}(),
 		OnBrowseDirectChildren: onBrowse,
-		//OnBrowseMetadata:       onBrowseMeta,
+		OnBrowseMetadata:       onBrowseMeta,
 	}
 
 	if err := dmsServer.Init(); err != nil {
@@ -84,12 +85,15 @@ func Stop() {
 	}
 }
 
-func onBrowse(path string, rootObjectPath string, host, userAgent string) (ret []interface{}, err error) {
-	if len(path) == 1 {
+func onBrowse(path, rootObjectPath, host, userAgent string) (ret []interface{}, err error) {
+	if path == "/" {
 		ret = getTorrents()
-	}
-	if filepath.Base(path) == "Load Torrent" {
-		
+		return
+	} else if isHashPath(path) {
+		ret = getTorrent(path, host)
+		return
+	} else if filepath.Base(path) == "Load Torrent" {
+		ret = loadTorrent(path, host)
 	}
 	return
 }
