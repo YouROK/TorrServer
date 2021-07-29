@@ -14,7 +14,7 @@ import { getTorrents } from 'utils/Utils'
 import parseTorrent from 'parse-torrent'
 import { ButtonWrapper, Header } from 'style/DialogStyles'
 
-import { checkImageURL, getMoviePosters, chechTorrentSource, parseTorrentTitle } from './helpers'
+import { checkImageURL, getMoviePosters, checkTorrentSource, parseTorrentTitle } from './helpers'
 import { Content } from './style'
 import RightSideComponent from './RightSideComponent'
 import LeftSideComponent from './LeftSideComponent'
@@ -147,7 +147,7 @@ export default function AddDialog({
   const prevTorrentSourceState = usePreviousState(torrentSource)
 
   useEffect(() => {
-    const isCorrectSource = chechTorrentSource(torrentSource)
+    const isCorrectSource = checkTorrentSource(torrentSource)
     if (!isCorrectSource) return setIsTorrentSourceCorrect(false)
 
     setIsTorrentSourceCorrect(true)
@@ -227,10 +227,10 @@ export default function AddDialog({
         {!isEditMode && (
           <LeftSideComponent
             setIsUserInteractedWithPoster={setIsUserInteractedWithPoster}
+            selectedFile={selectedFile}
             setSelectedFile={setSelectedFile}
             torrentSource={torrentSource}
             setTorrentSource={setTorrentSource}
-            selectedFile={selectedFile}
           />
         )}
 
