@@ -259,7 +259,7 @@ export const WidgetFieldValue = styled.div`
   }) => css`
     grid-area: value;
     font-size: 24px;
-    padding: 0px 16px;
+    padding: 0 20px 0 0;
     color: ${widgetFontColor};
     background: ${bgColor};
     border-radius: 0 5px 5px 0;
@@ -267,7 +267,7 @@ export const WidgetFieldValue = styled.div`
 
     @media (max-width: 800px) {
       font-size: 18px;
-      padding: 0px 4px;
+      padding: 0 16px 0 0;
     }
   `}
 `
