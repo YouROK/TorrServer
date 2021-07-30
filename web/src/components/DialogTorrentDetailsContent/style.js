@@ -129,12 +129,15 @@ export const SectionSubName = styled.div`
     },
   }) => css`
     ${({ mb }) => css`
+      ${mb && `margin-top: ${mb / 3}px`};
       ${mb && `margin-bottom: ${mb}px`};
+      line-height: 1.2;
       color: ${subNameFontColor};
 
       @media (max-width: 800px) {
+        ${mb && `margin-top: ${mb / 4}px`};
         ${mb && `margin-bottom: ${mb / 2}px`};
-        font-size: 11px;
+        font-size: 14px;
       }
     `}
   `}
@@ -149,14 +152,15 @@ export const SectionTitle = styled.div`
   }) => css`
     ${({ mb }) => css`
       ${mb && `margin-bottom: ${mb}px`};
-      font-size: 35px;
+      font-size: 34px;
       font-weight: 300;
       line-height: 1;
       word-break: break-word;
       color: ${color || titleFontColor};
 
       @media (max-width: 800px) {
-        font-size: 25px;
+        font-size: 24px;
+        line-height: 1.1;
         ${mb && `margin-bottom: ${mb / 2}px`};
       }
     `}
