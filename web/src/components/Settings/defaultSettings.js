@@ -1,6 +1,5 @@
 export default {
   AcceptPeerCon: true,
-  AnnTorrentsToDht: true,
   CacheSize: 96,
   ReaderReadAHead: 95,
   UseDisk: false,

@@ -64,7 +64,6 @@ func (bt *BTServer) configure() {
 	cliVers := userAgent //"uTorrent/2210(25302)"
 
 	bt.config.AcceptPeerConnections = settings.BTsets.AcceptPeerCon
-	bt.config.PeriodicallyAnnounceTorrentsToDht = settings.BTsets.AnnTorrentsToDht
 	bt.config.Debug = settings.BTsets.EnableDebug
 	bt.config.DisableIPv6 = settings.BTsets.EnableIPv6 == false
 	bt.config.DisableTCP = settings.BTsets.DisableTCP
@@ -95,9 +94,9 @@ func (bt *BTServer) configure() {
 	if settings.BTsets.PeersListenPort > 0 {
 		bt.config.ListenPort = settings.BTsets.PeersListenPort
 	} else {
-		log.Println("Find upnp port")
 		upnpport := 32000
 		for {
+		  log.Println("Check upnp port", upnpport)
 			l, err := net.Listen("tcp", ":"+strconv.Itoa(upnpport))
 			if l != nil {
 				l.Close()
