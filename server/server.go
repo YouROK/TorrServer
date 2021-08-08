@@ -2,6 +2,7 @@ package server
 
 import (
 	"io/ioutil"
+	"net"
 	"os"
 	"path/filepath"
 
@@ -15,8 +16,18 @@ func Start(port string, roSets bool) {
 	if port == "" {
 		port = "8090"
 	}
-	go cleanCache()
-	web.Start(port)
+	log.TLogln("Check web port", port)
+	l, err := net.Listen("tcp", ":"+port)
+	if l != nil {
+		l.Close()
+	}
+	if err != nil {
+		log.TLogln("Port", port, "already in use! Abort")
+		os.Exit(1)
+	} else {
+	  go cleanCache()
+	  web.Start(port)
+	}
 }
 
 func cleanCache() {
