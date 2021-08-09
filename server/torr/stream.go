@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"time"
 
@@ -46,8 +47,13 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 
 	reader := t.NewReader(file)
 
-	log.Println("Connect client")
-
+	host, port, err := net.SplitHostPort(req.RemoteAddr)
+	if err != nil {
+		log.Println("Connect client")
+	} else {
+		log.Println("Connect client", host, port)
+	}
+	
 	sets.SetViewed(&sets.Viewed{t.Hash().HexString(), fileID})
 
 	resp.Header().Set("Connection", "close")
@@ -56,6 +62,10 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 	http.ServeContent(resp, req, file.Path(), time.Unix(t.Timestamp, 0), reader)
 
 	t.CloseReader(reader)
-	log.Println("Disconnect client")
+	if err != nil {
+		log.Println("Disconnect client")
+	} else {
+		log.Println("Disconnect client", host, port)
+	}
 	return nil
 }

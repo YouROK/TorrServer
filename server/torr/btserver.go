@@ -94,6 +94,7 @@ func (bt *BTServer) configure() {
 		bt.config.UploadRateLimiter = utils.Limit(settings.BTsets.UploadRateLimit * 1024)
 	}
 	if settings.BTsets.PeersListenPort > 0 {
+		log.Println("Set listen port", settings.BTsets.PeersListenPort)
 		bt.config.ListenPort = settings.BTsets.PeersListenPort
 	} else {
 		upnpport := 32000
@@ -112,7 +113,7 @@ func (bt *BTServer) configure() {
 		bt.config.ListenPort = upnpport
 	}
 
-	log.Println("Configure client:", settings.BTsets)
+	log.Println("Client config:", settings.BTsets)
 }
 
 func (bt *BTServer) GetTorrent(hash torrent.InfoHash) *Torrent {
