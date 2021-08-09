@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
@@ -78,7 +77,7 @@ func main() {
 func dnsResolve() {
 	addrs, err := net.LookupHost("www.google.com")
 	if len(addrs) == 0 {
-		fmt.Println("Check dns", addrs, err)
+		log.TLogln("Check dns failed", addrs, err)
 
 		fn := func(ctx context.Context, network, address string) (net.Conn, error) {
 			d := net.Dialer{}
@@ -89,8 +88,8 @@ func dnsResolve() {
 			Dial: fn,
 		}
 
-		addrs, err = net.LookupHost("www.themoviedb.org")
-		fmt.Println("Check new dns", addrs, err)
+		addrs, err = net.LookupHost("www.google.com")
+		log.TLogln("Check cloudflare dns", addrs, err)
 	}
 }
 
