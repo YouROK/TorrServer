@@ -71,7 +71,7 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 	req.Link = strings.ReplaceAll(req.Link, "&amp;", "&")
 	torrSpec, err := utils.ParseLink(req.Link)
 	if err != nil {
-		log.TLogln("error add torrent:", err)
+		log.TLogln("error parse link:", err)
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
@@ -85,12 +85,15 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 
 	go func() {
 		if !tor.GotInfo() {
-			log.TLogln("error add torrent:", "timeout connection torrent")
+			log.TLogln("error add torrent:", "timeout connection get torrent info")
 			return
 		}
 
 		if tor.Title == "" {
-			tor.Title = tor.Name()
+			tor.Title = torrSpec.DisplayName // prefer dn over name
+			if tor.Title == "" {
+				tor.Title = tor.Name()
+			}
 		}
 
 		if req.SaveToDB {
