@@ -9,11 +9,11 @@
       "Or": "ИЛИ",
       "ClickOrDrag": "НАЖМИТЕ / ПЕРЕТАЩИТЕ ФАЙЛ (.torrent)"
     },
-    "CustomTorrentTitle": "Cвое имя (не обязательно)",
+    "CustomTorrentTitle": "Cвое название (не обязательно)",
     "CustomTorrentTitleHelperText": "Напишите свое название, чтобы найти постер",
     "HashExists": "Этот торрент уже есть в базе данных",
-    "OriginalTorrentTitle": "Оригинальное имя торрента",
-    "TitleBlank": "Имя (пустое - ориг. имя торрента)",
+    "OriginalTorrentTitle": "Оригинальное название торрента",
+    "TitleBlank": "Название (пустое - ориг. название торрента)",
     "TorrentSourceLink": "Ссылка на источник торрента",
     "TorrentSourceOptions": "magnet-ссылка / хеш / ссылка на .torrent файл",
     "WrongTorrentSource": "Неправильный torrent-источник"
