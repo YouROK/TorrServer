@@ -129,6 +129,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         margin='normal'
         id='PeersListenPort'
         label={t('SettingsDialog.PeersListenPort')}
+        helperText={t('SettingsDialog.PeersListenPortHint')}
         value={PeersListenPort}
         type='number'
         variant='outlined'

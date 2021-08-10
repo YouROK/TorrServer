@@ -101,6 +101,7 @@
     "DownloadRateLimit": "Download Rate Limit",
     "ForceEncrypt": "Force Encrypt Headers",
     "PeersListenPort": "Peers Listen Port",
+    "PeersListenPortHint": "1024 - 65535, 0 - auto",
     "PreloadCache": "Preload Cache Before Play",
     "ProMode": "PRO mode",
     "RAM": "RAM",
