@@ -23,12 +23,12 @@ export const getMoviePosters = (movieName, language = 'en') => {
 export const checkImageURL = async url => {
   if (!url || !url.match(/.(jpg|jpeg|png|gif)$/i)) return false
 
-  try {
-    await fetch(url, { mode: 'no-cors' })
+//  try {
+//    await fetch(url, { mode: 'no-cors' })
     return true
-  } catch (e) {
-    return false
-  }
+//  } catch (e) {
+//    return false
+//  }
 }
 
 const magnetRegex = /^magnet:\?xt=urn:[a-z0-9].*/i
