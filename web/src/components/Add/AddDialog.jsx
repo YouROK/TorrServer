@@ -271,7 +271,7 @@ export default function AddDialog({
           style={{ minWidth: '110px' }}
           disabled={!torrentSource || (isHashAlreadyExists && !isEditMode) || !isTorrentSourceCorrect}
           onClick={handleSave}
-          color='primary'
+          color='secondary'
         >
           {isSaving ? <CircularProgress style={{ color: 'white' }} size={20} /> : t(isEditMode ? 'Save' : 'Add')}
         </Button>
