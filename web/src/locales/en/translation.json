@@ -14,11 +14,11 @@
     "HashExists": "This torrent is already in database",
     "OriginalTorrentTitle": "Original torrent title",
     "TitleBlank": "Title (blank for orig. torrent title)",
-    "TorrentSourceLink": "Torrent source link",
+    "TorrentSourceLink": "Torrent source",
     "TorrentSourceOptions": "magnet / hash / .torrent file link",
     "WrongTorrentSource": "Wrong torrent source"
   },
-  "AddFromLink": "Add from Link",
+  "AddFromLink": "Add Torrent",
   "AddNewTorrent": "Add new torrent",
   "B": "B",
   "bps": "bps",
