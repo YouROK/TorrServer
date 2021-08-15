@@ -6,7 +6,7 @@ replace github.com/anacrolix/dht/v2 v2.9.1 => github.com/anacrolix/dht/v2 v2.10.
 
 require (
 	github.com/alexflint/go-arg v1.3.0
-	github.com/anacrolix/dht/v2 v2.10.1 // indirect
+	github.com/anacrolix/dht/v2 v2.10.3 // indirect
 	github.com/anacrolix/missinggo v1.3.0
 	github.com/anacrolix/torrent v1.30.2
 	github.com/gin-contrib/cors v1.3.1
