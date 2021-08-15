@@ -46,7 +46,7 @@ export const Section = styled.section`
   padding: 20px;
 
   > span {
-    font-size: 20px;
+    font-size: 22px;
     display: block;
     margin-bottom: 15px;
   }
@@ -87,7 +87,7 @@ export const LinkWrapper = styled.a`
     align-items: center;
     justify-content: start;
     border: 1px solid;
-    padding: 10px;
+    padding: 7px 10px;
     border-radius: 5px;
     text-transform: uppercase;
     text-decoration: none;
@@ -105,7 +105,7 @@ export const LinkWrapper = styled.a`
             filter: brightness(1.1);
 
             > * {
-              transform: translateY(-1px);
+              transform: translateY(0px);
             }
           }
         `

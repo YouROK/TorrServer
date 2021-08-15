@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
@@ -52,7 +53,11 @@ func main() {
 	settings.Path = params.Path
 	settings.HttpAuth = params.HttpAuth
 	log.Init(params.LogPath, params.WebLogPath)
-
+	fmt.Println("=========== START ===========")
+	if params.HttpAuth {
+		log.TLogln("Use HTTP Auth file", settings.Path, "/ accs.db")
+	}
+	
 	dnsResolve()
 	Preconfig(params.DontKill)
 
@@ -90,6 +95,8 @@ func dnsResolve() {
 
 		addrs, err = net.LookupHost("www.google.com")
 		log.TLogln("Check cloudflare dns", addrs, err)
+	} else {
+		log.TLogln("Check dns OK", addrs, err)
 	}
 }
 
