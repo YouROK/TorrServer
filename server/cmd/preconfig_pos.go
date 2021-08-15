@@ -3,10 +3,11 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
+		
+	"server/log"
 )
 
 func Preconfig(dkill bool) {
@@ -15,15 +16,14 @@ func Preconfig(dkill bool) {
 		signal.Notify(sigc,
 			syscall.SIGHUP,
 			syscall.SIGINT,
-
 			syscall.SIGPIPE,
 			syscall.SIGTERM,
 			syscall.SIGQUIT)
 		go func() {
 			for s := range sigc {
 				if dkill {
-					fmt.Println("Signal catched:", s)
-					fmt.Println("For stop server, close in api")
+					log.TLogln("Signal catched:", s)
+					log.TLogln("To stop server, close it from web / api")
 				}
 			}
 		}()

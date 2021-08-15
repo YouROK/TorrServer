@@ -22,14 +22,14 @@ import (
 
 type args struct {
 	Port        string `arg:"-p" help:"web server port"`
-	Path        string `arg:"-d" help:"database path"`
-	LogPath     string `arg:"-l" help:"log path"`
-	WebLogPath  string `arg:"-w" help:"web log path"`
+	Path        string `arg:"-d" help:"database dir path"`
+	LogPath     string `arg:"-l" help:"server log file path"`
+	WebLogPath  string `arg:"-w" help:"web access log file path"`
 	RDB         bool   `arg:"-r" help:"start in read-only DB mode"`
-	HttpAuth    bool   `arg:"-a" help:"http auth on all requests"`
-	DontKill    bool   `arg:"-k" help:"dont kill server on signal"`
-	UI          bool   `arg:"-u" help:"run page torrserver in browser"`
-	TorrentsDir string `arg:"-t" help:"autoload torrent from dir"`
+	HttpAuth    bool   `arg:"-a" help:"enable http auth on all requests"`
+	DontKill    bool   `arg:"-k" help:"don't kill server on signal"`
+	UI          bool   `arg:"-u" help:"open torrserver page in browser"`
+	TorrentsDir string `arg:"-t" help:"autoload torrents from dir"`
 }
 
 func (args) Version() string {
