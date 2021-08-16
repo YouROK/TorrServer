@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { rgba } from 'polished'
 import { NoImageIcon } from 'icons'
 import { IconButton, InputAdornment, TextField, useTheme } from '@material-ui/core'
 import { HighlightOff as HighlightOffIcon } from '@material-ui/icons'
@@ -92,7 +93,7 @@ export default function RightSideComponent({
                         setIsUserInteractedWithPoster(false)
                       }}
                     >
-                      <HighlightOffIcon style={{ color: isCustomTitleEnabled ? primary : 'gray' }} />
+                      <HighlightOffIcon style={{ color: isCustomTitleEnabled ? primary : rgba('#ccc', 0.5) }} />
                     </IconButton>
                   </InputAdornment>
                 ),
