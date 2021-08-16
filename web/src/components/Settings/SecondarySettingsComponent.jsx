@@ -8,7 +8,6 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
   const { t } = useTranslation()
 
   const {
-    AcceptPeerCon,
     RetrackersMode,
     TorrentDisconnectTimeout,
     EnableIPv6,
@@ -83,11 +82,6 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       <FormControlLabel
         control={<Switch checked={!DisableDHT} onChange={inputForm} id='DisableDHT' color='secondary' />}
         label={t('SettingsDialog.DHT')}
-        labelPlacement='start'
-      />
-      <FormControlLabel
-        control={<Switch checked={AcceptPeerCon} onChange={inputForm} id='AcceptPeerCon' color='secondary' />}
-        label={t('SettingsDialog.AcceptPeerCon')}
         labelPlacement='start'
       />
       <br />
