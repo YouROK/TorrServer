@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -54,10 +55,11 @@ func main() {
 	settings.HttpAuth = params.HttpAuth
 	log.Init(params.LogPath, params.WebLogPath)
 	fmt.Println("=========== START ===========")
+	fmt.Println("Go Ver:", runtime.Version())
 	if params.HttpAuth {
-		log.TLogln("Use HTTP Auth file", settings.Path, "/ accs.db")
+		log.TLogln("Use HTTP Auth file", settings.Path+"/accs.db")
 	}
-	
+
 	dnsResolve()
 	Preconfig(params.DontKill)
 
