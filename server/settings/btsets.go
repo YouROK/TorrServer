@@ -28,7 +28,6 @@ type BTSets struct {
 	EnableDebug              bool // print logs
 
 	// BT Config
-	AcceptPeerCon     bool `default:"true"`
 	EnableIPv6        bool
 	DisableTCP        bool
 	DisableUTP        bool
@@ -41,7 +40,6 @@ type BTSets struct {
 	ConnectionsLimit  int
 	//DhtConnectionLimit int // 0 - inf
 	PeersListenPort int
-	//Strategy           int // 0 - RequestStrategyDuplicateRequestTimeout, 1 - RequestStrategyFuzzing, 2 - RequestStrategyFastest
 }
 
 func (v *BTSets) String() string {
@@ -120,7 +118,6 @@ func loadBTSets() {
 
 func SetDefault() {
 	sets := new(BTSets)
-	sets.AcceptPeerCon = true
 	sets.EnableDebug = false
 	sets.DisableUTP = true
 	sets.CacheSize = 96 * 1024 * 1024 // 96 MB

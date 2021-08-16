@@ -64,7 +64,6 @@ func (bt *BTServer) configure() {
 	upnpID := "TorrServer"
 	cliVers := userAgent //"uTorrent/2210(25302)"
 
-	bt.config.AcceptPeerConnections = settings.BTsets.AcceptPeerCon
 	bt.config.Debug = settings.BTsets.EnableDebug
 	bt.config.DisableIPv6 = settings.BTsets.EnableIPv6 == false
 	bt.config.DisableTCP = settings.BTsets.DisableTCP
@@ -99,7 +98,7 @@ func (bt *BTServer) configure() {
 	} else {
 		upnpport := 32000
 		for {
-		  log.Println("Check upnp port", upnpport)
+			log.Println("Check upnp port", upnpport)
 			l, err := net.Listen("tcp", ":"+strconv.Itoa(upnpport))
 			if l != nil {
 				l.Close()
