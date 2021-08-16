@@ -35,6 +35,7 @@ type Cache struct {
 	muReaders sync.Mutex
 
 	isRemove bool
+	isClosed bool
 	muRemove sync.Mutex
 	torrent  *torrent.Torrent
 }
@@ -89,6 +90,8 @@ func (c *Cache) Piece(m metainfo.Piece) storage.PieceImpl {
 
 func (c *Cache) Close() error {
 	log.TLogln("Close cache for:", c.hash)
+	c.isClosed = true
+
 	delete(c.storage.caches, c.hash)
 
 	if settings.BTsets.RemoveCacheOnDrop {
@@ -114,7 +117,9 @@ func (c *Cache) Close() error {
 }
 
 func (c *Cache) removePiece(piece *Piece) {
-	piece.Release()
+	if !c.isClosed {
+		piece.Release()
+	}
 }
 
 func (c *Cache) AdjustRA(readahead int64) {
@@ -177,7 +182,7 @@ func (c *Cache) GetState() *state.CacheState {
 }
 
 func (c *Cache) cleanPieces() {
-	if c.isRemove {
+	if c.isRemove || c.isClosed {
 		return
 	}
 	c.muRemove.Lock()
