@@ -91,6 +91,7 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 
 		if tor.Title == "" {
 			tor.Title = torrSpec.DisplayName // prefer dn over name
+			tor.Title = strings.ReplaceAll(tor.Title, "rutor.info", "")
 			if tor.Title == "" {
 				tor.Title = tor.Name()
 			}
