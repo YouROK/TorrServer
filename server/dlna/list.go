@@ -138,7 +138,7 @@ func getObjFromTorrent(path, parent, host string, torr *torr.Torrent, file *stat
 		Object: obj,
 		Res:    make([]upnpav.Resource, 0, 1),
 	}
-	pathPlay := "/stream/" + url.PathEscape(file.Path) + "?link=" + torr.TorrentSpec.InfoHash.HexString() + "&play&index=" + strconv.Itoa(file.Id)
+	pathPlay := "stream/" + url.PathEscape(file.Path) + "?link=" + torr.TorrentSpec.InfoHash.HexString() + "&play&index=" + strconv.Itoa(file.Id)
 	item.Res = append(item.Res, upnpav.Resource{
 		URL: getLink(host, pathPlay),
 		ProtocolInfo: fmt.Sprintf("http-get:*:%s:%s", mime, dlna.ContentFeatures{
