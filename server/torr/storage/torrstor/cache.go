@@ -247,12 +247,20 @@ func (c *Cache) getRemPieces() []*Piece {
 		}
 		pc := r.getReaderPiece()
 		end := r.getPiecesRange().End
-		limit := 5
+		limit := 16777216 / c.pieceLength * 5
+		if limit > 40 {
+			limit = 40
+		}
+		count := limit
 
 		for pc <= end && limit > 0 {
 			if !c.pieces[pc].Complete {
 				if c.torrent.PieceState(pc).Priority == torrent.PiecePriorityNone {
-					c.torrent.Piece(pc).SetPriority(torrent.PiecePriorityNormal)
+					if limit > count/2 {
+						c.torrent.Piece(pc).SetPriority(torrent.PiecePriorityHigh)
+					} else {
+						c.torrent.Piece(pc).SetPriority(torrent.PiecePriorityNormal)
+					}
 				}
 				limit--
 			}
