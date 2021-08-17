@@ -281,7 +281,7 @@ export const LoadingProgress = styled.div.attrs(
     value,
     fullAmount,
     theme: {
-      dialogTorrentDetailsContent: { gradientEndColor },
+      dialogTorrentDetailsContent: { gradientStartColor, gradientEndColor },
     },
   }) => {
     const percentage = Math.min(100, (value * 100) / fullAmount)
@@ -289,7 +289,7 @@ export const LoadingProgress = styled.div.attrs(
     return {
       // this block is here according to styled-components recomendation about fast changable components
       style: {
-        background: `linear-gradient(to right, ${gradientEndColor} 0%, ${gradientEndColor} ${percentage}%, #fff ${percentage}%, #fff 100%)`,
+        background: `linear-gradient(to right, ${gradientStartColor} 0%, ${gradientEndColor} ${percentage}%, #fff ${percentage}%, #fff 100%)`,
       },
     }
   },
