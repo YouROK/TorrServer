@@ -55,7 +55,7 @@ func main() {
 	settings.HttpAuth = params.HttpAuth
 	log.Init(params.LogPath, params.WebLogPath)
 	fmt.Println("=========== START ===========")
-	fmt.Println("Go Ver:", runtime.Version())
+	fmt.Println("Build Go version:", runtime.Version())
 	if params.HttpAuth {
 		log.TLogln("Use HTTP Auth file", settings.Path+"/accs.db")
 	}
