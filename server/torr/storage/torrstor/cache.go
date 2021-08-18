@@ -256,11 +256,7 @@ func (c *Cache) getRemPieces() []*Piece {
 		for pc <= end && limit > 0 {
 			if !c.pieces[pc].Complete {
 				if c.torrent.PieceState(pc).Priority == torrent.PiecePriorityNone {
-				  if limit == 1 {
-				    c.torrent.Piece(pc).SetPriority(torrent.PiecePriorityNext)
-				  } else if limit < 4 {
-				    c.torrent.Piece(pc).SetPriority(torrent.PiecePriorityReadahead)
-				  } else if limit < count/2 {
+				  if limit > count/2 {
 						c.torrent.Piece(pc).SetPriority(torrent.PiecePriorityHigh)
 					} else {
 						c.torrent.Piece(pc).SetPriority(torrent.PiecePriorityNormal)
