@@ -241,6 +241,7 @@ func (c *Cache) getRemPieces() []*Piece {
 
 	c.updatePriority()
 
+	c.muReaders.Lock()
 	for r, _ := range c.readers {
 		if c.isIdInFileBE(ranges, r.getReaderPiece()) {
 			continue
@@ -267,6 +268,7 @@ func (c *Cache) getRemPieces() []*Piece {
 			pc++
 		}
 	}
+	c.muReaders.Unlock()
 
 	sort.Slice(piecesRemove, func(i, j int) bool {
 		return piecesRemove[i].Accessed < piecesRemove[j].Accessed
