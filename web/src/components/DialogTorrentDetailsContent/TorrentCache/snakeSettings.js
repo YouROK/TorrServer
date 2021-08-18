@@ -23,7 +23,7 @@ export const snakeSettings = {
       completeColor: '#5c6469',
       backgroundColor: '#949ca0',
       progressColor: '#949ca0',
-      readerColor: '#00a572',
+      readerColor: '#ccc',
       rangeColor: '#cda184',
     },
   },
