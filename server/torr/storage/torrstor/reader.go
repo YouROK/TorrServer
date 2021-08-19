@@ -113,9 +113,9 @@ func (r *Reader) Close() {
 	// file reader close in gotorrent
 	// this struct close in cache
 	r.isClosed = true
-	if len(r.file.Torrent().Files()) > 0 {
-		r.Reader.Close()
-	}
+	// if len(r.file.Torrent().Files()) > 0 {
+	// 	r.Reader.Close()
+	// }
 	go r.cache.getRemPieces()
 }
 
