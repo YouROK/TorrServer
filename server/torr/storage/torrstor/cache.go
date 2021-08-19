@@ -157,8 +157,9 @@ func (c *Cache) GetState() *state.CacheState {
 	}
 
 	readersState := make([]*state.ReaderState, 0)
-	c.muReaders.Lock()
+	
 	if c.Readers() > 0 {
+		c.muReaders.Lock()
 		for r, _ := range c.readers {
 			rng := r.getPiecesRange()
 			pc := r.getReaderPiece()
@@ -168,8 +169,8 @@ func (c *Cache) GetState() *state.CacheState {
 				Reader: pc,
 			})
 		}
+		c.muReaders.Unlock()
 	}
-	c.muReaders.Unlock()
 
 	c.filled = fill
 	cState.Capacity = c.capacity
