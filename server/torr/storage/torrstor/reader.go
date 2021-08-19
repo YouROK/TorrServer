@@ -125,8 +125,11 @@ func (r *Reader) getPiecesRange() Range {
 }
 
 func (r *Reader) getReaderPiece() int {
-	readerOff := r.offset
-	return r.getPieceNum(readerOff)
+	return r.getPieceNum(r.offset)
+}
+
+func (r *Reader) getReaderRAHPiece() int {
+	return r.getPieceNum(r.offset + r.readahead)
 }
 
 func (r *Reader) getPieceNum(offset int64) int {

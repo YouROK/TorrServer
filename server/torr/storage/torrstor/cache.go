@@ -247,26 +247,28 @@ func (c *Cache) getRemPieces() []*Piece {
 		if c.isIdInFileBE(ranges, r.getReaderPiece()) {
 			continue
 		}
-		pc := r.getReaderPiece()
+		readerPos := r.getReaderPiece()
+		readerRAHPos := r.getReaderRAHPiece()
 		end := r.getPiecesRange().End
-		limit := 16777216 / c.pieceLength * 5 // 80 MB
-		if limit > 40 {
-			limit = 40
+		count := int(16777216 / c.pieceLength * 5) // 80 MB
+		if count > 40 {
+			count = 40
 		}
-		count := limit
+		limit := 0
 
-		for pc <= end && limit > 0 {
-			if !c.pieces[pc].Complete {
-				if c.torrent.PieceState(pc).Priority == torrent.PiecePriorityNone {
-				  if limit < count/2 {
-						c.torrent.Piece(pc).SetPriority(torrent.PiecePriorityHigh)
-					} else {
-						c.torrent.Piece(pc).SetPriority(torrent.PiecePriorityNormal)
-					}
+		for i := readerPos; i < end && limit < count; i++ {
+			if !c.pieces[i].Complete {
+				if i == readerPos {
+					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNow)
+				} else if i > readerPos && i <= readerRAHPos {
+					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityReadahead)
+				} else if i > readerRAHPos && i <= end/2 && c.torrent.PieceState(i).Priority != torrent.PiecePriorityHigh {
+					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityHigh)
+				} else if i > end/2 && c.torrent.PieceState(i).Priority != torrent.PiecePriorityNormal {
+					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNormal)
 				}
-				limit--
+				limit++
 			}
-			pc++
 		}
 	}
 	c.muReaders.Unlock()
