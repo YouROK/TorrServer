@@ -126,7 +126,7 @@ func (c *Cache) AdjustRA(readahead int64) {
 	if settings.BTsets.CacheSize == 0 {
 		c.capacity = readahead * 3
 	}
-	if len(c.readers) > 0 {
+	if c.Readers() > 0 {
 		c.muReaders.Lock()
 		for r, _ := range c.readers {
 			r.SetReadahead(readahead)
@@ -158,7 +158,7 @@ func (c *Cache) GetState() *state.CacheState {
 
 	readersState := make([]*state.ReaderState, 0)
 	c.muReaders.Lock()
-	if len(c.readers) > 0 {
+	if c.Readers() > 0 {
 		for r, _ := range c.readers {
 			rng := r.getPiecesRange()
 			pc := r.getReaderPiece()
@@ -255,7 +255,6 @@ func (c *Cache) getRemPieces() []*Piece {
 			count = 40
 		}
 		limit := 0
-
 		for i := readerPos; i < end && limit < count; i++ {
 			if !c.pieces[i].Complete {
 				if i == readerPos {
