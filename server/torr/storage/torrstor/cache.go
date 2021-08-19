@@ -150,6 +150,7 @@ func (c *Cache) GetState() *state.CacheState {
 					Size:      p.Size,
 					Length:    c.pieceLength,
 					Completed: p.Complete,
+					Priority:  int(c.torrent.PieceState(p.Id).Priority),
 				}
 			}
 		}
@@ -257,7 +258,7 @@ func (c *Cache) getRemPieces() []*Piece {
 		for pc <= end && limit > 0 {
 			if !c.pieces[pc].Complete {
 				if c.torrent.PieceState(pc).Priority == torrent.PiecePriorityNone {
-				  if limit > count/2 {
+				  if limit < count/2 {
 						c.torrent.Piece(pc).SetPriority(torrent.PiecePriorityHigh)
 					} else {
 						c.torrent.Piece(pc).SetPriority(torrent.PiecePriorityNormal)

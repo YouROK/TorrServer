@@ -20,6 +20,7 @@ type ItemState struct {
 	Length    int64
 	Size      int64
 	Completed bool
+	Priority  int
 }
 
 type ReaderState struct {
