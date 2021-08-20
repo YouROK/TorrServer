@@ -73,10 +73,9 @@ func (p *Piece) Release() {
 	} else {
 		p.dPiece.Release()
 	}
-	// TODO: check this merge
-	if !p.cache.isClosed {
-		p.cache.torrent.Piece(p.Id).SetPriority(torrent.PiecePriorityNone)
-		// fix remove pieces hash
-		p.cache.torrent.Piece(p.Id).UpdateCompletion()
-	}
+// 	if !p.cache.isClosed {
+// 		p.cache.torrent.Piece(p.Id).SetPriority(torrent.PiecePriorityNone)
+// 		// fix remove pieces hash
+// 		p.cache.torrent.Piece(p.Id).UpdateCompletion()
+// 	}
 }
