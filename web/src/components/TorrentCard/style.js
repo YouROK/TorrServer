@@ -37,6 +37,7 @@ export const TorrentCardPoster = styled.div`
   border-radius: 5px;
   overflow: hidden;
   text-align: center;
+  cursor: pointer;
 
   ${({
     isPoster,

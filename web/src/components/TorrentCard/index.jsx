@@ -1,12 +1,12 @@
 import { forwardRef, memo, useState } from 'react'
 import {
   UnfoldMore as UnfoldMoreIcon,
-  Edit as EditIcon,
+  PlayArrow as PlayArrowIcon,
   Close as CloseIcon,
   Delete as DeleteIcon,
 } from '@material-ui/icons'
 import { getPeerString, humanizeSize, humanizeSpeed, removeRedundantCharacters } from 'utils/Utils'
-import { torrentsHost } from 'utils/Hosts'
+import { playlistTorrHost, torrentsHost } from 'utils/Hosts'
 import { NoImageIcon } from 'icons'
 import DialogTorrentDetailsContent from 'components/DialogTorrentDetailsContent'
 import Dialog from '@material-ui/core/Dialog'
@@ -59,10 +59,12 @@ const Torrent = ({ torrent }) => {
   const handleClickOpenEditDialog = () => setIsEditDialogOpen(true)
   const handleCloseEditDialog = () => setIsEditDialogOpen(false)
 
+  const fullPlaylistLink = `${playlistTorrHost()}/${encodeURIComponent(parsedTitle || 'file')}.m3u?link=${hash}&m3u`
+
   return (
     <>
       <TorrentCard>
-        <TorrentCardPoster isPoster={poster}>
+        <TorrentCardPoster isPoster={poster} onClick={handleClickOpenEditDialog}>
           {poster ? <img src={poster} alt='poster' /> : <NoImageIcon />}
         </TorrentCardPoster>
 
@@ -72,9 +74,13 @@ const Torrent = ({ torrent }) => {
             <span>{t('Details')}</span>
           </StyledButton>
 
-          <StyledButton onClick={handleClickOpenEditDialog}>
-            <EditIcon />
-            <span>{t('Edit')}</span>
+          <StyledButton
+            onClick={() => {
+              window.open(fullPlaylistLink, '_blank')
+            }}
+          >
+            <PlayArrowIcon />
+            <span>{t('Playlist')}</span>
           </StyledButton>
 
           <StyledButton onClick={() => dropTorrent(torrent)}>
