@@ -155,7 +155,7 @@ func (c *Cache) GetState() *state.CacheState {
 	}
 
 	readersState := make([]*state.ReaderState, 0)
-	
+
 	if c.Readers() > 0 {
 		c.muReaders.Lock()
 		for r, _ := range c.readers {
@@ -258,13 +258,13 @@ func (c *Cache) getRemPieces() []*Piece {
 			if !c.pieces[i].Complete {
 				if i == readerPos {
 					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNow)
-				} else if i == readerPos + 1 {
+				} else if i == readerPos+1 {
 					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNext)
 				} else if i > readerPos && i <= readerRAHPos {
 					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityReadahead)
-				} else if i > readerRAHPos && i <= readerPos + (end - readerPos)/2 && c.torrent.PieceState(i).Priority != torrent.PiecePriorityHigh {
+				} else if i > readerRAHPos && i <= readerRAHPos+5 && c.torrent.PieceState(i).Priority != torrent.PiecePriorityHigh {
 					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityHigh)
-				} else if i > readerPos + (end - readerPos)/2 && c.torrent.PieceState(i).Priority != torrent.PiecePriorityNormal {
+				} else if i > readerRAHPos+5 && c.torrent.PieceState(i).Priority != torrent.PiecePriorityNormal {
 					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNormal)
 				}
 				limit++
@@ -282,10 +282,10 @@ func (c *Cache) getRemPieces() []*Piece {
 }
 
 func (c *Cache) isIdInFileBE(ranges []Range, id int) bool {
-	
+
 	// keep 8/16 MB
 	FileRangeNotDelete := int64(c.pieceLength)
-	if (FileRangeNotDelete < 8 * 1024 * 1024) {
+	if FileRangeNotDelete < 8*1024*1024 {
 		FileRangeNotDelete = 8 * 1024 * 1024
 	}
 
