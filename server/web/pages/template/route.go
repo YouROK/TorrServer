@@ -9,48 +9,23 @@ func RouteWebPages(route *gin.RouterGroup) {
 		c.Data(200, "text/html; charset=utf-8", Indexhtml)
 	})
 
-	route.GET("/browserconfig.xml", func(c *gin.Context) {
-		c.Data(200, "application/xml", Browserconfigxml)
-	})
-
-
-	route.GET("/favicon-32x32.png", func(c *gin.Context) {
-		c.Data(200, "image/png", Favicon32x32png)
-	})
-
-
 	route.GET("/index.html", func(c *gin.Context) {
 		c.Data(200, "text/html; charset=utf-8", Indexhtml)
 	})
 
 
-	route.GET("/mstile-150x150.png", func(c *gin.Context) {
-		c.Data(200, "image/png", Mstile150x150png)
+	route.GET("/static/js/2.5a98d9f9.chunk.js", func(c *gin.Context) {
+		c.Data(200, "application/javascript", Staticjs25a98d9f9chunkjs)
 	})
 
 
-	route.GET("/static/js/2.97916048.chunk.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript", Staticjs297916048chunkjs)
-	})
-
-
-	route.GET("/static/js/main.b6b3aa76.chunk.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript", Staticjsmainb6b3aa76chunkjs)
+	route.GET("/static/js/main.823c0d3a.chunk.js.map", func(c *gin.Context) {
+		c.Data(200, "application/json", Staticjsmain823c0d3achunkjsmap)
 	})
 
 
 	route.GET("/static/js/runtime-main.8bda5920.js.map", func(c *gin.Context) {
 		c.Data(200, "application/json", Staticjsruntimemain8bda5920jsmap)
-	})
-
-
-	route.GET("/android-chrome-512x512.png", func(c *gin.Context) {
-		c.Data(200, "image/png", Androidchrome512x512png)
-	})
-
-
-	route.GET("/site.webmanifest", func(c *gin.Context) {
-		c.Data(200, "application/manifest+json", Sitewebmanifest)
 	})
 
 
@@ -64,11 +39,6 @@ func RouteWebPages(route *gin.RouterGroup) {
 	})
 
 
-	route.GET("/asset-manifest.json", func(c *gin.Context) {
-		c.Data(200, "application/json", Assetmanifestjson)
-	})
-
-
 	route.GET("/favicon-16x16.png", func(c *gin.Context) {
 		c.Data(200, "image/png", Favicon16x16png)
 	})
@@ -79,18 +49,48 @@ func RouteWebPages(route *gin.RouterGroup) {
 	})
 
 
-	route.GET("/static/js/2.97916048.chunk.js.LICENSE.txt", func(c *gin.Context) {
-		c.Data(200, "text/plain; charset=utf-8", Staticjs297916048chunkjsLICENSEtxt)
+	route.GET("/static/js/2.5a98d9f9.chunk.js.LICENSE.txt", func(c *gin.Context) {
+		c.Data(200, "text/plain; charset=utf-8", Staticjs25a98d9f9chunkjsLICENSEtxt)
 	})
 
 
-	route.GET("/static/js/2.97916048.chunk.js.map", func(c *gin.Context) {
-		c.Data(200, "application/json", Staticjs297916048chunkjsmap)
+	route.GET("/static/js/main.823c0d3a.chunk.js", func(c *gin.Context) {
+		c.Data(200, "application/javascript", Staticjsmain823c0d3achunkjs)
 	})
 
 
-	route.GET("/static/js/main.b6b3aa76.chunk.js.map", func(c *gin.Context) {
-		c.Data(200, "application/json", Staticjsmainb6b3aa76chunkjsmap)
+	route.GET("/android-chrome-512x512.png", func(c *gin.Context) {
+		c.Data(200, "image/png", Androidchrome512x512png)
+	})
+
+
+	route.GET("/asset-manifest.json", func(c *gin.Context) {
+		c.Data(200, "application/json", Assetmanifestjson)
+	})
+
+
+	route.GET("/browserconfig.xml", func(c *gin.Context) {
+		c.Data(200, "application/xml", Browserconfigxml)
+	})
+
+
+	route.GET("/favicon-32x32.png", func(c *gin.Context) {
+		c.Data(200, "image/png", Favicon32x32png)
+	})
+
+
+	route.GET("/mstile-150x150.png", func(c *gin.Context) {
+		c.Data(200, "image/png", Mstile150x150png)
+	})
+
+
+	route.GET("/site.webmanifest", func(c *gin.Context) {
+		c.Data(200, "application/manifest+json", Sitewebmanifest)
+	})
+
+
+	route.GET("/static/js/2.5a98d9f9.chunk.js.map", func(c *gin.Context) {
+		c.Data(200, "application/json", Staticjs25a98d9f9chunkjsmap)
 	})
 
 
