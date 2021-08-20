@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -23,14 +24,14 @@ import (
 
 type args struct {
 	Port        string `arg:"-p" help:"web server port"`
-	Path        string `arg:"-d" help:"database path"`
-	LogPath     string `arg:"-l" help:"log path"`
-	WebLogPath  string `arg:"-w" help:"web log path"`
+	Path        string `arg:"-d" help:"database dir path"`
+	LogPath     string `arg:"-l" help:"server log file path"`
+	WebLogPath  string `arg:"-w" help:"web access log file path"`
 	RDB         bool   `arg:"-r" help:"start in read-only DB mode"`
-	HttpAuth    bool   `arg:"-a" help:"http auth on all requests"`
-	DontKill    bool   `arg:"-k" help:"dont kill server on signal"`
-	UI          bool   `arg:"-u" help:"run page torrserver in browser"`
-	TorrentsDir string `arg:"-t" help:"autoload torrent from dir"`
+	HttpAuth    bool   `arg:"-a" help:"enable http auth on all requests"`
+	DontKill    bool   `arg:"-k" help:"don't kill server on signal"`
+	UI          bool   `arg:"-u" help:"open torrserver page in browser"`
+	TorrentsDir string `arg:"-t" help:"autoload torrents from dir"`
 }
 
 func (args) Version() string {
@@ -53,6 +54,11 @@ func main() {
 	settings.Path = params.Path
 	settings.HttpAuth = params.HttpAuth
 	log.Init(params.LogPath, params.WebLogPath)
+	fmt.Println("=========== START ===========")
+	fmt.Println("Build Go version:", runtime.Version())
+	if params.HttpAuth {
+		log.TLogln("Use HTTP Auth file", settings.Path+"/accs.db")
+	}
 
 	dnsResolve()
 	Preconfig(params.DontKill)
@@ -78,7 +84,7 @@ func main() {
 func dnsResolve() {
 	addrs, err := net.LookupHost("www.google.com")
 	if len(addrs) == 0 {
-		fmt.Println("Check dns", addrs, err)
+		log.TLogln("Check dns failed", addrs, err)
 
 		fn := func(ctx context.Context, network, address string) (net.Conn, error) {
 			d := net.Dialer{}
@@ -89,8 +95,10 @@ func dnsResolve() {
 			Dial: fn,
 		}
 
-		addrs, err = net.LookupHost("www.themoviedb.org")
-		fmt.Println("Check new dns", addrs, err)
+		addrs, err = net.LookupHost("www.google.com")
+		log.TLogln("Check cloudflare dns", addrs, err)
+	} else {
+		log.TLogln("Check dns OK", addrs, err)
 	}
 }
 

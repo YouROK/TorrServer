@@ -114,7 +114,7 @@ func (r *Reader) Close() {
 	// this struct close in cache
 	r.isClosed = true
 	if len(r.file.Torrent().Files()) > 0 {
-		r.Reader.Close()
+	 	r.Reader.Close()
 	}
 	go r.cache.getRemPieces()
 }
@@ -125,8 +125,11 @@ func (r *Reader) getPiecesRange() Range {
 }
 
 func (r *Reader) getReaderPiece() int {
-	readerOff := r.offset
-	return r.getPieceNum(readerOff)
+	return r.getPieceNum(r.offset)
+}
+
+func (r *Reader) getReaderRAHPiece() int {
+	return r.getPieceNum(r.offset + r.readahead)
 }
 
 func (r *Reader) getPieceNum(offset int64) int {

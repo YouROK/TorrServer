@@ -62,9 +62,10 @@ const TorrentCache = ({ cache, isMini }) => {
 
     ctx.clearRect(0, 0, canvasWidth, height)
 
-    source.forEach(({ percentage, isReader, isReaderRange }, i) => {
+    source.forEach(({ percentage, priority, isReader, isReaderRange }, i) => {
       const inProgress = percentage > 0 && percentage < 100
       const isCompleted = percentage === 100
+      const peacePriority = priority
       const currentRow = i % piecesInOneRow
       const currentColumn = Math.floor(i / piecesInOneRow)
       const fixBlurStroke = borderWidth % 2 === 0 ? 0 : 0.5
@@ -90,6 +91,20 @@ const TorrentCache = ({ cache, isMini }) => {
       ctx.fillRect(0, 0, pieceSize, pieceSize)
       ctx.strokeRect(0, 0, pieceSize, pieceSize)
       ctx.setTransform(1, 0, 0, 1, 0, 0)
+
+      if (peacePriority > 0) {
+        let info = ''
+        if (peacePriority === 1) info = '*'
+        else if (peacePriority === 2) info = 'H'
+        else if (peacePriority === 3) info = 'R'
+        else if (peacePriority === 4) info = 'N'
+        else if (peacePriority === 5) info = 'A'
+        ctx.font = isMini ? '12px monospace' : '10px monospace'
+        const xpad = isMini ? pieceSize * 0.34 : pieceSize * 0.28
+        const ypad = isMini ? pieceSize * 0.69 : pieceSize * 0.78
+        ctx.fillStyle = 'black'
+        ctx.fillText(info, x + xpad, y + ypad)
+      }
     })
   }, [
     cacheMap,
@@ -107,6 +122,7 @@ const TorrentCache = ({ cache, isMini }) => {
     completeColor,
     readerColor,
     rangeColor,
+    isMini,
     theme,
   ])
 

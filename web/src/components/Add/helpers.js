@@ -22,20 +22,19 @@ export const getMoviePosters = (movieName, language = 'en') => {
 
 export const checkImageURL = async url => {
   if (!url || !url.match(/.(jpg|jpeg|png|gif)$/i)) return false
-
-  try {
-    await fetch(url, { mode: 'no-cors' })
-    return true
-  } catch (e) {
-    return false
-  }
+  return true
 }
 
 const magnetRegex = /^magnet:\?xt=urn:[a-z0-9].*/i
 export const hashRegex = /^\b[0-9a-f]{32}\b$|^\b[0-9a-f]{40}\b$|^\b[0-9a-f]{64}\b$/i
 const torrentRegex = /^.*\.(torrent)$/i
-export const chechTorrentSource = source =>
-  source.match(hashRegex) !== null || source.match(magnetRegex) !== null || source.match(torrentRegex) !== null
+const linkRegex = /^(http(s?)):\/\/.*/i
+
+export const checkTorrentSource = source =>
+  source.match(hashRegex) !== null ||
+  source.match(magnetRegex) !== null ||
+  source.match(torrentRegex) !== null ||
+  source.match(linkRegex) !== null
 
 export const parseTorrentTitle = (parsingSource, callback) => {
   parseTorrent.remote(parsingSource, (err, { name, files } = {}) => {

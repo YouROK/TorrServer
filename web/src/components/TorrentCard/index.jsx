@@ -129,7 +129,7 @@ const Torrent = ({ torrent }) => {
       <Dialog open={isDeleteTorrentOpened} onClose={closeDeleteTorrentAlert}>
         <DialogTitle>{t('DeleteTorrent?')}</DialogTitle>
         <DialogActions>
-          <Button variant='outlined' onClick={closeDeleteTorrentAlert} color='primary'>
+          <Button variant='outlined' onClick={closeDeleteTorrentAlert} color='secondary'>
             {t('Cancel')}
           </Button>
 
@@ -139,7 +139,7 @@ const Torrent = ({ torrent }) => {
               deleteTorrent(torrent)
               closeDeleteTorrentAlert()
             }}
-            color='primary'
+            color='secondary'
             autoFocus
           >
             {t('OK')}

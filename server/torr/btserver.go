@@ -61,6 +61,7 @@ func (bt *BTServer) configure() {
 
 	userAgent := "qBittorrent/4.3.2"
 	peerID := "-qB4320-"
+	upnpID := "TorrServer"
 	cliVers := userAgent //"uTorrent/2210(25302)"
 
 	bt.config.Debug = settings.BTsets.EnableDebug
@@ -74,6 +75,7 @@ func (bt *BTServer) configure() {
 	bt.config.IPBlocklist = blocklist
 	bt.config.Bep20 = peerID
 	bt.config.PeerID = utils.PeerIDRandom(peerID)
+	bt.config.UpnpID = upnpID
 	bt.config.HTTPUserAgent = userAgent
 	bt.config.ExtendedHandshakeClientVersion = cliVers
 	bt.config.EstablishedConnsPerTorrent = settings.BTsets.ConnectionsLimit
@@ -93,11 +95,12 @@ func (bt *BTServer) configure() {
 		bt.config.UploadRateLimiter = utils.Limit(settings.BTsets.UploadRateLimit * 1024)
 	}
 	if settings.BTsets.PeersListenPort > 0 {
+		log.Println("Set listen port", settings.BTsets.PeersListenPort)
 		bt.config.ListenPort = settings.BTsets.PeersListenPort
 	} else {
-		log.Println("Find upnp port")
 		upnpport := 32000
 		for {
+			log.Println("Check upnp port", upnpport)
 			l, err := net.Listen("tcp", ":"+strconv.Itoa(upnpport))
 			if l != nil {
 				l.Close()
@@ -111,7 +114,7 @@ func (bt *BTServer) configure() {
 		bt.config.ListenPort = upnpport
 	}
 
-	log.Println("Configure client:", settings.BTsets)
+	log.Println("Client config:", settings.BTsets)
 }
 
 func (bt *BTServer) GetTorrent(hash torrent.InfoHash) *Torrent {

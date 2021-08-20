@@ -29,6 +29,15 @@ set_goarm() {
     GO_ARM=""
   fi
 }
+# use softfloat for mips builds
+set_gomips() {
+  if [[ "$1" =~ mips ]]; then
+    if [[ "$1" =~ mips(64) ]]; then MIPS64="${BASH_REMATCH[1]}"; fi
+    GO_MIPS="GOMIPS${MIPS64}=softfloat"
+  else
+    GO_MIPS=""
+  fi
+}
 
 GOBIN="go"
 
@@ -59,11 +68,15 @@ for PLATFORM in "${PLATFORMS[@]}"; do
   GOOS=${PLATFORM%/*}
   GOARCH=${PLATFORM#*/}
   set_goarm "$GOARCH"
+  set_gomips "$GOARCH"
   BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}${GOARM}"
   if [[ "${GOOS}" == "windows" ]]; then BIN_FILENAME="${BIN_FILENAME}.exe"; fi
-  CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GO_ARM} ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
+  CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GO_ARM} ${GO_MIPS} ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
   echo "${CMD}"
   eval "$CMD" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
+  CMD="../upx -q ${BIN_FILENAME}"; # upx --brute produce much smaller binaries
+  echo "compress with ${CMD}"
+  eval "$CMD"
 done
 
 #####################################
@@ -89,6 +102,9 @@ for GOARCH in "${!COMPILERS[@]}"; do
   CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GO_ARM} CGO_ENABLED=1 ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
   echo "${CMD}"
   eval "${CMD}" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
+  CMD="../upx -q ${BIN_FILENAME}"; # upx --brute produce much smaller binaries
+  echo "compress with ${CMD}"
+  eval "$CMD"
 done
 
 # eval errors

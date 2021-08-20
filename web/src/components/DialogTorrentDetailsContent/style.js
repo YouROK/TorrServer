@@ -129,12 +129,15 @@ export const SectionSubName = styled.div`
     },
   }) => css`
     ${({ mb }) => css`
+      ${mb && `margin-top: ${mb / 3}px`};
       ${mb && `margin-bottom: ${mb}px`};
+      line-height: 1.2;
       color: ${subNameFontColor};
 
       @media (max-width: 800px) {
+        ${mb && `margin-top: ${mb / 4}px`};
         ${mb && `margin-bottom: ${mb / 2}px`};
-        font-size: 11px;
+        font-size: 14px;
       }
     `}
   `}
@@ -149,14 +152,15 @@ export const SectionTitle = styled.div`
   }) => css`
     ${({ mb }) => css`
       ${mb && `margin-bottom: ${mb}px`};
-      font-size: 35px;
+      font-size: 34px;
       font-weight: 300;
       line-height: 1;
       word-break: break-word;
       color: ${color || titleFontColor};
 
       @media (max-width: 800px) {
-        font-size: 25px;
+        font-size: 24px;
+        line-height: 1.1;
         ${mb && `margin-bottom: ${mb / 2}px`};
       }
     `}
@@ -258,15 +262,16 @@ export const WidgetFieldValue = styled.div`
     },
   }) => css`
     grid-area: value;
-    padding: 0 20px;
+    font-size: 24px;
+    padding: 0 20px 0 0;
     color: ${widgetFontColor};
-    font-size: 25px;
     background: ${bgColor};
     border-radius: 0 5px 5px 0;
+    white-space: nowrap;
 
     @media (max-width: 800px) {
       font-size: 18px;
-      padding: 0 4px;
+      padding: 0 16px 0 0;
     }
   `}
 `
@@ -276,7 +281,7 @@ export const LoadingProgress = styled.div.attrs(
     value,
     fullAmount,
     theme: {
-      dialogTorrentDetailsContent: { gradientEndColor },
+      dialogTorrentDetailsContent: { gradientStartColor, gradientEndColor },
     },
   }) => {
     const percentage = Math.min(100, (value * 100) / fullAmount)
@@ -284,7 +289,7 @@ export const LoadingProgress = styled.div.attrs(
     return {
       // this block is here according to styled-components recomendation about fast changable components
       style: {
-        background: `linear-gradient(to right, ${gradientEndColor} 0%, ${gradientEndColor} ${percentage}%, #fff ${percentage}%, #fff 100%)`,
+        background: `linear-gradient(to right, ${gradientStartColor} 0%, ${gradientEndColor} ${percentage}%, #fff ${percentage}%, #fff 100%)`,
       },
     }
   },

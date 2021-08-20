@@ -85,16 +85,6 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         label={t('SettingsDialog.DHT')}
         labelPlacement='start'
       />
-      <TextField
-        onChange={inputForm}
-        margin='normal'
-        id='DhtConnectionLimit'
-        label={t('SettingsDialog.DhtConnectionLimit')}
-        value={DhtConnectionLimit}
-        type='number'
-        variant='outlined'
-        fullWidth
-      />
       <br />
       <TextField
         onChange={inputForm}
@@ -134,6 +124,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         margin='normal'
         id='PeersListenPort'
         label={t('SettingsDialog.PeersListenPort')}
+        helperText={t('SettingsDialog.PeersListenPortHint')}
         value={PeersListenPort}
         type='number'
         variant='outlined'

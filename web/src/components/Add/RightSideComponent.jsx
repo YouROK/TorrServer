@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next'
+import { rgba } from 'polished'
 import { NoImageIcon } from 'icons'
 import { IconButton, InputAdornment, TextField, useTheme } from '@material-ui/core'
-import { CheckBox as CheckBoxIcon } from '@material-ui/icons'
+import { HighlightOff as HighlightOffIcon } from '@material-ui/icons'
 
 import {
   ClearPosterButton,
@@ -84,7 +85,7 @@ export default function RightSideComponent({
                 endAdornment: (
                   <InputAdornment position='end'>
                     <IconButton
-                      style={{ padding: '0 0 0 7px' }}
+                      style={{ padding: '1px' }}
                       onClick={() => {
                         setTitle('')
                         setIsCustomTitleEnabled(!isCustomTitleEnabled)
@@ -92,7 +93,7 @@ export default function RightSideComponent({
                         setIsUserInteractedWithPoster(false)
                       }}
                     >
-                      <CheckBoxIcon style={{ color: isCustomTitleEnabled ? primary : 'gray' }} />
+                      <HighlightOffIcon style={{ color: isCustomTitleEnabled ? primary : rgba('#ccc', 0.5) }} />
                     </IconButton>
                   </InputAdornment>
                 ),

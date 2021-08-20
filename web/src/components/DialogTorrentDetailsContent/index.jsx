@@ -204,6 +204,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                 {bufferSize <= 33554432 && <SectionSubName>{t('BufferNote')}</SectionSubName>}
                 <LoadingProgress
                   value={Filled}
+                  style={{ marginTop: '5px' }}
                   fullAmount={bufferSize}
                   label={`${humanizeSize(bufferSize)} / ${humanizeSize(Filled) || `0 ${t('B')}`}`}
                 />

@@ -43,9 +43,9 @@ export const useCreateCacheMap = cache => {
     const map = []
 
     for (let i = 0; i < PiecesCount; i++) {
-      const { Size, Length } = Pieces[i] || {}
+      const { Size, Length, Priority } = Pieces[i] || {}
 
-      const newPiece = { id: i, percentage: (Size / Length) * 100 || 0 }
+      const newPiece = { id: i, percentage: (Size / Length) * 100 || 0, priority: Priority || 0 }
 
       Readers.forEach(r => {
         if (i === r.Reader) newPiece.isReader = true

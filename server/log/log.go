@@ -35,7 +35,7 @@ func Init(path, webpath string) {
 
 	if path != "" {
 		if fi, err := os.Lstat(path); err == nil {
-			if fi.Size() >= 1*1024*1024*1024 {
+			if fi.Size() >= 100*1024*1024 { // 100MB
 				os.Remove(path)
 			}
 		}
@@ -47,6 +47,10 @@ func Init(path, webpath string) {
 		logFile = ff
 		os.Stdout = ff
 		os.Stderr = ff
+		//https://stackoverflow.com/a/36140590
+		//fmt.Print(time.Now().UTC().Format("2006-01-02T15:04:05.999Z") + " TLOG  " + string(bytes))
+		log.SetFlags(log.Ldate|log.Ltime|log.LUTC|log.Lmsgprefix)
+		log.SetPrefix("0000 TLOG  ")
 		log.SetOutput(ff)
 	}
 }

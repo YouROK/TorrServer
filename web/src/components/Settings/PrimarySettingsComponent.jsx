@@ -50,13 +50,13 @@ export default function PrimarySettingsComponent({
 
         <PreloadCachePercentage
           value={100 - cachePercentage}
-          label={`${t('Cache')} ${cacheSize} MB`}
+          label={`${t('Cache')} ${cacheSize} ${t('MB')}`}
           preloadCachePercentage={preloadCachePercentage}
         />
 
         <PreloadCacheValue color={cacheBeforeReaderColor}>
           <div>
-            {100 - cachePercentage}% ({Math.round((cacheSize / 100) * (100 - cachePercentage))} MB)
+            {100 - cachePercentage}% ({Math.round((cacheSize / 100) * (100 - cachePercentage))} {t('MB')})
           </div>
 
           <div>{t('SettingsDialog.CacheBeforeReaderDesc')}</div>
@@ -64,7 +64,7 @@ export default function PrimarySettingsComponent({
 
         <PreloadCacheValue color={cacheAfterReaderColor}>
           <div>
-            {cachePercentage}% ({Math.round((cacheSize / 100) * cachePercentage)} MB)
+            {cachePercentage}% ({Math.round((cacheSize / 100) * cachePercentage)} {t('MB')})
           </div>
 
           <div>{t('SettingsDialog.CacheAfterReaderDesc')}</div>
@@ -80,9 +80,9 @@ export default function PrimarySettingsComponent({
           sliderMin={32}
           sliderMax={1024}
           inputMin={32}
-          inputMax={20000}
-          step={8}
-          onBlurCallback={value => setCacheSize(Math.round(value / 8) * 8)}
+          inputMax={999999}
+          step={4}
+          onBlurCallback={value => setCacheSize(Math.round(value / 4) * 4)}
         />
 
         <SliderInput
@@ -98,7 +98,7 @@ export default function PrimarySettingsComponent({
 
         <SliderInput
           isProMode={isProMode}
-          title={`${t('SettingsDialog.PreloadCache')} - ${preloadCachePercentage}% (${preloadCacheSize} MB)`}
+          title={`${t('SettingsDialog.PreloadCache')} - ${preloadCachePercentage}% (${preloadCacheSize} ${t('MB')})`}
           value={preloadCachePercentage}
           setValue={setPreloadCachePercentage}
           sliderMin={0}

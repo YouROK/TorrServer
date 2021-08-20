@@ -51,7 +51,7 @@ func Start(port string) {
 		api.SetupRoute(&route.RouterGroup)
 		pages.SetupRoute(&route.RouterGroup)
 	}
-	log.TLogln("Start web", port)
+	log.TLogln("Start web server at port", port)
 	waitChan <- route.Run(":" + port)
 }
 
