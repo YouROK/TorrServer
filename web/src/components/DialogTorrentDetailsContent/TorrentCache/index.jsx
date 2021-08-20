@@ -65,7 +65,6 @@ const TorrentCache = ({ cache, isMini }) => {
     source.forEach(({ percentage, priority, isReader, isReaderRange }, i) => {
       const inProgress = percentage > 0 && percentage < 100
       const isCompleted = percentage === 100
-      const peacePriority = priority
       const currentRow = i % piecesInOneRow
       const currentColumn = Math.floor(i / piecesInOneRow)
       const fixBlurStroke = borderWidth % 2 === 0 ? 0 : 0.5
@@ -92,13 +91,13 @@ const TorrentCache = ({ cache, isMini }) => {
       ctx.strokeRect(0, 0, pieceSize, pieceSize)
       ctx.setTransform(1, 0, 0, 1, 0, 0)
 
-      if (peacePriority > 0) {
+      if (priority > 0) {
         let info = ''
-        if (peacePriority === 1) info = '*'
-        else if (peacePriority === 2) info = 'H'
-        else if (peacePriority === 3) info = 'R'
-        else if (peacePriority === 4) info = 'N'
-        else if (peacePriority === 5) info = 'A'
+        if (priority === 1) info = '*'
+        else if (priority === 2) info = 'H'
+        else if (priority === 3) info = 'R'
+        else if (priority === 4) info = 'N'
+        else if (priority === 5) info = 'A'
         ctx.font = isMini ? '12px monospace' : '10px monospace'
         const xpad = isMini ? pieceSize * 0.34 : pieceSize * 0.28
         const ypad = isMini ? pieceSize * 0.69 : pieceSize * 0.78
