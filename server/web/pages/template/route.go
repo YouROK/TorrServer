@@ -9,23 +9,28 @@ func RouteWebPages(route *gin.RouterGroup) {
 		c.Data(200, "text/html; charset=utf-8", Indexhtml)
 	})
 
-	route.GET("/asset-manifest.json", func(c *gin.Context) {
-		c.Data(200, "application/json", Assetmanifestjson)
+	route.GET("/index.html", func(c *gin.Context) {
+		c.Data(200, "text/html; charset=utf-8", Indexhtml)
 	})
 
 
-	route.GET("/favicon-32x32.png", func(c *gin.Context) {
-		c.Data(200, "image/png", Favicon32x32png)
+	route.GET("/static/js/2.5a98d9f9.chunk.js", func(c *gin.Context) {
+		c.Data(200, "application/javascript", Staticjs25a98d9f9chunkjs)
 	})
 
 
-	route.GET("/static/js/2.97916048.chunk.js.map", func(c *gin.Context) {
-		c.Data(200, "application/json", Staticjs297916048chunkjsmap)
+	route.GET("/static/js/main.823c0d3a.chunk.js.map", func(c *gin.Context) {
+		c.Data(200, "application/json", Staticjsmain823c0d3achunkjsmap)
 	})
 
 
-	route.GET("/static/js/runtime-main.8bda5920.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript", Staticjsruntimemain8bda5920js)
+	route.GET("/static/js/runtime-main.8bda5920.js.map", func(c *gin.Context) {
+		c.Data(200, "application/json", Staticjsruntimemain8bda5920jsmap)
+	})
+
+
+	route.GET("/android-chrome-192x192.png", func(c *gin.Context) {
+		c.Data(200, "image/png", Androidchrome192x192png)
 	})
 
 
@@ -34,8 +39,43 @@ func RouteWebPages(route *gin.RouterGroup) {
 	})
 
 
+	route.GET("/favicon-16x16.png", func(c *gin.Context) {
+		c.Data(200, "image/png", Favicon16x16png)
+	})
+
+
+	route.GET("/favicon.ico", func(c *gin.Context) {
+		c.Data(200, "image/x-icon", Faviconico)
+	})
+
+
+	route.GET("/static/js/2.5a98d9f9.chunk.js.LICENSE.txt", func(c *gin.Context) {
+		c.Data(200, "text/plain; charset=utf-8", Staticjs25a98d9f9chunkjsLICENSEtxt)
+	})
+
+
+	route.GET("/static/js/main.823c0d3a.chunk.js", func(c *gin.Context) {
+		c.Data(200, "application/javascript", Staticjsmain823c0d3achunkjs)
+	})
+
+
+	route.GET("/android-chrome-512x512.png", func(c *gin.Context) {
+		c.Data(200, "image/png", Androidchrome512x512png)
+	})
+
+
+	route.GET("/asset-manifest.json", func(c *gin.Context) {
+		c.Data(200, "application/json", Assetmanifestjson)
+	})
+
+
 	route.GET("/browserconfig.xml", func(c *gin.Context) {
 		c.Data(200, "application/xml", Browserconfigxml)
+	})
+
+
+	route.GET("/favicon-32x32.png", func(c *gin.Context) {
+		c.Data(200, "image/png", Favicon32x32png)
 	})
 
 
@@ -49,53 +89,13 @@ func RouteWebPages(route *gin.RouterGroup) {
 	})
 
 
-	route.GET("/static/js/2.97916048.chunk.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript", Staticjs297916048chunkjs)
+	route.GET("/static/js/2.5a98d9f9.chunk.js.map", func(c *gin.Context) {
+		c.Data(200, "application/json", Staticjs25a98d9f9chunkjsmap)
 	})
 
 
-	route.GET("/android-chrome-192x192.png", func(c *gin.Context) {
-		c.Data(200, "image/png", Androidchrome192x192png)
-	})
-
-
-	route.GET("/favicon.ico", func(c *gin.Context) {
-		c.Data(200, "image/x-icon", Faviconico)
-	})
-
-
-	route.GET("/static/js/main.d8f84fc6.chunk.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript", Staticjsmaind8f84fc6chunkjs)
-	})
-
-
-	route.GET("/static/js/main.d8f84fc6.chunk.js.map", func(c *gin.Context) {
-		c.Data(200, "application/json", Staticjsmaind8f84fc6chunkjsmap)
-	})
-
-
-	route.GET("/static/js/runtime-main.8bda5920.js.map", func(c *gin.Context) {
-		c.Data(200, "application/json", Staticjsruntimemain8bda5920jsmap)
-	})
-
-
-	route.GET("/android-chrome-512x512.png", func(c *gin.Context) {
-		c.Data(200, "image/png", Androidchrome512x512png)
-	})
-
-
-	route.GET("/index.html", func(c *gin.Context) {
-		c.Data(200, "text/html; charset=utf-8", Indexhtml)
-	})
-
-
-	route.GET("/static/js/2.97916048.chunk.js.LICENSE.txt", func(c *gin.Context) {
-		c.Data(200, "text/plain; charset=utf-8", Staticjs297916048chunkjsLICENSEtxt)
-	})
-
-
-	route.GET("/favicon-16x16.png", func(c *gin.Context) {
-		c.Data(200, "image/png", Favicon16x16png)
+	route.GET("/static/js/runtime-main.8bda5920.js", func(c *gin.Context) {
+		c.Data(200, "application/javascript", Staticjsruntimemain8bda5920js)
 	})
 
 }
