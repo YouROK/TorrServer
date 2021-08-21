@@ -1,9 +1,7 @@
 package torrstor
 
 import (
-	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/storage"
-
 	"server/settings"
 )
 
@@ -75,10 +73,9 @@ func (p *Piece) Release() {
 	} else {
 		p.dPiece.Release()
 	}
-
-	if !p.cache.isClosed {
-		p.cache.torrent.Piece(p.Id).SetPriority(torrent.PiecePriorityNone)
-		// fix remove pieces hash
-		p.cache.torrent.Piece(p.Id).UpdateCompletion()
-	}
+// 	if !p.cache.isClosed {
+// 		p.cache.torrent.Piece(p.Id).SetPriority(torrent.PiecePriorityNone)
+// 		// fix remove pieces hash
+// 		p.cache.torrent.Piece(p.Id).UpdateCompletion()
+// 	}
 }
