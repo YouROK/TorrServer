@@ -61,7 +61,7 @@ func (bt *BTServer) configure() {
 
 	userAgent := "qBittorrent/4.3.2"
 	peerID := "-qB4320-"
-//	upnpID := "TorrServer"
+	upnpID := "TorrServer"
 	cliVers := userAgent //"uTorrent/2210(25302)"
 
 	bt.config.Debug = settings.BTsets.EnableDebug
@@ -75,7 +75,7 @@ func (bt *BTServer) configure() {
 	bt.config.IPBlocklist = blocklist
 	bt.config.Bep20 = peerID
 	bt.config.PeerID = utils.PeerIDRandom(peerID)
-//	bt.config.UpnpID = upnpID
+	bt.config.UpnpID = upnpID
 	bt.config.HTTPUserAgent = userAgent
 	bt.config.ExtendedHandshakeClientVersion = cliVers
 	bt.config.EstablishedConnsPerTorrent = settings.BTsets.ConnectionsLimit
