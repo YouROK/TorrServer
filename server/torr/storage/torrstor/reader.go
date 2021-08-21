@@ -94,6 +94,12 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 }
 
 func (r *Reader) SetReadahead(length int64) {
+	if time.Now().Unix() > r.lastAccess+60 && r.cache != nil && len(r.cache.readers) > 1 {
+		//fix read a head on not readed reader
+		r.Reader.SetReadahead(0)
+		r.readahead = 0
+		return
+	}
 	if r.cache != nil && length > r.cache.capacity {
 		length = r.cache.capacity
 	}
@@ -114,7 +120,7 @@ func (r *Reader) Close() {
 	// this struct close in cache
 	r.isClosed = true
 	if len(r.file.Torrent().Files()) > 0 {
-	 	r.Reader.Close()
+		r.Reader.Close()
 	}
 	go r.cache.getRemPieces()
 }
@@ -139,6 +145,7 @@ func (r *Reader) getPieceNum(offset int64) int {
 func (r *Reader) getOffsetRange() (int64, int64) {
 
 	if time.Now().Unix() > r.lastAccess+60 && len(r.cache.readers) > 1 {
+		r.SetReadahead(0)
 		return r.file.Offset(), r.file.Offset()
 	}
 
