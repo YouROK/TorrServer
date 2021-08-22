@@ -8,8 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anacrolix/torrent"
-
 	"server/log"
 	"server/settings"
 )
@@ -84,7 +82,4 @@ func (p *DiskPiece) Release() {
 	p.piece.Complete = false
 
 	os.Remove(p.name)
-
-	p.piece.cache.torrent.Piece(p.piece.Id).SetPriority(torrent.PiecePriorityNone)
-	p.piece.cache.torrent.Piece(p.piece.Id).UpdateCompletion()
 }

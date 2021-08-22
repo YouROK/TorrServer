@@ -4,8 +4,6 @@ import (
 	"io"
 	"sync"
 	"time"
-
-	"github.com/anacrolix/torrent"
 )
 
 type MemPiece struct {
@@ -69,7 +67,4 @@ func (p *MemPiece) Release() {
 	}
 	p.piece.Size = 0
 	p.piece.Complete = false
-
-	p.piece.cache.torrent.Piece(p.piece.Id).SetPriority(torrent.PiecePriorityNone)
-	p.piece.cache.torrent.Piece(p.piece.Id).UpdateCompletion()
 }
