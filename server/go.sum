@@ -656,8 +656,8 @@ github.com/tinylib/msgp v1.1.1/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDW
 github.com/tinylib/msgp v1.1.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tinylib/msgp v1.1.5/go.mod h1:eQsjooMTnV42mHu917E26IogZ2930nFyBQdofk10Udg=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20170815181823-89b8d40f7ca8/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
-github.com/tsynik/torrent v1.2.7-0.20210822073550-ce6a587148fe h1:sTueflLuNKGBsoLz0RFAqaDb9BMxceIXY8Su5jVht8M=
-github.com/tsynik/torrent v1.2.7-0.20210822073550-ce6a587148fe/go.mod h1:6qxhn+CsyQ9b35j3ETXGDMLh4z2vTTutGx3ZnllNcCo=
+github.com/tsynik/torrent v1.2.7-0.20210822081106-f50bd5065818 h1:8FwSi/4QLjNRNwFtqx2YX2z8kZlMC+n3oe6PcUKorw8=
+github.com/tsynik/torrent v1.2.7-0.20210822081106-f50bd5065818/go.mod h1:6qxhn+CsyQ9b35j3ETXGDMLh4z2vTTutGx3ZnllNcCo=
 github.com/ttacon/chalk v0.0.0-20160626202418-22c06c80ed31/go.mod h1:onvgF043R+lC5RZ8IT9rBXDaEDnpnw/Cl+HFiw+v/7Q=
 github.com/tv42/httpunix v0.0.0-20191220191345-2ba4b9c3382c/go.mod h1:hzIxponao9Kjc7aWznkXaL4U4TWaDSs8zcsY4Ka08nM=
 github.com/ugorji/go v1.1.7 h1:/68gy2h+1mWMrwZFeD1kQialdSzAb432dtpeJ42ovdo=
