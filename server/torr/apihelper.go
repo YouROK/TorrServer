@@ -1,7 +1,6 @@
 package torr
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -102,7 +101,7 @@ func GetTorrent(hashHex string) *Torrent {
 		go func() {
 			lockApi.Lock()
 			defer lockApi.Unlock()
-			fmt.Println("Add torrent")
+			log.TLogln("Add torrent")
 			tr, _ := NewTorrent(tor.TorrentSpec, bts)
 			if tr != nil {
 				tr.Title = tor.Title
@@ -215,15 +214,15 @@ func SetSettings(set *sets.BTSets) {
 	}
 	lockApi.Lock()
 	defer lockApi.Unlock()
-	fmt.Println("drop all")
+	log.TLogln("drop all")
 	dropAllTorrent()
 	time.Sleep(time.Second * 2)
-	fmt.Println("disconect")
+	log.TLogln("disconect")
 	bts.Disconnect()
 	sets.SetBTSets(set)
-	fmt.Println("connect")
+	log.TLogln("connect")
 	bts.Connect()
-	fmt.Println("end set settings")
+	log.TLogln("end set settings")
 }
 
 func SetDefSettings() {

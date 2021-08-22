@@ -199,6 +199,7 @@ func (c *Cache) cleanPieces() {
 		rems := (c.filled-c.capacity)/c.pieceLength + 1
 		for _, p := range remPieces {
 			c.removePiece(p)
+			c.torrent.Piece(p.Id).UpdateCompletion()
 			rems--
 			if rems <= 0 {
 				utils.FreeOSMemGC()
@@ -239,7 +240,7 @@ func (c *Cache) getRemPieces() []*Piece {
 		}
 	}
 
-	c.updatePriority()
+	c.clearPriority()
 
 	c.muReaders.Lock()
 	for r, _ := range c.readers {
@@ -328,10 +329,10 @@ func (c *Cache) CloseReader(r *Reader) {
 	r.Close()
 	delete(r.cache.readers, r)
 	r.cache.muReaders.Unlock()
-	go c.updatePriority()
+	go c.clearPriority()
 }
 
-func (c *Cache) updatePriority() {
+func (c *Cache) clearPriority() {
 	time.Sleep(time.Second)
 	ranges := make([]Range, 0)
 	c.muReaders.Lock()

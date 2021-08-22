@@ -2,7 +2,7 @@ module server
 
 go 1.17
 
-replace github.com/anacrolix/torrent v1.30.3 => github.com/tsynik/torrent v1.2.7-0.20210822081106-f50bd5065818
+replace github.com/anacrolix/torrent v1.30.3 => github.com/tsynik/torrent v1.2.7-0.20210822152206-0c6be3586d70
 
 exclude github.com/willf/bitset v1.2.0
 
