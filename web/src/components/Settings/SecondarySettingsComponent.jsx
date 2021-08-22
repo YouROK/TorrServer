@@ -21,7 +21,6 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
     DownloadRateLimit,
     UploadRateLimit,
     ConnectionsLimit,
-    DhtConnectionLimit,
     PeersListenPort,
   } = settings || {}
 
@@ -85,17 +84,6 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         label={t('SettingsDialog.DHT')}
         labelPlacement='start'
       />
-      <TextField
-        onChange={inputForm}
-        margin='normal'
-        id='DhtConnectionLimit'
-        label={t('SettingsDialog.DhtConnectionLimit')}
-        value={DhtConnectionLimit}
-        type='number'
-        variant='outlined'
-        fullWidth
-      />
-      <br />
       <TextField
         onChange={inputForm}
         margin='normal'
