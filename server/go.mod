@@ -2,7 +2,7 @@ module server
 
 go 1.17
 
-replace github.com/anacrolix/torrent v1.30.3 => github.com/tsynik/torrent v1.2.7-0.20210821095616-85838c0c0326
+replace github.com/anacrolix/torrent v1.30.3 => github.com/tsynik/torrent v1.2.7-0.20210822081106-f50bd5065818
 
 exclude github.com/willf/bitset v1.2.0
 
@@ -12,7 +12,7 @@ require (
 	github.com/anacrolix/torrent v1.30.3
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-contrib/location v0.0.2
-	github.com/gin-gonic/gin v1.6.3
+	github.com/gin-gonic/gin v1.7.0
 	github.com/pkg/browser v0.0.0-20210115035449-ce105d075bb4
 	github.com/pkg/errors v0.9.1
 	go.etcd.io/bbolt v1.3.6
@@ -42,7 +42,7 @@ require (
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.13.0 // indirect
 	github.com/go-playground/universal-translator v0.17.0 // indirect
-	github.com/go-playground/validator/v10 v10.2.0 // indirect
+	github.com/go-playground/validator/v10 v10.4.1 // indirect
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/google/btree v1.0.1 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
@@ -58,6 +58,7 @@ require (
 	github.com/ugorji/go/codec v1.1.7 // indirect
 	github.com/willf/bitset v1.1.11 // indirect
 	github.com/willf/bloom v2.0.3+incompatible // indirect
+	golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b // indirect
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.0.0-20210809222454-d867a43fc93e // indirect
