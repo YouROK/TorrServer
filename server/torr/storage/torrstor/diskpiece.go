@@ -85,5 +85,5 @@ func (p *DiskPiece) Release() {
 
 	os.Remove(p.name)
 
-	p.piece.cache.torrent.Piece(p.piece.Id).SetPriority(torrent.PiecePriorityNone)
+	//p.piece.cache.torrent.Piece(p.piece.Id).SetPriority(torrent.PiecePriorityNone)
 }

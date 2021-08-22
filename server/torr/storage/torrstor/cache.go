@@ -199,7 +199,7 @@ func (c *Cache) cleanPieces() {
 		rems := (c.filled-c.capacity)/c.pieceLength + 1
 		for _, p := range remPieces {
 			c.removePiece(p)
-			c.torrent.Piece(p.Id).UpdateCompletion()
+			//c.torrent.Piece(p.Id).UpdateCompletion() // safe call in Piece.Release()
 			rems--
 			if rems <= 0 {
 				utils.FreeOSMemGC()
