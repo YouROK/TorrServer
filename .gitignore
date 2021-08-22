@@ -5,6 +5,9 @@
 *.so
 *.dylib
 
+# Mac suff
+.DS_Store
+
 # Test binary, build with `go test -c`
 *.test
 
@@ -28,3 +31,5 @@ toolchains/
 /src/google.golang.org/
 /toolchain/
 /test/
+# web static conent
+server/web/pages/template
