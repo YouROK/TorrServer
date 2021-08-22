@@ -239,7 +239,7 @@ func (c *Cache) getRemPieces() []*Piece {
 		}
 	}
 
-	c.updatePriority()
+	c.clearPriority()
 
 	c.muReaders.Lock()
 	for r, _ := range c.readers {
@@ -328,10 +328,10 @@ func (c *Cache) CloseReader(r *Reader) {
 	r.Close()
 	delete(r.cache.readers, r)
 	r.cache.muReaders.Unlock()
-	go c.updatePriority()
+	go c.clearPriority()
 }
 
-func (c *Cache) updatePriority() {
+func (c *Cache) clearPriority() {
 	time.Sleep(time.Second)
 	ranges := make([]Range, 0)
 	c.muReaders.Lock()
