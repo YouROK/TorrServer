@@ -100,8 +100,8 @@ func (t *Torrent) WaitInfo() bool {
 		return false
 	}
 
-	// Close torrent if not info while 10 minutes
-	tm := time.NewTimer(time.Minute * 10)
+	// Close torrent if not info while 5 minutes
+	tm := time.NewTimer(time.Minute * 5)
 
 	select {
 	case <-t.Torrent.GotInfo():
