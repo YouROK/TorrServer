@@ -1,11 +1,13 @@
 package torr
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/anacrolix/torrent"
@@ -16,7 +18,8 @@ import (
 )
 
 var (
-	bts *BTServer
+	bts     *BTServer
+	lockApi sync.Mutex
 )
 
 func InitApiHelper(bt *BTServer) {
@@ -24,6 +27,8 @@ func InitApiHelper(bt *BTServer) {
 }
 
 func LoadTorrent(tor *Torrent) *Torrent {
+	lockApi.Lock()
+	defer lockApi.Unlock()
 	if tor.TorrentSpec == nil {
 		return nil
 	}
@@ -41,6 +46,8 @@ func LoadTorrent(tor *Torrent) *Torrent {
 }
 
 func AddTorrent(spec *torrent.TorrentSpec, title, poster string, data string) (*Torrent, error) {
+	lockApi.Lock()
+	defer lockApi.Unlock()
 	torr, err := NewTorrent(spec, bts)
 	if err != nil {
 		log.TLogln("error add torrent:", err)
@@ -80,6 +87,8 @@ func SaveTorrentToDB(torr *Torrent) {
 }
 
 func GetTorrent(hashHex string) *Torrent {
+	lockApi.Lock()
+	defer lockApi.Unlock()
 	hash := metainfo.NewHashFromHex(hashHex)
 	tor := bts.GetTorrent(hash)
 	if tor != nil {
@@ -91,6 +100,9 @@ func GetTorrent(hashHex string) *Torrent {
 	if tr != nil {
 		tor = tr
 		go func() {
+			lockApi.Lock()
+			defer lockApi.Unlock()
+			fmt.Println("Add torrent")
 			tr, _ := NewTorrent(tor.TorrentSpec, bts)
 			if tr != nil {
 				tr.Title = tor.Title
@@ -106,6 +118,9 @@ func GetTorrent(hashHex string) *Torrent {
 }
 
 func SetTorrent(hashHex, title, poster, data string) *Torrent {
+	lockApi.Lock()
+	defer lockApi.Unlock()
+
 	hash := metainfo.NewHashFromHex(hashHex)
 	torr := bts.GetTorrent(hash)
 	torrDb := GetTorrentDB(hash)
@@ -141,6 +156,8 @@ func SetTorrent(hashHex, title, poster, data string) *Torrent {
 }
 
 func RemTorrent(hashHex string) {
+	lockApi.Lock()
+	defer lockApi.Unlock()
 	hash := metainfo.NewHashFromHex(hashHex)
 	if sets.BTsets.UseDisk && hashHex != "" && hashHex != "/" {
 		name := filepath.Join(sets.BTsets.TorrentsSavePath, hashHex)
@@ -158,6 +175,8 @@ func RemTorrent(hashHex string) {
 }
 
 func ListTorrent() []*Torrent {
+	lockApi.Lock()
+	defer lockApi.Unlock()
 	btlist := bts.ListTorrents()
 	dblist := ListTorrentsDB()
 
@@ -184,6 +203,8 @@ func ListTorrent() []*Torrent {
 }
 
 func DropTorrent(hashHex string) {
+	lockApi.Lock()
+	defer lockApi.Unlock()
 	hash := metainfo.NewHashFromHex(hashHex)
 	bts.RemoveTorrent(hash)
 }
@@ -192,21 +213,42 @@ func SetSettings(set *sets.BTSets) {
 	if sets.ReadOnly {
 		return
 	}
+	lockApi.Lock()
+	defer lockApi.Unlock()
+	fmt.Println("drop all")
+	dropAllTorrent()
+	time.Sleep(time.Second * 2)
+	fmt.Println("disconect")
 	bts.Disconnect()
 	sets.SetBTSets(set)
+	fmt.Println("connect")
 	bts.Connect()
+	fmt.Println("end set settings")
 }
 
 func SetDefSettings() {
 	if sets.ReadOnly {
 		return
 	}
+	lockApi.Lock()
+	defer lockApi.Unlock()
+	dropAllTorrent()
 	bts.Disconnect()
 	sets.SetDefault()
 	bts.Connect()
+	time.Sleep(time.Second * 5)
+}
+
+func dropAllTorrent() {
+	for _, torr := range bts.torrents {
+		torr.drop()
+		<-torr.closed
+	}
 }
 
 func Shutdown() {
+	lockApi.Lock()
+	defer lockApi.Unlock()
 	bts.Disconnect()
 	sets.CloseDB()
 	log.TLogln("Received shutdown. Quit")
@@ -218,6 +260,8 @@ func WriteStatus(w io.Writer) {
 }
 
 func Preload(torr *Torrent, index int) {
+	lockApi.Lock()
+	lockApi.Unlock()
 	cache := float32(sets.BTsets.CacheSize)
 	preload := float32(sets.BTsets.PreloadCache)
 	size := int64((cache / 100.0) * preload)
