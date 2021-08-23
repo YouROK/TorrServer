@@ -8,6 +8,7 @@ import (
 	"syscall"
 		
 	"server/log"
+	"server/settings"
 )
 
 func Preconfig(dkill bool) {
@@ -22,8 +23,10 @@ func Preconfig(dkill bool) {
 		go func() {
 			for s := range sigc {
 				if dkill {
-					log.TLogln("Signal catched:", s)
-					log.TLogln("To stop server, close it from web / api")
+					if (settings.BTsets.EnableDebug || s != syscall.SIGPIPE) {
+						log.TLogln("Signal catched:", s)
+						log.TLogln("To stop server, close it from web / api")
+					}
 				}
 			}
 		}()
