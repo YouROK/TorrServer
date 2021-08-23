@@ -54,7 +54,9 @@ export default function DetailedView({
             <FormControlLabel
               control={
                 <Checkbox
+                  color='primary'
                   checked={isSnakeDebugMode}
+                  disableRipple
                   onChange={({ target: { checked } }) => {
                     setIsSnakeDebugMode(checked)
                     localStorage.setItem('isSnakeDebugMode', checked)
@@ -62,6 +64,7 @@ export default function DetailedView({
                 />
               }
               label={t('DebugMode')}
+              labelPlacement='start'
             />
           </div>
         </SectionTitle>

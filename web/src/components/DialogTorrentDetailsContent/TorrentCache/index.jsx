@@ -91,16 +91,16 @@ const TorrentCache = ({ cache, isMini, isSnakeDebugMode }) => {
       ctx.strokeRect(0, 0, pieceSize, pieceSize)
       ctx.setTransform(1, 0, 0, 1, 0, 0)
 
-      if (!isMini && isSnakeDebugMode && priority > 0) {
+      if (isSnakeDebugMode && priority > 0) {
         let info = ''
         if (priority === 1) info = '*'
         else if (priority === 2) info = 'H'
         else if (priority === 3) info = 'R'
         else if (priority === 4) info = 'N'
         else if (priority === 5) info = 'A'
-        ctx.font = '10px monospace'
-        const xpad = pieceSize * 0.28
-        const ypad = pieceSize * 0.78
+        ctx.font = isMini ? '13px monospace' : '10px monospace'
+        const xpad = isMini ? pieceSize * 0.35 : pieceSize * 0.29
+        const ypad = isMini ? pieceSize * 0.69 : pieceSize * 0.78
         ctx.fillStyle = 'black'
         ctx.fillText(info, x + xpad, y + ypad)
       }
