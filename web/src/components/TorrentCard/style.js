@@ -38,6 +38,12 @@ export const TorrentCardPoster = styled.div`
   overflow: hidden;
   text-align: center;
   cursor: pointer;
+  transition: 0.2s;
+  position: relative;
+
+  :hover {
+    filter: brightness(0.7);
+  }
 
   ${({
     isPoster,
