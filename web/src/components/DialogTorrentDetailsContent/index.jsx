@@ -45,6 +45,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
   const [playableFileList, setPlayableFileList] = useState()
   const [seasonAmount, setSeasonAmount] = useState(null)
   const [selectedSeason, setSelectedSeason] = useState()
+  const [isSnakeDebugMode] = useState(JSON.parse(localStorage.getItem('isSnakeDebugMode')) || false)
 
   const {
     poster,
@@ -210,7 +211,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                 />
               </SectionHeader>
 
-              <TorrentCache isMini cache={cache} />
+              <TorrentCache isMini cache={cache} isSnakeDebugMode={isSnakeDebugMode} />
               <Button
                 style={{ marginTop: '30px' }}
                 variant='contained'

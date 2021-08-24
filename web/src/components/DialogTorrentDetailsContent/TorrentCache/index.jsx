@@ -10,7 +10,7 @@ import getShortCacheMap from './getShortCacheMap'
 import { SnakeWrapper, ScrollNotification } from './style'
 import { createGradient, snakeSettings } from './snakeSettings'
 
-const TorrentCache = ({ cache, isMini }) => {
+const TorrentCache = ({ cache, isMini, isSnakeDebugMode }) => {
   const { t } = useTranslation()
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
   const { width } = dimensions
@@ -91,15 +91,15 @@ const TorrentCache = ({ cache, isMini }) => {
       ctx.strokeRect(0, 0, pieceSize, pieceSize)
       ctx.setTransform(1, 0, 0, 1, 0, 0)
 
-      if (priority > 0) {
+      if (isSnakeDebugMode && priority > 0) {
         let info = ''
         if (priority === 1) info = '*'
         else if (priority === 2) info = 'H'
         else if (priority === 3) info = 'R'
         else if (priority === 4) info = 'N'
         else if (priority === 5) info = 'A'
-        ctx.font = isMini ? '12px monospace' : '10px monospace'
-        const xpad = isMini ? pieceSize * 0.34 : pieceSize * 0.28
+        ctx.font = isMini ? '13px monospace' : '10px monospace'
+        const xpad = isMini ? pieceSize * 0.35 : pieceSize * 0.29
         const ypad = isMini ? pieceSize * 0.69 : pieceSize * 0.78
         ctx.fillStyle = 'black'
         ctx.fillText(info, x + xpad, y + ypad)
@@ -123,6 +123,7 @@ const TorrentCache = ({ cache, isMini }) => {
     rangeColor,
     isMini,
     theme,
+    isSnakeDebugMode,
   ])
 
   return (

@@ -33,6 +33,7 @@
   "CopyHash": "Copy Hash",
   "CopyLink": "Copy link",
   "Data": "Data",
+  "DebugMode": "Show download priorities",
   "Delete": "Delete",
   "DeleteTorrent?": "Delete Torrent?",
   "DeleteTorrents?": "Delete All Torrents?",

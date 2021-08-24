@@ -214,7 +214,7 @@ func SetSettings(set *sets.BTSets) {
 	}
 	lockApi.Lock()
 	defer lockApi.Unlock()
-	log.TLogln("drop all")
+	log.TLogln("drop all torrents")
 	dropAllTorrent()
 	time.Sleep(time.Second * 2)
 	log.TLogln("disconect")
@@ -222,6 +222,7 @@ func SetSettings(set *sets.BTSets) {
 	sets.SetBTSets(set)
 	log.TLogln("connect")
 	bts.Connect()
+	time.Sleep(time.Second * 2)
 	log.TLogln("end set settings")
 }
 
@@ -231,11 +232,16 @@ func SetDefSettings() {
 	}
 	lockApi.Lock()
 	defer lockApi.Unlock()
+	log.TLogln("drop all torrents")
 	dropAllTorrent()
+	time.Sleep(time.Second * 2)
+	log.TLogln("disconect")
 	bts.Disconnect()
 	sets.SetDefault()
+	log.TLogln("connect")
 	bts.Connect()
-	time.Sleep(time.Second * 5)
+	time.Sleep(time.Second * 2)
+	log.TLogln("end set default settings")
 }
 
 func dropAllTorrent() {

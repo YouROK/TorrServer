@@ -22,7 +22,7 @@ var (
 )
 
 func Start(port string) {
-	log.TLogln("Start TorrServer", version.Version)
+	log.TLogln("Start TorrServer")
 	ips := getLocalIps()
 	if len(ips) > 0 {
 		log.TLogln("IP:", ips)
