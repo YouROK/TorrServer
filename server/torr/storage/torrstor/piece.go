@@ -75,8 +75,7 @@ func (p *Piece) Release() {
 		p.dPiece.Release()
 	}
 	if !p.cache.isClosed {
-		// UpdateCompletion() also handle PiecePriority
-		//p.cache.torrent.Piece(p.Id).SetPriority(torrent.PiecePriorityNone)
+		p.cache.torrent.Piece(p.Id).SetPriority(torrent.PiecePriorityNone)
 		p.cache.torrent.Piece(p.Id).UpdateCompletion()
 	}
 }
