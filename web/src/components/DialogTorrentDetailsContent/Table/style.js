@@ -1,8 +1,8 @@
 import styled, { css } from 'styled-components'
 
-const viewedPrimaryColor = '#bdbdbd'
-const viewedSecondaryColor = '#c4c4c4'
-const viewedTertiaryColor = '#c9c9c9'
+const viewedPrimaryColor = '#858c90'
+const viewedSecondaryColor = '#8c9498'
+const viewedTertiaryColor = '#949ca0'
 const bigTableDividerColor = '#ddd'
 const bigTableDefaultRowColor = '#fff'
 const bigTableViewedRowColor = '#f3f3f3'

@@ -93,7 +93,7 @@ const TorrentCache = ({ cache, isMini, isSnakeDebugMode }) => {
 
       if (isSnakeDebugMode && priority > 0) {
         let info = ''
-        if (priority === 1) info = '*'
+        if (priority === 1) info = ''
         else if (priority === 2) info = 'H'
         else if (priority === 3) info = 'R'
         else if (priority === 4) info = 'N'
