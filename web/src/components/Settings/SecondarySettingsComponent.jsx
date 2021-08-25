@@ -85,7 +85,6 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         label={t('SettingsDialog.DHT')}
         labelPlacement='start'
       />
-      <br />
       <TextField
         onChange={inputForm}
         margin='normal'
@@ -137,7 +136,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       />
       <FormControlLabel
         control={<Switch checked={EnableDLNA} onChange={inputForm} id='EnableDLNA' color='secondary' />}
-        label='DLNA'
+        label={t('SettingsDialog.DLNA')}
         labelPlacement='start'
       />
       <br />

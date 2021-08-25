@@ -98,6 +98,7 @@
     "DHT": "DHT (Таблиця розподілених хешів)",
     "DhtConnectionLimit": "Обмеження з'єдань DHT",
     "Disk": "ОЗУ / Носій",
+    "DLNA": "DLNA-медиасервер",
     "DontAddRetrackers": "Нічого не робити",
     "DownloadRateLimit": "Обмеження швидкості завантаження",
     "ForceEncrypt": "Примусово шифрувати заголовки",
