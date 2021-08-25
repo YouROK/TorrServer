@@ -2,12 +2,16 @@ module server
 
 go 1.17
 
-replace github.com/anacrolix/torrent v1.30.3 => github.com/tsynik/torrent v1.2.7-0.20210825105145-c21425452ac8
+replace (
+	github.com/anacrolix/dms v1.2.2 => github.com/yourok/dms v0.0.0-20210726184814-0838f1936b67
+	github.com/anacrolix/torrent v1.30.3 => github.com/tsynik/torrent v1.2.7-0.20210825105145-c21425452ac8
+)
 
 exclude github.com/willf/bitset v1.2.0
 
 require (
 	github.com/alexflint/go-arg v1.3.0
+	github.com/anacrolix/dms v1.2.2
 	github.com/anacrolix/missinggo v1.3.0
 	github.com/anacrolix/torrent v1.30.3
 	github.com/gin-contrib/cors v1.3.1
@@ -25,6 +29,7 @@ require (
 	github.com/anacrolix/chansync v0.1.0 // indirect
 	github.com/anacrolix/confluence v1.8.0 // indirect
 	github.com/anacrolix/dht/v2 v2.10.3 // indirect
+	github.com/anacrolix/ffprobe v1.0.0 // indirect
 	github.com/anacrolix/log v0.9.0 // indirect
 	github.com/anacrolix/missinggo/perf v1.0.0 // indirect
 	github.com/anacrolix/missinggo/v2 v2.5.2 // indirect
