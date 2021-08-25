@@ -10,6 +10,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
   const {
     RetrackersMode,
     TorrentDisconnectTimeout,
+    EnableDLNA,
     EnableIPv6,
     ForceEncrypt,
     DisableTCP,
@@ -21,7 +22,6 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
     DownloadRateLimit,
     UploadRateLimit,
     ConnectionsLimit,
-    DhtConnectionLimit,
     PeersListenPort,
   } = settings || {}
 
@@ -85,16 +85,6 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         label={t('SettingsDialog.DHT')}
         labelPlacement='start'
       />
-      <TextField
-        onChange={inputForm}
-        margin='normal'
-        id='DhtConnectionLimit'
-        label={t('SettingsDialog.DhtConnectionLimit')}
-        value={DhtConnectionLimit}
-        type='number'
-        variant='outlined'
-        fullWidth
-      />
       <br />
       <TextField
         onChange={inputForm}
@@ -143,6 +133,11 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       <FormControlLabel
         control={<Switch checked={!DisableUPNP} onChange={inputForm} id='DisableUPNP' color='secondary' />}
         label='UPnP (Universal Plug and Play)'
+        labelPlacement='start'
+      />
+      <FormControlLabel
+        control={<Switch checked={EnableDLNA} onChange={inputForm} id='EnableDLNA' color='secondary' />}
+        label='DLNA'
         labelPlacement='start'
       />
       <br />
