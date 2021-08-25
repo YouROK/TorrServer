@@ -85,9 +85,6 @@ func (bt *BTServer) configure() {
 		ForceEncryption: settings.BTsets.ForceEncrypt,
 	}
 
-	if settings.BTsets.DhtConnectionLimit > 0 {
-		bt.config.ConnTracker.SetMaxEntries(settings.BTsets.DhtConnectionLimit)
-	}
 	if settings.BTsets.DownloadRateLimit > 0 {
 		bt.config.DownloadRateLimiter = utils.Limit(settings.BTsets.DownloadRateLimit * 1024)
 	}
