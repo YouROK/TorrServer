@@ -9,43 +9,13 @@ func RouteWebPages(route *gin.RouterGroup) {
 		c.Data(200, "text/html; charset=utf-8", Indexhtml)
 	})
 
-	route.GET("/static/js/runtime-main.8bda5920.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript", Staticjsruntimemain8bda5920js)
+	route.GET("/static/js/2.4daf62d1.chunk.js.map", func(c *gin.Context) {
+		c.Data(200, "application/json", Staticjs24daf62d1chunkjsmap)
 	})
 
 
-	route.GET("/index.html", func(c *gin.Context) {
-		c.Data(200, "text/html; charset=utf-8", Indexhtml)
-	})
-
-
-	route.GET("/mstile-150x150.png", func(c *gin.Context) {
-		c.Data(200, "image/png", Mstile150x150png)
-	})
-
-
-	route.GET("/site.webmanifest", func(c *gin.Context) {
-		c.Data(200, "application/manifest+json", Sitewebmanifest)
-	})
-
-
-	route.GET("/static/js/2.4daf62d1.chunk.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript", Staticjs24daf62d1chunkjs)
-	})
-
-
-	route.GET("/android-chrome-512x512.png", func(c *gin.Context) {
-		c.Data(200, "image/png", Androidchrome512x512png)
-	})
-
-
-	route.GET("/browserconfig.xml", func(c *gin.Context) {
-		c.Data(200, "application/xml", Browserconfigxml)
-	})
-
-
-	route.GET("/favicon-16x16.png", func(c *gin.Context) {
-		c.Data(200, "image/png", Favicon16x16png)
+	route.GET("/apple-touch-icon.png", func(c *gin.Context) {
+		c.Data(200, "image/png", Appletouchiconpng)
 	})
 
 
@@ -59,8 +29,28 @@ func RouteWebPages(route *gin.RouterGroup) {
 	})
 
 
-	route.GET("/apple-touch-icon.png", func(c *gin.Context) {
-		c.Data(200, "image/png", Appletouchiconpng)
+	route.GET("/static/js/main.ed4c2969.chunk.js", func(c *gin.Context) {
+		c.Data(200, "application/javascript", Staticjsmained4c2969chunkjs)
+	})
+
+
+	route.GET("/favicon-16x16.png", func(c *gin.Context) {
+		c.Data(200, "image/png", Favicon16x16png)
+	})
+
+
+	route.GET("/index.html", func(c *gin.Context) {
+		c.Data(200, "text/html; charset=utf-8", Indexhtml)
+	})
+
+
+	route.GET("/mstile-150x150.png", func(c *gin.Context) {
+		c.Data(200, "image/png", Mstile150x150png)
+	})
+
+
+	route.GET("/android-chrome-512x512.png", func(c *gin.Context) {
+		c.Data(200, "image/png", Androidchrome512x512png)
 	})
 
 
@@ -74,8 +64,23 @@ func RouteWebPages(route *gin.RouterGroup) {
 	})
 
 
-	route.GET("/static/js/main.d4131fd8.chunk.js.map", func(c *gin.Context) {
-		c.Data(200, "application/json", Staticjsmaind4131fd8chunkjsmap)
+	route.GET("/site.webmanifest", func(c *gin.Context) {
+		c.Data(200, "application/manifest+json", Sitewebmanifest)
+	})
+
+
+	route.GET("/static/js/2.4daf62d1.chunk.js", func(c *gin.Context) {
+		c.Data(200, "application/javascript", Staticjs24daf62d1chunkjs)
+	})
+
+
+	route.GET("/static/js/main.ed4c2969.chunk.js.map", func(c *gin.Context) {
+		c.Data(200, "application/json", Staticjsmained4c2969chunkjsmap)
+	})
+
+
+	route.GET("/static/js/runtime-main.8bda5920.js", func(c *gin.Context) {
+		c.Data(200, "application/javascript", Staticjsruntimemain8bda5920js)
 	})
 
 
@@ -84,18 +89,13 @@ func RouteWebPages(route *gin.RouterGroup) {
 	})
 
 
+	route.GET("/browserconfig.xml", func(c *gin.Context) {
+		c.Data(200, "application/xml", Browserconfigxml)
+	})
+
+
 	route.GET("/favicon-32x32.png", func(c *gin.Context) {
 		c.Data(200, "image/png", Favicon32x32png)
-	})
-
-
-	route.GET("/static/js/2.4daf62d1.chunk.js.map", func(c *gin.Context) {
-		c.Data(200, "application/json", Staticjs24daf62d1chunkjsmap)
-	})
-
-
-	route.GET("/static/js/main.d4131fd8.chunk.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript", Staticjsmaind4131fd8chunkjs)
 	})
 
 }
