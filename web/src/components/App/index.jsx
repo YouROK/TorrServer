@@ -95,9 +95,16 @@ export default function App() {
                       )}
                     </HeaderToggle>
 
-                    {/* TODO: Add Scroll element to choose different language */}
-                    <HeaderToggle onClick={() => (currentLang === 'en' ? changeLang('ru') : changeLang('en'))}>
-                      {currentLang === 'en' ? 'EN' : 'RU'}
+                    <HeaderToggle
+                      onClick={() =>
+                        currentLang === 'en'
+                        ? changeLang('ru')
+                        : currentLang === 'ru'
+                        ? changeLang('ua')
+                        : changeLang('en')
+                      }
+                    >
+                      {currentLang.toUpperCase()}
                     </HeaderToggle>
                   </div>
                 </AppHeader>
