@@ -33,7 +33,7 @@
   "CopyHash": "Скопіювати хеш",
   "CopyLink": "Копіювати",
   "Data": "Дані",
-  "DebugMode": "Мітки пріоритетів завантаження",
+  "DebugMode": "Мітки пріоритетів",
   "Delete": "Видалити",
   "DeleteTorrent?": "Видалити торент?",
   "DeleteTorrents?": "Видалити всі торенти?",
@@ -112,7 +112,7 @@
     "RemoveRetrackers": "Видалити",
     "ReplaceRetrackers": "Замінити",
     "RetrackersMode": "Ретрекери",
-    "ResetToDefault": "Скинути до базових налаштувань",
+    "ResetToDefault": "Налаштування за замовчуванням",
     "Settings": "Налаштування",
     "TorrentDisconnectTimeout": "Час очікування відключення торрента",
     "TorrentsSavePath": "Шлях для збереження кешу",
@@ -138,7 +138,7 @@
   "TorrentDetails": "Інформація про торент",
   "TorrentGettingInfo": "Отримання інформації",
   "TorrentInDb": "Торент в БД",
-  "TorrentPreload": "Попереднє завантаження",
+  "TorrentPreload": "Предзагрузкі",
   "TorrentSize": "Розмір торенту",
   "TorrentState": "Дані торенту",
   "TorrentStatus": "Статус торенту",
@@ -146,5 +146,5 @@
   "TurnOff": "Виключити",
   "UploadFile": "Завантажити файл",
   "UploadSpeed": "Швидкість вівдантаження",
-  "Viewed": "Переглянутий"
+  "Viewed": "Перегл."
 }
