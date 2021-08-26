@@ -67,7 +67,10 @@ export default function AddDialog({
 
     const allHashes = torrents.map(({ hash }) => hash)
     allHashes.includes(currentSourceHash) && handleClose()
-  }, [isSaving, torrents, currentSourceHash, handleClose])
+    // FIXME! check api reply on add links
+    const linkRegex = /^(http(s?)):\/\/.*/i
+    torrentSource.match(linkRegex) !== null && handleClose()
+  }, [isSaving, torrents, torrentSource, currentSourceHash, handleClose])
 
   const fullScreen = useMediaQuery('@media (max-width:930px)')
 
