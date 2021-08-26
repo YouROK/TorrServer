@@ -78,7 +78,7 @@ export const themeColors = {
     detailedView: {
       gradientStartColor: '#656f76',
       gradientEndColor: '#545a5e',
-      cacheSectionBGColor: '#dee3e5',
+      cacheSectionBGColor: '#949ca0',
     },
     addDialog: {
       gradientStartColor: '#656f76',
