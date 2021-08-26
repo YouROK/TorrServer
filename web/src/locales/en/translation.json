@@ -38,7 +38,7 @@
   "DeleteTorrent?": "Delete Torrent?",
   "DeleteTorrents?": "Delete All Torrents?",
   "DetailedCacheView": {
-    "button": "Detailed Cache View",
+    "button": "Cache Details View",
     "header": "$t(DetailedCacheView.button)"
   },
   "Details": "Details",
