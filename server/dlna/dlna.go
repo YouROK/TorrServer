@@ -41,18 +41,18 @@ func Start() {
 		NoProbe:      true,
 		Icons: []dms.Icon{
 			dms.Icon{
-				Width:      192,
-				Height:     192,
-				Depth:      32,
-				Mimetype:   "image/png",
-				ReadSeeker: bytes.NewReader(template.Androidchrome192x192png),
-			},
-			dms.Icon{
 				Width:      32,
 				Height:     32,
 				Depth:      32,
 				Mimetype:   "image/png",
 				ReadSeeker: bytes.NewReader(template.Favicon32x32png),
+			},
+			dms.Icon{
+				Width:      192,
+				Height:     192,
+				Depth:      32,
+				Mimetype:   "image/png",
+				ReadSeeker: bytes.NewReader(template.Androidchrome192x192png),
 			},
 		},
 		NotifyInterval: 30 * time.Second,
@@ -129,5 +129,33 @@ func getDefaultFriendlyName() string {
 		}
 		return ret + ": " + userName + " on " + host
 	}
-	return ret + ": " + userName + host
+
+	if host == "localhost" { // useless host, use 1st IP
+		ifaces, err := net.Interfaces()
+		if err != nil {
+			return ret + ": " + userName + "@" + host
+		}
+		var list []string
+		for _, i := range ifaces {
+			addrs, _ := i.Addrs()
+			if i.Flags&net.FlagUp == net.FlagUp {
+				for _, addr := range addrs {
+					var ip net.IP
+					switch v := addr.(type) {
+					case *net.IPNet:
+						ip = v.IP
+					case *net.IPAddr:
+						ip = v.IP
+					}
+					if !ip.IsLoopback() {
+						list = append(list, ip.String())
+					}
+				}
+			}
+		}
+		if len(list) > 0 {
+			return ret + " • " + list[0]
+		}
+	}
+	return ret + ": " + userName + "@" + host
 }
