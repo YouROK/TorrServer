@@ -2,9 +2,7 @@ module server
 
 go 1.17
 
-replace (
-	github.com/anacrolix/dms v1.2.2 => github.com/yourok/dms v0.0.0-20210826085116-42eca44e0aef
-)
+replace github.com/anacrolix/dms v1.2.2 => github.com/yourok/dms v0.0.0-20210826085116-42eca44e0aef
 
 exclude github.com/willf/bitset v1.2.0
 
@@ -29,7 +27,9 @@ require (
 	github.com/anacrolix/chansync v0.1.0 // indirect
 	github.com/anacrolix/confluence v1.8.0 // indirect
 	github.com/anacrolix/dht/v2 v2.10.3 // indirect
+	github.com/anacrolix/envpprof v1.1.1 // indirect
 	github.com/anacrolix/ffprobe v1.0.0 // indirect
+	github.com/anacrolix/go-libutp v1.0.4 // indirect
 	github.com/anacrolix/log v0.9.0 // indirect
 	github.com/anacrolix/missinggo/perf v1.0.0 // indirect
 	github.com/anacrolix/missinggo/v2 v2.5.2 // indirect
