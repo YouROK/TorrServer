@@ -33,13 +33,13 @@
   "CopyHash": "Скопировать хеш",
   "CopyLink": "Копировать",
   "Data": "Данные",
-  "DebugMode": "Метки приоритетов загрузки",
+  "DebugMode": "Метки приоритетов",
   "Delete": "Удалить",
   "DeleteTorrent?": "Удалить торрент?",
   "DeleteTorrents?": "Удалить все торренты?",
   "DetailedCacheView": {
-    "button": "Информация о заполнении кеша",
-    "header": "Заполнение кеша"
+    "button": "Заполнение кеша",
+    "header": "Информация о кеше"
   },
   "Details": "Инфо",
   "Donate?": "Хотите поддержать проект?",
@@ -66,7 +66,7 @@
   "Mbps": "Мбит/c",
   "Name": "Название",
   "NoTorrentsAdded": "Нет торрентов",
-  "Offline": "Сервер не доступен",
+  "Offline": "Сервер недоступен",
   "OK": "OK",
   "OpenLink": "Открыть",
   "Peers": "Пиры",
@@ -98,6 +98,7 @@
     "DHT": "DHT (Distributed Hash Table)",
     "DhtConnectionLimit": "Лимит подключений DHT",
     "Disk": "ПЗУ / Накопитель",
+    "DLNA": "DLNA-медиасервер",
     "DontAddRetrackers": "Ничего не делать",
     "DownloadRateLimit": "Ограничение скорости загрузки",
     "ForceEncrypt": "Принудительное шифрование заголовков",

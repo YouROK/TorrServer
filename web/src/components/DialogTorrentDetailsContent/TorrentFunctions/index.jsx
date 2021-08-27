@@ -28,13 +28,16 @@ const TorrentFunctions = memo(
           <>
             <SmallLabel>{t('DownloadPlaylist')}</SmallLabel>
             <SectionSubName mb={10}>
-              <strong>{t('LatestFilePlayed')}</strong> {latestViewedFileData?.title}.
-              {latestViewedFileData?.season && (
-                <>
-                  {' '}
-                  {t('Season')}: {latestViewedFileData?.season}. {t('Episode')}: {latestViewedFileData?.episode}.
-                </>
-              )}
+              {t('LatestFilePlayed')}{' '}
+              <strong>
+                {latestViewedFileData?.title}.
+                {latestViewedFileData?.season && (
+                  <>
+                    {' '}
+                    {t('Season')}: {latestViewedFileData?.season}. {t('Episode')}: {latestViewedFileData?.episode}.
+                  </>
+                )}
+              </strong>
             </SectionSubName>
 
             <MainSectionButtonGroup>

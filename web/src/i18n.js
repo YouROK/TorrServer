@@ -3,6 +3,7 @@ import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 import translationEN from 'locales/en/translation.json'
 import translationRU from 'locales/ru/translation.json'
+import translationUA from 'locales/ua/translation.json'
 
 i18n
   .use(LanguageDetector)
@@ -10,7 +11,11 @@ i18n
   .init({
     fallbackLng: 'en', // default language will be used if none of declared lanuages detected (en, ru)
     interpolation: { escapeValue: false }, // react already safes from xss
-    resources: { en: { translation: translationEN }, ru: { translation: translationRU } },
+    resources: {
+      en: { translation: translationEN },
+      ru: { translation: translationRU },
+      ua: { translation: translationUA },
+    },
   })
 
 export default i18n

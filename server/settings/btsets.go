@@ -27,6 +27,9 @@ type BTSets struct {
 	TorrentDisconnectTimeout int  // in seconds
 	EnableDebug              bool // print logs
 
+	// DLNA
+	EnableDLNA bool
+
 	// BT Config
 	EnableIPv6        bool
 	DisableTCP        bool
@@ -38,7 +41,7 @@ type BTSets struct {
 	DownloadRateLimit int // in kb, 0 - inf
 	UploadRateLimit   int // in kb, 0 - inf
 	ConnectionsLimit  int
-	PeersListenPort int
+	PeersListenPort   int
 }
 
 func (v *BTSets) String() string {
