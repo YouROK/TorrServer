@@ -193,6 +193,10 @@ func SetSettings(set *sets.BTSets) {
 	if sets.ReadOnly {
 		return
 	}
+	log.TLogln("drop all torrents")
+	dropAllTorrent()
+	time.Sleep(time.Second * 2)
+	log.TLogln("disconect")
 	bts.Disconnect()
 	sets.SetBTSets(set)
 	log.TLogln("connect")
@@ -205,6 +209,10 @@ func SetDefSettings() {
 	if sets.ReadOnly {
 		return
 	}
+	log.TLogln("drop all torrents")
+	dropAllTorrent()
+	time.Sleep(time.Second * 2)
+	log.TLogln("disconect")
 	bts.Disconnect()
 	sets.SetDefault()
 	log.TLogln("connect")
