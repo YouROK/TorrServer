@@ -154,7 +154,7 @@ func getDefaultFriendlyName() string {
 			}
 		}
 		if len(list) > 0 {
-			return ret + " • " + list[0]
+			return ret + " " + list[0]
 		}
 	}
 	return ret + ": " + userName + "@" + host
