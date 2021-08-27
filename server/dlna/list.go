@@ -16,6 +16,7 @@ import (
 	"server/settings"
 	"server/torr"
 	"server/torr/state"
+	"server/utils"
 )
 
 func getTorrents() (ret []interface{}) {
@@ -49,9 +50,9 @@ func getTorrent(path, host string) (ret []interface{}) {
 	if torr == nil {
 		return nil
 	}
-	parent := "%2F" + torr.TorrentSpec.InfoHash.HexString()
-	// get content from torrent
 
+	// get content from torrent
+	parent := "%2F" + torr.TorrentSpec.InfoHash.HexString()
 	// if torrent not loaded, get button for load
 	if torr.Files() == nil {
 		obj := upnpav.Object{
@@ -101,9 +102,11 @@ func loadTorrent(path, host string) (ret []interface{}) {
 	parent := "%2F" + tor.TorrentSpec.InfoHash.HexString()
 	files := tor.Status().FileStats
 	for _, f := range files {
-		obj := getObjFromTorrent(path, parent, host, tor, f)
-		if obj != nil {
-			ret = append(ret, obj)
+		if utils.GetMimeType(f.Path) != "*/*" {
+			obj := getObjFromTorrent(path, parent, host, tor, f)
+			if obj != nil {
+				ret = append(ret, obj)
+			}
 		}
 	}
 	return
@@ -123,11 +126,13 @@ func getLink(host, path string) string {
 func getObjFromTorrent(path, parent, host string, torr *torr.Torrent, file *state.TorrentFileStat) (ret interface{}) {
 	mime, err := dms.MimeTypeByPath(file.Path)
 	if err != nil {
-		return
+		//return // this always err
+		mime = "video/mpeg"
 	}
+	//mime := utils.GetMimeType(file.Path)
 
 	obj := upnpav.Object{
-		ID:         parent + "%2" + file.Path,
+		ID:         parent + "%2F" + file.Path,
 		Restricted: 1,
 		ParentID:   parent,
 		Class:      "object.item." + mime.Type() + "Item",

@@ -101,7 +101,7 @@ func GetTorrent(hashHex string) *Torrent {
 		go func() {
 			lockApi.Lock()
 			defer lockApi.Unlock()
-			log.TLogln("Add torrent")
+			log.TLogln("New torrent", tor.Hash())
 			tr, _ := NewTorrent(tor.TorrentSpec, bts)
 			if tr != nil {
 				tr.Title = tor.Title
