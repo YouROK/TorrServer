@@ -102,11 +102,9 @@ func loadTorrent(path, host string) (ret []interface{}) {
 	parent := "%2F" + tor.TorrentSpec.InfoHash.HexString()
 	files := tor.Status().FileStats
 	for _, f := range files {
-		if utils.GetMimeType(f.Path) != "*/*" {
-			obj := getObjFromTorrent(path, parent, host, tor, f)
-			if obj != nil {
-				ret = append(ret, obj)
-			}
+		obj := getObjFromTorrent(path, parent, host, tor, f)
+		if obj != nil {
+			ret = append(ret, obj)
 		}
 	}
 	return
@@ -124,12 +122,19 @@ func getLink(host, path string) string {
 }
 
 func getObjFromTorrent(path, parent, host string, torr *torr.Torrent, file *state.TorrentFileStat) (ret interface{}) {
+	// only playable files
+	if utils.GetMimeType(file.Path) == "*/*" {
+		return
+	}
 	mime, err := dms.MimeTypeByPath(file.Path)
 	if err != nil {
 		//return // this always err
-		mime = "video/mpeg"
+		if utils.GetMimeType(file.Path) == "video/*" {
+			mime = "video/mpeg"
+		} else {
+			mime = "audio/mpeg"
+		}
 	}
-	//mime := utils.GetMimeType(file.Path)
 
 	obj := upnpav.Object{
 		ID:         parent + "%2F" + file.Path,
