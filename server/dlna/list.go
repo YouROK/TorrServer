@@ -19,7 +19,9 @@ import (
 
 func getTorrents() (ret []interface{}) {
 	torrs := torr.ListTorrent()
+	var vol = 0
 	for _, t := range torrs {
+		vol++
 		obj := upnpav.Object{
 			ID:          "%2F" + t.TorrentSpec.InfoHash.HexString(),
 			ParentID:    "0",
@@ -30,7 +32,19 @@ func getTorrents() (ret []interface{}) {
 			AlbumArtURI: t.Poster,
 			Date: upnpav.Timestamp{Time: time.Now()},
 		}
-		cnt := upnpav.Container{Object: obj}
+		cnt := upnpav.Container{Object: obj, ChildCount: 1}
+		ret = append(ret, cnt)
+	}
+	if vol == 0 {
+		obj := upnpav.Object{
+			ID:         "%2FNo Torrents",
+			ParentID:   "0",
+			Title:      "No Torrents",
+			Class:      "object.container.storageFolder",
+			Restricted: 1,
+			Date: upnpav.Timestamp{Time: time.Now()},
+		}
+		cnt := upnpav.Container{Object: obj, ChildCount: 1}
 		ret = append(ret, cnt)
 	}
 	return
@@ -62,7 +76,7 @@ func getTorrent(path, host string) (ret []interface{}) {
 			Restricted: 1,
 			Date: upnpav.Timestamp{Time: time.Now()},
 		}
-		cnt := upnpav.Container{Object: obj}
+		cnt := upnpav.Container{Object: obj, ChildCount: 1}
 		ret = append(ret, cnt)
 		return
 	}
