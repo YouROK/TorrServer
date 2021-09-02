@@ -19,15 +19,22 @@ func init() {
 		mimeType   string
 		extensions string
 	}{
+		{"audio/aac", ".aac"},
 		{"audio/flac", ".flac"},
 		{"audio/mpeg", ".mpga,.mpega,.mp2,.mp3,.m4a"},
 		{"audio/ogg", ".oga,.ogg,.opus,.spx"},
+		{"audio/opus", ".opus"},
+		{"audio/weba", ".weba"},
 		{"audio/x-wav", ".wav"},
+		{"image/bmp", ".bmp"},
+		{"image/gif", ".gif"},
+		{"image/jpeg", ".jpg,.jpeg"},
+		{"image/png", ".png"},
 		{"image/tiff", ".tiff,.tif"},
 		{"video/dv", ".dif,.dv"},
 		{"video/fli", ".fli"},
 		{"video/mpeg", ".mpeg,.mpg,.mpe"},
-		{"video/MP2T", ".ts"},
+		{"video/mp2t", ".ts,.m2ts,.mts"},
 		{"video/mp4", ".mp4"},
 		{"video/quicktime", ".qt,.mov"},
 		{"video/ogg", ".ogv"},
@@ -45,9 +52,6 @@ func init() {
 	}
 	if err := mime.AddExtensionType(".rmvb", "application/vnd.rn-realmedia-vbr"); err != nil {
 		log.Printf("Could not register application/vnd.rn-realmedia-vbr MIME type: %s", err)
-	}
-	if err := mime.AddExtensionType(".ogv", "video/ogg"); err != nil {
-		log.Printf("Could not register video/ogg MIME type: %s", err)
 	}
 }
 
