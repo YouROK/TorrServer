@@ -22,12 +22,13 @@ func getTorrents() (ret []interface{}) {
 	for _, t := range torrs {
 		obj := upnpav.Object{
 			ID:          "%2F" + t.TorrentSpec.InfoHash.HexString(),
-			Restricted:  1,
 			ParentID:    "0",
-			Class:       "object.container.storageFolder",
 			Title:       t.Title,
+			Class:       "object.container.storageFolder",
+			Restricted:  1,
 			Icon:        t.Poster,
 			AlbumArtURI: t.Poster,
+			Date: upnpav.Timestamp{Time: time.Now()},
 		}
 		cnt := upnpav.Container{Object: obj}
 		ret = append(ret, cnt)
@@ -55,10 +56,11 @@ func getTorrent(path, host string) (ret []interface{}) {
 	if torr.Files() == nil {
 		obj := upnpav.Object{
 			ID:         parent + "%2FLoad Torrent",
-			Restricted: 1,
 			ParentID:   parent,
-			Class:      "object.container.storageFolder",
 			Title:      "Load Torrent",
+			Class:      "object.container.storageFolder",
+			Restricted: 1,
+			Date: upnpav.Timestamp{Time: time.Now()},
 		}
 		cnt := upnpav.Container{Object: obj}
 		ret = append(ret, cnt)
@@ -132,10 +134,11 @@ func getObjFromTorrent(path, parent, host string, torr *torr.Torrent, file *stat
 
 	obj := upnpav.Object{
 		ID:         parent + "%2F" + file.Path,
-		Restricted: 1,
 		ParentID:   parent,
-		Class:      "object.item." + mime.Type() + "Item",
 		Title:      file.Path,
+		Class:      "object.item." + mime.Type() + "Item",
+		Restricted: 1,
+		Date: upnpav.Timestamp{Time: time.Now()},
 	}
 
 	item := upnpav.Item{
