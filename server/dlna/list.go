@@ -9,14 +9,12 @@ import (
 	"time"
 
 	"github.com/anacrolix/dms/dlna"
-	"github.com/anacrolix/dms/dlna/dms"
 	"github.com/anacrolix/dms/upnpav"
 
 	"server/log"
 	"server/settings"
 	"server/torr"
 	"server/torr/state"
-	"server/utils"
 )
 
 func getTorrents() (ret []interface{}) {
@@ -122,18 +120,14 @@ func getLink(host, path string) string {
 }
 
 func getObjFromTorrent(path, parent, host string, torr *torr.Torrent, file *state.TorrentFileStat) (ret interface{}) {
-	// only playable files
-	if utils.GetMimeType(file.Path) == "*/*" {
+
+	mime, err := MimeTypeByPath(file.Path)
+	if err != nil {
+		log.TLogln("Can't detect mime type", err)	
 		return
 	}
-	mime, err := dms.MimeTypeByPath(file.Path)
-	if err != nil {
-		//return // this always err
-		if utils.GetMimeType(file.Path) == "video/*" {
-			mime = "video/mpeg"
-		} else {
-			mime = "audio/mpeg"
-		}
+	if !mime.IsMedia() {
+		return
 	}
 
 	obj := upnpav.Object{
