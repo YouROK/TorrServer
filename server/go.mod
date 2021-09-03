@@ -4,7 +4,7 @@ go 1.17
 
 replace (
 	github.com/anacrolix/dms v1.2.2 => github.com/tsynik/dms v0.0.0-20210902055723-0fcf49216c68
-	github.com/anacrolix/torrent v1.30.3 => github.com/tsynik/torrent v1.2.7-0.20210825105145-c21425452ac8
+	github.com/anacrolix/torrent v1.30.3 => github.com/tsynik/torrent v1.2.7-0.20210903201852-d16ba45e0bbd
 )
 
 exclude github.com/willf/bitset v1.2.0
