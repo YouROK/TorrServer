@@ -2,9 +2,7 @@ module server
 
 go 1.17
 
-replace (
-	github.com/anacrolix/dms v1.2.2 => github.com/tsynik/dms v0.0.0-20210902055723-0fcf49216c68
-)
+replace github.com/anacrolix/dms v1.2.2 => github.com/tsynik/dms v0.0.0-20210902055723-0fcf49216c68
 
 exclude github.com/willf/bitset v1.2.0
 
@@ -12,7 +10,7 @@ require (
 	github.com/alexflint/go-arg v1.3.0
 	github.com/anacrolix/dms v1.2.2
 	github.com/anacrolix/missinggo v1.3.0
-	github.com/anacrolix/torrent v1.30.4
+	github.com/anacrolix/torrent v1.31.0
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-contrib/location v0.0.2
 	github.com/gin-gonic/gin v1.7.0
