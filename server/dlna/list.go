@@ -9,29 +9,42 @@ import (
 	"time"
 
 	"github.com/anacrolix/dms/dlna"
-	"github.com/anacrolix/dms/dlna/dms"
 	"github.com/anacrolix/dms/upnpav"
 
 	"server/log"
 	"server/settings"
 	"server/torr"
 	"server/torr/state"
-	"server/utils"
 )
 
 func getTorrents() (ret []interface{}) {
 	torrs := torr.ListTorrent()
+	var vol = 0
 	for _, t := range torrs {
+		vol++
 		obj := upnpav.Object{
 			ID:          "%2F" + t.TorrentSpec.InfoHash.HexString(),
-			Restricted:  1,
 			ParentID:    "0",
-			Class:       "object.container.storageFolder",
 			Title:       t.Title,
+			Class:       "object.container.storageFolder",
+			Restricted:  1,
 			Icon:        t.Poster,
 			AlbumArtURI: t.Poster,
+			Date: upnpav.Timestamp{Time: time.Now()},
 		}
-		cnt := upnpav.Container{Object: obj}
+		cnt := upnpav.Container{Object: obj, ChildCount: 1}
+		ret = append(ret, cnt)
+	}
+	if vol == 0 {
+		obj := upnpav.Object{
+			ID:         "%2FNo Torrents",
+			ParentID:   "0",
+			Title:      "No Torrents",
+			Class:      "object.container.storageFolder",
+			Restricted: 1,
+			Date: upnpav.Timestamp{Time: time.Now()},
+		}
+		cnt := upnpav.Container{Object: obj, ChildCount: 1}
 		ret = append(ret, cnt)
 	}
 	return
@@ -57,12 +70,13 @@ func getTorrent(path, host string) (ret []interface{}) {
 	if torr.Files() == nil {
 		obj := upnpav.Object{
 			ID:         parent + "%2FLoad Torrent",
-			Restricted: 1,
 			ParentID:   parent,
-			Class:      "object.container.storageFolder",
 			Title:      "Load Torrent",
+			Class:      "object.container.storageFolder",
+			Restricted: 1,
+			Date: upnpav.Timestamp{Time: time.Now()},
 		}
-		cnt := upnpav.Container{Object: obj}
+		cnt := upnpav.Container{Object: obj, ChildCount: 1}
 		ret = append(ret, cnt)
 		return
 	}
@@ -122,26 +136,23 @@ func getLink(host, path string) string {
 }
 
 func getObjFromTorrent(path, parent, host string, torr *torr.Torrent, file *state.TorrentFileStat) (ret interface{}) {
-	// only playable files
-	if utils.GetMimeType(file.Path) == "*/*" {
+
+	mime, err := MimeTypeByPath(file.Path)
+	if err != nil {
+		log.TLogln("Can't detect mime type", err)	
 		return
 	}
-	mime, err := dms.MimeTypeByPath(file.Path)
-	if err != nil {
-		//return // this always err
-		if utils.GetMimeType(file.Path) == "video/*" {
-			mime = "video/mpeg"
-		} else {
-			mime = "audio/mpeg"
-		}
+	if !mime.IsMedia() {
+		return
 	}
 
 	obj := upnpav.Object{
 		ID:         parent + "%2F" + file.Path,
-		Restricted: 1,
 		ParentID:   parent,
-		Class:      "object.item." + mime.Type() + "Item",
 		Title:      file.Path,
+		Class:      "object.item." + mime.Type() + "Item",
+		Restricted: 1,
+		Date: upnpav.Timestamp{Time: time.Now()},
 	}
 
 	item := upnpav.Item{
