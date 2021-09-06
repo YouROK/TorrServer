@@ -90,6 +90,9 @@ func Stop() {
 
 func onBrowse(path, rootObjectPath, host, userAgent string) (ret []interface{}, err error) {
 	if path == "/" {
+		ret = getRoot()
+		return
+	} else if path == "/Torrents" {
 		ret = getTorrents()
 		return
 	} else if isHashPath(path) {
