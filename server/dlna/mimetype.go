@@ -19,29 +19,31 @@ func init() {
 		mimeType   string
 		extensions string
 	}{
-		{"audio/aac", ".aac"},
+		{"image/bmp", ".bmp"},
+		{"image/gif", ".gif"},
+		{"image/jpeg", ".jpg,.jpeg"},
+		{"image/png", ".png"},
+		{"image/tiff", ".tiff,.tif"},
+		{"audio/x-aac", ".aac"},
 		{"audio/flac", ".flac"},
 		{"audio/mpeg", ".mpga,.mpega,.mp2,.mp3,.m4a"},
 		{"audio/ogg", ".oga,.ogg,.opus,.spx"},
 		{"audio/opus", ".opus"},
 		{"audio/weba", ".weba"},
 		{"audio/x-wav", ".wav"},
-		{"image/bmp", ".bmp"},
-		{"image/gif", ".gif"},
-		{"image/jpeg", ".jpg,.jpeg"},
-		{"image/png", ".png"},
-		{"image/tiff", ".tiff,.tif"},
 		{"video/dv", ".dif,.dv"},
 		{"video/fli", ".fli"},
-		{"video/mpeg", ".mpeg,.mpg,.mpe"},
-		{"video/mp2t", ".ts,.m2ts,.mts"},
 		{"video/mp4", ".mp4"},
-		{"video/quicktime", ".qt,.mov"},
+		{"video/mpeg", ".mpeg,.mpg,.mpe"},
+		{"video/x-matroska", ".mpv,.mkv"},
+		{"video/mp2t", ".ts,.m2ts,.mts"},
 		{"video/ogg", ".ogv"},
 		{"video/webm", ".webm"},
 		{"video/x-msvideo", ".avi"},
-		{"video/x-matroska", ".mpv,.mkv"},
+		{"video/x-quicktime", ".qt,.mov"},
 		{"text/srt", ".srt"},
+		{"text/smi", ".smi"},
+		{"text/ssa", ".ssa"},
 	} {
 		for _, ext := range strings.Split(t.extensions, ",") {
 			err := mime.AddExtensionType(ext, t.mimeType)
@@ -78,6 +80,11 @@ func (mt mimeType) IsImage() bool {
 	return strings.HasPrefix(string(mt), "image/")
 }
 
+// IsSub returns true for subtitles MIME-types
+func (mt mimeType) IsSub() bool {
+	return strings.HasPrefix(string(mt), "text/srt") || strings.HasPrefix(string(mt), "text/smi") || strings.HasPrefix(string(mt), "text/ssa")
+}
+
 // Returns the group "type", the part before the '/'.
 func (mt mimeType) Type() string {
 	return strings.SplitN(string(mt), "/", 2)[0]
@@ -94,7 +101,13 @@ func MimeTypeByPath(filePath string) (ret mimeType, err error) {
 	if ret == "" {
 		ret, err = mimeTypeByContent(filePath)
 	}
-	if ret == "video/x-msvideo" {
+// Custom DLNA-compat mime mappings
+// TODO: make this client headers / profile map
+	if ret == "video/mp2t" {
+		ret = "video/mpeg"
+	} else if ret == "video/x-matroska" {
+		ret = "video/mpeg"
+	} else if ret == "video/x-msvideo" {
 		ret = "video/avi"
 	} else if ret == "" {
 		ret = "application/octet-stream"

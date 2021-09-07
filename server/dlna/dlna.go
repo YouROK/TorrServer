@@ -90,12 +90,15 @@ func Stop() {
 
 func onBrowse(path, rootObjectPath, host, userAgent string) (ret []interface{}, err error) {
 	if path == "/" {
+		ret = getRoot()
+		return
+	} else if path == "/TR" {
 		ret = getTorrents()
 		return
 	} else if isHashPath(path) {
 		ret = getTorrent(path, host)
 		return
-	} else if filepath.Base(path) == "Load Torrent" {
+	} else if filepath.Base(path) == "LD" {
 		ret = loadTorrent(path, host)
 	}
 	return
