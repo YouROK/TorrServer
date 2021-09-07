@@ -4,6 +4,7 @@
 package main
 
 import (
+	"syscall"
 	"time"
 )
 
