@@ -173,6 +173,7 @@ func getObjFromTorrent(path, parent, host string, torr *torr.Torrent, file *stat
 		}
 		return
 	}
+	// TODO: handle subtitles for media
 	if !mime.IsMedia() {
 		return
 	}
@@ -181,7 +182,7 @@ func getObjFromTorrent(path, parent, host string, torr *torr.Torrent, file *stat
 	}
 
 	obj := upnpav.Object{
-		ID:         url.PathEscape(parent + "/" + file.Path),
+		ID:         parent + "%2F" + url.PathEscape(file.Path),
 		ParentID:   parent,
 		Title:      file.Path,
 		Class:      "object.item." + mime.Type() + "Item",
