@@ -2,17 +2,15 @@ module server
 
 go 1.17
 
-replace (
-	github.com/anacrolix/dms v1.2.2 => github.com/tsynik/dms v0.0.0-20210906013928-2decf97d15be
-)
+replace github.com/anacrolix/dms v1.2.2 => github.com/tsynik/dms v0.0.0-20210906013928-2decf97d15be
 
 exclude github.com/willf/bitset v1.2.0
 
 require (
-	github.com/alexflint/go-arg v1.3.0
+	github.com/alexflint/go-arg v1.4.2
 	github.com/anacrolix/dms v1.2.2
 	github.com/anacrolix/missinggo v1.3.0
-	github.com/anacrolix/torrent v1.31.0
+	github.com/anacrolix/torrent v1.31.1-0.20210905013341-ccb90f125296
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-contrib/location v0.0.2
 	github.com/gin-gonic/gin v1.7.0
@@ -25,10 +23,10 @@ require (
 require (
 	crawshaw.io/sqlite v0.3.3-0.20210127221821-98b1f83c5508 // indirect
 	github.com/RoaringBitmap/roaring v0.9.4 // indirect
-	github.com/alexflint/go-scalar v1.0.0 // indirect
-	github.com/anacrolix/chansync v0.1.0 // indirect
+	github.com/alexflint/go-scalar v1.1.0 // indirect
+	github.com/anacrolix/chansync v0.1.1-0.20210904130811-9cd7139c8dd9 // indirect
 	github.com/anacrolix/confluence v1.8.0 // indirect
-	github.com/anacrolix/dht/v2 v2.10.3 // indirect
+	github.com/anacrolix/dht/v2 v2.10.5-0.20210902001729-06cc4fe90e53 // indirect
 	github.com/anacrolix/envpprof v1.1.1 // indirect
 	github.com/anacrolix/ffprobe v1.0.0 // indirect
 	github.com/anacrolix/go-libutp v1.0.4 // indirect
@@ -37,7 +35,7 @@ require (
 	github.com/anacrolix/missinggo/v2 v2.5.2 // indirect
 	github.com/anacrolix/mmsg v1.0.0 // indirect
 	github.com/anacrolix/multiless v0.1.1-0.20210529082330-de2f6cf29619 // indirect
-	github.com/anacrolix/stm v0.3.0-alpha // indirect
+	github.com/anacrolix/stm v0.3.0 // indirect
 	github.com/anacrolix/sync v0.4.0 // indirect
 	github.com/anacrolix/upnp v0.1.2-0.20200416075019-5e9378ed1425 // indirect
 	github.com/anacrolix/utp v0.1.0 // indirect
@@ -71,7 +69,7 @@ require (
 	github.com/pion/mdns v0.0.5 // indirect
 	github.com/pion/randutil v0.1.0 // indirect
 	github.com/pion/rtcp v1.2.6 // indirect
-	github.com/pion/rtp v1.7.1 // indirect
+	github.com/pion/rtp v1.7.2 // indirect
 	github.com/pion/sctp v1.7.12 // indirect
 	github.com/pion/sdp/v3 v3.0.4 // indirect
 	github.com/pion/srtp/v2 v2.0.5 // indirect
@@ -91,6 +89,7 @@ require (
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.0.0-20210809222454-d867a43fc93e // indirect
 	golang.org/x/text v0.3.6 // indirect
+	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
