@@ -3,8 +3,8 @@ module server
 go 1.17
 
 replace (
-	github.com/anacrolix/dms v1.2.2 => github.com/tsynik/dms v0.0.0-20210906003125-e00296ccb6ef
-	github.com/anacrolix/torrent v1.30.3 => github.com/tsynik/torrent v1.2.7-0.20210903201852-d16ba45e0bbd
+	github.com/anacrolix/dms v1.2.2 => github.com/tsynik/dms v0.0.0-20210906013928-2decf97d15be
+	github.com/anacrolix/torrent v1.30.3 => github.com/tsynik/torrent v1.2.7-0.20210907192509-2141ede9aa09
 )
 
 exclude github.com/willf/bitset v1.2.0
@@ -67,6 +67,7 @@ require (
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.0.0-20210809222454-d867a43fc93e // indirect
+	golang.org/x/text v0.3.6 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
