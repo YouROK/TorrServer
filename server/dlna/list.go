@@ -22,7 +22,7 @@ func getRoot() (ret []interface{}) {
 
 	// Root Object
 	rootObj := upnpav.Object{
-		ID:         "%2FTorrents",
+		ID:         "%2FTR",
 		ParentID:   "0",
 		Title:      "Torrents",
 		Class:      "object.container.storageFolder",
@@ -52,7 +52,7 @@ func getTorrents() (ret []interface{}) {
 		vol++
 		obj := upnpav.Object{
 			ID:          "%2F" + t.TorrentSpec.InfoHash.HexString(),
-			ParentID:    "%2FTorrents",
+			ParentID:    "%2FTR",
 			Title:       t.Title,
 			Class:       "object.container.storageFolder",
 			Restricted:  1,
@@ -65,8 +65,8 @@ func getTorrents() (ret []interface{}) {
 	}
 	if vol == 0 {
 		obj := upnpav.Object{
-			ID:         "%2FNo Torrents",
-			ParentID:   "%2FTorrents",
+			ID:         "%2FNT",
+			ParentID:   "%2FTR",
 			Title:      "No Torrents",
 			Class:      "object.container.storageFolder",
 			Restricted: 1,
@@ -98,7 +98,7 @@ func getTorrent(path, host string) (ret []interface{}) {
 	// if torrent not loaded, get button for load
 	if torr.Files() == nil {
 		obj := upnpav.Object{
-			ID:         parent + "%2FLoad Torrent",
+			ID:         parent + "%2FLD",
 			ParentID:   parent,
 			Title:      "Load Torrent",
 			Class:      "object.container.storageFolder",
@@ -181,7 +181,7 @@ func getObjFromTorrent(path, parent, host string, torr *torr.Torrent, file *stat
 	}
 
 	obj := upnpav.Object{
-		ID:         parent + "%2F" + file.Path,
+		ID:         url.PathEscape(parent + "/" + file.Path),
 		ParentID:   parent,
 		Title:      file.Path,
 		Class:      "object.item." + mime.Type() + "Item",
