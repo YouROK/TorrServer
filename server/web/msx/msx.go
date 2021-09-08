@@ -1,4 +1,4 @@
-package api
+package msx
 
 import (
 	"fmt"
@@ -16,8 +16,11 @@ import (
 )
 
 type msxMenu struct {
-	Logo string        `json:"logo,omitempty"`
-	Menu []msxMenuItem `json:"menu"`
+	Logo    string        `json:"logo,omitempty"`
+	Reuse   bool          `json:"reuse"`
+	Cache   bool          `json:"cache"`
+	Restore bool          `json:"restore"`
+	Menu    []msxMenuItem `json:"menu"`
 }
 
 type msxMenuItem struct {
@@ -76,7 +79,10 @@ func msxTorrents(c *gin.Context) {
 	}
 
 	c.JSON(200, msxMenu{
-		Logo: logo,
+		Logo:    logo,
+		Cache:   false,
+		Reuse:   false,
+		Restore: false,
 		Menu: []msxMenuItem{
 			// Main page
 			{
