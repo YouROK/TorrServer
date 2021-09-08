@@ -45,6 +45,10 @@ var Indexhtml []byte
 var Mstile150x150png []byte
 
 
+//go:embed pages/safari-pinned-tab.svg
+var Safaripinnedtabsvg []byte
+
+
 //go:embed pages/site.webmanifest
 var Sitewebmanifest []byte
 
