@@ -29,7 +29,7 @@ func Preconfig(kill bool) {
 			case <-pulse.C:
 				{
 					send := false
-					for i, torrent := range torr.ListTorrent() {
+					for _, torrent := range torr.ListTorrent() {
 						if torrent.Stat != state.TorrentInDB {
 							send = true
 							break
