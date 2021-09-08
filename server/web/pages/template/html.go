@@ -5,6 +5,10 @@ import (
 )
 
 
+//go:embed pages/.DS_Store
+var DSStore []byte
+
+
 //go:embed pages/android-chrome-192x192.png
 var Androidchrome192x192png []byte
 
@@ -23,6 +27,14 @@ var Assetmanifestjson []byte
 
 //go:embed pages/browserconfig.xml
 var Browserconfigxml []byte
+
+
+//go:embed pages/dlnaicon-48.jpg
+var Dlnaicon48jpg []byte
+
+
+//go:embed pages/dlnaicon-48.png
+var Dlnaicon48png []byte
 
 
 //go:embed pages/favicon-16x16.png
@@ -45,32 +57,28 @@ var Indexhtml []byte
 var Mstile150x150png []byte
 
 
-//go:embed pages/safari-pinned-tab.svg
-var Safaripinnedtabsvg []byte
-
-
 //go:embed pages/site.webmanifest
 var Sitewebmanifest []byte
 
 
-//go:embed pages/static/js/2.d5f08679.chunk.js
-var Staticjs2d5f08679chunkjs []byte
+//go:embed pages/static/js/2.937400ae.chunk.js
+var Staticjs2937400aechunkjs []byte
 
 
-//go:embed pages/static/js/2.d5f08679.chunk.js.LICENSE.txt
-var Staticjs2d5f08679chunkjsLICENSEtxt []byte
+//go:embed pages/static/js/2.937400ae.chunk.js.LICENSE.txt
+var Staticjs2937400aechunkjsLICENSEtxt []byte
 
 
-//go:embed pages/static/js/2.d5f08679.chunk.js.map
-var Staticjs2d5f08679chunkjsmap []byte
+//go:embed pages/static/js/2.937400ae.chunk.js.map
+var Staticjs2937400aechunkjsmap []byte
 
 
-//go:embed pages/static/js/main.d1c06468.chunk.js
-var Staticjsmaind1c06468chunkjs []byte
+//go:embed pages/static/js/main.6692fb9e.chunk.js
+var Staticjsmain6692fb9echunkjs []byte
 
 
-//go:embed pages/static/js/main.d1c06468.chunk.js.map
-var Staticjsmaind1c06468chunkjsmap []byte
+//go:embed pages/static/js/main.6692fb9e.chunk.js.map
+var Staticjsmain6692fb9echunkjsmap []byte
 
 
 //go:embed pages/static/js/runtime-main.33603a80.js
