@@ -42,16 +42,23 @@ func Start() {
 		StallEventSubscribe: true,
 		Icons: []dms.Icon{
 			dms.Icon{
-				Width:      32,
-				Height:     32,
-				Depth:      32,
+				Width:      48,
+				Height:     48,
+				Depth:      24,
+				Mimetype:   "image/jpeg",
+				ReadSeeker: bytes.NewReader(template.Dlnaicon48jpg),
+			},
+			dms.Icon{
+				Width:      48,
+				Height:     48,
+				Depth:      24,
 				Mimetype:   "image/png",
-				ReadSeeker: bytes.NewReader(template.Favicon32x32png),
+				ReadSeeker: bytes.NewReader(template.Dlnaicon48png),
 			},
 			dms.Icon{
 				Width:      192,
 				Height:     192,
-				Depth:      32,
+				Depth:      24,
 				Mimetype:   "image/png",
 				ReadSeeker: bytes.NewReader(template.Androidchrome192x192png),
 			},

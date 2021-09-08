@@ -198,8 +198,8 @@ func getObjFromTorrent(path, parent, host string, torr *torr.Torrent, file *stat
 	item.Res = append(item.Res, upnpav.Resource{
 		URL: getLink(host, pathPlay),
 		ProtocolInfo: fmt.Sprintf("http-get:*:%s:%s", mime, dlna.ContentFeatures{
-			SupportTimeSeek: true,
 			SupportRange:    true,
+			SupportTimeSeek: true,
 		}.String()),
 		Size: uint64(file.Length),
 	})
