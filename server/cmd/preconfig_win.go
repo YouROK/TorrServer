@@ -6,6 +6,9 @@ package main
 import (
 	"syscall"
 	"time"
+
+	"server/torr"
+	"server/torr/state"
 )
 
 const (
@@ -16,14 +19,27 @@ const (
 var pulseTime = 1 * time.Minute
 
 func Preconfig(kill bool) {
-	// don't sleep/hibernate windows
-	kernel32 := syscall.NewLazyDLL("kernel32.dll")
-	setThreadExecStateProc := kernel32.NewProc("SetThreadExecutionState")
-	pulse := time.NewTicker(pulseTime)
-	for {
-		select {
-		case <-pulse.C:
-			setThreadExecStateProc.Call(uintptr(EsSystemRequired))
+	go func() {
+		// don't sleep/hibernate windows
+		kernel32 := syscall.NewLazyDLL("kernel32.dll")
+		setThreadExecStateProc := kernel32.NewProc("SetThreadExecutionState")
+		pulse := time.NewTicker(pulseTime)
+		for {
+			select {
+			case <-pulse.C:
+				{
+					send := false
+					for i, torrent := range torr.ListTorrent() {
+						if torrent.Stat != state.TorrentInDB {
+							send = true
+							break
+						}
+					}
+					if send {
+						setThreadExecStateProc.Call(uintptr(EsSystemRequired))
+					}
+				}
+			}
 		}
-	}
+	}()
 }
