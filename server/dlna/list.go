@@ -27,12 +27,12 @@ func getRoot() (ret []interface{}) {
 		Restricted: 1,
 		Title:      "Torrents",
 		Class:      "object.container.storageFolder",
-		Date: upnpav.Timestamp{Time: time.Now()},
+		Date:       upnpav.Timestamp{Time: time.Now()},
 	}
 
 	// add Root Object
-	len := len(torr.ListTorrent())
-	cnt := upnpav.Container{Object: rootObj, ChildCount: len}
+	lenl := len(torr.ListTorrent())
+	cnt := upnpav.Container{Object: rootObj, ChildCount: lenl}
 	ret = append(ret, cnt)
 
 	return
@@ -46,7 +46,7 @@ func getTorrents() (ret []interface{}) {
 	sort.Slice(torrs, func(i, j int) bool {
 		return torrs[i].Title < torrs[j].Title
 	})
-	
+
 	var vol = 0
 	for _, t := range torrs {
 		vol++
@@ -58,7 +58,7 @@ func getTorrents() (ret []interface{}) {
 			Class:       "object.container.storageFolder",
 			Icon:        t.Poster,
 			AlbumArtURI: t.Poster,
-			Date: upnpav.Timestamp{Time: time.Now()},
+			Date:        upnpav.Timestamp{Time: time.Now()},
 		}
 		cnt := upnpav.Container{Object: obj, ChildCount: 1}
 		ret = append(ret, cnt)
@@ -70,7 +70,7 @@ func getTorrents() (ret []interface{}) {
 			Restricted: 1,
 			Title:      "No Torrents",
 			Class:      "object.container.storageFolder",
-			Date: upnpav.Timestamp{Time: time.Now()},
+			Date:       upnpav.Timestamp{Time: time.Now()},
 		}
 		cnt := upnpav.Container{Object: obj, ChildCount: 1}
 		ret = append(ret, cnt)
@@ -103,7 +103,7 @@ func getTorrent(path, host string) (ret []interface{}) {
 			Restricted: 1,
 			Title:      "Load Torrent",
 			Class:      "object.container.storageFolder",
-			Date: upnpav.Timestamp{Time: time.Now()},
+			Date:       upnpav.Timestamp{Time: time.Now()},
 		}
 		cnt := upnpav.Container{Object: obj, ChildCount: 1}
 		ret = append(ret, cnt)
@@ -187,7 +187,7 @@ func getObjFromTorrent(path, parent, host string, torr *torr.Torrent, file *stat
 		Restricted: 1,
 		Title:      file.Path,
 		Class:      "object.item." + mime.Type() + "Item",
-		Date: upnpav.Timestamp{Time: time.Now()},
+		Date:       upnpav.Timestamp{Time: time.Now()},
 	}
 
 	item := upnpav.Item{
@@ -199,7 +199,7 @@ func getObjFromTorrent(path, parent, host string, torr *torr.Torrent, file *stat
 		URL: getLink(host, pathPlay),
 		ProtocolInfo: fmt.Sprintf("http-get:*:%s:%s", mime, dlna.ContentFeatures{
 			SupportTimeSeek: true,
-			SupportRange: true,
+			SupportRange:    true,
 		}.String()),
 		Size: uint64(file.Length),
 	})
