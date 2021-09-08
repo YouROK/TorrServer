@@ -29,6 +29,14 @@ var Assetmanifestjson []byte
 var Browserconfigxml []byte
 
 
+//go:embed pages/dlnaicon-120.jpg
+var Dlnaicon120jpg []byte
+
+
+//go:embed pages/dlnaicon-120.png
+var Dlnaicon120png []byte
+
+
 //go:embed pages/dlnaicon-48.jpg
 var Dlnaicon48jpg []byte
 
@@ -73,12 +81,12 @@ var Staticjs2937400aechunkjsLICENSEtxt []byte
 var Staticjs2937400aechunkjsmap []byte
 
 
-//go:embed pages/static/js/main.6692fb9e.chunk.js
-var Staticjsmain6692fb9echunkjs []byte
+//go:embed pages/static/js/main.f2cdf583.chunk.js
+var Staticjsmainf2cdf583chunkjs []byte
 
 
-//go:embed pages/static/js/main.6692fb9e.chunk.js.map
-var Staticjsmain6692fb9echunkjsmap []byte
+//go:embed pages/static/js/main.f2cdf583.chunk.js.map
+var Staticjsmainf2cdf583chunkjsmap []byte
 
 
 //go:embed pages/static/js/runtime-main.33603a80.js
