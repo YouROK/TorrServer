@@ -36,9 +36,9 @@ func Start() {
 			}
 			return conn
 		}(),
-		FriendlyName: getDefaultFriendlyName(),
-		NoTranscode:  true,
-		NoProbe:      true,
+		FriendlyName:        getDefaultFriendlyName(),
+		NoTranscode:         true,
+		NoProbe:             true,
 		StallEventSubscribe: true,
 		Icons: []dms.Icon{
 			dms.Icon{

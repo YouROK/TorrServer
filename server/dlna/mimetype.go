@@ -7,14 +7,13 @@ import (
 	"os"
 	"path"
 	"strings"
-
 )
 
 func init() {
 
-// Add a minimal number of mime types to augment go's built in types
-// for environments which don't have access to a mime.types file (e.g.
-// Termux on android)
+	// Add a minimal number of mime types to augment go's built in types
+	// for environments which don't have access to a mime.types file (e.g.
+	// Termux on android)
 	for _, t := range []struct {
 		mimeType   string
 		extensions string
@@ -101,8 +100,8 @@ func MimeTypeByPath(filePath string) (ret mimeType, err error) {
 	if ret == "" {
 		ret, err = mimeTypeByContent(filePath)
 	}
-// Custom DLNA-compat mime mappings
-// TODO: make this client headers / profile map
+	// Custom DLNA-compat mime mappings
+	// TODO: make this client headers / profile map
 	if ret == "video/mp2t" {
 		ret = "video/mpeg"
 	} else if ret == "video/x-matroska" {
