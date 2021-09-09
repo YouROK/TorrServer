@@ -128,6 +128,7 @@ func onBrowseMeta(path string, rootObjectPath string, host, userAgent string) (r
 			Restricted: 1,
 			Searchable: 1,
 			Title:      "TorrServer",
+			Date:       upnpav.Timestamp{Time: time.Now()},
 			Class:      "object.container.storageFolder",
 		}
 		// add Root Object
