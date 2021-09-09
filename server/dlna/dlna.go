@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/anacrolix/dms/dlna/dms"
+	"github.com/anacrolix/dms/upnpav"
 
 	"server/log"
 	"server/web/pages/template"
@@ -45,20 +46,6 @@ func Start() {
 				Width:      48,
 				Height:     48,
 				Depth:      24,
-				Mimetype:   "image/png",
-				ReadSeeker: bytes.NewReader(template.Dlnaicon48png),
-			},
-			dms.Icon{
-				Width:      120,
-				Height:     120,
-				Depth:      24,
-				Mimetype:   "image/png",
-				ReadSeeker: bytes.NewReader(template.Dlnaicon120png),
-			},
-			dms.Icon{
-				Width:      48,
-				Height:     48,
-				Depth:      24,
 				Mimetype:   "image/jpeg",
 				ReadSeeker: bytes.NewReader(template.Dlnaicon48jpg),
 			},
@@ -68,6 +55,20 @@ func Start() {
 				Depth:      24,
 				Mimetype:   "image/jpeg",
 				ReadSeeker: bytes.NewReader(template.Dlnaicon120jpg),
+			},
+			dms.Icon{
+				Width:      48,
+				Height:     48,
+				Depth:      24,
+				Mimetype:   "image/png",
+				ReadSeeker: bytes.NewReader(template.Dlnaicon48png),
+			},
+			dms.Icon{
+				Width:      120,
+				Height:     120,
+				Depth:      24,
+				Mimetype:   "image/png",
+				ReadSeeker: bytes.NewReader(template.Dlnaicon120png),
 			},
 		},
 		NotifyInterval: 30 * time.Second,
@@ -119,6 +120,20 @@ func onBrowse(path, rootObjectPath, host, userAgent string) (ret []interface{}, 
 }
 
 func onBrowseMeta(path string, rootObjectPath string, host, userAgent string) (ret interface{}, err error) {
+	if path == "/" {
+		// Root Object Meta
+		rootObj := upnpav.Object{
+			ID:         "0",
+			ParentID:   "-1",
+			Restricted: 1,
+			Searchable: 1,
+			Title:      "TorrServer",
+			Class:      "object.container.storageFolder",
+		}
+		// add Root Object
+		ret = upnpav.Container{Object: rootObj, ChildCount: 1}
+		return
+	}
 	err = fmt.Errorf("not implemented")
 	return
 }

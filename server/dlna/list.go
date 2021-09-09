@@ -20,8 +20,8 @@ import (
 
 func getRoot() (ret []interface{}) {
 
-	// Root Object
-	rootObj := upnpav.Object{
+	// Torrents Object
+	tObj := upnpav.Object{
 		ID:         "%2FTR",
 		ParentID:   "0",
 		Restricted: 1,
@@ -30,9 +30,9 @@ func getRoot() (ret []interface{}) {
 		Date:       upnpav.Timestamp{Time: time.Now()},
 	}
 
-	// add Root Object
-	lenl := len(torr.ListTorrent())
-	cnt := upnpav.Container{Object: rootObj, ChildCount: lenl}
+	// add Torrents Object
+	vol := len(torr.ListTorrent())
+	cnt := upnpav.Container{Object: tObj, ChildCount: vol}
 	ret = append(ret, cnt)
 
 	return
@@ -74,7 +74,6 @@ func getTorrents() (ret []interface{}) {
 		}
 		cnt := upnpav.Container{Object: obj, ChildCount: 1}
 		ret = append(ret, cnt)
-		vol = 1
 	}
 	return
 }
