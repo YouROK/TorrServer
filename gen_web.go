@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -33,7 +34,9 @@ func main() {
 	filepath.WalkDir(srcGo+"template/pages/", func(path string, d fs.DirEntry, err error) error {
 		if !d.IsDir() {
 			name := strings.TrimPrefix(path, srcGo+"template/")
-			files = append(files, name)
+			if !strings.HasPrefix(name, ".") {
+				files = append(files, name)
+			}
 		}
 		return nil
 	})
@@ -58,7 +61,7 @@ import (
 
 	for _, f := range files {
 		fname := cleanName(strings.TrimPrefix(f, "pages"))
-		embedStr += "\n\n//go:embed " + f + "\nvar " + fname + " []byte\n"
+		embedStr += "\n//go:embed " + f + "\nvar " + fname + " []byte\n"
 		ret[strings.TrimPrefix(f, "pages")] = fname
 	}
 
@@ -86,13 +89,18 @@ func RouteWebPages(route *gin.RouterGroup) {
 `
 	mime.AddExtensionType(".map", "application/json")
 	mime.AddExtensionType(".webmanifest", "application/manifest+json")
-	for link, v := range fmap {
+	// sort fmap
+  keys := make([]string, 0, len(fmap))
+  for key := range fmap {
+  	keys = append(keys, key)
+  }
+  sort.Strings(keys)
+	for _, link := range keys {
 		fmime := mime.TypeByExtension(filepath.Ext(link))
 		embedStr += `
 	route.GET("` + link + `", func(c *gin.Context) {
-		c.Data(200, "` + fmime + `", ` + v + `)
+		c.Data(200, "` + fmime + `", ` + fmap[link] + `)
 	})
-
 `
 	}
 	embedStr += "}"
