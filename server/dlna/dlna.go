@@ -42,20 +42,20 @@ func Start() {
 		NoProbe:             true,
 		StallEventSubscribe: true,
 		Icons: []dms.Icon{
-			dms.Icon{
-				Width:      48,
-				Height:     48,
-				Depth:      24,
-				Mimetype:   "image/jpeg",
-				ReadSeeker: bytes.NewReader(template.Dlnaicon48jpg),
-			},
-			dms.Icon{
-				Width:      120,
-				Height:     120,
-				Depth:      24,
-				Mimetype:   "image/jpeg",
-				ReadSeeker: bytes.NewReader(template.Dlnaicon120jpg),
-			},
+			//			dms.Icon{
+			//				Width:      48,
+			//				Height:     48,
+			//				Depth:      24,
+			//				Mimetype:   "image/jpeg",
+			//				ReadSeeker: bytes.NewReader(template.Dlnaicon48jpg),
+			//			},
+			//			dms.Icon{
+			//				Width:      120,
+			//				Height:     120,
+			//				Depth:      24,
+			//				Mimetype:   "image/jpeg",
+			//				ReadSeeker: bytes.NewReader(template.Dlnaicon120jpg),
+			//			},
 			dms.Icon{
 				Width:      48,
 				Height:     48,
