@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"server/dlna"
 	"server/settings"
+	"server/web/msx"
 
 	"server/log"
 	"server/torr"
@@ -48,9 +49,11 @@ func Start(port string) {
 	routeAuth := auth.SetupAuth(route)
 	if routeAuth != nil {
 		api.SetupRoute(routeAuth)
+		msx.SetupRoute(routeAuth)
 		pages.SetupRoute(routeAuth)
 	} else {
 		api.SetupRoute(&route.RouterGroup)
+		msx.SetupRoute(&route.RouterGroup)
 		pages.SetupRoute(&route.RouterGroup)
 	}
 	if settings.BTsets.EnableDLNA {

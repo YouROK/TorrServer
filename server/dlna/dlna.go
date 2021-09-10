@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/anacrolix/dms/dlna/dms"
+	"github.com/anacrolix/dms/upnpav"
 
 	"server/log"
 	"server/web/pages/template"
@@ -36,24 +37,38 @@ func Start() {
 			}
 			return conn
 		}(),
-		FriendlyName: getDefaultFriendlyName(),
-		NoTranscode:  true,
-		NoProbe:      true,
+		FriendlyName:        getDefaultFriendlyName(),
+		NoTranscode:         true,
+		NoProbe:             true,
 		StallEventSubscribe: true,
 		Icons: []dms.Icon{
+			//			dms.Icon{
+			//				Width:      48,
+			//				Height:     48,
+			//				Depth:      24,
+			//				Mimetype:   "image/jpeg",
+			//				ReadSeeker: bytes.NewReader(template.Dlnaicon48jpg),
+			//			},
+			//			dms.Icon{
+			//				Width:      120,
+			//				Height:     120,
+			//				Depth:      24,
+			//				Mimetype:   "image/jpeg",
+			//				ReadSeeker: bytes.NewReader(template.Dlnaicon120jpg),
+			//			},
 			dms.Icon{
-				Width:      32,
-				Height:     32,
-				Depth:      32,
+				Width:      48,
+				Height:     48,
+				Depth:      24,
 				Mimetype:   "image/png",
-				ReadSeeker: bytes.NewReader(template.Favicon32x32png),
+				ReadSeeker: bytes.NewReader(template.Dlnaicon48png),
 			},
 			dms.Icon{
-				Width:      192,
-				Height:     192,
-				Depth:      32,
+				Width:      120,
+				Height:     120,
+				Depth:      24,
 				Mimetype:   "image/png",
-				ReadSeeker: bytes.NewReader(template.Androidchrome192x192png),
+				ReadSeeker: bytes.NewReader(template.Dlnaicon120png),
 			},
 		},
 		NotifyInterval: 30 * time.Second,
@@ -105,6 +120,21 @@ func onBrowse(path, rootObjectPath, host, userAgent string) (ret []interface{}, 
 }
 
 func onBrowseMeta(path string, rootObjectPath string, host, userAgent string) (ret interface{}, err error) {
+	if path == "/" {
+		// Root Object Meta
+		rootObj := upnpav.Object{
+			ID:         "0",
+			ParentID:   "-1",
+			Restricted: 1,
+			Searchable: 1,
+			Title:      "TorrServer",
+			Date:       upnpav.Timestamp{Time: time.Now()},
+			Class:      "object.container.storageFolder",
+		}
+		// add Root Object
+		ret = upnpav.Container{Object: rootObj, ChildCount: 1}
+		return
+	}
 	err = fmt.Errorf("not implemented")
 	return
 }

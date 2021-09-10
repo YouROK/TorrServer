@@ -65,7 +65,7 @@ func (t *Torrent) Preload(index int, size int64) {
 
 		// mb5 -> 8/16 MB
 		mb5 := int64(t.Info().PieceLength)
-		if (mb5 < 8 * 1024 * 1024) {
+		if mb5 < 8*1024*1024 {
 			mb5 = 8 * 1024 * 1024
 		}
 

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/anacrolix/dms/dlna"
 	"github.com/anacrolix/missinggo/httptoo"
 	"github.com/anacrolix/torrent"
 
@@ -55,11 +56,19 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 			log.Println("Connect client", host, port)
 		}
 	}
-	
+
 	sets.SetViewed(&sets.Viewed{t.Hash().HexString(), fileID})
 
 	resp.Header().Set("Connection", "close")
 	resp.Header().Set("ETag", httptoo.EncodeQuotedString(fmt.Sprintf("%s/%s", t.Hash().HexString(), file.Path())))
+	resp.Header().Set("transferMode.dlna.org", "Streaming")
+
+	if req.Header.Get("getContentFeatures.dlna.org") != "" {
+		resp.Header().Set("contentFeatures.dlna.org", dlna.ContentFeatures{
+			SupportRange:    true,
+			SupportTimeSeek: true,
+		}.String())
+	}
 
 	http.ServeContent(resp, req, file.Path(), time.Unix(t.Timestamp, 0), reader)
 

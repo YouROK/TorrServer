@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package main
@@ -6,7 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-		
+
 	"server/log"
 	"server/settings"
 )
@@ -23,7 +24,7 @@ func Preconfig(dkill bool) {
 		go func() {
 			for s := range sigc {
 				if dkill {
-					if (settings.BTsets.EnableDebug || s != syscall.SIGPIPE) {
+					if settings.BTsets.EnableDebug || s != syscall.SIGPIPE {
 						log.TLogln("Signal catched:", s)
 						log.TLogln("To stop server, close it from web / api")
 					}
