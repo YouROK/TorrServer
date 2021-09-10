@@ -34,5 +34,3 @@ toolchains/
 /src/google.golang.org/
 /toolchain/
 /test/
-# web static conent
-server/web/pages/template
