@@ -2,7 +2,6 @@ package dlna
 
 import (
 	"bytes"
-	"fmt"
 	"net"
 	"os"
 	"os/user"
