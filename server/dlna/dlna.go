@@ -13,6 +13,7 @@ import (
 	"github.com/anacrolix/dms/upnpav"
 
 	"server/log"
+	"server/torr"
 	"server/web/pages/template"
 )
 
@@ -121,7 +122,6 @@ func onBrowse(path, rootObjectPath, host, userAgent string) (ret []interface{}, 
 
 func onBrowseMeta(path string, rootObjectPath string, host, userAgent string) (ret interface{}, err error) {
 	if path == "/" {
-		// Root Object Meta
 		rootObj := upnpav.Object{
 			ID:         "0",
 			ParentID:   "-1",
@@ -134,8 +134,25 @@ func onBrowseMeta(path string, rootObjectPath string, host, userAgent string) (r
 		// add Root Object
 		ret = upnpav.Container{Object: rootObj, ChildCount: 1}
 		return
+	} else if path == "/TR" {
+		// Torrents Object Meta
+		trObj := upnpav.Object{
+			ID:         "%2FR",
+			ParentID:   "0",
+			Restricted: 1,
+			Searchable: 1,
+			Title:      "Torrents",
+			Date:       upnpav.Timestamp{Time: time.Now()},
+			Class:      "object.container.storageFolder",
+		}
+		vol := len(torr.ListTorrent())
+		ret = upnpav.Container{Object: trObj, ChildCount: vol}
+		return
+	} else if isHashPath(path) {
+		ret = getTorrentMeta(path, host)
+		return
 	}
-	err = fmt.Errorf("not implemented")
+	// err = fmt.Errorf("not implemented")
 	return
 }
 
