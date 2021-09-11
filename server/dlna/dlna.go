@@ -2,6 +2,7 @@ package dlna
 
 import (
 	"bytes"
+	"fmt"
 	"net"
 	"os"
 	"os/user"
@@ -134,9 +135,9 @@ func onBrowseMeta(path string, rootObjectPath string, host, userAgent string) (r
 		ret = upnpav.Container{Object: rootObj, ChildCount: 1}
 		return
 	} else if path == "/TR" {
-		// Torrents Object Meta
+		// TR Object Meta
 		trObj := upnpav.Object{
-			ID:         "%2FR",
+			ID:         "%2FTR",
 			ParentID:   "0",
 			Restricted: 1,
 			Searchable: 1,
@@ -147,11 +148,11 @@ func onBrowseMeta(path string, rootObjectPath string, host, userAgent string) (r
 		vol := len(torr.ListTorrent())
 		ret = upnpav.Container{Object: trObj, ChildCount: vol}
 		return
-	} else if isHashPath(path) {
-		ret = getTorrentMeta(path, host)
-		return
 	}
-	// err = fmt.Errorf("not implemented")
+	ret = getTorrentMeta(path, host)
+	if ret == nil {
+		err = fmt.Errorf("meta not found")
+	}
 	return
 }
 

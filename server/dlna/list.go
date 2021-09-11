@@ -128,18 +128,48 @@ func getTorrentMeta(path, host string) (ret interface{}) {
 	}
 
 	// Meta object
-	obj := upnpav.Object{
-		ID:         "%2F" + torr.TorrentSpec.InfoHash.HexString(),
-		ParentID:   "%2FTR",
-		Restricted: 1,
-		Title:      torr.Title,
-		Class:      "object.container.storageFolder",
-		Date:       upnpav.Timestamp{Time: time.Now()},
+	if isHashPath(path) {
+		// hash object meta
+		obj := upnpav.Object{
+			ID:         "%2F" + torr.TorrentSpec.InfoHash.HexString(),
+			ParentID:   "%2FTR",
+			Restricted: 1,
+			Title:      torr.Title,
+			Date:       upnpav.Timestamp{Time: time.Now()},
+		}
+		meta := upnpav.Container{Object: obj, ChildCount: 1}
+		return meta
+	} else if filepath.Base(path) == "LD" {
+		parent := url.PathEscape(filepath.Dir(path))
+		// LD object meta
+		obj := upnpav.Object{
+			ID:         parent + "%2FLD",
+			ParentID:   parent,
+			Restricted: 1,
+			Searchable: 1,
+			Title:      "Load Torrents",
+			Date:       upnpav.Timestamp{Time: time.Now()},
+		}
+		meta := upnpav.Container{Object: obj, ChildCount: 1}
+		return meta
+	} else {
+		file := filepath.Base(path)
+		id := url.PathEscape(path)
+		parent := url.PathEscape(filepath.Dir(path))
+		// file object meta
+		obj := upnpav.Object{
+			ID:         id,
+			ParentID:   parent,
+			Restricted: 1,
+			Searchable: 1,
+			Title:      file,
+			Date:       upnpav.Timestamp{Time: time.Now()},
+		}
+		meta := upnpav.Container{Object: obj, ChildCount: 1}
+		return meta
 	}
-	
-	meta := upnpav.Container{Object: obj, ChildCount: 1}
-	
-	return meta
+
+	return nil
 }
 
 func loadTorrent(path, host string) (ret []interface{}) {
