@@ -12,6 +12,7 @@ import (
 	"github.com/anacrolix/dms/dlna/dms"
 
 	"server/log"
+	"server/utils"
 	"server/web/pages/template"
 )
 
@@ -21,10 +22,15 @@ func Start() {
 	dmsServer = &dms.Server{
 		Interfaces: func() (ifs []net.Interface) {
 			var err error
-			ifs, err = net.Interfaces()
+			ifaces, err := net.Interfaces()
 			if err != nil {
 				log.TLogln(err)
 				os.Exit(1)
+			}
+			for _, element := range ifaces {
+				if element.Flags&net.FlagLoopback == 0 && element.Flags&net.FlagUp == net.FlagUp && element.Flags&net.FlagMulticast == net.FlagMulticast && utils.IsPhysicalInterface(element.HardwareAddr.String()) {
+					ifs = append(ifs, element)
+				}
 			}
 			return
 		}(),
@@ -159,7 +165,7 @@ func getDefaultFriendlyName() string {
 		var list []string
 		for _, i := range ifaces {
 			addrs, _ := i.Addrs()
-			if i.Flags&net.FlagUp == net.FlagUp {
+			if i.Flags&net.FlagLoopback == 0 && i.Flags&net.FlagUp == net.FlagUp && i.Flags&net.FlagMulticast == net.FlagMulticast && utils.IsPhysicalInterface(i.HardwareAddr.String()) {
 				for _, addr := range addrs {
 					var ip net.IP
 					switch v := addr.(type) {

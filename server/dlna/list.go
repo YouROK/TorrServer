@@ -115,7 +115,7 @@ func getTorrent(path, host string) (ret []interface{}) {
 
 func getTorrentMeta(path, host string) (ret interface{}) {
 
-	if path=="/" {
+	if path == "/" {
 		rootObj := upnpav.Object{
 			ID:         "0",
 			ParentID:   "-1",
@@ -143,7 +143,7 @@ func getTorrentMeta(path, host string) (ret interface{}) {
 		meta := upnpav.Container{Object: trObj}
 		return meta
 	}
-	
+
 	// find torrent without load
 	torrs := torr.ListTorrent()
 	var torr *torr.Torrent
