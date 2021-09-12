@@ -15,7 +15,7 @@
           webOS.service.request('luna://com.webos.applicationManager', {
             method: 'launch',
             parameters: {
-              id: '',
+              id: 'com.webos.app.videoplayer',
               params: {
                 videoList: {
                 result: params.getAll('url').map(url => ({url: url})),
@@ -33,7 +33,7 @@
           });
         } catch(e) {
           console.log('ERROR', e);
-          TVXInteractionPlugin.executeAction('error:Failed to open Video Player');
+          TVXInteractionPlugin.executeAction('error:Failed to open Video Player – ' + e.getMessage());
         }
       }
 
