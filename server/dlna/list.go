@@ -114,6 +114,36 @@ func getTorrent(path, host string) (ret []interface{}) {
 }
 
 func getTorrentMeta(path, host string) (ret interface{}) {
+
+	if path=="/" {
+		rootObj := upnpav.Object{
+			ID:         "0",
+			ParentID:   "-1",
+			Restricted: 1,
+			Searchable: 1,
+			Title:      "TorrServer",
+			Date:       upnpav.Timestamp{Time: time.Now()},
+			Class:      "object.container",
+		}
+		// add Root Object
+		meta := upnpav.Container{Object: rootObj}
+		return meta
+	} else if path == "/TR" {
+		// TR Object Meta
+		trObj := upnpav.Object{
+			ID:         "%2FTR",
+			ParentID:   "0",
+			Restricted: 1,
+			Searchable: 1,
+			Title:      "Torrents",
+			Date:       upnpav.Timestamp{Time: time.Now()},
+			Class:      "object.container",
+		}
+		//vol := len(torr.ListTorrent())
+		meta := upnpav.Container{Object: trObj}
+		return meta
+	}
+	
 	// find torrent without load
 	torrs := torr.ListTorrent()
 	var torr *torr.Torrent
@@ -136,11 +166,15 @@ func getTorrentMeta(path, host string) (ret interface{}) {
 			Restricted: 1,
 			Title:      torr.Title,
 			Date:       upnpav.Timestamp{Time: time.Now()},
+			Class:      "object.container",
 		}
-		meta := upnpav.Container{Object: obj, ChildCount: 1}
+		meta := upnpav.Container{Object: obj}
 		return meta
 	} else if filepath.Base(path) == "LD" {
 		parent := url.PathEscape(filepath.Dir(path))
+		if settings.BTsets.EnableDebug {
+			log.TLogln("getTorrentMeta parent for LD", parent)
+		}
 		// LD object meta
 		obj := upnpav.Object{
 			ID:         parent + "%2FLD",
@@ -149,13 +183,17 @@ func getTorrentMeta(path, host string) (ret interface{}) {
 			Searchable: 1,
 			Title:      "Load Torrents",
 			Date:       upnpav.Timestamp{Time: time.Now()},
+			Class:      "object.container",
 		}
-		meta := upnpav.Container{Object: obj, ChildCount: 1}
+		meta := upnpav.Container{Object: obj}
 		return meta
 	} else {
 		file := filepath.Base(path)
 		id := url.PathEscape(path)
 		parent := url.PathEscape(filepath.Dir(path))
+		if settings.BTsets.EnableDebug {
+			log.TLogln("getTorrentMeta id:", id, "parent:", parent)
+		}
 		// file object meta
 		obj := upnpav.Object{
 			ID:         id,
@@ -164,11 +202,12 @@ func getTorrentMeta(path, host string) (ret interface{}) {
 			Searchable: 1,
 			Title:      file,
 			Date:       upnpav.Timestamp{Time: time.Now()},
+			Class:      "object.container",
 		}
-		meta := upnpav.Container{Object: obj, ChildCount: 1}
+		meta := upnpav.Container{Object: obj}
 		return meta
 	}
-
+	// for error response
 	return nil
 }
 
