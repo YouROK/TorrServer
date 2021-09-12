@@ -31,3 +31,4 @@ toolchains/
 /src/google.golang.org/
 /toolchain/
 /test/
+/server/web/pages/template/pages/msx

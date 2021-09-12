@@ -46,23 +46,38 @@ var Indexhtml []byte
 //go:embed pages/mstile-150x150.png
 var Mstile150x150png []byte
 
+//go:embed pages/msx/tizen.html
+var Msxtizenhtml []byte
+
+//go:embed pages/msx/tizen.js
+var Msxtizenjs []byte
+
+//go:embed pages/msx/tvx-plugin.min.js
+var Msxtvxpluginminjs []byte
+
+//go:embed pages/msx/webOSTV-1.2.4.js
+var MsxwebOSTV124js []byte
+
+//go:embed pages/msx/webos.html
+var Msxweboshtml []byte
+
 //go:embed pages/site.webmanifest
 var Sitewebmanifest []byte
 
-//go:embed pages/static/js/2.937400ae.chunk.js
-var Staticjs2937400aechunkjs []byte
+//go:embed pages/static/js/2.74a4e2cb.chunk.js
+var Staticjs274a4e2cbchunkjs []byte
 
-//go:embed pages/static/js/2.937400ae.chunk.js.LICENSE.txt
-var Staticjs2937400aechunkjsLICENSEtxt []byte
+//go:embed pages/static/js/2.74a4e2cb.chunk.js.LICENSE.txt
+var Staticjs274a4e2cbchunkjsLICENSEtxt []byte
 
-//go:embed pages/static/js/2.937400ae.chunk.js.map
-var Staticjs2937400aechunkjsmap []byte
+//go:embed pages/static/js/2.74a4e2cb.chunk.js.map
+var Staticjs274a4e2cbchunkjsmap []byte
 
-//go:embed pages/static/js/main.f2cdf583.chunk.js
-var Staticjsmainf2cdf583chunkjs []byte
+//go:embed pages/static/js/main.72a47914.chunk.js
+var Staticjsmain72a47914chunkjs []byte
 
-//go:embed pages/static/js/main.f2cdf583.chunk.js.map
-var Staticjsmainf2cdf583chunkjsmap []byte
+//go:embed pages/static/js/main.72a47914.chunk.js.map
+var Staticjsmain72a47914chunkjsmap []byte
 
 //go:embed pages/static/js/runtime-main.33603a80.js
 var Staticjsruntimemain33603a80js []byte

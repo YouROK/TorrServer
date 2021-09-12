@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>WebOS Interaction Plugin</title>
+    <meta charset="UTF-8" />
+    <meta name="author" content="kolsys" />
+    <meta name="copyright" content="kolsys" />
+    <script type="text/javascript" src="webOSTV-1.2.4.js"></script>
+    <script type="text/javascript" src="tvx-plugin.min.js"></script>
+    <script type="text/javascript">
+      const params = new URLSearchParams(document.location.search);
+
+      function WebOSPlay() {
+        try {
+          webOS.service.request('luna://com.webos.applicationManager', {
+            method: 'launch',
+            parameters: {
+              id: '',
+              params: {
+                videoList: {
+                result: params.getAll('url').map(url => ({url: url})),
+                }
+              },
+              onSuccess: function (args) {
+                console.log('Success:', args);
+                TVXInteractionPlugin.executeAction('back');
+              },
+              onFailure: function (args) {
+                console.log('Failed to open Video Player', args);
+                TVXInteractionPlugin.executeAction('error:Failed to open Video Player');
+              }
+            },
+          });
+        } catch(e) {
+          console.log('ERROR', e);
+          TVXInteractionPlugin.executeAction('error:Failed to open Video Player');
+        }
+      }
+
+      function WebOSHandler() {
+        this.ready = function() {
+          WebOSPlay();
+        };
+        this.handleRequest = function(dataId, data, callback) {
+          if (dataId == 'init') {
+            callback({
+              type: 'pages',
+              headline: 'WebOS Player',
+              pages: [{
+                  items: [{
+                      type: 'default',
+                      layout: '0,0,12,6',
+                      color: 'msx-glass',
+                      text: 'Opening webOS Media Player...'
+                    }]
+                }]
+            });
+            return true;
+          }
+          return false;
+        };
+      }
+
+      window.onload = function() {
+        TVXInteractionPlugin.setupHandler(new WebOSHandler());
+        TVXInteractionPlugin.init();
+      };
+    </script>
+  </head>
+  <body>
+  </body>
+</html>

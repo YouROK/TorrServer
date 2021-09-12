@@ -28,6 +28,7 @@ func main() {
 
 	run("rm", "-rf", srcGo+"template/pages")
 	run("cp", "-r", compileHtml, srcGo+"template/pages")
+	run("cp", "-r", "server/web/msx/pages", srcGo+"template/pages/msx")
 
 	files := make([]string, 0)
 
