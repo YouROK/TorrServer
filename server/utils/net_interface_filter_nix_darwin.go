@@ -20,7 +20,7 @@ func GetAllPhysicalInterfaces() []PhysicalInterface {
 	var outInterfaces []PhysicalInterface
 
 	for _, element := range ifaces {
-		if element.Flags&net.FlagLoopback == 0 && element.Flags&net.FlagUp == 1 && isPhysicalInterface(element.HardwareAddr.String()) {
+		if element.Flags&net.FlagLoopback == 0 && element.Flags&net.FlagUp == 1 && IsPhysicalInterface(element.HardwareAddr.String()) {
 			outInterfaces = append(outInterfaces, PhysicalInterface{MACAddress: element.HardwareAddr.String(), Name: element.Name, FriendlyName: element.Name})
 		}
 	}
