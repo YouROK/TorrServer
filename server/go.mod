@@ -13,7 +13,7 @@ require (
 	github.com/alexflint/go-arg v1.4.2
 	github.com/anacrolix/dms v1.2.2
 	github.com/anacrolix/missinggo v1.3.0
-	github.com/anacrolix/torrent v1.31.0
+	github.com/anacrolix/torrent v1.31.1-0.20210912041407-4691b0b8d194
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-contrib/location v0.0.2
 	github.com/gin-gonic/gin v1.7.4
@@ -27,7 +27,7 @@ require (
 	crawshaw.io/sqlite v0.3.3-0.20210127221821-98b1f83c5508 // indirect
 	github.com/RoaringBitmap/roaring v0.9.4 // indirect
 	github.com/alexflint/go-scalar v1.1.0 // indirect
-	github.com/anacrolix/chansync v0.1.1-0.20210904130811-9cd7139c8dd9 // indirect
+	github.com/anacrolix/chansync v0.2.1-0.20210910114620-14955c95ded9 // indirect
 	github.com/anacrolix/confluence v1.8.0 // indirect
 	github.com/anacrolix/dht/v2 v2.10.5-0.20210902001729-06cc4fe90e53 // indirect
 	github.com/anacrolix/envpprof v1.1.1 // indirect
