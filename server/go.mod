@@ -2,8 +2,7 @@ module server
 
 go 1.17
 
-replace github.com/anacrolix/dms v1.2.2 => github.com/tsynik/dms v0.0.0-20210913075730-e41ecd88369c
-
+replace github.com/anacrolix/dms v1.2.2 => github.com/tsynik/dms v0.0.0-20210911171915-d3d89ee99163
 
 exclude (
 	github.com/willf/bitset v1.2.0
@@ -21,7 +20,6 @@ require (
 	github.com/pkg/browser v0.0.0-20210115035449-ce105d075bb4
 	github.com/pkg/errors v0.9.1
 	go.etcd.io/bbolt v1.3.6
-	golang.org/x/sys v0.0.0-20210809222454-d867a43fc93e
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
 )
 
@@ -92,6 +90,7 @@ require (
 	golang.org/x/crypto v0.0.0-20210813211128-0a44fdfbc16e // indirect
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
+	golang.org/x/sys v0.0.0-20210809222454-d867a43fc93e // indirect
 	golang.org/x/text v0.3.6 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect

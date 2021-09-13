@@ -13,6 +13,7 @@ import (
 	"github.com/anacrolix/dms/upnpav"
 
 	"server/log"
+	mt "server/mimetype"
 	"server/settings"
 	"server/torr"
 	"server/torr/state"
@@ -72,7 +73,7 @@ func getTorrents() (ret []interface{}) {
 			Class:      "object.container.storageFolder",
 			Date:       upnpav.Timestamp{Time: time.Now()},
 		}
-		cnt := upnpav.Container{Object: obj, ChildCount: 1}
+		cnt := upnpav.Container{Object: obj, ChildCount: 0}
 		ret = append(ret, cnt)
 	}
 	return
@@ -114,50 +115,6 @@ func getTorrent(path, host string) (ret []interface{}) {
 }
 
 func getTorrentMeta(path, host string) (ret interface{}) {
-	// https://github.com/1100101/minidlna/blob/ca6dbba18390ad6f8b8d7b7dbcf797dbfd95e2db/upnpsoap.c#L1237-L1243
-	if path == "/" {
-		rootObj := upnpav.Object{
-			ID:         "0",
-			ParentID:   "-1",
-			Restricted: 1,
-			Searchable: 1,
-			Title:      "TorrServer",
-			Date:       upnpav.Timestamp{Time: time.Now()},
-			Class:      "object.container",
-			SearchXML: `	<upnp:searchClass includeDerived="0">object.container.album.musicAlbum</upnp:searchClass>
-	<upnp:searchClass includeDerived="0">object.container.genre.musicGenre</upnp:searchClass>
-	<upnp:searchClass includeDerived="0">object.container.person.musicArtist</upnp:searchClass>
-	<upnp:searchClass includeDerived="0">object.container.playlistContainer</upnp:searchClass>
-	<upnp:searchClass includeDerived="0">object.container.storageFolder</upnp:searchClass>
-	<upnp:searchClass includeDerived="0">object.item.audioItem.musicTrack</upnp:searchClass>
-	<upnp:searchClass includeDerived="0">object.item.imageItem.photo</upnp:searchClass>
-	<upnp:searchClass includeDerived="1">object.container.album</upnp:searchClass>
-	<upnp:searchClass includeDerived="1">object.container.genre</upnp:searchClass>
-	<upnp:searchClass includeDerived="1">object.container</upnp:searchClass>
-	<upnp:searchClass includeDerived="1">object.item.audioItem</upnp:searchClass>
-	<upnp:searchClass includeDerived="1">object.item.imageItem</upnp:searchClass>
-	<upnp:searchClass includeDerived="1">object.item.videoItem</upnp:searchClass>
-`,
-		}
-		// add Root Object
-		meta := upnpav.Container{Object: rootObj}
-		return meta
-	} else if path == "/TR" {
-		// TR Object Meta
-		trObj := upnpav.Object{
-			ID:         "%2FTR",
-			ParentID:   "0",
-			Restricted: 1,
-			Searchable: 1,
-			Title:      "Torrents",
-			Date:       upnpav.Timestamp{Time: time.Now()},
-			Class:      "object.container",
-		}
-		//vol := len(torr.ListTorrent())
-		meta := upnpav.Container{Object: trObj}
-		return meta
-	}
-
 	// find torrent without load
 	torrs := torr.ListTorrent()
 	var torr *torr.Torrent
@@ -172,7 +129,34 @@ func getTorrentMeta(path, host string) (ret interface{}) {
 	}
 
 	// Meta object
-	if isHashPath(path) {
+	if path == "/" {
+		// root object meta
+		rootObj := upnpav.Object{
+			ID:         "0",
+			ParentID:   "-1",
+			Restricted: 1,
+			Searchable: 1,
+			Title:      "TorrServer",
+			Date:       upnpav.Timestamp{Time: time.Now()},
+			Class:      "object.container.storageFolder",
+		}
+		meta := upnpav.Container{Object: rootObj, ChildCount: 1}
+		return meta
+	} else if path == "/TR" {
+		// TR Object Meta
+		trObj := upnpav.Object{
+			ID:         "%2FTR",
+			ParentID:   "0",
+			Restricted: 1,
+			Searchable: 1,
+			Title:      "Torrents",
+			Date:       upnpav.Timestamp{Time: time.Now()},
+			Class:      "object.container.storageFolder",
+		}
+		vol := len(torrs)
+		meta := upnpav.Container{Object: trObj, ChildCount: vol}
+		return meta
+	} else if isHashPath(path) {
 		// hash object meta
 		obj := upnpav.Object{
 			ID:         "%2F" + torr.TorrentSpec.InfoHash.HexString(),
@@ -180,15 +164,11 @@ func getTorrentMeta(path, host string) (ret interface{}) {
 			Restricted: 1,
 			Title:      torr.Title,
 			Date:       upnpav.Timestamp{Time: time.Now()},
-			Class:      "object.container",
 		}
-		meta := upnpav.Container{Object: obj}
+		meta := upnpav.Container{Object: obj, ChildCount: 1}
 		return meta
 	} else if filepath.Base(path) == "LD" {
 		parent := url.PathEscape(filepath.Dir(path))
-		if settings.BTsets.EnableDebug {
-			log.TLogln("getTorrentMeta parent for LD", parent)
-		}
 		// LD object meta
 		obj := upnpav.Object{
 			ID:         parent + "%2FLD",
@@ -197,17 +177,13 @@ func getTorrentMeta(path, host string) (ret interface{}) {
 			Searchable: 1,
 			Title:      "Load Torrents",
 			Date:       upnpav.Timestamp{Time: time.Now()},
-			Class:      "object.container",
 		}
-		meta := upnpav.Container{Object: obj}
+		meta := upnpav.Container{Object: obj, ChildCount: 1}
 		return meta
 	} else {
 		file := filepath.Base(path)
 		id := url.PathEscape(path)
 		parent := url.PathEscape(filepath.Dir(path))
-		if settings.BTsets.EnableDebug {
-			log.TLogln("getTorrentMeta id:", id, "parent:", parent)
-		}
 		// file object meta
 		obj := upnpav.Object{
 			ID:         id,
@@ -216,12 +192,11 @@ func getTorrentMeta(path, host string) (ret interface{}) {
 			Searchable: 1,
 			Title:      file,
 			Date:       upnpav.Timestamp{Time: time.Now()},
-			Class:      "object.container",
 		}
-		meta := upnpav.Container{Object: obj}
+		meta := upnpav.Container{Object: obj, ChildCount: 1}
 		return meta
 	}
-	// for error response
+
 	return nil
 }
 
@@ -277,7 +252,7 @@ func getLink(host, path string) string {
 
 func getObjFromTorrent(path, parent, host string, torr *torr.Torrent, file *state.TorrentFileStat) (ret interface{}) {
 
-	mime, err := MimeTypeByPath(file.Path)
+	mime, err := mt.MimeTypeByPath(file.Path)
 	if err != nil {
 		if settings.BTsets.EnableDebug {
 			log.TLogln("Can't detect mime type", err)

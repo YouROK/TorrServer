@@ -1,4 +1,4 @@
-package dlna
+package mimetype
 
 import (
 	"log"

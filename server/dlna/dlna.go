@@ -13,7 +13,6 @@ import (
 	"github.com/anacrolix/dms/dlna/dms"
 
 	"server/log"
-	"server/utils"
 	"server/web/pages/template"
 )
 
@@ -30,7 +29,7 @@ func Start() {
 			}
 			for _, i := range ifaces {
 				// interface flags seem to always be 0 on Windows
-				if runtime.GOOS != "windows" && (i.Flags&net.FlagLoopback != 0 || i.Flags&net.FlagUp == 0 || i.Flags&net.FlagMulticast == 0) || !utils.IsPhysicalInterface(i.HardwareAddr.String()) {
+				if runtime.GOOS != "windows" && (i.Flags&net.FlagLoopback != 0 || i.Flags&net.FlagUp == 0 || i.Flags&net.FlagMulticast == 0) {
 					continue
 				}
 				ifs = append(ifs, i)
@@ -168,7 +167,7 @@ func getDefaultFriendlyName() string {
 		var list []string
 		for _, i := range ifaces {
 			// interface flags seem to always be 0 on Windows
-			if runtime.GOOS != "windows" && (i.Flags&net.FlagLoopback != 0 || i.Flags&net.FlagUp == 0 || i.Flags&net.FlagMulticast == 0) || !utils.IsPhysicalInterface(i.HardwareAddr.String()) {
+			if runtime.GOOS != "windows" && (i.Flags&net.FlagLoopback != 0 || i.Flags&net.FlagUp == 0 || i.Flags&net.FlagMulticast == 0) {
 				continue
 			}
 			addrs, _ := i.Addrs()
