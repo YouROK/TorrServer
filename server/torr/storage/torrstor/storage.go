@@ -30,10 +30,10 @@ func (s *Storage) OpenTorrent(info *metainfo.Info, infoHash metainfo.Hash) (stor
 	ch := NewCache(s.capacity, s)
 	ch.Init(info, infoHash)
 	s.caches[infoHash] = ch
-//	return ch, nil
+	//	return ch, nil
 	return storage2.TorrentImpl{
-		 Piece: ch.Piece,
-		 Close: ch.Close,
+		Piece: ch.Piece,
+		Close: ch.Close,
 	}, nil
 }
 
