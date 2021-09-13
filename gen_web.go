@@ -90,11 +90,11 @@ func RouteWebPages(route *gin.RouterGroup) {
 	mime.AddExtensionType(".map", "application/json")
 	mime.AddExtensionType(".webmanifest", "application/manifest+json")
 	// sort fmap
-  keys := make([]string, 0, len(fmap))
-  for key := range fmap {
-  	keys = append(keys, key)
-  }
-  sort.Strings(keys)
+	keys := make([]string, 0, len(fmap))
+	for key := range fmap {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
 	for _, link := range keys {
 		fmime := mime.TypeByExtension(filepath.Ext(link))
 		embedStr += `
@@ -103,7 +103,7 @@ func RouteWebPages(route *gin.RouterGroup) {
 	})
 `
 	}
-	embedStr += "}"
+	embedStr += "}\n"
 
 	ff.WriteString(embedStr)
 }

@@ -2,7 +2,7 @@ module server
 
 go 1.17
 
-replace github.com/anacrolix/dms v1.2.2 => github.com/tsynik/dms v0.0.0-20210909053938-38af4173d4ac
+replace github.com/anacrolix/dms v1.2.2 => github.com/tsynik/dms v0.0.0-20210911200354-fd999256e04d
 
 exclude (
 	github.com/willf/bitset v1.2.0

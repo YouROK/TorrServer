@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/anacrolix/dms/dlna/dms"
-	"github.com/anacrolix/dms/upnpav"
 
 	"server/log"
+	"server/utils"
 	"server/web/pages/template"
 )
 
@@ -22,10 +22,15 @@ func Start() {
 	dmsServer = &dms.Server{
 		Interfaces: func() (ifs []net.Interface) {
 			var err error
-			ifs, err = net.Interfaces()
+			ifaces, err := net.Interfaces()
 			if err != nil {
 				log.TLogln(err)
 				os.Exit(1)
+			}
+			for _, element := range ifaces {
+				if element.Flags&net.FlagLoopback == 0 && element.Flags&net.FlagUp == net.FlagUp && element.Flags&net.FlagMulticast == net.FlagMulticast && utils.IsPhysicalInterface(element.HardwareAddr.String()) {
+					ifs = append(ifs, element)
+				}
 			}
 			return
 		}(),
@@ -120,22 +125,10 @@ func onBrowse(path, rootObjectPath, host, userAgent string) (ret []interface{}, 
 }
 
 func onBrowseMeta(path string, rootObjectPath string, host, userAgent string) (ret interface{}, err error) {
-	if path == "/" {
-		// Root Object Meta
-		rootObj := upnpav.Object{
-			ID:         "0",
-			ParentID:   "-1",
-			Restricted: 1,
-			Searchable: 1,
-			Title:      "TorrServer",
-			Date:       upnpav.Timestamp{Time: time.Now()},
-			Class:      "object.container.storageFolder",
-		}
-		// add Root Object
-		ret = upnpav.Container{Object: rootObj, ChildCount: 1}
-		return
+	ret = getTorrentMeta(path, host)
+	if ret == nil {
+		err = fmt.Errorf("meta not found")
 	}
-	err = fmt.Errorf("not implemented")
 	return
 }
 
@@ -172,7 +165,7 @@ func getDefaultFriendlyName() string {
 		var list []string
 		for _, i := range ifaces {
 			addrs, _ := i.Addrs()
-			if i.Flags&net.FlagUp == net.FlagUp {
+			if i.Flags&net.FlagLoopback == 0 && i.Flags&net.FlagUp == net.FlagUp && i.Flags&net.FlagMulticast == net.FlagMulticast && utils.IsPhysicalInterface(i.HardwareAddr.String()) {
 				for _, addr := range addrs {
 					var ip net.IP
 					switch v := addr.(type) {
