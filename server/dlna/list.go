@@ -13,7 +13,6 @@ import (
 	"github.com/anacrolix/dms/upnpav"
 
 	"server/log"
-	mt "server/mimetype"
 	"server/settings"
 	"server/torr"
 	"server/torr/state"
@@ -125,11 +124,6 @@ func getTorrentMeta(path, host string) (ret interface{}) {
 			Title:      "TorrServer",
 			Date:       upnpav.Timestamp{Time: time.Now()},
 			Class:      "object.container",
-			SearchXML: `	<upnp:searchClass includeDerived="1">object.container</upnp:searchClass>
-	<upnp:searchClass includeDerived="1">object.item.audioItem</upnp:searchClass>
-	<upnp:searchClass includeDerived="1">object.item.imageItem</upnp:searchClass>
-	<upnp:searchClass includeDerived="1">object.item.videoItem</upnp:searchClass>
-`,
 		}
 		// add Root Object
 		meta := upnpav.Container{Object: rootObj}
@@ -140,12 +134,13 @@ func getTorrentMeta(path, host string) (ret interface{}) {
 			ID:         "%2FTR",
 			ParentID:   "0",
 			Restricted: 1,
+			Searchable: 1,
 			Title:      "Torrents",
-			Class:      "object.container.storageFolder",
 			Date:       upnpav.Timestamp{Time: time.Now()},
+			Class:      "object.container",
 		}
-		vol := len(torr.ListTorrent())
-		meta := upnpav.Container{Object: trObj, ChildCount: vol}
+		//vol := len(torr.ListTorrent())
+		meta := upnpav.Container{Object: trObj}
 		return meta
 	}
 
@@ -170,8 +165,8 @@ func getTorrentMeta(path, host string) (ret interface{}) {
 			ParentID:   "%2FTR",
 			Restricted: 1,
 			Title:      torr.Title,
-			Class:      "object.container.storageFolder",
 			Date:       upnpav.Timestamp{Time: time.Now()},
+			Class:      "object.container",
 		}
 		meta := upnpav.Container{Object: obj}
 		return meta
@@ -185,10 +180,10 @@ func getTorrentMeta(path, host string) (ret interface{}) {
 			ID:         parent + "%2FLD",
 			ParentID:   parent,
 			Restricted: 1,
-			Searchable: 0,
+			Searchable: 1,
 			Title:      "Load Torrents",
-			Class:      "object.container.storageFolder",
 			Date:       upnpav.Timestamp{Time: time.Now()},
+			Class:      "object.container",
 		}
 		meta := upnpav.Container{Object: obj}
 		return meta
@@ -204,15 +199,16 @@ func getTorrentMeta(path, host string) (ret interface{}) {
 			ID:         id,
 			ParentID:   parent,
 			Restricted: 1,
+			Searchable: 1,
 			Title:      file,
-			Class:      "object.container",
 			Date:       upnpav.Timestamp{Time: time.Now()},
+			Class:      "object.container",
 		}
 		meta := upnpav.Container{Object: obj}
 		return meta
 	}
-	// nil for error
-	return
+	// for error response
+	return nil
 }
 
 func loadTorrent(path, host string) (ret []interface{}) {
@@ -267,7 +263,7 @@ func getLink(host, path string) string {
 
 func getObjFromTorrent(path, parent, host string, torr *torr.Torrent, file *state.TorrentFileStat) (ret interface{}) {
 
-	mime, err := mt.MimeTypeByPath(file.Path)
+	mime, err := MimeTypeByPath(file.Path)
 	if err != nil {
 		if settings.BTsets.EnableDebug {
 			log.TLogln("Can't detect mime type", err)
