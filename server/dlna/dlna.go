@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
-	"runtime"
 	"time"
 
 	"github.com/anacrolix/dms/dlna/dms"
@@ -28,12 +27,10 @@ func Start() {
 				log.TLogln(err)
 				os.Exit(1)
 			}
-			for _, i := range ifaces {
-				// interface flags seem to always be 0 on Windows
-				if runtime.GOOS != "windows" && (i.Flags&net.FlagLoopback != 0 || i.Flags&net.FlagUp == 0 || i.Flags&net.FlagMulticast == 0) || !utils.IsPhysicalInterface(i.HardwareAddr.String()) {
-					continue
+			for _, element := range ifaces {
+				if element.Flags&net.FlagLoopback == 0 && element.Flags&net.FlagUp == net.FlagUp && element.Flags&net.FlagMulticast == net.FlagMulticast && utils.IsPhysicalInterface(element.HardwareAddr.String()) {
+					ifs = append(ifs, element)
 				}
-				ifs = append(ifs, i)
 			}
 			return
 		}(),
@@ -167,21 +164,19 @@ func getDefaultFriendlyName() string {
 		}
 		var list []string
 		for _, i := range ifaces {
-			// interface flags seem to always be 0 on Windows
-			if runtime.GOOS != "windows" && (i.Flags&net.FlagLoopback != 0 || i.Flags&net.FlagUp == 0 || i.Flags&net.FlagMulticast == 0) || !utils.IsPhysicalInterface(i.HardwareAddr.String()) {
-				continue
-			}
 			addrs, _ := i.Addrs()
-			for _, addr := range addrs {
-				var ip net.IP
-				switch v := addr.(type) {
-				case *net.IPNet:
-					ip = v.IP
-				case *net.IPAddr:
-					ip = v.IP
-				}
-				if !ip.IsLoopback() && ip.To4() != nil {
-					list = append(list, ip.String())
+			if i.Flags&net.FlagLoopback == 0 && i.Flags&net.FlagUp == net.FlagUp && i.Flags&net.FlagMulticast == net.FlagMulticast && utils.IsPhysicalInterface(i.HardwareAddr.String()) {
+				for _, addr := range addrs {
+					var ip net.IP
+					switch v := addr.(type) {
+					case *net.IPNet:
+						ip = v.IP
+					case *net.IPAddr:
+						ip = v.IP
+					}
+					if !ip.IsLoopback() {
+						list = append(list, ip.String())
+					}
 				}
 			}
 		}
