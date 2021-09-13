@@ -13,6 +13,7 @@ import (
 	"github.com/anacrolix/dms/upnpav"
 
 	"server/log"
+	mt "server/mimetype"
 	"server/settings"
 	"server/torr"
 	"server/torr/state"
@@ -224,7 +225,7 @@ func getLink(host, path string) string {
 
 func getObjFromTorrent(path, parent, host string, torr *torr.Torrent, file *state.TorrentFileStat) (ret interface{}) {
 
-	mime, err := MimeTypeByPath(file.Path)
+	mime, err := mt.MimeTypeByPath(file.Path)
 	if err != nil {
 		if settings.BTsets.EnableDebug {
 			log.TLogln("Can't detect mime type", err)
