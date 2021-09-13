@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/anacrolix/dms/dlna/dms"
@@ -23,10 +24,17 @@ func Start() {
 	dmsServer = &dms.Server{
 		Interfaces: func() (ifs []net.Interface) {
 			var err error
-			ifs, err = net.Interfaces()
+			ifaces, err := net.Interfaces()
 			if err != nil {
 				log.TLogln(err)
 				os.Exit(1)
+			}
+			for _, i := range ifaces {
+				// interface flags seem to always be 0 on Windows
+				if runtime.GOOS != "windows" && (i.Flags&net.FlagLoopback != 0 || i.Flags&net.FlagUp == 0 || i.Flags&net.FlagMulticast == 0) {
+					continue
+				}
+				ifs = append(ifs, i)
 			}
 			return
 		}(),
@@ -188,19 +196,21 @@ func getDefaultFriendlyName() string {
 		}
 		var list []string
 		for _, i := range ifaces {
+			// interface flags seem to always be 0 on Windows
+			if runtime.GOOS != "windows" && (i.Flags&net.FlagLoopback != 0 || i.Flags&net.FlagUp == 0 || i.Flags&net.FlagMulticast == 0) {
+				continue
+			}
 			addrs, _ := i.Addrs()
-			if i.Flags&net.FlagUp == net.FlagUp {
-				for _, addr := range addrs {
-					var ip net.IP
-					switch v := addr.(type) {
-					case *net.IPNet:
-						ip = v.IP
-					case *net.IPAddr:
-						ip = v.IP
-					}
-					if !ip.IsLoopback() {
-						list = append(list, ip.String())
-					}
+			for _, addr := range addrs {
+				var ip net.IP
+				switch v := addr.(type) {
+				case *net.IPNet:
+					ip = v.IP
+				case *net.IPAddr:
+					ip = v.IP
+				}
+				if !ip.IsLoopback() && ip.To4() != nil {
+					list = append(list, ip.String())
 				}
 			}
 		}
