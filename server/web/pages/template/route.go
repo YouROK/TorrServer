@@ -77,14 +77,6 @@ func RouteWebPages(route *gin.RouterGroup) {
 		c.Data(200, "application/javascript", Msxtvxpluginminjs)
 	})
 
-	route.GET("/msx/webOSTV-1.2.4.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript", MsxwebOSTV124js)
-	})
-
-	route.GET("/msx/webos.html", func(c *gin.Context) {
-		c.Data(200, "text/html; charset=utf-8", Msxweboshtml)
-	})
-
 	route.GET("/site.webmanifest", func(c *gin.Context) {
 		c.Data(200, "application/manifest+json", Sitewebmanifest)
 	})

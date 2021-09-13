@@ -35,7 +35,7 @@ func main() {
 	filepath.WalkDir(srcGo+"template/pages/", func(path string, d fs.DirEntry, err error) error {
 		if !d.IsDir() {
 			name := strings.TrimPrefix(path, srcGo+"template/")
-			if !strings.HasPrefix(name, ".") {
+			if !strings.HasPrefix(filepath.Base(name), ".") {
 				files = append(files, name)
 			}
 		}

@@ -16,11 +16,12 @@ import (
 )
 
 type msxMenu struct {
-	Logo    string        `json:"logo,omitempty"`
-	Reuse   bool          `json:"reuse"`
-	Cache   bool          `json:"cache"`
-	Restore bool          `json:"restore"`
-	Menu    []msxMenuItem `json:"menu"`
+	Logo      string        `json:"logo,omitempty"`
+	Reuse     bool          `json:"reuse"`
+	Cache     bool          `json:"cache"`
+	Restore   bool          `json:"restore"`
+	Reference string        `json:"reference,omitempty"`
+	Menu      []msxMenuItem `json:"menu"`
 }
 
 type msxMenuItem struct {
@@ -92,10 +93,11 @@ func msxTorrents(c *gin.Context) {
 	}
 
 	c.JSON(200, msxMenu{
-		Logo:    logo,
-		Cache:   false,
-		Reuse:   false,
-		Restore: false,
+		Logo:      logo,
+		Cache:     false,
+		Reuse:     false,
+		Restore:   false,
+		Reference: host + "/msx/torrents",
 		Menu: []msxMenuItem{
 			// Main page
 			{
@@ -195,7 +197,19 @@ func msxPlaylist(c *gin.Context) {
 				"type": mime,
 			}
 		} else if (platform == "lg") {
-			item.Action = "content:request:interaction:init@" + host + "/msx/webos.html?url=" + url.QueryEscape(uri)
+			item.Action = "system:lg:launch:com.webos.app.videoplayer"
+			item.Data = gin.H{
+				"properties": gin.H{
+					"videoList": gin.H{
+						"result": [1]gin.H{
+							gin.H{
+								"url": uri,
+								"thumbnail": tor.Poster,
+							},
+						},
+					},
+				},
+			}
 		} else if (platform == "ios" || platform == "mac") {
 			// TODO - for iOS and Mac the application must be defined in scheme but we don't know what user has installed
 			// item.Action = "system:tvx:launch:vlc://"+uri

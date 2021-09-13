@@ -55,12 +55,6 @@ var Msxtizenjs []byte
 //go:embed pages/msx/tvx-plugin.min.js
 var Msxtvxpluginminjs []byte
 
-//go:embed pages/msx/webOSTV-1.2.4.js
-var MsxwebOSTV124js []byte
-
-//go:embed pages/msx/webos.html
-var Msxweboshtml []byte
-
 //go:embed pages/site.webmanifest
 var Sitewebmanifest []byte
 
