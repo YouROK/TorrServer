@@ -114,7 +114,7 @@ func getTorrent(path, host string) (ret []interface{}) {
 }
 
 func getTorrentMeta(path, host string) (ret interface{}) {
-
+	// https://github.com/1100101/minidlna/blob/ca6dbba18390ad6f8b8d7b7dbcf797dbfd95e2db/upnpsoap.c#L1237-L1243
 	if path == "/" {
 		rootObj := upnpav.Object{
 			ID:         "0",
@@ -124,6 +124,20 @@ func getTorrentMeta(path, host string) (ret interface{}) {
 			Title:      "TorrServer",
 			Date:       upnpav.Timestamp{Time: time.Now()},
 			Class:      "object.container",
+			SearchXML: `	<upnp:searchClass includeDerived="0">object.container.album.musicAlbum</upnp:searchClass>
+	<upnp:searchClass includeDerived="0">object.container.genre.musicGenre</upnp:searchClass>
+	<upnp:searchClass includeDerived="0">object.container.person.musicArtist</upnp:searchClass>
+	<upnp:searchClass includeDerived="0">object.container.playlistContainer</upnp:searchClass>
+	<upnp:searchClass includeDerived="0">object.container.storageFolder</upnp:searchClass>
+	<upnp:searchClass includeDerived="0">object.item.audioItem.musicTrack</upnp:searchClass>
+	<upnp:searchClass includeDerived="0">object.item.imageItem.photo</upnp:searchClass>
+	<upnp:searchClass includeDerived="1">object.container.album</upnp:searchClass>
+	<upnp:searchClass includeDerived="1">object.container.genre</upnp:searchClass>
+	<upnp:searchClass includeDerived="1">object.container</upnp:searchClass>
+	<upnp:searchClass includeDerived="1">object.item.audioItem</upnp:searchClass>
+	<upnp:searchClass includeDerived="1">object.item.imageItem</upnp:searchClass>
+	<upnp:searchClass includeDerived="1">object.item.videoItem</upnp:searchClass>
+`,
 		}
 		// add Root Object
 		meta := upnpav.Container{Object: rootObj}
