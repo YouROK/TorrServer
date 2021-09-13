@@ -73,7 +73,7 @@ func getTorrents() (ret []interface{}) {
 			Class:      "object.container.storageFolder",
 			Date:       upnpav.Timestamp{Time: time.Now()},
 		}
-		cnt := upnpav.Container{Object: obj, ChildCount: 1}
+		cnt := upnpav.Container{Object: obj, ChildCount: 0}
 		ret = append(ret, cnt)
 	}
 	return
@@ -129,7 +129,34 @@ func getTorrentMeta(path, host string) (ret interface{}) {
 	}
 
 	// Meta object
-	if isHashPath(path) {
+	if path == "/" {
+		// root object meta
+		rootObj := upnpav.Object{
+			ID:         "0",
+			ParentID:   "-1",
+			Restricted: 1,
+			Searchable: 1,
+			Title:      "TorrServer",
+			Date:       upnpav.Timestamp{Time: time.Now()},
+			Class:      "object.container.storageFolder",
+		}
+		meta := upnpav.Container{Object: rootObj, ChildCount: 1}
+		return meta
+	} else if path == "/TR" {
+		// TR Object Meta
+		trObj := upnpav.Object{
+			ID:         "%2FTR",
+			ParentID:   "0",
+			Restricted: 1,
+			Searchable: 1,
+			Title:      "Torrents",
+			Date:       upnpav.Timestamp{Time: time.Now()},
+			Class:      "object.container.storageFolder",
+		}
+		vol := len(torrs)
+		meta := upnpav.Container{Object: trObj, ChildCount: vol}
+		return meta
+	} else if isHashPath(path) {
 		// hash object meta
 		obj := upnpav.Object{
 			ID:         "%2F" + torr.TorrentSpec.InfoHash.HexString(),
