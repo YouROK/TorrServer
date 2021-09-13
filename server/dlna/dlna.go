@@ -10,8 +10,10 @@ import (
 	"time"
 
 	"github.com/anacrolix/dms/dlna/dms"
+	"github.com/anacrolix/dms/upnpav"
 
 	"server/log"
+	"server/torr"
 	"server/web/pages/template"
 )
 
@@ -119,6 +121,34 @@ func onBrowse(path, rootObjectPath, host, userAgent string) (ret []interface{}, 
 }
 
 func onBrowseMeta(path string, rootObjectPath string, host, userAgent string) (ret interface{}, err error) {
+	if path == "/" {
+		rootObj := upnpav.Object{
+			ID:         "0",
+			ParentID:   "-1",
+			Restricted: 1,
+			Searchable: 1,
+			Title:      "TorrServer",
+			Date:       upnpav.Timestamp{Time: time.Now()},
+			Class:      "object.container.storageFolder",
+		}
+		// add Root Object
+		ret = upnpav.Container{Object: rootObj, ChildCount: 1}
+		return
+	} else if path == "/TR" {
+		// TR Object Meta
+		trObj := upnpav.Object{
+			ID:         "%2FTR",
+			ParentID:   "0",
+			Restricted: 1,
+			Searchable: 1,
+			Title:      "Torrents",
+			Date:       upnpav.Timestamp{Time: time.Now()},
+			Class:      "object.container.storageFolder",
+		}
+		vol := len(torr.ListTorrent())
+		ret = upnpav.Container{Object: trObj, ChildCount: vol}
+		return
+	}
 	ret = getTorrentMeta(path, host)
 	if ret == nil {
 		err = fmt.Errorf("meta not found")
