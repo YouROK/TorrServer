@@ -105,7 +105,7 @@ func MimeTypeByPath(filePath string) (ret mimeType, err error) {
 	if ret == "video/mp2t" {
 		ret = "video/mpeg"
 	} else if ret == "video/x-matroska" {
-		ret = "video/mpeg"
+		ret = "video/x-matroska"
 	} else if ret == "video/x-msvideo" {
 		ret = "video/avi"
 	} else if ret == "" {
