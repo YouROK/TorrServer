@@ -7,13 +7,12 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/anacrolix/dms/dlna/dms"
-	"github.com/anacrolix/dms/upnpav"
 
 	"server/log"
-	"server/torr"
 	"server/web/pages/template"
 )
 
@@ -23,10 +22,17 @@ func Start() {
 	dmsServer = &dms.Server{
 		Interfaces: func() (ifs []net.Interface) {
 			var err error
-			ifs, err = net.Interfaces()
+			ifaces, err := net.Interfaces()
 			if err != nil {
 				log.TLogln(err)
 				os.Exit(1)
+			}
+			for _, i := range ifaces {
+				// interface flags seem to always be 0 on Windows
+				if runtime.GOOS != "windows" && (i.Flags&net.FlagLoopback != 0 || i.Flags&net.FlagUp == 0 || i.Flags&net.FlagMulticast == 0) {
+					continue
+				}
+				ifs = append(ifs, i)
 			}
 			return
 		}(),
@@ -121,34 +127,6 @@ func onBrowse(path, rootObjectPath, host, userAgent string) (ret []interface{}, 
 }
 
 func onBrowseMeta(path string, rootObjectPath string, host, userAgent string) (ret interface{}, err error) {
-	if path == "/" {
-		rootObj := upnpav.Object{
-			ID:         "0",
-			ParentID:   "-1",
-			Restricted: 1,
-			Searchable: 1,
-			Title:      "TorrServer",
-			Date:       upnpav.Timestamp{Time: time.Now()},
-			Class:      "object.container.storageFolder",
-		}
-		// add Root Object
-		ret = upnpav.Container{Object: rootObj, ChildCount: 1}
-		return
-	} else if path == "/TR" {
-		// TR Object Meta
-		trObj := upnpav.Object{
-			ID:         "%2FTR",
-			ParentID:   "0",
-			Restricted: 1,
-			Searchable: 1,
-			Title:      "Torrents",
-			Date:       upnpav.Timestamp{Time: time.Now()},
-			Class:      "object.container.storageFolder",
-		}
-		vol := len(torr.ListTorrent())
-		ret = upnpav.Container{Object: trObj, ChildCount: vol}
-		return
-	}
 	ret = getTorrentMeta(path, host)
 	if ret == nil {
 		err = fmt.Errorf("meta not found")
@@ -188,19 +166,21 @@ func getDefaultFriendlyName() string {
 		}
 		var list []string
 		for _, i := range ifaces {
+			// interface flags seem to always be 0 on Windows
+			if runtime.GOOS != "windows" && (i.Flags&net.FlagLoopback != 0 || i.Flags&net.FlagUp == 0 || i.Flags&net.FlagMulticast == 0) {
+				continue
+			}
 			addrs, _ := i.Addrs()
-			if i.Flags&net.FlagUp == net.FlagUp {
-				for _, addr := range addrs {
-					var ip net.IP
-					switch v := addr.(type) {
-					case *net.IPNet:
-						ip = v.IP
-					case *net.IPAddr:
-						ip = v.IP
-					}
-					if !ip.IsLoopback() {
-						list = append(list, ip.String())
-					}
+			for _, addr := range addrs {
+				var ip net.IP
+				switch v := addr.(type) {
+				case *net.IPNet:
+					ip = v.IP
+				case *net.IPAddr:
+					ip = v.IP
+				}
+				if !ip.IsLoopback() && ip.To4() != nil {
+					list = append(list, ip.String())
 				}
 			}
 		}
