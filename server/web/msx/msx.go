@@ -197,19 +197,20 @@ func msxPlaylist(c *gin.Context) {
 				"type": mime,
 			}
 		} else if (platform == "lg") {
-			item.Action = "system:lg:launch:com.webos.app.videoplayer"
-			item.Data = gin.H{
-				"properties": gin.H{
-					"videoList": gin.H{
-						"result": [1]gin.H{
-							gin.H{
-								"url": uri,
-								"thumbnail": tor.Poster,
-							},
-						},
-					},
-				},
-			}
+			// TODO - custom player needed
+			// item.Action = "system:lg:launch:com.webos.app.mediadiscovery"
+			// item.Data = gin.H{
+			// 	"properties": gin.H{
+			// 		"videoList": gin.H{
+			// 			"result": [1]gin.H{
+			// 				gin.H{
+			// 					"url": uri,
+			// 					"thumbnail": tor.Poster,
+			// 				},
+			// 			},
+			// 		},
+			// 	},
+			// }
 		} else if (platform == "ios" || platform == "mac") {
 			// TODO - for iOS and Mac the application must be defined in scheme but we don't know what user has installed
 			// item.Action = "system:tvx:launch:vlc://"+uri
