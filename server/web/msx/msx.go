@@ -84,8 +84,8 @@ func msxTorrents(c *gin.Context) {
 
 	for i, tor := range torrs {
 		item := msxItem{
-			Title:  tor.Title,
-			Image:  tor.Poster,
+			Title: tor.Title,
+			Image: tor.Poster,
 			Action: "content:" + host + "/msx/playlist/" + url.PathEscape(tor.Title) +
 				"?hash=" + tor.TorrentSpec.InfoHash.HexString() + "&platform={PLATFORM}",
 		}
@@ -189,31 +189,31 @@ func msxPlaylist(c *gin.Context) {
 			Action:      action + ":" + uri,
 		}
 
-		if (platform == "android" || platform == "firetv") {
+		if platform == "android" || platform == "firetv" {
 			item.Action = "system:tvx:launch"
 			item.Data = gin.H{
-				"id": hash + "-" + fmt.Sprint(f.Id),
-				"uri": uri,
+				"id":   hash + "-" + fmt.Sprint(f.Id),
+				"uri":  uri,
 				"type": mime,
 			}
-		} else if (platform == "lg") {
+		} else if platform == "lg" {
 			// TODO - custom player needed
-			// item.Action = "system:lg:launch:com.webos.app.mediadiscovery"
-			// item.Data = gin.H{
-			// 	"properties": gin.H{
-			// 		"videoList": gin.H{
-			// 			"result": [1]gin.H{
-			// 				gin.H{
-			// 					"url": uri,
-			// 					"thumbnail": tor.Poster,
-			// 				},
-			// 			},
-			// 		},
-			// 	},
-			// }
-		} else if (platform == "ios" || platform == "mac") {
+			//item.Action = "system:lg:launch:com.webos.app.mediadiscovery"
+			//item.Data = gin.H{
+			//	"properties": gin.H{
+			//		"videoList": gin.H{
+			//			"result": [1]gin.H{
+			//				gin.H{
+			//					"url":       uri,
+			//					"thumbnail": tor.Poster,
+			//				},
+			//			},
+			//		},
+			//	},
+			//}
+		} else if platform == "ios" || platform == "mac" {
 			// TODO - for iOS and Mac the application must be defined in scheme but we don't know what user has installed
-			// item.Action = "system:tvx:launch:vlc://"+uri
+			item.Action = "system:tvx:launch:vlc://" + uri
 		}
 
 		if isViewed(viewed, f.Id) {
@@ -247,14 +247,14 @@ func msxPlaylist(c *gin.Context) {
 		Items: list,
 	}
 
-	if (platform == "tizen") {
+	if platform == "tizen" {
 		res.Template.Properties = gin.H{
-			"button:content:icon": "tune",
+			"button:content:icon":   "tune",
 			"button:content:action": "content:request:interaction:init@" + host + "/msx/tizen.html",
 		}
-	} else if (platform == "netcast") {
+	} else if platform == "netcast" {
 		res.Template.Properties = gin.H{
-			"button:content:icon": "tune",
+			"button:content:icon":   "tune",
 			"button:content:action": "system:netcast:menu",
 		}
 	}
