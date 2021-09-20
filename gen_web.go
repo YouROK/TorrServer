@@ -28,13 +28,14 @@ func main() {
 
 	run("rm", "-rf", srcGo+"template/pages")
 	run("cp", "-r", compileHtml, srcGo+"template/pages")
+	run("cp", "-r", "server/web/msx/pages", srcGo+"template/pages/msx")
 
 	files := make([]string, 0)
 
 	filepath.WalkDir(srcGo+"template/pages/", func(path string, d fs.DirEntry, err error) error {
 		if !d.IsDir() {
 			name := strings.TrimPrefix(path, srcGo+"template/")
-			if !strings.HasPrefix(name, ".") {
+			if !strings.HasPrefix(filepath.Base(name), ".") {
 				files = append(files, name)
 			}
 		}

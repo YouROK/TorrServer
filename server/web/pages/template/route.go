@@ -65,28 +65,40 @@ func RouteWebPages(route *gin.RouterGroup) {
 		c.Data(200, "image/png", Mstile150x150png)
 	})
 
+	route.GET("/msx/tizen.html", func(c *gin.Context) {
+		c.Data(200, "text/html; charset=utf-8", Msxtizenhtml)
+	})
+
+	route.GET("/msx/tizen.js", func(c *gin.Context) {
+		c.Data(200, "application/javascript", Msxtizenjs)
+	})
+
+	route.GET("/msx/tvx-plugin.min.js", func(c *gin.Context) {
+		c.Data(200, "application/javascript", Msxtvxpluginminjs)
+	})
+
 	route.GET("/site.webmanifest", func(c *gin.Context) {
 		c.Data(200, "application/manifest+json", Sitewebmanifest)
 	})
 
-	route.GET("/static/js/2.937400ae.chunk.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript", Staticjs2937400aechunkjs)
+	route.GET("/static/js/2.74a4e2cb.chunk.js", func(c *gin.Context) {
+		c.Data(200, "application/javascript", Staticjs274a4e2cbchunkjs)
 	})
 
-	route.GET("/static/js/2.937400ae.chunk.js.LICENSE.txt", func(c *gin.Context) {
-		c.Data(200, "text/plain; charset=utf-8", Staticjs2937400aechunkjsLICENSEtxt)
+	route.GET("/static/js/2.74a4e2cb.chunk.js.LICENSE.txt", func(c *gin.Context) {
+		c.Data(200, "text/plain; charset=utf-8", Staticjs274a4e2cbchunkjsLICENSEtxt)
 	})
 
-	route.GET("/static/js/2.937400ae.chunk.js.map", func(c *gin.Context) {
-		c.Data(200, "application/json", Staticjs2937400aechunkjsmap)
+	route.GET("/static/js/2.74a4e2cb.chunk.js.map", func(c *gin.Context) {
+		c.Data(200, "application/json", Staticjs274a4e2cbchunkjsmap)
 	})
 
-	route.GET("/static/js/main.f2cdf583.chunk.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript", Staticjsmainf2cdf583chunkjs)
+	route.GET("/static/js/main.72a47914.chunk.js", func(c *gin.Context) {
+		c.Data(200, "application/javascript", Staticjsmain72a47914chunkjs)
 	})
 
-	route.GET("/static/js/main.f2cdf583.chunk.js.map", func(c *gin.Context) {
-		c.Data(200, "application/json", Staticjsmainf2cdf583chunkjsmap)
+	route.GET("/static/js/main.72a47914.chunk.js.map", func(c *gin.Context) {
+		c.Data(200, "application/json", Staticjsmain72a47914chunkjsmap)
 	})
 
 	route.GET("/static/js/runtime-main.33603a80.js", func(c *gin.Context) {
