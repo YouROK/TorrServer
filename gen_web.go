@@ -97,6 +97,12 @@ func RouteWebPages(route *gin.RouterGroup) {
 	sort.Strings(keys)
 	for _, link := range keys {
 		fmime := mime.TypeByExtension(filepath.Ext(link))
+		if fmime == "application/xml" || fmime == "application/javascript" {
+			fmime = fmime + "; charset=utf-8"
+		}
+		if fmime == "image/x-icon" {
+			fmime = "image/vnd.microsoft.icon"
+		}
 		embedStr += `
 	route.GET("` + link + `", func(c *gin.Context) {
 		c.Data(200, "` + fmime + `", ` + fmap[link] + `)
