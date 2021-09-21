@@ -81,12 +81,12 @@ func RouteWebPages(route *gin.RouterGroup) {
 		c.Data(200, "application/json", Staticjs2937400aechunkjsmap)
 	})
 
-	route.GET("/static/js/main.07647a59.chunk.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript", Staticjsmain07647a59chunkjs)
+	route.GET("/static/js/main.5736632b.chunk.js", func(c *gin.Context) {
+		c.Data(200, "application/javascript", Staticjsmain5736632bchunkjs)
 	})
 
-	route.GET("/static/js/main.07647a59.chunk.js.map", func(c *gin.Context) {
-		c.Data(200, "application/json", Staticjsmain07647a59chunkjsmap)
+	route.GET("/static/js/main.5736632b.chunk.js.map", func(c *gin.Context) {
+		c.Data(200, "application/json", Staticjsmain5736632bchunkjsmap)
 	})
 
 	route.GET("/static/js/runtime-main.33603a80.js", func(c *gin.Context) {
