@@ -16,11 +16,12 @@ import (
 )
 
 type msxMenu struct {
-	Logo    string        `json:"logo,omitempty"`
-	Reuse   bool          `json:"reuse"`
-	Cache   bool          `json:"cache"`
-	Restore bool          `json:"restore"`
-	Menu    []msxMenuItem `json:"menu"`
+	Logo      string        `json:"logo,omitempty"`
+	Reuse     bool          `json:"reuse"`
+	Cache     bool          `json:"cache"`
+	Restore   bool          `json:"restore"`
+	Reference string        `json:"reference,omitempty"`
+	Menu      []msxMenuItem `json:"menu"`
 }
 
 type msxMenuItem struct {
@@ -29,13 +30,24 @@ type msxMenuItem struct {
 	Data  msxData `json:"data,omitempty"`
 }
 
+type msxTemplate struct {
+	Type       string `json:"type,omitempty"`
+	Layout     string `json:"layout,omitempty"`
+	Color      string `json:"color,omitempty"`
+	Icon       string `json:"icon,omitempty"`
+	IconSize   string `json:"iconSize,omitempty"`
+	BadgeColor string `json:"badgeColor,omitempty"`
+	TagColor   string `json:"tagColor,omitempty"`
+	Properties gin.H  `json:"properties,omitempty"`
+}
+
 type msxData struct {
-	Type     string    `json:"type,omitempty"`
-	Headline string    `json:"headline,omitempty"`
-	Action   string    `json:"action,omitempty"`
-	Template gin.H     `json:"template,omitempty"`
-	Items    []msxItem `json:"items,omitempty"`
-	Pages    []msxPage `json:"pages,omitempty"`
+	Type     string      `json:"type,omitempty"`
+	Headline string      `json:"headline,omitempty"`
+	Action   string      `json:"action,omitempty"`
+	Template msxTemplate `json:"template,omitempty"`
+	Items    []msxItem   `json:"items,omitempty"`
+	Pages    []msxPage   `json:"pages,omitempty"`
 }
 
 type msxItem struct {
@@ -47,6 +59,7 @@ type msxItem struct {
 	Icon        string `json:"icon,omitempty"`
 	Badge       string `json:"badge,omitempty"`
 	Tag         string `json:"tag,omitempty"`
+	Data        gin.H  `json:"data,omitempty"`
 }
 
 type msxPage struct {
@@ -71,18 +84,20 @@ func msxTorrents(c *gin.Context) {
 
 	for i, tor := range torrs {
 		item := msxItem{
-			Title:  tor.Title,
-			Image:  tor.Poster,
-			Action: "content:" + host + "/msx/playlist/" + url.PathEscape(tor.Title) + "?hash=" + tor.TorrentSpec.InfoHash.HexString(),
+			Title: tor.Title,
+			Image: tor.Poster,
+			Action: "content:" + host + "/msx/playlist/" + url.PathEscape(tor.Title) +
+				"?hash=" + tor.TorrentSpec.InfoHash.HexString() + "&platform={PLATFORM}",
 		}
 		list[i] = item
 	}
 
 	c.JSON(200, msxMenu{
-		Logo:    logo,
-		Cache:   false,
-		Reuse:   false,
-		Restore: false,
+		Logo:      logo,
+		Cache:     false,
+		Reuse:     false,
+		Restore:   false,
+		Reference: host + "/msx/torrents",
 		Menu: []msxMenuItem{
 			// Main page
 			{
@@ -90,11 +105,11 @@ func msxTorrents(c *gin.Context) {
 				Label: "Torrents",
 				Data: msxData{
 					Type: "pages",
-					Template: gin.H{
-						"type":   "separate",
-						"layout": "0,0,2,4",
-						"icon":   "msx-white-soft:movie",
-						"color":  "msx-glass",
+					Template: msxTemplate{
+						Type:   "separate",
+						Layout: "0,0,2,4",
+						Icon:   "msx-white-soft:movie",
+						Color:  "msx-glass",
 					},
 					Items: list,
 				},
@@ -134,6 +149,7 @@ func msxPlaylist(c *gin.Context) {
 		})
 		return
 	}
+	platform, _ := c.GetQuery("platform")
 
 	tor := torr.GetTorrent(hash)
 	if tor == nil {
@@ -166,11 +182,40 @@ func msxPlaylist(c *gin.Context) {
 			continue
 		}
 		name := filepath.Base(f.Path)
+		uri := host + "/stream/" + url.PathEscape(name) + "?link=" + hash + "&index=" + fmt.Sprint(f.Id) + "&play"
 		item := msxItem{
 			Label:       name,
 			PlayerLabel: strings.TrimSuffix(name, filepath.Ext(name)),
-			Action:      action + ":" + host + "/stream/" + url.PathEscape(name) + "?link=" + hash + "&index=" + fmt.Sprint(f.Id) + "&play",
+			Action:      action + ":" + uri,
 		}
+
+		if platform == "android" || platform == "firetv" {
+			item.Action = "system:tvx:launch"
+			item.Data = gin.H{
+				"id":   hash + "-" + fmt.Sprint(f.Id),
+				"uri":  uri,
+				"type": mime,
+			}
+		} else if platform == "lg" {
+			// TODO - custom player needed
+			//item.Action = "system:lg:launch:com.webos.app.mediadiscovery"
+			//item.Data = gin.H{
+			//	"properties": gin.H{
+			//		"videoList": gin.H{
+			//			"result": [1]gin.H{
+			//				gin.H{
+			//					"url":       uri,
+			//					"thumbnail": tor.Poster,
+			//				},
+			//			},
+			//		},
+			//	},
+			//}
+		} else if platform == "ios" || platform == "mac" {
+			// TODO - for iOS and Mac the application must be defined in scheme but we don't know what user has installed
+			item.Action = "system:tvx:launch:vlc://" + uri
+		}
+
 		if isViewed(viewed, f.Id) {
 			item.Tag = " "
 		}
@@ -190,16 +235,28 @@ func msxPlaylist(c *gin.Context) {
 	res := msxData{
 		Headline: tor.Title,
 		Type:     "list",
-		Template: gin.H{
-			"type":       "control",
-			"layout":     "0,2,12,1",
-			"color":      "msx-glass",
-			"icon":       "msx-white-soft:movie",
-			"iconSize":   "medium",
-			"badgeColor": "msx-yellow",
-			"tagColor":   "msx-yellow",
+		Template: msxTemplate{
+			Type:       "control",
+			Layout:     "0,2,12,1",
+			Color:      "msx-glass",
+			Icon:       "msx-white-soft:movie",
+			IconSize:   "medium",
+			BadgeColor: "msx-yellow",
+			TagColor:   "msx-yellow",
 		},
 		Items: list,
+	}
+
+	if platform == "tizen" {
+		res.Template.Properties = gin.H{
+			"button:content:icon":   "tune",
+			"button:content:action": "content:request:interaction:init@" + host + "/msx/tizen.html",
+		}
+	} else if platform == "netcast" {
+		res.Template.Properties = gin.H{
+			"button:content:icon":   "tune",
+			"button:content:action": "system:netcast:menu",
+		}
 	}
 
 	// If only one item start to play immediately but it not works
