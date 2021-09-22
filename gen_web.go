@@ -40,6 +40,7 @@ func main() {
 		}
 		return nil
 	})
+	sort.Strings(files)
 	fmap := writeEmbed(srcGo+"template/html.go", files)
 	writeRoute(srcGo+"template/route.go", fmap)
 }
