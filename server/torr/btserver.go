@@ -64,6 +64,7 @@ func (bt *BTServer) configure() {
 	upnpID := "TorrServer"
 	cliVers := userAgent //"uTorrent/2210(25302)"
 
+//	bt.config.AlwaysWantConns = true
 	bt.config.Debug = settings.BTsets.EnableDebug
 	bt.config.DisableIPv6 = settings.BTsets.EnableIPv6 == false
 	bt.config.DisableTCP = settings.BTsets.DisableTCP
