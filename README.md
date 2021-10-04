@@ -200,6 +200,8 @@ SberBank card: 4276 4000 6707 2919
 
 ###### **dancheskus** [github.com/dancheskus](https://github.com/dancheskus)
 
+###### **kolsys** [github.com/kolsys](https://github.com/kolsys)
+
 ###### **Tw1cker Руслан Пахнев** [github.com/Nemiroff](https://github.com/Nemiroff)
 
-###### **SpAwN_LMG**
+###### **SpAwN_LMG** [github.com/spawnlmg](https://github.com/spawnlmg)
