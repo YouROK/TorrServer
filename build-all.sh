@@ -83,11 +83,6 @@ done
 ### Android build section
 #####
 
-if [ -z "$NDK_TOOLCHAIN" ]; then
-  echo "NDK_TOOLCHAIN is not defined. Android builds was skipped"
-  exit
-fi
-
 declare -a COMPILERS=(
   "arm7:armv7a-linux-androideabi21-clang"
   "arm64:aarch64-linux-android21-clang"
