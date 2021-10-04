@@ -180,15 +180,20 @@ local:127.0.0.1\
 127.0.0.1\
 \# at the beginning of the line, comment
 
+#
+### MSX Install:
+Open msx and goto: Settings -> Start Parameter -> Setup \
+Enter current ip address and port of server e.g. _127.0.0.1:8090_
 
 #
 ### Donate:
-[PayPal](https://www.paypal.me/yourok)
+[PayPal](https://www.paypal.me/yourok) \
+[QIWI](qiwi.com/n/YOUROK85) \
+[YooMoney](https://yoomoney.ru/to/410013733697114/200) 
 
-[YooMoney](https://yoomoney.ru/to/410013733697114/200)  
-YooMoney card: 4048 4150 1812 8179
+SberBank card: **4276 4000 6707 2919**
 
-SberBank card: 4276 4000 6707 2919
+YooMoney card: **4048 4150 1812 8179**
 
 
 #
