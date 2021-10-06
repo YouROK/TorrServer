@@ -243,8 +243,8 @@ func Preload(torr *Torrent, index int) {
 	cache := float32(sets.BTsets.CacheSize)
 	preload := float32(sets.BTsets.PreloadCache)
 	size := int64((cache / 100.0) * preload)
-	if size < 32*1024*1024 {
-		size = 32 * 1024 * 1024
+	if size <= 0 {
+		return
 	}
 	if size > sets.BTsets.CacheSize {
 		size = sets.BTsets.CacheSize

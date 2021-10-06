@@ -66,6 +66,8 @@ type msxPage struct {
 	Items []gin.H `json:"items,omitempty"`
 }
 
+const ICON_OPTIONS = "tune"
+
 func msxStart(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"name":      "TorrServer",
@@ -173,6 +175,7 @@ func msxPlaylist(c *gin.Context) {
 	status := tor.Status()
 	viewed := sets.ListViewed(hash)
 	var list []msxItem
+	contentAction := ""
 
 	for _, f := range status.FileStats {
 		mime := utils.GetMimeType(f.Path)
@@ -196,24 +199,16 @@ func msxPlaylist(c *gin.Context) {
 				"uri":  uri,
 				"type": mime,
 			}
-		} else if platform == "lg" {
-			// TODO - custom player needed
-			//item.Action = "system:lg:launch:com.webos.app.mediadiscovery"
-			//item.Data = gin.H{
-			//	"properties": gin.H{
-			//		"videoList": gin.H{
-			//			"result": [1]gin.H{
-			//				gin.H{
-			//					"url":       uri,
-			//					"thumbnail": tor.Poster,
-			//				},
-			//			},
-			//		},
-			//	},
-			//}
+		} else if platform == "tizen" {
+			contentAction = "content:request:interaction:init@" + host + "/msx/tizen.html"
+		} else if platform == "netcast" {
+			contentAction = "system:netcast:menu"
 		} else if platform == "ios" || platform == "mac" {
 			// TODO - for iOS and Mac the application must be defined in scheme but we don't know what user has installed
 			item.Action = "system:tvx:launch:vlc://" + uri
+		} else {
+			item.Action = "video:plugin:" + host + "/msx/html5x.html?url= " + url.QueryEscape(uri)
+			contentAction = "panel:request:player:options"
 		}
 
 		if isViewed(viewed, f.Id) {
@@ -247,22 +242,12 @@ func msxPlaylist(c *gin.Context) {
 		Items: list,
 	}
 
-	if platform == "tizen" {
+	if contentAction != "" {
 		res.Template.Properties = gin.H{
-			"button:content:icon":   "tune",
-			"button:content:action": "content:request:interaction:init@" + host + "/msx/tizen.html",
-		}
-	} else if platform == "netcast" {
-		res.Template.Properties = gin.H{
-			"button:content:icon":   "tune",
-			"button:content:action": "system:netcast:menu",
+			"button:content:icon":   ICON_OPTIONS,
+			"button:content:action": contentAction,
 		}
 	}
-
-	// If only one item start to play immediately but it not works
-	// if (len(list) == 1) {
-	//  res.Action = "execute:" + list[0].Action
-	// }
 
 	c.JSON(200, res)
 }
