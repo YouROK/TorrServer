@@ -26,7 +26,7 @@ func RouteWebPages(route *gin.RouterGroup) {
 	})
 
 	route.GET("/browserconfig.xml", func(c *gin.Context) {
-		c.Data(200, "application/xml", Browserconfigxml)
+		c.Data(200, "application/xml; charset=utf-8", Browserconfigxml)
 	})
 
 	route.GET("/dlnaicon-120.jpg", func(c *gin.Context) {
@@ -54,7 +54,7 @@ func RouteWebPages(route *gin.RouterGroup) {
 	})
 
 	route.GET("/favicon.ico", func(c *gin.Context) {
-		c.Data(200, "image/x-icon", Faviconico)
+		c.Data(200, "image/vnd.microsoft.icon", Faviconico)
 	})
 
 	route.GET("/index.html", func(c *gin.Context) {
@@ -70,7 +70,7 @@ func RouteWebPages(route *gin.RouterGroup) {
 	})
 
 	route.GET("/static/js/2.937400ae.chunk.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript", Staticjs2937400aechunkjs)
+		c.Data(200, "application/javascript; charset=utf-8", Staticjs2937400aechunkjs)
 	})
 
 	route.GET("/static/js/2.937400ae.chunk.js.LICENSE.txt", func(c *gin.Context) {
@@ -81,16 +81,16 @@ func RouteWebPages(route *gin.RouterGroup) {
 		c.Data(200, "application/json", Staticjs2937400aechunkjsmap)
 	})
 
-	route.GET("/static/js/main.5736632b.chunk.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript", Staticjsmain5736632bchunkjs)
+	route.GET("/static/js/main.9ebbd58c.chunk.js", func(c *gin.Context) {
+		c.Data(200, "application/javascript; charset=utf-8", Staticjsmain9ebbd58cchunkjs)
 	})
 
-	route.GET("/static/js/main.5736632b.chunk.js.map", func(c *gin.Context) {
-		c.Data(200, "application/json", Staticjsmain5736632bchunkjsmap)
+	route.GET("/static/js/main.9ebbd58c.chunk.js.map", func(c *gin.Context) {
+		c.Data(200, "application/json", Staticjsmain9ebbd58cchunkjsmap)
 	})
 
 	route.GET("/static/js/runtime-main.33603a80.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript", Staticjsruntimemain33603a80js)
+		c.Data(200, "application/javascript; charset=utf-8", Staticjsruntimemain33603a80js)
 	})
 
 	route.GET("/static/js/runtime-main.33603a80.js.map", func(c *gin.Context) {
