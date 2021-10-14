@@ -23,6 +23,7 @@ type Reader struct {
 
 	///Preload
 	lastAccess int64
+	isUse      bool
 	muPreload  sync.Mutex
 	ranges     Range
 }
@@ -94,7 +95,7 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 }
 
 func (r *Reader) SetReadahead(length int64) {
-	if time.Now().Unix() > r.lastAccess+60 && r.cache != nil && len(r.cache.readers) > 1 {
+	if !r.isUse && r.cache != nil {
 		//fix read a head on not readed reader
 		r.Reader.SetReadahead(0)
 		r.readahead = 0
@@ -143,14 +144,8 @@ func (r *Reader) getPieceNum(offset int64) int {
 }
 
 func (r *Reader) getOffsetRange() (int64, int64) {
-
-	if time.Now().Unix() > r.lastAccess+60 && len(r.cache.readers) > 1 {
-		r.SetReadahead(0)
-		return r.file.Offset(), r.file.Offset()
-	}
-
 	prc := int64(settings.BTsets.ReaderReadAHead)
-	readers := int64(len(r.cache.readers))
+	readers := int64(r.getUseReaders())
 	if readers == 0 {
 		readers = 1
 	}
@@ -166,4 +161,28 @@ func (r *Reader) getOffsetRange() (int64, int64) {
 		endOffset = r.file.Length()
 	}
 	return beginOffset, endOffset
+}
+
+func (r *Reader) checkReader() {
+	if time.Now().Unix() > r.lastAccess+60 && len(r.cache.readers) > 1 {
+		r.SetReadahead(0)
+		r.isUse = false
+		if r.offset > 0 {
+			r.Reader.Seek(0, io.SeekStart)
+		}
+	} else {
+		r.isUse = true
+	}
+}
+
+func (r *Reader) getUseReaders() int {
+	readers := 1
+	if r.cache != nil {
+		for reader, _ := range r.cache.readers {
+			if reader.isUse {
+				readers++
+			}
+		}
+	}
+	return readers
 }

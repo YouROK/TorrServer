@@ -215,7 +215,10 @@ func (c *Cache) getRemPieces() []*Piece {
 	ranges := make([]Range, 0)
 	c.muReaders.Lock()
 	for r, _ := range c.readers {
-		ranges = append(ranges, r.getPiecesRange())
+		r.checkReader()
+		if r.isUse {
+			ranges = append(ranges, r.getPiecesRange())
+		}
 	}
 	c.muReaders.Unlock()
 	ranges = mergeRange(ranges)
@@ -243,6 +246,9 @@ func (c *Cache) getRemPieces() []*Piece {
 
 	c.muReaders.Lock()
 	for r, _ := range c.readers {
+		if !r.isUse {
+			continue
+		}
 		if c.isIdInFileBE(ranges, r.getReaderPiece()) {
 			continue
 		}
@@ -336,7 +342,10 @@ func (c *Cache) clearPriority() {
 	ranges := make([]Range, 0)
 	c.muReaders.Lock()
 	for r, _ := range c.readers {
-		ranges = append(ranges, r.getPiecesRange())
+		r.checkReader()
+		if r.isUse {
+			ranges = append(ranges, r.getPiecesRange())
+		}
 	}
 	c.muReaders.Unlock()
 	ranges = mergeRange(ranges)
