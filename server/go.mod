@@ -17,6 +17,7 @@ require (
 	github.com/anacrolix/dms v1.3.0
 	github.com/anacrolix/missinggo v1.3.0
 	github.com/anacrolix/torrent v1.31.0
+	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-contrib/location v0.0.2
 	github.com/gin-gonic/gin v1.7.4
 	github.com/pkg/browser v0.0.0-20210115035449-ce105d075bb4

@@ -3,12 +3,12 @@ package web
 import (
 	"net"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/location"
 	"github.com/gin-gonic/gin"
 
 	"server/dlna"
 	"server/settings"
-	"server/web/cors"
 	"server/web/msx"
 
 	"server/log"
@@ -38,11 +38,14 @@ func Start(port string) {
 	}
 	gin.SetMode(gin.ReleaseMode)
 
+	//corsCfg := cors.DefaultConfig()
+	//corsCfg.AllowAllOrigins = true
+	//corsCfg.AllowHeaders = []string{"*"}
+	//corsCfg.AllowMethods = []string{"*"}
+	//corsCfg.AllowPrivateNetwork = true
 	corsCfg := cors.DefaultConfig()
 	corsCfg.AllowAllOrigins = true
-	corsCfg.AllowHeaders = []string{"*"}
-	corsCfg.AllowMethods = []string{"*"}
-	corsCfg.AllowPrivateNetwork = true
+	corsCfg.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "X-Requested-With", "Accept", "Authorization"}
 
 	route := gin.New()
 	route.Use(log.WebLogger(), blocker.Blocker(), gin.Recovery(), cors.New(corsCfg), location.Default())
