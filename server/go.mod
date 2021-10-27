@@ -2,7 +2,6 @@ module server
 
 go 1.17
 
-
 replace github.com/anacrolix/dms v1.3.0 => github.com/tsynik/dms v0.0.0-20210913141714-452c963535cf
 
 exclude (
@@ -15,6 +14,7 @@ require (
 	github.com/anacrolix/dms v1.3.0
 	github.com/anacrolix/missinggo v1.3.0
 	github.com/anacrolix/torrent v1.34.0
+	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-contrib/location v0.0.2
 	github.com/gin-gonic/gin v1.7.4
 	github.com/pkg/browser v0.0.0-20210115035449-ce105d075bb4
@@ -33,7 +33,7 @@ require (
 	github.com/anacrolix/envpprof v1.1.1 // indirect
 	github.com/anacrolix/ffprobe v1.0.0 // indirect
 	github.com/anacrolix/go-libutp v1.0.4 // indirect
-	github.com/anacrolix/log v0.9.0 // indirect
+	github.com/anacrolix/log v0.10.0 // indirect
 	github.com/anacrolix/missinggo/perf v1.0.0 // indirect
 	github.com/anacrolix/missinggo/v2 v2.5.2 // indirect
 	github.com/anacrolix/mmsg v1.0.0 // indirect
@@ -55,6 +55,7 @@ require (
 	github.com/go-playground/validator/v10 v10.9.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/btree v1.0.1 // indirect
+	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
