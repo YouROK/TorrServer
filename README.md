@@ -191,7 +191,7 @@ Enter current ip address and port of server e.g. _127.0.0.1:8090_
 [QIWI](qiwi.com/n/YOUROK85) \
 [YooMoney](https://yoomoney.ru/to/410013733697114/200) 
 
-SberBank card: **4276 4000 6707 2919**
+SberBank card: **5484 4000 2285 7839**
 
 YooMoney card: **4048 4150 1812 8179**
 
