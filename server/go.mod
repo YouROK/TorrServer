@@ -13,7 +13,7 @@ require (
 	github.com/alexflint/go-arg v1.4.2
 	github.com/anacrolix/dms v1.3.0
 	github.com/anacrolix/missinggo v1.3.0
-	github.com/anacrolix/torrent v1.34.0
+	github.com/anacrolix/torrent v1.35.0
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-contrib/location v0.0.2
 	github.com/gin-gonic/gin v1.7.4
