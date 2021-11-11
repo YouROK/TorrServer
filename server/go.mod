@@ -4,7 +4,7 @@ go 1.17
 
 replace (
 	github.com/anacrolix/dms v1.3.0 => github.com/tsynik/dms v0.0.0-20210913141714-452c963535cf
-	github.com/anacrolix/torrent v1.31.0 => github.com/tsynik/torrent v1.2.7-0.20211007185359-9e08f1da608f
+	github.com/anacrolix/torrent v1.36.0 => github.com/tsynik/torrent v1.2.7-0.20211110234935-5d5051f7062b
 )
 
 exclude (
@@ -13,10 +13,10 @@ exclude (
 )
 
 require (
-	github.com/alexflint/go-arg v1.3.0
+	github.com/alexflint/go-arg v1.4.2
 	github.com/anacrolix/dms v1.3.0
 	github.com/anacrolix/missinggo v1.3.0
-	github.com/anacrolix/torrent v1.31.0
+	github.com/anacrolix/torrent v1.36.0
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-contrib/location v0.0.2
 	github.com/gin-gonic/gin v1.7.4
@@ -28,12 +28,12 @@ require (
 
 require (
 	github.com/RoaringBitmap/roaring v0.9.4 // indirect
-	github.com/alexflint/go-scalar v1.0.0 // indirect
-	github.com/anacrolix/chansync v0.2.0 // indirect
-	github.com/anacrolix/confluence v1.8.0 // indirect
-	github.com/anacrolix/dht/v2 v2.10.5 // indirect
+	github.com/alexflint/go-scalar v1.1.0 // indirect
+	github.com/anacrolix/chansync v0.3.0 // indirect
+	github.com/anacrolix/confluence v1.9.0 // indirect
+	github.com/anacrolix/dht/v2 v2.12.0 // indirect
 	github.com/anacrolix/ffprobe v1.0.0 // indirect
-	github.com/anacrolix/log v0.9.0 // indirect
+	github.com/anacrolix/log v0.10.0 // indirect
 	github.com/anacrolix/missinggo/perf v1.0.0 // indirect
 	github.com/anacrolix/missinggo/v2 v2.5.2 // indirect
 	github.com/anacrolix/multiless v0.2.0 // indirect
@@ -60,16 +60,16 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
-	github.com/rs/dnscache v0.0.0-20210201191234-295bba877686 // indirect
+	github.com/rs/dnscache v0.0.0-20211102005908-e0241e321417 // indirect
 	github.com/ryszard/goskiplist v0.0.0-20150312221310-2dfbae5fcf46 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/ugorji/go/codec v1.2.6 // indirect
 	github.com/willf/bitset v1.1.11 // indirect
 	github.com/willf/bloom v2.0.3+incompatible // indirect
-	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97 // indirect
+	golang.org/x/crypto v0.0.0-20210813211128-0a44fdfbc16e // indirect
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20210809222454-d867a43fc93e // indirect
+	golang.org/x/sys v0.0.0-20211023085530-d6a326fbbf70 // indirect
 	golang.org/x/text v0.3.6 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
