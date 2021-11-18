@@ -4,7 +4,7 @@ go 1.17
 
 replace (
 	github.com/anacrolix/dms v1.3.0 => github.com/tsynik/dms v0.0.0-20211115041208-76e0609a5d1c
-	github.com/anacrolix/torrent v1.38.0 => github.com/tsynik/torrent v1.2.7-0.20211110234935-5d5051f7062b
+	github.com/anacrolix/torrent v1.38.0 => github.com/tsynik/torrent v1.2.7-0.20211118235503-1cf1470494b3
 )
 
 exclude (
