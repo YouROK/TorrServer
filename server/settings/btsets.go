@@ -121,7 +121,7 @@ func loadBTSets() {
 func SetDefault() {
 	sets := new(BTSets)
 	sets.EnableDebug = false
-	sets.CacheSize = 64 * 1024 * 1024 // 96 MB
+	sets.CacheSize = 64 * 1024 * 1024 // 64 MB
 	sets.PreloadCache = 50
 	sets.ConnectionsLimit = 23
 	sets.RetrackersMode = 1
