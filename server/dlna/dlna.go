@@ -8,6 +8,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"time"
 
 	"github.com/anacrolix/dms/dlna/dms"
@@ -37,7 +38,20 @@ func Start() {
 			return
 		}(),
 		HTTPConn: func() net.Listener {
-			conn, err := net.Listen("tcp", ":9080")
+			port := 9080
+			for {
+				log.TLogln("Check dlna port", port)
+				m, err := net.Listen("tcp", ":"+strconv.Itoa(port))
+				if m != nil {
+					m.Close()
+				}
+				if err == nil {
+					break
+				}
+				port++
+			}
+			log.TLogln("Set dlna port", port)
+			conn, err := net.Listen("tcp", ":"+strconv.Itoa(port))
 			if err != nil {
 				log.TLogln(err)
 				os.Exit(1)

@@ -8,6 +8,11 @@ After open browser link http://127.0.0.1:8090 \
 On linux systems you need to set the environment variable before run \
 ***export GODEBUG=madvdontneed=1***
 
+#### Unofficial TorrServer iocage plugin
+On FreeBSD (TrueNAS/FreeNAS) you can use this plugin
+
+https://github.com/filka96/iocage-plugin-TorrServer
+
 ### Build
 Install golang 1.16+ by instruction: https://golang.org/doc/install \
 Goto dir to source\
