@@ -790,8 +790,8 @@ github.com/tinylib/msgp v1.1.1/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDW
 github.com/tinylib/msgp v1.1.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tinylib/msgp v1.1.5/go.mod h1:eQsjooMTnV42mHu917E26IogZ2930nFyBQdofk10Udg=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20170815181823-89b8d40f7ca8/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
-github.com/tsynik/dms v0.0.0-20211115041208-76e0609a5d1c h1:bW5N+HRUV8xj1A20JOiU0zoPX27Z1nK+XmXld2jEgK0=
-github.com/tsynik/dms v0.0.0-20211115041208-76e0609a5d1c/go.mod h1:oWW4QbQ9YGl+FJ1X8xcrUYVObfA/KdipoeBuTC4ltG8=
+github.com/tsynik/dms v0.0.0-20210913141714-452c963535cf h1:1aPC/oFTq4NsYSjiQFrvn/Tmvq/Qr/sCxzRR669T9nw=
+github.com/tsynik/dms v0.0.0-20210913141714-452c963535cf/go.mod h1:oWW4QbQ9YGl+FJ1X8xcrUYVObfA/KdipoeBuTC4ltG8=
 github.com/tsynik/torrent v1.2.7-0.20211118235503-1cf1470494b3 h1:XnLWLmelwb3w3rg6Fu0lxqCDcKKYGXzOu//nkD3CsaY=
 github.com/tsynik/torrent v1.2.7-0.20211118235503-1cf1470494b3/go.mod h1:jQ6cjnxeGS17occX0P3NXtfDmVgUPcrqbBFfjFW2AGc=
 github.com/ttacon/chalk v0.0.0-20160626202418-22c06c80ed31/go.mod h1:onvgF043R+lC5RZ8IT9rBXDaEDnpnw/Cl+HFiw+v/7Q=
