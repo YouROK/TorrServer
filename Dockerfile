@@ -49,12 +49,12 @@ ENV TS_CONF_PATH="/opt/ts/config"
 ENV TS_LOG_PATH="/opt/ts/log"
 ENV TS_TORR_DIR="/opt/ts/torrents"
 ENV TS_PORT=8090
+ENV GODEBUG=madvdontneed=1
 
 COPY --from=compressed ./torrserver /usr/bin/torrserver
 COPY ./docker-entrypoint.sh /docker-entrypoint.sh
 
-RUN apk add --no-cache --update ffmpeg \
-&& mkdir -p $TS_CONF_PATH && mkdir -p $TS_TORR_DIR && touch $TS_LOG_PATH
+RUN apk add --no-cache --update ffmpeg
 
 CMD /docker-entrypoint.sh
 ### BUILD MAIN IMAGE end ###
