@@ -2,13 +2,13 @@ module server
 
 go 1.17
 
-replace github.com/anacrolix/dms v1.3.0 => github.com/tsynik/dms v0.0.0-20211115041208-76e0609a5d1c
+	github.com/anacrolix/dms v1.3.0 => github.com/tsynik/dms v0.0.0-20210913141714-452c963535cf
 
 require (
 	github.com/alexflint/go-arg v1.4.2
 	github.com/anacrolix/dms v1.3.0
 	github.com/anacrolix/missinggo v1.3.0
-	github.com/anacrolix/torrent v1.39.0
+	github.com/anacrolix/torrent v1.39.1
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-contrib/location v0.0.2
 	github.com/gin-gonic/gin v1.7.4
