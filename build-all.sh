@@ -50,7 +50,7 @@ OUTPUT="${ROOT}/dist/TorrServer"
 
 #### Build web
 echo "Build web"
-$GOBIN run gen_web.go || exit 1
+$GOBIN run gen_web.go
 
 #### Build server
 echo "Build server"
@@ -83,20 +83,22 @@ done
 ### Android build section
 #####
 
-declare -A COMPILERS=(
-  ["arm7"]="armv7a-linux-androideabi21-clang"
-  ["arm64"]="aarch64-linux-android21-clang"
-  ["386"]="i686-linux-android21-clang"
-  ["amd64"]="x86_64-linux-android21-clang"
+declare -a COMPILERS=(
+  "arm7:armv7a-linux-androideabi21-clang"
+  "arm64:aarch64-linux-android21-clang"
+  "386:i686-linux-android21-clang"
+  "amd64:x86_64-linux-android21-clang"
 )
 
 export NDK_TOOLCHAIN=$ROOT/toolchain
 
 GOOS=android
 
-for GOARCH in "${!COMPILERS[@]}"; do
-  export CC="$NDK_TOOLCHAIN/bin/${COMPILERS[$GOARCH]}"
-  export CXX="$NDK_TOOLCHAIN/bin/${COMPILERS[$GOARCH]}++"
+for V in "${COMPILERS[@]}"; do
+  GOARCH=${V%:*}
+  COMPILER=${V#*:}
+  export CC="$NDK_TOOLCHAIN/bin/$COMPILER"
+  export CXX="$NDK_TOOLCHAIN/bin/$COMPILER++"
   set_goarm "$GOARCH"
   BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}${GOARM}"
   CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GO_ARM} CGO_ENABLED=1 ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
