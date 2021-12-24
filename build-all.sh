@@ -74,7 +74,7 @@ for PLATFORM in "${PLATFORMS[@]}"; do
   CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GO_ARM} ${GO_MIPS} ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
   echo "${CMD}"
   eval "$CMD" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
-  CMD="../upx -q ${BIN_FILENAME}"; # upx --brute produce much smaller binaries
+  CMD="upx -q ${BIN_FILENAME}"; # upx --brute produce much smaller binaries
   echo "compress with ${CMD}"
   eval "$CMD"
 done
@@ -102,7 +102,7 @@ for GOARCH in "${!COMPILERS[@]}"; do
   CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GO_ARM} CGO_ENABLED=1 ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
   echo "${CMD}"
   eval "${CMD}" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
-  CMD="../upx -q ${BIN_FILENAME}"; # upx --brute produce much smaller binaries
+  CMD="upx -q ${BIN_FILENAME}"; # upx --brute produce much smaller binaries
   echo "compress with ${CMD}"
   eval "$CMD"
 done
