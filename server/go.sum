@@ -104,7 +104,6 @@ github.com/anacrolix/dht/v2 v2.10.0/go.mod h1:KC51tqylRYBu82RM5pEYf+g1n7db+F0tOJ
 github.com/anacrolix/dht/v2 v2.10.5-0.20210902001729-06cc4fe90e53/go.mod h1:zHjijcebN+L7JbzxW0mOraHis+I81EIgsJAAtiw8bQ8=
 github.com/anacrolix/dht/v2 v2.10.6-0.20211007004332-99263ec9c1c8/go.mod h1:WID4DexLrucfnwzv1OV8REzgoCpyVDwEczxIOrUeFrY=
 github.com/anacrolix/dht/v2 v2.12.0/go.mod h1:GfoiqvbDg0um5RVTJYf5HdPLDgk6TQeWKnPDfQ4bmWw=
-github.com/anacrolix/dht/v2 v2.13.0/go.mod h1:zJgaiAU2yhzmchZE2mY8WyZ64LK/F/D9MAeN0ct73qQ=
 github.com/anacrolix/dht/v2 v2.14.0 h1:EKqE6RG7+RpshENsPC16aTnYOfvtIYP/O455RqZ+d84=
 github.com/anacrolix/dht/v2 v2.14.0/go.mod h1:zJgaiAU2yhzmchZE2mY8WyZ64LK/F/D9MAeN0ct73qQ=
 github.com/anacrolix/envpprof v0.0.0-20180404065416-323002cec2fa/go.mod h1:KgHhUaQMc8cC0+cEflSgCFNFbKwi5h54gqtVn8yhP7c=
@@ -793,10 +792,10 @@ github.com/tinylib/msgp v1.1.1/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDW
 github.com/tinylib/msgp v1.1.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tinylib/msgp v1.1.5/go.mod h1:eQsjooMTnV42mHu917E26IogZ2930nFyBQdofk10Udg=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20170815181823-89b8d40f7ca8/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
-github.com/tsynik/dms v0.0.0-20210913141714-452c963535cf h1:1aPC/oFTq4NsYSjiQFrvn/Tmvq/Qr/sCxzRR669T9nw=
-github.com/tsynik/dms v0.0.0-20210913141714-452c963535cf/go.mod h1:oWW4QbQ9YGl+FJ1X8xcrUYVObfA/KdipoeBuTC4ltG8=
-github.com/tsynik/torrent v1.2.7-0.20211118235503-1cf1470494b3 h1:XnLWLmelwb3w3rg6Fu0lxqCDcKKYGXzOu//nkD3CsaY=
-github.com/tsynik/torrent v1.2.7-0.20211118235503-1cf1470494b3/go.mod h1:jQ6cjnxeGS17occX0P3NXtfDmVgUPcrqbBFfjFW2AGc=
+github.com/tsynik/dms v1.3.1 h1:uHm0VKF2DoGzuQ9UrCqi5X6kp4OEDl7kO4g+cVlljYo=
+github.com/tsynik/dms v1.3.1/go.mod h1:oWW4QbQ9YGl+FJ1X8xcrUYVObfA/KdipoeBuTC4ltG8=
+github.com/tsynik/torrent v1.2.7 h1:13opBKS3EVSFe5B07YGQmvAAhXHsC0PLEpfSuyyOTnU=
+github.com/tsynik/torrent v1.2.7/go.mod h1:pk8lB5UEBVgCQdzEwAD6TBPJJK6++BsktMdPiLjPBjk=
 github.com/ttacon/chalk v0.0.0-20160626202418-22c06c80ed31/go.mod h1:onvgF043R+lC5RZ8IT9rBXDaEDnpnw/Cl+HFiw+v/7Q=
 github.com/tv42/httpunix v0.0.0-20191220191345-2ba4b9c3382c/go.mod h1:hzIxponao9Kjc7aWznkXaL4U4TWaDSs8zcsY4Ka08nM=
 github.com/ugorji/go v1.1.7/go.mod h1:kZn38zHttfInRq0xu/PH0az30d+z6vm202qpg1oXVMw=
