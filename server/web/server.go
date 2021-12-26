@@ -7,6 +7,10 @@ import (
 	"github.com/gin-contrib/location"
 	"github.com/gin-gonic/gin"
 
+	"server/dlna"
+	"server/settings"
+	"server/web/msx"
+
 	"server/log"
 	"server/torr"
 	"server/version"
@@ -22,7 +26,7 @@ var (
 )
 
 func Start(port string) {
-	log.TLogln("Start TorrServer", version.Version)
+	log.TLogln("Start TorrServer")
 	ips := getLocalIps()
 	if len(ips) > 0 {
 		log.TLogln("IP:", ips)
@@ -34,6 +38,11 @@ func Start(port string) {
 	}
 	gin.SetMode(gin.ReleaseMode)
 
+	//corsCfg := cors.DefaultConfig()
+	//corsCfg.AllowAllOrigins = true
+	//corsCfg.AllowHeaders = []string{"*"}
+	//corsCfg.AllowMethods = []string{"*"}
+	//corsCfg.AllowPrivateNetwork = true
 	corsCfg := cors.DefaultConfig()
 	corsCfg.AllowAllOrigins = true
 	corsCfg.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "X-Requested-With", "Accept", "Authorization"}
@@ -46,10 +55,15 @@ func Start(port string) {
 	routeAuth := auth.SetupAuth(route)
 	if routeAuth != nil {
 		api.SetupRoute(routeAuth)
+		msx.SetupRoute(routeAuth)
 		pages.SetupRoute(routeAuth)
 	} else {
 		api.SetupRoute(&route.RouterGroup)
+		msx.SetupRoute(&route.RouterGroup)
 		pages.SetupRoute(&route.RouterGroup)
+	}
+	if settings.BTsets.EnableDLNA {
+		dlna.Start()
 	}
 	log.TLogln("Start web server at port", port)
 	waitChan <- route.Run(":" + port)
@@ -60,6 +74,7 @@ func Wait() error {
 }
 
 func Stop() {
+	dlna.Stop()
 	BTS.Disconnect()
 	waitChan <- nil
 }

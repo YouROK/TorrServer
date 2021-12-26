@@ -1,4 +1,6 @@
 import { useTranslation } from 'react-i18next'
+import { Checkbox, FormControlLabel } from '@material-ui/core'
+import { useState } from 'react'
 
 import { SectionTitle, WidgetWrapper } from '../style'
 import { DetailedViewCacheSection, DetailedViewWidgetSection } from './style'
@@ -24,6 +26,9 @@ export default function DetailedView({
   cache,
 }) {
   const { t } = useTranslation()
+  const [isSnakeDebugMode, setIsSnakeDebugMode] = useState(
+    JSON.parse(localStorage.getItem('isSnakeDebugMode')) || false,
+  )
 
   return (
     <>
@@ -43,9 +48,28 @@ export default function DetailedView({
 
       <DetailedViewCacheSection>
         <SectionTitle color='#000' mb={20}>
-          {t('Cache')}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>{t('Cache')}</span>
+
+            <FormControlLabel
+              control={
+                <Checkbox
+                  color='primary'
+                  checked={isSnakeDebugMode}
+                  disableRipple
+                  onChange={({ target: { checked } }) => {
+                    setIsSnakeDebugMode(checked)
+                    localStorage.setItem('isSnakeDebugMode', checked)
+                  }}
+                />
+              }
+              label={t('DebugMode')}
+              labelPlacement='start'
+            />
+          </div>
         </SectionTitle>
-        <TorrentCache cache={cache} />
+
+        <TorrentCache cache={cache} isSnakeDebugMode={isSnakeDebugMode} />
       </DetailedViewCacheSection>
     </>
   )

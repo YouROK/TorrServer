@@ -33,11 +33,12 @@
   "CopyHash": "Copy Hash",
   "CopyLink": "Copy link",
   "Data": "Data",
+  "DebugMode": "Download priorities",
   "Delete": "Delete",
   "DeleteTorrent?": "Delete Torrent?",
   "DeleteTorrents?": "Delete All Torrents?",
   "DetailedCacheView": {
-    "button": "Detailed Cache View",
+    "button": "Cache Details View",
     "header": "$t(DetailedCacheView.button)"
   },
   "Details": "Details",
@@ -97,6 +98,7 @@
     "DHT": "DHT (Distributed Hash Table)",
     "DhtConnectionLimit": "DHT Connection Limit",
     "Disk": "Disk",
+    "DLNA": "DLNA Media Server",
     "DontAddRetrackers": "Don`t add retrackers",
     "DownloadRateLimit": "Download Rate Limit",
     "ForceEncrypt": "Force Encrypt Headers",

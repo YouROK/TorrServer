@@ -91,6 +91,7 @@ func GetTorrent(hashHex string) *Torrent {
 	if tr != nil {
 		tor = tr
 		go func() {
+			log.TLogln("New torrent", tor.Hash())
 			tr, _ := NewTorrent(tor.TorrentSpec, bts)
 			if tr != nil {
 				tr.Title = tor.Title
@@ -192,18 +193,39 @@ func SetSettings(set *sets.BTSets) {
 	if sets.ReadOnly {
 		return
 	}
-	bts.Disconnect()
 	sets.SetBTSets(set)
+	log.TLogln("drop all torrents")
+	dropAllTorrent()
+	time.Sleep(time.Second * 2)
+	log.TLogln("disconect")
+	bts.Disconnect()
+	log.TLogln("connect")
 	bts.Connect()
+	time.Sleep(time.Second * 2)
+	log.TLogln("end set settings")
 }
 
 func SetDefSettings() {
 	if sets.ReadOnly {
 		return
 	}
-	bts.Disconnect()
 	sets.SetDefault()
+	log.TLogln("drop all torrents")
+	dropAllTorrent()
+	time.Sleep(time.Second * 2)
+	log.TLogln("disconect")
+	bts.Disconnect()
+	log.TLogln("connect")
 	bts.Connect()
+	time.Sleep(time.Second * 2)
+	log.TLogln("end set default settings")
+}
+
+func dropAllTorrent() {
+	for _, torr := range bts.torrents {
+		torr.drop()
+		<-torr.closed
+	}
 }
 
 func Shutdown() {
@@ -221,8 +243,8 @@ func Preload(torr *Torrent, index int) {
 	cache := float32(sets.BTsets.CacheSize)
 	preload := float32(sets.BTsets.PreloadCache)
 	size := int64((cache / 100.0) * preload)
-	if size < 32*1024*1024 {
-		size = 32 * 1024 * 1024
+	if size <= 0 {
+		return
 	}
 	if size > sets.BTsets.CacheSize {
 		size = sets.BTsets.CacheSize

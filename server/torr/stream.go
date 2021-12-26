@@ -8,9 +8,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/anacrolix/dms/dlna"
 	"github.com/anacrolix/missinggo/httptoo"
 	"github.com/anacrolix/torrent"
 
+	mt "server/mimetype"
 	sets "server/settings"
 	"server/torr/state"
 )
@@ -48,24 +50,40 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 	reader := t.NewReader(file)
 
 	host, port, err := net.SplitHostPort(req.RemoteAddr)
-	if err != nil {
-		log.Println("Connect client")
-	} else {
-		log.Println("Connect client", host, port)
+	if sets.BTsets.EnableDebug {
+		if err != nil {
+			log.Println("Connect client")
+		} else {
+			log.Println("Connect client", host, port)
+		}
 	}
-	
+
 	sets.SetViewed(&sets.Viewed{t.Hash().HexString(), fileID})
 
 	resp.Header().Set("Connection", "close")
 	resp.Header().Set("ETag", httptoo.EncodeQuotedString(fmt.Sprintf("%s/%s", t.Hash().HexString(), file.Path())))
+	// DLNA headers
+	resp.Header().Set("transferMode.dlna.org", "Streaming")
+	mime, err := mt.MimeTypeByPath(file.Path())
+	if err == nil && mime.IsMedia() {
+		resp.Header().Set("content-type", mime.String())
+	}
+	if req.Header.Get("getContentFeatures.dlna.org") != "" {
+		resp.Header().Set("contentFeatures.dlna.org", dlna.ContentFeatures{
+			SupportRange:    true,
+			SupportTimeSeek: true,
+		}.String())
+	}
 
 	http.ServeContent(resp, req, file.Path(), time.Unix(t.Timestamp, 0), reader)
 
 	t.CloseReader(reader)
-	if err != nil {
-		log.Println("Disconnect client")
-	} else {
-		log.Println("Disconnect client", host, port)
+	if sets.BTsets.EnableDebug {
+		if err != nil {
+			log.Println("Disconnect client")
+		} else {
+			log.Println("Disconnect client", host, port)
+		}
 	}
 	return nil
 }

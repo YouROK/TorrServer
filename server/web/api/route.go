@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-
 	sets "server/settings"
 	"server/torr"
 )

@@ -49,8 +49,8 @@ func Init(path, webpath string) {
 		os.Stderr = ff
 		//https://stackoverflow.com/a/36140590
 		//fmt.Print(time.Now().UTC().Format("2006-01-02T15:04:05.999Z") + " TLOG  " + string(bytes))
-		log.SetFlags(log.Ldate|log.Ltime|log.LUTC|log.Lmsgprefix)
-		log.SetPrefix("0000 TLOG  ")
+		log.SetFlags(log.Ldate | log.Ltime | log.LUTC | log.Lmsgprefix)
+		log.SetPrefix("UTC0 TLOG  ")
 		log.SetOutput(ff)
 	}
 }

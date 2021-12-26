@@ -13,89 +13,87 @@ func RouteWebPages(route *gin.RouterGroup) {
 		c.Data(200, "image/png", Androidchrome192x192png)
 	})
 
-
-	route.GET("/static/js/main.5f04c8c5.chunk.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript", Staticjsmain5f04c8c5chunkjs)
-	})
-
-
 	route.GET("/android-chrome-512x512.png", func(c *gin.Context) {
 		c.Data(200, "image/png", Androidchrome512x512png)
 	})
-
-
-	route.GET("/browserconfig.xml", func(c *gin.Context) {
-		c.Data(200, "application/xml", Browserconfigxml)
-	})
-
-
-	route.GET("/favicon-32x32.png", func(c *gin.Context) {
-		c.Data(200, "image/png", Favicon32x32png)
-	})
-
-
-	route.GET("/mstile-150x150.png", func(c *gin.Context) {
-		c.Data(200, "image/png", Mstile150x150png)
-	})
-
-
-	route.GET("/static/js/2.5a98d9f9.chunk.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript", Staticjs25a98d9f9chunkjs)
-	})
-
-
-	route.GET("/static/js/runtime-main.8bda5920.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript", Staticjsruntimemain8bda5920js)
-	})
-
 
 	route.GET("/apple-touch-icon.png", func(c *gin.Context) {
 		c.Data(200, "image/png", Appletouchiconpng)
 	})
 
-
 	route.GET("/asset-manifest.json", func(c *gin.Context) {
 		c.Data(200, "application/json", Assetmanifestjson)
 	})
 
+	route.GET("/browserconfig.xml", func(c *gin.Context) {
+		c.Data(200, "application/xml; charset=utf-8", Browserconfigxml)
+	})
+
+	route.GET("/dlnaicon-120.jpg", func(c *gin.Context) {
+		c.Data(200, "image/jpeg", Dlnaicon120jpg)
+	})
+
+	route.GET("/dlnaicon-120.png", func(c *gin.Context) {
+		c.Data(200, "image/png", Dlnaicon120png)
+	})
+
+	route.GET("/dlnaicon-48.jpg", func(c *gin.Context) {
+		c.Data(200, "image/jpeg", Dlnaicon48jpg)
+	})
+
+	route.GET("/dlnaicon-48.png", func(c *gin.Context) {
+		c.Data(200, "image/png", Dlnaicon48png)
+	})
 
 	route.GET("/favicon-16x16.png", func(c *gin.Context) {
 		c.Data(200, "image/png", Favicon16x16png)
 	})
 
+	route.GET("/favicon-32x32.png", func(c *gin.Context) {
+		c.Data(200, "image/png", Favicon32x32png)
+	})
+
+	route.GET("/favicon.ico", func(c *gin.Context) {
+		c.Data(200, "image/vnd.microsoft.icon", Faviconico)
+	})
 
 	route.GET("/index.html", func(c *gin.Context) {
 		c.Data(200, "text/html; charset=utf-8", Indexhtml)
 	})
 
+	route.GET("/mstile-150x150.png", func(c *gin.Context) {
+		c.Data(200, "image/png", Mstile150x150png)
+	})
 
 	route.GET("/site.webmanifest", func(c *gin.Context) {
 		c.Data(200, "application/manifest+json", Sitewebmanifest)
 	})
 
-
-	route.GET("/static/js/2.5a98d9f9.chunk.js.LICENSE.txt", func(c *gin.Context) {
-		c.Data(200, "text/plain; charset=utf-8", Staticjs25a98d9f9chunkjsLICENSEtxt)
+	route.GET("/static/js/2.7285be30.chunk.js", func(c *gin.Context) {
+		c.Data(200, "application/javascript; charset=utf-8", Staticjs27285be30chunkjs)
 	})
 
-
-	route.GET("/static/js/2.5a98d9f9.chunk.js.map", func(c *gin.Context) {
-		c.Data(200, "application/json", Staticjs25a98d9f9chunkjsmap)
+	route.GET("/static/js/2.7285be30.chunk.js.LICENSE.txt", func(c *gin.Context) {
+		c.Data(200, "text/plain; charset=utf-8", Staticjs27285be30chunkjsLICENSEtxt)
 	})
 
-
-	route.GET("/static/js/runtime-main.8bda5920.js.map", func(c *gin.Context) {
-		c.Data(200, "application/json", Staticjsruntimemain8bda5920jsmap)
+	route.GET("/static/js/2.7285be30.chunk.js.map", func(c *gin.Context) {
+		c.Data(200, "application/json", Staticjs27285be30chunkjsmap)
 	})
 
-
-	route.GET("/favicon.ico", func(c *gin.Context) {
-		c.Data(200, "image/x-icon", Faviconico)
+	route.GET("/static/js/main.ab08a185.chunk.js", func(c *gin.Context) {
+		c.Data(200, "application/javascript; charset=utf-8", Staticjsmainab08a185chunkjs)
 	})
 
-
-	route.GET("/static/js/main.5f04c8c5.chunk.js.map", func(c *gin.Context) {
-		c.Data(200, "application/json", Staticjsmain5f04c8c5chunkjsmap)
+	route.GET("/static/js/main.ab08a185.chunk.js.map", func(c *gin.Context) {
+		c.Data(200, "application/json", Staticjsmainab08a185chunkjsmap)
 	})
 
+	route.GET("/static/js/runtime-main.33603a80.js", func(c *gin.Context) {
+		c.Data(200, "application/javascript; charset=utf-8", Staticjsruntimemain33603a80js)
+	})
+
+	route.GET("/static/js/runtime-main.33603a80.js.map", func(c *gin.Context) {
+		c.Data(200, "application/json", Staticjsruntimemain33603a80jsmap)
+	})
 }

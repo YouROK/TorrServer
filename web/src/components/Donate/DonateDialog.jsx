@@ -23,6 +23,7 @@ export default function DonateDialog({ onClose }) {
             <ButtonGroup variant='outlined' color='primary' aria-label='contained primary button group'>
               <Button onClick={() => window.open('https://www.paypal.com/paypalme/yourok', '_blank')}>PayPal</Button>
               <Button onClick={() => window.open('https://yoomoney.ru/to/410013733697114', '_blank')}>IO.Money</Button>
+              <Button onClick={() => window.open('https://qiwi.com/n/YOUROK85', '_blank')}>QIWI</Button>
             </ButtonGroup>
           </ListItem>
           <ListItem key='DonateForm'>
@@ -31,7 +32,6 @@ export default function DonateDialog({ onClose }) {
           </ListItem>
         </List>
       </DialogContent>
-
       <DialogActions>
         <Button onClick={onClose} color='secondary' variant='contained'>
           Ok

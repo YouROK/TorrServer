@@ -1,11 +1,11 @@
 import styled, { css } from 'styled-components'
 
-const viewedPrimaryColor = '#bdbdbd'
-const viewedSecondaryColor = '#c4c4c4'
-const viewedTertiaryColor = '#c9c9c9'
-const bigTableDividerColor = '#ddd'
-const bigTableDefaultRowColor = '#fff'
-const bigTableViewedRowColor = '#f3f3f3'
+const viewedPrimaryColor = '#858c90'
+const viewedSecondaryColor = '#8c9498'
+const viewedTertiaryColor = '#949ca0'
+const bigTableDividerColor = '#d2d2d2'
+const bigTableDefaultRowColor = '#f3f3f3'
+const bigTableViewedRowColor = '#ddd'
 
 const viewedIndicator = css`
   ${({
@@ -187,7 +187,7 @@ export const ShortTable = styled.div`
         grid-template-columns: repeat(3, 1fr);
         align-items: center;
         gap: 20px;
-        background: #fff;
+        background: #f3f3f3;
 
         @media (max-width: 410px) {
           gap: 10px;

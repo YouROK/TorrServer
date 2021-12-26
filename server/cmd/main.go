@@ -41,6 +41,8 @@ func (args) Version() string {
 var params args
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
 	arg.MustParse(&params)
 
 	if params.Path == "" {
@@ -55,7 +57,7 @@ func main() {
 	settings.HttpAuth = params.HttpAuth
 	log.Init(params.LogPath, params.WebLogPath)
 	fmt.Println("=========== START ===========")
-	fmt.Println("Build Go version:", runtime.Version())
+	fmt.Println("TorrServer", version.Version+",", runtime.Version()+",", "CPU Num:", runtime.NumCPU())
 	if params.HttpAuth {
 		log.TLogln("Use HTTP Auth file", settings.Path+"/accs.db")
 	}
