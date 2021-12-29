@@ -101,11 +101,11 @@ func MimeTypeByPath(filePath string) (ret mimeType, err error) {
 		ret, err = mimeTypeByContent(filePath)
 	}
 	// Custom DLNA-compat mime mappings
-	// TODO: make this client headers / profile map
+	// TODO: make this depend on client headers / profile map
 	if ret == "video/mp2t" {
 		ret = "video/mpeg"
-	} else if ret == "video/x-matroska" {
-		ret = "video/mpeg"
+		//	} else if ret == "video/x-matroska" {
+		//		ret = "video/mpeg"
 	} else if ret == "video/x-msvideo" {
 		ret = "video/avi"
 	} else if ret == "" {

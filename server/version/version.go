@@ -1,3 +1,3 @@
 package version
 
-const Version = "MatriX.110"
+const Version = "MatriX.111"

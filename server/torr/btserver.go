@@ -64,6 +64,7 @@ func (bt *BTServer) configure() {
 	upnpID := "TorrServer"
 	cliVers := userAgent //"uTorrent/2210(25302)"
 
+//	bt.config.AlwaysWantConns = true
 	bt.config.Debug = settings.BTsets.EnableDebug
 	bt.config.DisableIPv6 = settings.BTsets.EnableIPv6 == false
 	bt.config.DisableTCP = settings.BTsets.DisableTCP
@@ -80,12 +81,11 @@ func (bt *BTServer) configure() {
 	bt.config.ExtendedHandshakeClientVersion = cliVers
 	bt.config.EstablishedConnsPerTorrent = settings.BTsets.ConnectionsLimit
 	bt.config.TotalHalfOpenConns = 500
-
 	// Encryption/Obfuscation
-	bt.config.EncryptionPolicy = torrent.EncryptionPolicy{
-		ForceEncryption: settings.BTsets.ForceEncrypt,
+	bt.config.HeaderObfuscationPolicy = torrent.HeaderObfuscationPolicy{
+		RequirePreferred: settings.BTsets.ForceEncrypt,
+		Preferred:        true,
 	}
-
 	if settings.BTsets.DownloadRateLimit > 0 {
 		bt.config.DownloadRateLimiter = utils.Limit(settings.BTsets.DownloadRateLimit * 1024)
 	}
