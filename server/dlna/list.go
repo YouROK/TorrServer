@@ -142,7 +142,7 @@ func getTorrentMeta(path, host string) (ret interface{}) {
 		}
 		meta := upnpav.Container{Object: rootObj, ChildCount: 1}
 		return meta
-	} else if path == "/TR" {
+	} else if filepath.Base(path) == "TR" {
 		// TR Object Meta
 		trObj := upnpav.Object{
 			ID:         "%2FTR",

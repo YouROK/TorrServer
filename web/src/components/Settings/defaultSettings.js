@@ -20,6 +20,5 @@ export default {
   PreloadCache: 50,
   RemoveCacheOnDrop: false,
   RetrackersMode: 1,
-  Strategy: 0,
   TorrentDisconnectTimeout: 30,
 }
