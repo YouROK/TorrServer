@@ -2,13 +2,13 @@ module server
 
 go 1.17
 
-replace github.com/anacrolix/dms v1.3.0 => github.com/tsynik/dms v0.0.0-20210913141714-452c963535cf
+replace github.com/anacrolix/dms v1.3.0 => github.com/tsynik/dms v1.3.1
 
 require (
 	github.com/alexflint/go-arg v1.4.2
 	github.com/anacrolix/dms v1.3.0
 	github.com/anacrolix/missinggo v1.3.0
-	github.com/anacrolix/torrent v1.39.2-0.20211223215610-fc857d455766
+	github.com/anacrolix/torrent v1.40.0
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-contrib/location v0.0.2
 	github.com/gin-gonic/gin v1.7.7
@@ -23,7 +23,7 @@ require (
 	github.com/alexflint/go-scalar v1.1.0 // indirect
 	github.com/anacrolix/chansync v0.3.0 // indirect
 	github.com/anacrolix/confluence v1.10.0 // indirect
-	github.com/anacrolix/dht/v2 v2.14.1-0.20211220010335-4062f7927abf // indirect
+	github.com/anacrolix/dht/v2 v2.15.0 // indirect
 	github.com/anacrolix/envpprof v1.1.1 // indirect
 	github.com/anacrolix/ffprobe v1.0.0 // indirect
 	github.com/anacrolix/go-libutp v1.1.0 // indirect
@@ -31,7 +31,7 @@ require (
 	github.com/anacrolix/missinggo/perf v1.0.0 // indirect
 	github.com/anacrolix/missinggo/v2 v2.5.2 // indirect
 	github.com/anacrolix/mmsg v1.0.0 // indirect
-	github.com/anacrolix/multiless v0.2.0 // indirect
+	github.com/anacrolix/multiless v0.3.0 // indirect
 	github.com/anacrolix/stm v0.3.0 // indirect
 	github.com/anacrolix/sync v0.4.0 // indirect
 	github.com/anacrolix/upnp v0.1.2 // indirect
@@ -59,7 +59,7 @@ require (
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/pion/datachannel v1.5.2 // indirect
 	github.com/pion/dtls/v2 v2.0.13 // indirect
-	github.com/pion/ice/v2 v2.1.17 // indirect
+	github.com/pion/ice/v2 v2.1.18 // indirect
 	github.com/pion/interceptor v0.1.4 // indirect
 	github.com/pion/logging v0.2.2 // indirect
 	github.com/pion/mdns v0.0.5 // indirect
@@ -73,7 +73,7 @@ require (
 	github.com/pion/transport v0.13.0 // indirect
 	github.com/pion/turn/v2 v2.0.6 // indirect
 	github.com/pion/udp v0.1.1 // indirect
-	github.com/pion/webrtc/v3 v3.1.11 // indirect
+	github.com/pion/webrtc/v3 v3.1.12 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 // indirect
 	github.com/rs/dnscache v0.0.0-20211102005908-e0241e321417 // indirect
 	github.com/ugorji/go/codec v1.2.6 // indirect
