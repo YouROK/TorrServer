@@ -12,6 +12,7 @@ import (
 	"server/settings"
 	"server/torr/storage/torrstor"
 	"server/torr/utils"
+	"server/version"
 )
 
 type BTServer struct {
@@ -59,12 +60,13 @@ func (bt *BTServer) configure() {
 	bt.storage = torrstor.NewStorage(settings.BTsets.CacheSize)
 	bt.config.DefaultStorage = bt.storage
 
-	userAgent := "qBittorrent/4.3.2"
-	peerID := "-qB4320-"
-	upnpID := "TorrServer"
-	cliVers := userAgent //"uTorrent/2210(25302)"
+	userAgent := "qBittorrent/4.3.9"
+	peerID := "-qB4390-"
+	upnpID := "TorrServer/" + version.Version
+	cliVers := userAgent
 
-//	bt.config.AlwaysWantConns = true
+	//	bt.config.AcceptPeerConnections = false
+	//	bt.config.AlwaysWantConns = true
 	bt.config.Debug = settings.BTsets.EnableDebug
 	bt.config.DisableIPv6 = settings.BTsets.EnableIPv6 == false
 	bt.config.DisableTCP = settings.BTsets.DisableTCP

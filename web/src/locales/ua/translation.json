@@ -96,7 +96,6 @@
     "ConnectionsLimit": "Обмеження з'єдань",
     "ConnectionsLimitHint": "рекомендовано 20-25",
     "DHT": "DHT (Distributed Hash Table)",
-    "DhtConnectionLimit": "Обмеження з'єдань DHT",
     "Disk": "ПЗП / Носій",
     "DLNA": "DLNA-медиасервер",
     "DontAddRetrackers": "Нічого не робити",

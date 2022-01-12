@@ -96,7 +96,6 @@
     "ConnectionsLimit": "Connections Limit",
     "ConnectionsLimitHint": "20-25 recommended",
     "DHT": "DHT (Distributed Hash Table)",
-    "DhtConnectionLimit": "DHT Connection Limit",
     "Disk": "Disk",
     "DLNA": "DLNA Media Server",
     "DontAddRetrackers": "Don`t add retrackers",
