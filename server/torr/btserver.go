@@ -71,6 +71,8 @@ func (bt *BTServer) configure() {
 	bt.config.DisableIPv6 = settings.BTsets.EnableIPv6 == false
 	bt.config.DisableTCP = settings.BTsets.DisableTCP
 	bt.config.DisableUTP = settings.BTsets.DisableUTP
+	//	https://github.com/anacrolix/torrent/issues/703
+	bt.config.DisableWebtorrent = true
 	bt.config.NoDefaultPortForwarding = settings.BTsets.DisableUPNP
 	bt.config.NoDHT = settings.BTsets.DisableDHT
 	bt.config.DisablePEX = settings.BTsets.DisablePEX
