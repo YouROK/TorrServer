@@ -117,6 +117,12 @@ func (bt *BTServer) configure() {
 	}
 
 	log.Println("Client config:", settings.BTsets)
+
+	// set public IPv6
+	bt.config.PublicIp6 = getPublicIp6()
+	if bt.config.PublicIp6 != nil {
+		log.Println("PublicIp6:", bt.config.PublicIp6)
+	}
 }
 
 func (bt *BTServer) GetTorrent(hash torrent.InfoHash) *Torrent {
@@ -138,4 +144,30 @@ func (bt *BTServer) RemoveTorrent(hash torrent.InfoHash) {
 	if torr, ok := bt.torrents[hash]; ok {
 		torr.Close()
 	}
+}
+
+func getPublicIp6() net.IP {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		log.Println("Error get public IPv6")
+		return nil
+	}
+	for _, i := range ifaces {
+		addrs, _ := i.Addrs()
+		if i.Flags&net.FlagUp == net.FlagUp {
+			for _, addr := range addrs {
+				var ip net.IP
+				switch v := addr.(type) {
+				case *net.IPNet:
+					ip = v.IP
+				case *net.IPAddr:
+					ip = v.IP
+				}
+				if !ip.IsLoopback() && !ip.IsPrivate() && ip.To4 == nil && ip.To16 != nil {
+					return ip
+				}
+			}
+		}
+	}
+	return nil
 }

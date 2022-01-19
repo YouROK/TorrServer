@@ -8,6 +8,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strconv"
 	"time"
 
@@ -185,6 +186,7 @@ func getDefaultFriendlyName() string {
 			}
 		}
 		if len(list) > 0 {
+			sort.Strings(list)
 			return ret + " " + list[0]
 		}
 	}
