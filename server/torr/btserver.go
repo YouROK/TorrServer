@@ -185,7 +185,7 @@ func getPublicIp4() net.IP {
 				case *net.IPAddr:
 					ip = v.IP
 				}
-				if !ip.IsLoopback() && !ip.IsPrivate() && ip.To4 != nil {
+				if !ip.IsLoopback() && !ip.IsPrivate() && ip.To4 != nil && ip.To16 == nil {
 					return ip
 				}
 			}
