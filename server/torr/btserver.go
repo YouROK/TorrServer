@@ -1,6 +1,7 @@
 package torr
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"strconv"
@@ -24,6 +25,27 @@ type BTServer struct {
 	torrents map[metainfo.Hash]*Torrent
 
 	mu sync.Mutex
+}
+
+var privateIPBlocks []*net.IPNet
+
+func init() {
+	for _, cidr := range []string{
+		"127.0.0.0/8",    // IPv4 loopback
+		"10.0.0.0/8",     // RFC1918
+		"172.16.0.0/12",  // RFC1918
+		"192.168.0.0/16", // RFC1918
+		"169.254.0.0/16", // RFC3927 link-local
+		"::1/128",        // IPv6 loopback
+		"fe80::/10",      // IPv6 link-local
+		"fc00::/7",       // IPv6 unique local addr
+	} {
+		_, block, err := net.ParseCIDR(cidr)
+		if err != nil {
+			panic(fmt.Errorf("parse error on %q: %v", cidr, err))
+		}
+		privateIPBlocks = append(privateIPBlocks, block)
+	}
 }
 
 func NewBTS() *BTServer {
@@ -120,13 +142,12 @@ func (bt *BTServer) configure() {
 
 	// set public IPv4
 	if settings.PubIPv4 != "" {
-		ip4 := net.ParseIP(settings.PubIPv4)
-		if ip4.To4 != nil {
+		if ip4 := net.ParseIP(settings.PubIPv4); ip4.To4 != nil {
 			bt.config.PublicIp4 = ip4
 		}
 	}
 	if bt.config.PublicIp4 == nil {
-			bt.config.PublicIp4 = getPublicIp4()
+		bt.config.PublicIp4 = getPublicIp4()
 	}
 	if bt.config.PublicIp4 != nil {
 		log.Println("PublicIp4:", bt.config.PublicIp4)
@@ -134,13 +155,12 @@ func (bt *BTServer) configure() {
 
 	// set public IPv6
 	if settings.PubIPv6 != "" {
-		ip6 := net.ParseIP(settings.PubIPv6)
-		if ip6.To4 == nil && ip6.To16 != nil {
+		if ip6 := net.ParseIP(settings.PubIPv6); ip6.To16 != nil && ip6.To4 == nil {
 			bt.config.PublicIp6 = ip6
 		}
 	}
 	if bt.config.PublicIp6 == nil {
-			bt.config.PublicIp6 = getPublicIp6()
+		bt.config.PublicIp6 = getPublicIp6()
 	}
 	if bt.config.PublicIp6 != nil {
 		log.Println("PublicIp6:", bt.config.PublicIp6)
@@ -168,6 +188,25 @@ func (bt *BTServer) RemoveTorrent(hash torrent.InfoHash) {
 	}
 }
 
+func isPrivateIP(ip net.IP) bool {
+	//		log.Println(ip, "IsLoopback:", ip.IsLoopback())
+	//		log.Println(ip, "IsPrivate:", ip.IsPrivate())
+	//		log.Println(ip, "IsLinkLocalUnicast:", ip.IsLinkLocalUnicast())
+	//		log.Println(ip, "IsLinkLocalMulticast:", ip.IsLinkLocalMulticast())
+	//		log.Println(ip, "IsGlobalUnicast:", ip.IsGlobalUnicast())
+
+	if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
+		return true
+	}
+
+	for _, block := range privateIPBlocks {
+		if block.Contains(ip) {
+			return true
+		}
+	}
+	return false
+}
+
 func getPublicIp4() net.IP {
 	ifaces, err := net.Interfaces()
 	if err != nil {
@@ -185,7 +224,7 @@ func getPublicIp4() net.IP {
 				case *net.IPAddr:
 					ip = v.IP
 				}
-				if !ip.IsLoopback() && !ip.IsPrivate() && ip.To4 != nil && ip.To16 == nil {
+				if !isPrivateIP(ip) && ip.To4() != nil {
 					return ip
 				}
 			}
@@ -211,7 +250,7 @@ func getPublicIp6() net.IP {
 				case *net.IPAddr:
 					ip = v.IP
 				}
-				if !ip.IsLoopback() && !ip.IsPrivate() && ip.To4 == nil && ip.To16 != nil {
+				if !isPrivateIP(ip) && ip.To16() != nil && ip.To4() == nil {
 					return ip
 				}
 			}
