@@ -13,6 +13,8 @@ var (
 	Port     string
 	ReadOnly bool
 	HttpAuth bool
+	PubIPv4  string
+	PubIPv6  string
 )
 
 func InitSets(readOnly bool) {

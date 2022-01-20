@@ -4,8 +4,7 @@ export default {
   UseDisk: false,
   UploadRateLimit: 0,
   TorrentsSavePath: '',
-  ConnectionsLimit: 23,
-  DhtConnectionLimit: 0,
+  ConnectionsLimit: 25,
   DisableDHT: false,
   DisablePEX: false,
   DisableTCP: false,
@@ -20,6 +19,5 @@ export default {
   PreloadCache: 50,
   RemoveCacheOnDrop: false,
   RetrackersMode: 1,
-  Strategy: 0,
   TorrentDisconnectTimeout: 30,
 }

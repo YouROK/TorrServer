@@ -96,7 +96,6 @@
     "ConnectionsLimit": "Торрент-соединения",
     "ConnectionsLimitHint": "рекомендуется 20-25",
     "DHT": "DHT (Distributed Hash Table)",
-    "DhtConnectionLimit": "Лимит подключений DHT",
     "Disk": "ПЗУ / Накопитель",
     "DLNA": "DLNA-медиасервер",
     "DontAddRetrackers": "Ничего не делать",

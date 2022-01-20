@@ -191,6 +191,27 @@ Open msx and goto: Settings -> Start Parameter -> Setup \
 Enter current ip address and port of server e.g. _127.0.0.1:8090_
 
 #
+### Running in docker
+Just run:  `docker run --rm -d --name torrserver -p 8090:8090 ghcr.io/yourok/torrserver:latest` \
+For running in persistence mode, just mount volume to container by adding `-v ~/ts:/opt/ts`, where `~/ts` folder path is just example, but you could use it anyway... Result example command: `docker run --rm -d --name torrserver -v ~/ts:/opt/ts -p 8090:8090 ghcr.io/yourok/torrserver:latest` \
+Other options:
+- add `-e TS_HTTPAUTH=1` and place [auth file](#authorization) into `~/ts/config` forlder for enabling basic auth
+- add `-e TS_RDB=1` for enabling `--rdb` flag
+- add `-e TS_DONTKILL=1` for enabling `--dontkill` flag
+- add `-e TS_PORT=5555` for changind default port to 5555(example), also u need to change `-p 8090:8090` to `-p 5555:5555` (example)
+- add `-e TS_CONF_PATH=/opt/tsss` for overriding torrserver config path inside container
+- add `-e TS_TORR_DIR=/opt/torr_files` for overriding torrents directory
+- add `-e TS_LOG_PATH=/opt/torrserver.log` for overriding log path
+
+
+Example with full overrided command(on default values):
+```
+docker run --rm -d -e TS_PORT=5665 -e TS_DONTKILL=1 -e TS_HTTPAUTH=1 -e TS_RDB=1 -e TS_CONF_PATH=/opt/ts/config -e TS_LOG_PATH=/opt/ts/log -e TS_TORR_DIR=/opt/ts/torrents --name torrserver -v ~/ts:/opt/ts -p 5665:5665 ghcr.io/yourok/torrserver:latest
+
+```
+
+
+#
 ### Donate:
 [PayPal](https://www.paypal.me/yourok) \
 [QIWI](qiwi.com/n/YOUROK85) \

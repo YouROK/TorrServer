@@ -37,6 +37,8 @@ func SetupRoute(route *gin.RouterGroup) {
 	route.GET("/playlistall/all.m3u", allPlayList)
 	route.GET("/playlist", playList)
 	route.GET("/playlist/*fname", playList)
+
+	route.GET("/download/:size", download)
 }
 
 func shutdown(c *gin.Context) {

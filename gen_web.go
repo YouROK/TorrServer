@@ -14,14 +14,16 @@ import (
 
 func main() {
 	dir, _ := os.Getwd()
-	os.Chdir("web")
-	if run("yarn") != nil {
-		os.Exit(1)
+	if _, err := os.Stat("web/build/static"); os.IsNotExist(err) {
+		os.Chdir("web")
+		if run("yarn") != nil {
+			os.Exit(1)
+		}
+		if run("yarn", "run", "build") != nil {
+			os.Exit(1)
+		}
+		os.Chdir(dir)
 	}
-	if run("yarn", "run", "build") != nil {
-		os.Exit(1)
-	}
-	os.Chdir(dir)
 
 	compileHtml := "web/build/"
 	srcGo := "server/web/pages/"

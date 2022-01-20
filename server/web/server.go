@@ -2,6 +2,7 @@ package web
 
 import (
 	"net"
+	"sort"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/location"
@@ -29,7 +30,7 @@ func Start(port string) {
 	log.TLogln("Start TorrServer")
 	ips := getLocalIps()
 	if len(ips) > 0 {
-		log.TLogln("IP:", ips)
+		log.TLogln("IPs:", ips)
 	}
 	err := BTS.Connect()
 	if err != nil {
@@ -107,5 +108,6 @@ func getLocalIps() []string {
 			}
 		}
 	}
+	sort.Strings(list)
 	return list
 }
