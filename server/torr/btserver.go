@@ -145,7 +145,7 @@ func (bt *BTServer) configure() {
 
 	// set public IPv4
 	if settings.PubIPv4 != "" {
-		if ip4 := net.ParseIP(settings.PubIPv4); ip4.To4 != nil && !isPrivateIP(ip4) {
+		if ip4 := net.ParseIP(settings.PubIPv4); ip4.To4() != nil && !isPrivateIP(ip4) {
 			bt.config.PublicIp4 = ip4
 		}
 	}
@@ -158,7 +158,7 @@ func (bt *BTServer) configure() {
 
 	// set public IPv6
 	if settings.PubIPv6 != "" {
-		if ip6 := net.ParseIP(settings.PubIPv6); ip6.To16 != nil && ip6.To4 == nil && !isPrivateIP(ip6) {
+		if ip6 := net.ParseIP(settings.PubIPv6); ip6.To16() != nil && ip6.To4() == nil && !isPrivateIP(ip6) {
 			bt.config.PublicIp6 = ip6
 		}
 	}
