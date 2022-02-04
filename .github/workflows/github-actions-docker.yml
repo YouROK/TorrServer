@@ -8,37 +8,36 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
-      -
-        name: tag number
+      - name: tag number
         run : echo ${{ github.event.release.tag_name }}
-      -
-        name: Checkout
+      
+      - name: Checkout
         uses: actions/checkout@v2
-      -
-        name: Set up QEMU
+      
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
-      -
-        name: Set up Docker Buildx
+      
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
-      -
-        name: Login to GitHub Container Registry
+      
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v1
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - 
-        name: set lower case owner name
+      
+      - name: set lower case owner name
         run: |
           echo "REG_REPO=${REPO,,}" >>${GITHUB_ENV}
         env:
           REPO: '${{ github.repository }}'
-      - 
-        name: CHECK ENVS
+      
+      - name: CHECK ENVS
         run: |
           echo ${{ env.REG_REPO }}
-      -
-        name: Build and push
+      
+      - name: Build and push
         uses: docker/build-push-action@v2
         with:
           context: .
