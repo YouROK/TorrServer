@@ -1,7 +1,6 @@
 package dlna
 
 import (
-	"bytes"
 	"fmt"
 	"net"
 	"os"
@@ -13,20 +12,23 @@ import (
 	"time"
 
 	"github.com/anacrolix/dms/dlna/dms"
+	"github.com/anacrolix/log"
 
-	"server/log"
-	"server/web/pages/template"
+  "server/settings"
+  "server/web/pages/template"
 )
 
 var dmsServer *dms.Server
 
 func Start() {
+	logger := log.Default.WithNames("dms")
 	dmsServer = &dms.Server{
+		Logger: logger.WithNames("dms", "server"),
 		Interfaces: func() (ifs []net.Interface) {
 			var err error
 			ifaces, err := net.Interfaces()
 			if err != nil {
-				log.TLogln(err)
+				log.Print(err)
 				os.Exit(1)
 			}
 			for _, i := range ifaces {
@@ -41,7 +43,7 @@ func Start() {
 		HTTPConn: func() net.Listener {
 			port := 9080
 			for {
-				log.TLogln("Check dlna port", port)
+				log.Printf("Check dlna port %d", port)
 				m, err := net.Listen("tcp", ":"+strconv.Itoa(port))
 				if m != nil {
 					m.Close()
@@ -51,10 +53,10 @@ func Start() {
 				}
 				port++
 			}
-			log.TLogln("Set dlna port", port)
+			log.Printf("Set dlna port %d", port)
 			conn, err := net.Listen("tcp", ":"+strconv.Itoa(port))
 			if err != nil {
-				log.TLogln(err)
+				log.Print(err)
 				os.Exit(1)
 			}
 			return conn
@@ -69,16 +71,17 @@ func Start() {
 				Height:     48,
 				Depth:      24,
 				Mimetype:   "image/png",
-				ReadSeeker: bytes.NewReader(template.Dlnaicon48png),
+				Bytes:      template.Dlnaicon48png,
 			},
 			dms.Icon{
 				Width:      120,
 				Height:     120,
 				Depth:      24,
 				Mimetype:   "image/png",
-				ReadSeeker: bytes.NewReader(template.Dlnaicon120png),
+				Bytes:      template.Dlnaicon120png,
 			},
 		},
+		LogHeaders: settings.BTsets.EnableDebug,
 		NotifyInterval: 30 * time.Second,
 		AllowedIpNets: func() []*net.IPNet {
 			var nets []*net.IPNet
@@ -93,12 +96,12 @@ func Start() {
 	}
 
 	if err := dmsServer.Init(); err != nil {
-		log.TLogln("error initing dms server: %v", err)
+		log.Printf("error initing dms server: %v", err)
 		os.Exit(1)
 	}
 	go func() {
 		if err := dmsServer.Run(); err != nil {
-			log.TLogln(err)
+			log.Print(err)
 			os.Exit(1)
 		}
 	}()
@@ -140,13 +143,13 @@ func getDefaultFriendlyName() string {
 	userName := ""
 	user, err := user.Current()
 	if err != nil {
-		log.TLogln("getDefaultFriendlyName could not get username: %s", err)
+		log.Printf("getDefaultFriendlyName could not get username: %s", err)
 	} else {
 		userName = user.Name
 	}
 	host, err := os.Hostname()
 	if err != nil {
-		log.TLogln("getDefaultFriendlyName could not get hostname: %s", err)
+		log.Printf("getDefaultFriendlyName could not get hostname: %s", err)
 	}
 
 	if userName == "" && host == "" {
