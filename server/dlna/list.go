@@ -55,7 +55,7 @@ func getTorrents() (ret []interface{}) {
 			ID:          "%2F" + t.TorrentSpec.InfoHash.HexString(),
 			ParentID:    "%2FTR",
 			Restricted:  1,
-			Title:       t.Title,
+			Title:       strings.ReplaceAll(t.Title, "/", "|"),
 			Class:       "object.container.storageFolder",
 			Icon:        t.Poster,
 			AlbumArtURI: t.Poster,
