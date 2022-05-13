@@ -14,8 +14,8 @@ import (
 	"github.com/anacrolix/dms/dlna/dms"
 	"github.com/anacrolix/log"
 
-  "server/settings"
-  "server/web/pages/template"
+	"server/settings"
+	"server/web/pages/template"
 )
 
 var dmsServer *dms.Server
@@ -67,21 +67,21 @@ func Start() {
 		StallEventSubscribe: true,
 		Icons: []dms.Icon{
 			dms.Icon{
-				Width:      48,
-				Height:     48,
-				Depth:      24,
-				Mimetype:   "image/png",
-				Bytes:      template.Dlnaicon48png,
+				Width:    48,
+				Height:   48,
+				Depth:    24,
+				Mimetype: "image/png",
+				Bytes:    template.Dlnaicon48png,
 			},
 			dms.Icon{
-				Width:      120,
-				Height:     120,
-				Depth:      24,
-				Mimetype:   "image/png",
-				Bytes:      template.Dlnaicon120png,
+				Width:    120,
+				Height:   120,
+				Depth:    24,
+				Mimetype: "image/png",
+				Bytes:    template.Dlnaicon120png,
 			},
 		},
-		LogHeaders: settings.BTsets.EnableDebug,
+		LogHeaders:     settings.BTsets.EnableDebug,
 		NotifyInterval: 30 * time.Second,
 		AllowedIpNets: func() []*net.IPNet {
 			var nets []*net.IPNet
