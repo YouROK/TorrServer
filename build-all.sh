@@ -90,7 +90,7 @@ declare -a COMPILERS=(
   "amd64:x86_64-linux-android21-clang"
 )
 
-export NDK_TOOLCHAIN=$ROOT/toolchain
+export NDK_TOOLCHAIN=/Users/yourok/Library/Android/sdk/ndk/23.1.7779620/toolchains/llvm/prebuilt/darwin-x86_64
 
 GOOS=android
 

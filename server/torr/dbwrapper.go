@@ -2,6 +2,7 @@ package torr
 
 import (
 	"encoding/json"
+	"server/torr/utils"
 	"time"
 
 	"server/settings"
@@ -29,7 +30,9 @@ func AddTorrentDB(torr *Torrent) {
 	} else {
 		t.Data = torr.Data
 	}
-	t.Poster = torr.Poster
+	if utils.CheckImgUrl(torr.Poster) {
+		t.Poster = torr.Poster
+	}
 	t.Size = torr.Size
 	if t.Size == 0 && torr.Torrent != nil {
 		t.Size = torr.Torrent.Length()

@@ -20,7 +20,8 @@ Run build script under linux build-all.sh\
 For build web page need install npm and yarn\
 For instal yarn: _npm i -g yarn_ after install npm\
 For build android server need android toolchain\
-Download android ndk and copy android-ndk-XXX/toolchains/llvm/prebuilt/linux-x86_64 dir to source, rename it to toolchain
+Download android ndk and change NDK_TOOLCHAIN in build.sh to\
+path/to/Android/sdk/ndk/ver/toolchains/llvm/prebuilt/platform
 
 #
 ### Server args:
