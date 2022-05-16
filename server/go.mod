@@ -3,7 +3,7 @@ module server
 go 1.18
 
 replace (
-	github.com/anacrolix/dms v1.4.0 => github.com/tsynik/dms v1.4.2
+	github.com/anacrolix/dms v1.4.0 => github.com/tsynik/dms v1.4.3
 	github.com/anacrolix/torrent v1.43.1 => github.com/tsynik/torrent v1.2.8
 )
 
