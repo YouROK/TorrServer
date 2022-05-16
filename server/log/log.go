@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -47,10 +48,9 @@ func Init(path, webpath string) {
 		logFile = ff
 		os.Stdout = ff
 		os.Stderr = ff
-		//https://stackoverflow.com/a/36140590
-		//fmt.Print(time.Now().UTC().Format("2006-01-02T15:04:05.999Z") + " TLOG  " + string(bytes))
-		log.SetFlags(log.Ldate | log.Ltime | log.LUTC | log.Lmsgprefix)
-		log.SetPrefix("UTC0 SRV ")
+		t := time.Now().Format("2006-01-02T15:04:05-0700")
+		log.SetFlags(log.Lmsgprefix)
+		log.SetPrefix(t + " SRV ")
 		log.SetOutput(ff)
 	}
 }

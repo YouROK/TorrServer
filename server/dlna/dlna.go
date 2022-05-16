@@ -21,14 +21,14 @@ import (
 var dmsServer *dms.Server
 
 func Start() {
-	logger := log.Default.WithNames("dms")
+	logger := log.Default.WithNames("dlna")
 	dmsServer = &dms.Server{
 		Logger: logger.WithNames("dms", "server"),
 		Interfaces: func() (ifs []net.Interface) {
 			var err error
 			ifaces, err := net.Interfaces()
 			if err != nil {
-				log.Print(err)
+				logger.Print(err)
 				os.Exit(1)
 			}
 			for _, i := range ifaces {
@@ -43,7 +43,7 @@ func Start() {
 		HTTPConn: func() net.Listener {
 			port := 9080
 			for {
-				log.Printf("Check dlna port %d", port)
+				logger.Printf("Check dlna port %d", port)
 				m, err := net.Listen("tcp", ":"+strconv.Itoa(port))
 				if m != nil {
 					m.Close()
@@ -53,10 +53,10 @@ func Start() {
 				}
 				port++
 			}
-			log.Printf("Set dlna port %d", port)
+			logger.Printf("Set dlna port %d", port)
 			conn, err := net.Listen("tcp", ":"+strconv.Itoa(port))
 			if err != nil {
-				log.Print(err)
+				logger.Print(err)
 				os.Exit(1)
 			}
 			return conn
@@ -96,12 +96,12 @@ func Start() {
 	}
 
 	if err := dmsServer.Init(); err != nil {
-		log.Printf("error initing dms server: %v", err)
+		logger.Printf("error initing dms server: %v", err)
 		os.Exit(1)
 	}
 	go func() {
 		if err := dmsServer.Run(); err != nil {
-			log.Print(err)
+			logger.Print(err)
 			os.Exit(1)
 		}
 	}()
@@ -139,17 +139,18 @@ func onBrowseMeta(path string, rootObjectPath string, host, userAgent string) (r
 }
 
 func getDefaultFriendlyName() string {
+	logger := log.Default.WithNames("dlna")
 	ret := "TorrServer"
 	userName := ""
 	user, err := user.Current()
 	if err != nil {
-		log.Printf("getDefaultFriendlyName could not get username: %s", err)
+		logger.Printf("getDefaultFriendlyName could not get username: %s", err)
 	} else {
 		userName = user.Name
 	}
 	host, err := os.Hostname()
 	if err != nil {
-		log.Printf("getDefaultFriendlyName could not get hostname: %s", err)
+		logger.Printf("getDefaultFriendlyName could not get hostname: %s", err)
 	}
 
 	if userName == "" && host == "" {
