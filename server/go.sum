@@ -271,8 +271,8 @@ github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/tinylib/msgp v1.0.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tinylib/msgp v1.1.0/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tinylib/msgp v1.1.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
-github.com/tsynik/dms v1.4.2 h1:WDwjKBAjvTR1a6xycUNz+1OGmqhxMkWalof2k4msH4Q=
-github.com/tsynik/dms v1.4.2/go.mod h1:tyr6Ns5fHG1ejdBvA6FoJPS34KSWsY8qQPbcPsRNdtk=
+github.com/tsynik/dms v1.4.4 h1:i2wT3blB+3kIruKf75/zyyR2Gpgslvc6hFuXhioJj8I=
+github.com/tsynik/dms v1.4.4/go.mod h1:tyr6Ns5fHG1ejdBvA6FoJPS34KSWsY8qQPbcPsRNdtk=
 github.com/tsynik/torrent v1.2.8 h1:2eRLVxZEbkwfLwBIaUpGVwhYawcRF80JBgh2YYbtPZA=
 github.com/tsynik/torrent v1.2.8/go.mod h1:wtEVRmXUffDKwa1YpwP6EbWfuuzPZ7Q+FiBuhTJPvOo=
 github.com/ugorji/go v1.1.7/go.mod h1:kZn38zHttfInRq0xu/PH0az30d+z6vm202qpg1oXVMw=
