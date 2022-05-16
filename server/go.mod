@@ -3,7 +3,7 @@ module server
 go 1.18
 
 replace (
-	github.com/anacrolix/dms v1.4.0 => github.com/tsynik/dms v1.4.1
+	github.com/anacrolix/dms v1.4.0 => github.com/tsynik/dms v1.4.2
 	github.com/tidwall/btree v1.3.1 => github.com/tidwall/btree v0.7.2-0.20211211132910-4215444137fc
 )
 
