@@ -57,6 +57,16 @@ func SetBTSets(sets *BTSets) {
 	if ReadOnly {
 		return
 	}
+	// failsafe (load defaults)
+	if sets.CacheSize == 0 {
+		sets.CacheSize = 64 * 1024 * 1024
+	}
+	if sets.ConnectionsLimit == 0 {
+		sets.ConnectionsLimit = 25
+	}
+	if sets.TorrentDisconnectTimeout == 0 {
+		sets.TorrentDisconnectTimeout = 30
+	}
 
 	if sets.ReaderReadAHead < 5 {
 		sets.ReaderReadAHead = 5
