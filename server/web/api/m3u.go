@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -72,7 +73,7 @@ func sendM3U(c *gin.Context, name, hash string, m3u string) {
 	c.Header("Content-Type", "audio/x-mpegurl")
 	c.Header("Connection", "close")
 	if hash != "" {
-		c.Header("ETag", httptoo.EncodeQuotedString(fmt.Sprintf("%s/%s", hash, name)))
+		c.Header("ETag", httptoo.EncodeQuotedString(fmt.Sprintf("%s/%s", hash, hex.EncodeToString([]byte(name)))))
 	}
 	if name == "" {
 		name = "playlist.m3u"

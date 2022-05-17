@@ -48,9 +48,15 @@ func Init(path, webpath string) {
 		logFile = ff
 		os.Stdout = ff
 		os.Stderr = ff
-		t := time.Now().Format("2006-01-02T15:04:05-0700")
+		var timeFmt string
+		var ok bool
+		timeFmt, ok = os.LookupEnv("GO_LOG_TIME_FMT")
+		if !ok {
+			timeFmt = "2006-01-02T15:04:05-0700"
+		}
+		t := time.Now().Format(timeFmt)
 		log.SetFlags(log.Lmsgprefix)
-		log.SetPrefix(t + " SRV ")
+		log.SetPrefix(t + " TSM ")
 		log.SetOutput(ff)
 	}
 }
