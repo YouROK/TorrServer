@@ -28,7 +28,7 @@ func Start() {
 			var err error
 			ifaces, err := net.Interfaces()
 			if err != nil {
-				logger.Print(err)
+				logger.Levelf(log.Error, "%v", err)
 				os.Exit(1)
 			}
 			for _, i := range ifaces {
@@ -43,7 +43,7 @@ func Start() {
 		HTTPConn: func() net.Listener {
 			port := 9080
 			for {
-				logger.Printf("Check dlna port %d", port)
+				logger.Levelf(log.Info, "Check dlna port %d", port)
 				m, err := net.Listen("tcp", ":"+strconv.Itoa(port))
 				if m != nil {
 					m.Close()
@@ -53,10 +53,10 @@ func Start() {
 				}
 				port++
 			}
-			logger.Printf("Set dlna port %d", port)
+			logger.Levelf(log.Info, "Set dlna port %d", port)
 			conn, err := net.Listen("tcp", ":"+strconv.Itoa(port))
 			if err != nil {
-				logger.Print(err)
+				logger.Levelf(log.Error, "%v", err)
 				os.Exit(1)
 			}
 			return conn
@@ -96,12 +96,12 @@ func Start() {
 	}
 
 	if err := dmsServer.Init(); err != nil {
-		logger.Printf("error initing dms server: %v", err)
+		logger.Levelf(log.Error, "error initing dms server: %v", err)
 		os.Exit(1)
 	}
 	go func() {
 		if err := dmsServer.Run(); err != nil {
-			logger.Print(err)
+			logger.Levelf(log.Error, "%v", err)
 			os.Exit(1)
 		}
 	}()
