@@ -1,6 +1,7 @@
 package torr
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
@@ -61,7 +62,7 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 	sets.SetViewed(&sets.Viewed{t.Hash().HexString(), fileID})
 
 	resp.Header().Set("Connection", "close")
-	resp.Header().Set("ETag", httptoo.EncodeQuotedString(fmt.Sprintf("%s/%s", t.Hash().HexString(), file.Path())))
+	resp.Header().Set("ETag", httptoo.EncodeQuotedString(fmt.Sprintf("%s/%s", t.Hash().HexString(), hex.EncodeToString([]byte(file.Path())))))
 	// DLNA headers
 	resp.Header().Set("transferMode.dlna.org", "Streaming")
 	mime, err := mt.MimeTypeByPath(file.Path())
