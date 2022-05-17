@@ -196,12 +196,12 @@ func SetSettings(set *sets.BTSets) {
 	sets.SetBTSets(set)
 	log.TLogln("drop all torrents")
 	dropAllTorrent()
-	time.Sleep(time.Second * 2)
+	time.Sleep(time.Second * 1)
 	log.TLogln("disconect")
 	bts.Disconnect()
 	log.TLogln("connect")
 	bts.Connect()
-	time.Sleep(time.Second * 2)
+	time.Sleep(time.Second * 1)
 	log.TLogln("end set settings")
 }
 
@@ -212,12 +212,12 @@ func SetDefSettings() {
 	sets.SetDefault()
 	log.TLogln("drop all torrents")
 	dropAllTorrent()
-	time.Sleep(time.Second * 2)
+	time.Sleep(time.Second * 1)
 	log.TLogln("disconect")
 	bts.Disconnect()
 	log.TLogln("connect")
 	bts.Connect()
-	time.Sleep(time.Second * 2)
+	time.Sleep(time.Second * 1)
 	log.TLogln("end set default settings")
 }
 
