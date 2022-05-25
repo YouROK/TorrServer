@@ -28,7 +28,8 @@ type BTSets struct {
 	EnableDebug              bool // print logs
 
 	// DLNA
-	EnableDLNA bool
+	EnableDLNA   bool
+	FriendlyName string
 
 	// BT Config
 	EnableIPv6        bool

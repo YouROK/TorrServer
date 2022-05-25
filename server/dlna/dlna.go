@@ -140,6 +140,11 @@ func onBrowseMeta(path string, rootObjectPath string, host, userAgent string) (r
 
 func getDefaultFriendlyName() string {
 	logger := log.Default.WithNames("dlna")
+
+	if settings.BTsets.FriendlyName != "" {
+		return settings.BTsets.FriendlyName
+	}
+
 	ret := "TorrServer"
 	userName := ""
 	user, err := user.Current()
