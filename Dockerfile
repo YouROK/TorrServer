@@ -7,7 +7,7 @@ RUN yarn install && yarn run build
 ### FRONT BUILD END ###
 
 ### BUILD TORRSERVER MULTIARCH START ###
-FROM --platform=$BUILDPLATFORM golang:1.17-alpine as builder
+FROM --platform=$BUILDPLATFORM golang:1.18-alpine as builder
 
 COPY . /opt/src
 COPY --from=front /app/build /opt/src/web/build
