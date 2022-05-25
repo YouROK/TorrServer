@@ -61,7 +61,7 @@ export default function SettingsDialog({ handleClose }) {
       )
         sets[id] = Boolean(!checked)
       else sets[id] = Boolean(checked)
-    } else if (type === 'url') {
+    } else if (type === 'url' || type === 'text') {
       sets[id] = value
     }
     setSettings(sets)

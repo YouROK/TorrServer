@@ -50,8 +50,8 @@ type Torrent struct {
 }
 
 func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
-	// TODO panic when settings sets
-	if bt == nil {
+	// https://github.com/anacrolix/torrent/issues/747
+	if bt == nil || bt.client == nil {
 		return nil, errors.New("BT client not connected")
 	}
 	switch settings.BTsets.RetrackersMode {

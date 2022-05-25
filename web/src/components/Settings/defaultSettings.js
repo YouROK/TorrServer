@@ -14,6 +14,7 @@ export default {
   DownloadRateLimit: 0,
   EnableDebug: false,
   EnableIPv6: false,
+  FriendlyName: '',
   ForceEncrypt: false,
   PeersListenPort: 0,
   PreloadCache: 50,

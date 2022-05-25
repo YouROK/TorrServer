@@ -15,6 +15,7 @@ var (
 	HttpAuth bool
 	PubIPv4  string
 	PubIPv6  string
+	TorAddr  string
 )
 
 func InitSets(readOnly bool) {

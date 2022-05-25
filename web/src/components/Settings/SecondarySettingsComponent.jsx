@@ -10,8 +10,10 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
   const {
     RetrackersMode,
     TorrentDisconnectTimeout,
+    EnableDebug,
     EnableDLNA,
     EnableIPv6,
+    FriendlyName,
     ForceEncrypt,
     DisableTCP,
     DisableUTP,
@@ -137,6 +139,22 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       <FormControlLabel
         control={<Switch checked={EnableDLNA} onChange={inputForm} id='EnableDLNA' color='secondary' />}
         label={t('SettingsDialog.DLNA')}
+        labelPlacement='start'
+      />
+      <TextField
+        onChange={inputForm}
+        margin='normal'
+        id='FriendlyName'
+        label={t('SettingsDialog.FriendlyName')}
+        helperText={t('SettingsDialog.FriendlyNameHint')}
+        value={FriendlyName}
+        type='text'
+        variant='outlined'
+        fullWidth
+      />
+      <FormControlLabel
+        control={<Switch checked={EnableDebug} onChange={inputForm} id='EnableDebug' color='secondary' />}
+        label={t('SettingsDialog.EnableDebug')}
         labelPlacement='start'
       />
       <br />

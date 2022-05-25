@@ -32,8 +32,9 @@ type args struct {
 	DontKill    bool   `arg:"-k" help:"don't kill server on signal"`
 	UI          bool   `arg:"-u" help:"open torrserver page in browser"`
 	TorrentsDir string `arg:"-t" help:"autoload torrents from dir"`
-	IPv4        string `arg:"-4" help:"set public IPv4 addr"`
-	IPv6        string `arg:"-6" help:"set public IPv6 addr"`
+	TorrentAddr string `default:":32000" help:"Torrent client address"`
+	PubIPv4     string `arg:"-4" help:"set public IPv4 addr"`
+	PubIPv6     string `arg:"-6" help:"set public IPv6 addr"`
 }
 
 func (args) Version() string {
@@ -74,12 +75,16 @@ func main() {
 		}()
 	}
 
-	if params.IPv4 != "" {
-		settings.PubIPv4 = params.IPv4
+	if params.TorrentAddr != "" {
+		settings.TorAddr = params.TorrentAddr
 	}
 
-	if params.IPv6 != "" {
-		settings.PubIPv6 = params.IPv6
+	if params.PubIPv4 != "" {
+		settings.PubIPv4 = params.PubIPv4
+	}
+
+	if params.PubIPv6 != "" {
+		settings.PubIPv6 = params.PubIPv6
 	}
 
 	if params.TorrentsDir != "" {
