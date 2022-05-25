@@ -30,7 +30,7 @@ func Start(port string) {
 	log.TLogln("Start TorrServer")
 	ips := getLocalIps()
 	if len(ips) > 0 {
-		log.TLogln("IPs:", ips)
+		log.TLogln("Local IPs:", ips)
 	}
 	err := BTS.Connect()
 	if err != nil {
@@ -102,7 +102,7 @@ func getLocalIps() []string {
 				case *net.IPAddr:
 					ip = v.IP
 				}
-				if !ip.IsLoopback() {
+				if !ip.IsLoopback() && !ip.IsLinkLocalUnicast() && !ip.IsLinkLocalMulticast() {
 					list = append(list, ip.String())
 				}
 			}

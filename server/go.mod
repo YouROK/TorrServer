@@ -12,6 +12,7 @@ require (
 	github.com/anacrolix/dms v1.4.0
 	github.com/anacrolix/log v0.13.1
 	github.com/anacrolix/missinggo v1.3.0
+	github.com/anacrolix/publicip v0.2.0
 	github.com/anacrolix/torrent v1.43.1
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-contrib/location v0.0.2
