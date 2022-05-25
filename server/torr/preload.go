@@ -63,17 +63,17 @@ func (t *Torrent) Preload(index int, size int64) {
 			}
 		}()
 
-		// mb5 -> 8/16 MB
-		mb5 := int64(t.Info().PieceLength)
-		if mb5 < 8*1024*1024 {
-			mb5 = 8 * 1024 * 1024
+		// startend -> 8/16 MB
+		startend := int64(t.Info().PieceLength)
+		if startend < 8*1024*1024 {
+			startend = 8 * 1024 * 1024
 		}
 
 		readerStart := file.NewReader()
 		defer readerStart.Close()
 		readerStart.SetResponsive()
 		readerStart.SetReadahead(0)
-		readerStartEnd := size - mb5
+		readerStartEnd := size - startend
 
 		if readerStartEnd < 0 {
 			// Если конец начального ридера оказался за началом
@@ -84,7 +84,7 @@ func (t *Torrent) Preload(index int, size int64) {
 			readerStartEnd = file.Length()
 		}
 
-		readerEndStart := file.Length() - mb5
+		readerEndStart := file.Length() - startend
 		readerEndEnd := file.Length()
 
 		var wa sync.WaitGroup

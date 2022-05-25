@@ -255,9 +255,9 @@ func (c *Cache) getRemPieces() []*Piece {
 		readerPos := r.getReaderPiece()
 		readerRAHPos := r.getReaderRAHPiece()
 		end := r.getPiecesRange().End
-		count := int(16 * 1024 * 1024 / c.pieceLength * 5) // 80 MB
-		if count > 40 {
-			count = 40
+		count := int(16 * 1024 * 1024 * 4 / c.pieceLength) // 64 MB window
+		if count > 64 {
+			count = 64
 		}
 		limit := 0
 		for i := readerPos; i < end && limit < count; i++ {
