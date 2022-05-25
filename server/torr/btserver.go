@@ -120,24 +120,28 @@ func (bt *BTServer) configure(ctx context.Context) (err error) {
 	if settings.BTsets.UploadRateLimit > 0 {
 		bt.config.UploadRateLimiter = utils.Limit(settings.BTsets.UploadRateLimit * 1024)
 	}
-	if settings.BTsets.PeersListenPort > 0 {
-		log.Println("Set listen port", settings.BTsets.PeersListenPort)
-		bt.config.ListenPort = settings.BTsets.PeersListenPort
+	if settings.TorAddr != "" {
+		bt.config.SetListenAddr(settings.TorAddr)
 	} else {
-		upnpport := 32000
-		for {
-			log.Println("Check upnp port", upnpport)
-			l, err := net.Listen("tcp", ":"+strconv.Itoa(upnpport))
-			if l != nil {
-				l.Close()
+		if settings.BTsets.PeersListenPort > 0 {
+			log.Println("Set listen port", settings.BTsets.PeersListenPort)
+			bt.config.ListenPort = settings.BTsets.PeersListenPort
+		} else {
+			upnpport := 32000
+			for {
+				log.Println("Check upnp port", upnpport)
+				l, err := net.Listen("tcp", ":"+strconv.Itoa(upnpport))
+				if l != nil {
+					l.Close()
+				}
+				if err == nil {
+					break
+				}
+				upnpport++
 			}
-			if err == nil {
-				break
-			}
-			upnpport++
+			log.Println("Set upnp port", upnpport)
+			bt.config.ListenPort = upnpport
 		}
-		log.Println("Set upnp port", upnpport)
-		bt.config.ListenPort = upnpport
 	}
 
 	log.Println("Client config:", settings.BTsets)

@@ -32,6 +32,7 @@ type args struct {
 	DontKill    bool   `arg:"-k" help:"don't kill server on signal"`
 	UI          bool   `arg:"-u" help:"open torrserver page in browser"`
 	TorrentsDir string `arg:"-t" help:"autoload torrents from dir"`
+	TorrentAddr string `default:":32000" help:"Torrent client address"`
 	PubIPv4     string `arg:"-4" help:"set public IPv4 addr"`
 	PubIPv6     string `arg:"-6" help:"set public IPv6 addr"`
 }
@@ -72,6 +73,10 @@ func main() {
 			time.Sleep(time.Second)
 			browser.OpenURL("http://127.0.0.1:" + params.Port)
 		}()
+	}
+
+	if params.TorrentAddr != "" {
+		settings.TorAddr = params.TorrentAddr
 	}
 
 	if params.PubIPv4 != "" {
