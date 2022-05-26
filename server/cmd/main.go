@@ -23,7 +23,7 @@ import (
 )
 
 type args struct {
-	Port        string `arg:"-p" help:"web server port, default :8090"`
+	Port        string `arg:"-p" help:"web server port, default 8090"`
 	Path        string `arg:"-d" help:"database dir path"`
 	LogPath     string `arg:"-l" help:"server log file path"`
 	WebLogPath  string `arg:"-w" help:"web access log file path"`

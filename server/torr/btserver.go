@@ -146,7 +146,7 @@ func (bt *BTServer) configure(ctx context.Context) {
 	}
 
 	log.Println("Client config:", settings.BTsets)
-	
+
 	var err error
 
 	// set public IPv4
