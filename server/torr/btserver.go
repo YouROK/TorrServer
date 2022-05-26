@@ -121,26 +121,27 @@ func (bt *BTServer) configure(ctx context.Context) {
 		bt.config.UploadRateLimiter = utils.Limit(settings.BTsets.UploadRateLimit * 1024)
 	}
 	if settings.TorAddr != "" {
+		log.Println("Set listen addr", settings.TorAddr)
 		bt.config.SetListenAddr(settings.TorAddr)
 	} else {
 		if settings.BTsets.PeersListenPort > 0 {
 			log.Println("Set listen port", settings.BTsets.PeersListenPort)
 			bt.config.ListenPort = settings.BTsets.PeersListenPort
 		} else {
-			upnpport := 32000
+			lport := 32000
 			for {
-				log.Println("Check upnp port", upnpport)
-				l, err := net.Listen("tcp", ":"+strconv.Itoa(upnpport))
+				log.Println("Check listen port", lport)
+				l, err := net.Listen("tcp", ":"+strconv.Itoa(lport))
 				if l != nil {
 					l.Close()
 				}
 				if err == nil {
 					break
 				}
-				upnpport++
+				lport++
 			}
-			log.Println("Set upnp port", upnpport)
-			bt.config.ListenPort = upnpport
+			log.Println("Set listen port", lport)
+			bt.config.ListenPort = lport
 		}
 	}
 
