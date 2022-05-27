@@ -3,6 +3,7 @@ package settings
 import (
 	"path/filepath"
 	"strings"
+	"time"
 
 	"server/log"
 
@@ -15,7 +16,7 @@ type TDB struct {
 }
 
 func NewTDB() *TDB {
-	db, err := bolt.Open(filepath.Join(Path, "config.db"), 0666, nil)
+	db, err := bolt.Open(filepath.Join(Path, "config.db"), 0666, &bolt.Options{Timeout: 5 * time.Second})
 	if err != nil {
 		log.TLogln(err)
 		return nil

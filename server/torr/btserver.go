@@ -77,7 +77,7 @@ func (bt *BTServer) Disconnect() {
 	}
 }
 
-func (bt *BTServer) configure(ctx context.Context) (err error) {
+func (bt *BTServer) configure(ctx context.Context) {
 	blocklist, _ := utils.ReadBlockedIP()
 	bt.config = torrent.NewDefaultClientConfig()
 
@@ -124,30 +124,33 @@ func (bt *BTServer) configure(ctx context.Context) (err error) {
 		bt.config.UploadRateLimiter = utils.Limit(settings.BTsets.UploadRateLimit * 1024)
 	}
 	if settings.TorAddr != "" {
+		log.Println("Set listen addr", settings.TorAddr)
 		bt.config.SetListenAddr(settings.TorAddr)
 	} else {
 		if settings.BTsets.PeersListenPort > 0 {
 			log.Println("Set listen port", settings.BTsets.PeersListenPort)
 			bt.config.ListenPort = settings.BTsets.PeersListenPort
 		} else {
-			upnpport := 32000
+			lport := 32000
 			for {
-				log.Println("Check upnp port", upnpport)
-				l, err := net.Listen("tcp", ":"+strconv.Itoa(upnpport))
+				log.Println("Check listen port", lport)
+				l, err := net.Listen("tcp", ":"+strconv.Itoa(lport))
 				if l != nil {
 					l.Close()
 				}
 				if err == nil {
 					break
 				}
-				upnpport++
+				lport++
 			}
-			log.Println("Set upnp port", upnpport)
-			bt.config.ListenPort = upnpport
+			log.Println("Set listen port", lport)
+			bt.config.ListenPort = lport
 		}
 	}
 
 	log.Println("Client config:", settings.BTsets)
+
+	var err error
 
 	// set public IPv4
 	if settings.PubIPv4 != "" {
@@ -171,7 +174,7 @@ func (bt *BTServer) configure(ctx context.Context) (err error) {
 			bt.config.PublicIp6 = ip6
 		}
 	}
-	if bt.config.PublicIp6 == nil {
+	if bt.config.PublicIp6 == nil && settings.BTsets.EnableIPv6 {
 		bt.config.PublicIp6, err = publicip.Get6(ctx)
 		if err != nil {
 			log.Printf("error getting public ipv6 address: %v", err)
@@ -180,7 +183,6 @@ func (bt *BTServer) configure(ctx context.Context) (err error) {
 	if bt.config.PublicIp6 != nil {
 		log.Println("PublicIp6:", bt.config.PublicIp6)
 	}
-	return err
 }
 
 func (bt *BTServer) GetTorrent(hash torrent.InfoHash) *Torrent {

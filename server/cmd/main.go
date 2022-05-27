@@ -23,7 +23,7 @@ import (
 )
 
 type args struct {
-	Port        string `arg:"-p" help:"web server port"`
+	Port        string `arg:"-p" help:"web server port, default 8090"`
 	Path        string `arg:"-d" help:"database dir path"`
 	LogPath     string `arg:"-l" help:"server log file path"`
 	WebLogPath  string `arg:"-w" help:"web access log file path"`
@@ -32,7 +32,7 @@ type args struct {
 	DontKill    bool   `arg:"-k" help:"don't kill server on signal"`
 	UI          bool   `arg:"-u" help:"open torrserver page in browser"`
 	TorrentsDir string `arg:"-t" help:"autoload torrents from dir"`
-	TorrentAddr string `default:":32000" help:"Torrent client address"`
+	TorrentAddr string `help:"Torrent client address, default :32000"`
 	PubIPv4     string `arg:"-4" help:"set public IPv4 addr"`
 	PubIPv6     string `arg:"-6" help:"set public IPv6 addr"`
 }
