@@ -2,14 +2,11 @@ module server
 
 go 1.18
 
-replace (
-	github.com/anacrolix/dms v1.4.0 => github.com/tsynik/dms v1.4.4
-	github.com/anacrolix/torrent v1.43.1 => github.com/tsynik/torrent v1.2.8
-)
+replace github.com/anacrolix/torrent v1.43.1 => github.com/tsynik/torrent v1.2.8
 
 require (
 	github.com/alexflint/go-arg v1.4.2
-	github.com/anacrolix/dms v1.4.0
+	github.com/anacrolix/dms v1.4.1-0.20220531031435-b445a5a66575
 	github.com/anacrolix/log v0.13.1
 	github.com/anacrolix/missinggo v1.3.0
 	github.com/anacrolix/publicip v0.2.0
@@ -61,9 +58,9 @@ require (
 	github.com/stretchr/testify v1.7.1 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
 	golang.org/x/crypto v0.0.0-20220513210258-46612604a0f9 // indirect
-	golang.org/x/net v0.0.0-20220513224357-95641704303c // indirect
+	golang.org/x/net v0.0.0-20220531201128-c960675eff93 // indirect
 	golang.org/x/sync v0.0.0-20220513210516-0976fa681c29 // indirect
-	golang.org/x/sys v0.0.0-20220513210249-45d2b4557a2a // indirect
+	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
