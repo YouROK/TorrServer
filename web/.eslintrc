@@ -8,7 +8,8 @@
       "jsxSingleQuote": true,
       "printWidth": 120,
       "arrowParens": "avoid", // Allow single argument without parentheses in arrow functions
-      "semi": false
+      "semi": false,
+      "endOfLine": "crlf"
     }],
     "import/no-anonymous-default-export": 0, // Allow "export default"
     "import/no-extraneous-dependencies": ["error", {"devDependencies": ["**/*.test.js", "**/*.spec.js"]}],
