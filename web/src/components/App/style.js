@@ -1,3 +1,4 @@
+import { IconButton } from '@material-ui/core'
 import { rgba } from 'polished'
 import styled, { css } from 'styled-components'
 
@@ -15,6 +16,12 @@ export const AppWrapper = styled.div`
     grid-template-areas:
       'head head'
       'side content';
+
+    @media screen and (display-mode: standalone) {
+      grid-template-columns: 0 1fr;
+      grid-template-rows: 90px 1fr 90px;
+      height: 100vh;
+    }
   `}
 `
 
@@ -36,6 +43,15 @@ export const AppHeader = styled.div`
     box-shadow: 0px 2px 4px -1px rgb(0 0 0 / 20%), 0px 4px 5px 0px rgb(0 0 0 / 14%), 0px 1px 10px 0px rgb(0 0 0 / 12%);
     padding: 0 16px;
     z-index: 3;
+
+    @media screen and (display-mode: standalone) {
+      grid-template-columns: max-content 1fr;
+      align-items: end;
+      padding: 7px 16px;
+      position: fixed;
+      width: 100%;
+      height: 90px;
+    }
   `}
 `
 export const AppSidebarStyle = styled.div`
@@ -57,6 +73,10 @@ export const AppSidebarStyle = styled.div`
 
     svg {
       fill: ${sidebarFillColor};
+    }
+
+    @media screen and (display-mode: standalone) {
+      display: none;
     }
   `}
 `
@@ -82,6 +102,11 @@ export const TorrentListWrapper = styled.div`
 
   @media (max-width: 700px) {
     grid-template-columns: 1fr;
+  }
+
+  @media screen and (display-mode: standalone) {
+    height: calc(100vh - 90px);
+    padding-bottom: 105px;
   }
 `
 
@@ -116,4 +141,12 @@ export const HeaderToggle = styled.div`
       }
     }
   `}
+`
+
+export const StyledIconButton = styled(IconButton)`
+  margin-right: 6px;
+
+  @media screen and (display-mode: standalone) {
+    display: none;
+  }
 `

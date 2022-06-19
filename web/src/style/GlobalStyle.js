@@ -15,6 +15,17 @@ export default createGlobalStyle`
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     letter-spacing: -0.1px;
+    -webkit-tap-highlight-color: transparent;
+
+    @media screen and (display-mode: standalone) {
+      height: 100vh;
+    }
+  }
+
+  header {
+    @media screen and (display-mode: standalone) {
+      padding-top: 30px;
+    }
   }
 
   button {

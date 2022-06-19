@@ -2,8 +2,9 @@ import { useState } from 'react'
 import ListItemIcon from '@material-ui/core/ListItemIcon'
 import LibraryAddIcon from '@material-ui/icons/LibraryAdd'
 import ListItemText from '@material-ui/core/ListItemText'
-import ListItem from '@material-ui/core/ListItem'
 import { useTranslation } from 'react-i18next'
+import StyledMenuButtonWrapper from 'style/StyledMenuButtonWrapper'
+import { isStandaloneApp } from 'utils/Utils'
 
 import AddDialog from './AddDialog'
 
@@ -15,12 +16,22 @@ export default function AddDialogButton({ isOffline, isLoading }) {
 
   return (
     <div>
-      <ListItem disabled={isOffline || isLoading} button onClick={handleClickOpen}>
-        <ListItemIcon>
-          <LibraryAddIcon />
-        </ListItemIcon>
-        <ListItemText primary={t('AddFromLink')} />
-      </ListItem>
+      <StyledMenuButtonWrapper disabled={isOffline || isLoading} button onClick={handleClickOpen}>
+        {isStandaloneApp ? (
+          <>
+            <LibraryAddIcon />
+            <div>{t('AddFromLink')}</div>
+          </>
+        ) : (
+          <>
+            <ListItemIcon>
+              <LibraryAddIcon />
+            </ListItemIcon>
+
+            <ListItemText primary={t('AddFromLink')} />
+          </>
+        )}
+      </StyledMenuButtonWrapper>
 
       {isDialogOpen && <AddDialog handleClose={handleClose} />}
     </div>

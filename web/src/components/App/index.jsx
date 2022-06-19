@@ -1,7 +1,6 @@
 import CssBaseline from '@material-ui/core/CssBaseline'
 import { createContext, useEffect, useState } from 'react'
 import Typography from '@material-ui/core/Typography'
-import IconButton from '@material-ui/core/IconButton'
 import {
   Menu as MenuIcon,
   Close as CloseIcon,
@@ -21,11 +20,12 @@ import { ThemeProvider as StyledComponentsThemeProvider } from 'styled-component
 import { useQuery } from 'react-query'
 import { getTorrents } from 'utils/Utils'
 import GlobalStyle from 'style/GlobalStyle'
+import { lightTheme, THEME_MODES, useMaterialUITheme } from 'style/materialUISetup'
+import getStyledComponentsTheme from 'style/getStyledComponentsTheme'
 
-import { AppWrapper, AppHeader, HeaderToggle } from './style'
+import { AppWrapper, AppHeader, HeaderToggle, StyledIconButton } from './style'
 import Sidebar from './Sidebar'
-import { lightTheme, THEME_MODES, useMaterialUITheme } from '../../style/materialUISetup'
-import getStyledComponentsTheme from '../../style/getStyledComponentsTheme'
+import PWAFooter from './PWAFooter'
 
 export const DarkModeContext = createContext()
 
@@ -63,14 +63,9 @@ export default function App() {
             <Div100vh>
               <AppWrapper>
                 <AppHeader>
-                  <IconButton
-                    edge='start'
-                    color='inherit'
-                    onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-                    style={{ marginRight: '6px' }}
-                  >
+                  <StyledIconButton edge='start' color='inherit' onClick={() => setIsDrawerOpen(!isDrawerOpen)}>
                     {isDrawerOpen ? <CloseIcon /> : <MenuIcon />}
-                  </IconButton>
+                  </StyledIconButton>
 
                   <Typography variant='h6' noWrap>
                     TorrServer {torrServerVersion}
@@ -117,6 +112,12 @@ export default function App() {
                 />
 
                 <TorrentList isOffline={isOffline} torrents={torrents} isLoading={isLoading} />
+
+                <PWAFooter
+                  isOffline={isOffline}
+                  isLoading={isLoading}
+                  setIsDonationDialogOpen={setIsDonationDialogOpen}
+                />
 
                 <MuiThemeProvider theme={lightTheme}>
                   {isDonationDialogOpen && <DonateDialog onClose={() => setIsDonationDialogOpen(false)} />}

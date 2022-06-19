@@ -3,12 +3,13 @@ import { useEffect, useState } from 'react'
 import Button from '@material-ui/core/Button'
 import Dialog from '@material-ui/core/Dialog'
 import InfoIcon from '@material-ui/icons/Info'
-import ListItem from '@material-ui/core/ListItem'
 import ListItemIcon from '@material-ui/core/ListItemIcon'
 import ListItemText from '@material-ui/core/ListItemText'
 import { useTranslation } from 'react-i18next'
 import { useMediaQuery } from '@material-ui/core'
 import { echoHost } from 'utils/Hosts'
+import StyledMenuButtonWrapper from 'style/StyledMenuButtonWrapper'
+import { isStandaloneApp } from 'utils/Utils'
 
 import LinkComponent from './LinkComponent'
 import { DialogWrapper, HeaderSection, ThanksSection, Section, FooterSection } from './style'
@@ -24,12 +25,22 @@ export default function AboutDialog() {
 
   return (
     <>
-      <ListItem button key='Settings' onClick={() => setOpen(true)}>
-        <ListItemIcon>
-          <InfoIcon />
-        </ListItemIcon>
-        <ListItemText primary={t('About')} />
-      </ListItem>
+      <StyledMenuButtonWrapper button key='Settings' onClick={() => setOpen(true)}>
+        {isStandaloneApp ? (
+          <>
+            <InfoIcon />
+            <div>{t('About')}</div>
+          </>
+        ) : (
+          <>
+            <ListItemIcon>
+              <InfoIcon />
+            </ListItemIcon>
+
+            <ListItemText primary={t('About')} />
+          </>
+        )}
+      </StyledMenuButtonWrapper>
 
       <Dialog
         open={open}
