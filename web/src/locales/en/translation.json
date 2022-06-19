@@ -88,6 +88,7 @@
   "SettingsDialog": {
     "AddRetrackers": "Add retrackers",
     "AdditionalSettings": "Additional Settings",
+    "MobileAppSettings": "Mobile app settings",
     "CacheBeforeReaderDesc": "from cache will be saved before currently played frame",
     "CacheAfterReaderDesc": "from cache will be loaded after currently played frame",
     "CacheSize": "Cache Size",
@@ -125,8 +126,10 @@
     "Tabs": {
       "Main": "Main",
       "Additional": "Additional",
-      "AdditionalDisabled": "(enable PRO mode)"
-    }
+      "AdditionalDisabled": "(enable PRO mode)",
+      "App": "App"
+    },
+    "UseVLC": "Prompt to open video in VLC"
   },
   "Size": "Size",
   "SpecialThanks": "Special Thanks",

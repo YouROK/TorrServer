@@ -12,12 +12,14 @@ import SwipeableViews from 'react-swipeable-views'
 import CircularProgress from '@material-ui/core/CircularProgress'
 import { StyledDialog } from 'style/CustomMaterialUiStyles'
 import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
+import { isStandaloneApp } from 'utils/Utils'
 
 import { SettingsHeader, FooterSection, Content } from './style'
 import defaultSettings from './defaultSettings'
 import { a11yProps, TabPanel } from './tabComponents'
 import PrimarySettingsComponent from './PrimarySettingsComponent'
 import SecondarySettingsComponent from './SecondarySettingsComponent'
+import MobileAppSettings from './MobileAppSettings'
 
 export default function SettingsDialog({ handleClose }) {
   const { t } = useTranslation()
@@ -30,6 +32,7 @@ export default function SettingsDialog({ handleClose }) {
   const [cachePercentage, setCachePercentage] = useState(40)
   const [preloadCachePercentage, setPreloadCachePercentage] = useState(0)
   const [isProMode, setIsProMode] = useState(JSON.parse(localStorage.getItem('isProMode')) || false)
+  const [isVlcUsed, setIsVlcUsed] = useState(JSON.parse(localStorage.getItem('isVlcUsed')) ?? true)
 
   useEffect(() => {
     axios.post(settingsHost(), { action: 'get' }).then(({ data }) => {
@@ -46,6 +49,7 @@ export default function SettingsDialog({ handleClose }) {
     sets.ReaderReadAHead = cachePercentage
     sets.PreloadCache = preloadCachePercentage
     axios.post(settingsHost(), { action: 'set', sets })
+    localStorage.setItem('isVlcUsed', isVlcUsed)
   }
 
   const inputForm = ({ target: { type, value, checked, id } }) => {
@@ -124,6 +128,8 @@ export default function SettingsDialog({ handleClose }) {
             }
             {...a11yProps(1)}
           />
+
+          {isStandaloneApp && <Tab label={t('SettingsDialog.Tabs.App')} {...a11yProps(2)} />}
         </Tabs>
       </AppBar>
 
@@ -153,6 +159,12 @@ export default function SettingsDialog({ handleClose }) {
               <TabPanel value={selectedTab} index={1} dir={direction}>
                 <SecondarySettingsComponent settings={settings} inputForm={inputForm} />
               </TabPanel>
+
+              {isStandaloneApp && (
+                <TabPanel value={selectedTab} index={2} dir={direction}>
+                  <MobileAppSettings isVlcUsed={isVlcUsed} setIsVlcUsed={setIsVlcUsed} />
+                </TabPanel>
+              )}
             </SwipeableViews>
           </>
         ) : (

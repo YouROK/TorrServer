@@ -88,6 +88,7 @@
   "SettingsDialog": {
     "AddRetrackers": "Додавати",
     "AdditionalSettings": "Додаткові налаштування",
+    "MobileAppSettings": "Установки моб. програми",
     "CacheBeforeReaderDesc": "з кешу буде збережено до поточного відтворюваного кадру",
     "CacheAfterReaderDesc": "з кешу буде завантажено після поточно відтвореного кадру",
     "CacheSize": "Размір кешу",
@@ -125,8 +126,10 @@
     "Tabs": {
       "Main": "Основні",
       "Additional": "Додаткові",
-      "AdditionalDisabled": "(включіть ПРО-режим)"
-    }
+      "AdditionalDisabled": "(включіть ПРО-режим)",
+      "App": "Додаток"
+    },
+    "UseVLC": "Пропонувати відкрити відео у VLC"
   },
   "Size": "Розмір",
   "SpecialThanks": "Окрема подяка",
