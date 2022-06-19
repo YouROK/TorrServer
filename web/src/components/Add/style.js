@@ -95,6 +95,7 @@ export const LeftSideBottomSectionNoFile = styled.div`
   ${LeftSideBottomSectionBasicStyles}
   border: 4px dashed rgba(0,0,0,0.1);
   text-align: center;
+  outline: none;
 
   ${({ isDragActive }) => isDragActive && `border: 4px dashed green`};
 
