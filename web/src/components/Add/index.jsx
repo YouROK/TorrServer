@@ -3,7 +3,7 @@ import ListItemIcon from '@material-ui/core/ListItemIcon'
 import LibraryAddIcon from '@material-ui/icons/LibraryAdd'
 import ListItemText from '@material-ui/core/ListItemText'
 import { useTranslation } from 'react-i18next'
-import StyledMenuButtonWrapper from 'style/StyledMenuButtonWrapper'
+import { StyledMenuButtonWrapper } from 'style/CustomMaterialUiStyles'
 import { isStandaloneApp } from 'utils/Utils'
 
 import AddDialog from './AddDialog'

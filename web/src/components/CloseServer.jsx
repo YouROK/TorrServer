@@ -4,7 +4,7 @@ import { PowerSettingsNew as PowerSettingsNewIcon } from '@material-ui/icons'
 import { shutdownHost } from 'utils/Hosts'
 import { useTranslation } from 'react-i18next'
 import { isStandaloneApp } from 'utils/Utils'
-import StyledMenuButtonWrapper from 'style/StyledMenuButtonWrapper'
+import { StyledMenuButtonWrapper } from 'style/CustomMaterialUiStyles'
 
 export default function CloseServer({ isOffline, isLoading }) {
   const { t } = useTranslation()

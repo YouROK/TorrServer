@@ -1,7 +1,7 @@
 import { CreditCard as CreditCardIcon } from '@material-ui/icons'
 import { useTranslation } from 'react-i18next'
 import CloseServer from 'components/CloseServer'
-import StyledMenuButtonWrapper from 'style/StyledMenuButtonWrapper'
+import { StyledMenuButtonWrapper } from 'style/CustomMaterialUiStyles'
 import AddDialogButton from 'components/Add'
 import AboutDialog from 'components/About'
 import SettingsDialogButton from 'components/Settings'

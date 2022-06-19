@@ -1,14 +1,13 @@
 import axios from 'axios'
 import { useEffect, useState } from 'react'
 import Button from '@material-ui/core/Button'
-import Dialog from '@material-ui/core/Dialog'
 import InfoIcon from '@material-ui/icons/Info'
 import ListItemIcon from '@material-ui/core/ListItemIcon'
 import ListItemText from '@material-ui/core/ListItemText'
 import { useTranslation } from 'react-i18next'
 import { useMediaQuery } from '@material-ui/core'
 import { echoHost } from 'utils/Hosts'
-import StyledMenuButtonWrapper from 'style/StyledMenuButtonWrapper'
+import { StyledDialog, StyledMenuButtonWrapper } from 'style/CustomMaterialUiStyles'
 import { isStandaloneApp } from 'utils/Utils'
 
 import LinkComponent from './LinkComponent'
@@ -42,18 +41,19 @@ export default function AboutDialog() {
         )}
       </StyledMenuButtonWrapper>
 
-      <Dialog
+      <StyledDialog
         open={open}
         onClose={() => setOpen(false)}
         aria-labelledby='form-dialog-title'
         fullScreen={fullScreen}
         maxWidth='xl'
+        hideBackdrop={isStandaloneApp}
       >
         <DialogWrapper>
           <HeaderSection>
             <div>{t('About')}</div>
             {torrServerVersion}
-            <img src='/apple-touch-icon.png' alt='ts-icon' />
+            <img src='/apple-icon-180.png' alt='ts-icon' />
           </HeaderSection>
 
           <div style={{ overflow: 'auto' }}>
@@ -88,7 +88,7 @@ export default function AboutDialog() {
             </Button>
           </FooterSection>
         </DialogWrapper>
-      </Dialog>
+      </StyledDialog>
     </>
   )
 }

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Button from '@material-ui/core/Button'
-import Dialog from '@material-ui/core/Dialog'
 import { torrentsHost, torrentUploadHost } from 'utils/Hosts'
 import axios from 'axios'
 import { useTranslation } from 'react-i18next'
@@ -10,9 +9,10 @@ import { useMediaQuery } from '@material-ui/core'
 import CircularProgress from '@material-ui/core/CircularProgress'
 import usePreviousState from 'utils/usePreviousState'
 import { useQuery } from 'react-query'
-import { getTorrents } from 'utils/Utils'
+import { getTorrents, isStandaloneApp } from 'utils/Utils'
 import parseTorrent from 'parse-torrent'
-import { ButtonWrapper, Header } from 'style/DialogStyles'
+import { ButtonWrapper } from 'style/DialogStyles'
+import { StyledDialog, StyledHeader } from 'style/CustomMaterialUiStyles'
 
 import { checkImageURL, getMoviePosters, checkTorrentSource, parseTorrentTitle } from './helpers'
 import { Content } from './style'
@@ -223,8 +223,15 @@ export default function AddDialog({
   }
 
   return (
-    <Dialog open onClose={handleClose} fullScreen={fullScreen} fullWidth maxWidth='md'>
-      <Header>{t(isEditMode ? 'EditTorrent' : 'AddNewTorrent')}</Header>
+    <StyledDialog
+      open
+      onClose={handleClose}
+      fullScreen={fullScreen}
+      fullWidth
+      maxWidth='md'
+      hideBackdrop={isStandaloneApp}
+    >
+      <StyledHeader>{t(isEditMode ? 'EditTorrent' : 'AddNewTorrent')}</StyledHeader>
 
       <Content isEditMode={isEditMode}>
         {!isEditMode && (
@@ -279,6 +286,6 @@ export default function AddDialog({
           {isSaving ? <CircularProgress style={{ color: 'white' }} size={20} /> : t(isEditMode ? 'Save' : 'Add')}
         </Button>
       </ButtonWrapper>
-    </Dialog>
+    </StyledDialog>
   )
 }

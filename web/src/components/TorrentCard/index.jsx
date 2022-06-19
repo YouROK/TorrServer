@@ -5,7 +5,7 @@ import {
   Close as CloseIcon,
   Delete as DeleteIcon,
 } from '@material-ui/icons'
-import { getPeerString, humanizeSize, humanizeSpeed, removeRedundantCharacters } from 'utils/Utils'
+import { getPeerString, humanizeSize, humanizeSpeed, isStandaloneApp, removeRedundantCharacters } from 'utils/Utils'
 import { playlistTorrHost, torrentsHost } from 'utils/Hosts'
 import { NoImageIcon } from 'icons'
 import DialogTorrentDetailsContent from 'components/DialogTorrentDetailsContent'
@@ -16,6 +16,7 @@ import axios from 'axios'
 import ptt from 'parse-torrent-title'
 import { useTranslation } from 'react-i18next'
 import AddDialog from 'components/Add/AddDialog'
+import { StyledDialog } from 'style/CustomMaterialUiStyles'
 
 import { StyledButton, TorrentCard, TorrentCardButtons, TorrentCardDescription, TorrentCardPoster } from './style'
 
@@ -121,16 +122,17 @@ const Torrent = ({ torrent }) => {
         </TorrentCardDescription>
       </TorrentCard>
 
-      <Dialog
+      <StyledDialog
         open={isDetailedInfoOpened}
         onClose={closeDetailedInfo}
         fullScreen={fullScreen}
         fullWidth
         maxWidth='xl'
         TransitionComponent={Transition}
+        hideBackdrop={isStandaloneApp}
       >
         <DialogTorrentDetailsContent closeDialog={closeDetailedInfo} torrent={torrent} />
-      </Dialog>
+      </StyledDialog>
 
       <Dialog open={isDeleteTorrentOpened} onClose={closeDeleteTorrentAlert}>
         <DialogTitle>{t('DeleteTorrent?')}</DialogTitle>

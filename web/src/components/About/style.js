@@ -26,6 +26,10 @@ export const HeaderSection = styled.section`
       width: 60px;
     }
   }
+
+  @media screen and (display-mode: standalone) {
+    padding-top: 30px;
+  }
 `
 
 export const ThanksSection = styled.section`

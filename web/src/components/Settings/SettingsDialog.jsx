@@ -1,5 +1,4 @@
 import axios from 'axios'
-import Dialog from '@material-ui/core/Dialog'
 import Button from '@material-ui/core/Button'
 import Checkbox from '@material-ui/core/Checkbox'
 import { FormControlLabel, useMediaQuery, useTheme } from '@material-ui/core'
@@ -11,6 +10,8 @@ import Tabs from '@material-ui/core/Tabs'
 import Tab from '@material-ui/core/Tab'
 import SwipeableViews from 'react-swipeable-views'
 import CircularProgress from '@material-ui/core/CircularProgress'
+import { StyledDialog } from 'style/CustomMaterialUiStyles'
+import { isStandaloneApp } from 'utils/Utils'
 
 import { SettingsHeader, FooterSection, Content } from './style'
 import defaultSettings from './defaultSettings'
@@ -82,7 +83,14 @@ export default function SettingsDialog({ handleClose }) {
   const handleChangeIndex = index => setSelectedTab(index)
 
   return (
-    <Dialog open onClose={handleClose} fullScreen={fullScreen} fullWidth maxWidth='md'>
+    <StyledDialog
+      open
+      onClose={handleClose}
+      fullScreen={fullScreen}
+      fullWidth
+      maxWidth='md'
+      hideBackdrop={isStandaloneApp}
+    >
       <SettingsHeader>
         <div>{t('SettingsDialog.Settings')}</div>
         <FormControlLabel
@@ -179,6 +187,6 @@ export default function SettingsDialog({ handleClose }) {
           {t('Save')}
         </Button>
       </FooterSection>
-    </Dialog>
+    </StyledDialog>
   )
 }

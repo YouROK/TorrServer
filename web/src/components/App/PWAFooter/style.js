@@ -1,12 +1,14 @@
 import styled from 'styled-components'
 
+export const pwaFooterHeight = 90
+
 export default styled.div`
   background: #575757;
   color: #fff;
   position: fixed;
   bottom: 0;
   width: 100%;
-  height: 90px;
+  height: ${pwaFooterHeight}px;
 
   display: none;
 

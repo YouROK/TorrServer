@@ -22,12 +22,6 @@ export default createGlobalStyle`
     }
   }
 
-  header {
-    @media screen and (display-mode: standalone) {
-      padding-top: 30px;
-    }
-  }
-
   button {
     font-family: "Open Sans", sans-serif;
     letter-spacing: -0.1px;

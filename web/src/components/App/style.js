@@ -2,6 +2,8 @@ import { IconButton } from '@material-ui/core'
 import { rgba } from 'polished'
 import styled, { css } from 'styled-components'
 
+import { pwaFooterHeight } from './PWAFooter/style'
+
 export const AppWrapper = styled.div`
   ${({
     theme: {
@@ -19,7 +21,7 @@ export const AppWrapper = styled.div`
 
     @media screen and (display-mode: standalone) {
       grid-template-columns: 0 1fr;
-      grid-template-rows: 90px 1fr 90px;
+      grid-template-rows: ${pwaFooterHeight}px 1fr ${pwaFooterHeight}px;
       height: 100vh;
     }
   `}
@@ -50,7 +52,7 @@ export const AppHeader = styled.div`
       padding: 7px 16px;
       position: fixed;
       width: 100%;
-      height: 90px;
+      height: ${pwaFooterHeight}px;
     }
   `}
 `
@@ -105,7 +107,7 @@ export const TorrentListWrapper = styled.div`
   }
 
   @media screen and (display-mode: standalone) {
-    height: calc(100vh - 90px);
+    height: calc(100vh - ${pwaFooterHeight}px);
     padding-bottom: 105px;
   }
 `
