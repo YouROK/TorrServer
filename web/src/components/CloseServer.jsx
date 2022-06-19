@@ -21,7 +21,7 @@ export default function CloseServer({ isOffline, isLoading }) {
         {isStandaloneApp ? (
           <>
             <PowerSettingsNewIcon />
-            <div>{t('CloseServer')}</div>
+            <div>{t('TurnOff')}</div>
           </>
         ) : (
           <>

@@ -32,7 +32,7 @@ export default function AboutDialog() {
         {isStandaloneApp ? (
           <>
             <InfoIcon />
-            <div>{t('About')}</div>
+            <div>{t('Details')}</div>
           </>
         ) : (
           <>
