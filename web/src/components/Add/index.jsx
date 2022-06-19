@@ -7,6 +7,7 @@ import { StyledMenuButtonWrapper } from 'style/CustomMaterialUiStyles'
 import { isStandaloneApp } from 'utils/Utils'
 
 import AddDialog from './AddDialog'
+import { StyledPWAAddButton } from './style'
 
 export default function AddDialogButton({ isOffline, isLoading }) {
   const { t } = useTranslation()
@@ -18,10 +19,7 @@ export default function AddDialogButton({ isOffline, isLoading }) {
     <div>
       <StyledMenuButtonWrapper disabled={isOffline || isLoading} button onClick={handleClickOpen}>
         {isStandaloneApp ? (
-          <>
-            <LibraryAddIcon />
-            <div>{t('AddFromLink')}</div>
-          </>
+          <StyledPWAAddButton />
         ) : (
           <>
             <ListItemIcon>

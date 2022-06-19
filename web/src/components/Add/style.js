@@ -337,3 +337,30 @@ export const PosterLanguageSwitch = styled.div`
     }
   `}
 `
+
+export const StyledPWAAddButton = styled.div`
+  border: 2px solid white;
+  border-radius: 50%;
+  height: 45px;
+  width: 45px;
+  position: relative;
+
+  :before,
+  :after {
+    content: '';
+    background: white;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  :before {
+    width: 2px;
+    height: 25px;
+  }
+  :after {
+    width: 25px;
+    height: 2px;
+  }
+`
