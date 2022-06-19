@@ -1,5 +1,6 @@
 import { IconButton } from '@material-ui/core'
 import { rgba } from 'polished'
+import { standaloneMedia } from 'style/standaloneMedia'
 import styled, { css } from 'styled-components'
 
 import { pwaFooterHeight } from './PWAFooter/style'
@@ -19,11 +20,11 @@ export const AppWrapper = styled.div`
       'head head'
       'side content';
 
-    @media screen and (display-mode: standalone) {
+    ${standaloneMedia(css`
       grid-template-columns: 0 1fr;
       grid-template-rows: ${pwaFooterHeight}px 1fr ${pwaFooterHeight}px;
       height: 100vh;
-    }
+    `)}
   `}
 `
 
@@ -46,14 +47,14 @@ export const AppHeader = styled.div`
     padding: 0 16px;
     z-index: 3;
 
-    @media screen and (display-mode: standalone) {
+    ${standaloneMedia(css`
       grid-template-columns: max-content 1fr;
       align-items: end;
       padding: 7px 16px;
       position: fixed;
       width: 100%;
       height: ${pwaFooterHeight}px;
-    }
+    `)}
   `}
 `
 export const AppSidebarStyle = styled.div`
@@ -77,9 +78,9 @@ export const AppSidebarStyle = styled.div`
       fill: ${sidebarFillColor};
     }
 
-    @media screen and (display-mode: standalone) {
+    ${standaloneMedia(css`
       display: none;
-    }
+    `)}
   `}
 `
 export const TorrentListWrapper = styled.div`
@@ -106,10 +107,10 @@ export const TorrentListWrapper = styled.div`
     grid-template-columns: 1fr;
   }
 
-  @media screen and (display-mode: standalone) {
+  ${standaloneMedia(css`
     height: calc(100vh - ${pwaFooterHeight}px);
     padding-bottom: 105px;
-  }
+  `)}
 `
 
 export const HeaderToggle = styled.div`
@@ -148,7 +149,7 @@ export const HeaderToggle = styled.div`
 export const StyledIconButton = styled(IconButton)`
   margin-right: 6px;
 
-  @media screen and (display-mode: standalone) {
+  ${standaloneMedia(css`
     display: none;
-  }
+  `)}
 `

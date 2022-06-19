@@ -12,6 +12,7 @@
       "endOfLine": "crlf"
     }],
     "import/no-anonymous-default-export": 0, // Allow "export default"
+    "import/prefer-default-export": 0,
     "import/no-extraneous-dependencies": ["error", {"devDependencies": ["**/*.test.js", "**/*.spec.js"]}],
     "react/jsx-one-expression-per-line": 0,
     "import/order": ["warn", {

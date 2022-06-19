@@ -1,4 +1,5 @@
-import styled from 'styled-components'
+import { standaloneMedia } from 'style/standaloneMedia'
+import styled, { css } from 'styled-components'
 
 export const pwaFooterHeight = 90
 
@@ -12,9 +13,9 @@ export default styled.div`
 
   display: none;
 
-  @media screen and (display-mode: standalone) {
+  ${standaloneMedia(css`
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     justify-items: center;
-  }
+  `)}
 `

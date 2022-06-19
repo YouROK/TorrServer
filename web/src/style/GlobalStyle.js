@@ -1,4 +1,6 @@
-import { createGlobalStyle } from 'styled-components'
+import { createGlobalStyle, css } from 'styled-components'
+
+import { standaloneMedia } from './standaloneMedia'
 
 export default createGlobalStyle`
   *,
@@ -17,9 +19,10 @@ export default createGlobalStyle`
     letter-spacing: -0.1px;
     -webkit-tap-highlight-color: transparent;
 
-    @media screen and (display-mode: standalone) {
+
+    ${standaloneMedia(css`
       height: 100vh;
-    }
+    `)}
   }
 
   button {
