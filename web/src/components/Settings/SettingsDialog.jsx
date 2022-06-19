@@ -11,7 +11,7 @@ import Tab from '@material-ui/core/Tab'
 import SwipeableViews from 'react-swipeable-views'
 import CircularProgress from '@material-ui/core/CircularProgress'
 import { StyledDialog } from 'style/CustomMaterialUiStyles'
-import { isStandaloneApp } from 'utils/Utils'
+import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
 
 import { SettingsHeader, FooterSection, Content } from './style'
 import defaultSettings from './defaultSettings'
@@ -36,6 +36,8 @@ export default function SettingsDialog({ handleClose }) {
       setSettings({ ...data, CacheSize: data.CacheSize / (1024 * 1024) })
     })
   }, [])
+
+  const ref = useOnStandaloneAppOutsideClick(handleClose)
 
   const handleSave = () => {
     handleClose()
@@ -83,14 +85,7 @@ export default function SettingsDialog({ handleClose }) {
   const handleChangeIndex = index => setSelectedTab(index)
 
   return (
-    <StyledDialog
-      open
-      onClose={handleClose}
-      fullScreen={fullScreen}
-      fullWidth
-      maxWidth='md'
-      hideBackdrop={isStandaloneApp}
-    >
+    <StyledDialog open onClose={handleClose} fullScreen={fullScreen} fullWidth maxWidth='md' ref={ref}>
       <SettingsHeader>
         <div>{t('SettingsDialog.Settings')}</div>
         <FormControlLabel

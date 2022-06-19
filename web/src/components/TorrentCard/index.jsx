@@ -5,7 +5,7 @@ import {
   Close as CloseIcon,
   Delete as DeleteIcon,
 } from '@material-ui/icons'
-import { getPeerString, humanizeSize, humanizeSpeed, isStandaloneApp, removeRedundantCharacters } from 'utils/Utils'
+import { getPeerString, humanizeSize, humanizeSpeed, removeRedundantCharacters } from 'utils/Utils'
 import { playlistTorrHost, torrentsHost } from 'utils/Hosts'
 import { NoImageIcon } from 'icons'
 import DialogTorrentDetailsContent from 'components/DialogTorrentDetailsContent'
@@ -129,7 +129,6 @@ const Torrent = ({ torrent }) => {
         fullWidth
         maxWidth='xl'
         TransitionComponent={Transition}
-        hideBackdrop={isStandaloneApp}
       >
         <DialogTorrentDetailsContent closeDialog={closeDetailedInfo} torrent={torrent} />
       </StyledDialog>

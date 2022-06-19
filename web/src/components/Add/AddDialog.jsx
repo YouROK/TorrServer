@@ -9,10 +9,11 @@ import { useMediaQuery } from '@material-ui/core'
 import CircularProgress from '@material-ui/core/CircularProgress'
 import usePreviousState from 'utils/usePreviousState'
 import { useQuery } from 'react-query'
-import { getTorrents, isStandaloneApp } from 'utils/Utils'
+import { getTorrents } from 'utils/Utils'
 import parseTorrent from 'parse-torrent'
 import { ButtonWrapper } from 'style/DialogStyles'
 import { StyledDialog, StyledHeader } from 'style/CustomMaterialUiStyles'
+import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
 
 import { checkImageURL, getMoviePosters, checkTorrentSource, parseTorrentTitle } from './helpers'
 import { Content } from './style'
@@ -45,6 +46,8 @@ export default function AddDialog({
   const [skipDebounce, setSkipDebounce] = useState(false)
   const [isCustomTitleEnabled, setIsCustomTitleEnabled] = useState(false)
   const [currentSourceHash, setCurrentSourceHash] = useState()
+
+  const ref = useOnStandaloneAppOutsideClick(handleClose)
 
   const { data: torrents } = useQuery('torrents', getTorrents, { retry: 1, refetchInterval: 1000 })
 
@@ -223,14 +226,7 @@ export default function AddDialog({
   }
 
   return (
-    <StyledDialog
-      open
-      onClose={handleClose}
-      fullScreen={fullScreen}
-      fullWidth
-      maxWidth='md'
-      hideBackdrop={isStandaloneApp}
-    >
+    <StyledDialog open onClose={handleClose} fullScreen={fullScreen} fullWidth maxWidth='md' ref={ref}>
       <StyledHeader>{t(isEditMode ? 'EditTorrent' : 'AddNewTorrent')}</StyledHeader>
 
       <Content isEditMode={isEditMode}>

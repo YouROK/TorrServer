@@ -3,6 +3,7 @@ import Dialog from '@material-ui/core/Dialog'
 import { pwaFooterHeight } from 'components/App/PWAFooter/style'
 import styled from 'styled-components'
 import { Header } from 'style/DialogStyles'
+import { isStandaloneApp } from 'utils/Utils'
 
 export const StyledMenuButtonWrapper = styled(ListItem).attrs({ button: true })`
   @media screen and (display-mode: standalone) {
@@ -16,7 +17,9 @@ export const StyledMenuButtonWrapper = styled(ListItem).attrs({ button: true })`
   }
 `
 
-export const StyledDialog = styled(Dialog)`
+export const StyledDialog = styled(Dialog).attrs({
+  ...(isStandaloneApp && { hideBackdrop: true, transitionDuration: 0 }),
+})`
   @media screen and (display-mode: standalone) {
     margin-bottom: ${pwaFooterHeight}px;
 

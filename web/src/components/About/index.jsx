@@ -9,6 +9,7 @@ import { useMediaQuery } from '@material-ui/core'
 import { echoHost } from 'utils/Hosts'
 import { StyledDialog, StyledMenuButtonWrapper } from 'style/CustomMaterialUiStyles'
 import { isStandaloneApp } from 'utils/Utils'
+import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
 
 import LinkComponent from './LinkComponent'
 import { DialogWrapper, HeaderSection, ThanksSection, Section, FooterSection } from './style'
@@ -21,6 +22,9 @@ export default function AboutDialog() {
   useEffect(() => {
     axios.get(echoHost()).then(({ data }) => setTorrServerVersion(data))
   }, [])
+
+  const onClose = () => setOpen(false)
+  const ref = useOnStandaloneAppOutsideClick(onClose)
 
   return (
     <>
@@ -43,11 +47,11 @@ export default function AboutDialog() {
 
       <StyledDialog
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={onClose}
         aria-labelledby='form-dialog-title'
         fullScreen={fullScreen}
         maxWidth='xl'
-        hideBackdrop={isStandaloneApp}
+        ref={ref}
       >
         <DialogWrapper>
           <HeaderSection>
@@ -83,7 +87,7 @@ export default function AboutDialog() {
           </div>
 
           <FooterSection>
-            <Button onClick={() => setOpen(false)} color='primary' variant='contained'>
+            <Button onClick={onClose} color='primary' variant='contained'>
               {t('Close')}
             </Button>
           </FooterSection>
