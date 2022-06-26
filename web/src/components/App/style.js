@@ -29,9 +29,13 @@ export const AppWrapper = styled.div`
 `
 
 export const CenteredGrid = styled.div`
-  height: 100%;
   display: grid;
   place-items: center;
+
+  ${standaloneMedia(css`
+    height: 100vh;
+    width: 100vw;
+  `)}
 `
 
 export const AppHeader = styled.div`

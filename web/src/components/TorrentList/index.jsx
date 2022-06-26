@@ -6,11 +6,6 @@ import NoServerConnection from './NoServerConnection'
 import AddFirstTorrent from './AddFirstTorrent'
 
 export default function TorrentList({ isOffline, isLoading, torrents }) {
-  return (
-    <CenteredGrid>
-      <AddFirstTorrent />
-    </CenteredGrid>
-  )
   if (isLoading || isOffline || !torrents.length) {
     return (
       <CenteredGrid>
