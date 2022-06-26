@@ -7,11 +7,16 @@ import IOSShareIcon from './IOSShareIcon'
 import { StyledWrapper, StyledHeader, StyledContent } from './style'
 
 export function PWAInstallationGuide() {
-  const [isOpen, setIsOpen] = useState(!JSON.parse(localStorage.getItem('pwaNotificationIsClosed')))
+  const pwaNotificationIsClosed = JSON.parse(localStorage.getItem('pwaNotificationIsClosed'))
+  const [isOpen, setIsOpen] = useState(!pwaNotificationIsClosed)
+  const [shouldBeOpened, setShouldBeOpened] = useState(!pwaNotificationIsClosed)
+
   const { t } = useTranslation()
 
+  if (!isOpen) return null
+
   return (
-    <StyledWrapper isOpen={isOpen}>
+    <StyledWrapper isOpen={shouldBeOpened}>
       <StyledHeader>
         <img src='/apple-icon-180.png' width={50} alt='ts-icon' />
 
@@ -22,8 +27,12 @@ export function PWAInstallationGuide() {
           aria-label='close'
           color='inherit'
           onClick={() => {
-            setIsOpen(false)
-            localStorage.setItem('pwaNotificationIsClosed', true)
+            setShouldBeOpened(false)
+
+            setTimeout(() => {
+              setIsOpen(false)
+              localStorage.setItem('pwaNotificationIsClosed', true)
+            }, 300)
           }}
         >
           <CloseIcon fontSize='small' />
