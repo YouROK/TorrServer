@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Button from '@material-ui/core/Button'
-import Dialog from '@material-ui/core/Dialog'
 import { torrentsHost, torrentUploadHost } from 'utils/Hosts'
 import axios from 'axios'
 import { useTranslation } from 'react-i18next'
@@ -12,7 +11,9 @@ import usePreviousState from 'utils/usePreviousState'
 import { useQuery } from 'react-query'
 import { getTorrents } from 'utils/Utils'
 import parseTorrent from 'parse-torrent'
-import { ButtonWrapper, Header } from 'style/DialogStyles'
+import { ButtonWrapper } from 'style/DialogStyles'
+import { StyledDialog, StyledHeader } from 'style/CustomMaterialUiStyles'
+import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
 
 import { checkImageURL, getMoviePosters, checkTorrentSource, parseTorrentTitle } from './helpers'
 import { Content } from './style'
@@ -45,6 +46,8 @@ export default function AddDialog({
   const [skipDebounce, setSkipDebounce] = useState(false)
   const [isCustomTitleEnabled, setIsCustomTitleEnabled] = useState(false)
   const [currentSourceHash, setCurrentSourceHash] = useState()
+
+  const ref = useOnStandaloneAppOutsideClick(handleClose)
 
   const { data: torrents } = useQuery('torrents', getTorrents, { retry: 1, refetchInterval: 1000 })
 
@@ -223,8 +226,8 @@ export default function AddDialog({
   }
 
   return (
-    <Dialog open onClose={handleClose} fullScreen={fullScreen} fullWidth maxWidth='md'>
-      <Header>{t(isEditMode ? 'EditTorrent' : 'AddNewTorrent')}</Header>
+    <StyledDialog open onClose={handleClose} fullScreen={fullScreen} fullWidth maxWidth='md' ref={ref}>
+      <StyledHeader>{t(isEditMode ? 'EditTorrent' : 'AddNewTorrent')}</StyledHeader>
 
       <Content isEditMode={isEditMode}>
         {!isEditMode && (
@@ -279,6 +282,6 @@ export default function AddDialog({
           {isSaving ? <CircularProgress style={{ color: 'white' }} size={20} /> : t(isEditMode ? 'Save' : 'Add')}
         </Button>
       </ButtonWrapper>
-    </Dialog>
+    </StyledDialog>
   )
 }

@@ -28,6 +28,8 @@ const Table = memo(
     // if files in list is more then 1 and no season text detected by ptt.parse, show full name
     const shouldDisplayFullFileName = playableFileList.length > 1 && !fileHasEpisodeText
 
+    const isVlcUsed = JSON.parse(localStorage.getItem('isVlcUsed')) ?? true
+
     return !playableFileList?.length ? (
       'No playable files in this torrent'
     ) : (
@@ -133,11 +135,19 @@ const Table = memo(
                       {t('Preload')}
                     </Button>
 
-                    <a style={{ textDecoration: 'none' }} href={link} target='_blank' rel='noreferrer'>
-                      <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
-                        {t('OpenLink')}
-                      </Button>
-                    </a>
+                    {isVlcUsed ? (
+                      <a style={{ textDecoration: 'none' }} href={`vlc://${link}`}>
+                        <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
+                          VLC
+                        </Button>
+                      </a>
+                    ) : (
+                      <a style={{ textDecoration: 'none' }} href={link} target='_blank' rel='noreferrer'>
+                        <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
+                          {t('OpenLink')}
+                        </Button>
+                      </a>
+                    )}
 
                     <CopyToClipboard text={link}>
                       <Button variant='outlined' color='primary' size='small'>

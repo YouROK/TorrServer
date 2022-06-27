@@ -1,5 +1,4 @@
 import axios from 'axios'
-import Dialog from '@material-ui/core/Dialog'
 import Button from '@material-ui/core/Button'
 import Checkbox from '@material-ui/core/Checkbox'
 import { FormControlLabel, useMediaQuery, useTheme } from '@material-ui/core'
@@ -11,12 +10,16 @@ import Tabs from '@material-ui/core/Tabs'
 import Tab from '@material-ui/core/Tab'
 import SwipeableViews from 'react-swipeable-views'
 import CircularProgress from '@material-ui/core/CircularProgress'
+import { StyledDialog } from 'style/CustomMaterialUiStyles'
+import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
+import { isStandaloneApp } from 'utils/Utils'
 
 import { SettingsHeader, FooterSection, Content } from './style'
 import defaultSettings from './defaultSettings'
 import { a11yProps, TabPanel } from './tabComponents'
 import PrimarySettingsComponent from './PrimarySettingsComponent'
 import SecondarySettingsComponent from './SecondarySettingsComponent'
+import MobileAppSettings from './MobileAppSettings'
 
 export default function SettingsDialog({ handleClose }) {
   const { t } = useTranslation()
@@ -29,12 +32,15 @@ export default function SettingsDialog({ handleClose }) {
   const [cachePercentage, setCachePercentage] = useState(40)
   const [preloadCachePercentage, setPreloadCachePercentage] = useState(0)
   const [isProMode, setIsProMode] = useState(JSON.parse(localStorage.getItem('isProMode')) || false)
+  const [isVlcUsed, setIsVlcUsed] = useState(JSON.parse(localStorage.getItem('isVlcUsed')) ?? true)
 
   useEffect(() => {
     axios.post(settingsHost(), { action: 'get' }).then(({ data }) => {
       setSettings({ ...data, CacheSize: data.CacheSize / (1024 * 1024) })
     })
   }, [])
+
+  const ref = useOnStandaloneAppOutsideClick(handleClose)
 
   const handleSave = () => {
     handleClose()
@@ -43,6 +49,7 @@ export default function SettingsDialog({ handleClose }) {
     sets.ReaderReadAHead = cachePercentage
     sets.PreloadCache = preloadCachePercentage
     axios.post(settingsHost(), { action: 'set', sets })
+    localStorage.setItem('isVlcUsed', isVlcUsed)
   }
 
   const inputForm = ({ target: { type, value, checked, id } }) => {
@@ -82,7 +89,7 @@ export default function SettingsDialog({ handleClose }) {
   const handleChangeIndex = index => setSelectedTab(index)
 
   return (
-    <Dialog open onClose={handleClose} fullScreen={fullScreen} fullWidth maxWidth='md'>
+    <StyledDialog open onClose={handleClose} fullScreen={fullScreen} fullWidth maxWidth='md' ref={ref}>
       <SettingsHeader>
         <div>{t('SettingsDialog.Settings')}</div>
         <FormControlLabel
@@ -121,6 +128,8 @@ export default function SettingsDialog({ handleClose }) {
             }
             {...a11yProps(1)}
           />
+
+          {isStandaloneApp && <Tab label={t('SettingsDialog.Tabs.App')} {...a11yProps(2)} />}
         </Tabs>
       </AppBar>
 
@@ -150,6 +159,12 @@ export default function SettingsDialog({ handleClose }) {
               <TabPanel value={selectedTab} index={1} dir={direction}>
                 <SecondarySettingsComponent settings={settings} inputForm={inputForm} />
               </TabPanel>
+
+              {isStandaloneApp && (
+                <TabPanel value={selectedTab} index={2} dir={direction}>
+                  <MobileAppSettings isVlcUsed={isVlcUsed} setIsVlcUsed={setIsVlcUsed} />
+                </TabPanel>
+              )}
             </SwipeableViews>
           </>
         ) : (
@@ -179,6 +194,6 @@ export default function SettingsDialog({ handleClose }) {
           {t('Save')}
         </Button>
       </FooterSection>
-    </Dialog>
+    </StyledDialog>
   )
 }

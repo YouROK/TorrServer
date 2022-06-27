@@ -1,9 +1,10 @@
 import { AppBar, IconButton, makeStyles, Toolbar, Typography } from '@material-ui/core'
 import CloseIcon from '@material-ui/icons/Close'
 import { ArrowBack } from '@material-ui/icons'
+import { isStandaloneApp } from 'utils/Utils'
 
 const useStyles = makeStyles({
-  appBar: { position: 'relative' },
+  appBar: { position: 'relative', ...(isStandaloneApp && { paddingTop: '30px' }) },
   title: { marginLeft: '5px', flex: 1 },
 })
 

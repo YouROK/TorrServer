@@ -75,6 +75,16 @@
   "Playlist": "Плейлист",
   "Preload": "Предзагр.",
   "ProjectSource": "Сайт проекта",
+  "PWAGuide": {
+    "Header": "Установить приложение",
+    "Description": "Установите приложение на ваше устройство для быстрого доступа в любой момент. Без AppStore. Без загрузки.",
+    "VLC": "VLC кнопка будет добавлена для мгновенного воспроизведения на телефоне",
+    "FirstStep": "Нажмите на",
+    "SecondStep": {
+      "Select": "Выбирите",
+      "AddToHomeScreen":"На экран «Домой»"
+    }
+  },
   "Releases": "Релизы TorrServer",
   "RemoveAll": "Удалить все",
   "RemoveViews": "Очистить просмотры",
@@ -88,6 +98,7 @@
   "SettingsDialog": {
     "AddRetrackers": "Добавлять",
     "AdditionalSettings": "Дополнительные настройки",
+    "MobileAppSettings": "Настройки моб. приложения",
     "CacheBeforeReaderDesc": "от кеша будет оставаться позади воспроизводимого кадра",
     "CacheAfterReaderDesc": "кеша будет спереди от воспроизводимого кадра",
     "CacheSize": "Размер кеша",
@@ -125,8 +136,10 @@
     "Tabs": {
       "Main": "Основные",
       "Additional": "Дополнительные",
-      "AdditionalDisabled": "(включите ПРО-режим)"
-    }
+      "AdditionalDisabled": "(включите ПРО-режим)",
+      "App": "Приложение"
+    },
+    "UseVLC": "Предлагать открыть видео в VLC"
   },
   "Size": "Размер",
   "SpecialThanks": "Отдельное спасибо",

@@ -75,6 +75,16 @@
   "Playlist": "Playlist",
   "Preload": "Preload",
   "ProjectSource": "Project page",
+  "PWAGuide": {
+    "Header": "Install application",
+    "Description": "Install the app on your device to easily access it anytime. No app store. No download.",
+    "VLC": "VLC button will be added to open video instantly on the phone",
+    "FirstStep": "Tap on",
+    "SecondStep": {
+      "Select": "Select",
+      "AddToHomeScreen":"Add to Home Screen"
+    }
+  },
   "Releases": "TorrServer Releases",
   "RemoveAll": "Remove All",
   "RemoveViews": "Remove View States",
@@ -88,6 +98,7 @@
   "SettingsDialog": {
     "AddRetrackers": "Add retrackers",
     "AdditionalSettings": "Additional Settings",
+    "MobileAppSettings": "Mobile app settings",
     "CacheBeforeReaderDesc": "from cache will be saved before currently played frame",
     "CacheAfterReaderDesc": "from cache will be loaded after currently played frame",
     "CacheSize": "Cache Size",
@@ -125,8 +136,10 @@
     "Tabs": {
       "Main": "Main",
       "Additional": "Additional",
-      "AdditionalDisabled": "(enable PRO mode)"
-    }
+      "AdditionalDisabled": "(enable PRO mode)",
+      "App": "App"
+    },
+    "UseVLC": "Prompt to open video in VLC"
   },
   "Size": "Size",
   "SpecialThanks": "Special Thanks",

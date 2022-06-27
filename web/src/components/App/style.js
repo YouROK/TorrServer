@@ -1,5 +1,9 @@
+import { IconButton } from '@material-ui/core'
 import { rgba } from 'polished'
+import { standaloneMedia } from 'style/standaloneMedia'
 import styled, { css } from 'styled-components'
+
+import { pwaFooterHeight } from './PWAFooter/style'
 
 export const AppWrapper = styled.div`
   ${({
@@ -15,13 +19,23 @@ export const AppWrapper = styled.div`
     grid-template-areas:
       'head head'
       'side content';
+
+    ${standaloneMedia(css`
+      grid-template-columns: 0 1fr;
+      grid-template-rows: ${pwaFooterHeight}px 1fr ${pwaFooterHeight}px;
+      height: 100vh;
+    `)}
   `}
 `
 
 export const CenteredGrid = styled.div`
-  height: 100%;
   display: grid;
   place-items: center;
+
+  ${standaloneMedia(css`
+    height: 100vh;
+    width: 100vw;
+  `)}
 `
 
 export const AppHeader = styled.div`
@@ -36,6 +50,15 @@ export const AppHeader = styled.div`
     box-shadow: 0px 2px 4px -1px rgb(0 0 0 / 20%), 0px 4px 5px 0px rgb(0 0 0 / 14%), 0px 1px 10px 0px rgb(0 0 0 / 12%);
     padding: 0 16px;
     z-index: 3;
+
+    ${standaloneMedia(css`
+      grid-template-columns: max-content 1fr;
+      align-items: end;
+      padding: 7px 16px;
+      position: fixed;
+      width: 100%;
+      height: ${pwaFooterHeight}px;
+    `)}
   `}
 `
 export const AppSidebarStyle = styled.div`
@@ -58,6 +81,10 @@ export const AppSidebarStyle = styled.div`
     svg {
       fill: ${sidebarFillColor};
     }
+
+    ${standaloneMedia(css`
+      display: none;
+    `)}
   `}
 `
 export const TorrentListWrapper = styled.div`
@@ -83,6 +110,11 @@ export const TorrentListWrapper = styled.div`
   @media (max-width: 700px) {
     grid-template-columns: 1fr;
   }
+
+  ${standaloneMedia(css`
+    height: calc(100vh - ${pwaFooterHeight}px);
+    padding-bottom: 105px;
+  `)}
 `
 
 export const HeaderToggle = styled.div`
@@ -116,4 +148,12 @@ export const HeaderToggle = styled.div`
       }
     }
   `}
+`
+
+export const StyledIconButton = styled(IconButton)`
+  margin-right: 6px;
+
+  ${standaloneMedia(css`
+    display: none;
+  `)}
 `

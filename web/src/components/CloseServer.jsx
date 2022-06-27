@@ -1,8 +1,11 @@
 import { useState } from 'react'
-import { Button, Dialog, DialogActions, DialogTitle, ListItem, ListItemIcon, ListItemText } from '@material-ui/core'
+import { Button, DialogActions, DialogTitle, ListItemIcon, ListItemText } from '@material-ui/core'
+import { StyledDialog, StyledMenuButtonWrapper } from 'style/CustomMaterialUiStyles'
 import { PowerSettingsNew as PowerSettingsNewIcon } from '@material-ui/icons'
 import { shutdownHost } from 'utils/Hosts'
 import { useTranslation } from 'react-i18next'
+import { isStandaloneApp } from 'utils/Utils'
+import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
 
 export default function CloseServer({ isOffline, isLoading }) {
   const { t } = useTranslation()
@@ -10,17 +13,28 @@ export default function CloseServer({ isOffline, isLoading }) {
   const closeDialog = () => setOpen(false)
   const openDialog = () => setOpen(true)
 
+  const ref = useOnStandaloneAppOutsideClick(closeDialog)
+
   return (
     <>
-      <ListItem disabled={isOffline || isLoading} button key={t('CloseServer')} onClick={openDialog}>
-        <ListItemIcon>
-          <PowerSettingsNewIcon />
-        </ListItemIcon>
+      <StyledMenuButtonWrapper disabled={isOffline || isLoading} button key={t('CloseServer')} onClick={openDialog}>
+        {isStandaloneApp ? (
+          <>
+            <PowerSettingsNewIcon />
+            <div>{t('TurnOff')}</div>
+          </>
+        ) : (
+          <>
+            <ListItemIcon>
+              <PowerSettingsNewIcon />
+            </ListItemIcon>
 
-        <ListItemText primary={t('CloseServer')} />
-      </ListItem>
+            <ListItemText primary={t('CloseServer')} />
+          </>
+        )}
+      </StyledMenuButtonWrapper>
 
-      <Dialog open={open} onClose={closeDialog}>
+      <StyledDialog open={open} onClose={closeDialog} ref={ref}>
         <DialogTitle>{t('CloseServer?')}</DialogTitle>
         <DialogActions>
           <Button variant='outlined' onClick={closeDialog} color='secondary'>
@@ -39,7 +53,7 @@ export default function CloseServer({ isOffline, isLoading }) {
             {t('TurnOff')}
           </Button>
         </DialogActions>
-      </Dialog>
+      </StyledDialog>
     </>
   )
 }

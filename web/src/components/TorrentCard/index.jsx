@@ -16,6 +16,8 @@ import axios from 'axios'
 import ptt from 'parse-torrent-title'
 import { useTranslation } from 'react-i18next'
 import AddDialog from 'components/Add/AddDialog'
+import { StyledDialog } from 'style/CustomMaterialUiStyles'
+import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
 
 import { StyledButton, TorrentCard, TorrentCardButtons, TorrentCardDescription, TorrentCardPoster } from './style'
 
@@ -60,6 +62,8 @@ const Torrent = ({ torrent }) => {
   const handleCloseEditDialog = () => setIsEditDialogOpen(false)
 
   const fullPlaylistLink = `${playlistTorrHost()}/${encodeURIComponent(parsedTitle || 'file')}.m3u?link=${hash}&m3u`
+
+  const detailedInfoDialogRef = useOnStandaloneAppOutsideClick(closeDetailedInfo)
 
   return (
     <>
@@ -121,16 +125,17 @@ const Torrent = ({ torrent }) => {
         </TorrentCardDescription>
       </TorrentCard>
 
-      <Dialog
+      <StyledDialog
         open={isDetailedInfoOpened}
         onClose={closeDetailedInfo}
         fullScreen={fullScreen}
         fullWidth
         maxWidth='xl'
         TransitionComponent={Transition}
+        ref={detailedInfoDialogRef}
       >
         <DialogTorrentDetailsContent closeDialog={closeDetailedInfo} torrent={torrent} />
-      </Dialog>
+      </StyledDialog>
 
       <Dialog open={isDeleteTorrentOpened} onClose={closeDeleteTorrentAlert}>
         <DialogTitle>{t('DeleteTorrent?')}</DialogTitle>
