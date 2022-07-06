@@ -26,7 +26,7 @@ const Table = memo(
     const fileHasResolutionText = !!playableFileList?.find(({ path }) => ptt.parse(path).resolution)
 
     // if files in list is more then 1 and no season text detected by ptt.parse, show full name
-    const shouldDisplayFullFileName = playableFileList.length > 1 && !fileHasEpisodeText
+    const shouldDisplayFullFileName = playableFileList?.length > 1 && !fileHasEpisodeText
 
     const isVlcUsed = JSON.parse(localStorage.getItem('isVlcUsed')) ?? true
 
