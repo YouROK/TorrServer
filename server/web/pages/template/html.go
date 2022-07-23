@@ -115,20 +115,20 @@ var Manifesticon512maskablepng []byte
 //go:embed pages/site.webmanifest
 var Sitewebmanifest []byte
 
-//go:embed pages/static/js/2.6c0ea491.chunk.js
-var Staticjs26c0ea491chunkjs []byte
+//go:embed pages/static/js/2.c024ca3c.chunk.js
+var Staticjs2c024ca3cchunkjs []byte
 
-//go:embed pages/static/js/2.6c0ea491.chunk.js.LICENSE.txt
-var Staticjs26c0ea491chunkjsLICENSEtxt []byte
+//go:embed pages/static/js/2.c024ca3c.chunk.js.LICENSE.txt
+var Staticjs2c024ca3cchunkjsLICENSEtxt []byte
 
-//go:embed pages/static/js/2.6c0ea491.chunk.js.map
-var Staticjs26c0ea491chunkjsmap []byte
+//go:embed pages/static/js/2.c024ca3c.chunk.js.map
+var Staticjs2c024ca3cchunkjsmap []byte
 
-//go:embed pages/static/js/main.87afdef1.chunk.js
-var Staticjsmain87afdef1chunkjs []byte
+//go:embed pages/static/js/main.b26c84fd.chunk.js
+var Staticjsmainb26c84fdchunkjs []byte
 
-//go:embed pages/static/js/main.87afdef1.chunk.js.map
-var Staticjsmain87afdef1chunkjsmap []byte
+//go:embed pages/static/js/main.b26c84fd.chunk.js.map
+var Staticjsmainb26c84fdchunkjsmap []byte
 
 //go:embed pages/static/js/runtime-main.33603a80.js
 var Staticjsruntimemain33603a80js []byte
