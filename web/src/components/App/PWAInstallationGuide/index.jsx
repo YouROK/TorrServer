@@ -18,7 +18,7 @@ export function PWAInstallationGuide() {
   return (
     <StyledWrapper isOpen={shouldBeOpened}>
       <StyledHeader>
-        <img src='/apple-icon-180.png' width={50} alt='ts-icon' />
+        <img src='/apple-touch-icon.png' width={50} alt='ts-icon' />
 
         {t('PWAGuide.Header')}
 
