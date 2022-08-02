@@ -9,7 +9,7 @@
       "printWidth": 120,
       "arrowParens": "avoid", // Allow single argument without parentheses in arrow functions
       "semi": false,
-      "endOfLine": "crlf"
+      "endOfLine": "auto"
     }],
     "import/no-anonymous-default-export": 0, // Allow "export default"
     "import/prefer-default-export": 0,
