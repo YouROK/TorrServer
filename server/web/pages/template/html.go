@@ -4,6 +4,9 @@ import (
 	_ "embed"
 )
 
+//go:embed pages/apple-icon-180.png
+var Appleicon180png []byte
+
 //go:embed pages/apple-splash-1125-2436.jpg
 var Applesplash11252436jpg []byte
 
@@ -82,9 +85,6 @@ var Applesplash7501334jpg []byte
 //go:embed pages/apple-splash-828-1792.jpg
 var Applesplash8281792jpg []byte
 
-//go:embed pages/apple-touch-icon.png
-var Appletouchiconpng []byte
-
 //go:embed pages/asset-manifest.json
 var Assetmanifestjson []byte
 
@@ -97,11 +97,8 @@ var Dlnaicon120png []byte
 //go:embed pages/dlnaicon-48.png
 var Dlnaicon48png []byte
 
-//go:embed pages/favicon-16x16.png
-var Favicon16x16png []byte
-
-//go:embed pages/favicon-32x32.png
-var Favicon32x32png []byte
+//go:embed pages/favicon-196.png
+var Favicon196png []byte
 
 //go:embed pages/index.html
 var Indexhtml []byte
@@ -118,23 +115,23 @@ var Manifesticon512maskablepng []byte
 //go:embed pages/site.webmanifest
 var Sitewebmanifest []byte
 
-//go:embed pages/static/js/2.3fb2b3da.chunk.js
-var Staticjs23fb2b3dachunkjs []byte
+//go:embed pages/static/js/2.6c0ea491.chunk.js
+var Staticjs26c0ea491chunkjs []byte
 
-//go:embed pages/static/js/2.3fb2b3da.chunk.js.LICENSE.txt
-var Staticjs23fb2b3dachunkjsLICENSEtxt []byte
+//go:embed pages/static/js/2.6c0ea491.chunk.js.LICENSE.txt
+var Staticjs26c0ea491chunkjsLICENSEtxt []byte
 
-//go:embed pages/static/js/2.3fb2b3da.chunk.js.map
-var Staticjs23fb2b3dachunkjsmap []byte
+//go:embed pages/static/js/2.6c0ea491.chunk.js.map
+var Staticjs26c0ea491chunkjsmap []byte
 
-//go:embed pages/static/js/main.d3c82667.chunk.js
-var Staticjsmaind3c82667chunkjs []byte
+//go:embed pages/static/js/main.87afdef1.chunk.js
+var Staticjsmain87afdef1chunkjs []byte
 
-//go:embed pages/static/js/main.d3c82667.chunk.js.map
-var Staticjsmaind3c82667chunkjsmap []byte
+//go:embed pages/static/js/main.87afdef1.chunk.js.map
+var Staticjsmain87afdef1chunkjsmap []byte
 
-//go:embed pages/static/js/runtime-main.40b0cc71.js
-var Staticjsruntimemain40b0cc71js []byte
+//go:embed pages/static/js/runtime-main.33603a80.js
+var Staticjsruntimemain33603a80js []byte
 
-//go:embed pages/static/js/runtime-main.40b0cc71.js.map
-var Staticjsruntimemain40b0cc71jsmap []byte
+//go:embed pages/static/js/runtime-main.33603a80.js.map
+var Staticjsruntimemain33603a80jsmap []byte
