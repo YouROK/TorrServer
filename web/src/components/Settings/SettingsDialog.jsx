@@ -32,7 +32,7 @@ export default function SettingsDialog({ handleClose }) {
   const [cachePercentage, setCachePercentage] = useState(40)
   const [preloadCachePercentage, setPreloadCachePercentage] = useState(0)
   const [isProMode, setIsProMode] = useState(JSON.parse(localStorage.getItem('isProMode')) || false)
-  const [isVlcUsed, setIsVlcUsed] = useState(JSON.parse(localStorage.getItem('isVlcUsed')) ?? true)
+  const [isVlcUsed, setIsVlcUsed] = useState(JSON.parse(localStorage.getItem('isVlcUsed')) ?? false)
 
   useEffect(() => {
     axios.post(settingsHost(), { action: 'get' }).then(({ data }) => {
