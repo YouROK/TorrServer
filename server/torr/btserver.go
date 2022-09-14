@@ -96,7 +96,7 @@ func (bt *BTServer) configure(ctx context.Context) {
 	bt.config.DisableTCP = settings.BTsets.DisableTCP
 	bt.config.DisableUTP = settings.BTsets.DisableUTP
 	//	https://github.com/anacrolix/torrent/issues/703
-	bt.config.DisableWebtorrent = true
+	bt.config.DisableWebtorrent = false // TODO: check memory usage
 	bt.config.NoDefaultPortForwarding = settings.BTsets.DisableUPNP
 	bt.config.NoDHT = settings.BTsets.DisableDHT
 	bt.config.DisablePEX = settings.BTsets.DisablePEX
