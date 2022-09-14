@@ -1,9 +1,10 @@
-import ListItem from '@material-ui/core/ListItem'
 import ListItemIcon from '@material-ui/core/ListItemIcon'
 import ListItemText from '@material-ui/core/ListItemText'
 import { useState } from 'react'
 import SettingsIcon from '@material-ui/icons/Settings'
 import { useTranslation } from 'react-i18next'
+import { StyledMenuButtonWrapper } from 'style/CustomMaterialUiStyles'
+import { isStandaloneApp } from 'utils/Utils'
 
 import SettingsDialog from './SettingsDialog'
 
@@ -16,12 +17,22 @@ export default function SettingsDialogButton({ isOffline, isLoading }) {
 
   return (
     <div>
-      <ListItem disabled={isOffline || isLoading} button onClick={handleClickOpen}>
-        <ListItemIcon>
-          <SettingsIcon />
-        </ListItemIcon>
-        <ListItemText primary={t('SettingsDialog.Settings')} />
-      </ListItem>
+      <StyledMenuButtonWrapper disabled={isOffline || isLoading} button onClick={handleClickOpen}>
+        {isStandaloneApp ? (
+          <>
+            <SettingsIcon />
+            <div>{t('SettingsDialog.Settings')}</div>
+          </>
+        ) : (
+          <>
+            <ListItemIcon>
+              <SettingsIcon />
+            </ListItemIcon>
+
+            <ListItemText primary={t('SettingsDialog.Settings')} />
+          </>
+        )}
+      </StyledMenuButtonWrapper>
 
       {isDialogOpen && <SettingsDialog handleClose={handleClose} />}
     </div>

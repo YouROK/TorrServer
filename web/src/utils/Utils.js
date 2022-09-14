@@ -65,3 +65,5 @@ export const getTorrents = async () => {
     throw new Error(null)
   }
 }
+
+export const isStandaloneApp = window.matchMedia('screen and (display-mode: standalone)').matches

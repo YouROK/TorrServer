@@ -1,14 +1,15 @@
 import axios from 'axios'
 import { useEffect, useState } from 'react'
 import Button from '@material-ui/core/Button'
-import Dialog from '@material-ui/core/Dialog'
 import InfoIcon from '@material-ui/icons/Info'
-import ListItem from '@material-ui/core/ListItem'
 import ListItemIcon from '@material-ui/core/ListItemIcon'
 import ListItemText from '@material-ui/core/ListItemText'
 import { useTranslation } from 'react-i18next'
 import { useMediaQuery } from '@material-ui/core'
 import { echoHost } from 'utils/Hosts'
+import { StyledDialog, StyledMenuButtonWrapper } from 'style/CustomMaterialUiStyles'
+import { isStandaloneApp } from 'utils/Utils'
+import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
 
 import LinkComponent from './LinkComponent'
 import { DialogWrapper, HeaderSection, ThanksSection, Section, FooterSection } from './style'
@@ -22,21 +23,35 @@ export default function AboutDialog() {
     axios.get(echoHost()).then(({ data }) => setTorrServerVersion(data))
   }, [])
 
+  const onClose = () => setOpen(false)
+  const ref = useOnStandaloneAppOutsideClick(onClose)
+
   return (
     <>
-      <ListItem button key='Settings' onClick={() => setOpen(true)}>
-        <ListItemIcon>
-          <InfoIcon />
-        </ListItemIcon>
-        <ListItemText primary={t('About')} />
-      </ListItem>
+      <StyledMenuButtonWrapper button key='Settings' onClick={() => setOpen(true)}>
+        {isStandaloneApp ? (
+          <>
+            <InfoIcon />
+            <div>{t('Details')}</div>
+          </>
+        ) : (
+          <>
+            <ListItemIcon>
+              <InfoIcon />
+            </ListItemIcon>
 
-      <Dialog
+            <ListItemText primary={t('About')} />
+          </>
+        )}
+      </StyledMenuButtonWrapper>
+
+      <StyledDialog
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={onClose}
         aria-labelledby='form-dialog-title'
         fullScreen={fullScreen}
         maxWidth='xl'
+        ref={ref}
       >
         <DialogWrapper>
           <HeaderSection>
@@ -72,12 +87,12 @@ export default function AboutDialog() {
           </div>
 
           <FooterSection>
-            <Button onClick={() => setOpen(false)} color='primary' variant='contained'>
+            <Button onClick={onClose} color='primary' variant='contained'>
               {t('Close')}
             </Button>
           </FooterSection>
         </DialogWrapper>
-      </Dialog>
+      </StyledDialog>
     </>
   )
 }

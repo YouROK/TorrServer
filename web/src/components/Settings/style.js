@@ -1,11 +1,11 @@
 import styled, { css } from 'styled-components'
 import { mainColors } from 'style/colors'
-import { Header } from 'style/DialogStyles'
+import { StyledHeader } from 'style/CustomMaterialUiStyles'
 
 export const cacheBeforeReaderColor = '#b3dfc9'
 export const cacheAfterReaderColor = mainColors.light.primary
 
-export const SettingsHeader = styled(Header)`
+export const SettingsHeader = styled(StyledHeader)`
   display: grid;
   grid-auto-flow: column;
   align-items: center;
