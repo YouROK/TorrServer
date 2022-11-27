@@ -251,3 +251,14 @@ func Preload(torr *Torrent, index int) {
 	}
 	torr.Preload(index, size)
 }
+
+func PreloadAll(torr *Torrent, index int) {
+	size := torr.Size
+	if size <= 0 {
+		return
+	}
+	if size > sets.BTsets.CacheSize {
+		size = sets.BTsets.CacheSize
+	}
+	torr.Preload(index, size)
+}

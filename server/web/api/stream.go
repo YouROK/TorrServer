@@ -31,6 +31,7 @@ func stream(c *gin.Context) {
 	link := c.Query("link")
 	indexStr := c.Query("index")
 	_, preload := c.GetQuery("preload")
+	_, preloadAll := c.GetQuery("preloadAll")
 	_, stat := c.GetQuery("stat")
 	_, save := c.GetQuery("save")
 	_, m3u := c.GetQuery("m3u")
@@ -112,6 +113,8 @@ func stream(c *gin.Context) {
 	// preload torrent
 	if preload {
 		torr.Preload(tor, index)
+	} else if preloadAll {
+		torr.PreloadAll(tor, index)
 	}
 	// return stat if query
 	if stat {
@@ -135,6 +138,7 @@ func streamNoAuth(c *gin.Context) {
 	link := c.Query("link")
 	indexStr := c.Query("index")
 	_, preload := c.GetQuery("preload")
+	_, preloadAll := c.GetQuery("preloadAll")
 	_, m3u := c.GetQuery("m3u")
 	_, fromlast := c.GetQuery("fromlast")
 	_, play := c.GetQuery("play")
@@ -196,6 +200,8 @@ func streamNoAuth(c *gin.Context) {
 	// preload torrent
 	if preload {
 		torr.Preload(tor, index)
+	} else if preloadAll {
+		torr.PreloadAll(tor, index)
 	}
 
 	// return m3u if query
