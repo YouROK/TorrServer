@@ -19,6 +19,7 @@ const Table = memo(
   ({ playableFileList, viewedFileList, selectedSeason, seasonAmount, hash }) => {
     const { t } = useTranslation()
     const preloadBuffer = fileId => fetch(`${streamHost()}?link=${hash}&index=${fileId}&preload`)
+    const preloadCacheAll = fileId => fetch(`${streamHost()}?link=${hash}&index=${fileId}&preloadAll`)
     const getFileLink = (path, id) =>
       `${streamHost()}/${encodeURIComponent(path.split('\\').pop().split('/').pop())}?link=${hash}&index=${id}&play`
     const fileHasEpisodeText = !!playableFileList?.find(({ path }) => ptt.parse(path).episode)
@@ -64,7 +65,7 @@ const Table = memo(
                     <td data-label='size'>{humanizeSize(length)}</td>
                     <td>
                       <div className='button-cell'>
-                        <Button onClick={() => preloadBuffer(id)} variant='outlined' color='primary' size='small'>
+                        <Button onClick={() => preloadCacheAll(id)} variant='outlined' color='primary' size='small'>
                           {t('Preload')}
                         </Button>
 
