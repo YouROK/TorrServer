@@ -4,11 +4,9 @@ go 1.18
 
 require (
 	github.com/alexflint/go-arg v1.4.3
-	github.com/anacrolix/dht/v2 v2.19.3-0.20221221005837-88ee3382ad4a
 	github.com/anacrolix/dms v1.5.0
 	github.com/anacrolix/log v0.13.2-0.20221123232138-02e2764801c3
 	github.com/anacrolix/missinggo v1.3.0
-	github.com/anacrolix/multiless v0.3.1-0.20221221005021-2d12701f83f7
 	github.com/anacrolix/publicip v0.3.0
 	github.com/anacrolix/torrent v1.48.0
 	github.com/gin-contrib/cors v1.4.0
@@ -27,6 +25,7 @@ require (
 	github.com/alecthomas/atomic v0.1.0-alpha2 // indirect
 	github.com/alexflint/go-scalar v1.1.0 // indirect
 	github.com/anacrolix/chansync v0.3.0 // indirect
+	github.com/anacrolix/dht/v2 v2.19.3-0.20221221005837-88ee3382ad4a // indirect
 	github.com/anacrolix/envpprof v1.2.1 // indirect
 	github.com/anacrolix/ffprobe v1.0.1 // indirect
 	github.com/anacrolix/generics v0.0.0-20221221005542-ac1d5b02b8a3 // indirect
@@ -34,6 +33,7 @@ require (
 	github.com/anacrolix/missinggo/perf v1.0.0 // indirect
 	github.com/anacrolix/missinggo/v2 v2.7.1 // indirect
 	github.com/anacrolix/mmsg v1.0.0 // indirect
+	github.com/anacrolix/multiless v0.3.1-0.20221221005021-2d12701f83f7 // indirect
 	github.com/anacrolix/stm v0.5.0 // indirect
 	github.com/anacrolix/sync v0.4.0 // indirect
 	github.com/anacrolix/upnp v0.1.3-0.20220123035249-922794e51c96 // indirect
