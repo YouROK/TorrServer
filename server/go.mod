@@ -3,6 +3,7 @@ module server
 go 1.18
 
 require (
+	github.com/agnivade/levenshtein v1.1.1
 	github.com/alexflint/go-arg v1.4.3
 	github.com/anacrolix/dms v1.5.0
 	github.com/anacrolix/log v0.13.2-0.20221123232138-02e2764801c3
@@ -12,6 +13,7 @@ require (
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-contrib/location v0.0.2
 	github.com/gin-gonic/gin v1.8.2
+	github.com/kljensen/snowball v0.6.0
 	github.com/pkg/browser v0.0.0-20210115035449-ce105d075bb4
 	github.com/pkg/errors v0.9.1
 	go.etcd.io/bbolt v1.3.6
