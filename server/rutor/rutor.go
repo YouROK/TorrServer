@@ -14,6 +14,7 @@ import (
 	"server/rutor/torrsearch"
 	"server/rutor/utils"
 	"server/settings"
+	utils2 "server/torr/utils"
 	"sort"
 	"strconv"
 	"strings"
@@ -28,6 +29,7 @@ var (
 func Start() {
 	go func() {
 		if settings.BTsets.EnableRutorSearch {
+			loadDB()
 			updateDB()
 			isStop = false
 			for !isStop {
@@ -45,42 +47,55 @@ func Start() {
 
 func Stop() {
 	isStop = true
+	torrs = nil
+	torrsearch.NewIndex(nil)
+	utils2.FreeOSMemGC()
 	time.Sleep(time.Millisecond * 1500)
 }
 
 // https://github.com/yourok-0001/releases/raw/master/torr/rutor.ls
 func updateDB() {
 	log.TLogln("Update rutor db")
-	filename := filepath.Join(settings.Path, "rutor.tmp")
-	out, err := os.Create(filename)
+	fnTmp := filepath.Join(settings.Path, "rutor.tmp")
+	out, err := os.Create(fnTmp)
 	if err != nil {
 		log.TLogln("Error create file rutor.tmp:", err)
 		return
 	}
-	defer out.Close()
+
 	resp, err := http.Get("https://github.com/yourok-0001/releases/raw/master/torr/rutor.ls")
 	if err != nil {
 		log.TLogln("Error connect to rutor db:", err)
+		out.Close()
 		return
 	}
 	defer resp.Body.Close()
 	_, err = io.Copy(out, resp.Body)
+	out.Close()
 	if err != nil {
 		log.TLogln("Error download rutor db:", err)
 		return
 	}
 
-	err = os.Remove(filepath.Join(settings.Path, "rutor.ls"))
-	if err != nil && !os.IsNotExist(err) {
-		log.TLogln("Error remove old rutor db:", err)
-		return
+	fnOrig := filepath.Join(settings.Path, "rutor.ls")
+
+	md5Tmp := utils.MD5File(fnTmp)
+	md5Orig := utils.MD5File(fnOrig)
+	if md5Tmp != md5Orig {
+		err = os.Remove(fnOrig)
+		if err != nil && !os.IsNotExist(err) {
+			log.TLogln("Error remove old rutor db:", err)
+			return
+		}
+		err = os.Rename(fnTmp, fnOrig)
+		if err != nil {
+			log.TLogln("Error rename rutor db:", err)
+			return
+		}
+		loadDB()
+	} else {
+		os.Remove(fnTmp)
 	}
-	err = os.Rename(filename, filepath.Join(settings.Path, "rutor.ls"))
-	if err != nil {
-		log.TLogln("Error rename rutor db:", err)
-		return
-	}
-	loadDB()
 }
 
 func loadDB() {
@@ -100,9 +115,13 @@ func loadDB() {
 			}
 		}
 	}
+	utils2.FreeOSMemGC()
 }
 
 func Search(query string) []*models.TorrentDetails {
+	if !settings.BTsets.EnableRutorSearch {
+		return nil
+	}
 	matchedIDs := torrsearch.Search(query)
 	if len(matchedIDs) == 0 {
 		return nil
