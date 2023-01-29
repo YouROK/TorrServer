@@ -1,6 +1,6 @@
 #!/bin/bash
 dirInstall="/Users/Shared/TorrServer"
-serviceName="ru.yourok.torrserver"
+serviceName="torrserver"
 
 function checkArch() {
   case $(uname -m) in
