@@ -114,7 +114,6 @@ EOF
   fi
   echo ""
   if [[ "$isAuth" == 1 ]]; then
-
     echo "Вы выбрали установку с авторизацией"
     [[ ! -f "$dirInstall/accs.db" ]] && {
       echo ""
@@ -160,10 +159,19 @@ EOF
   echo ""
   echo "TorrServer $(getLatestRelease) для ${architecture} Mac установлен в ${dirInstall}"
   echo ""
-  sleep 15
+  echo "Теперь вы можете открыть браузер по адресу http://localhost:8090 для его настройки"
+  echo ""
+  if [[ "$isAuth" == 1 && $isAuthUser > 0 ]]; then
+  echo "Для авторизации введите пользователя $isAuthUser с паролем $isAuthPass"
+  echo ""
+  fi
+  sleep 60
 }
 
 while true; do
+  echo "==============================================================="
+  echo " Скрипт установки, обновления и удаления TorrServer для MacOS"
+  echo "==============================================================="
   echo ""
   read -p "Хотите установить или обновить TorrServer? Для удаления введите «Удалить» " yn
   case $yn in
