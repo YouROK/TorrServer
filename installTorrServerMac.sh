@@ -24,7 +24,8 @@ function cleanup() {
   sudo rm -f /Library/LaunchDaemons/*torrserver* 1>/dev/null 2>&1
   sudo rm -f $HOME/Library/LaunchAgents/*torrserver* 1>/dev/null 2>&1
   sudo rm -f $HOME/Library/LaunchDaemons/*torrserver* 1>/dev/null 2>&1
-  runningPid=$(ps -ax|grep -i torr|awk '{print $1}'|head -n1)
+  self="$(basename "$0")"
+  runningPid=$(ps -ax|grep -i torrserver|grep -v grep|grep -v "$self"|awk '{print $1}')
   sudo kill -9 $runningPid 1>/dev/null 2>&1
 }
 
@@ -41,9 +42,13 @@ function uninstall() {
     sudo rm -rf $dirInstall
     echo ""
     echo "TorrServer удален c вашего Mac"
+    echo ""
+    sleep 5
   else
     echo ""
     echo "OK"
+    echo ""
+    sleep 5
   fi
 }
   
@@ -107,8 +112,9 @@ EOF
   else
     isAuth=0
   fi
+  echo ""
   if [[ "$isAuth" == 1 ]]; then
-    echo ""
+
     echo "Вы выбрали установку с авторизацией"
     [[ ! -f "$dirInstall/accs.db" ]] && {
       echo ""
@@ -125,12 +131,12 @@ EOF
       echo -e "{\n  \"$isAuthUser\": \"$isAuthPass\"\n}" > $dirInstall/accs.db
     } || {
       echo ""
-      echo "Используйте реквизиты из ${dirInstall}/accs.db для входа"   
+      echo "Используйте реквизиты из ${dirInstall}/accs.db для входа"
+      echo ""
     }
   else
     sed -i '' -e '/httpauth/d' $dirInstall/$serviceName.plist
   fi
-  echo ""
   printf 'Автозагрузка для текушего пользователя (1) или всех (2)? '
   read answer
   if [ "$answer" != "${answer#[1]}" ] ;then
@@ -139,7 +145,7 @@ EOF
     [[ ! -d "$sysPath" ]] && mkdir -p ${sysPath}
     cp "$dirInstall/$serviceName.plist" $sysPath
     chmod 0644 "$sysPath/$serviceName.plist"
-    launchctl load -w "$sysPath/$serviceName.plist"
+    launchctl load -w "$sysPath/$serviceName.plist" 1>/dev/null 2>&1
   else
     # root
     sysPath="/Library/LaunchDaemons"
@@ -147,12 +153,14 @@ EOF
     sudo cp "$dirInstall/$serviceName.plist" $sysPath
     sudo chown root:wheel "$sysPath/$serviceName.plist"
     sudo chmod 0644 "$sysPath/$serviceName.plist"
-    sudo launchctl load -w "$sysPath/$serviceName.plist"
+    sudo launchctl load -w "$sysPath/$serviceName.plist" 1>/dev/null 2>&1
   fi
   echo ""
   echo "Сервис автозагрузки записан в ${sysPath}"
   echo ""
   echo "TorrServer $(getLatestRelease) для ${architecture} Mac установлен в ${dirInstall}"
+  echo ""
+  sleep 15
 }
 
 while true; do
@@ -165,6 +173,6 @@ while true; do
     * ) echo "Ввведите Да (Yes) Нет (No) или Удалить (Delete).";;
   esac
 done
-echo ""
 echo "Have Fun!"
 echo ""
+sleep 5
