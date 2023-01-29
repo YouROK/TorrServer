@@ -173,12 +173,12 @@ func RouteWebPages(route *gin.RouterGroup) {
 		c.Data(200, "application/json", Staticjs20cd0ff72chunkjsmap)
 	})
 
-	route.GET("/static/js/main.5c60811c.chunk.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript; charset=utf-8", Staticjsmain5c60811cchunkjs)
+	route.GET("/static/js/main.1d6ebecd.chunk.js", func(c *gin.Context) {
+		c.Data(200, "application/javascript; charset=utf-8", Staticjsmain1d6ebecdchunkjs)
 	})
 
-	route.GET("/static/js/main.5c60811c.chunk.js.map", func(c *gin.Context) {
-		c.Data(200, "application/json", Staticjsmain5c60811cchunkjsmap)
+	route.GET("/static/js/main.1d6ebecd.chunk.js.map", func(c *gin.Context) {
+		c.Data(200, "application/json", Staticjsmain1d6ebecdchunkjsmap)
 	})
 
 	route.GET("/static/js/runtime-main.64d07802.js", func(c *gin.Context) {

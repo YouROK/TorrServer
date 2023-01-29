@@ -162,6 +162,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       <FormControlLabel
         control={<Switch checked={EnableRutorSearch} onChange={inputForm} id='EnableRutorSearch' color='secondary' />}
         label={t('SettingsDialog.EnableRutorSearch')}
+        helperText={t('SettingsDialog.EnableRutorSearchHint')}
         labelPlacement='start'
       />
       <br />
