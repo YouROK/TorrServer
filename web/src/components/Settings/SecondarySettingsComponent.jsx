@@ -14,6 +14,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
     EnableDLNA,
     EnableIPv6,
     FriendlyName,
+    EnableRutorSearch,
     ForceEncrypt,
     DisableTCP,
     DisableUTP,
@@ -155,6 +156,12 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       <FormControlLabel
         control={<Switch checked={EnableDebug} onChange={inputForm} id='EnableDebug' color='secondary' />}
         label={t('SettingsDialog.EnableDebug')}
+        labelPlacement='start'
+      />
+      <br />
+      <FormControlLabel
+        control={<Switch checked={EnableRutorSearch} onChange={inputForm} id='EnableRutorSearch' color='secondary' />}
+        label={t('SettingsDialog.EnableRutorSearch')}
         labelPlacement='start'
       />
       <br />
