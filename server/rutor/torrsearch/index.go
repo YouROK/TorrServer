@@ -1,7 +1,7 @@
 package torrsearch
 
 import (
-	"log"
+	"server/log"
 	"server/rutor/models"
 	"strconv"
 )
@@ -12,7 +12,9 @@ type Index map[string][]int
 var idx Index
 
 func NewIndex(torrs []*models.TorrentDetails) {
-	log.Println("Index torrs")
+	if len(torrs) > 0 {
+		log.TLogln("Index rutor db")
+	}
 	idx = make(Index)
 	idx.add(torrs)
 }
