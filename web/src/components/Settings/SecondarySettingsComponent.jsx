@@ -1,6 +1,14 @@
 import { useTranslation } from 'react-i18next'
 import TextField from '@material-ui/core/TextField'
-import { FormControlLabel, InputAdornment, InputLabel, Select, Switch } from '@material-ui/core'
+import {
+  FormControlLabel,
+  FormGroup,
+  FormHelperText,
+  InputAdornment,
+  InputLabel,
+  Select,
+  Switch,
+} from '@material-ui/core'
 
 import { SecondarySettingsContent, SettingSectionLabel } from './style'
 
@@ -158,13 +166,14 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         label={t('SettingsDialog.EnableDebug')}
         labelPlacement='start'
       />
-      <br />
-      <FormControlLabel
-        control={<Switch checked={EnableRutorSearch} onChange={inputForm} id='EnableRutorSearch' color='secondary' />}
-        label={t('SettingsDialog.EnableRutorSearch')}
-        helperText={t('SettingsDialog.EnableRutorSearchHint')}
-        labelPlacement='start'
-      />
+      <FormGroup>
+        <FormControlLabel
+          control={<Switch checked={EnableRutorSearch} onChange={inputForm} id='EnableRutorSearch' color='secondary' />}
+          label={t('SettingsDialog.EnableRutorSearch')}
+          labelPlacement='start'
+        />
+        <FormHelperText>{t('SettingsDialog.EnableRutorSearchHint')}</FormHelperText>
+      </FormGroup>
       <br />
       <InputLabel htmlFor='RetrackersMode'>{t('SettingsDialog.RetrackersMode')}</InputLabel>
       <Select
