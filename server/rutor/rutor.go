@@ -100,7 +100,7 @@ func updateDB() {
 
 func loadDB() {
 	log.TLogln("Load rutor db")
-	buf, err := os.ReadFile("rutor.ls")
+	buf, err := os.ReadFile(filepath.Join(settings.Path, "rutor.ls"))
 	if err == nil {
 		r := flate.NewReader(bytes.NewReader(buf))
 		buf, err = io.ReadAll(r)
@@ -114,6 +114,8 @@ func loadDB() {
 				torrsearch.NewIndex(torrs)
 			}
 		}
+	} else {
+		log.TLogln("Error load rutor db:", err)
 	}
 	utils2.FreeOSMemGC()
 }
