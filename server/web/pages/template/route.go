@@ -161,24 +161,24 @@ func RouteWebPages(route *gin.RouterGroup) {
 		c.Data(200, "application/manifest+json", Sitewebmanifest)
 	})
 
-	route.GET("/static/js/2.a56500ca.chunk.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript; charset=utf-8", Staticjs2a56500cachunkjs)
+	route.GET("/static/js/2.d3f8d41d.chunk.js", func(c *gin.Context) {
+		c.Data(200, "application/javascript; charset=utf-8", Staticjs2d3f8d41dchunkjs)
 	})
 
-	route.GET("/static/js/2.a56500ca.chunk.js.LICENSE.txt", func(c *gin.Context) {
-		c.Data(200, "text/plain; charset=utf-8", Staticjs2a56500cachunkjsLICENSEtxt)
+	route.GET("/static/js/2.d3f8d41d.chunk.js.LICENSE.txt", func(c *gin.Context) {
+		c.Data(200, "text/plain; charset=utf-8", Staticjs2d3f8d41dchunkjsLICENSEtxt)
 	})
 
-	route.GET("/static/js/2.a56500ca.chunk.js.map", func(c *gin.Context) {
-		c.Data(200, "application/json", Staticjs2a56500cachunkjsmap)
+	route.GET("/static/js/2.d3f8d41d.chunk.js.map", func(c *gin.Context) {
+		c.Data(200, "application/json", Staticjs2d3f8d41dchunkjsmap)
 	})
 
-	route.GET("/static/js/main.e80a408b.chunk.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript; charset=utf-8", Staticjsmaine80a408bchunkjs)
+	route.GET("/static/js/main.4bd54915.chunk.js", func(c *gin.Context) {
+		c.Data(200, "application/javascript; charset=utf-8", Staticjsmain4bd54915chunkjs)
 	})
 
-	route.GET("/static/js/main.e80a408b.chunk.js.map", func(c *gin.Context) {
-		c.Data(200, "application/json", Staticjsmaine80a408bchunkjsmap)
+	route.GET("/static/js/main.4bd54915.chunk.js.map", func(c *gin.Context) {
+		c.Data(200, "application/json", Staticjsmain4bd54915chunkjsmap)
 	})
 
 	route.GET("/static/js/runtime-main.64d07802.js", func(c *gin.Context) {
