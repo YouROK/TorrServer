@@ -16,7 +16,7 @@ function isRoot() {
 
 function addUser() {
   if isRoot; then
-  	[[ $username == "root" ]] && return 0
+    [[ $username == "root" ]] && return 0
     egrep "^$username" /etc/passwd >/dev/null
     if [ $? -eq 0 ]; then
       [[ $lang == "en" ]] && echo " - $username user exists!" || echo " - пользователь $username найден!"
@@ -35,7 +35,7 @@ function addUser() {
 
 function delUser() {
   if isRoot; then
-  	[[ $username == "root" ]] && return 0
+    [[ $username == "root" ]] && return 0
     egrep "^$username" /etc/passwd >/dev/null
     if [ $? -eq 0 ]; then
       userdel --remove "$username" 2>/dev/null # --force 
@@ -204,8 +204,8 @@ function checkArch() {
     i686) architecture="386" ;;
     x86_64) architecture="amd64" ;;
     aarch64) architecture="arm64" ;;
-    armv7|armv7l) architecture="arm7";;
-    armv6|armv6l) architecture="arm5";;
+    armv7|armv7l) architecture="arm7" ;;
+    armv6|armv6l) architecture="arm5" ;;
     *) [[ $lang == "en" ]] && { echo " Unsupported Arch. Can't continue."; exit 1; } || { echo " Не поддерживаемая архитектура. Продолжение невозможно."; exit 1; } ;;
   esac
 }
@@ -498,16 +498,20 @@ while true; do
   echo ""
   [[ $lang == "en" ]] && read -p " Want to install or configure TorrServer? (Yes|No) Type Delete to uninstall. " ydn </dev/tty || read -p " Хотите установить, обновить или настроить TorrServer? (Да|Нет) Для удаления введите «Удалить» " ydn </dev/tty
   case $ydn in
-    [YyДд]* )
-      initialCheck;
-      installTorrServer;
-      break;;
-    [DdУу]* )
-      uninstall;
-      break;;
-    [NnНн]* )
-      break;;
-    * ) [[ $lang == "en" ]] && echo " Enter Yes, No or Delete" || echo " Ввведите Да, Нет или Удалить" ;;
+    [YyДд]*)
+      initialCheck
+      installTorrServer
+      break
+      ;;
+    [DdУу]*)
+      uninstall
+      break
+      ;;
+    [NnНн]*)
+      break
+      ;;
+    *) [[ $lang == "en" ]] && echo " Enter Yes, No or Delete" || echo " Ввведите Да, Нет или Удалить"
+    	;;
   esac
 done
 
