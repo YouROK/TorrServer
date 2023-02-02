@@ -42,8 +42,8 @@ function uninstall() {
 		echo " Это действие удалит все данные TorrServer включая базу данных торрентов и настройки по указанному выше пути!"
 		echo ""
   }
-  [[ $lang == "en" ]] && read -p ' Are you shure you want to delete TorrServer? (Yes/No) ' answer </dev/tty || read -p ' Вы уверены что хотите удалить программу? (Да/Нет) ' answer </dev/tty
-  if [ "$answer" != "${answer#[YyДд]}" ] ; then
+  [[ $lang == "en" ]] && read -p ' Are you shure you want to delete TorrServer? (Yes/No) ' answer_del </dev/tty || read -p ' Вы уверены что хотите удалить программу? (Да/Нет) ' answer_del </dev/tty
+  if [ "$answer_del" != "${answer_del#[YyДд]}" ] ; then
     cleanup
     cleanAll
     echo ""
@@ -201,8 +201,8 @@ function installTorrServer() {
   [[ $lang == "en" ]] && echo " Install and configure TorrServer…" || echo " Устанавливаем и настраиваем TorrServer…"
   if checkInstalled; then
     if ! checkInstalledVersion; then
-      [[ $lang == "en" ]] && read -p ' Want to update TorrServer? (Yes/No) ' answer </dev/tty || read -p ' Хотите обновить TorrServer? (Да/Нет) ' answer </dev/tty
-      if [ "$answer" != "${answer#[YyДд]}" ] ;then
+      [[ $lang == "en" ]] && read -p ' Want to update TorrServer? (Yes/No) ' answer_up </dev/tty || read -p ' Хотите обновить TorrServer? (Да/Нет) ' answer_up </dev/tty
+      if [ "$answer_up" != "${answer_up#[YyДд]}" ] ;then
         UpdateVersion
       fi
     fi
@@ -240,17 +240,17 @@ function installTorrServer() {
     WantedBy = multi-user.target
 EOF
   [ -z $servicePort ] && {
-    [[ $lang == "en" ]] && read -p ' Change TorrServer web-port? (Yes/No) ' answer </dev/tty || read -p ' Хотите изменить порт для TorrServer? (Да/Нет) ' answer </dev/tty
-    if [ "$answer" != "${answer#[YyДд]}" ] ;then
-      [[ $lang == "en" ]] && read -p ' Enter port number: ' answer </dev/tty || read -p ' Введите номер порта: ' answer </dev/tty
-      servicePort=$answer
+    [[ $lang == "en" ]] && read -p ' Change TorrServer web-port? (Yes/No) ' answer_cp </dev/tty || read -p ' Хотите изменить порт для TorrServer? (Да/Нет) ' answer_cp </dev/tty
+    if [ "$answer_cp" != "${answer_cp#[YyДд]}" ] ;then
+      [[ $lang == "en" ]] && read -p ' Enter port number: ' answer_port </dev/tty || read -p ' Введите номер порта: ' answer_port </dev/tty
+      servicePort=$answer_port
     else
       servicePort="8090"
     fi
   }
   [ -z $isAuth ] && {
-    [[ $lang == "en" ]] && read -p ' Enable server authorization? (Yes/No) ' answer </dev/tty || read -p ' Включить авторизацию на сервере? (Да/Нет) ' answer </dev/tty
-    if [ "$answer" != "${answer#[YyДд]}" ] ;then
+    [[ $lang == "en" ]] && read -p ' Enable server authorization? (Yes/No) ' answer_auth </dev/tty || read -p ' Включить авторизацию на сервере? (Да/Нет) ' answer_auth </dev/tty
+    if [ "$answer_auth" != "${answer_auth#[YyДд]}" ] ;then
       isAuth=1
     else
       isAuth=0
@@ -258,10 +258,10 @@ EOF
   }
   if [[ "$isAuth" == 1 ]]; then
     [[ ! -f "$dirInstall/accs.db" ]] && {
-      [[ $lang == "en" ]] && read -p ' User: ' answer </dev/tty || read -p ' Пользователь: ' answer </dev/tty
-      isAuthUser=$answer
-      [[ $lang == "en" ]] && read -p ' Password: ' answer </dev/tty || read -p ' Пароль: ' answer </dev/tty
-      isAuthPass=$answer
+      [[ $lang == "en" ]] && read -p ' User: ' answer_user </dev/tty || read -p ' Пользователь: ' answer_user </dev/tty
+      isAuthUser=$answer_user
+      [[ $lang == "en" ]] && read -p ' Password: ' answer_pass </dev/tty || read -p ' Пароль: ' answer_pass </dev/tty
+      isAuthPass=$answer_pass
       [[ $lang == "en" ]] && echo " Apply user and password - $isAuthUser:$isAuthPass" || echo " Устанавливаем логин и пароль - $isAuthUser:$isAuthPass"
       echo -e "{\n  \"$isAuthUser\": \"$isAuthPass\"\n}" > $dirInstall/accs.db
     } || {
@@ -276,8 +276,8 @@ EOF
 EOF
   fi
   [ -z $isRdb ] && {
-    [[ $lang == "en" ]] && read -p ' Start TorrServer in public read-only mode? (Yes/No) ' answer </dev/tty || read -p ' Запускать TorrServer в публичном режиме без возможности изменения настроек через веб сервера? (Да/Нет) ' answer </dev/tty
-    if [ "$answer" != "${answer#[YyДд]}" ] ;then
+    [[ $lang == "en" ]] && read -p ' Start TorrServer in public read-only mode? (Yes/No) ' answer_rdb </dev/tty || read -p ' Запускать TorrServer в публичном режиме без возможности изменения настроек через веб сервера? (Да/Нет) ' answer_rdb </dev/tty
+    if [ "$answer_rdb" != "${answer_rdb#[YyДд]}" ] ;then
       isRdb=1
     else
       isRdb=0
@@ -285,19 +285,19 @@ EOF
   }
   if [[ "$isRdb" == 1 ]]; then
     [[ $lang == "en" ]] && {
-    echo " Set database to read-only mode…"
-    echo " To change remove --rdb option from $dirInstall/$serviceName.config"
-    echo " or rerun install script without parameters"
+			echo " Set database to read-only mode…"
+			echo " To change remove --rdb option from $dirInstall/$serviceName.config"
+			echo " or rerun install script without parameters"
     } || {
-    echo " База данных устанавливается в режим «только для чтения»…"
-    echo " Для изменения отредактируйте $dirInstall/$serviceName.config, убрав опцию --rdb"
-    echo " или запустите интерактивную установку без параметров повторно"
+			echo " База данных устанавливается в режим «только для чтения»…"
+			echo " Для изменения отредактируйте $dirInstall/$serviceName.config, убрав опцию --rdb"
+			echo " или запустите интерактивную установку без параметров повторно"
     }
     sed -i 's|DAEMON_OPTIONS="--port|DAEMON_OPTIONS="--rdb --port|' $dirInstall/$serviceName.config
   fi
   [ -z $isLog ] && {
-    [[ $lang == "en" ]] && read -p ' Enable TorrServer log output to file? (Yes/No) ' answer </dev/tty || read -p ' Включить запись журнала работы TorrServer в файл? (Да/Нет) ' answer </dev/tty
-    if [ "$answer" != "${answer#[YyДд]}" ] ;then
+    [[ $lang == "en" ]] && read -p ' Enable TorrServer log output to file? (Yes/No) ' answer_log </dev/tty || read -p ' Включить запись журнала работы TorrServer в файл? (Да/Нет) ' answer_log </dev/tty
+    if [ "$answer_log" != "${answer_log#[YyДд]}" ] ;then
       sed -i "s|--path|--logpath $dirInstall/$serviceName.log --path|" "$dirInstall/$serviceName.config"
     fi
   }
@@ -435,8 +435,8 @@ case $1 in
     echo " Choose Language:"
     echo " [1] English"
     echo " [2] Русский"
-    read -p ' Your language (Ваш язык): ' answer </dev/tty
-    if [ "$answer" != "${answer#[2]}" ] ;then
+    read -p ' Your language (Ваш язык): ' answer_lang </dev/tty
+    if [ "$answer_lang" != "${answer_lang#[2]}" ] ;then
       lang="ru"
     fi
     echo ""
