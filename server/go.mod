@@ -2,7 +2,7 @@ module server
 
 go 1.18
 
-replace github.com/anacrolix/torrent v1.46.1-0.20220831010947-648acc0120a4 => github.com/tsynik/torrent v1.2.8
+replace github.com/anacrolix/torrent v1.47.0 => github.com/tsynik/torrent v1.2.8
 
 require (
 	github.com/agnivade/levenshtein v1.1.1
@@ -11,7 +11,7 @@ require (
 	github.com/anacrolix/log v0.13.2-0.20220711050817-613cb738ef30
 	github.com/anacrolix/missinggo v1.3.0
 	github.com/anacrolix/publicip v0.3.0
-	github.com/anacrolix/torrent v1.46.1-0.20220831010947-648acc0120a4
+	github.com/anacrolix/torrent v1.47.0
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-contrib/location v0.0.2
 	github.com/gin-gonic/gin v1.8.1
@@ -27,7 +27,7 @@ require (
 	github.com/alecthomas/atomic v0.1.0-alpha2 // indirect
 	github.com/alexflint/go-scalar v1.1.0 // indirect
 	github.com/anacrolix/chansync v0.3.0 // indirect
-	github.com/anacrolix/dht/v2 v2.18.1 // indirect
+	github.com/anacrolix/dht/v2 v2.19.1 // indirect
 	github.com/anacrolix/ffprobe v1.0.0 // indirect
 	github.com/anacrolix/missinggo/perf v1.0.0 // indirect
 	github.com/anacrolix/missinggo/v2 v2.7.0 // indirect
