@@ -434,7 +434,7 @@ case $1 in
     exit
     ;;
   -r|--remove|remove)
-    uninstall
+    cleanup
     exit
     ;;
   -h|--help|help)
