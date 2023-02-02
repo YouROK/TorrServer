@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+username="torrserver" # system user to add || root
 dirInstall="/opt/torrserver" # путь установки torrserver
 serviceName="torrserver" # имя службы: systemctl status torrserver.service
 scriptname=$(basename "$(test -L "$0" && readlink "$0" || echo "$0")")
@@ -10,6 +11,43 @@ scriptname=$(basename "$(test -L "$0" && readlink "$0" || echo "$0")")
 function isRoot() {
   if [ "$EUID" -ne 0 ]; then
     return 1
+  fi
+}
+
+function addUser() {
+  if isRoot; then
+  	[[ $username == "root" ]] && return 0
+    egrep "^$username" /etc/passwd >/dev/null
+    if [ $? -eq 0 ]; then
+      [[ $lang == "en" ]] && echo " - $username user exists!" || echo " - пользователь $username найден!"
+      return 0
+    else
+      useradd --home-dir "$dirInstall" --create-home --shell /bin/false -c "TorrServer" "$username"
+      [ $? -eq 0 ] && {
+        chmod 755 "$dirInstall"
+        [[ $lang == "en" ]] && echo " - User $username has been added to system!" || echo " - пользователь $username добавлен!"
+      } || {
+        [[ $lang == "en" ]] && echo " - Failed to add $username user!" || echo " - не удалось добавить пользователя $username!"
+      }
+    fi
+  fi
+}
+
+function delUser() {
+  if isRoot; then
+  	[[ $username == "root" ]] && return 0
+    egrep "^$username" /etc/passwd >/dev/null
+    if [ $? -eq 0 ]; then
+      userdel --remove "$username" 2>/dev/null # --force 
+      [ $? -eq 0 ] && {
+        [[ $lang == "en" ]] && echo " - User $username has been removed from system!" || echo " - Пользователь $username удален!"
+      } || {
+        [[ $lang == "en" ]] && echo " - Failed to remove $username user!" || echo " - не удалось удалить пользователя $username!"
+      }
+    else
+      [[ $lang == "en" ]] && echo " - $username - no such user!" || echo " - пользователь $username не найден!"
+      return 1
+    fi
   fi
 }
 
@@ -29,6 +67,8 @@ function getIP() {
 }
 
 function uninstall() {
+  checkArch
+  checkInstalled
   [[ $lang == "en" ]] && {
     echo ""
     echo " TorrServer install dir - ${dirInstall}"
@@ -46,8 +86,7 @@ function uninstall() {
   if [ "$answer_del" != "${answer_del#[YyДд]}" ]; then
     cleanup
     cleanAll
-    echo ""
-    [[ $lang == "en" ]] && echo " TorrServer deleted!" || echo " TorrServer удален!"
+    [[ $lang == "en" ]] && echo " - TorrServer uninstalled!" || echo " - TorrServer удален из системы!"
     echo ""
   else
     echo ""
@@ -58,11 +97,13 @@ function cleanup() {
   systemctl stop $serviceName 2>/dev/null
   systemctl disable $serviceName 2>/dev/null
   rm -rf /usr/local/lib/systemd/system/$serviceName.service $dirInstall 2>/dev/null
+  delUser
 }
 
 function cleanAll() { # guess other installs
   systemctl stop torr torrserver 2>/dev/null
   systemctl disable torr torrserver 2>/dev/null
+  rm -rf /home/torrserver 2>/dev/null
   rm -rf /usr/local/torr 2>/dev/null
   rm -rf /opt/torr{,*} 2>/dev/null
   rm -f /{,etc,usr/local/lib}/systemd/system/tor{,r,rserver}.service 2>/dev/null
@@ -222,8 +263,8 @@ function installTorrServer() {
     After = network.target
 
     [Service]
-    User = root
-    Group = root
+    User = $username
+    Group = $username
     Type = simple
     NonBlocking = true
     EnvironmentFile = $dirInstall/$serviceName.config
@@ -309,7 +350,8 @@ EOF
 
   [[ $lang == "en" ]] && echo " Starting TorrServer…" || echo " Запускаем службу TorrServer…"
   systemctl daemon-reload 2>/dev/null
-  systemctl enable --now $serviceName.service 2>/dev/null
+  systemctl enable $serviceName.service 2>/dev/null # enable --now
+  systemctl restart $serviceName.service 2>/dev/null
   getIP
   [[ $lang == "en" ]] && {
     echo ""
@@ -331,6 +373,9 @@ EOF
 }
 
 function checkInstalled() {
+  if ! addUser; then
+    username="root"
+  fi
   binName="TorrServer-linux-${architecture}"
   if [[ -f "$dirInstall/$binName" ]] || [[ $(stat -c%s "$dirInstall/$binName" 2>/dev/null) -ne 0 ]]; then
     [[ $lang == "en" ]] && echo " - TorrServer found in $dirInstall" || echo " - TorrServer найден в директории $dirInstall"
@@ -351,12 +396,12 @@ function checkInstalledVersion() {
   else
     [[ $lang == "en" ]] && {
       echo " - TorrServer update found!"
-      echo "  installed: \"$($dirInstall/$binName --version 2>/dev/null | awk '{print $2}')\""
-      echo "  available: \"$(getLatestRelease)\""
+      echo "   installed: \"$($dirInstall/$binName --version 2>/dev/null | awk '{print $2}')\""
+      echo "   available: \"$(getLatestRelease)\""
     } || {
       echo " - Доступно обновление сервера"
-      echo "  установлен: \"$($dirInstall/$binName --version 2>/dev/null | awk '{print $2}')\""
-      echo "  обновление: \"$(getLatestRelease)\""
+      echo "   установлен: \"$($dirInstall/$binName --version 2>/dev/null | awk '{print $2}')\""
+      echo "   обновление: \"$(getLatestRelease)\""
     }
     return 1
   fi
@@ -424,7 +469,7 @@ case $1 in
     exit
     ;;
   -r|--remove|remove)
-    cleanup
+    uninstall
     exit
     ;;
   -h|--help|help)
