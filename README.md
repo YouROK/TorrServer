@@ -9,10 +9,10 @@ On linux systems you may need to set the environment variable before run \
 ***export GODEBUG=madvdontneed=1***
 
 #### macOS install / configure / uninstall script
-curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerMac.sh|sudo bash
+Just run in Terminal: `curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerMac.sh | sudo bash`
 
 #### Linux on VPS install / configure / uninstall script
-curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh|sudo bash
+Just run in console: `curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh | sudo bash`
 
 #### Unofficial TorrServer iocage plugin
 On FreeBSD (TrueNAS/FreeNAS) you can use this plugin
