@@ -24,26 +24,26 @@ function getLang() {
 }
 
 function getIP() {
-	[ -z "`which dig`" ] && serverIP=$(host myip.opendns.com resolver1.opendns.com | tail -n1 | cut -d' ' -f4-) || serverIP=$(dig +short myip.opendns.com @resolver1.opendns.com)
-	# echo $serverIP
+  [ -z "`which dig`" ] && serverIP=$(host myip.opendns.com resolver1.opendns.com | tail -n1 | cut -d' ' -f4-) || serverIP=$(dig +short myip.opendns.com @resolver1.opendns.com)
+  # echo $serverIP
 }
 
 function uninstall() {
-	[[ $lang == "en" ]] && {
-		echo ""
-		echo " TorrServer install dir - ${dirInstall}"
-		echo ""
-		echo " This action will delete TorrServer including all it's torrents, settings and files on path above!"
-		echo ""
-	} || {
-		echo ""
-		echo " Директория c TorrServer - ${dirInstall}"
-		echo ""
-		echo " Это действие удалит все данные TorrServer включая базу данных торрентов и настройки по указанному выше пути!"
-		echo ""
+  [[ $lang == "en" ]] && {
+    echo ""
+    echo " TorrServer install dir - ${dirInstall}"
+    echo ""
+    echo " This action will delete TorrServer including all it's torrents, settings and files on path above!"
+    echo ""
+  } || {
+    echo ""
+    echo " Директория c TorrServer - ${dirInstall}"
+    echo ""
+    echo " Это действие удалит все данные TorrServer включая базу данных торрентов и настройки по указанному выше пути!"
+    echo ""
   }
   [[ $lang == "en" ]] && read -p ' Are you shure you want to delete TorrServer? (Yes/No) ' answer_del </dev/tty || read -p ' Вы уверены что хотите удалить программу? (Да/Нет) ' answer_del </dev/tty
-  if [ "$answer_del" != "${answer_del#[YyДд]}" ] ; then
+  if [ "$answer_del" != "${answer_del#[YyДд]}" ]; then
     cleanup
     cleanAll
     echo ""
@@ -202,7 +202,7 @@ function installTorrServer() {
   if checkInstalled; then
     if ! checkInstalledVersion; then
       [[ $lang == "en" ]] && read -p ' Want to update TorrServer? (Yes/No) ' answer_up </dev/tty || read -p ' Хотите обновить TorrServer? (Да/Нет) ' answer_up </dev/tty
-      if [ "$answer_up" != "${answer_up#[YyДд]}" ] ;then
+      if [ "$answer_up" != "${answer_up#[YyДд]}" ]; then
         UpdateVersion
       fi
     fi
@@ -241,7 +241,7 @@ function installTorrServer() {
 EOF
   [ -z $servicePort ] && {
     [[ $lang == "en" ]] && read -p ' Change TorrServer web-port? (Yes/No) ' answer_cp </dev/tty || read -p ' Хотите изменить порт для TorrServer? (Да/Нет) ' answer_cp </dev/tty
-    if [ "$answer_cp" != "${answer_cp#[YyДд]}" ] ;then
+    if [ "$answer_cp" != "${answer_cp#[YyДд]}" ]; then
       [[ $lang == "en" ]] && read -p ' Enter port number: ' answer_port </dev/tty || read -p ' Введите номер порта: ' answer_port </dev/tty
       servicePort=$answer_port
     else
@@ -250,7 +250,7 @@ EOF
   }
   [ -z $isAuth ] && {
     [[ $lang == "en" ]] && read -p ' Enable server authorization? (Yes/No) ' answer_auth </dev/tty || read -p ' Включить авторизацию на сервере? (Да/Нет) ' answer_auth </dev/tty
-    if [ "$answer_auth" != "${answer_auth#[YyДд]}" ] ;then
+    if [ "$answer_auth" != "${answer_auth#[YyДд]}" ]; then
       isAuth=1
     else
       isAuth=0
@@ -277,7 +277,7 @@ EOF
   fi
   [ -z $isRdb ] && {
     [[ $lang == "en" ]] && read -p ' Start TorrServer in public read-only mode? (Yes/No) ' answer_rdb </dev/tty || read -p ' Запускать TorrServer в публичном режиме без возможности изменения настроек через веб сервера? (Да/Нет) ' answer_rdb </dev/tty
-    if [ "$answer_rdb" != "${answer_rdb#[YyДд]}" ] ;then
+    if [ "$answer_rdb" != "${answer_rdb#[YyДд]}" ]; then
       isRdb=1
     else
       isRdb=0
@@ -285,20 +285,21 @@ EOF
   }
   if [[ "$isRdb" == 1 ]]; then
     [[ $lang == "en" ]] && {
-			echo " Set database to read-only mode…"
-			echo " To change remove --rdb option from $dirInstall/$serviceName.config"
-			echo " or rerun install script without parameters"
+      echo " Set database to read-only mode…"
+      echo " To change remove --rdb option from $dirInstall/$serviceName.config"
+      echo " or rerun install script without parameters"
     } || {
-			echo " База данных устанавливается в режим «только для чтения»…"
-			echo " Для изменения отредактируйте $dirInstall/$serviceName.config, убрав опцию --rdb"
-			echo " или запустите интерактивную установку без параметров повторно"
+      echo " База данных устанавливается в режим «только для чтения»…"
+      echo " Для изменения отредактируйте $dirInstall/$serviceName.config, убрав опцию --rdb"
+      echo " или запустите интерактивную установку без параметров повторно"
     }
     sed -i 's|DAEMON_OPTIONS="--port|DAEMON_OPTIONS="--rdb --port|' $dirInstall/$serviceName.config
   fi
   [ -z $isLog ] && {
     [[ $lang == "en" ]] && read -p ' Enable TorrServer log output to file? (Yes/No) ' answer_log </dev/tty || read -p ' Включить запись журнала работы TorrServer в файл? (Да/Нет) ' answer_log </dev/tty
-    if [ "$answer_log" != "${answer_log#[YyДд]}" ] ;then
+    if [ "$answer_log" != "${answer_log#[YyДд]}" ]; then
       sed -i "s|--path|--logpath $dirInstall/$serviceName.log --path|" "$dirInstall/$serviceName.config"
+      [[ $lang == "en" ]] && echo " - TorrServer log stored at $dirInstall/$serviceName.log" || echo " - лог TorrServer располагается по пути $dirInstall/$serviceName.log"
     fi
   }
 
@@ -348,14 +349,14 @@ function checkInstalledVersion() {
   if [[ "$(getLatestRelease)" == "$($dirInstall/$binName --version 2>/dev/null | awk '{print $2}')" ]]; then
     [[ $lang == "en" ]] && echo " - You have latest TorrServer $(getLatestRelease)" || echo " - Установлен TorrServer последней версии $(getLatestRelease)"
   else
-  	[[ $lang == "en" ]] && {
-			echo " - TorrServer update found!"
-			echo "  installed: \"$($dirInstall/$binName --version 2>/dev/null | awk '{print $2}')\""
-			echo "  available: \"$(getLatestRelease)\""
+    [[ $lang == "en" ]] && {
+      echo " - TorrServer update found!"
+      echo "  installed: \"$($dirInstall/$binName --version 2>/dev/null | awk '{print $2}')\""
+      echo "  available: \"$(getLatestRelease)\""
     } || {
-			echo " - Доступно обновление сервера"
-			echo "  установлен: \"$($dirInstall/$binName --version 2>/dev/null | awk '{print $2}')\""
-			echo "  обновление: \"$(getLatestRelease)\""
+      echo " - Доступно обновление сервера"
+      echo "  установлен: \"$($dirInstall/$binName --version 2>/dev/null | awk '{print $2}')\""
+      echo "  обновление: \"$(getLatestRelease)\""
     }
     return 1
   fi
@@ -436,7 +437,7 @@ case $1 in
     echo " [1] English"
     echo " [2] Русский"
     read -p ' Your language (Ваш язык): ' answer_lang </dev/tty
-    if [ "$answer_lang" != "${answer_lang#[2]}" ] ;then
+    if [ "$answer_lang" != "${answer_lang#[2]}" ]; then
       lang="ru"
     fi
     echo ""
