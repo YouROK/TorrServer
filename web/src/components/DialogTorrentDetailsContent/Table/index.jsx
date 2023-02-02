@@ -34,7 +34,6 @@ const Table = memo(
       'No playable files in this torrent'
     ) : (
       <>
-        <div>{isVlcUsed.toString()}</div>
         <TableStyle>
           <thead>
             <tr>

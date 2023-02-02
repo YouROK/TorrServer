@@ -115,6 +115,8 @@
     "ForceEncrypt": "Примусово шифрувати заголовки",
     "FriendlyName": "Ім'я сервера DLNA",
     "FriendlyNameHint": "Залиште порожнім, щоб використовувати значення за промовчанням.",
+    "EnableRutorSearch": "Увімкніть пошук RuTor",
+    "EnableRutorSearchHint": "Ви можете шукати торренти от RuTor, навіть якщо RuTor недоступний. Основа в пам'яті займає близько 500 МБ.",
     "PeersListenPort": "Порт для вхідних з'єднань",
     "PeersListenPortHint": "1024 - 65535, 0 - авто",
     "PreloadCache": "Буфер попер. завантаження",

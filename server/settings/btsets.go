@@ -31,6 +31,9 @@ type BTSets struct {
 	EnableDLNA   bool
 	FriendlyName string
 
+	// Rutor
+	EnableRutorSearch bool
+
 	// BT Config
 	EnableIPv6        bool
 	DisableTCP        bool

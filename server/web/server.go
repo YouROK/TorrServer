@@ -2,6 +2,7 @@ package web
 
 import (
 	"net"
+	"server/rutor"
 	"sort"
 
 	"github.com/gin-contrib/cors"
@@ -37,6 +38,8 @@ func Start(port string) {
 		waitChan <- err
 		return
 	}
+	rutor.Start()
+
 	gin.SetMode(gin.ReleaseMode)
 
 	//corsCfg := cors.DefaultConfig()

@@ -26,6 +26,8 @@ var defTrackers = []string{
 	"udp://tracker.opentrackr.org:1337/announce",
 	"http://bt.svao-ix.ru/announce",
 	"udp://explodie.org:6969/announce",
+	"wss://tracker.btorrent.xyz",
+	"wss://tracker.openwebtorrent.com",
 }
 
 var loadedTrackers []string
