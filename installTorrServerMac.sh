@@ -2,13 +2,18 @@
 dirInstall="/Users/Shared/TorrServer"
 serviceName="torrserver"
 
+function getLang() {
+	lang=$(locale | grep LANG | cut -d= -f2 | tr -d '"' | cut -d_ -f1)
+	[[ $lang != "ru" ]] && lang="en"
+}
+
 function checkArch() {
   case $(uname -m) in
     i386) architecture="386" ;;
     i686) architecture="386" ;;
     x86_64) architecture="amd64" ;;
     aarch64) architecture="arm64" ;;
-    *) echo "Извините, не поддерживаемая архитектура. Продолжение невозможно" && exit 1;;
+    *) [[ $lang == "en" ]] && { echo ""; echo "Unsupported Arch. Can't continue."; exit 1; } || { echo ""; echo "Не поддерживаемая архитектура. Продолжение невозможно."; exit 1; } ;;
   esac
 }
 
@@ -19,29 +24,42 @@ function getLatestRelease() {
   head -1
 }
 
+function killRunning() {
+  self="$(basename "$0")"
+  runningPid=$(ps -ax|grep -i torrserver|grep -v grep|grep -v "$self"|awk '{print $1}')
+  # echo $runningPid
+  [ -z $runningPid ] || sudo kill -9 $runningPid
+}
+
 function cleanup() {
   sudo rm -f /Library/LaunchAgents/*torrserver* 1>/dev/null 2>&1
   sudo rm -f /Library/LaunchDaemons/*torrserver* 1>/dev/null 2>&1
   sudo rm -f $HOME/Library/LaunchAgents/*torrserver* 1>/dev/null 2>&1
   sudo rm -f $HOME/Library/LaunchDaemons/*torrserver* 1>/dev/null 2>&1
-  self="$(basename "$0")"
-  runningPid=$(ps -ax|grep -i torrserver|grep -v grep|grep -v "$self"|awk '{print $1}')
-  sudo kill -9 $runningPid 1>/dev/null 2>&1
+  killRunning
 }
 
 function uninstall() {
-  echo ""
-  echo "Директория c TorrServer - ${dirInstall}"
-  echo ""
-  echo "Это действие удалит все данные TorrServer включая базу данных торрентов и настройки по указанному выше пути."
-  echo ""
-  printf 'Вы уверены что хотите удалить программу? '
+	[[ $lang == "en" ]] && {
+		echo ""
+		echo "TorrServer install dir - ${dirInstall}"
+		echo ""
+		echo "This action will delete TorrServer including all it's torrents, settings and files on path above."
+		echo ""
+  } || {
+		echo ""
+		echo "Директория c TorrServer - ${dirInstall}"
+		echo ""
+		echo "Это действие удалит все данные TorrServer включая базу данных торрентов и настройки по указанному выше пути."
+		echo ""
+  }
+  [[ $lang == "en" ]] && printf 'Are you shure you want to delete TorrServer? (Yes/No) ' || printf 'Вы уверены что хотите удалить программу? (Да/Нет) '
   read answer
-  if [ "$answer" != "${answer#[YyДд]}" ] ; then
+  if [ "$answer" != "${answer#[YyДд]}" ]; then
     cleanup
     sudo rm -rf $dirInstall
     echo ""
-    echo "TorrServer удален c вашего Mac"
+    [[ $lang == "en" ]] && echo "TorrServer deleted from Mac" || echo "TorrServer удален c вашего Mac"
     echo ""
     sleep 5
   else
@@ -51,13 +69,17 @@ function uninstall() {
     sleep 5
   fi
 }
-  
-checkArch
 
 function installTorrServer() {
-  echo ""
-  echo "Устанавливаем TorrServer $(getLatestRelease) ..."
-  echo ""
+	[[ $lang == "en" ]] && {
+		echo ""
+		echo "Install TorrServer $(getLatestRelease)…"
+		echo ""
+  } || {
+		echo ""
+		echo "Устанавливаем TorrServer $(getLatestRelease)…"
+		echo ""
+  }
   binName="TorrServer-darwin-${architecture}"
   [[ ! -d "$dirInstall" ]] && mkdir -p ${dirInstall}
   urlBin="https://github.com/YouROK/TorrServer/releases/download/$(getLatestRelease)/${binName}"
@@ -66,11 +88,34 @@ function installTorrServer() {
     chmod a+rx "$dirInstall/$binName"
     xattr -r -d com.apple.quarantine "$dirInstall/$binName"
   fi
-  echo ""
-  echo "Создаем сервис автозагрузки TorrServer $(getLatestRelease) ..."
-  echo ""
-  echo "Система запросит ваш пароль администратора"
-  echo ""
+  [[ $lang == "en" ]] && {
+		echo ""
+		echo "Add autostart service for TorrServer $(getLatestRelease)…"
+		echo ""
+		echo "System will ask your administrator password"
+		echo ""
+  } || {
+		echo ""
+		echo "Создаем сервис автозагрузки TorrServer $(getLatestRelease)…"
+		echo ""
+		echo "Система запросит ваш пароль администратора"
+		echo ""
+  }
+###
+  cleanup
+###
+	[[ $lang == "en" ]] && printf 'Change TorrServer web port? (Yes/No) ' || printf 'Хотите изменить веб-порт для TorrServer? (Да/Нет) '
+	read answer
+	if [ "$answer" != "${answer#[YyДд]}" ]; then
+  	echo ""
+		[[ $lang == "en" ]] && printf 'Enter port number: ' || printf 'Введите номер порта: '
+		read answer
+		servicePort=$answer
+  	echo ""
+	else
+		servicePort="8090"
+  	echo ""
+	fi
   cat << EOF > $dirInstall/$serviceName.plist
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -88,7 +133,7 @@ function installTorrServer() {
   <array>
     <string>${dirInstall}/TorrServer-darwin-${architecture}</string>
     <string>--port</string>
-    <string>8090</string>
+    <string>${servicePort}</string>
     <string>--path</string>
     <string>${dirInstall}</string>
     <string>--logpath</string>
@@ -102,43 +147,40 @@ function installTorrServer() {
 </dict>
 </plist>
 EOF
-###
-  cleanup
-###
-  printf 'Включить авторизацию на сервере? '
+  [[ $lang == "en" ]] && printf 'Enable HTTP Authorization? (Yes/No) ' || printf 'Включить авторизацию на сервере? (Да/Нет) '
   read answer
-  if [ "$answer" != "${answer#[YyДд]}" ] ;then
+  if [ "$answer" != "${answer#[YyДд]}" ]; then
     isAuth=1
   else
     isAuth=0
   fi
   echo ""
   if [[ "$isAuth" == 1 ]]; then
-    echo "Вы выбрали установку с авторизацией"
+    [[ $lang == "en" ]] && echo "HTTP Auth Install choosen" || echo "Вы выбрали установку с авторизацией"
     [[ ! -f "$dirInstall/accs.db" ]] && {
       echo ""
-      printf 'Пользователь: '
+      [[ $lang == "en" ]] && printf 'User: ' || printf 'Пользователь: '
       read answer
       isAuthUser=$answer
       echo ""
-      printf 'Пароль: '
+      [[ $lang == "en" ]] && printf 'Password: ' || printf 'Пароль: '
       read answer
       isAuthPass=$answer
       echo ""
-      echo "Устанавливаем логин и пароль: $isAuthUser:$isAuthPass"
+      [[ $lang == "en" ]] && echo "Added credentials: $isAuthUser:$isAuthPass" || echo "Устанавливаем логин и пароль: $isAuthUser:$isAuthPass"
       echo ""
       echo -e "{\n  \"$isAuthUser\": \"$isAuthPass\"\n}" > $dirInstall/accs.db
     } || {
       echo ""
-      echo "Используйте реквизиты из ${dirInstall}/accs.db для входа"
+      [[ $lang == "en" ]] && echo "Use ${dirInstall}/accs.db credentials for access" || echo "Используйте реквизиты из ${dirInstall}/accs.db для входа"
       echo ""
     }
   else
     sed -i '' -e '/httpauth/d' $dirInstall/$serviceName.plist
   fi
-  printf 'Автозагрузка для текушего пользователя (1) или всех (2)? '
+  [[ $lang == "en" ]] && printf 'Add autostart for current user (1) or all users (2)? ' || printf 'Добавить автозагрузку для текушего пользователя (1) или всех (2)? '
   read answer
-  if [ "$answer" != "${answer#[1]}" ] ;then
+  if [ "$answer" != "${answer#[1]}" ]; then
     # user
     sysPath="${HOME}/Library/LaunchAgents"
     [[ ! -d "$sysPath" ]] && mkdir -p ${sysPath}
@@ -154,31 +196,43 @@ EOF
     sudo chmod 0644 "$sysPath/$serviceName.plist"
     sudo launchctl load -w "$sysPath/$serviceName.plist" 1>/dev/null 2>&1
   fi
-  echo ""
-  echo "Сервис автозагрузки записан в ${sysPath}"
-  echo ""
-  echo "TorrServer $(getLatestRelease) для ${architecture} Mac установлен в ${dirInstall}"
-  echo ""
-  echo "Теперь вы можете открыть браузер по адресу http://localhost:8090 для его настройки"
-  echo ""
+  [[ $lang == "en" ]] && {
+		echo ""
+		echo "Autostart service added to ${sysPath}"
+		echo ""
+		echo "TorrServer $(getLatestRelease) for ${architecture} Mac installed to ${dirInstall}"
+		echo ""
+		echo "You can open browser URL http://localhost:$servicePort for TorrServer setup and use"
+		echo ""
+  } || {
+		echo ""
+		echo "Сервис автозагрузки записан в ${sysPath}"
+		echo ""
+		echo "TorrServer $(getLatestRelease) для ${architecture} Mac установлен в ${dirInstall}"
+		echo ""
+		echo "Теперь вы можете открыть браузер по адресу http://localhost:$servicePort для его настройки и использования"
+		echo ""
+  }
   if [[ "$isAuth" == 1 && $isAuthUser > 0 ]]; then
-  echo "Для авторизации введите пользователя $isAuthUser с паролем $isAuthPass"
-  echo ""
+  	[[ $lang == "en" ]] && echo "Use user \"$isAuthUser\" with password \"$isAuthPass\" for web auth" || echo "Для авторизации введите пользователя $isAuthUser с паролем $isAuthPass"
+  	echo ""
   fi
   sleep 60
 }
 
 while true; do
-  echo "==============================================================="
-  echo " Скрипт установки, обновления и удаления TorrServer для MacOS"
-  echo "==============================================================="
+	getLang
   echo ""
-  read -p "Хотите установить или обновить TorrServer? Для удаления введите «Удалить» " yn
+  echo "=============================================================="
+  [[ $lang == "en" ]] && echo " TorrServer install, update and uninstall script for MacOS " || echo " Скрипт установки, обновления и удаления TorrServer для MacOS "
+  echo "=============================================================="
+  echo ""
+  [[ $lang == "en" ]] && read -p "Want to install or update TorrServer? (Yes or No). Enter \"Delete\" to Uninstall TorrServer. " yn || read -p "Хотите установить или обновить TorrServer? (Да|Нет). Для удаления введите «Удалить». " yn
   case $yn in
-    [YyДд]* ) installTorrServer; break;;
+    [YyДд]* ) checkArch; installTorrServer; break;;
     [DdУу]* ) uninstall; break;;
     [NnНн]* ) exit;;
-    * ) echo "Ввведите Да (Yes) Нет (No) или Удалить (Delete).";;
+    * ) [[ $lang == "en" ]] && { echo ""; echo "Enter \"Yes\", \"No\" or \"Delete\"."; } || { echo ""; echo "Ввведите «Да», «Нет» или «Удалить»."; } ;;
   esac
 done
 echo "Have Fun!"
