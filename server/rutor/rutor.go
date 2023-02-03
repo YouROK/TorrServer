@@ -1,7 +1,6 @@
 package rutor
 
 import (
-	"bytes"
 	"compress/flate"
 	"encoding/json"
 	"github.com/agnivade/levenshtein"
@@ -100,24 +99,50 @@ func updateDB() {
 
 func loadDB() {
 	log.TLogln("Load rutor db")
-	buf, err := os.ReadFile(filepath.Join(settings.Path, "rutor.ls"))
+	ff, err := os.Open(filepath.Join(settings.Path, "rutor.ls"))
 	if err == nil {
-		r := flate.NewReader(bytes.NewReader(buf))
-		buf, err = io.ReadAll(r)
-		r.Close()
-		if err == nil {
-			var ftors []*models.TorrentDetails
-			err = json.Unmarshal(buf, &ftors)
+		defer ff.Close()
+		r := flate.NewReader(ff)
+		defer r.Close()
+		var ftorrs []*models.TorrentDetails
+		dec := json.NewDecoder(r)
+
+		_, err := dec.Token()
+		if err != nil {
+			log.TLogln("Error read token rutor db:", err)
+			return
+		}
+
+		var channel = make(chan *models.TorrentDetails, 0)
+		go func() {
+			for torr := range channel {
+				ftorrs = append(ftorrs, torr)
+			}
+			torrs = ftorrs
+		}()
+
+		for dec.More() {
+			var torr *models.TorrentDetails
+			err = dec.Decode(&torr)
 			if err == nil {
-				torrs = ftors
-				log.TLogln("Index rutor db")
-				torrsearch.NewIndex(torrs)
+				channel <- torr
 			} else {
 				log.TLogln("Error read rutor db:", err)
 			}
-		} else {
-			log.TLogln("Error read rutor db:", err)
 		}
+		close(channel)
+
+		log.TLogln("Index rutor db")
+		torrsearch.NewIndex(torrs)
+
+		//err = dec.Decode(&ftorrs)
+		//if err == nil {
+		//	torrs = ftorrs
+		//	log.TLogln("Index rutor db")
+		//	torrsearch.NewIndex(torrs)
+		//} else {
+		//	log.TLogln("Error read rutor db:", err)
+		//}
 	} else {
 		log.TLogln("Error load rutor db:", err)
 	}
