@@ -297,7 +297,7 @@ EOF
       isAuth=0
     fi
   }
-  if [[ "$isAuth" == 1 ]]; then
+  if [ $isAuth -eq 1 ]; then
     [[ ! -f "$dirInstall/accs.db" ]] && {
       [[ $lang == "en" ]] && read -p ' User: ' answer_user </dev/tty || read -p ' Пользователь: ' answer_user </dev/tty
       isAuthUser=$answer_user
@@ -324,7 +324,7 @@ EOF
       isRdb=0
     fi
   }
-  if [[ "$isRdb" == 1 ]]; then
+  if [ $isRdb -eq 1 ]; then
     [[ $lang == "en" ]] && {
       echo " Set database to read-only mode…"
       echo " To change remove --rdb option from $dirInstall/$serviceName.config"
