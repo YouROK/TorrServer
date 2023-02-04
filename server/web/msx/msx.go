@@ -32,7 +32,7 @@ func SetupRoute(r *gin.RouterGroup) {
 	r.GET("/msx/start.json", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"name":      "TorrServer",
-			"version":   "0.0.1",
+			"version":   version.Version,
 			"parameter": "content:request:interaction:init@{PREFIX}{SERVER}/msx/torrents",
 		})
 	})
