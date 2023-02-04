@@ -9,7 +9,7 @@ On linux systems you may need to set the environment variable before run \
 ***export GODEBUG=madvdontneed=1***
 
 #### macOS install / configure / uninstall script
-Just run in Terminal: `curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerMac.sh | sudo bash`
+Just run in Terminal: `curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerMac.sh -o installTorrserverMac.sh && chmod 755 installTorrServerMac.sh && sudo ./installTorrServerMac.sh`
 
 #### Linux on VPS install / configure / uninstall script
 Just run in console: `curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh | sudo bash`
