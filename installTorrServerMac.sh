@@ -12,6 +12,7 @@ function checkArch() {
     i386) architecture="386" ;;
     i686) architecture="386" ;;
     x86_64) architecture="amd64" ;;
+    arm64) architecture="arm64" ;;
     aarch64) architecture="arm64" ;;
     *) [[ $lang == "en" ]] && { echo ""; echo " Unsupported Arch. Can't continue."; exit 1; } || { echo ""; echo " Не поддерживаемая архитектура. Продолжение невозможно."; exit 1; } ;;
   esac
