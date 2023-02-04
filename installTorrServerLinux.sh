@@ -306,8 +306,8 @@ EOF
       [[ $lang == "en" ]] && echo " Store $isAuthUser:$isAuthPass to ${dirInstall}/accs.db" || echo " Сохраняем $isAuthUser:$isAuthPass в ${dirInstall}/accs.db"
       echo -e "{\n  \"$isAuthUser\": \"$isAuthPass\"\n}" > $dirInstall/accs.db
     } || {
-    	auth=$(cat "$dirInstall/accs.db"|head -2|tail -1|tr -d '[:space:]')
-      [[ $lang == "en" ]] && echo " Use existing auth from ${dirInstall}/accs.db - $auth" || echo " Используйте реквизиты из ${dirInstall}/accs.db для авторизации - $auth"
+    	auth=$(cat "$dirInstall/accs.db"|head -2|tail -1|tr -d '[:space:]'|tr -d '"')
+      [[ $lang == "en" ]] && echo " - Use existing auth from ${dirInstall}/accs.db - $auth" || echo " - Используйте реквизиты из ${dirInstall}/accs.db для авторизации - $auth"
     }
     cat << EOF > $dirInstall/$serviceName.config
     DAEMON_OPTIONS="--port $servicePort --path $dirInstall --httpauth"
