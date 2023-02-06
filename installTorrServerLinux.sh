@@ -9,7 +9,7 @@ scriptname=$(basename "$(test -L "$0" && readlink "$0" || echo "$0")")
 #################################
 
 function isRoot() {
-  if [ "$EUID" -ne 0 ]; then
+  if [ $EUID -ne 0 ]; then
     return 1
   fi
 }
@@ -297,16 +297,17 @@ EOF
       isAuth=0
     fi
   }
-  if [[ "$isAuth" == 1 ]]; then
+  if [ $isAuth -eq 1 ]; then
     [[ ! -f "$dirInstall/accs.db" ]] && {
       [[ $lang == "en" ]] && read -p ' User: ' answer_user </dev/tty || read -p ' Пользователь: ' answer_user </dev/tty
       isAuthUser=$answer_user
       [[ $lang == "en" ]] && read -p ' Password: ' answer_pass </dev/tty || read -p ' Пароль: ' answer_pass </dev/tty
       isAuthPass=$answer_pass
-      [[ $lang == "en" ]] && echo " Apply user and password - $isAuthUser:$isAuthPass" || echo " Устанавливаем логин и пароль - $isAuthUser:$isAuthPass"
+      [[ $lang == "en" ]] && echo " Store $isAuthUser:$isAuthPass to ${dirInstall}/accs.db" || echo " Сохраняем $isAuthUser:$isAuthPass в ${dirInstall}/accs.db"
       echo -e "{\n  \"$isAuthUser\": \"$isAuthPass\"\n}" > $dirInstall/accs.db
     } || {
-      [[ $lang == "en" ]] && echo " Use existing auth from ${dirInstall}/accs.db" || echo " Используйте реквизиты из ${dirInstall}/accs.db для входа"
+    	auth=$(cat "$dirInstall/accs.db"|head -2|tail -1|tr -d '[:space:]'|tr -d '"')
+      [[ $lang == "en" ]] && echo " - Use existing auth from ${dirInstall}/accs.db - $auth" || echo " - Используйте реквизиты из ${dirInstall}/accs.db для авторизации - $auth"
     }
     cat << EOF > $dirInstall/$serviceName.config
     DAEMON_OPTIONS="--port $servicePort --path $dirInstall --httpauth"
@@ -324,7 +325,7 @@ EOF
       isRdb=0
     fi
   }
-  if [[ "$isRdb" == 1 ]]; then
+  if [ $isRdb -eq 1 ]; then
     [[ $lang == "en" ]] && {
       echo " Set database to read-only mode…"
       echo " To change remove --rdb option from $dirInstall/$serviceName.config"
@@ -366,8 +367,8 @@ EOF
     echo " Теперь вы можете открыть браузер по адресу http://${serverIP}:${servicePort} для доступа к вебу TorrServer"
     echo ""
   }
-  if [[ "$isAuth" == 1 && $isAuthUser > 0 ]]; then
-    [[ $lang == "en" ]] && echo " Use user \"$isAuthUser\" with password \"$isAuthPass\" for authentication" || echo " Для авторизации введите пользователя $isAuthUser с паролем $isAuthPass"
+  if [[ $isAuth -eq 1 && $isAuthUser > 0 ]]; then
+    [[ $lang == "en" ]] && echo " Use user \"$isAuthUser\" with password \"$isAuthPass\" for authentication" || echo " Для авторизации используйте пользователя «$isAuthUser» с паролем «$isAuthPass»"
   echo ""
   fi
 }

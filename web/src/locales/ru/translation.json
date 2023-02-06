@@ -4,7 +4,7 @@
   "Add": "Добавить",
   "AddDialog": {
     "AddPosterLinkInput": "Ссылка на постер",
-    "AddTorrentSourceNotification": "Сначала добавьте torrent-источник",
+    "AddTorrentSourceNotification": "Сначала добавьте торрент",
     "AppendFile": {
       "Or": "ИЛИ",
       "ClickOrDrag": "НАЖМИТЕ / ПЕРЕТАЩИТЕ ФАЙЛ (.torrent)"
@@ -16,7 +16,7 @@
     "TitleBlank": "Название (пустое - ориг. название торрента)",
     "TorrentSourceLink": "Ссылка на источник торрента",
     "TorrentSourceOptions": "magnet-ссылка / хеш / ссылка на .torrent файл",
-    "WrongTorrentSource": "Неправильный torrent-источник"
+    "WrongTorrentSource": "Неправильный торрент"
   },
   "AddFromLink": "Добавить",
   "AddNewTorrent": "Добавить новый торрент",
@@ -74,11 +74,11 @@
   "PiecesLength": "Размер блока",
   "Playlist": "Плейлист",
   "Preload": "Предзагр.",
-  "ProjectSource": "Сайт проекта",
+  "ProjectSource": "GitHub проекта",
   "PWAGuide": {
     "Header": "Установить приложение",
     "Description": "Установите приложение на ваше устройство для быстрого доступа в любой момент. Без AppStore. Без загрузки.",
-    "VLC": "VLC кнопка будет добавлена для мгновенного воспроизведения на телефоне",
+    "VLC": "Кнопка VLC будет добавлена для мгновенного воспроизведения на телефоне",
     "FirstStep": "Нажмите на",
     "SecondStep": {
       "Select": "Выбирите",
@@ -137,7 +137,7 @@
     "UseDiskDesc": "Рекомендуется использовать оперативную память или внешние носители на устройствах с flash-памятью",
     "Tabs": {
       "Main": "Основные",
-      "Additional": "Дополнительные",
+      "Additional": "Расширенные",
       "AdditionalDisabled": "(включите ПРО-режим)",
       "App": "Приложение"
     },
