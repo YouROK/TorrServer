@@ -134,15 +134,6 @@ func loadDB() {
 
 		log.TLogln("Index rutor db")
 		torrsearch.NewIndex(torrs)
-
-		//err = dec.Decode(&ftorrs)
-		//if err == nil {
-		//	torrs = ftorrs
-		//	log.TLogln("Index rutor db")
-		//	torrsearch.NewIndex(torrs)
-		//} else {
-		//	log.TLogln("Error read rutor db:", err)
-		//}
 	} else {
 		log.TLogln("Error load rutor db:", err)
 	}
