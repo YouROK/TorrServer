@@ -82,7 +82,7 @@ function installTorrServer() {
     echo ""
   }
   binName="TorrServer-darwin-${architecture}"
-  [[ ! -d "$dirInstall" ]] && mkdir -p ${dirInstall}
+  [[ ! -d "$dirInstall" ]] && mkdir -p ${dirInstall} && chmod a+rw ${dirInstall}
   urlBin="https://github.com/YouROK/TorrServer/releases/download/$(getLatestRelease)/${binName}"
   if [[ ! -f "$dirInstall/$binName" ]] | [[ ! -x "$dirInstall/$binName" ]] || [[ $(stat -c%s "$dirInstall/$binName" 2>/dev/null) -eq 0 ]]; then
     curl -L --progress-bar -# -o "$dirInstall/$binName" "$urlBin"
