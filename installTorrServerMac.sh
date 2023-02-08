@@ -174,7 +174,7 @@ EOF
   else
     sed -i '' -e '/httpauth/d' $dirInstall/$serviceName.plist
   fi
-  [[ $lang == "en" ]] && read -p ' Add autostart for current user (1) or all users (2)? ' answer_cu </dev/tty || read -p ' Добавить автозагрузку для текушего пользователя (1) или всех (2)? ' answer_cu </dev/tty
+  [[ $lang == "en" ]] && read -p ' Add autostart for current user (1) or all users (2)? ' answer_cu </dev/tty || read -p ' Добавить автозагрузку для текущего пользователя (1) или для всех (2)? ' answer_cu </dev/tty
   if [ "$answer_cu" != "${answer_cu#[1]}" ]; then
     # user
     sysPath="${HOME}/Library/LaunchAgents"
