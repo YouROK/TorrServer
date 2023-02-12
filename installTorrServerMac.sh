@@ -82,7 +82,7 @@ function installTorrServer() {
     echo ""
   }
   binName="TorrServer-darwin-${architecture}"
-  [[ ! -d "$dirInstall" ]] && mkdir -p ${dirInstall}
+  [[ ! -d "$dirInstall" ]] && mkdir -p ${dirInstall} && chmod a+rw ${dirInstall}
   urlBin="https://github.com/YouROK/TorrServer/releases/download/$(getLatestRelease)/${binName}"
   if [[ ! -f "$dirInstall/$binName" ]] | [[ ! -x "$dirInstall/$binName" ]] || [[ $(stat -c%s "$dirInstall/$binName" 2>/dev/null) -eq 0 ]]; then
     curl -L --progress-bar -# -o "$dirInstall/$binName" "$urlBin"
@@ -174,7 +174,7 @@ EOF
   else
     sed -i '' -e '/httpauth/d' $dirInstall/$serviceName.plist
   fi
-  [[ $lang == "en" ]] && read -p ' Add autostart for current user (1) or all users (2)? ' answer_cu </dev/tty || read -p ' Добавить автозагрузку для текушего пользователя (1) или всех (2)? ' answer_cu </dev/tty
+  [[ $lang == "en" ]] && read -p ' Add autostart for current user (1) or all users (2)? ' answer_cu </dev/tty || read -p ' Добавить автозагрузку для текущего пользователя (1) или для всех (2)? ' answer_cu </dev/tty
   if [ "$answer_cu" != "${answer_cu#[1]}" ]; then
     # user
     sysPath="${HOME}/Library/LaunchAgents"

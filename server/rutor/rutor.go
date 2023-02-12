@@ -28,8 +28,9 @@ var (
 func Start() {
 	go func() {
 		if settings.BTsets.EnableRutorSearch {
-			loadDB()
-			updateDB()
+			if !updateDB() {
+				loadDB()
+			}
 			isStop = false
 			for !isStop {
 				for i := 0; i < 3*60*60; i++ {
@@ -53,27 +54,27 @@ func Stop() {
 }
 
 // https://github.com/yourok-0001/releases/raw/master/torr/rutor.ls
-func updateDB() {
+func updateDB() bool {
 	log.TLogln("Update rutor db")
 	fnTmp := filepath.Join(settings.Path, "rutor.tmp")
 	out, err := os.Create(fnTmp)
 	if err != nil {
 		log.TLogln("Error create file rutor.tmp:", err)
-		return
+		return false
 	}
 
 	resp, err := http.Get("https://github.com/yourok-0001/releases/raw/master/torr/rutor.ls")
 	if err != nil {
 		log.TLogln("Error connect to rutor db:", err)
 		out.Close()
-		return
+		return false
 	}
 	defer resp.Body.Close()
 	_, err = io.Copy(out, resp.Body)
 	out.Close()
 	if err != nil {
 		log.TLogln("Error download rutor db:", err)
-		return
+		return false
 	}
 
 	fnOrig := filepath.Join(settings.Path, "rutor.ls")
@@ -84,17 +85,19 @@ func updateDB() {
 		err = os.Remove(fnOrig)
 		if err != nil && !os.IsNotExist(err) {
 			log.TLogln("Error remove old rutor db:", err)
-			return
+			return false
 		}
 		err = os.Rename(fnTmp, fnOrig)
 		if err != nil {
 			log.TLogln("Error rename rutor db:", err)
-			return
+			return false
 		}
 		loadDB()
+		return true
 	} else {
 		os.Remove(fnTmp)
 	}
+	return false
 }
 
 func loadDB() {
@@ -134,15 +137,6 @@ func loadDB() {
 
 		log.TLogln("Index rutor db")
 		torrsearch.NewIndex(torrs)
-
-		//err = dec.Decode(&ftorrs)
-		//if err == nil {
-		//	torrs = ftorrs
-		//	log.TLogln("Index rutor db")
-		//	torrsearch.NewIndex(torrs)
-		//} else {
-		//	log.TLogln("Error read rutor db:", err)
-		//}
 	} else {
 		log.TLogln("Error load rutor db:", err)
 	}
