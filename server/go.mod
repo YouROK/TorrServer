@@ -18,6 +18,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	go.etcd.io/bbolt v1.3.6
 	golang.org/x/time v0.3.0
+	gopkg.in/vansante/go-ffprobe.v2 v2.1.1
 )
 
 require (
