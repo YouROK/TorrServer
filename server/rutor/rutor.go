@@ -53,7 +53,7 @@ func Stop() {
 	time.Sleep(time.Millisecond * 1500)
 }
 
-// https://github.com/yourok-0001/releases/raw/master/torr/rutor.ls
+// http://releases.yourok.ru/torr/rutor.ls
 func updateDB() bool {
 	log.TLogln("Update rutor db")
 	fnTmp := filepath.Join(settings.Path, "rutor.tmp")
@@ -63,7 +63,7 @@ func updateDB() bool {
 		return false
 	}
 
-	resp, err := http.Get("https://github.com/yourok-0001/releases/raw/master/torr/rutor.ls")
+	resp, err := http.Get("http://releases.yourok.ru/torr/rutor.ls")
 	if err != nil {
 		log.TLogln("Error connect to rutor db:", err)
 		out.Close()
