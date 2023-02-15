@@ -66,14 +66,14 @@ func Start() {
 		NoProbe:             true,
 		StallEventSubscribe: true,
 		Icons: []dms.Icon{
-			dms.Icon{
+			{
 				Width:    48,
 				Height:   48,
 				Depth:    24,
 				Mimetype: "image/png",
 				Bytes:    template.Dlnaicon48png,
 			},
-			dms.Icon{
+			{
 				Width:    120,
 				Height:   120,
 				Depth:    24,

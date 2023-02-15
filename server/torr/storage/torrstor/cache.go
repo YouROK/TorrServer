@@ -126,7 +126,7 @@ func (c *Cache) AdjustRA(readahead int64) {
 	}
 	if c.Readers() > 0 {
 		c.muReaders.Lock()
-		for r, _ := range c.readers {
+		for r := range c.readers {
 			r.SetReadahead(readahead)
 		}
 		c.muReaders.Unlock()
@@ -158,7 +158,7 @@ func (c *Cache) GetState() *state.CacheState {
 
 	if c.Readers() > 0 {
 		c.muReaders.Lock()
-		for r, _ := range c.readers {
+		for r := range c.readers {
 			rng := r.getPiecesRange()
 			pc := r.getReaderPiece()
 			readersState = append(readersState, &state.ReaderState{
@@ -214,7 +214,7 @@ func (c *Cache) getRemPieces() []*Piece {
 
 	ranges := make([]Range, 0)
 	c.muReaders.Lock()
-	for r, _ := range c.readers {
+	for r := range c.readers {
 		r.checkReader()
 		if r.isUse {
 			ranges = append(ranges, r.getPiecesRange())
@@ -245,7 +245,7 @@ func (c *Cache) getRemPieces() []*Piece {
 	c.clearPriority()
 
 	c.muReaders.Lock()
-	for r, _ := range c.readers {
+	for r := range c.readers {
 		if !r.isUse {
 			continue
 		}
@@ -341,7 +341,7 @@ func (c *Cache) clearPriority() {
 	time.Sleep(time.Second)
 	ranges := make([]Range, 0)
 	c.muReaders.Lock()
-	for r, _ := range c.readers {
+	for r := range c.readers {
 		r.checkReader()
 		if r.isUse {
 			ranges = append(ranges, r.getPiecesRange())
@@ -350,7 +350,7 @@ func (c *Cache) clearPriority() {
 	c.muReaders.Unlock()
 	ranges = mergeRange(ranges)
 
-	for id, _ := range c.pieces {
+	for id := range c.pieces {
 		if len(ranges) > 0 {
 			if !inRanges(ranges, id) {
 				if c.torrent.PieceState(id).Priority != torrent.PiecePriorityNone {

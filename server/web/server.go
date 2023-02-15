@@ -40,7 +40,7 @@ func Start(port string) {
 	}
 	rutor.Start()
 
-	//gin.SetMode(gin.ReleaseMode)
+	gin.SetMode(gin.ReleaseMode)
 
 	//corsCfg := cors.DefaultConfig()
 	//corsCfg.AllowAllOrigins = true

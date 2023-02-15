@@ -197,7 +197,7 @@ func (r *Reader) readerOff() {
 func (r *Reader) getUseReaders() int {
 	readers := 0
 	if r.cache != nil {
-		for reader, _ := range r.cache.readers {
+		for reader := range r.cache.readers {
 			if reader.isUse {
 				readers++
 			}
