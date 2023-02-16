@@ -116,25 +116,16 @@ func loadDB() {
 			return
 		}
 
-		var channel = make(chan *models.TorrentDetails, 0)
-		go func() {
-			for torr := range channel {
-				ftorrs = append(ftorrs, torr)
-			}
-			torrs = ftorrs
-		}()
-
 		for dec.More() {
 			var torr *models.TorrentDetails
 			err = dec.Decode(&torr)
 			if err == nil {
-				channel <- torr
+				ftorrs = append(ftorrs, torr)
 			} else {
 				log.TLogln("Error read rutor db:", err)
 			}
 		}
-		close(channel)
-
+		torrs = ftorrs
 		log.TLogln("Index rutor db")
 		torrsearch.NewIndex(torrs)
 		log.TLogln("Torrents count:", len(torrs))
