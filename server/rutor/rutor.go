@@ -137,6 +137,9 @@ func loadDB() {
 
 		log.TLogln("Index rutor db")
 		torrsearch.NewIndex(torrs)
+		log.TLogln("Torrents count:", len(torrs))
+		log.TLogln("Indexed words:", len(torrsearch.GetIDX()))
+
 	} else {
 		log.TLogln("Error load rutor db:", err)
 	}

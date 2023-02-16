@@ -18,6 +18,10 @@ func Search(text string) []int {
 	return idx.search(text)
 }
 
+func GetIDX() Index {
+	return idx
+}
+
 func (idx Index) add(torrs []*models.TorrentDetails) {
 	for ID, torr := range torrs {
 		for _, token := range analyze(torr.Title) {

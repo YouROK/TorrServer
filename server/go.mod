@@ -19,7 +19,8 @@ require (
 	github.com/pkg/browser v0.0.0-20210115035449-ce105d075bb4
 	github.com/pkg/errors v0.9.1
 	go.etcd.io/bbolt v1.3.6
-	golang.org/x/time v0.0.0-20220722155302-e5dcc9cfc0b9
+	golang.org/x/time v0.3.0
+	gopkg.in/vansante/go-ffprobe.v2 v2.1.1
 )
 
 require (
