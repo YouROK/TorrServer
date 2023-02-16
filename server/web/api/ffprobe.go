@@ -4,13 +4,20 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"gopkg.in/vansante/go-ffprobe.v2"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"server/utils"
+
+	"github.com/gin-gonic/gin"
+	"gopkg.in/vansante/go-ffprobe.v2"
 )
+
+func commandExists(cmd string) bool {
+	_, err := exec.LookPath(cmd)
+	return err == nil
+}
 
 func ffp(c *gin.Context) {
 	hash := c.Param("hash")
@@ -22,13 +29,22 @@ func ffp(c *gin.Context) {
 	}
 
 	host := utils.GetScheme(c) + "://" + c.Request.Host + "/stream?link=" + hash + "&index=" + indexStr + "&play"
-	fmt.Println(host)
+	// log.Println("ffprobe", host)
 
 	ctx, cancelFn := context.WithCancel(context.Background())
 	defer cancelFn()
 
-	if _, err := os.Stat("ffprobe"); os.IsNotExist(err) {
-		ffprobe.SetFFProbeBinPath(filepath.Dir(os.Args[0]) + "/ffprobe")
+	// path lookup
+	path, err := exec.LookPath("ffprobe")
+	if err == nil {
+		// log.Println("ffprobe found in", path)
+		ffprobe.SetFFProbeBinPath(path)
+	} else {
+		// log.Println("ffprobe not found in $PATH")
+		// working dir
+		if _, err := os.Stat("ffprobe"); os.IsNotExist(err) {
+			ffprobe.SetFFProbeBinPath(filepath.Dir(os.Args[0]) + "/ffprobe")
+		}
 	}
 
 	data, err := ffprobe.ProbeURL(ctx, host)
