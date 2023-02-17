@@ -2,7 +2,7 @@ package msx
 
 import (
 	_ "embed"
-	
+
 	"server/version"
 
 	"github.com/gin-gonic/gin"
@@ -23,16 +23,11 @@ var (
 	rus []byte
 )
 
-func ass(b []byte, t string) func(*gin.Context) {
-	return func(c *gin.Context) {
-		c.Header("Content-Encoding", "gzip")
-		c.Data(200, t+"; charset=UTF-8", b)
-	}
-}
 func ass(c *gin.Context, b []byte, t string) {
 	c.Header("Content-Encoding", "gzip")
 	c.Data(200, t+"; charset=UTF-8", b)
 }
+
 func SetupRoute(r *gin.RouterGroup) {
 	r.GET("/msx/:pth", func(c *gin.Context) {
 		s := []string{"tvx", "tizen"}

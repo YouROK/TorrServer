@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//Action: get
+// Action: get
 type cacheReqJS struct {
 	requestI
 	Hash string `json:"hash,omitempty"`
