@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"server/rutor/models"
 	"testing"
+
+	"server/rutor/models"
 )
 
 func TestParseChannel(t *testing.T) {
-	var channel = make(chan *models.TorrentDetails, 0)
+	channel := make(chan *models.TorrentDetails, 0)
 	var ftors []*models.TorrentDetails
 	go func() {
 		for torr := range channel {

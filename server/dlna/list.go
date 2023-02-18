@@ -20,7 +20,6 @@ import (
 )
 
 func getRoot() (ret []interface{}) {
-
 	// Torrents Object
 	tObj := upnpav.Object{
 		ID:         "%2FTR",
@@ -37,18 +36,16 @@ func getRoot() (ret []interface{}) {
 	ret = append(ret, cnt)
 
 	return
-
 }
 
 func getTorrents() (ret []interface{}) {
-
 	torrs := torr.ListTorrent()
 	// sort by title as in cds SortCaps
 	sort.Slice(torrs, func(i, j int) bool {
 		return torrs[i].Title < torrs[j].Title
 	})
 
-	var vol = 0
+	vol := 0
 	for _, t := range torrs {
 		vol++
 		obj := upnpav.Object{
@@ -251,7 +248,6 @@ func getLink(host, path string) string {
 }
 
 func getObjFromTorrent(path, parent, host string, torr *torr.Torrent, file *state.TorrentFileStat) (ret interface{}) {
-
 	mime, err := mt.MimeTypeByPath(file.Path)
 	if err != nil {
 		if settings.BTsets.EnableDebug {

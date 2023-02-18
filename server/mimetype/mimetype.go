@@ -10,7 +10,6 @@ import (
 )
 
 func init() {
-
 	// Add a minimal number of mime types to augment go's built in types
 	// for environments which don't have access to a mime.types file (e.g.
 	// Termux on android)

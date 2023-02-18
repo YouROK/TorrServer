@@ -11,9 +11,7 @@ import (
 	"server/web/api/utils"
 )
 
-var (
-	dbTorrentsName = []byte("Torrents")
-)
+var dbTorrentsName = []byte("Torrents")
 
 type torrentOldDB struct {
 	Name      string
@@ -29,7 +27,7 @@ func Migrate() {
 		return
 	}
 
-	db, err := bolt.Open(filepath.Join(Path, "torrserver.db"), 0666, nil)
+	db, err := bolt.Open(filepath.Join(Path, "torrserver.db"), 0o666, nil)
 	if err != nil {
 		return
 	}

@@ -64,7 +64,7 @@ func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
 
 	if settings.BTsets.UseDisk {
 		name := filepath.Join(settings.BTsets.TorrentsSavePath, hash.HexString())
-		err := os.MkdirAll(name, 0777)
+		err := os.MkdirAll(name, 0o777)
 		if err != nil {
 			log.TLogln("Error create dir:", err)
 		}
@@ -235,7 +235,7 @@ func (c *Cache) getRemPieces() []*Piece {
 			}
 		} else {
 			// on preload clean
-			//TODO проверить
+			// TODO проверить
 			if p.Size > 0 && !c.isIdInFileBE(ranges, id) {
 				piecesRemove = append(piecesRemove, p)
 			}
@@ -288,7 +288,6 @@ func (c *Cache) getRemPieces() []*Piece {
 }
 
 func (c *Cache) isIdInFileBE(ranges []Range, id int) bool {
-
 	// keep 8/16 MB
 	FileRangeNotDelete := int64(c.pieceLength)
 	if FileRangeNotDelete < 8*1024*1024 {

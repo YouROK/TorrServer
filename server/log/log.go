@@ -12,20 +12,24 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var logPath = ""
-var webLogPath = ""
+var (
+	logPath    = ""
+	webLogPath = ""
+)
 
 var webLog *log.Logger
 
-var logFile *os.File
-var webLogFile *os.File
+var (
+	logFile    *os.File
+	webLogFile *os.File
+)
 
 func Init(path, webpath string) {
 	webLogPath = webpath
 	logPath = path
 
 	if webpath != "" {
-		ff, err := os.OpenFile(webLogPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		ff, err := os.OpenFile(webLogPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0o666)
 		if err != nil {
 			TLogln("Error create web log file:", err)
 		} else {
@@ -40,7 +44,7 @@ func Init(path, webpath string) {
 				os.Remove(path)
 			}
 		}
-		ff, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		ff, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0o666)
 		if err != nil {
 			TLogln("Error create log file:", err)
 			return
@@ -87,7 +91,7 @@ func WebLogger() gin.HandlerFunc {
 			return
 		}
 		body := ""
-		//save body if not form or file
+		// save body if not form or file
 		if !strings.HasPrefix(c.Request.Header.Get("Content-Type"), "multipart/form-data") {
 			body, _ := ioutil.ReadAll(c.Request.Body)
 			c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(body))

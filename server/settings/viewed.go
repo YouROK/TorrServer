@@ -69,7 +69,7 @@ func ListViewed(hash string) []*Viewed {
 		err = json.Unmarshal(buf, &indeces)
 		if err == nil {
 			var ret []*Viewed
-			for i, _ := range indeces {
+			for i := range indeces {
 				ret = append(ret, &Viewed{hash, i})
 			}
 			return ret
@@ -85,7 +85,7 @@ func ListViewed(hash string) []*Viewed {
 			var indeces map[int]struct{}
 			err = json.Unmarshal(buf, &indeces)
 			if err == nil {
-				for i, _ := range indeces {
+				for i := range indeces {
 					ret = append(ret, &Viewed{key, i})
 				}
 			}

@@ -2,8 +2,9 @@ package web
 
 import (
 	"net"
-	"server/rutor"
 	"sort"
+
+	"server/rutor"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/location"
@@ -42,11 +43,11 @@ func Start(port string) {
 
 	gin.SetMode(gin.ReleaseMode)
 
-	//corsCfg := cors.DefaultConfig()
-	//corsCfg.AllowAllOrigins = true
-	//corsCfg.AllowHeaders = []string{"*"}
-	//corsCfg.AllowMethods = []string{"*"}
-	//corsCfg.AllowPrivateNetwork = true
+	// corsCfg := cors.DefaultConfig()
+	// corsCfg.AllowAllOrigins = true
+	// corsCfg.AllowHeaders = []string{"*"}
+	// corsCfg.AllowMethods = []string{"*"}
+	// corsCfg.AllowPrivateNetwork = true
 	corsCfg := cors.DefaultConfig()
 	corsCfg.AllowAllOrigins = true
 	corsCfg.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "X-Requested-With", "Accept", "Authorization"}
