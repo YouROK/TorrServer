@@ -211,5 +211,4 @@ func streamNoAuth(c *gin.Context) {
 	}
 	c.Header("WWW-Authenticate", "Basic realm=Authorization Required")
 	c.AbortWithStatus(http.StatusUnauthorized)
-
 }

@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+
 	"server/rutor"
 
 	"github.com/gin-gonic/gin"

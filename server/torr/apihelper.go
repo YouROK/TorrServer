@@ -15,9 +15,7 @@ import (
 	sets "server/settings"
 )
 
-var (
-	bts *BTServer
-)
+var bts *BTServer
 
 func InitApiHelper(bt *BTServer) {
 	bts = bt

@@ -3,21 +3,23 @@ package rutor
 import (
 	"compress/flate"
 	"encoding/json"
-	"github.com/agnivade/levenshtein"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/agnivade/levenshtein"
+
 	"server/log"
 	"server/rutor/models"
 	"server/rutor/torrsearch"
 	"server/rutor/utils"
 	"server/settings"
 	utils2 "server/torr/utils"
-	"sort"
-	"strconv"
-	"strings"
-	"time"
 )
 
 var (

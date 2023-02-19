@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//Action: add, get, set, rem, list, drop
+// Action: add, get, set, rem, list, drop
 type torrReqJS struct {
 	requestI
 	Link     string `json:"link,omitempty"`

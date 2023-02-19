@@ -53,9 +53,7 @@ func (v *BTSets) String() string {
 	return string(buf)
 }
 
-var (
-	BTsets *BTSets
-)
+var BTsets *BTSets
 
 func SetBTSets(sets *BTSets) {
 	if ReadOnly {

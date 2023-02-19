@@ -16,7 +16,7 @@ type TDB struct {
 }
 
 func NewTDB() *TDB {
-	db, err := bolt.Open(filepath.Join(Path, "config.db"), 0666, &bolt.Options{Timeout: 5 * time.Second})
+	db, err := bolt.Open(filepath.Join(Path, "config.db"), 0o666, &bolt.Options{Timeout: 5 * time.Second})
 	if err != nil {
 		log.TLogln(err)
 		return nil
@@ -60,7 +60,6 @@ func (v *TDB) Get(xpath, name string) []byte {
 		ret = buckt.Get([]byte(name))
 		return nil
 	})
-
 	if err != nil {
 		log.TLogln("Error get sets", xpath+"/"+name, ", error:", err)
 	}
@@ -95,12 +94,10 @@ func (v *TDB) Set(xpath, name string, value []byte) {
 
 		return buckt.Put([]byte(name), value)
 	})
-
 	if err != nil {
 		log.TLogln("Error put sets", xpath+"/"+name, ", error:", err)
 		log.TLogln("value:", value)
 	}
-
 }
 
 func (v *TDB) List(xpath string) []string {
@@ -134,7 +131,6 @@ func (v *TDB) List(xpath string) []string {
 
 		return nil
 	})
-
 	if err != nil {
 		log.TLogln("Error list sets", xpath, ", error:", err)
 	}
@@ -169,9 +165,7 @@ func (v *TDB) Rem(xpath, name string) {
 
 		return buckt.Delete([]byte(name))
 	})
-
 	if err != nil {
 		log.TLogln("Error rem sets", xpath+"/"+name, ", error:", err)
 	}
-
 }
