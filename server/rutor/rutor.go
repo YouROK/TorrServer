@@ -58,6 +58,16 @@ func Stop() {
 // http://releases.yourok.ru/torr/rutor.ls
 func updateDB() bool {
 	log.TLogln("Update rutor db")
+
+	fnOrig := filepath.Join(settings.Path, "rutor.ls")
+
+	if fi, err := os.Stat(fnOrig); err == nil {
+		if time.Since(fi.ModTime()) < time.Minute*175 /*2:55*/ {
+			log.TLogln("Less 3 hours rutor db old")
+			return false
+		}
+	}
+
 	fnTmp := filepath.Join(settings.Path, "rutor.tmp")
 	out, err := os.Create(fnTmp)
 	if err != nil {
@@ -78,8 +88,6 @@ func updateDB() bool {
 		log.TLogln("Error download rutor db:", err)
 		return false
 	}
-
-	fnOrig := filepath.Join(settings.Path, "rutor.ls")
 
 	md5Tmp := utils.MD5File(fnTmp)
 	md5Orig := utils.MD5File(fnOrig)
