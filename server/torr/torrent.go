@@ -135,14 +135,13 @@ func (t *Torrent) AddExpiredTime(duration time.Duration) {
 }
 
 func (t *Torrent) watch() {
-	t.progressTicker = time.NewTicker(time.Second / 2)
+	t.progressTicker = time.NewTicker(time.Second)
 	defer t.progressTicker.Stop()
 
 	for {
 		select {
 		case <-t.progressTicker.C:
 			go t.progressEvent()
-			time.Sleep(time.Second / 2) // FIXME! TEMP TEST TIMER
 		case <-t.closed:
 			return
 		}
