@@ -3,8 +3,8 @@
   "short_name": "TorrServer",
   "icons": [
     {
-      "src": "manifest-icon-192.maskable.png",
-      "sizes": "192x192",
+      "src": "icon.png",
+      "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
     },
@@ -15,7 +15,7 @@
       "purpose": "maskable"
     },
     {
-      "src": "manifest-icon-512.maskable.png",
+      "src": "logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
