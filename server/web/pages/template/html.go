@@ -112,12 +112,6 @@ var Indexhtml []byte
 //go:embed pages/logo.png
 var Logopng []byte
 
-//go:embed pages/manifest-icon-192.maskable.png
-var Manifesticon192maskablepng []byte
-
-//go:embed pages/manifest-icon-512.maskable.png
-var Manifesticon512maskablepng []byte
-
 //go:embed pages/mstile-150x150.png
 var Mstile150x150png []byte
 

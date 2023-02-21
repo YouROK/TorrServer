@@ -4,27 +4,15 @@
   "icons": [
     {
       "src": "icon.png",
-      "sizes": "180x180",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "manifest-icon-192.maskable.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any"
     },
     {
       "src": "logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "manifest-icon-512.maskable.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
     }
   ],
   "theme_color": "#ffffff",

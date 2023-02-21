@@ -153,14 +153,6 @@ func RouteWebPages(route *gin.RouterGroup) {
 		c.Data(200, "image/png", Logopng)
 	})
 
-	route.GET("/manifest-icon-192.maskable.png", func(c *gin.Context) {
-		c.Data(200, "image/png", Manifesticon192maskablepng)
-	})
-
-	route.GET("/manifest-icon-512.maskable.png", func(c *gin.Context) {
-		c.Data(200, "image/png", Manifesticon512maskablepng)
-	})
-
 	route.GET("/mstile-150x150.png", func(c *gin.Context) {
 		c.Data(200, "image/png", Mstile150x150png)
 	})
