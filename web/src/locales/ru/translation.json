@@ -98,7 +98,7 @@
   "SettingsDialog": {
     "AddRetrackers": "Добавлять",
     "AdditionalSettings": "Дополнительные настройки",
-    "MobileAppSettings": "Настройки моб. приложения",
+    "MobileAppSettings": "Настройки приложения",
     "CacheBeforeReaderDesc": "от кеша будет оставаться позади воспроизводимого кадра",
     "CacheAfterReaderDesc": "кеша будет спереди от воспроизводимого кадра",
     "CacheSize": "Размер кеша",
