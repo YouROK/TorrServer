@@ -2,6 +2,7 @@ package utils
 
 import (
 	"path/filepath"
+	"strings"
 
 	"server/torr/state"
 )
@@ -68,7 +69,7 @@ var extAudio = map[string]interface{}{
 }
 
 func GetMimeType(filename string) string {
-	ext := filepath.Ext(filename)
+	ext := strings.ToLower(filepath.Ext(filename))
 	if _, ok := extVideo[ext]; ok {
 		return "video/*"
 	}
