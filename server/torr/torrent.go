@@ -42,6 +42,9 @@ type Torrent struct {
 	PreloadSize    int64
 	PreloadedBytes int64
 
+	DurationSeconds float64
+	BitRate         string
+
 	expiredTime time.Time
 
 	closed <-chan struct{}
@@ -277,6 +280,8 @@ func (t *Torrent) Status() *state.TorrentStatus {
 	st.Data = t.Data
 	st.Timestamp = t.Timestamp
 	st.TorrentSize = t.Size
+	st.BitRate = t.BitRate
+	st.DurationSeconds = t.DurationSeconds
 
 	if t.TorrentSpec != nil {
 		st.Hash = t.TorrentSpec.InfoHash.HexString()
