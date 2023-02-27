@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"server/ffprobe"
-
-	"server/utils"
+	settings2 "server/settings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,8 +19,7 @@ func ffp(c *gin.Context) {
 		return
 	}
 
-	host := utils.GetScheme(c) + "://" + c.Request.Host + "/stream?link=" + hash + "&index=" + indexStr + "&play"
-	// log.Println("ffprobe", host)
+	host := "http://127.0.0.1:" + settings2.Port + "/stream?link=" + hash + "&index=" + indexStr + "&play"
 
 	data, err := ffprobe.ProbeUrl(host)
 	if err != nil {
