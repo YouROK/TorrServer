@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -52,15 +51,16 @@ func Init(path, webpath string) {
 		logFile = ff
 		os.Stdout = ff
 		os.Stderr = ff
-		var timeFmt string
-		var ok bool
-		timeFmt, ok = os.LookupEnv("GO_LOG_TIME_FMT")
-		if !ok {
-			timeFmt = "2006-01-02T15:04:05-0700"
-		}
-		t := time.Now().Format(timeFmt)
-		log.SetFlags(log.Lmsgprefix)
-		log.SetPrefix(t + " TSM ")
+		// var timeFmt string
+		// var ok bool
+		// timeFmt, ok = os.LookupEnv("GO_LOG_TIME_FMT")
+		// if !ok {
+		// 	timeFmt = "2006-01-02T15:04:05-0700"
+		// }
+		// log.SetFlags(log.Lmsgprefix)
+		// log.SetPrefix(time.Now().Format(timeFmt) + " TSM ")
+		log.SetFlags(log.LstdFlags | log.LUTC | log.Lmsgprefix)
+		log.SetPrefix("UTC0 ")
 		log.SetOutput(ff)
 	}
 }

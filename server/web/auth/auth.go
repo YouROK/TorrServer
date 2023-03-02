@@ -62,8 +62,9 @@ func BasicAuth(accounts gin.Accounts) gin.HandlerFunc {
 	pairs := processAccounts(accounts)
 	return func(c *gin.Context) {
 		user, found := pairs.searchCredential(c.Request.Header.Get("Authorization"))
-		if !found {
+		if !found { // always accessible
 			if strings.HasPrefix(c.FullPath(), "/stream") ||
+				c.FullPath() == "/site.webmanifest" ||
 				// https://github.com/YouROK/TorrServer/issues/172
 				(strings.HasPrefix(c.FullPath(), "/play") && c.FullPath() != "/playlistall/all.m3u") {
 				c.Set("not_auth", true)

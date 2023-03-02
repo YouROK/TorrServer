@@ -48,12 +48,13 @@ func Start(port string) {
 	// corsCfg.AllowHeaders = []string{"*"}
 	// corsCfg.AllowMethods = []string{"*"}
 	// corsCfg.AllowPrivateNetwork = true
-	corsCfg := cors.DefaultConfig()
-	corsCfg.AllowAllOrigins = true
-	corsCfg.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "X-Requested-With", "Accept", "Authorization"}
+	// corsCfg := cors.DefaultConfig()
+	// corsCfg.AllowAllOrigins = true
+	// corsCfg.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "X-Requested-With", "Accept", "Authorization"}
 
 	route := gin.New()
-	route.Use(log.WebLogger(), blocker.Blocker(), gin.Recovery(), cors.New(corsCfg), location.Default())
+	// cors.Default() allows all origins - https://github.com/gin-contrib/cors#default-allows-all-origins
+	route.Use(log.WebLogger(), blocker.Blocker(), gin.Recovery(), cors.Default(), location.Default())
 
 	route.GET("/echo", echo)
 

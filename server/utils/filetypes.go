@@ -2,6 +2,7 @@ package utils
 
 import (
 	"path/filepath"
+	"strings"
 
 	"server/torr/state"
 )
@@ -16,7 +17,6 @@ var extVideo = map[string]interface{}{
 	".drc":   nil,
 	".flv":   nil,
 	".m2ts":  nil,
-	".ts":    nil,
 	".m2v":   nil,
 	".m4p":   nil,
 	".m4v":   nil,
@@ -29,6 +29,7 @@ var extVideo = map[string]interface{}{
 	".mpeg":  nil,
 	".mpg":   nil,
 	".mpv":   nil,
+	".mts":   nil,
 	".mxf":   nil,
 	".nsv":   nil,
 	".ogg":   nil,
@@ -38,6 +39,7 @@ var extVideo = map[string]interface{}{
 	".rmvb":  nil,
 	".roq":   nil,
 	".svi":   nil,
+	".ts":    nil,
 	".vob":   nil,
 	".webm":  nil,
 	".wmv":   nil,
@@ -49,6 +51,9 @@ var extAudio = map[string]interface{}{
 	".aiff": nil,
 	".ape":  nil,
 	".au":   nil,
+	".dff":  nil,
+	".dsd":  nil,
+	".dsf":  nil,
 	".flac": nil,
 	".gsm":  nil,
 	".it":   nil,
@@ -58,17 +63,22 @@ var extAudio = map[string]interface{}{
 	".mod":  nil,
 	".mp3":  nil,
 	".mpa":  nil,
+	".mpga": nil,
+	".oga":  nil,
+	".ogg":  nil,
+	".opus": nil,
 	".pls":  nil,
 	".ra":   nil,
 	".s3m":  nil,
 	".sid":  nil,
+	".spx":  nil,
 	".wav":  nil,
 	".wma":  nil,
 	".xm":   nil,
 }
 
 func GetMimeType(filename string) string {
-	ext := filepath.Ext(filename)
+	ext := strings.ToLower(filepath.Ext(filename))
 	if _, ok := extVideo[ext]; ok {
 		return "video/*"
 	}

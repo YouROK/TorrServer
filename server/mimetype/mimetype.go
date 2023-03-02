@@ -42,6 +42,7 @@ func init() {
 		{"video/mp2t", ".ts,.m2ts,.mts"},
 		{"video/ogg", ".ogv"},
 		{"video/webm", ".webm"},
+		{"video/x-ms-vob", ".vob"},
 		{"video/x-msvideo", ".avi"},
 		{"video/x-quicktime", ".qt,.mov"},
 		{"text/srt", ".srt"},

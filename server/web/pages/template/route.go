@@ -113,10 +113,6 @@ func RouteWebPages(route *gin.RouterGroup) {
 		c.Data(200, "image/jpeg", Applesplash8281792jpg)
 	})
 
-	route.GET("/apple-touch-icon.png", func(c *gin.Context) {
-		c.Data(200, "image/png", Appletouchiconpng)
-	})
-
 	route.GET("/asset-manifest.json", func(c *gin.Context) {
 		c.Data(200, "application/json", Assetmanifestjson)
 	})
@@ -141,6 +137,14 @@ func RouteWebPages(route *gin.RouterGroup) {
 		c.Data(200, "image/png", Favicon32x32png)
 	})
 
+	route.GET("/favicon.ico", func(c *gin.Context) {
+		c.Data(200, "image/vnd.microsoft.icon", Faviconico)
+	})
+
+	route.GET("/icon.png", func(c *gin.Context) {
+		c.Data(200, "image/png", Iconpng)
+	})
+
 	route.GET("/index.html", func(c *gin.Context) {
 		c.Data(200, "text/html; charset=utf-8", Indexhtml)
 	})
@@ -149,12 +153,8 @@ func RouteWebPages(route *gin.RouterGroup) {
 		c.Data(200, "image/png", Logopng)
 	})
 
-	route.GET("/manifest-icon-192.maskable.png", func(c *gin.Context) {
-		c.Data(200, "image/png", Manifesticon192maskablepng)
-	})
-
-	route.GET("/manifest-icon-512.maskable.png", func(c *gin.Context) {
-		c.Data(200, "image/png", Manifesticon512maskablepng)
+	route.GET("/mstile-150x150.png", func(c *gin.Context) {
+		c.Data(200, "image/png", Mstile150x150png)
 	})
 
 	route.GET("/site.webmanifest", func(c *gin.Context) {
@@ -173,12 +173,12 @@ func RouteWebPages(route *gin.RouterGroup) {
 		c.Data(200, "application/json", Staticjs2d3f8d41dchunkjsmap)
 	})
 
-	route.GET("/static/js/main.4bd54915.chunk.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript; charset=utf-8", Staticjsmain4bd54915chunkjs)
+	route.GET("/static/js/main.e240e160.chunk.js", func(c *gin.Context) {
+		c.Data(200, "application/javascript; charset=utf-8", Staticjsmaine240e160chunkjs)
 	})
 
-	route.GET("/static/js/main.4bd54915.chunk.js.map", func(c *gin.Context) {
-		c.Data(200, "application/json", Staticjsmain4bd54915chunkjsmap)
+	route.GET("/static/js/main.e240e160.chunk.js.map", func(c *gin.Context) {
+		c.Data(200, "application/json", Staticjsmaine240e160chunkjsmap)
 	})
 
 	route.GET("/static/js/runtime-main.64d07802.js", func(c *gin.Context) {
