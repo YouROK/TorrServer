@@ -2,12 +2,13 @@ package ffprobe
 
 import (
 	"context"
-	"gopkg.in/vansante/go-ffprobe.v2"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"time"
+
+	"gopkg.in/vansante/go-ffprobe.v2"
 )
 
 var binFile = "ffprobe"

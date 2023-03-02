@@ -3,10 +3,11 @@ package torr
 import (
 	"fmt"
 	"io"
-	"server/ffprobe"
 	"strconv"
 	"sync"
 	"time"
+
+	"server/ffprobe"
 
 	"github.com/anacrolix/torrent"
 
