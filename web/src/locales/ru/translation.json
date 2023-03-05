@@ -116,7 +116,7 @@
     "FriendlyName": "Имя сервера DLNA",
     "FriendlyNameHint": "Оставьте пустым, чтобы использовать значение по умолчанию.",
     "EnableRutorSearch": "Включить поиск по RuTor",
-    "EnableRutorSearchHint": "Можно искать торренты от RuTor, даже если RuTor не доступен. База в памяти занимает около 500 МБ.",
+    "EnableRutorSearchHint": "Поиск торрентов от RuTor, даже если RuTor не доступен. ВНИМАНИЕ: база занимает около 500 МБ в оперативной памяти.",
     "PeersListenPort": "Порт для входящих подключений",
     "PeersListenPortHint": "1024 - 65535, 0 - авто",
     "PreloadCache": "Буфер предзагрузки",
