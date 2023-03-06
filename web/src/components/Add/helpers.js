@@ -21,7 +21,7 @@ export const getMoviePosters = (movieName, language = 'en') => {
 }
 
 export const checkImageURL = async url => {
-  if (!url || !url.match(/.(jpg|jpeg|png|gif)$/i)) return false
+  if (!url || !url.match(/.(\.jpg|\.jpeg|\.png|\.gif|\.svg||\.webp).*$/i)) return false
   return true
 }
 
