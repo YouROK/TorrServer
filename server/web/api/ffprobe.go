@@ -4,8 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+
 	"server/ffprobe"
-	settings2 "server/settings"
+	sets "server/settings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,9 +20,9 @@ func ffp(c *gin.Context) {
 		return
 	}
 
-	host := "http://127.0.0.1:" + settings2.Port + "/stream?link=" + hash + "&index=" + indexStr + "&play"
+	link := "http://127.0.0.1:" + sets.Port + "/play/" + hash + "/" + indexStr
 
-	data, err := ffprobe.ProbeUrl(host)
+	data, err := ffprobe.ProbeUrl(link)
 	if err != nil {
 		c.AbortWithError(http.StatusBadRequest, fmt.Errorf("error getting data: %v", err))
 		return

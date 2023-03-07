@@ -28,8 +28,7 @@ function getLatestRelease() {
 function killRunning() {
   self="$(basename "$0")"
   runningPid=$(ps -ax|grep -i torrserver|grep -v grep|grep -v "$self"|awk '{print $1}')
-  # echo $runningPid
-  [ -z $runningPid ] || sudo kill -9 $runningPid
+  [[ -z $runningPid ]] || sudo kill -9 $runningPid
 }
 
 function cleanup() {
