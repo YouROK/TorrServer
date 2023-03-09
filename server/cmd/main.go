@@ -35,7 +35,7 @@ type args struct {
 	TorrentAddr string `help:"Torrent client address, default :32000"`
 	PubIPv4     string `arg:"-4" help:"set public IPv4 addr"`
 	PubIPv6     string `arg:"-6" help:"set public IPv6 addr"`
-	SearchWA    bool   `arg:"-swa" help:"search without auth"`
+	SearchWA    bool   `arg:"-s" help:"search without auth"`
 }
 
 func (args) Version() string {
