@@ -13,13 +13,15 @@ var (
 	Port     string
 	ReadOnly bool
 	HttpAuth bool
+	SearchWA bool
 	PubIPv4  string
 	PubIPv6  string
 	TorAddr  string
 )
 
-func InitSets(readOnly bool) {
+func InitSets(readOnly, searchWA bool) {
 	ReadOnly = readOnly
+	SearchWA = searchWA
 	tdb = NewTDB()
 	if tdb == nil {
 		log.TLogln("Error open db:", filepath.Join(Path, "config.db"))

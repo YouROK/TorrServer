@@ -66,7 +66,8 @@ func BasicAuth(accounts gin.Accounts) gin.HandlerFunc {
 			if strings.HasPrefix(c.FullPath(), "/stream") ||
 				c.FullPath() == "/site.webmanifest" ||
 				// https://github.com/YouROK/TorrServer/issues/172
-				(strings.HasPrefix(c.FullPath(), "/play") && c.FullPath() != "/playlistall/all.m3u") {
+				(strings.HasPrefix(c.FullPath(), "/play") && c.FullPath() != "/playlistall/all.m3u") ||
+				(settings.SearchWA && strings.HasPrefix(c.FullPath(), "/search")) {
 				c.Set("not_auth", true)
 				return
 			}
