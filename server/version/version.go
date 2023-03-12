@@ -17,7 +17,11 @@ func GetTorrentVersion() string {
 	}
 	for _, dep := range bi.Deps {
 		if dep.Path == "github.com/anacrolix/torrent" {
-			return dep.Version
+			if dep.Replace != nil {
+				return dep.Replace.Version
+			} else {
+				return dep.Version
+			}
 		}
 	}
 	return ""
