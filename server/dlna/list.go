@@ -137,6 +137,7 @@ func getTorrentMeta(path, host string) (ret interface{}) {
 			Date:       upnpav.Timestamp{Time: time.Now()},
 			Class:      "object.container.storageFolder",
 		}
+		torrs := torr.ListTorrent()
 		vol := len(torrs)
 		meta := upnpav.Container{Object: trObj, ChildCount: vol}
 		return meta
