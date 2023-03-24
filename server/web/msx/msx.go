@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"sync"
+
 	"server/version"
 
 	"github.com/gin-gonic/gin"
