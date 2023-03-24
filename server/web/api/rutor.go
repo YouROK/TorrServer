@@ -1,8 +1,10 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/url"
+
+	"github.com/gin-gonic/gin"
+
 	"server/rutor"
 	"server/rutor/models"
 )
