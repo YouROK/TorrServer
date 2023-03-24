@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"sync"
+	"server/version"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,7 +25,6 @@ var (
 )
 
 func asset(c *gin.Context, t string, d []byte) {
-	c.Header("Access-Control-Allow-Origin", "*")
 	c.Header("Content-Encoding", "gzip")
 	c.Data(200, t+"; charset=UTF-8", d)
 }
