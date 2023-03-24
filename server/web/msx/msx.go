@@ -36,7 +36,7 @@ func SetupRoute(r *gin.RouterGroup) {
 			c.JSON(200, map[string]string{
 				"name":      "TorrServer",
 				"version":   version.Version,
-				"parameter": "menu:request:interaction:torr@{PREFIX}{SERVER}/msx/init",
+				"parameter": "menu:request:interaction:init@{PREFIX}{SERVER}/msx/ts",
 			})
 		case "russian.json":
 			asset(c, "application/json", rus)
