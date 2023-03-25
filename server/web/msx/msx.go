@@ -12,13 +12,13 @@ import (
 )
 
 var (
-	//go:embed russian.min.gz
+	//go:embed russian.json.gz
 	rus []byte
-	//go:embed torrents.min.gz
+	//go:embed torrents.js.gz
 	trs []byte
-	//go:embed torrent.min.gz
+	//go:embed torrent.js.gz
 	trn []byte
-	//go:embed ts.min.gz
+	//go:embed ts.js.gz
 	its []byte
 
 	idb = new(sync.Mutex)
