@@ -62,7 +62,7 @@ func SetupRoute(r *gin.RouterGroup) {
 			}
 			c.Data(200, "text/html; charset=UTF-8", append(b, "</head>\n<body></body>\n</html>"...))
 		default:
-			c.AbortWithStatus(400)
+			c.AbortWithStatus(404)
 		}
 	})
 	r.GET("/msx/imdb", func(c *gin.Context) {
