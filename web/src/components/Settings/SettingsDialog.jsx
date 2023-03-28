@@ -1,6 +1,6 @@
 import axios from 'axios'
 import Button from '@material-ui/core/Button'
-import Checkbox from '@material-ui/core/Checkbox'
+import Switch from '@material-ui/core/Switch'
 import { FormControlLabel, useMediaQuery, useTheme } from '@material-ui/core'
 import { settingsHost } from 'utils/Hosts'
 import { useEffect, useState } from 'react'
@@ -94,7 +94,7 @@ export default function SettingsDialog({ handleClose }) {
         <div>{t('SettingsDialog.Settings')}</div>
         <FormControlLabel
           control={
-            <Checkbox
+            <Switch
               checked={isProMode}
               onChange={({ target: { checked } }) => {
                 setIsProMode(checked)
@@ -105,6 +105,7 @@ export default function SettingsDialog({ handleClose }) {
             />
           }
           label={t('SettingsDialog.ProMode')}
+          labelPlacement='start'
         />
       </SettingsHeader>
 

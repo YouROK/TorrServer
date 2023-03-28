@@ -53,6 +53,11 @@ export const useMaterialUITheme = () => {
           secondary: { main: mainColors[theme].secondary },
         },
         overrides: {
+          MuiTypography: {
+            h6: {
+              fontSize: '1.2rem',
+            },
+          },
           MuiInputBase: {
             input: {
               color: mainColors[theme].labels,
