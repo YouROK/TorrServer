@@ -13,7 +13,8 @@
     "CustomTorrentTitleHelperText": "Напишіть власну назву, щоб знайти плакат",
     "HashExists": "Даний торент вже є у базі даних",
     "OriginalTorrentTitle": "Оригінальна назва торенту",
-    "TitleBlank": "Назва (порожнє - ориг. назва торенту)",
+    "TitleBlank": "Назва",
+    "TitleBlankHelperText": "Порожнє - ориг. назва торенту",
     "TorrentSourceLink": "Посилання на джерело терента",
     "TorrentSourceOptions": "magnet-посилання / хеш / посилання на .torrent файл",
     "WrongTorrentSource": "Хибне torrent-джерело"
