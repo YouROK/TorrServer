@@ -13,7 +13,8 @@
     "CustomTorrentTitleHelperText": "Write custom title to find poster",
     "HashExists": "This torrent is already in database",
     "OriginalTorrentTitle": "Original torrent title",
-    "TitleBlank": "Title (blank for orig. torrent title)",
+    "TitleBlank": "Title",
+    "TitleBlankHelperText": "Blank for orig. torrent title",
     "TorrentSourceLink": "Torrent source",
     "TorrentSourceOptions": "magnet / hash / .torrent file link",
     "WrongTorrentSource": "Wrong torrent source"

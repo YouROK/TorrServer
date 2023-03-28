@@ -13,7 +13,8 @@
     "CustomTorrentTitleHelperText": "Напишите свое название, чтобы найти постер",
     "HashExists": "Этот торрент уже есть в базе данных",
     "OriginalTorrentTitle": "Оригинальное название торрента",
-    "TitleBlank": "Название (пустое - ориг. название торрента)",
+    "TitleBlank": "Название",
+    "TitleBlankHelperText": "Пустое - ориг. название торрента",
     "TorrentSourceLink": "Ссылка на источник торрента",
     "TorrentSourceOptions": "magnet-ссылка / хеш / ссылка на .torrent файл",
     "WrongTorrentSource": "Неправильный торрент"
