@@ -110,11 +110,14 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         fullWidth
       />
       <br />
-      <FormControlLabel
-        control={<Switch checked={!DisableUpload} onChange={inputForm} id='DisableUpload' color='secondary' />}
-        label={t('SettingsDialog.Upload')}
-        labelPlacement='start'
-      />
+      <FormGroup>
+        <FormControlLabel
+          control={<Switch checked={!DisableUpload} onChange={inputForm} id='DisableUpload' color='secondary' />}
+          label={t('SettingsDialog.Upload')}
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('SettingsDialog.UploadHint')}</FormHelperText>
+      </FormGroup>
       <TextField
         onChange={inputForm}
         margin='normal'
@@ -172,13 +175,13 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
           label={t('SettingsDialog.EnableRutorSearch')}
           labelPlacement='start'
         />
-        <FormHelperText>{t('SettingsDialog.EnableRutorSearchHint')}</FormHelperText>
+        <FormHelperText margin='none'>{t('SettingsDialog.EnableRutorSearchHint')}</FormHelperText>
       </FormGroup>
       <br />
       <InputLabel htmlFor='RetrackersMode'>{t('SettingsDialog.RetrackersMode')}</InputLabel>
       <Select
         onChange={inputForm}
-        margin='normal'
+        margin='dense'
         type='number'
         native
         id='RetrackersMode'

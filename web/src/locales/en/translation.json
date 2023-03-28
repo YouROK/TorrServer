@@ -133,7 +133,8 @@
     "Settings": "Settings",
     "TorrentDisconnectTimeout": "Torrent Disconnect Timeout",
     "TorrentsSavePath": "Torrents Save Path",
-    "Upload": "Upload (not recommended to disable)",
+    "Upload": "Upload",
+    "UploadHint": "Not recommended to disable",
     "UploadRateLimit": "Upload Rate Limit",
     "UseDiskDesc": "Better use RAM or external storage on flash-based devices",
     "Tabs": {
