@@ -1,7 +1,7 @@
 import { createTheme, useMediaQuery } from '@material-ui/core'
 import { useEffect, useMemo, useState } from 'react'
 
-import { mainColors } from './colors'
+import { mainColors, themeColors } from './colors'
 
 export const THEME_MODES = { LIGHT: 'light', DARK: 'dark', AUTO: 'auto' }
 
@@ -60,7 +60,7 @@ export const useMaterialUITheme = () => {
           },
           MuiPaper: {
             root: {
-              backgroundColor: mainColors[theme].paperColor,
+              backgroundColor: themeColors[theme].app.paperColor,
             },
           },
           MuiInputBase: {
