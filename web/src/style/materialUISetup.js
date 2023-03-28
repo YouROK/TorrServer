@@ -77,6 +77,13 @@ export const useMaterialUITheme = () => {
               },
             },
           },
+          MuiFormGroup: {
+            root: {
+              '& .MuiFormHelperText-root': {
+                marginTop: -10,
+              },
+            },
+          },
         },
       }),
     [theme],
