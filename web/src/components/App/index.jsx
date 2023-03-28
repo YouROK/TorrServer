@@ -22,7 +22,7 @@ import { ThemeProvider as StyledComponentsThemeProvider } from 'styled-component
 import { useQuery } from 'react-query'
 import { getTorrents, isStandaloneApp } from 'utils/Utils'
 import GlobalStyle from 'style/GlobalStyle'
-import { lightTheme, THEME_MODES, useMaterialUITheme } from 'style/materialUISetup'
+import { /* lightTheme, */ THEME_MODES, useMaterialUITheme } from 'style/materialUISetup'
 import getStyledComponentsTheme from 'style/getStyledComponentsTheme'
 import checkIsIOS from 'utils/checkIsIOS'
 
@@ -132,9 +132,9 @@ export default function App() {
                   setIsDonationDialogOpen={setIsDonationDialogOpen}
                 />
 
-                <MuiThemeProvider theme={lightTheme}>
-                  {isDonationDialogOpen && <DonateDialog onClose={() => setIsDonationDialogOpen(false)} />}
-                </MuiThemeProvider>
+                {/* <MuiThemeProvider theme={lightTheme}> */}
+                {isDonationDialogOpen && <DonateDialog onClose={() => setIsDonationDialogOpen(false)} />}
+                {/* </MuiThemeProvider> */}
 
                 {snackbarIsClosed ? checkIsIOS() && !isStandaloneApp && <PWAInstallationGuide /> : <DonateSnackbar />}
               </AppWrapper>

@@ -58,6 +58,11 @@ export const useMaterialUITheme = () => {
               fontSize: '1.2rem',
             },
           },
+          MuiPaper: {
+            root: {
+              backgroundColor: mainColors[theme].paperColor,
+            },
+          },
           MuiInputBase: {
             input: {
               color: mainColors[theme].labels,
