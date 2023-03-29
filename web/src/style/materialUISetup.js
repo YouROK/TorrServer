@@ -1,7 +1,7 @@
 import { createTheme, useMediaQuery } from '@material-ui/core'
 import { useEffect, useMemo, useState } from 'react'
 
-import { mainColors } from './colors'
+import { mainColors, themeColors } from './colors'
 
 export const THEME_MODES = { LIGHT: 'light', DARK: 'dark', AUTO: 'auto' }
 
@@ -53,6 +53,16 @@ export const useMaterialUITheme = () => {
           secondary: { main: mainColors[theme].secondary },
         },
         overrides: {
+          MuiTypography: {
+            h6: {
+              fontSize: '1.2rem',
+            },
+          },
+          MuiPaper: {
+            root: {
+              backgroundColor: themeColors[theme].app.paperColor,
+            },
+          },
           MuiInputBase: {
             input: {
               color: mainColors[theme].labels,
@@ -80,7 +90,7 @@ export const useMaterialUITheme = () => {
           MuiFormGroup: {
             root: {
               '& .MuiFormHelperText-root': {
-                marginTop: -10,
+                marginTop: -8,
               },
             },
           },

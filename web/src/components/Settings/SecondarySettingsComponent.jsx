@@ -39,32 +39,46 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
   return (
     <SecondarySettingsContent>
       <SettingSectionLabel>{t('SettingsDialog.AdditionalSettings')}</SettingSectionLabel>
-
-      <FormControlLabel
-        control={<Switch checked={EnableIPv6} onChange={inputForm} id='EnableIPv6' color='secondary' />}
-        label='IPv6'
-        labelPlacement='start'
-      />
-      <FormControlLabel
-        control={<Switch checked={!DisableTCP} onChange={inputForm} id='DisableTCP' color='secondary' />}
-        label='TCP (Transmission Control Protocol)'
-        labelPlacement='start'
-      />
-      <FormControlLabel
-        control={<Switch checked={!DisableUTP} onChange={inputForm} id='DisableUTP' color='secondary' />}
-        label='μTP (Micro Transport Protocol)'
-        labelPlacement='start'
-      />
-      <FormControlLabel
-        control={<Switch checked={!DisablePEX} onChange={inputForm} id='DisablePEX' color='secondary' />}
-        label='PEX (Peer Exchange)'
-        labelPlacement='start'
-      />
-      <FormControlLabel
-        control={<Switch checked={ForceEncrypt} onChange={inputForm} id='ForceEncrypt' color='secondary' />}
-        label={t('SettingsDialog.ForceEncrypt')}
-        labelPlacement='start'
-      />
+      <FormGroup>
+        <FormControlLabel
+          control={<Switch checked={EnableIPv6} onChange={inputForm} id='EnableIPv6' color='secondary' />}
+          label='IPv6'
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('SettingsDialog.EnableIPv6Hint')}</FormHelperText>
+      </FormGroup>
+      <FormGroup>
+        <FormControlLabel
+          control={<Switch checked={!DisableTCP} onChange={inputForm} id='DisableTCP' color='secondary' />}
+          label='TCP (Transmission Control Protocol)'
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('SettingsDialog.DisableTCPHint')}</FormHelperText>
+      </FormGroup>
+      <FormGroup>
+        <FormControlLabel
+          control={<Switch checked={!DisableUTP} onChange={inputForm} id='DisableUTP' color='secondary' />}
+          label='μTP (Micro Transport Protocol)'
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('SettingsDialog.DisableUTPHint')}</FormHelperText>
+      </FormGroup>
+      <FormGroup>
+        <FormControlLabel
+          control={<Switch checked={!DisablePEX} onChange={inputForm} id='DisablePEX' color='secondary' />}
+          label='PEX (Peer Exchange)'
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('SettingsDialog.DisablePEXHint')}</FormHelperText>
+      </FormGroup>
+      <FormGroup>
+        <FormControlLabel
+          control={<Switch checked={ForceEncrypt} onChange={inputForm} id='ForceEncrypt' color='secondary' />}
+          label={t('SettingsDialog.ForceEncrypt')}
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('SettingsDialog.ForceEncryptHint')}</FormHelperText>
+      </FormGroup>
       <TextField
         onChange={inputForm}
         margin='normal'
@@ -91,11 +105,14 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         fullWidth
       />
       <br />
-      <FormControlLabel
-        control={<Switch checked={!DisableDHT} onChange={inputForm} id='DisableDHT' color='secondary' />}
-        label={t('SettingsDialog.DHT')}
-        labelPlacement='start'
-      />
+      <FormGroup>
+        <FormControlLabel
+          control={<Switch checked={!DisableDHT} onChange={inputForm} id='DisableDHT' color='secondary' />}
+          label={t('SettingsDialog.DHT')}
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('SettingsDialog.DisableDHTHint')}</FormHelperText>
+      </FormGroup>
       <TextField
         onChange={inputForm}
         margin='normal'
@@ -143,11 +160,14 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         variant='outlined'
         fullWidth
       />
-      <FormControlLabel
-        control={<Switch checked={!DisableUPNP} onChange={inputForm} id='DisableUPNP' color='secondary' />}
-        label='UPnP (Universal Plug and Play)'
-        labelPlacement='start'
-      />
+      <FormGroup>
+        <FormControlLabel
+          control={<Switch checked={!DisableUPNP} onChange={inputForm} id='DisableUPNP' color='secondary' />}
+          label='UPnP (Universal Plug and Play)'
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('SettingsDialog.DisableUPNPHint')}</FormHelperText>
+      </FormGroup>
       <FormControlLabel
         control={<Switch checked={EnableDLNA} onChange={inputForm} id='EnableDLNA' color='secondary' />}
         label={t('SettingsDialog.DLNA')}
@@ -164,11 +184,6 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         variant='outlined'
         fullWidth
       />
-      <FormControlLabel
-        control={<Switch checked={EnableDebug} onChange={inputForm} id='EnableDebug' color='secondary' />}
-        label={t('SettingsDialog.EnableDebug')}
-        labelPlacement='start'
-      />
       <FormGroup>
         <FormControlLabel
           control={<Switch checked={EnableRutorSearch} onChange={inputForm} id='EnableRutorSearch' color='secondary' />}
@@ -177,6 +192,11 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         />
         <FormHelperText margin='none'>{t('SettingsDialog.EnableRutorSearchHint')}</FormHelperText>
       </FormGroup>
+      <FormControlLabel
+        control={<Switch checked={EnableDebug} onChange={inputForm} id='EnableDebug' color='secondary' />}
+        label={t('SettingsDialog.EnableDebug')}
+        labelPlacement='start'
+      />
       <br />
       <InputLabel htmlFor='RetrackersMode'>{t('SettingsDialog.RetrackersMode')}</InputLabel>
       <Select
