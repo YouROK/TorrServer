@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/agnivade/levenshtein v1.1.1
 	github.com/alexflint/go-arg v1.4.3
-	github.com/anacrolix/dms v1.5.0
+	github.com/anacrolix/dms v1.5.1-0.20230317005814-6af26ec4c733
 	github.com/anacrolix/log v0.13.2-0.20221123232138-02e2764801c3
 	github.com/anacrolix/missinggo v1.3.0
 	github.com/anacrolix/publicip v0.3.0
