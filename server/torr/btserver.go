@@ -94,7 +94,7 @@ func (bt *BTServer) configure(ctx context.Context) {
 	bt.config.PeriodicallyAnnounceTorrentsToDht = true // no peers from DHT with false
 	//	bt.config.AlwaysWantConns = true
 	bt.config.Debug = settings.BTsets.EnableDebug
-	bt.config.DisableIPv6 = settings.BTsets.EnableIPv6 == false
+	bt.config.DisableIPv6 = !settings.BTsets.EnableIPv6
 	bt.config.DisableTCP = settings.BTsets.DisableTCP
 	bt.config.DisableUTP = settings.BTsets.DisableUTP
 	//	https://github.com/anacrolix/torrent/issues/703
