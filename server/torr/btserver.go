@@ -89,14 +89,17 @@ func (bt *BTServer) configure(ctx context.Context) {
 	upnpID := "TorrServer/" + version.Version
 	cliVers := userAgent
 
-	//	bt.config.AcceptPeerConnections = false
+	// Don't announce to trackers. This only leaves DHT to discover peers.
+	bt.config.DisableTrackers = true
+	bt.config.PeriodicallyAnnounceTorrentsToDht = true // no peers from DHT with false
 	//	bt.config.AlwaysWantConns = true
 	bt.config.Debug = settings.BTsets.EnableDebug
 	bt.config.DisableIPv6 = settings.BTsets.EnableIPv6 == false
 	bt.config.DisableTCP = settings.BTsets.DisableTCP
 	bt.config.DisableUTP = settings.BTsets.DisableUTP
 	//	https://github.com/anacrolix/torrent/issues/703
-	bt.config.DisableWebtorrent = false // TODO: check memory usage
+	bt.config.DisableWebtorrent = true // TODO: check memory usage
+	bt.config.DisableWebseeds = true
 	bt.config.NoDefaultPortForwarding = settings.BTsets.DisableUPNP
 	bt.config.NoDHT = settings.BTsets.DisableDHT
 	bt.config.DisablePEX = settings.BTsets.DisablePEX
