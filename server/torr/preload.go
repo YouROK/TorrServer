@@ -43,6 +43,9 @@ func (t *Torrent) Preload(index int, size int64) {
 	defer func() {
 		if t.Stat == state.TorrentPreload {
 			t.Stat = state.TorrentWorking
+			// Очистка по окончании прелоада
+			t.BitRate = ""
+			t.DurationSeconds = 0
 		}
 	}()
 
