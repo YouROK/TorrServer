@@ -89,9 +89,6 @@ func (bt *BTServer) configure(ctx context.Context) {
 	upnpID := "TorrServer/" + version.Version
 	cliVers := userAgent
 
-	// Don't announce to trackers. This only leaves DHT to discover peers.
-	bt.config.DisableTrackers = true
-	bt.config.PeriodicallyAnnounceTorrentsToDht = true // no peers from DHT with false
 	//	bt.config.AlwaysWantConns = true
 	bt.config.Debug = settings.BTsets.EnableDebug
 	bt.config.DisableIPv6 = !settings.BTsets.EnableIPv6
@@ -207,12 +204,6 @@ func (bt *BTServer) RemoveTorrent(hash torrent.InfoHash) {
 }
 
 func isPrivateIP(ip net.IP) bool {
-	//		log.Println(ip, "IsLoopback:", ip.IsLoopback())
-	//		log.Println(ip, "IsPrivate:", ip.IsPrivate())
-	//		log.Println(ip, "IsLinkLocalUnicast:", ip.IsLinkLocalUnicast())
-	//		log.Println(ip, "IsLinkLocalMulticast:", ip.IsLinkLocalMulticast())
-	//		log.Println(ip, "IsGlobalUnicast:", ip.IsGlobalUnicast())
-
 	if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
 		return true
 	}
