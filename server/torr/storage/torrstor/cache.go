@@ -315,15 +315,14 @@ func (c *Cache) NewReader(file *torrent.File) *Reader {
 }
 
 func (c *Cache) Readers() int {
-	// TODO проверить
-	// if c == nil {
-	// 	return 0
-	// }
-	if c == nil || c.readers == nil {
+	if c == nil {
 		return 0
 	}
 	c.muReaders.Lock()
 	defer c.muReaders.Unlock()
+	if c.readers == nil {
+		return 0
+	}
 	return len(c.readers)
 }
 
