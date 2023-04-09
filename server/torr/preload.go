@@ -84,8 +84,8 @@ func (t *Torrent) Preload(index int, size int64) {
 
 		// startend -> 8/16 MB
 		startend := t.Info().PieceLength
-		if startend < 8*1024*1024 {
-			startend = 8 * 1024 * 1024
+		if startend < 8<<20 {
+			startend = 8 << 20
 		}
 
 		readerStart := file.NewReader()

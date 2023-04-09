@@ -25,7 +25,6 @@ type Reader struct {
 	lastAccess int64
 	isUse      bool
 	mu         sync.Mutex
-	ranges     Range
 }
 
 func newReader(file *torrent.File, cache *Cache) *Reader {
