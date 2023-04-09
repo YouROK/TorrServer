@@ -104,10 +104,9 @@ func (c *Cache) Close() error {
 		}
 	}
 
-	c.pieces = nil
-
 	c.muReaders.Lock()
 	c.readers = nil
+	c.pieces = nil
 	c.muReaders.Unlock()
 
 	utils.FreeOSMemGC()

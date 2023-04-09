@@ -77,6 +77,11 @@ func (t *Torrent) Preload(index int, size int64) {
 			}
 		}
 
+		if t.Stat == state.TorrentClosed {
+			log.TLogln("End preload: torrent closed")
+			return
+		}
+
 		// startend -> 8/16 MB
 		startend := t.Info().PieceLength
 		if startend < 8*1024*1024 {
@@ -101,27 +106,29 @@ func (t *Torrent) Preload(index int, size int64) {
 		readerEndStart := file.Length() - startend
 		readerEndEnd := file.Length()
 
-		var wa sync.WaitGroup
+		var wg sync.WaitGroup
 		go func() {
 			offset := int64(0)
 			if readerEndStart > readerStartEnd {
 				// Если конечный ридер не входит в диапозон начального
-				wa.Add(1)
-				defer wa.Done()
-				readerEnd := file.NewReader()
-				readerEnd.SetResponsive()
-				readerEnd.SetReadahead(0)
-				readerEnd.Seek(readerEndStart, io.SeekStart)
-				offset = readerEndStart
-				tmp := make([]byte, 32768, 32768)
-				for offset+int64(len(tmp)) < readerEndEnd {
-					n, err := readerEnd.Read(tmp)
-					if err != nil {
-						break
+				wg.Add(1)
+				defer wg.Done()
+				if t.Stat == state.TorrentPreload {
+					readerEnd := file.NewReader()
+					readerEnd.SetResponsive()
+					readerEnd.SetReadahead(0)
+					readerEnd.Seek(readerEndStart, io.SeekStart)
+					offset = readerEndStart
+					tmp := make([]byte, 32768)
+					for offset+int64(len(tmp)) < readerEndEnd {
+						n, err := readerEnd.Read(tmp)
+						if err != nil {
+							break
+						}
+						offset += int64(n)
 					}
-					offset += int64(n)
+					readerEnd.Close()
 				}
-				readerEnd.Close()
 			}
 		}()
 
@@ -132,7 +139,7 @@ func (t *Torrent) Preload(index int, size int64) {
 		}
 		readerStart.SetReadahead(readahead)
 		offset := int64(0)
-		tmp := make([]byte, 32768, 32768)
+		tmp := make([]byte, 32768)
 		for offset+int64(len(tmp)) < readerStartEnd {
 			n, err := readerStart.Read(tmp)
 			if err != nil {
@@ -146,7 +153,7 @@ func (t *Torrent) Preload(index int, size int64) {
 			}
 		}
 
-		wa.Wait()
+		wg.Wait()
 	}
 	log.TLogln("End preload:", file.Torrent().InfoHash().HexString(), "Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
 }
