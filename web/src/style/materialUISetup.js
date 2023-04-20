@@ -55,7 +55,7 @@ export const useMaterialUITheme = () => {
         overrides: {
           MuiTypography: {
             h6: {
-              fontSize: '1.2rem',
+              fontSize: '1.0rem',
             },
           },
           MuiPaper: {
