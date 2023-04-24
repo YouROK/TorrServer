@@ -131,8 +131,6 @@ func loadDB() {
 			err = dec.Decode(&torr)
 			if err == nil {
 				ftorrs = append(ftorrs, torr)
-			} else {
-				log.TLogln("Error read rutor db:", err)
 			}
 		}
 		torrs = ftorrs
