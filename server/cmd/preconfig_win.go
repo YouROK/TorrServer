@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	EsSystemRequired = 0x00000001
-	EsContinuous     = 0x80000000
+	EsSystemRequired   = 0x00000001
+	EsAwaymodeRequired = 0x00000040 // Added for future improvements
+	EsContinuous       = 0x80000000
 )
 
 var pulseTime = 1 * time.Minute
@@ -23,20 +24,32 @@ func Preconfig(kill bool) {
 		// don't sleep/hibernate windows
 		kernel32 := syscall.NewLazyDLL("kernel32.dll")
 		setThreadExecStateProc := kernel32.NewProc("SetThreadExecutionState")
+		currentExecState := uintptr(EsContinuous)
+		normalExecutionState := uintptr(EsContinuous)
+		systemRequireState := uintptr(EsSystemRequired | EsContinuous)
 		pulse := time.NewTicker(pulseTime)
 		for {
 			select {
 			case <-pulse.C:
 				{
-					send := false
+					systemRequired := false
 					for _, torrent := range torr.ListTorrent() {
 						if torrent.Stat != state.TorrentInDB {
-							send = true
+							systemRequired = true
 							break
 						}
 					}
-					if send {
-						setThreadExecStateProc.Call(uintptr(EsSystemRequired))
+					if systemRequired && currentExecState != systemRequireState {
+						// Looks like sending just EsSystemRequired to clear timer is broken in Win11.
+						// Enable system required to avoid the system to idle to sleep.
+						currentExecState = systemRequireState
+						setThreadExecStateProc.Call(systemRequireState)
+					}
+
+					if !systemRequired && currentExecState != normalExecutionState {
+						// Clear EXECUTION_STATE flags to disable away mode and allow the system to idle to sleep normally.
+						currentExecState = normalExecutionState
+						setThreadExecStateProc.Call(normalExecutionState)
 					}
 				}
 			}
