@@ -4,6 +4,7 @@
 package main
 
 import (
+	"runtime"
 	"syscall"
 	"time"
 
@@ -21,12 +22,14 @@ var pulseTime = 60 * time.Second
 
 func Preconfig(kill bool) {
 	go func() {
+		// need work on one thread because SetThreadExecutionState sets flag to thread. We need set and clear flag for same thread.
+		runtime.LockOSThread()
 		// don't sleep/hibernate windows
 		kernel32 := syscall.NewLazyDLL("kernel32.dll")
 		setThreadExecStateProc := kernel32.NewProc("SetThreadExecutionState")
 		currentExecState := uintptr(EsContinuous)
 		normalExecutionState := uintptr(EsContinuous)
-		systemRequireState := uintptr(EsSystemRequired | EsContinuous) 
+		systemRequireState := uintptr(EsSystemRequired | EsContinuous)
 		pulse := time.NewTicker(pulseTime)
 		for {
 			select {
