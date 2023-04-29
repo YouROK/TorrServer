@@ -19,6 +19,7 @@ const (
 )
 
 var pulseTime = 60 * time.Second
+var clearFlagTimeout = 3 * 60 * time.Second
 
 func Preconfig(kill bool) {
 	go func() {
@@ -31,6 +32,7 @@ func Preconfig(kill bool) {
 		normalExecutionState := uintptr(EsContinuous)
 		systemRequireState := uintptr(EsSystemRequired | EsContinuous)
 		pulse := time.NewTicker(pulseTime)
+		clearFlagTime: = -1
 		for {
 			select {
 			case <-pulse.C:
@@ -51,8 +53,17 @@ func Preconfig(kill bool) {
 
 					if !systemRequired && currentExecState != normalExecutionState {
 						// Clear EXECUTION_STATE flags to disable away mode and allow the system to idle to sleep normally.
-						currentExecState = normalExecutionState
-						setThreadExecStateProc.Call(normalExecutionState)
+						
+						// Avoid clear flag immediately to add time to start next episode   
+						if (clearFlagTime == -1) {
+							clearFlagTime = time.Now() + clearFlagTimeout
+						}
+
+						if (clearFlagTime >= time.Now()) {
+							clearFlagTime = -1
+							currentExecState = normalExecutionState
+							setThreadExecStateProc.Call(normalExecutionState)
+						}
 					}
 				}
 			}
