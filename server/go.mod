@@ -17,6 +17,7 @@ require (
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/pkg/errors v0.9.1
 	go.etcd.io/bbolt v1.3.7
+	golang.org/x/image v0.7.0
 	golang.org/x/time v0.3.0
 	gopkg.in/vansante/go-ffprobe.v2 v2.1.1
 )
