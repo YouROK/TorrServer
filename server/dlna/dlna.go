@@ -29,7 +29,8 @@ func Start() {
 			ifaces, err := net.Interfaces()
 			if err != nil {
 				logger.Levelf(log.Error, "%v", err)
-				os.Exit(1)
+				return
+				// os.Exit(1) // avoid start on Android 13+
 			}
 			for _, i := range ifaces {
 				// interface flags seem to always be 0 on Windows
