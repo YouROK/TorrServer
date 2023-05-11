@@ -25,7 +25,7 @@ type BTSets struct {
 	ForceEncrypt             bool
 	RetrackersMode           int  // 0 - don`t add, 1 - add retrackers (def), 2 - remove retrackers 3 - replace retrackers
 	TorrentDisconnectTimeout int  // in seconds
-	EnableDebug              bool // print logs
+	EnableDebug              bool // debug logs
 
 	// DLNA
 	EnableDLNA   bool
@@ -59,7 +59,7 @@ func SetBTSets(sets *BTSets) {
 	if ReadOnly {
 		return
 	}
-	// failsafe (load defaults)
+	// failsafe checks (use defaults)
 	if sets.CacheSize == 0 {
 		sets.CacheSize = 64 * 1024 * 1024
 	}
@@ -114,6 +114,25 @@ func SetBTSets(sets *BTSets) {
 	tdb.Set("Settings", "BitTorr", buf)
 }
 
+func SetDefaultConfig() {
+	sets := new(BTSets)
+	sets.CacheSize = 64 * 1024 * 1024 // 64 MB
+	sets.PreloadCache = 50
+	sets.ConnectionsLimit = 25
+	sets.RetrackersMode = 1
+	sets.TorrentDisconnectTimeout = 30
+	sets.ReaderReadAHead = 95 // 95%
+	BTsets = sets
+	if !ReadOnly {
+		buf, err := json.Marshal(BTsets)
+		if err != nil {
+			log.TLogln("Error marshal btsets", err)
+			return
+		}
+		tdb.Set("Settings", "BitTorr", buf)
+	}
+}
+
 func loadBTSets() {
 	buf := tdb.Get("Settings", "BitTorr")
 	if len(buf) > 0 {
@@ -127,17 +146,5 @@ func loadBTSets() {
 		log.TLogln("Error unmarshal btsets", err)
 	}
 
-	SetDefault()
-}
-
-func SetDefault() {
-	sets := new(BTSets)
-	sets.EnableDebug = false
-	sets.CacheSize = 64 * 1024 * 1024 // 64 MB
-	sets.PreloadCache = 50
-	sets.ConnectionsLimit = 25
-	sets.RetrackersMode = 1
-	sets.TorrentDisconnectTimeout = 30
-	sets.ReaderReadAHead = 95 // 95%
-	BTsets = sets
+	SetDefaultConfig()
 }
