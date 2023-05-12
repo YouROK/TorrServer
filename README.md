@@ -243,7 +243,7 @@ docker run --rm -d -e TS_PORT=5665 -e TS_DONTKILL=1 -e TS_HTTPAUTH=1 -e TS_RDB=1
 #
 ### Donate:
 [PayPal](https://www.paypal.me/yourok) \
-[QIWI](qiwi.com/n/YOUROK85) \
+[QIWI]((https://qiwi.com/n/YOUROK85) \
 [YooMoney](https://yoomoney.ru/to/410013733697114/200) 
 
 SberBank card: **5484 4000 2285 7839**
