@@ -1,0 +1,24 @@
+stages:
+  - build_go
+
+build_go:
+  image: golang:latest
+  stage: build_go
+  when: manual
+  tags:
+    - amd64
+  artifacts:
+    name: "TorrServer"
+    paths:
+      - dist
+  script:
+    - apt update
+    - apt install -y npm zip
+    - rm -rf /var/lib/apt/lists/*
+    - npm install -g yarn
+    - wget -q "https://dl.google.com/android/repository/android-ndk-r25c-linux.zip"
+    - unzip ./android-ndk-r25c-linux.zip
+    - rm ./android-ndk-r25c-linux.zip
+    - pwd
+    - ls -l
+    - ./build-all.sh

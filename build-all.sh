@@ -1,9 +1,9 @@
 #!/bin/bash
 
 PLATFORMS=(
+  'linux/amd64'
   'linux/arm64'
   'linux/arm7'
-  'linux/amd64'
   'linux/arm5'
   'linux/386'
   'windows/amd64'
@@ -90,9 +90,9 @@ declare -a COMPILERS=(
   "amd64:x86_64-linux-android21-clang"
 )
 
-export NDK_VERSION="23.1.7779620" # 25.1.8937393
-export NDK_TOOLCHAIN=${ANDROID_HOME}/ndk/${NDK_VERSION}/toolchains/llvm/prebuilt/darwin-x86_64
-
+export NDK_VERSION="25.2.9519653" # 25.1.8937393
+#export NDK_TOOLCHAIN=${ANDROID_HOME}/ndk/${NDK_VERSION}/toolchains/llvm/prebuilt/darwin-x86_64
+export NDK_TOOLCHAIN="${PWD}/../android-ndk-r25c/toolchains/llvm/prebuilt/linux-x86_64"
 GOOS=android
 
 for V in "${COMPILERS[@]}"; do

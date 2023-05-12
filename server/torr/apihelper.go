@@ -207,7 +207,7 @@ func SetDefSettings() {
 	if sets.ReadOnly {
 		return
 	}
-	sets.SetDefault()
+	sets.SetDefaultConfig()
 	log.TLogln("drop all torrents")
 	dropAllTorrent()
 	time.Sleep(time.Second * 1)
