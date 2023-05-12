@@ -193,8 +193,6 @@ func getTorrentMeta(path, host string) (ret interface{}) {
 		meta := upnpav.Container{Object: obj, ChildCount: 1}
 		return meta
 	}
-
-	return nil
 }
 
 func loadTorrent(path, host string) (ret []interface{}) {
