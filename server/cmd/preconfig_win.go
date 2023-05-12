@@ -18,8 +18,10 @@ const (
 	EsContinuous       = 0x80000000
 )
 
-var pulseTime = 60 * time.Second
-var clearFlagTimeout = 3 * 60 * time.Second
+var (
+	pulseTime        = 60 * time.Second
+	clearFlagTimeout = 3 * 60 * time.Second
+)
 
 func Preconfig(kill bool) {
 	go func() {
