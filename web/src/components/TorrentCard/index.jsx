@@ -116,7 +116,7 @@ const Torrent = ({ torrent }) => {
             <StatusIndicator stat={stat} />
 
             <div className='description-statistics-element-wrapper'>
-              <div className='description-section-name'>{t('Size')}</div>
+              <div className='description-section-name'><StatusIndicator stat={stat} />{t('Size')}</div>
               <div className='description-statistics-element-value'>{torrentSize > 0 && humanizeSize(torrentSize)}</div>
             </div>
 
@@ -195,9 +195,9 @@ export const StatusIndicator = ({ stat }) => {
   }
 
   return (
-    <div className='description-statistics-element-wrapper'>
+    <span className='description-status-wrapper'>
       <StatusIndicators color={colors[stat]} title={values[stat]} />
-    </div>
+    </span>
   )
 }
 

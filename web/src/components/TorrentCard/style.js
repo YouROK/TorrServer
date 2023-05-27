@@ -127,6 +127,14 @@ export const TorrentCardDescription = styled.div`
       }
     }
 
+    .description-status-wrapper {
+      display: inline-block;
+      height: 8px;
+      margin-inline-end: 4px;
+      margin-bottom: 4px;
+      vertical-align: middle;
+    }
+
     .description-torrent-title {
       overflow: auto;
       word-break: break-all;
