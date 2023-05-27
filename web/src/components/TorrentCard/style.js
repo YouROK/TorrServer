@@ -123,7 +123,8 @@ export const TorrentCardDescription = styled.div`
       color: ${accentCardColor};
 
       @media (max-width: 770px) {
-        font-size: 0.4rem;
+        font-size: 0.5rem;
+        line-height: 10px;
       }
     }
 
@@ -131,8 +132,7 @@ export const TorrentCardDescription = styled.div`
       display: inline-block;
       height: 8px;
       margin-inline-end: 4px;
-      margin-bottom: 4px;
-      vertical-align: middle;
+      vertical-align: baseline;
     }
 
     .description-torrent-title {
