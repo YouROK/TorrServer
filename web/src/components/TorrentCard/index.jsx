@@ -113,10 +113,11 @@ const Torrent = ({ torrent }) => {
           </div>
 
           <div className='description-statistics-wrapper'>
-            <StatusIndicator stat={stat} />
-
             <div className='description-statistics-element-wrapper'>
-              <div className='description-section-name'><StatusIndicator stat={stat} />{t('Size')}</div>
+              <div className='description-section-name'>
+                <StatusIndicator stat={stat} />
+                {t('Size')}
+              </div>
               <div className='description-statistics-element-value'>{torrentSize > 0 && humanizeSize(torrentSize)}</div>
             </div>
 
