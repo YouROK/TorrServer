@@ -163,8 +163,8 @@ export const TorrentCardDescription = styled.div`
     }
 
     .description-statistics-element-value {
-      margin-left: 5px;
       margin-bottom: 10px;
+      margin-left: 0;
       word-break: break-all;
 
       @media (max-width: 1260px), (max-height: 500px) {
