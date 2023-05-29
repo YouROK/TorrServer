@@ -68,8 +68,6 @@ github.com/anacrolix/missinggo/perf v1.0.0/go.mod h1:ljAFWkBuzkO12MQclXzZrosP5ur
 github.com/anacrolix/missinggo/v2 v2.2.0/go.mod h1:o0jgJoYOyaoYQ4E2ZMISVa9c88BbUBVQQW4QeRkNCGY=
 github.com/anacrolix/missinggo/v2 v2.5.1/go.mod h1:WEjqh2rmKECd0t1VhQkLGTdIWXO6f6NLjp5GlMZ+6FA=
 github.com/anacrolix/missinggo/v2 v2.5.2/go.mod h1:yNvsLrtZYRYCOI+KRH/JM8TodHjtIE/bjOGhQaLOWIE=
-github.com/anacrolix/missinggo/v2 v2.7.1 h1:Y+wL0JC6D2icpwhDpcrRM4THQB/uFcPNYUtZMbYvQgI=
-github.com/anacrolix/missinggo/v2 v2.7.1/go.mod h1:2IZIvmRTizALNYFYXsPR7ofXPzJgyBpKZ4kMqMEICkI=
 github.com/anacrolix/missinggo/v2 v2.7.2-0.20230527121029-a582b4f397b9 h1:W/oGeHhYwxueeiDjQfmK9G+X9M2xJgfTtow62v0TWAs=
 github.com/anacrolix/missinggo/v2 v2.7.2-0.20230527121029-a582b4f397b9/go.mod h1:mIEtp9pgaXqt8VQ3NQxFOod/eQ1H0D1XsZzKUQfwtac=
 github.com/anacrolix/mmsg v0.0.0-20180515031531-a4a3ba1fc8bb/go.mod h1:x2/ErsYUmT77kezS63+wzZp8E3byYB0gzirM/WMBLfw=
@@ -89,10 +87,8 @@ github.com/anacrolix/sync v0.4.0/go.mod h1:BbecHL6jDSExojhNtgTFSBcdGerzNc64tz3DC
 github.com/anacrolix/tagflag v0.0.0-20180109131632-2146c8d41bf0/go.mod h1:1m2U/K6ZT+JZG0+bdMK6qauP49QT4wE5pmhJXOKKCHw=
 github.com/anacrolix/tagflag v1.0.0/go.mod h1:1m2U/K6ZT+JZG0+bdMK6qauP49QT4wE5pmhJXOKKCHw=
 github.com/anacrolix/tagflag v1.1.0/go.mod h1:Scxs9CV10NQatSmbyjqmqmeQNwGzlNe0CMUMIxqHIG8=
-github.com/anacrolix/torrent v1.51.3 h1:Rj5LNfT2/IucClxyskD5klaepNQorSeWHChP+y/xYU8=
-github.com/anacrolix/torrent v1.51.3/go.mod h1:t9v92CO5xOCvmg+Qfn3XcBbXVhN9Xg6xID2d565IhVo=
-github.com/anacrolix/torrent v1.51.4-0.20230528035322-5efb4dd9410e h1:rrdRJi0ALM/mRux5k8lZcjqd9PqfEAJybCgpInni1MU=
-github.com/anacrolix/torrent v1.51.4-0.20230528035322-5efb4dd9410e/go.mod h1:+XzcWXQU97PPEWSvpC85MJyqzP1vz47M5BYGno4vIHg=
+github.com/anacrolix/torrent v1.52.0 h1:bjhmB3OmwXS/dpvvLoBEfsg8GUl9r5BVnTYk3Jfmge0=
+github.com/anacrolix/torrent v1.52.0/go.mod h1:+XzcWXQU97PPEWSvpC85MJyqzP1vz47M5BYGno4vIHg=
 github.com/anacrolix/upnp v0.1.3-0.20220123035249-922794e51c96 h1:QAVZ3pN/J4/UziniAhJR2OZ9Ox5kOY2053tBbbqUPYA=
 github.com/anacrolix/upnp v0.1.3-0.20220123035249-922794e51c96/go.mod h1:Wa6n8cYIdaG35x15aH3Zy6d03f7P728QfdcDeD/IEOs=
 github.com/anacrolix/utp v0.2.0 h1:65Cdmr6q9WSw2KsM+rtJFu7rqDzLl2bdysf4KlNPcFI=
