@@ -425,6 +425,15 @@ function DowngradeVersion() {
   chmod +x "$dirInstall/$binName"
   systemctl start $serviceName.service
 }
+
+function RequiredPackages() {
+pkgs='curl iputils-ping dnsutils'
+if ! dpkg -s $pkgs >/dev/null 2>&1; then
+  [[ $lang == "en" ]] && echo " Installing the missing packages…" || echo " Устанавливаем недостающие пакеты…"
+  sleep 3
+  apt -y install $pkgs
+fi
+}
 #####################################
 #     E N D   F U N C T I O N S     #
 #####################################
@@ -500,6 +509,7 @@ while true; do
   [[ $lang == "en" ]] && read -p " Want to install or configure TorrServer? (Yes|No) Type Delete to uninstall. " ydn </dev/tty || read -p " Хотите установить, обновить или настроить TorrServer? (Да|Нет) Для удаления введите «Удалить» " ydn </dev/tty
   case $ydn in
     [YyДд]*)
+      RequiredPackages
       initialCheck
       installTorrServer
       break
