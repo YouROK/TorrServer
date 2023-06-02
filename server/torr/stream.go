@@ -59,7 +59,7 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 		}
 	}
 
-	sets.SetViewed(&sets.Viewed{t.Hash().HexString(), fileID})
+	sets.SetViewed(&sets.Viewed{Hash: t.Hash().HexString(), FileIndex: fileID})
 
 	resp.Header().Set("Connection", "close")
 	etag := hex.EncodeToString([]byte(fmt.Sprintf("%s/%s", t.Hash().HexString(), file.Path())))
