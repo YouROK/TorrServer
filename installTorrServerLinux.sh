@@ -130,11 +130,11 @@ function helpUsage() {
 function checkOS() {
   if [[ -e /etc/debian_version ]]; then
     OS="debian"
+    PKGS='curl iputils-ping dnsutils'
     source /etc/os-release
-
     if [[ $ID == "debian" || $ID == "raspbian" ]]; then
       if [[ $VERSION_ID -lt 6 ]]; then
-        echo "⚠️ Ваша версия Debian не поддерживается."
+        echo " Ваша версия Debian не поддерживается."
         echo ""
         echo " Скрипт поддерживает только Debian >=6"
         echo ""
@@ -144,54 +144,64 @@ function checkOS() {
       OS="ubuntu"
       MAJOR_UBUNTU_VERSION=$(echo "$VERSION_ID" | cut -d '.' -f1)
       if [[ $MAJOR_UBUNTU_VERSION -lt 10 ]]; then
-        echo "⚠️ Ваша версия Ubuntu не поддерживается."
+        echo " Ваша версия Ubuntu не поддерживается."
         echo ""
         echo " Скрипт поддерживает только Ubuntu >=10"
         echo ""
         exit 1
       fi
     fi
+    if ! dpkg -s $PKGS >/dev/null 2>&1; then
+      [[ $lang == "en" ]] && echo " Installing missing packages…" || echo " Устанавливаем недостающие пакеты…"
+      sleep 1
+      apt -y install $PKGS
+    fi
   elif [[ -e /etc/system-release ]]; then
     source /etc/os-release
     if [[ $ID == "fedora" || $ID_LIKE == "fedora" ]]; then
       OS="fedora"
-      # [ -z "$(rpm -qa wget)" ] && yum -y install wget
+      [ -z "$(rpm -qa curl)" ] && yum -y install curl
+      [ -z "$(rpm -qa iputils)" ] && yum -y install iputils
     fi
     if [[ $ID == "centos" || $ID == "rocky" || $ID == "redhat" ]]; then
       OS="centos"
       if [[ ! $VERSION_ID =~ (6|7|8) ]]; then
-        echo "⚠️ Ваша версия CentOS/RockyLinux/RedHat не поддерживается."
+        echo " Ваша версия CentOS/RockyLinux/RedHat не поддерживается."
         echo ""
         echo " Скрипт поддерживает только CentOS/RockyLinux/RedHat версии 6,7 и 8."
         echo ""
         exit 1
       fi
-      # [ -z "$(rpm -qa wget)" ] && yum -y install wget
+      [ -z "$(rpm -qa curl)" ] && yum -y install curl
+      [ -z "$(rpm -qa iputils)" ] && yum -y install iputils
     fi
     if [[ $ID == "ol" ]]; then
       OS="oracle"
       if [[ ! $VERSION_ID =~ (6|7|8) ]]; then
-        echo "⚠️ Ваша версия Oracle Linux не поддерживается."
+        echo " Ваша версия Oracle Linux не поддерживается."
         echo ""
         echo " Скрипт поддерживает только Oracle Linux версии 6,7 и 8."
         exit 1
       fi
-      # [ -z "$(rpm -qa wget)" ] && yum -y install wget
+      [ -z "$(rpm -qa curl)" ] && yum -y install curl
+      [ -z "$(rpm -qa iputils)" ] && yum -y install iputils
     fi
     if [[ $ID == "amzn" ]]; then
       OS="amzn"
       if [[ $VERSION_ID != "2" ]]; then
-        echo "⚠️ Ваша версия Amazon Linux не поддерживается."
+        echo " Ваша версия Amazon Linux не поддерживается."
         echo ""
         echo " Скрипт поддерживает только Amazon Linux 2."
         echo ""
         exit 1
       fi
-      # [ -z "$(rpm -qa wget)" ] && yum -y install wget
+      [ -z "$(rpm -qa curl)" ] && yum -y install curl
+      [ -z "$(rpm -qa iputils)" ] && yum -y install iputils
     fi
   elif [[ -e /etc/arch-release ]]; then
     OS=arch
-    # [ -z $(pacman -Qqe wget 2>/dev/null) ] &&  pacman -Sy --noconfirm wget
+    [ -z $(pacman -Qqe curl 2>/dev/null) ] &&  pacman -Sy --noconfirm curl
+    [ -z $(pacman -Qqe iputils 2>/dev/null) ] &&  pacman -Sy --noconfirm iputils
   else
     echo " Похоже, что вы запускаете этот установщик в системе отличной от Debian, Ubuntu, Fedora, CentOS, Amazon Linux, Oracle Linux или Arch Linux."
     exit 1
@@ -225,7 +235,7 @@ function initialCheck() {
     [[ $lang == "en" ]] && echo " Script must run as root or user with sudo privileges. Example: sudo $scriptname" || echo " Вам нужно запустить скрипт от root или пользователя с правами sudo. Пример: sudo $scriptname"
     exit 1
   fi
-  [ -z "`which curl`" ] && echo " Сначала установите curl" && exit 1
+  # [ -z "`which curl`" ] && echo " Сначала установите curl" && exit 1
   checkOS
   checkArch
   checkInternet
