@@ -35,7 +35,7 @@ func (p *DiskPiece) WriteAt(b []byte, off int64) (n int, err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	ff, err := os.OpenFile(p.name, os.O_RDWR|os.O_CREATE, 0666)
+	ff, err := os.OpenFile(p.name, os.O_RDWR|os.O_CREATE, 0o666)
 	if err != nil {
 		log.TLogln("Error open file:", err)
 		return 0, err
@@ -55,7 +55,7 @@ func (p *DiskPiece) ReadAt(b []byte, off int64) (n int, err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	ff, err := os.OpenFile(p.name, os.O_RDONLY, 0666)
+	ff, err := os.OpenFile(p.name, os.O_RDONLY, 0o666)
 	if os.IsNotExist(err) {
 		return 0, io.EOF
 	}

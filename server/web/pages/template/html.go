@@ -82,9 +82,6 @@ var Applesplash7501334jpg []byte
 //go:embed pages/apple-splash-828-1792.jpg
 var Applesplash8281792jpg []byte
 
-//go:embed pages/apple-touch-icon.png
-var Appletouchiconpng []byte
-
 //go:embed pages/asset-manifest.json
 var Assetmanifestjson []byte
 
@@ -103,35 +100,38 @@ var Favicon16x16png []byte
 //go:embed pages/favicon-32x32.png
 var Favicon32x32png []byte
 
+//go:embed pages/favicon.ico
+var Faviconico []byte
+
+//go:embed pages/icon.png
+var Iconpng []byte
+
 //go:embed pages/index.html
 var Indexhtml []byte
 
 //go:embed pages/logo.png
 var Logopng []byte
 
-//go:embed pages/manifest-icon-192.maskable.png
-var Manifesticon192maskablepng []byte
-
-//go:embed pages/manifest-icon-512.maskable.png
-var Manifesticon512maskablepng []byte
+//go:embed pages/mstile-150x150.png
+var Mstile150x150png []byte
 
 //go:embed pages/site.webmanifest
 var Sitewebmanifest []byte
 
-//go:embed pages/static/js/2.0f998e59.chunk.js
-var Staticjs20f998e59chunkjs []byte
+//go:embed pages/static/js/2.4ba5e0d3.chunk.js
+var Staticjs24ba5e0d3chunkjs []byte
 
-//go:embed pages/static/js/2.0f998e59.chunk.js.LICENSE.txt
-var Staticjs20f998e59chunkjsLICENSEtxt []byte
+//go:embed pages/static/js/2.4ba5e0d3.chunk.js.LICENSE.txt
+var Staticjs24ba5e0d3chunkjsLICENSEtxt []byte
 
-//go:embed pages/static/js/2.0f998e59.chunk.js.map
-var Staticjs20f998e59chunkjsmap []byte
+//go:embed pages/static/js/2.4ba5e0d3.chunk.js.map
+var Staticjs24ba5e0d3chunkjsmap []byte
 
-//go:embed pages/static/js/main.604c45f6.chunk.js
-var Staticjsmain604c45f6chunkjs []byte
+//go:embed pages/static/js/main.56b36c2a.chunk.js
+var Staticjsmain56b36c2achunkjs []byte
 
-//go:embed pages/static/js/main.604c45f6.chunk.js.map
-var Staticjsmain604c45f6chunkjsmap []byte
+//go:embed pages/static/js/main.56b36c2a.chunk.js.map
+var Staticjsmain56b36c2achunkjsmap []byte
 
 //go:embed pages/static/js/runtime-main.64d07802.js
 var Staticjsruntimemain64d07802js []byte

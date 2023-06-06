@@ -5,8 +5,14 @@ TorrServer, stream torrent to http
 Just download server from releases and exec file\
 https://github.com/YouROK/TorrServer/releases \
 After open browser link http://127.0.0.1:8090 \
-On linux systems you need to set the environment variable before run \
+On linux systems you may need to set the environment variable before run \
 ***export GODEBUG=madvdontneed=1***
+
+#### macOS install / configure / uninstall script
+Just run in Terminal: `curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerMac.sh -o installTorrserverMac.sh && chmod 755 installTorrServerMac.sh && sudo ./installTorrServerMac.sh`
+
+#### Linux on VPS install / configure / uninstall script
+Just run in console: `curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh | sudo bash`
 
 #### Unofficial TorrServer iocage plugin
 On FreeBSD (TrueNAS/FreeNAS) you can use this plugin
@@ -26,17 +32,39 @@ path/to/Android/sdk/ndk/ver/toolchains/llvm/prebuilt/platform
 #
 ### Server args:
 #### Usage
-TorrServer [--port PORT] [--path PATH] [--logpath LOGPATH] [--rdb] [--httpauth] [--dontkill] [--ui]
+TorrServer-darwin-arm64 [--port PORT] [--path PATH] [--logpath LOGPATH] [--weblogpath WEBLOGPATH] [--rdb] [--httpauth] [--dontkill] [--ui] [--torrentsdir TORRENTSDIR] [--torrentaddr TORRENTADDR] [--pubipv4 PUBIPV4] [--pubipv6 PUBIPV6] [--searchwa]
 
 #### Options
-* --port PORT, -p PORT             web server port
-* --path PATH, -d PATH             database and settings path
-* --logpath LOGPATH, -l LOGPATH    log path
-* --rdb, -r                        start in read-only DB mode
-* --httpauth, -a                   http auth on all requests
-* --dontkill, -k                   dont kill server on signal
-* --ui, -u                         run page torrserver in browser
-* --version                        display version and exit
+* --port PORT, -p PORT   
+  *                 web server port, default 8090
+* --path PATH, -d PATH   
+  *                 database dir path
+* --logpath LOGPATH, -l LOGPATH
+  *                 server log file path
+* --weblogpath WEBLOGPATH, -w WEBLOGPATH
+  *                 web access log file path
+* --rdb, -r              
+  *                 start in read-only DB mode
+* --httpauth, -a         
+  *                 enable http auth on all requests
+* --dontkill, -k         
+  *                 don't kill server on signal
+* --ui, -u               
+  *                 open torrserver page in browser
+* --torrentsdir TORRENTSDIR, -t TORRENTSDIR
+  *                 autoload torrents from dir
+* --torrentaddr TORRENTADDR
+  *                 Torrent client address, default :32000
+* --pubipv4 PUBIPV4, -4 PUBIPV4
+  *                 set public IPv4 addr
+* --pubipv6 PUBIPV6, -6 PUBIPV6 
+  *                 set public IPv6 addr
+* --searchwa, -s         
+  *                 search without auth
+* --help, -h             
+  *                 display this help and exit
+* --version              
+  *                 display version and exit
 
 
 #
@@ -215,7 +243,7 @@ docker run --rm -d -e TS_PORT=5665 -e TS_DONTKILL=1 -e TS_HTTPAUTH=1 -e TS_RDB=1
 #
 ### Donate:
 [PayPal](https://www.paypal.me/yourok) \
-[QIWI](qiwi.com/n/YOUROK85) \
+[QIWI]((https://qiwi.com/n/YOUROK85) \
 [YooMoney](https://yoomoney.ru/to/410013733697114/200) 
 
 SberBank card: **5484 4000 2285 7839**

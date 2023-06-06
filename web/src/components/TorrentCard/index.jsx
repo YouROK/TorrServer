@@ -18,8 +18,16 @@ import { useTranslation } from 'react-i18next'
 import AddDialog from 'components/Add/AddDialog'
 import { StyledDialog } from 'style/CustomMaterialUiStyles'
 import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
+import { GETTING_INFO, IN_DB, CLOSED, PRELOAD, WORKING } from 'torrentStates'
 
-import { StyledButton, TorrentCard, TorrentCardButtons, TorrentCardDescription, TorrentCardPoster } from './style'
+import {
+  StatusIndicators,
+  StyledButton,
+  TorrentCard,
+  TorrentCardButtons,
+  TorrentCardDescription,
+  TorrentCardPoster,
+} from './style'
 
 const Transition = forwardRef((props, ref) => <Slide direction='up' ref={ref} {...props} />)
 
@@ -36,7 +44,7 @@ const Torrent = ({ torrent }) => {
   const openDeleteTorrentAlert = () => setIsDeleteTorrentOpened(true)
   const closeDeleteTorrentAlert = () => setIsDeleteTorrentOpened(false)
 
-  const { title, name, poster, torrent_size: torrentSize, download_speed: downloadSpeed, hash } = torrent
+  const { title, name, poster, torrent_size: torrentSize, download_speed: downloadSpeed, hash, stat } = torrent
 
   const dropTorrent = () => axios.post(torrentsHost(), { action: 'drop', hash })
   const deleteTorrent = () => axios.post(torrentsHost(), { action: 'rem', hash })
@@ -106,7 +114,10 @@ const Torrent = ({ torrent }) => {
 
           <div className='description-statistics-wrapper'>
             <div className='description-statistics-element-wrapper'>
-              <div className='description-section-name'>{t('Size')}</div>
+              <div className='description-section-name'>
+                <StatusIndicator stat={stat} />
+                {t('Size')}
+              </div>
               <div className='description-statistics-element-value'>{torrentSize > 0 && humanizeSize(torrentSize)}</div>
             </div>
 
@@ -162,6 +173,32 @@ const Torrent = ({ torrent }) => {
         <AddDialog hash={hash} title={title} name={name} poster={poster} handleClose={handleCloseEditDialog} />
       )}
     </>
+  )
+}
+
+export const StatusIndicator = ({ stat }) => {
+  const { t } = useTranslation()
+
+  const values = {
+    [GETTING_INFO]: t('TorrentGettingInfo'),
+    [PRELOAD]: t('TorrentPreload'),
+    [WORKING]: t('TorrentWorking'),
+    [CLOSED]: t('TorrentClosed'),
+    [IN_DB]: t('TorrentInDb'),
+  }
+
+  const colors = {
+    [GETTING_INFO]: '#2196F3',
+    [PRELOAD]: '#FFC107',
+    [WORKING]: '#CDDC39',
+    [CLOSED]: '#E57373',
+    [IN_DB]: '#9E9E9E',
+  }
+
+  return (
+    <span className='description-status-wrapper'>
+      <StatusIndicators color={colors[stat]} title={values[stat]} />
+    </span>
   )
 }
 

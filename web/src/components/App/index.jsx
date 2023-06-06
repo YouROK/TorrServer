@@ -7,6 +7,8 @@ import {
   Brightness4 as Brightness4Icon,
   Brightness5 as Brightness5Icon,
   BrightnessAuto as BrightnessAutoIcon,
+  Sort as SortIcon,
+  SortByAlpha as SortByAlphaIcon,
 } from '@material-ui/icons'
 import { echoHost } from 'utils/Hosts'
 import Div100vh from 'react-div-100vh'
@@ -20,7 +22,7 @@ import { ThemeProvider as StyledComponentsThemeProvider } from 'styled-component
 import { useQuery } from 'react-query'
 import { getTorrents, isStandaloneApp } from 'utils/Utils'
 import GlobalStyle from 'style/GlobalStyle'
-import { lightTheme, THEME_MODES, useMaterialUITheme } from 'style/materialUISetup'
+import { /* lightTheme, */ THEME_MODES, useMaterialUITheme } from 'style/materialUISetup'
 import getStyledComponentsTheme from 'style/getStyledComponentsTheme'
 import checkIsIOS from 'utils/checkIsIOS'
 
@@ -47,6 +49,9 @@ export default function App() {
     onError: () => setIsOffline(true),
     onSuccess: () => setIsOffline(false),
   })
+  const [sortABC, setSortABC] = useState(false)
+  const handleClickSortABC = () => setSortABC(true)
+  const handleClickSortDate = () => setSortABC(false)
 
   useEffect(() => {
     axios.get(echoHost()).then(({ data }) => setTorrServerVersion(data))
@@ -76,8 +81,12 @@ export default function App() {
                   </Typography>
 
                   <div
-                    style={{ justifySelf: 'end', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}
+                    style={{ justifySelf: 'end', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}
                   >
+                    <HeaderToggle onClick={() => (sortABC === true ? handleClickSortDate() : handleClickSortABC())}>
+                      {sortABC === true ? <SortByAlphaIcon /> : <SortIcon />}
+                    </HeaderToggle>
+
                     <HeaderToggle
                       onClick={() => {
                         if (currentThemeMode === THEME_MODES.LIGHT) updateThemeMode(THEME_MODES.DARK)
@@ -100,7 +109,9 @@ export default function App() {
                           ? changeLang('ru')
                           : currentLang === 'ru'
                           ? changeLang('ua')
-                          : changeLang('en')
+                          : currentLang === 'ua'
+                          ? changeLang('zh')
+                          : currentLang === 'en'                         
                       }
                     >
                       {currentLang.toUpperCase()}
@@ -115,7 +126,7 @@ export default function App() {
                   setIsDonationDialogOpen={setIsDonationDialogOpen}
                 />
 
-                <TorrentList isOffline={isOffline} torrents={torrents} isLoading={isLoading} />
+                <TorrentList isOffline={isOffline} torrents={torrents} isLoading={isLoading} sortABC={sortABC} />
 
                 <PWAFooter
                   isOffline={isOffline}
@@ -123,9 +134,9 @@ export default function App() {
                   setIsDonationDialogOpen={setIsDonationDialogOpen}
                 />
 
-                <MuiThemeProvider theme={lightTheme}>
-                  {isDonationDialogOpen && <DonateDialog onClose={() => setIsDonationDialogOpen(false)} />}
-                </MuiThemeProvider>
+                {/* <MuiThemeProvider theme={lightTheme}> */}
+                {isDonationDialogOpen && <DonateDialog onClose={() => setIsDonationDialogOpen(false)} />}
+                {/* </MuiThemeProvider> */}
 
                 {snackbarIsClosed ? checkIsIOS() && !isStandaloneApp && <PWAInstallationGuide /> : <DonateSnackbar />}
               </AppWrapper>

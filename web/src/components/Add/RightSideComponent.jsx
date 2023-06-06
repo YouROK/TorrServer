@@ -67,6 +67,7 @@ export default function RightSideComponent({
               margin='dense'
               label={t('AddDialog.OriginalTorrentTitle')}
               type='text'
+              variant='outlined'
               fullWidth
               disabled={isCustomTitleEnabled}
               InputProps={{ readOnly: true }}
@@ -79,6 +80,7 @@ export default function RightSideComponent({
               margin='dense'
               label={t('AddDialog.CustomTorrentTitle')}
               type='text'
+              variant='outlined'
               fullWidth
               helperText={t('AddDialog.CustomTorrentTitleHelperText')}
               InputProps={{
@@ -107,7 +109,9 @@ export default function RightSideComponent({
             margin='dense'
             label={t('AddDialog.TitleBlank')}
             type='text'
+            variant='outlined'
             fullWidth
+            helperText={t('AddDialog.TitleBlankHelperText')}
           />
         )}
         <TextField
@@ -116,6 +120,7 @@ export default function RightSideComponent({
           margin='dense'
           label={t('AddDialog.AddPosterLinkInput')}
           type='url'
+          variant='outlined'
           fullWidth
         />
 

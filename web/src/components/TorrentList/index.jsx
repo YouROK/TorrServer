@@ -5,7 +5,7 @@ import { TorrentListWrapper, CenteredGrid } from 'components/App/style'
 import NoServerConnection from './NoServerConnection'
 import AddFirstTorrent from './AddFirstTorrent'
 
-export default function TorrentList({ isOffline, isLoading, torrents }) {
+export default function TorrentList({ isOffline, isLoading, sortABC, torrents }) {
   if (isLoading || isOffline || !torrents.length) {
     return (
       <CenteredGrid>
@@ -20,7 +20,15 @@ export default function TorrentList({ isOffline, isLoading, torrents }) {
     )
   }
 
-  return (
+  return sortABC ? (
+    <TorrentListWrapper>
+      {torrents
+        .sort((a, b) => a.title > b.title)
+        .map(torrent => (
+          <TorrentCard key={torrent.hash} torrent={torrent} />
+        ))}
+    </TorrentListWrapper>
+  ) : (
     <TorrentListWrapper>
       {torrents.map(torrent => (
         <TorrentCard key={torrent.hash} torrent={torrent} />

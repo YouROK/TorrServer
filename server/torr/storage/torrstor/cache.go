@@ -64,7 +64,7 @@ func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
 
 	if settings.BTsets.UseDisk {
 		name := filepath.Join(settings.BTsets.TorrentsSavePath, hash.HexString())
-		err := os.MkdirAll(name, 0777)
+		err := os.MkdirAll(name, 0o777)
 		if err != nil {
 			log.TLogln("Error create dir:", err)
 		}
@@ -104,10 +104,9 @@ func (c *Cache) Close() error {
 		}
 	}
 
-	c.pieces = nil
-
 	c.muReaders.Lock()
 	c.readers = nil
+	c.pieces = nil
 	c.muReaders.Unlock()
 
 	utils.FreeOSMemGC()
@@ -126,7 +125,7 @@ func (c *Cache) AdjustRA(readahead int64) {
 	}
 	if c.Readers() > 0 {
 		c.muReaders.Lock()
-		for r, _ := range c.readers {
+		for r := range c.readers {
 			r.SetReadahead(readahead)
 		}
 		c.muReaders.Unlock()
@@ -158,7 +157,7 @@ func (c *Cache) GetState() *state.CacheState {
 
 	if c.Readers() > 0 {
 		c.muReaders.Lock()
-		for r, _ := range c.readers {
+		for r := range c.readers {
 			rng := r.getPiecesRange()
 			pc := r.getReaderPiece()
 			readersState = append(readersState, &state.ReaderState{
@@ -214,7 +213,7 @@ func (c *Cache) getRemPieces() []*Piece {
 
 	ranges := make([]Range, 0)
 	c.muReaders.Lock()
-	for r, _ := range c.readers {
+	for r := range c.readers {
 		r.checkReader()
 		if r.isUse {
 			ranges = append(ranges, r.getPiecesRange())
@@ -235,7 +234,6 @@ func (c *Cache) getRemPieces() []*Piece {
 			}
 		} else {
 			// on preload clean
-			//TODO проверить
 			if p.Size > 0 && !c.isIdInFileBE(ranges, id) {
 				piecesRemove = append(piecesRemove, p)
 			}
@@ -245,7 +243,7 @@ func (c *Cache) getRemPieces() []*Piece {
 	c.clearPriority()
 
 	c.muReaders.Lock()
-	for r, _ := range c.readers {
+	for r := range c.readers {
 		if !r.isUse {
 			continue
 		}
@@ -255,7 +253,7 @@ func (c *Cache) getRemPieces() []*Piece {
 		readerPos := r.getReaderPiece()
 		readerRAHPos := r.getReaderRAHPiece()
 		end := r.getPiecesRange().End
-		count := int(16 * 1024 * 1024 * 4 / c.pieceLength) // 64 MB window
+		count := int(64 << 20 / c.pieceLength) // 64 MB window
 		if count > 64 {
 			count = 64
 		}
@@ -288,11 +286,10 @@ func (c *Cache) getRemPieces() []*Piece {
 }
 
 func (c *Cache) isIdInFileBE(ranges []Range, id int) bool {
-
 	// keep 8/16 MB
 	FileRangeNotDelete := int64(c.pieceLength)
-	if FileRangeNotDelete < 8*1024*1024 {
-		FileRangeNotDelete = 8 * 1024 * 1024
+	if FileRangeNotDelete < 8<<20 {
+		FileRangeNotDelete = 8 << 20
 	}
 
 	for _, rng := range ranges {
@@ -323,7 +320,7 @@ func (c *Cache) Readers() int {
 	}
 	c.muReaders.Lock()
 	defer c.muReaders.Unlock()
-	if c == nil || c.readers == nil {
+	if c.readers == nil {
 		return 0
 	}
 	return len(c.readers)
@@ -341,7 +338,7 @@ func (c *Cache) clearPriority() {
 	time.Sleep(time.Second)
 	ranges := make([]Range, 0)
 	c.muReaders.Lock()
-	for r, _ := range c.readers {
+	for r := range c.readers {
 		r.checkReader()
 		if r.isUse {
 			ranges = append(ranges, r.getPiecesRange())
@@ -350,7 +347,7 @@ func (c *Cache) clearPriority() {
 	c.muReaders.Unlock()
 	ranges = mergeRange(ranges)
 
-	for id, _ := range c.pieces {
+	for id := range c.pieces {
 		if len(ranges) > 0 {
 			if !inRanges(ranges, id) {
 				if c.torrent.PieceState(id).Priority != torrent.PiecePriorityNone {

@@ -100,10 +100,10 @@ func getM3uList(tor *state.TorrentStatus, host string, fromLast bool) string {
 					fn = f.Path
 				}
 				m3u += "#EXTINF:0," + fn + "\n"
-				fileNamesakes := findFileNamesakes(tor.FileStats, f) //find external media with same name (audio/subtiles tracks)
+				fileNamesakes := findFileNamesakes(tor.FileStats, f) // find external media with same name (audio/subtiles tracks)
 				if fileNamesakes != nil {
-					m3u += "#EXTVLCOPT:input-slave="         //include VLC option for external media
-					for _, namesake := range fileNamesakes { //include play-links to external media, with # splitter
+					m3u += "#EXTVLCOPT:input-slave="         // include VLC option for external media
+					for _, namesake := range fileNamesakes { // include play-links to external media, with # splitter
 						sname := filepath.Base(namesake.Path)
 						m3u += host + "/stream/" + url.PathEscape(sname) + "?link=" + tor.Hash + "&index=" + fmt.Sprint(namesake.Id) + "&play#"
 					}
@@ -118,12 +118,12 @@ func getM3uList(tor *state.TorrentStatus, host string, fromLast bool) string {
 }
 
 func findFileNamesakes(files []*state.TorrentFileStat, file *state.TorrentFileStat) []*state.TorrentFileStat {
-	//find files with the same name in torrent
+	// find files with the same name in torrent
 	name := filepath.Base(strings.TrimSuffix(file.Path, filepath.Ext(file.Path)))
 	var namesakes []*state.TorrentFileStat
 	for _, f := range files {
-		if strings.Contains(f.Path, name) { //external tracks always include name of videofile
-			if f != file { //exclude itself
+		if strings.Contains(f.Path, name) { // external tracks always include name of videofile
+			if f != file { // exclude itself
 				namesakes = append(namesakes, f)
 			}
 		}

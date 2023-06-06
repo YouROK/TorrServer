@@ -3,6 +3,8 @@ package api
 import (
 	"net/http"
 
+	"server/rutor"
+
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"server/dlna"
@@ -11,7 +13,7 @@ import (
 	"server/torr"
 )
 
-//Action: get, set, def
+// Action: get, set, def
 type setsReqJS struct {
 	requestI
 	Sets *sets.BTSets `json:"sets,omitempty"`
@@ -34,11 +36,14 @@ func settings(c *gin.Context) {
 		if req.Sets.EnableDLNA {
 			dlna.Start()
 		}
+		rutor.Stop()
+		rutor.Start()
 		c.Status(200)
 		return
 	} else if req.Action == "def" {
 		torr.SetDefSettings()
 		dlna.Stop()
+		rutor.Stop()
 		c.Status(200)
 		return
 	}

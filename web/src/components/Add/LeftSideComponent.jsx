@@ -54,6 +54,7 @@ export default function LeftSideComponent({
           helperText={t('AddDialog.TorrentSourceOptions')}
           type='text'
           fullWidth
+          variant='outlined'
           onFocus={() => setIsTorrentSourceActive(true)}
           onBlur={() => setIsTorrentSourceActive(false)}
           inputProps={{ autoComplete: 'off' }}

@@ -2,8 +2,9 @@ package torr
 
 import (
 	"encoding/json"
-	"server/torr/utils"
 	"time"
+
+	"server/torr/utils"
 
 	"server/settings"
 	"server/torr/state"

@@ -15,9 +15,7 @@ import (
 	sets "server/settings"
 )
 
-var (
-	bts *BTServer
-)
+var bts *BTServer
 
 func InitApiHelper(bt *BTServer) {
 	bts = bt
@@ -209,7 +207,7 @@ func SetDefSettings() {
 	if sets.ReadOnly {
 		return
 	}
-	sets.SetDefault()
+	sets.SetDefaultConfig()
 	log.TLogln("drop all torrents")
 	dropAllTorrent()
 	time.Sleep(time.Second * 1)

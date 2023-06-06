@@ -4,6 +4,8 @@ import (
 	"net"
 	"sort"
 
+	"server/rutor"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/location"
 	"github.com/gin-gonic/gin"
@@ -27,7 +29,7 @@ var (
 )
 
 func Start(port string) {
-	log.TLogln("Start TorrServer")
+	log.TLogln("Start TorrServer " + version.Version + " torrent " + version.GetTorrentVersion())
 	ips := getLocalIps()
 	if len(ips) > 0 {
 		log.TLogln("Local IPs:", ips)
@@ -37,13 +39,15 @@ func Start(port string) {
 		waitChan <- err
 		return
 	}
+	rutor.Start()
+
 	gin.SetMode(gin.ReleaseMode)
 
-	//corsCfg := cors.DefaultConfig()
-	//corsCfg.AllowAllOrigins = true
-	//corsCfg.AllowHeaders = []string{"*"}
-	//corsCfg.AllowMethods = []string{"*"}
-	//corsCfg.AllowPrivateNetwork = true
+	// corsCfg := cors.DefaultConfig()
+	// corsCfg.AllowAllOrigins = true
+	// corsCfg.AllowHeaders = []string{"*"}
+	// corsCfg.AllowMethods = []string{"*"}
+	// corsCfg.AllowPrivateNetwork = true
 	corsCfg := cors.DefaultConfig()
 	corsCfg.AllowAllOrigins = true
 	corsCfg.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "X-Requested-With", "Accept", "Authorization"}
