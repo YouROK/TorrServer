@@ -2,9 +2,10 @@ package utils
 
 import (
 	"encoding/base32"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -34,7 +35,7 @@ var loadedTrackers []string
 
 func GetTrackerFromFile() []string {
 	name := filepath.Join(settings.Path, "trackers.txt")
-	buf, err := ioutil.ReadFile(name)
+	buf, err := os.ReadFile(name)
 	if err == nil {
 		list := strings.Split(string(buf), "\n")
 		var ret []string
@@ -62,7 +63,7 @@ func loadNewTracker() {
 	}
 	resp, err := http.Get("https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best_ip.txt")
 	if err == nil {
-		buf, err := ioutil.ReadAll(resp.Body)
+		buf, err := io.ReadAll(resp.Body)
 		if err == nil {
 			arr := strings.Split(string(buf), "\n")
 			var ret []string
