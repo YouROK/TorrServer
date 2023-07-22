@@ -10,6 +10,7 @@ On linux systems you may need to set the environment variable before run \
 
 #### macOS install / configure / uninstall script
 Just run in Terminal: `curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerMac.sh -o installTorrserverMac.sh && chmod 755 installTorrServerMac.sh && sudo ./installTorrServerMac.sh`
+Alternative install script for Intel Macs: https://github.com/dancheskus/TorrServerMacInstaller
 
 #### Linux on VPS install / configure / uninstall script
 Just run in console: `curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh | sudo bash`
