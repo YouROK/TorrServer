@@ -47,8 +47,8 @@ github.com/anacrolix/ffprobe v1.0.1 h1:S/MfCrUNZvbkkykX/1mmLVRf8//M7mvlY3BcwHaK3
 github.com/anacrolix/ffprobe v1.0.1/go.mod h1:MXe+zG/RRa5OdIf5+VYYfS/CfsSqOH7RrvGIqJBzqhI=
 github.com/anacrolix/generics v0.0.0-20230428105757-683593396d68 h1:fyXlBfnlFzZSFckJ8QLb2lfmWfY++4RiUnae7ZMuv0A=
 github.com/anacrolix/generics v0.0.0-20230428105757-683593396d68/go.mod h1:ff2rHB/joTV03aMSSn/AZNnaIpUw0h3njetGsaXcMy8=
-github.com/anacrolix/go-libutp v1.3.0 h1:D18Pvhzq3kvTlMRmjcG0rXM7INfVdfNtfxaoJwzZm9o=
-github.com/anacrolix/go-libutp v1.3.0/go.mod h1:heF41EC8kN0qCLMokLBVkB8NXiLwx3t8R8810MTNI5o=
+github.com/anacrolix/go-libutp v1.3.1 h1:idJzreNLl+hNjGC3ZnUOjujEaryeOGgkwHLqSGoige0=
+github.com/anacrolix/go-libutp v1.3.1/go.mod h1:heF41EC8kN0qCLMokLBVkB8NXiLwx3t8R8810MTNI5o=
 github.com/anacrolix/log v0.3.0/go.mod h1:lWvLTqzAnCWPJA08T2HCstZi0L1y2Wyvm3FJgwU9jwU=
 github.com/anacrolix/log v0.6.0/go.mod h1:lWvLTqzAnCWPJA08T2HCstZi0L1y2Wyvm3FJgwU9jwU=
 github.com/anacrolix/log v0.10.1-0.20220123034749-3920702c17f8/go.mod h1:GmnE2c0nvz8pOIPUSC9Rawgefy1sDXqposC2wgtBZE4=
@@ -87,8 +87,8 @@ github.com/anacrolix/sync v0.4.0/go.mod h1:BbecHL6jDSExojhNtgTFSBcdGerzNc64tz3DC
 github.com/anacrolix/tagflag v0.0.0-20180109131632-2146c8d41bf0/go.mod h1:1m2U/K6ZT+JZG0+bdMK6qauP49QT4wE5pmhJXOKKCHw=
 github.com/anacrolix/tagflag v1.0.0/go.mod h1:1m2U/K6ZT+JZG0+bdMK6qauP49QT4wE5pmhJXOKKCHw=
 github.com/anacrolix/tagflag v1.1.0/go.mod h1:Scxs9CV10NQatSmbyjqmqmeQNwGzlNe0CMUMIxqHIG8=
-github.com/anacrolix/torrent v1.52.4-0.20230709231311-8229ac4b3f58 h1:LWKEGcLkQN1B6f6wAB58MUrBZY/1Vfr1xNtf0I8cKT4=
-github.com/anacrolix/torrent v1.52.4-0.20230709231311-8229ac4b3f58/go.mod h1:yBUcBuIOlttGEgAW/6gamzQGD+k2+wUh65fOPPzxvC4=
+github.com/anacrolix/torrent v1.52.4 h1:Kv+RuBJE75BqHYYv7TgXF7/mLAAFwyn/rZl90D0EUwE=
+github.com/anacrolix/torrent v1.52.4/go.mod h1:CcM8oPMYye5J42cSqJrmUpqwRFgSsJQ1jCEHwygqnqQ=
 github.com/anacrolix/upnp v0.1.3-0.20220123035249-922794e51c96 h1:QAVZ3pN/J4/UziniAhJR2OZ9Ox5kOY2053tBbbqUPYA=
 github.com/anacrolix/upnp v0.1.3-0.20220123035249-922794e51c96/go.mod h1:Wa6n8cYIdaG35x15aH3Zy6d03f7P728QfdcDeD/IEOs=
 github.com/anacrolix/utp v0.2.0 h1:65Cdmr6q9WSw2KsM+rtJFu7rqDzLl2bdysf4KlNPcFI=
