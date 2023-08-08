@@ -36,6 +36,7 @@ func Start(port string) {
 	}
 	err := BTS.Connect()
 	if err != nil {
+		log.TLogln("BTS.Connect() error!", err)
 		waitChan <- err
 		return
 	}
