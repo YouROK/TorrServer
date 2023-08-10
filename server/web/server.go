@@ -2,6 +2,7 @@ package web
 
 import (
 	"net"
+	"os"
 	"sort"
 
 	"server/rutor"
@@ -37,8 +38,9 @@ func Start(port string) {
 	err := BTS.Connect()
 	if err != nil {
 		log.TLogln("BTS.Connect() error!", err)
-		waitChan <- err
-		return
+		os.Exit(1)
+		//waitChan <- err
+		//return
 	}
 	rutor.Start()
 
