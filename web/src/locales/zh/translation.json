@@ -112,7 +112,7 @@
      "DisablePEXHint": "最好保持启用状态",
      "DisableTCPHint": "在未启用μTP的情况下不要禁用",
      "DisableUPNPHint": "在路由器上自动打开端口",
-     "DisableUTPHint": "不建议在不安全设备上启用",
+     "DisableUTPHint": "建议在 Windows 操作系统上禁用",
     "Disk": "磁盘",
      "DLNA": "DLNA媒体服务器",
      "DontAddRetrackers": "不加retrackers",

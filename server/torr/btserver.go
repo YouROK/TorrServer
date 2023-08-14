@@ -141,7 +141,7 @@ func (bt *BTServer) configure(ctx context.Context) {
 			// }
 			// log.Println("Set listen port", lport)
 			log.Println("Set listen port to random autoselect (0)")
-			bt.config.ListenPort = 0 //lport
+			bt.config.ListenPort = 0 // lport
 		}
 	}
 

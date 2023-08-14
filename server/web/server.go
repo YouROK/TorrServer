@@ -37,10 +37,8 @@ func Start(port string) {
 	}
 	err := BTS.Connect()
 	if err != nil {
-		log.TLogln("BTS.Connect() error!", err)
-		os.Exit(1)
-		//waitChan <- err
-		//return
+		log.TLogln("BTS.Connect() error!", err) // waitChan <- err
+		os.Exit(1)                              // return
 	}
 	rutor.Start()
 

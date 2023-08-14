@@ -112,7 +112,7 @@
     "DisablePEXHint": "Better leave enabled",
     "DisableTCPHint": "Don't disable without μTP enabled",
     "DisableUPNPHint": "Auto-open port on router",
-    "DisableUTPHint": "Not recommended to enable on weak devices",
+    "DisableUTPHint": "Recommended to disable in Windows OS",
     "Disk": "Disk",
     "DLNA": "DLNA Media Server",
     "DontAddRetrackers": "Don`t add retrackers",
