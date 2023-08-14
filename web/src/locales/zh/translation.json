@@ -16,8 +16,8 @@
     "TitleBlank": "标题",
     "TitleBlankHelperText": "留空则使用种子原始标题",
     "TorrentSourceLink": "种子地址",
-     "TorrentSourceOptions": "magnet / hash / .torrent文件链接",
-     "WrongTorrentSource": "错误的种子来源"
+    "TorrentSourceOptions": "magnet / hash / .torrent文件链接",
+    "WrongTorrentSource": "错误的种子来源"
   },
   "AddFromLink": "添加种子",
   "AddNewTorrent": "添加新种子",
