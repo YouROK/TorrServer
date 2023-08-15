@@ -69,6 +69,7 @@ export default function AboutDialog() {
               <div>
                 <LinkComponent name={t('ProjectSource')} link='https://github.com/YouROK/TorrServer' />
                 <LinkComponent name={t('Releases')} link='https://github.com/YouROK/TorrServer/releases' />
+                <LinkComponent name={t('NasReleases')} link='https://github.com/vladlenas' />
               </div>
             </Section>
 
@@ -85,6 +86,7 @@ export default function AboutDialog() {
                 <LinkComponent name='damiva' link='https://github.com/damiva' />
                 <LinkComponent name='Anton Potekhin' link='https://github.com/Anton111111' />
                 <LinkComponent name='FaintGhost' link='https://github.com/FaintGhost' />
+                <LinkComponent name='vladlenas' link='https://github.com/vladlenas' />
               </div>
             </Section>
           </div>

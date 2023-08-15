@@ -76,6 +76,7 @@
   "Playlist": "播放列表",
   "Preload": "预加载",
   "ProjectSource": "项目GitHub",
+  "NasReleases": "NAS GitHub 版本",
   "PWAGuide": {
     "Header": "安装应用程序",
     "Description": "将应用程序安装到您的设备上，以便随时方便地访问。无需应用商店、无需下载。",
