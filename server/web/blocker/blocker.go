@@ -4,9 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
-	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -22,11 +22,11 @@ func Blocker() gin.HandlerFunc {
 	}
 
 	name := filepath.Join(settings.Path, "bip.txt")
-	buf, _ := ioutil.ReadFile(name)
+	buf, _ := os.ReadFile(name)
 	blackIpList := scanBuf(buf)
 
 	name = filepath.Join(settings.Path, "wip.txt")
-	buf, _ = ioutil.ReadFile(name)
+	buf, _ = os.ReadFile(name)
 	whiteIpList := scanBuf(buf)
 
 	if blackIpList.NumRanges() == 0 && whiteIpList.NumRanges() == 0 {

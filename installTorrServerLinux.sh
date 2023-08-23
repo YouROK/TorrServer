@@ -448,6 +448,9 @@ case $1 in
       isRdb=0
       isLog=0
       installTorrServer
+    else
+      systemctl stop $serviceName.service
+      systemctl start $serviceName.service
     fi
     exit
     ;;

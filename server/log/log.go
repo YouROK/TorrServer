@@ -3,7 +3,7 @@ package log
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"strings"
@@ -93,8 +93,8 @@ func WebLogger() gin.HandlerFunc {
 		body := ""
 		// save body if not form or file
 		if !strings.HasPrefix(c.Request.Header.Get("Content-Type"), "multipart/form-data") {
-			body, _ := ioutil.ReadAll(c.Request.Body)
-			c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+			body, _ := io.ReadAll(c.Request.Body)
+			c.Request.Body = io.NopCloser(bytes.NewBuffer(body))
 		} else {
 			body = "body hidden, too large"
 		}

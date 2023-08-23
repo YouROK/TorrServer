@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -127,7 +126,7 @@ func watchTDir(dir string) {
 		path = dir
 	}
 	for {
-		files, err := ioutil.ReadDir(path)
+		files, err := os.ReadDir(path)
 		if err == nil {
 			for _, file := range files {
 				filename := filepath.Join(path, file.Name())

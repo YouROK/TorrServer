@@ -3,8 +3,8 @@ package auth
 import (
 	"encoding/base64"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -28,7 +28,7 @@ func SetupAuth(engine *gin.Engine) *gin.RouterGroup {
 }
 
 func getAccounts() gin.Accounts {
-	buf, err := ioutil.ReadFile(filepath.Join(settings.Path, "accs.db"))
+	buf, err := os.ReadFile(filepath.Join(settings.Path, "accs.db"))
 	if err != nil {
 		return nil
 	}

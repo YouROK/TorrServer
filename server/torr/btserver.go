@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"strconv"
 	"sync"
 
 	"github.com/anacrolix/publicip"
@@ -131,20 +130,21 @@ func (bt *BTServer) configure(ctx context.Context) {
 			log.Println("Set listen port", settings.BTsets.PeersListenPort)
 			bt.config.ListenPort = settings.BTsets.PeersListenPort
 		} else {
-			lport := 32000
-			for {
-				log.Println("Check listen port", lport)
-				l, err := net.Listen("tcp", ":"+strconv.Itoa(lport))
-				if l != nil {
-					l.Close()
-				}
-				if err == nil {
-					break
-				}
-				lport++
-			}
-			log.Println("Set listen port", lport)
-			bt.config.ListenPort = lport
+			// lport := 32000
+			// for {
+			// 	log.Println("Check listen port", lport)
+			// 	l, err := net.Listen("tcp", ":"+strconv.Itoa(lport))
+			// 	if l != nil {
+			// 		l.Close()
+			// 	}
+			// 	if err == nil {
+			// 		break
+			// 	}
+			// 	lport++
+			// }
+			// log.Println("Set listen port", lport)
+			log.Println("Set listen port to random autoselect (0)")
+			bt.config.ListenPort = 0 // lport
 		}
 	}
 

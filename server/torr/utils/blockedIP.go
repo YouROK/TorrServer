@@ -2,7 +2,7 @@ package utils
 
 import (
 	"bufio"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -12,7 +12,7 @@ import (
 )
 
 func ReadBlockedIP() (ranger iplist.Ranger, err error) {
-	buf, err := ioutil.ReadFile(filepath.Join(settings.Path, "blocklist"))
+	buf, err := os.ReadFile(filepath.Join(settings.Path, "blocklist"))
 	if err != nil {
 		return nil, err
 	}

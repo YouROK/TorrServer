@@ -1,7 +1,6 @@
 package server
 
 import (
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -36,7 +35,7 @@ func cleanCache() {
 		return
 	}
 
-	dirs, err := ioutil.ReadDir(settings.BTsets.TorrentsSavePath)
+	dirs, err := os.ReadDir(settings.BTsets.TorrentsSavePath)
 	if err != nil {
 		return
 	}
@@ -68,7 +67,7 @@ func cleanCache() {
 }
 
 func removeAllFiles(path string) {
-	files, err := ioutil.ReadDir(path)
+	files, err := os.ReadDir(path)
 	if err != nil {
 		return
 	}

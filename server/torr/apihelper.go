@@ -2,7 +2,6 @@ package torr
 
 import (
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -143,7 +142,7 @@ func RemTorrent(hashHex string) {
 	hash := metainfo.NewHashFromHex(hashHex)
 	if sets.BTsets.UseDisk && hashHex != "" && hashHex != "/" {
 		name := filepath.Join(sets.BTsets.TorrentsSavePath, hashHex)
-		ff, _ := ioutil.ReadDir(name)
+		ff, _ := os.ReadDir(name)
 		for _, f := range ff {
 			os.Remove(filepath.Join(name, f.Name()))
 		}
