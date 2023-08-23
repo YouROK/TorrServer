@@ -6,7 +6,7 @@ import (
 	// "github.com/anacrolix/torrent"
 )
 
-const Version = "MatriX.125.OE"
+const Version = "MatriX.125.XO"
 
 func GetTorrentVersion() string {
 	// _ = torrent.NewDefaultClientConfig()
