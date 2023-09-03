@@ -21,6 +21,7 @@ const TorrentFunctions = memo(
       axios.post(viewedHost(), { action: 'rem', hash, file_index: -1 }).then(() => setViewedFileList())
     const fullPlaylistLink = `${playlistTorrHost()}/${encodeURIComponent(name || title || 'file')}.m3u?link=${hash}&m3u`
     const partialPlaylistLink = `${fullPlaylistLink}&fromlast`
+    const magnet = `magnet:?xt=urn:btih:${hash}&dn=${encodeURIComponent(name || title)}`
 
     return (
       <>
@@ -73,7 +74,7 @@ const TorrentFunctions = memo(
               </Button>
             </a>
           )}
-          <CopyToClipboard text={hash}>
+          <CopyToClipboard text={magnet}>
             <Button variant='contained' color='primary' size='large'>
               {t('CopyHash')}
             </Button>
