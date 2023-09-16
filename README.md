@@ -10,6 +10,7 @@ On linux systems you may need to set the environment variable before run \
 
 #### macOS install / configure / uninstall script
 Just run in Terminal: `curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerMac.sh -o installTorrserverMac.sh && chmod 755 installTorrServerMac.sh && sudo ./installTorrServerMac.sh`
+Alternative install script for Intel Macs: https://github.com/dancheskus/TorrServerMacInstaller
 
 #### Linux on VPS install / configure / uninstall script
 Just run in console: `curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh | sudo bash`
@@ -54,7 +55,7 @@ TorrServer-darwin-arm64 [--port PORT] [--path PATH] [--logpath LOGPATH] [--weblo
 * --torrentsdir TORRENTSDIR, -t TORRENTSDIR
   *                 autoload torrents from dir
 * --torrentaddr TORRENTADDR
-  *                 Torrent client address, default :32000
+  *                 Torrent client address (format [IP]:PORT, ex. :32000, 127.0.0.1:32768 etc)
 * --pubipv4 PUBIPV4, -4 PUBIPV4
   *                 set public IPv4 addr
 * --pubipv6 PUBIPV6, -6 PUBIPV6 

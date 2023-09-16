@@ -50,12 +50,13 @@ OUTPUT="${ROOT}/dist/TorrServer"
 
 #### Build web
 echo "Build web"
+export NODE_OPTIONS=--openssl-legacy-provider
 $GOBIN run gen_web.go
 
 #### Build server
 echo "Build server"
 cd "${ROOT}/server" || exit 1
-$GOBIN clean -i -r -cache #--modcache
+$GOBIN clean -i -r -cache --modcache
 $GOBIN mod tidy
 
 BUILD_FLAGS="-ldflags=${LDFLAGS} -tags=nosqlite"
@@ -92,7 +93,8 @@ declare -a COMPILERS=(
 
 export NDK_VERSION="25.2.9519653" # 25.1.8937393
 #export NDK_TOOLCHAIN=${ANDROID_HOME}/ndk/${NDK_VERSION}/toolchains/llvm/prebuilt/darwin-x86_64
-export NDK_TOOLCHAIN="${PWD}/../android-ndk-r25c/toolchains/llvm/prebuilt/linux-x86_64"
+#export NDK_TOOLCHAIN="${PWD}/../android-ndk-r25c/toolchains/llvm/prebuilt/linux-x86_64"
+export NDK_TOOLCHAIN=/Users/yourok/Projects/AndroidNDK
 GOOS=android
 
 for V in "${COMPILERS[@]}"; do

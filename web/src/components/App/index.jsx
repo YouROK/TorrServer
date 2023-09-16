@@ -111,7 +111,7 @@ export default function App() {
                           ? changeLang('ua')
                           : currentLang === 'ua'
                           ? changeLang('zh')
-                          : currentLang === 'en'                         
+                          : changeLang('en')
                       }
                     >
                       {currentLang.toUpperCase()}
