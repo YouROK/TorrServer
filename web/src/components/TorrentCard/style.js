@@ -136,7 +136,7 @@ export const TorrentCardDescription = styled.div`
     }
 
     .description-torrent-title {
-      overflow: auto;
+      overflow: hidden;
       word-break: break-all;
     }
 
@@ -165,7 +165,6 @@ export const TorrentCardDescription = styled.div`
     .description-statistics-element-value {
       margin-bottom: 10px;
       margin-left: 0;
-      word-break: break-all;
 
       @media (max-width: 1260px), (max-height: 500px) {
         font-size: 0.7rem;
@@ -181,7 +180,7 @@ export const TorrentCardDescription = styled.div`
       }
 
       @media (max-width: 410px) {
-        font-size: 10px;
+        font-size: 9px;
       }
     }
   `}

@@ -83,7 +83,7 @@ func (c *Cache) Piece(m metainfo.Piece) storage.PieceImpl {
 	if val, ok := c.pieces[m.Index()]; ok {
 		return val
 	}
-	return nil
+	return &PieceFake{}
 }
 
 func (c *Cache) Close() error {
