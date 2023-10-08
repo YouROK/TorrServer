@@ -111,6 +111,8 @@ export default function App() {
                           ? changeLang('ua')
                           : currentLang === 'ua'
                           ? changeLang('zh')
+                          : currentLang === 'zh'
+                          ? changeLang('bg')
                           : changeLang('en')
                       }
                     >
