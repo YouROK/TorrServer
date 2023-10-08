@@ -10,7 +10,7 @@
       "ClickOrDrag": "Щракнете / Влачи§Пусни (.torrent)"
     },
     "CustomTorrentTitle": "Персонализирано заглавие (по избор)",
-    "CustomTorrentTitleHelperText": Напишете персонализирано заглавие, за да намерите плакат",
+    "CustomTorrentTitleHelperText": "Напишете персонализирано заглавие, за да намерите плакат",
     "HashExists": "Този торент вече е в базата данни",
     "OriginalTorrentTitle": "Оригинално заглавие на торент",
     "TitleBlank": "Заглавие",
