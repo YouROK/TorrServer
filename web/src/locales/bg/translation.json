@@ -40,7 +40,7 @@
     "DeleteTorrents?": "Изтриване на всички торенти?",
     "DetailedCacheView": {
         "button": "Подробности за кеша",
-        "header": "$t(DetailedCacheView.button)"
+        "header": "Подробности за кеша"
     },
     "Details": "Подробности",
     "Donate?": "Искате ли да дарите?",
