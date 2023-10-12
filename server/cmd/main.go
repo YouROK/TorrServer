@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/browser"
 
 	"server"
+	_ "server/docs"
 	"server/log"
 	"server/settings"
 	"server/torr"

@@ -1,0 +1,58 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Torrent streaming server.",
+        "title": "Swagger Torrserver API",
+        "contact": {},
+        "license": {
+            "name": "GPL 3.0"
+        },
+        "version": "1.0"
+    },
+    "basePath": "/",
+    "paths": {
+        "/echo": {
+            "get": {
+                "description": "Tests whether server is alive or not",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "echo"
+                ],
+                "summary": "Tests server status",
+                "responses": {
+                    "200": {
+                        "description": "Server version",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/shutdown": {
+            "get": {
+                "description": "Gracefully shuts down server.",
+                "tags": [
+                    "shutdown"
+                ],
+                "summary": "Shuts down server",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BasicAuth": {
+            "type": "basic"
+        }
+    },
+    "externalDocs": {
+        "description": "OpenAPI",
+        "url": "https://swagger.io/resources/open-api/"
+    }
+}

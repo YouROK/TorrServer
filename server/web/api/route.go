@@ -4,9 +4,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	sets "server/settings"
 	"server/torr"
+
+	"github.com/gin-gonic/gin"
 )
 
 type requestI struct {
@@ -45,6 +46,15 @@ func SetupRoute(route *gin.RouterGroup) {
 	route.GET("/ffp/:hash/:id", ffp)
 }
 
+// shutdown godoc
+//
+//	@Summary		Shuts down server
+//	@Description	Gracefully shuts down server.
+//
+//	@Tags			shutdown
+//
+//	@Success		200
+//	@Router			/shutdown [get]
 func shutdown(c *gin.Context) {
 	if sets.ReadOnly {
 		c.Status(http.StatusForbidden)

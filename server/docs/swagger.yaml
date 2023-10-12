@@ -1,0 +1,38 @@
+basePath: /
+externalDocs:
+  description: OpenAPI
+  url: https://swagger.io/resources/open-api/
+info:
+  contact: {}
+  description: Torrent streaming server.
+  license:
+    name: GPL 3.0
+  title: Swagger Torrserver API
+  version: "1.0"
+paths:
+  /echo:
+    get:
+      description: Tests whether server is alive or not
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Server version
+          schema:
+            type: string
+      summary: Tests server status
+      tags:
+      - echo
+  /shutdown:
+    get:
+      description: Gracefully shuts down server.
+      responses:
+        "200":
+          description: OK
+      summary: Shuts down server
+      tags:
+      - shutdown
+securityDefinitions:
+  BasicAuth:
+    type: basic
+swagger: "2.0"
