@@ -4,9 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"server/dlna"
 	"server/log"
-	set "server/settings"
 	"server/torr"
 	"server/torr/state"
 	"server/web/api/utils"
@@ -105,11 +103,6 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 			torr.SaveTorrentToDB(tor)
 		}
 	}()
-	// TODO: remove
-	if set.BTsets.EnableDLNA {
-		dlna.Stop()
-		dlna.Start()
-	}
 	c.JSON(200, tor.Status())
 }
 
@@ -143,11 +136,6 @@ func remTorrent(req torrReqJS, c *gin.Context) {
 		return
 	}
 	torr.RemTorrent(req.Hash)
-	// TODO: remove
-	if set.BTsets.EnableDLNA {
-		dlna.Stop()
-		dlna.Start()
-	}
 	c.Status(200)
 }
 
