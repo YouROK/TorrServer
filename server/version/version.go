@@ -9,7 +9,6 @@ import (
 const Version = "MatriX.126.XO"
 
 func GetTorrentVersion() string {
-	// _ = torrent.NewDefaultClientConfig()
 	bi, ok := debug.ReadBuildInfo()
 	if !ok {
 		log.Printf("Failed to read build info")
