@@ -73,15 +73,22 @@ TorrServer-darwin-arm64 [--port PORT] [--path PATH] [--logpath LOGPATH] [--weblo
   *                 display version and exit
 
 
-#
-### Http Api of TorrServer:
-#### GET
+#### Development
 
-###### /echo 
-*Return version of server*
+`swag` must be installed on the system to [re]build Swagger documentation.
 
-###### /shutdown 
-*Shutdown server*
+```bash
+go install github.com/swaggo/swag/cmd/swag@latest
+cd server; swag init -g web/server.go
+
+# Documentation can be linted with
+swag fmt
+```
+
+#### API Docs
+
+API documentation is hosted as Swagger format available at path `/swagger/index.html`.
+
 
 ###### /stream...
 #### args:
