@@ -18,7 +18,7 @@
                     "text/plain"
                 ],
                 "tags": [
-                    "echo"
+                    "API"
                 ],
                 "summary": "Tests server status",
                 "responses": {
@@ -31,17 +31,211 @@
                 }
             }
         },
+        "/settings": {
+            "post": {
+                "description": "Allow to get or set server settings.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Get / Set server settings",
+                "parameters": [
+                    {
+                        "description": "Settings request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.setsReqJS"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Depends on what has been asked",
+                        "schema": {
+                            "$ref": "#/definitions/settings.BTSets"
+                        }
+                    }
+                }
+            }
+        },
         "/shutdown": {
             "get": {
                 "description": "Gracefully shuts down server.",
                 "tags": [
-                    "shutdown"
+                    "API"
                 ],
                 "summary": "Shuts down server",
                 "responses": {
                     "200": {
                         "description": "OK"
                     }
+                }
+            }
+        },
+        "/torrents": {
+            "post": {
+                "description": "Allow to add, get or set torrents to server.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Add / Get / Set torrents",
+                "parameters": [
+                    {
+                        "description": "Torrent request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.torrReqJS"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "api.setsReqJS": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string"
+                },
+                "sets": {
+                    "$ref": "#/definitions/settings.BTSets"
+                }
+            }
+        },
+        "api.torrReqJS": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string"
+                },
+                "data": {
+                    "type": "string"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "link": {
+                    "type": "string"
+                },
+                "poster": {
+                    "type": "string"
+                },
+                "save_to_db": {
+                    "type": "boolean"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "settings.BTSets": {
+            "type": "object",
+            "properties": {
+                "cacheSize": {
+                    "description": "Cache",
+                    "type": "integer"
+                },
+                "connectionsLimit": {
+                    "type": "integer"
+                },
+                "disableDHT": {
+                    "type": "boolean"
+                },
+                "disablePEX": {
+                    "type": "boolean"
+                },
+                "disableTCP": {
+                    "type": "boolean"
+                },
+                "disableUPNP": {
+                    "type": "boolean"
+                },
+                "disableUTP": {
+                    "type": "boolean"
+                },
+                "disableUpload": {
+                    "type": "boolean"
+                },
+                "downloadRateLimit": {
+                    "description": "in kb, 0 - inf",
+                    "type": "integer"
+                },
+                "enableDLNA": {
+                    "description": "DLNA",
+                    "type": "boolean"
+                },
+                "enableDebug": {
+                    "description": "debug logs",
+                    "type": "boolean"
+                },
+                "enableIPv6": {
+                    "description": "BT Config",
+                    "type": "boolean"
+                },
+                "enableRutorSearch": {
+                    "description": "Rutor",
+                    "type": "boolean"
+                },
+                "forceEncrypt": {
+                    "description": "Torrent",
+                    "type": "boolean"
+                },
+                "friendlyName": {
+                    "type": "string"
+                },
+                "peersListenPort": {
+                    "type": "integer"
+                },
+                "preloadCache": {
+                    "description": "in percent",
+                    "type": "integer"
+                },
+                "readerReadAHead": {
+                    "description": "in percent, 5%-100%, [...S__X__E...] [S-E] not clean",
+                    "type": "integer"
+                },
+                "removeCacheOnDrop": {
+                    "type": "boolean"
+                },
+                "retrackersMode": {
+                    "description": "0 - don`t add, 1 - add retrackers (def), 2 - remove retrackers 3 - replace retrackers",
+                    "type": "integer"
+                },
+                "torrentDisconnectTimeout": {
+                    "description": "in seconds",
+                    "type": "integer"
+                },
+                "torrentsSavePath": {
+                    "type": "string"
+                },
+                "uploadRateLimit": {
+                    "description": "in kb, 0 - inf",
+                    "type": "integer"
+                },
+                "useDisk": {
+                    "description": "Disk",
+                    "type": "boolean"
                 }
             }
         }

@@ -108,7 +108,7 @@ func Stop() {
 //	@Summary		Tests server status
 //	@Description	Tests whether server is alive or not
 //
-//	@Tags			echo
+//	@Tags			API
 //
 //	@Produce		plain
 //	@Success		200	{string}	string	"Server version"
