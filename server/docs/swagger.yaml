@@ -1,4 +1,94 @@
 basePath: /
+definitions:
+  api.setsReqJS:
+    properties:
+      action:
+        type: string
+      sets:
+        $ref: '#/definitions/settings.BTSets'
+    type: object
+  api.torrReqJS:
+    properties:
+      action:
+        type: string
+      data:
+        type: string
+      hash:
+        type: string
+      link:
+        type: string
+      poster:
+        type: string
+      save_to_db:
+        type: boolean
+      title:
+        type: string
+    type: object
+  settings.BTSets:
+    properties:
+      cacheSize:
+        description: Cache
+        type: integer
+      connectionsLimit:
+        type: integer
+      disableDHT:
+        type: boolean
+      disablePEX:
+        type: boolean
+      disableTCP:
+        type: boolean
+      disableUPNP:
+        type: boolean
+      disableUTP:
+        type: boolean
+      disableUpload:
+        type: boolean
+      downloadRateLimit:
+        description: in kb, 0 - inf
+        type: integer
+      enableDLNA:
+        description: DLNA
+        type: boolean
+      enableDebug:
+        description: debug logs
+        type: boolean
+      enableIPv6:
+        description: BT Config
+        type: boolean
+      enableRutorSearch:
+        description: Rutor
+        type: boolean
+      forceEncrypt:
+        description: Torrent
+        type: boolean
+      friendlyName:
+        type: string
+      peersListenPort:
+        type: integer
+      preloadCache:
+        description: in percent
+        type: integer
+      readerReadAHead:
+        description: in percent, 5%-100%, [...S__X__E...] [S-E] not clean
+        type: integer
+      removeCacheOnDrop:
+        type: boolean
+      retrackersMode:
+        description: 0 - don`t add, 1 - add retrackers (def), 2 - remove retrackers
+          3 - replace retrackers
+        type: integer
+      torrentDisconnectTimeout:
+        description: in seconds
+        type: integer
+      torrentsSavePath:
+        type: string
+      uploadRateLimit:
+        description: in kb, 0 - inf
+        type: integer
+      useDisk:
+        description: Disk
+        type: boolean
+    type: object
 externalDocs:
   description: OpenAPI
   url: https://swagger.io/resources/open-api/
@@ -22,7 +112,29 @@ paths:
             type: string
       summary: Tests server status
       tags:
-      - echo
+      - API
+  /settings:
+    post:
+      consumes:
+      - application/json
+      description: Allow to get or set server settings.
+      parameters:
+      - description: Settings request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.setsReqJS'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Depends on what has been asked
+          schema:
+            $ref: '#/definitions/settings.BTSets'
+      summary: Get / Set server settings
+      tags:
+      - API
   /shutdown:
     get:
       description: Gracefully shuts down server.
@@ -31,7 +143,27 @@ paths:
           description: OK
       summary: Shuts down server
       tags:
-      - shutdown
+      - API
+  /torrents:
+    post:
+      consumes:
+      - application/json
+      description: Allow to add, get or set torrents to server.
+      parameters:
+      - description: Torrent request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.torrReqJS'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: Add / Get / Set torrents
+      tags:
+      - API
 securityDefinitions:
   BasicAuth:
     type: basic

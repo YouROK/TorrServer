@@ -26,6 +26,19 @@ type torrReqJS struct {
 	SaveToDB bool   `json:"save_to_db,omitempty"`
 }
 
+// torrents godoc
+//
+//	@Summary		Add / Get / Set torrents
+//	@Description	Allow to add, get or set torrents to server.
+//
+//	@Tags			API
+//
+//	@Param			request	body	torrReqJS	true	"Torrent request"
+//
+//	@Accept			json
+//	@Produce		json
+//	@Success		200
+//	@Router			/torrents [post]
 func torrents(c *gin.Context) {
 	var req torrReqJS
 	err := c.ShouldBindJSON(&req)

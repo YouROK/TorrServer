@@ -165,15 +165,6 @@ Only one file support
 ##### Return cache stat 
 https://github.com/YouROK/TorrServer/blob/d36d0c28f805ceab39adb4aac2869cd7a272085b/server/torr/storage/state/state.go
 
-###### /settings
-##### Send json:
-{\
-    "action": "get/set/def",\
-    _fields of BTSets_\
-}
-##### Return json of BTSets
-https://github.com/YouROK/TorrServer/blob/d36d0c28f805ceab39adb4aac2869cd7a272085b/server/settings/btsets.go
-
 ###### /viewed
 ##### Send json:
 {\
