@@ -40,7 +40,9 @@ func allPlayList(c *gin.Context) {
 
 // http://127.0.0.1:8090/playlist?hash=...
 // http://127.0.0.1:8090/playlist?hash=...&fromlast
+// http://127.0.0.1:8090/playlist/fname?hash=...
 func playList(c *gin.Context) {
+	name := strings.ReplaceAll(c.Param("fname"), `/`, "") // strip starting / from param
 	hash, _ := c.GetQuery("hash")
 	_, fromlast := c.GetQuery("fromlast")
 	if hash == "" {
@@ -65,8 +67,13 @@ func playList(c *gin.Context) {
 	host := utils.GetScheme(c) + "://" + c.Request.Host
 	list := getM3uList(tor.Status(), host, fromlast)
 	list = "#EXTM3U\n" + list
+	if name == "" {
+		name = tor.Name() + ".m3u"
+	} else {
+		name += ".m3u"
+	}
 
-	sendM3U(c, tor.Name()+".m3u", tor.Hash().HexString(), list)
+	sendM3U(c, name, tor.Hash().HexString(), list)
 }
 
 func sendM3U(c *gin.Context, name, hash string, m3u string) {
