@@ -20,6 +20,11 @@ On FreeBSD (TrueNAS/FreeNAS) you can use this plugin
 
 https://github.com/filka96/iocage-plugin-TorrServer
 
+#### NAS releases
+https://github.com/vladlenas
+
+Synology NAS packages repo source: https://grigi.lt
+
 ### Build
 Install golang 1.16+ by instruction: https://golang.org/doc/install \
 Goto dir to source\
@@ -262,6 +267,8 @@ YooMoney card: **4048 4150 1812 8179**
 ###### @dancheskus [github.com/dancheskus](https://github.com/dancheskus)
 
 ###### @kolsys [github.com/kolsys](https://github.com/kolsys)
+
+###### @vladlenas [github.com/vladlenas](https://github.com/vladlenas)
 
 ###### @Nemiroff aka **Tw1cker** [github.com/Nemiroff](https://github.com/Nemiroff)
 
