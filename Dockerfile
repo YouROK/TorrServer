@@ -20,14 +20,10 @@ ARG TARGETARCH
 # Step for multiarch build with docker buildx
 ENV GOARCH=$TARGETARCH
 
-# Install swag golang binary 
-RUN go install github.com/swaggo/swag/cmd/swag@latest
-
 # Build torrserver
 RUN apk add --update g++ \
 && go run gen_web.go \
 && cd server \
-&& swag init -g web/server.go \
 && go clean -i -r -cache \
 && go mod tidy \
 && go build -ldflags '-w -s' --o "torrserver" ./cmd 

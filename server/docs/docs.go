@@ -18,6 +18,35 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/download": {
+            "get": {
+                "description": "Download the current torrent from given size.",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Download the current torrent from given size",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Download size",
+                        "name": "size",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    }
+                }
+            }
+        },
         "/echo": {
             "get": {
                 "description": "Tests whether server is alive or not",
@@ -33,6 +62,26 @@ const docTemplate = `{
                         "description": "Server version",
                         "schema": {
                             "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/playlistall/all.m3u": {
+            "get": {
+                "description": "Retrieve all torrents and generates a bundled M3U playlist.",
+                "produces": [
+                    "audio/x-mpegurl"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Get a M3U playlist with all torrents",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
                         }
                     }
                 }
@@ -116,6 +165,43 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/viewed": {
+            "post": {
+                "description": "Allow to set, list or remove viewed torrents from server.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Set / List / Remove viewed torrents",
+                "parameters": [
+                    {
+                        "description": "Viewed torrent request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.viewedReqJS"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/settings.Viewed"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -152,6 +238,20 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.viewedReqJS": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string"
+                },
+                "file_index": {
+                    "type": "integer"
+                },
+                "hash": {
                     "type": "string"
                 }
             }
@@ -243,6 +343,17 @@ const docTemplate = `{
                 "useDisk": {
                     "description": "Disk",
                     "type": "boolean"
+                }
+            }
+        },
+        "settings.Viewed": {
+            "type": "object",
+            "properties": {
+                "file_index": {
+                    "type": "integer"
+                },
+                "hash": {
+                    "type": "string"
                 }
             }
         }

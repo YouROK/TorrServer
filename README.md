@@ -81,7 +81,7 @@ TorrServer-darwin-arm64 [--port PORT] [--path PATH] [--logpath LOGPATH] [--weblo
 go install github.com/swaggo/swag/cmd/swag@latest
 cd server; swag init -g web/server.go
 
-# Documentation can be linted with
+# Documentation can be linted using
 swag fmt
 ```
 
@@ -128,9 +128,6 @@ API documentation is hosted as Swagger format available at path `/swagger/index.
 * hash - hash of torrent
 * index - index of file
 
-###### /playlistall/all.m3u
-*Get all http links of all torrents in m3u list*
-
 ###### /playlist
 *Get http link of torrent in m3u list*
 #### args:
@@ -138,19 +135,6 @@ API documentation is hosted as Swagger format available at path `/swagger/index.
 * fromlast - from last play file
 
 #
-#### POST
-###### /torrents
-##### Send json:
-{\
-    "action": "add/get/set/rem/list/drop",\
-    "link": "hash/magnet/link to torrent",\
-    "hash": "hash of torrent",\
-    "title": "title of torrent",\
-    "poster": "link to poster of torrent",\
-    "data": "custom data of torrent, may be json",\
-    "save_to_db": true/false\
-}
-##### Return json of torrent(s)
 
 ###### /torrent/upload
 ##### Send multipart/form data
@@ -169,20 +153,6 @@ Only one file support
 }
 ##### Return cache stat 
 https://github.com/YouROK/TorrServer/blob/d36d0c28f805ceab39adb4aac2869cd7a272085b/server/torr/storage/state/state.go
-
-###### /viewed
-##### Send json:
-{\
-    "action": "set/rem/list",\
-    "hash": "hash of torrent",\
-    "file_index": int, id of file,\
-}
-##### Return
-if hash is empty, return all viewed files\
-if hash is not empty, return viewed file of torrent 
-##### Json struct see in
-https://github.com/YouROK/TorrServer/blob/d36d0c28f805ceab39adb4aac2869cd7a272085b/server/settings/viewed.go
-
 
 
 #
