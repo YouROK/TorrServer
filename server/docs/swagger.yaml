@@ -1,5 +1,12 @@
 basePath: /
 definitions:
+  api.cacheReqJS:
+    properties:
+      action:
+        type: string
+      hash:
+        type: string
+    type: object
   api.setsReqJS:
     properties:
       action:
@@ -32,6 +39,43 @@ definitions:
         type: integer
       hash:
         type: string
+    type: object
+  models.TorrentDetails:
+    properties:
+      audioQuality:
+        type: integer
+      categories:
+        type: string
+      createDate:
+        type: string
+      hash:
+        type: string
+      imdbid:
+        type: string
+      link:
+        type: string
+      magnet:
+        type: string
+      name:
+        type: string
+      names:
+        items:
+          type: string
+        type: array
+      peer:
+        type: integer
+      seed:
+        type: integer
+      size:
+        type: string
+      title:
+        type: string
+      tracker:
+        type: string
+      videoQuality:
+        type: integer
+      year:
+        type: integer
     type: object
   settings.BTSets:
     properties:
@@ -105,6 +149,147 @@ definitions:
       hash:
         type: string
     type: object
+  state.CacheState:
+    properties:
+      capacity:
+        type: integer
+      filled:
+        type: integer
+      hash:
+        type: string
+      pieces:
+        additionalProperties:
+          $ref: '#/definitions/state.ItemState'
+        type: object
+      piecesCount:
+        type: integer
+      piecesLength:
+        type: integer
+      readers:
+        items:
+          $ref: '#/definitions/state.ReaderState'
+        type: array
+      torrent:
+        $ref: '#/definitions/state.TorrentStatus'
+    type: object
+  state.ItemState:
+    properties:
+      completed:
+        type: boolean
+      id:
+        type: integer
+      length:
+        type: integer
+      priority:
+        type: integer
+      size:
+        type: integer
+    type: object
+  state.ReaderState:
+    properties:
+      end:
+        type: integer
+      reader:
+        type: integer
+      start:
+        type: integer
+    type: object
+  state.TorrentFileStat:
+    properties:
+      id:
+        type: integer
+      length:
+        type: integer
+      path:
+        type: string
+    type: object
+  state.TorrentStat:
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    type: integer
+    x-enum-varnames:
+    - TorrentAdded
+    - TorrentGettingInfo
+    - TorrentPreload
+    - TorrentWorking
+    - TorrentClosed
+    - TorrentInDB
+  state.TorrentStatus:
+    properties:
+      active_peers:
+        type: integer
+      bit_rate:
+        type: string
+      bytes_read:
+        type: integer
+      bytes_read_data:
+        type: integer
+      bytes_read_useful_data:
+        type: integer
+      bytes_written:
+        type: integer
+      bytes_written_data:
+        type: integer
+      chunks_read:
+        type: integer
+      chunks_read_useful:
+        type: integer
+      chunks_read_wasted:
+        type: integer
+      chunks_written:
+        type: integer
+      connected_seeders:
+        type: integer
+      data:
+        type: string
+      download_speed:
+        type: number
+      duration_seconds:
+        type: number
+      file_stats:
+        items:
+          $ref: '#/definitions/state.TorrentFileStat'
+        type: array
+      half_open_peers:
+        type: integer
+      hash:
+        type: string
+      loaded_size:
+        type: integer
+      name:
+        type: string
+      pending_peers:
+        type: integer
+      pieces_dirtied_bad:
+        type: integer
+      pieces_dirtied_good:
+        type: integer
+      poster:
+        type: string
+      preload_size:
+        type: integer
+      preloaded_bytes:
+        type: integer
+      stat:
+        $ref: '#/definitions/state.TorrentStat'
+      stat_string:
+        type: string
+      timestamp:
+        type: integer
+      title:
+        type: string
+      torrent_size:
+        type: integer
+      total_peers:
+        type: integer
+      upload_speed:
+        type: number
+    type: object
 externalDocs:
   description: OpenAPI
   url: https://swagger.io/resources/open-api/
@@ -116,6 +301,26 @@ info:
   title: Swagger Torrserver API
   version: "1.0"
 paths:
+  /cache:
+    post:
+      description: Return cache stats.
+      parameters:
+      - description: Cache stats request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.cacheReqJS'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Cache stats
+          schema:
+            $ref: '#/definitions/state.CacheState'
+      summary: Return cache stats
+      tags:
+      - API
   /download:
     get:
       description: Download the current torrent from given size.
@@ -148,6 +353,133 @@ paths:
       summary: Tests server status
       tags:
       - API
+  /ffp:
+    get:
+      description: Gather informations using ffprobe.
+      parameters:
+      - description: Torrent hash
+        in: query
+        name: hash
+        required: true
+        type: string
+      - description: File index in torrent
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Data returned from ffprobe
+      summary: Gather informations using ffprobe
+      tags:
+      - API
+  /magnets:
+    get:
+      description: Get HTML of magnet links.
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: Magnet links
+      summary: Get HTML of magnet links
+      tags:
+      - Pages
+  /msx:
+    get:
+      description: Multi usage endpoint.
+      parameters:
+      - description: Magnet/hash/link to torrent
+        in: query
+        name: link
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Data returned according to query
+      summary: Multi usage endpoint
+      tags:
+      - MSX
+  /msx/imdb:
+    get:
+      description: Get MSX IMDB informations.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: JSON MSX IMDB informations
+      summary: Get MSX IMDB informations
+      tags:
+      - MSX
+  /msx/imdb/:id:
+    get:
+      description: Get MSX IMDB informations.
+      parameters:
+      - description: IMDB ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: JSON MSX IMDB informations
+      summary: Get MSX IMDB informations
+      tags:
+      - MSX
+  /play:
+    get:
+      description: Play given torrent referenced by hash.
+      parameters:
+      - description: Torrent hash
+        in: query
+        name: hash
+        required: true
+        type: string
+      - description: File index in torrent
+        in: query
+        name: id
+        required: true
+        type: string
+      - description: Not authenticated
+        in: query
+        name: not_auth
+        type: boolean
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Torrent data
+      summary: Play given torrent referenced by hash
+      tags:
+      - API
+  /playlist:
+    get:
+      description: Get HTTP link of torrent in M3U list.
+      parameters:
+      - description: Torrent hash
+        in: query
+        name: hash
+        required: true
+        type: string
+      - description: From last play file
+        in: query
+        name: fromlast
+        type: boolean
+      produces:
+      - audio/x-mpegurl
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      summary: Get HTTP link of torrent in M3U list
+      tags:
+      - API
   /playlistall/all.m3u:
     get:
       description: Retrieve all torrents and generates a bundled M3U playlist.
@@ -159,6 +491,27 @@ paths:
           schema:
             type: file
       summary: Get a M3U playlist with all torrents
+      tags:
+      - API
+  /search:
+    get:
+      description: Makes a rutor search.
+      parameters:
+      - description: Rutor query
+        in: query
+        name: query
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Rutor torrent search result(s)
+          schema:
+            items:
+              $ref: '#/definitions/models.TorrentDetails'
+            type: array
+      summary: Makes a rutor search
       tags:
       - API
   /settings:
@@ -190,6 +543,108 @@ paths:
         "200":
           description: OK
       summary: Shuts down server
+      tags:
+      - API
+  /stat:
+    get:
+      description: Stat server.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Stats
+      summary: Stat server
+      tags:
+      - Pages
+  /stream:
+    get:
+      description: Multi usage endpoint.
+      parameters:
+      - description: Magnet/hash/link to torrent
+        in: query
+        name: link
+        required: true
+        type: string
+      - description: File index in torrent
+        in: query
+        name: index
+        type: string
+      - description: Should preload torrent
+        in: query
+        name: preload
+        type: string
+      - description: Get statistics from torrent
+        in: query
+        name: stat
+        type: string
+      - description: Should save torrent
+        in: query
+        name: save
+        type: string
+      - description: Get torrent as M3U playlist
+        in: query
+        name: m3u
+        type: string
+      - description: Get m3u from last play
+        in: query
+        name: fromlast
+        type: string
+      - description: Start stream torrent
+        in: query
+        name: play
+        type: string
+      - description: Set title of torrent
+        in: query
+        name: title
+        required: true
+        type: string
+      - description: File index in torrent
+        in: query
+        name: poster
+        required: true
+        type: string
+      - description: Set poster link of torrent
+        in: query
+        name: not_auth
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Data returned according to query
+      summary: Multi usage endpoint
+      tags:
+      - API
+  /torrent/upload:
+    post:
+      description: Only one file support.
+      parameters:
+      - description: Save to DB
+        in: formData
+        name: save
+        required: true
+        type: string
+      - description: Torrent title
+        in: formData
+        name: title
+        type: string
+      - description: Torrent poster
+        in: formData
+        name: poster
+        type: string
+      - description: Torrent data
+        in: formData
+        name: data
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Torrent status
+          schema:
+            type: string
+      summary: Only one file support
       tags:
       - API
   /torrents:

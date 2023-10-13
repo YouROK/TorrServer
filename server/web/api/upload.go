@@ -3,12 +3,28 @@ package api
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"server/log"
 	"server/torr"
 	"server/web/api/utils"
+
+	"github.com/gin-gonic/gin"
 )
 
+// torrentUpload godoc
+//
+//	@Summary		Only one file support
+//	@Description	Only one file support.
+//
+//	@Tags			API
+//
+//	@Param			save	formData	string	true	"Save to DB"
+//	@Param			title	formData	string	false	"Torrent title"
+//	@Param			poster	formData	string	false	"Torrent poster"
+//	@Param			data	formData	string	false	"Torrent data"
+//
+//	@Produce		json
+//	@Success		200	{string} string	"Torrent status"
+//	@Router			/torrent/upload [post]
 func torrentUpload(c *gin.Context) {
 	form, err := c.MultipartForm()
 	if err != nil {

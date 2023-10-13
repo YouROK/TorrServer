@@ -15,6 +15,18 @@ type cacheReqJS struct {
 	Hash string `json:"hash,omitempty"`
 }
 
+// cache godoc
+//
+//	@Summary		Return cache stats
+//	@Description	Return cache stats.
+//
+//	@Tags			API
+//
+//	@Param			request	body	cacheReqJS	true	"Cache stats request"
+//
+//	@Produce		json
+//	@Success		200	{object} state.CacheState	"Cache stats"
+//	@Router			/cache [post]
 func cache(c *gin.Context) {
 	var req cacheReqJS
 	err := c.ShouldBindJSON(&req)

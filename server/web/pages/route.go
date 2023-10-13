@@ -15,11 +15,31 @@ func SetupRoute(route *gin.RouterGroup) {
 	route.GET("/magnets", getTorrents)
 }
 
+// stat godoc
+//
+//	@Summary		Stat server
+//	@Description	Stat server.
+//
+//	@Tags			Pages
+//
+//	@Produce		text/plain
+//	@Success		200	"Stats"
+//	@Router			/stat [get]
 func statPage(c *gin.Context) {
 	torr.WriteStatus(c.Writer)
 	c.Status(200)
 }
 
+// getTorrents godoc
+//
+//	@Summary		Get HTML of magnet links
+//	@Description	Get HTML of magnet links.
+//
+//	@Tags			Pages
+//
+//	@Produce		text/html
+//	@Success		200	"Magnet links"
+//	@Router			/magnets [get]
 func getTorrents(c *gin.Context) {
 	list := settings.ListTorrent()
 	http := "<div>"
