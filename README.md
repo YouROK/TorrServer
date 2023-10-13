@@ -243,9 +243,9 @@ docker run --rm -d -e TS_PORT=5665 -e TS_DONTKILL=1 -e TS_HTTPAUTH=1 -e TS_RDB=1
 
 #
 ### Donate:
-[PayPal](https://www.paypal.me/yourok) \
-[QIWI]((https://qiwi.com/n/YOUROK85) \
-[YooMoney](https://yoomoney.ru/to/410013733697114/200) 
+[QIWI](https://qiwi.com/n/YOUROK85) \
+[YooMoney](https://yoomoney.ru/to/410013733697114/200) \
+[PayPal](https://www.paypal.me/yourok)
 
 SberBank card: **5484 4000 2285 7839**
 
@@ -255,14 +255,20 @@ YooMoney card: **4048 4150 1812 8179**
 #
 ### Thanks to everyone who tested and helped
 
-###### **Anacrolix Matt Joiner** [github.com/anacrolix](https://github.com/anacrolix/)
+###### **@nacrolix Matt Joiner** [github.com/anacrolix](https://github.com/anacrolix/)
 
-###### **tsynik** [github.com/tsynik](https://github.com/tsynik)
+###### **@tsynik** [github.com/tsynik](https://github.com/tsynik)
 
-###### **dancheskus** [github.com/dancheskus](https://github.com/dancheskus)
+###### **@dancheskus** [github.com/dancheskus](https://github.com/dancheskus)
 
-###### **kolsys** [github.com/kolsys](https://github.com/kolsys)
+###### **@kolsys** [github.com/kolsys](https://github.com/kolsys)
 
-###### **Tw1cker Руслан Пахнев** [github.com/Nemiroff](https://github.com/Nemiroff)
+###### **@nemiroff aka Tw1cker** [github.com/Nemiroff](https://github.com/Nemiroff)
 
-###### **SpAwN_LMG** [github.com/spawnlmg](https://github.com/spawnlmg)
+###### **@spawnlmg SpAwN_LMG** [github.com/spawnlmg](https://github.com/spawnlmg)
+
+###### **@TopperBG Dimitar "Topper" Maznekov** [github.com/TopperBG](https://github.com/TopperBG)
+
+###### **@FaintGhost Zhang Yaowei** [github.com/FaintGhost](https://github.com/FaintGhost)
+
+###### **@Anton111111 Anton Potekhin** [github.com/Anton111111](https://github.com/Anton111111)
