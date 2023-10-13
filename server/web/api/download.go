@@ -40,6 +40,18 @@ func (f *fileReader) Seek(offset int64, whence int) (int64, error) {
 	return f.pos, nil
 }
 
+// download godoc
+//
+//	@Summary		Download the current torrent from given size
+//	@Description	Download the current torrent from given size.
+//
+//	@Tags			API
+//
+//	@Param			size	query	string	true	"Download size"
+//
+//	@Produce		application/octet-stream
+//	@Success		200 {file} file
+//	@Router			/download [get]
 func download(c *gin.Context) {
 	szStr := c.Param("size")
 	sz, err := strconv.Atoi(szStr)

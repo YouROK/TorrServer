@@ -22,6 +22,16 @@ import (
 	"github.com/pkg/errors"
 )
 
+// allPlayList godoc
+//
+//	@Summary		Get a M3U playlist with all torrents
+//	@Description	Retrieve all torrents and generates a bundled M3U playlist.
+//
+//	@Tags			API
+//
+//	@Produce		audio/x-mpegurl
+//	@Success		200 {file} file
+//	@Router			/playlistall/all.m3u [get]
 func allPlayList(c *gin.Context) {
 	torrs := torr.ListTorrent()
 

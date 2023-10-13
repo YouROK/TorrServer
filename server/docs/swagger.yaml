@@ -24,6 +24,15 @@ definitions:
       title:
         type: string
     type: object
+  api.viewedReqJS:
+    properties:
+      action:
+        type: string
+      file_index:
+        type: integer
+      hash:
+        type: string
+    type: object
   settings.BTSets:
     properties:
       cacheSize:
@@ -89,6 +98,13 @@ definitions:
         description: Disk
         type: boolean
     type: object
+  settings.Viewed:
+    properties:
+      file_index:
+        type: integer
+      hash:
+        type: string
+    type: object
 externalDocs:
   description: OpenAPI
   url: https://swagger.io/resources/open-api/
@@ -100,6 +116,25 @@ info:
   title: Swagger Torrserver API
   version: "1.0"
 paths:
+  /download:
+    get:
+      description: Download the current torrent from given size.
+      parameters:
+      - description: Download size
+        in: query
+        name: size
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      summary: Download the current torrent from given size
+      tags:
+      - API
   /echo:
     get:
       description: Tests whether server is alive or not
@@ -111,6 +146,19 @@ paths:
           schema:
             type: string
       summary: Tests server status
+      tags:
+      - API
+  /playlistall/all.m3u:
+    get:
+      description: Retrieve all torrents and generates a bundled M3U playlist.
+      produces:
+      - audio/x-mpegurl
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      summary: Get a M3U playlist with all torrents
       tags:
       - API
   /settings:
@@ -162,6 +210,30 @@ paths:
         "200":
           description: OK
       summary: Add / Get / Set torrents
+      tags:
+      - API
+  /viewed:
+    post:
+      consumes:
+      - application/json
+      description: Allow to set, list or remove viewed torrents from server.
+      parameters:
+      - description: Viewed torrent request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.viewedReqJS'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/settings.Viewed'
+            type: array
+      summary: Set / List / Remove viewed torrents
       tags:
       - API
 securityDefinitions:
