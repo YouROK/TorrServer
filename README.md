@@ -1,4 +1,5 @@
-## TorrServer
+# TorrServer
+
 TorrServer, stream torrent to http
 
 ### Installation
@@ -67,7 +68,6 @@ TorrServer-darwin-arm64 [--port PORT] [--path PATH] [--logpath LOGPATH] [--weblo
 * --version              
   *                 display version and exit
 
-
 #### Development
 
 `swag` must be installed on the system to [re]build Swagger documentation.
@@ -80,95 +80,29 @@ cd server; swag init -g web/server.go
 swag fmt
 ```
 
+#
+### API
+
 #### API Docs
 
 API documentation is hosted as Swagger format available at path `/swagger/index.html`.
 
+#### API Authentication
 
-###### /stream...
-#### args:
-* link - magnet/hash/link to torrent
-* index - index of file
-* preload - preload torrent
-* stat - return stat of torrent
-* save - save to db
-* m3u - return m3u
-* fromlast - return m3u from last play
-* play - start stream torrent
-* title - set title of torrent
-* poster - set poster link of torrent
+The user data file should be located near to the settings. Basic auth, read more in wiki <https://en.wikipedia.org/wiki/Basic_access_authentication>.
 
-##### Examples:
->**get stat**
->
->http://127.0.0.1:8090/stream/fname?link=...&stat
->
->**get m3u**
->
->http://127.0.0.1:8090/stream/fname?link=...&index=1&m3u
->http://127.0.0.1:8090/stream/fname?link=...&index=1&m3u&fromlast
->
->**stream torrent**
->
->http://127.0.0.1:8090/stream/fname?link=...&index=1&play
->http://127.0.0.1:8090/stream/fname?link=...&index=1&play&save
->http://127.0.0.1:8090/stream/fname?link=...&index=1&play&save&title=...&poster=...
->
->**only save**
->
->http://127.0.0.1:8090/stream/fname?link=...&save&title=...&poster=...
+* File name: *accs.db*
+* JSON file format
 
-###### /play/:hash/:id
-#### params:
-* hash - hash of torrent
-* index - index of file
-
-###### /playlist
-*Get http link of torrent in m3u list*
-#### args:
-* hash - hash of torrent
-* fromlast - from last play file
-
-#
-
-###### /torrent/upload
-##### Send multipart/form data
-Only one file support
-#### args:
-* title - set title of torrent
-* poster - set poster link of torrent
-* data - set custom data of torrent, may be json
-* save - save to db
-
-###### /cache
-##### Send json:
-{\
-    "action": "get"\
-    "hash" : ""hash": "hash of torrent",\
+```json
+{
+    "User1": "Pass1",
+    "User2": "Pass2"
 }
-##### Return cache stat 
-https://github.com/YouROK/TorrServer/blob/d36d0c28f805ceab39adb4aac2869cd7a272085b/server/torr/storage/state/state.go
-
+```
 
 #
-### Authorization
-
-The user data file should be located near to the settings.\
-Basic auth, read more in wiki \
-https://en.wikipedia.org/wiki/Basic_access_authentication
-
-File name: *accs.db*\
-File format:
-
-{\
-    "User1": "Pass1",\
-    "User2": "Pass2"\
-}
-
-
-
-#
-### Whitelist/Blacklist ip
+### Whitelist/Blacklist IP
 The lists file should be located near to the settings.
 
 whitelist file name: wip.txt\

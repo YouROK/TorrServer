@@ -11,6 +11,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// ffp godoc
+//
+//	@Summary		Gather informations using ffprobe
+//	@Description	Gather informations using ffprobe.
+//
+//	@Tags			API
+//
+//	@Param			hash	query	string	true	"Torrent hash"
+//	@Param			id		query	string	true	"File index in torrent"
+//
+//	@Produce		json
+//	@Success		200	"Data returned from ffprobe"
+//	@Router			/ffp [get]
 func ffp(c *gin.Context) {
 	hash := c.Param("hash")
 	indexStr := c.Param("id")

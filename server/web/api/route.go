@@ -31,7 +31,7 @@ func SetupRoute(route *gin.RouterGroup) {
 
 	route.GET("/playlistall/all.m3u", allPlayList)
 	route.GET("/playlist", playList)
-	route.GET("/playlist/*fname", playList)
+	route.GET("/playlist/*fname", playList) // Is this endpoint still needed ? `fname` is never used in handler
 
 	route.GET("/download/:size", download)
 

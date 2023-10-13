@@ -18,6 +18,37 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/cache": {
+            "post": {
+                "description": "Return cache stats.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Return cache stats",
+                "parameters": [
+                    {
+                        "description": "Cache stats request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.cacheReqJS"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Cache stats",
+                        "schema": {
+                            "$ref": "#/definitions/state.CacheState"
+                        }
+                    }
+                }
+            }
+        },
         "/download": {
             "get": {
                 "description": "Download the current torrent from given size.",
@@ -67,6 +98,199 @@ const docTemplate = `{
                 }
             }
         },
+        "/ffp": {
+            "get": {
+                "description": "Gather informations using ffprobe.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Gather informations using ffprobe",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Torrent hash",
+                        "name": "hash",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "File index in torrent",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Data returned from ffprobe"
+                    }
+                }
+            }
+        },
+        "/magnets": {
+            "get": {
+                "description": "Get HTML of magnet links.",
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "Pages"
+                ],
+                "summary": "Get HTML of magnet links",
+                "responses": {
+                    "200": {
+                        "description": "Magnet links"
+                    }
+                }
+            }
+        },
+        "/msx": {
+            "get": {
+                "description": "Multi usage endpoint.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MSX"
+                ],
+                "summary": "Multi usage endpoint",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Magnet/hash/link to torrent",
+                        "name": "link",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Data returned according to query"
+                    }
+                }
+            }
+        },
+        "/msx/imdb": {
+            "get": {
+                "description": "Get MSX IMDB informations.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MSX"
+                ],
+                "summary": "Get MSX IMDB informations",
+                "responses": {
+                    "200": {
+                        "description": "JSON MSX IMDB informations"
+                    }
+                }
+            }
+        },
+        "/msx/imdb/:id": {
+            "get": {
+                "description": "Get MSX IMDB informations.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MSX"
+                ],
+                "summary": "Get MSX IMDB informations",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "IMDB ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "JSON MSX IMDB informations"
+                    }
+                }
+            }
+        },
+        "/play": {
+            "get": {
+                "description": "Play given torrent referenced by hash.",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Play given torrent referenced by hash",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Torrent hash",
+                        "name": "hash",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "File index in torrent",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Not authenticated",
+                        "name": "not_auth",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Torrent data"
+                    }
+                }
+            }
+        },
+        "/playlist": {
+            "get": {
+                "description": "Get HTTP link of torrent in M3U list.",
+                "produces": [
+                    "audio/x-mpegurl"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Get HTTP link of torrent in M3U list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Torrent hash",
+                        "name": "hash",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "From last play file",
+                        "name": "fromlast",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    }
+                }
+            }
+        },
         "/playlistall/all.m3u": {
             "get": {
                 "description": "Retrieve all torrents and generates a bundled M3U playlist.",
@@ -82,6 +306,38 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "type": "file"
+                        }
+                    }
+                }
+            }
+        },
+        "/search": {
+            "get": {
+                "description": "Makes a rutor search.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Makes a rutor search",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Rutor query",
+                        "name": "query",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Rutor torrent search result(s)",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.TorrentDetails"
+                            }
                         }
                     }
                 }
@@ -131,6 +387,159 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "OK"
+                    }
+                }
+            }
+        },
+        "/stat": {
+            "get": {
+                "description": "Stat server.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Pages"
+                ],
+                "summary": "Stat server",
+                "responses": {
+                    "200": {
+                        "description": "Stats"
+                    }
+                }
+            }
+        },
+        "/stream": {
+            "get": {
+                "description": "Multi usage endpoint.",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Multi usage endpoint",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Magnet/hash/link to torrent",
+                        "name": "link",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "File index in torrent",
+                        "name": "index",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Should preload torrent",
+                        "name": "preload",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Get statistics from torrent",
+                        "name": "stat",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Should save torrent",
+                        "name": "save",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Get torrent as M3U playlist",
+                        "name": "m3u",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Get m3u from last play",
+                        "name": "fromlast",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start stream torrent",
+                        "name": "play",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Set title of torrent",
+                        "name": "title",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "File index in torrent",
+                        "name": "poster",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Set poster link of torrent",
+                        "name": "not_auth",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Data returned according to query"
+                    }
+                }
+            }
+        },
+        "/torrent/upload": {
+            "post": {
+                "description": "Only one file support.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Only one file support",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Save to DB",
+                        "name": "save",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Torrent title",
+                        "name": "title",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Torrent poster",
+                        "name": "poster",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Torrent data",
+                        "name": "data",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Torrent status",
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 }
             }
@@ -205,6 +614,17 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "api.cacheReqJS": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string"
+                },
+                "hash": {
+                    "type": "string"
+                }
+            }
+        },
         "api.setsReqJS": {
             "type": "object",
             "properties": {
@@ -253,6 +673,62 @@ const docTemplate = `{
                 },
                 "hash": {
                     "type": "string"
+                }
+            }
+        },
+        "models.TorrentDetails": {
+            "type": "object",
+            "properties": {
+                "audioQuality": {
+                    "type": "integer"
+                },
+                "categories": {
+                    "type": "string"
+                },
+                "createDate": {
+                    "type": "string"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "imdbid": {
+                    "type": "string"
+                },
+                "link": {
+                    "type": "string"
+                },
+                "magnet": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "names": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "peer": {
+                    "type": "integer"
+                },
+                "seed": {
+                    "type": "integer"
+                },
+                "size": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "tracker": {
+                    "type": "string"
+                },
+                "videoQuality": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "integer"
                 }
             }
         },
@@ -354,6 +830,215 @@ const docTemplate = `{
                 },
                 "hash": {
                     "type": "string"
+                }
+            }
+        },
+        "state.CacheState": {
+            "type": "object",
+            "properties": {
+                "capacity": {
+                    "type": "integer"
+                },
+                "filled": {
+                    "type": "integer"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "pieces": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/state.ItemState"
+                    }
+                },
+                "piecesCount": {
+                    "type": "integer"
+                },
+                "piecesLength": {
+                    "type": "integer"
+                },
+                "readers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/state.ReaderState"
+                    }
+                },
+                "torrent": {
+                    "$ref": "#/definitions/state.TorrentStatus"
+                }
+            }
+        },
+        "state.ItemState": {
+            "type": "object",
+            "properties": {
+                "completed": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "length": {
+                    "type": "integer"
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "size": {
+                    "type": "integer"
+                }
+            }
+        },
+        "state.ReaderState": {
+            "type": "object",
+            "properties": {
+                "end": {
+                    "type": "integer"
+                },
+                "reader": {
+                    "type": "integer"
+                },
+                "start": {
+                    "type": "integer"
+                }
+            }
+        },
+        "state.TorrentFileStat": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "length": {
+                    "type": "integer"
+                },
+                "path": {
+                    "type": "string"
+                }
+            }
+        },
+        "state.TorrentStat": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5
+            ],
+            "x-enum-varnames": [
+                "TorrentAdded",
+                "TorrentGettingInfo",
+                "TorrentPreload",
+                "TorrentWorking",
+                "TorrentClosed",
+                "TorrentInDB"
+            ]
+        },
+        "state.TorrentStatus": {
+            "type": "object",
+            "properties": {
+                "active_peers": {
+                    "type": "integer"
+                },
+                "bit_rate": {
+                    "type": "string"
+                },
+                "bytes_read": {
+                    "type": "integer"
+                },
+                "bytes_read_data": {
+                    "type": "integer"
+                },
+                "bytes_read_useful_data": {
+                    "type": "integer"
+                },
+                "bytes_written": {
+                    "type": "integer"
+                },
+                "bytes_written_data": {
+                    "type": "integer"
+                },
+                "chunks_read": {
+                    "type": "integer"
+                },
+                "chunks_read_useful": {
+                    "type": "integer"
+                },
+                "chunks_read_wasted": {
+                    "type": "integer"
+                },
+                "chunks_written": {
+                    "type": "integer"
+                },
+                "connected_seeders": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "string"
+                },
+                "download_speed": {
+                    "type": "number"
+                },
+                "duration_seconds": {
+                    "type": "number"
+                },
+                "file_stats": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/state.TorrentFileStat"
+                    }
+                },
+                "half_open_peers": {
+                    "type": "integer"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "loaded_size": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pending_peers": {
+                    "type": "integer"
+                },
+                "pieces_dirtied_bad": {
+                    "type": "integer"
+                },
+                "pieces_dirtied_good": {
+                    "type": "integer"
+                },
+                "poster": {
+                    "type": "string"
+                },
+                "preload_size": {
+                    "type": "integer"
+                },
+                "preloaded_bytes": {
+                    "type": "integer"
+                },
+                "stat": {
+                    "$ref": "#/definitions/state.TorrentStat"
+                },
+                "stat_string": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "torrent_size": {
+                    "type": "integer"
+                },
+                "total_peers": {
+                    "type": "integer"
+                },
+                "upload_speed": {
+                    "type": "number"
                 }
             }
         }
