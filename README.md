@@ -255,20 +255,20 @@ YooMoney card: **4048 4150 1812 8179**
 #
 ### Thanks to everyone who tested and helped
 
-###### **@nacrolix Matt Joiner** [github.com/anacrolix](https://github.com/anacrolix/)
+###### @nacrolix **Matt Joiner** [github.com/anacrolix](https://github.com/anacrolix/)
 
-###### **@tsynik** [github.com/tsynik](https://github.com/tsynik)
+###### @tsynik [github.com/tsynik](https://github.com/tsynik)
 
-###### **@dancheskus** [github.com/dancheskus](https://github.com/dancheskus)
+###### @dancheskus [github.com/dancheskus](https://github.com/dancheskus)
 
-###### **@kolsys** [github.com/kolsys](https://github.com/kolsys)
+###### @kolsys [github.com/kolsys](https://github.com/kolsys)
 
-###### **@nemiroff aka Tw1cker** [github.com/Nemiroff](https://github.com/Nemiroff)
+###### @Nemiroff aka **Tw1cker** [github.com/Nemiroff](https://github.com/Nemiroff)
 
-###### **@spawnlmg SpAwN_LMG** [github.com/spawnlmg](https://github.com/spawnlmg)
+###### @spawnlmg **SpAwN_LMG** [github.com/spawnlmg](https://github.com/spawnlmg)
 
-###### **@TopperBG Dimitar "Topper" Maznekov** [github.com/TopperBG](https://github.com/TopperBG)
+###### @TopperBG **Dimitar Maznekov** [github.com/TopperBG](https://github.com/TopperBG)
 
-###### **@FaintGhost Zhang Yaowei** [github.com/FaintGhost](https://github.com/FaintGhost)
+###### @FaintGhost **Zhang Yaowei** [github.com/FaintGhost](https://github.com/FaintGhost)
 
-###### **@Anton111111 Anton Potekhin** [github.com/Anton111111](https://github.com/Anton111111)
+###### @Anton111111 **Anton Potekhin** [github.com/Anton111111](https://github.com/Anton111111)
