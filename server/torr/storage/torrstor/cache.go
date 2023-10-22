@@ -242,40 +242,40 @@ func (c *Cache) getRemPieces() []*Piece {
 
 	c.clearPriority()
 
-	c.muReaders.Lock()
-	for r := range c.readers {
-		if !r.isUse {
-			continue
-		}
-		if c.isIdInFileBE(ranges, r.getReaderPiece()) {
-			continue
-		}
-		readerPos := r.getReaderPiece()
-		readerRAHPos := r.getReaderRAHPiece()
-		end := r.getPiecesRange().End
-		count := int(64 << 20 / c.pieceLength) // 64 MB window
-		if count > 64 {
-			count = 64
-		}
-		limit := 0
-		for i := readerPos; i < end && limit < count; i++ {
-			if !c.pieces[i].Complete {
-				if i == readerPos {
-					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNow)
-				} else if i == readerPos+1 {
-					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNext)
-				} else if i > readerPos && i <= readerRAHPos {
-					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityReadahead)
-				} else if i > readerRAHPos && i <= readerRAHPos+5 && c.torrent.PieceState(i).Priority != torrent.PiecePriorityHigh {
-					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityHigh)
-				} else if i > readerRAHPos+5 && c.torrent.PieceState(i).Priority != torrent.PiecePriorityNormal {
-					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNormal)
-				}
-				limit++
-			}
-		}
-	}
-	c.muReaders.Unlock()
+	// c.muReaders.Lock()
+	// for r := range c.readers {
+	// 	if !r.isUse {
+	// 		continue
+	// 	}
+	// 	if c.isIdInFileBE(ranges, r.getReaderPiece()) {
+	// 		continue
+	// 	}
+	// 	readerPos := r.getReaderPiece()
+	// 	readerRAHPos := r.getReaderRAHPiece()
+	// 	end := r.getPiecesRange().End
+	// 	count := int(64 << 20 / c.pieceLength) // 64 MB window
+	// 	if count > 64 {
+	// 		count = 64
+	// 	}
+	// 	limit := 0
+	// 	for i := readerPos; i < end && limit < count; i++ {
+	// 		if !c.pieces[i].Complete {
+	// 			if i == readerPos {
+	// 				c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNow)
+	// 			} else if i == readerPos+1 {
+	// 				c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNext)
+	// 			} else if i > readerPos && i <= readerRAHPos {
+	// 				c.torrent.Piece(i).SetPriority(torrent.PiecePriorityReadahead)
+	// 			} else if i > readerRAHPos && i <= readerRAHPos+5 && c.torrent.PieceState(i).Priority != torrent.PiecePriorityHigh {
+	// 				c.torrent.Piece(i).SetPriority(torrent.PiecePriorityHigh)
+	// 			} else if i > readerRAHPos+5 && c.torrent.PieceState(i).Priority != torrent.PiecePriorityNormal {
+	// 				c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNormal)
+	// 			}
+	// 			limit++
+	// 		}
+	// 	}
+	// }
+	// c.muReaders.Unlock()
 
 	sort.Slice(piecesRemove, func(i, j int) bool {
 		return piecesRemove[i].Accessed < piecesRemove[j].Accessed

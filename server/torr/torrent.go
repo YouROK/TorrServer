@@ -189,7 +189,7 @@ func (t *Torrent) progressEvent() {
 	t.muTorrent.Unlock()
 
 	t.lastTimeSpeed = time.Now()
-	t.updateRA()
+	// t.updateRA()
 }
 
 func (t *Torrent) updateRA() {
