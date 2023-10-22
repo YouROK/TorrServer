@@ -28,8 +28,8 @@ type torrReqJS struct {
 
 // torrents godoc
 //
-//	@Summary		Add / Get / Set torrents
-//	@Description	Allow to add, get or set torrents to server.
+//	@Summary		Handle torrents informations
+//	@Description	Allow to add, get or set torrents to server. The action depends of what has been asked.
 //
 //	@Tags			API
 //
@@ -72,7 +72,6 @@ func torrents(c *gin.Context) {
 		{
 			dropTorrent(req, c)
 		}
-
 	}
 }
 

@@ -33,7 +33,7 @@ var (
 )
 
 //	@title			Swagger Torrserver API
-//	@version		1.0
+//	@version		{version.Version}
 //	@description	Torrent streaming server.
 
 //	@license.name	GPL 3.0

@@ -7,7 +7,7 @@
         "license": {
             "name": "GPL 3.0"
         },
-        "version": "1.0"
+        "version": "{version.Version}"
     },
     "basePath": "/",
     "paths": {
@@ -362,7 +362,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Depends on what has been asked",
+                        "description": "Depends on what action has been asked",
                         "schema": {
                             "$ref": "#/definitions/settings.BTSets"
                         }
@@ -372,7 +372,7 @@
         },
         "/shutdown": {
             "get": {
-                "description": "Gracefully shuts down server.",
+                "description": "Gracefully shuts down server after 1 second.",
                 "tags": [
                     "API"
                 ],
@@ -493,6 +493,9 @@
         "/torrent/upload": {
             "post": {
                 "description": "Only one file support.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -502,11 +505,17 @@
                 "summary": "Only one file support",
                 "parameters": [
                     {
+                        "type": "file",
+                        "description": "Torrent file to insert",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
                         "type": "string",
                         "description": "Save to DB",
                         "name": "save",
-                        "in": "formData",
-                        "required": true
+                        "in": "formData"
                     },
                     {
                         "type": "string",
@@ -531,7 +540,7 @@
                     "200": {
                         "description": "Torrent status",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/state.TorrentStatus"
                         }
                     }
                 }
@@ -539,7 +548,7 @@
         },
         "/torrents": {
             "post": {
-                "description": "Allow to add, get or set torrents to server.",
+                "description": "Allow to add, get or set torrents to server. The action depends of what has been asked.",
                 "consumes": [
                     "application/json"
                 ],
@@ -549,7 +558,7 @@
                 "tags": [
                     "API"
                 ],
-                "summary": "Add / Get / Set torrents",
+                "summary": "Handle torrents informations",
                 "parameters": [
                     {
                         "description": "Torrent request",

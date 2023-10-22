@@ -17,13 +17,16 @@ import (
 //
 //	@Tags			API
 //
-//	@Param			save	formData	string	true	"Save to DB"
+//	@Param			file	formData	file	true	"Torrent file to insert"
+//	@Param			save	formData	string	false	"Save to DB"
 //	@Param			title	formData	string	false	"Torrent title"
 //	@Param			poster	formData	string	false	"Torrent poster"
 //	@Param			data	formData	string	false	"Torrent data"
 //
+//	@Accept			multipart/form-data
+//
 //	@Produce		json
-//	@Success		200	{string} string	"Torrent status"
+//	@Success		200	{object}	state.TorrentStatus	"Torrent status"
 //	@Router			/torrent/upload [post]
 func torrentUpload(c *gin.Context) {
 	form, err := c.MultipartForm()

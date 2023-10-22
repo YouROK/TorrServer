@@ -31,7 +31,7 @@ type setsReqJS struct {
 //
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	sets.BTSets	"Depends on what has been asked"
+//	@Success		200	{object}	sets.BTSets	"Depends on what action has been asked"
 //	@Router			/settings [post]
 func settings(c *gin.Context) {
 	var req setsReqJS

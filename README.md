@@ -28,10 +28,9 @@
 
 ## Introduction
 
-TorrServer is a program that allows users to view torrents online without the need for preliminary file downloading. 
-The core functionality of TorrServer includes caching torrents and subsequent data transfer via the HTTP protocol, 
+TorrServer is a program that allows users to view torrents online without the need for preliminary file downloading.
+The core functionality of TorrServer includes caching torrents and subsequent data transfer via the HTTP protocol,
 allowing the cache size to be adjusted according to the system parameters and the user's internet connection speed.
-
 
 ## Features
 
@@ -46,7 +45,7 @@ allowing the cache size to be adjusted according to the system parameters and th
 
 ### Installation
 
-Download the application for the required platform in the [releases](https://github.com/YouROK/TorrServer/releases) page. After installation, open the link http://127.0.0.1:8090 in the browser.'
+Download the application for the required platform in the [releases](https://github.com/YouROK/TorrServer/releases) page. After installation, open the link <http://127.0.0.1:8090> in the browser.'
 
 #### Windows
 
@@ -68,16 +67,16 @@ Run in console
 curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerMac.sh -o installTorrserverMac.sh && chmod 755 installTorrServerMac.sh && sudo ./installTorrServerMac.sh
 ```
 
-Alternative install script for Intel Macs: https://github.com/dancheskus/TorrServerMacInstaller
+Alternative install script for Intel Macs: <https://github.com/dancheskus/TorrServerMacInstaller>
 
 #### IOCage Plugin (Unofficial)
 
-On FreeBSD (TrueNAS/FreeNAS) you can use this plugin: https://github.com/filka96/iocage-plugin-TorrServer
+On FreeBSD (TrueNAS/FreeNAS) you can use this plugin: <https://github.com/filka96/iocage-plugin-TorrServer>
 
 #### For NAS Systems (Unofficial)
 
-- Several releases are available through this link: https://github.com/vladlenas
-- **Synology NAS** packages repo source: https://grigi.lt
+- Several releases are available through this link: <https://github.com/vladlenas>
+- **Synology NAS** packages repo source: <https://grigi.lt>
 
 ### Server args
 
@@ -111,7 +110,8 @@ Run in console
 docker run --rm -d --name torrserver -p 8090:8090 ghcr.io/yourok/torrserver:latest
 ```
 
-For running in persistence mode, just mount volume to container by adding `-v ~/ts:/opt/ts`, where `~/ts` folder path is just example, but you could use it anyway... Result example command: 
+For running in persistence mode, just mount volume to container by adding `-v ~/ts:/opt/ts`, where `~/ts` folder path is just example, but you could use it anyway... Result example command:
+
 ```bash
 docker run --rm -d --name torrserver -v ~/ts:/opt/ts -p 8090:8090 ghcr.io/yourok/torrserver:latest
 ```
@@ -205,7 +205,7 @@ API documentation is hosted as Swagger format available at path `/swagger/index.
 
 ### API Authentication
 
-The user data file should be located near to the settings. Basic auth, read more in wiki https://en.wikipedia.org/wiki/Basic_access_authentication.
+The user data file should be located near to the settings. Basic auth, read more in wiki <https://en.wikipedia.org/wiki/Basic_access_authentication>.
 
 `accs.db` in JSON format:
 
@@ -223,11 +223,11 @@ The lists file should be located near to the settings.
 - Whitelist file name: `wip.txt`
 - Blacklist file name: `bip.txt`
 
-_Whitelist has priority_
+Whitelist has priority over everything else.
 
 Example:
 
-```
+```text
 local:127.0.0.0-127.0.0.255
 127.0.0.0-127.0.0.255
 local:127.0.0.1
