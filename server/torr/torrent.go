@@ -198,11 +198,10 @@ func (t *Torrent) updateRA() {
 	if t.Torrent != nil && t.Torrent.Info() != nil {
 		pieceLen := t.Torrent.Info().PieceLength
 		adj := pieceLen * int64(t.Torrent.Stats().ActivePeers) / int64(1+t.cache.Readers())
-		switch {
-		case adj < pieceLen:
+		if adj < pieceLen {
 			adj = pieceLen
-		case adj > pieceLen*4:
-			adj = pieceLen * 4
+			//} else if adj > pieceLen*4 {
+			//	adj = pieceLen * 4
 		}
 		go t.cache.AdjustRA(adj)
 	}
