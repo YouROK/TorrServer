@@ -11,6 +11,7 @@ PLATFORMS=(
   'darwin/amd64'
   'darwin/arm64'
   'freebsd/amd64'
+  'freebsd/arm7'
   'linux/mips'
   'linux/mipsle'
   'linux/mips64'
