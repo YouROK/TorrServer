@@ -6,7 +6,7 @@ import (
 	// "github.com/anacrolix/torrent"
 )
 
-const Version = "MatriX.127.XO"
+const Version = "MatriX.127"
 
 func GetTorrentVersion() string {
 	bi, ok := debug.ReadBuildInfo()
