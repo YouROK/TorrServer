@@ -241,7 +241,17 @@ func (c *Cache) getRemPieces() []*Piece {
 	}
 
 	c.clearPriority()
+	c.setLoadPriority(ranges)
 
+	sort.Slice(piecesRemove, func(i, j int) bool {
+		return piecesRemove[i].Accessed < piecesRemove[j].Accessed
+	})
+
+	c.filled = fill
+	return piecesRemove
+}
+
+func (c *Cache) setLoadPriority(ranges []Range) {
 	c.muReaders.Lock()
 	for r := range c.readers {
 		if !r.isUse {
@@ -253,10 +263,7 @@ func (c *Cache) getRemPieces() []*Piece {
 		readerPos := r.getReaderPiece()
 		readerRAHPos := r.getReaderRAHPiece()
 		end := r.getPiecesRange().End
-		count := int(64 << 20 / c.pieceLength) // 64 MB window
-		if count > 64 {
-			count = 64
-		}
+		count := settings.BTsets.ConnectionsLimit / c.Readers() // max concurrent loading blocks
 		limit := 0
 		for i := readerPos; i < end && limit < count; i++ {
 			if !c.pieces[i].Complete {
@@ -276,13 +283,6 @@ func (c *Cache) getRemPieces() []*Piece {
 		}
 	}
 	c.muReaders.Unlock()
-
-	sort.Slice(piecesRemove, func(i, j int) bool {
-		return piecesRemove[i].Accessed < piecesRemove[j].Accessed
-	})
-
-	c.filled = fill
-	return piecesRemove
 }
 
 func (c *Cache) isIdInFileBE(ranges []Range, id int) bool {
@@ -360,4 +360,11 @@ func (c *Cache) clearPriority() {
 			}
 		}
 	}
+}
+
+func (c *Cache) GetCapacity() int64 {
+	if c == nil {
+		return 0
+	}
+	return c.capacity
 }
