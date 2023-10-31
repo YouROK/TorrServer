@@ -69,7 +69,7 @@ func playList(c *gin.Context) {
 	name := strings.ReplaceAll(c.Param("fname"), `/`, "") // strip starting / from param
 	if name == "" {
 		name = tor.Name() + ".m3u"
-	} else {
+	} else if !strings.HasSuffix(strings.ToLower(name), ".m3u") && !strings.HasSuffix(strings.ToLower(name), ".m3u8") {
 		name += ".m3u"
 	}
 
