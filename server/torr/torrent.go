@@ -193,8 +193,8 @@ func (t *Torrent) progressEvent() {
 }
 
 func (t *Torrent) updateRA() {
-	t.muTorrent.Lock()
-	defer t.muTorrent.Unlock()
+	// t.muTorrent.Lock()
+	// defer t.muTorrent.Unlock()
 	// if t.Torrent != nil && t.Torrent.Info() != nil {
 	// 	pieceLen := t.Torrent.Info().PieceLength
 	// 	adj := pieceLen * int64(t.Torrent.Stats().ActivePeers) / int64(1+t.cache.Readers())
@@ -206,13 +206,8 @@ func (t *Torrent) updateRA() {
 	// 	}
 	// 	go t.cache.AdjustRA(adj)
 	// }
-	if t.cache != nil {
-		readers := t.cache.Readers()
-		if readers > 0 { // actually it's 0 in preload
-			adj := int64(16 << 20) // 16 MB fixed RA
-			go t.cache.AdjustRA(adj)
-		}
-	}
+	adj := int64(16 << 20) // 16 MB fixed RA
+	go t.cache.AdjustRA(adj)
 }
 
 func (t *Torrent) expired() bool {
