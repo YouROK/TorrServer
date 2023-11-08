@@ -143,12 +143,20 @@ func watchTDir(dir string) {
 								tor.Drop()
 								os.Remove(filename)
 								time.Sleep(time.Second)
+							} else {
+								log.TLogln("Error get info from torrent")
 							}
+						} else {
+							log.TLogln("Error parse torrent file:", err)
 						}
+					} else {
+						log.TLogln("Error parse file name:", err)
 					}
 				}
 			}
+		} else {
+			log.TLogln("Error read dir:", err)
 		}
-		time.Sleep(time.Second)
+		time.Sleep(time.Second * 5)
 	}
 }
