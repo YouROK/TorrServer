@@ -4,7 +4,7 @@ TorrServer, stream torrent to http
 ### Installation
 Just download server from releases and exec file\
 https://github.com/YouROK/TorrServer/releases \
-After open browser link http://127.0.0.1:8090 \
+Then open the browser link http://127.0.0.1:8090 or https://127.0.0.1:8091 if the server was started with --ssl option \
 On linux systems you may need to set the environment variable before run \
 ***export GODEBUG=madvdontneed=1***
 
@@ -38,11 +38,19 @@ path/to/Android/sdk/ndk/ver/toolchains/llvm/prebuilt/platform
 #
 ### Server args:
 #### Usage
-TorrServer-darwin-arm64 [--port PORT] [--path PATH] [--logpath LOGPATH] [--weblogpath WEBLOGPATH] [--rdb] [--httpauth] [--dontkill] [--ui] [--torrentsdir TORRENTSDIR] [--torrentaddr TORRENTADDR] [--pubipv4 PUBIPV4] [--pubipv6 PUBIPV6] [--searchwa]
+TorrServer-darwin-arm64 [--port PORT] [--ssl] [--sslport PORT] [--sslcert PATH] [--sslkey PATH] [--path PATH] [--logpath LOGPATH] [--weblogpath WEBLOGPATH] [--rdb] [--httpauth] [--dontkill] [--ui] [--torrentsdir TORRENTSDIR] [--torrentaddr TORRENTADDR] [--pubipv4 PUBIPV4] [--pubipv6 PUBIPV6] [--searchwa]
 
 #### Options
 * --port PORT, -p PORT   
   *                 web server port, default 8090
+* --ssl  
+  *                 enables https, default false
+* --sslport PORT
+	*                 web server ssl port, If not set, will be set to default 8091 or taken from db(if stored previously). Accepted if --ssl enabled.
+* --sslcert PATH
+	*                 path to ssl cert file. If not set, default self-signed certificate/key will be generated. Accepted if --ssl enabled.
+* --sslkey PATH
+	*                 path to ssl key file. If not set, default self-signed certificate/key will be generated. Accepted if --ssl enabled.
 * --path PATH, -d PATH   
   *                 database dir path
 * --logpath LOGPATH, -l LOGPATH

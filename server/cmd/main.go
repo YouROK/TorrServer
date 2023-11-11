@@ -74,7 +74,7 @@ func main() {
 	}
 
 	dnsResolve()
-	// Preconfig(params.DontKill)
+	Preconfig(params.DontKill)
 
 	if params.UI {
 		go func() {
