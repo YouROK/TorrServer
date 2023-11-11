@@ -113,7 +113,7 @@ func getAbsPath(fileName string) string {
 	return filePath
 }
 
-func CheckCertKeyFiles(certFile, keyFile, port string) error {
+func VerifyCertKeyFiles(certFile, keyFile, port string) error {
 	// Load the certificate and key
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {

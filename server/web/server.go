@@ -82,8 +82,8 @@ func Start() {
 			log.TLogln("Saving path to ssl cert and key in db", settings.BTsets.SslCert, settings.BTsets.SslKey)
 			settings.SetBTSets(settings.BTsets)
 		}
-		//check if cert and key files valid
-		err = sslcerts.CheckCertKeyFiles(settings.BTsets.SslCert, settings.BTsets.SslKey, settings.SslPort)
+		//verify if cert and key files are valid
+		err = sslcerts.VerifyCertKeyFiles(settings.BTsets.SslCert, settings.BTsets.SslKey, settings.SslPort)
 		//if not valid, generate new self-signed cert and key files
 		if err != nil {
 			log.TLogln("Error checking certificate and private key files:", err)
@@ -91,8 +91,8 @@ func Start() {
 			log.TLogln("Saving path to ssl cert and key in db", settings.BTsets.SslCert, settings.BTsets.SslKey)
 			settings.SetBTSets(settings.BTsets)
 		}
-		log.TLogln("Starting https server at port", settings.SslPort)
 		go func() {
+			log.TLogln("Starting https server at port", settings.SslPort)
 			waitChan <- route.RunTLS(":"+settings.SslPort, settings.BTsets.SslCert, settings.BTsets.SslKey)
 		}()
 	}

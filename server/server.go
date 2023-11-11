@@ -56,6 +56,8 @@ func Start(port, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA b
 		log.TLogln("Port", port, "already in use! Please set different sslport for HTTPS. Abort")
 		os.Exit(1)
 	}
+
+	// set settings http and https ports. Start web server.
 	go cleanCache()
 	settings.Port = port
 	settings.SslPort = settings.BTsets.SslPort
