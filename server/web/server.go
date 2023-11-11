@@ -22,6 +22,7 @@ import (
 	"server/web/auth"
 	"server/web/blocker"
 	"server/web/pages"
+	"server/web/sslcerts"
 )
 
 var (
@@ -29,7 +30,7 @@ var (
 	waitChan = make(chan error)
 )
 
-func Start(port string) {
+func Start() {
 	log.TLogln("Start TorrServer " + version.Version + " torrent " + version.GetTorrentVersion())
 	ips := getLocalIps()
 	if len(ips) > 0 {
@@ -71,8 +72,36 @@ func Start(port string) {
 	if settings.BTsets.EnableDLNA {
 		dlna.Start()
 	}
-	log.TLogln("Start web server at port", port)
-	waitChan <- route.Run(":" + port)
+
+	log.TLogln(settings.BTsets)
+	//check if https enabled
+	if settings.Ssl {
+		//if no cert and key files set in db/settings, generate new self-signed cert and key files
+		if settings.BTsets.SslCert == "" || settings.BTsets.SslKey == "" {
+			settings.BTsets.SslCert, settings.BTsets.SslKey = sslcerts.MakeCertKeyFiles(ips)
+			log.TLogln("Saving path to ssl cert and key in db", settings.BTsets.SslCert, settings.BTsets.SslKey)
+			settings.SetBTSets(settings.BTsets)
+		}
+		//check if cert and key files valid
+		err = sslcerts.CheckCertKeyFiles(settings.BTsets.SslCert, settings.BTsets.SslKey, settings.SslPort)
+		//if not valid, generate new self-signed cert and key files
+		if err != nil {
+			log.TLogln("Error checking certificate and private key files:", err)
+			settings.BTsets.SslCert, settings.BTsets.SslKey = sslcerts.MakeCertKeyFiles(ips)
+			log.TLogln("Saving path to ssl cert and key in db", settings.BTsets.SslCert, settings.BTsets.SslKey)
+			settings.SetBTSets(settings.BTsets)
+		}
+		log.TLogln("Starting https server at port", settings.SslPort)
+		go func() {
+			waitChan <- route.RunTLS(":"+settings.SslPort, settings.BTsets.SslCert, settings.BTsets.SslKey)
+		}()
+	}
+
+	go func() {
+		log.TLogln("Start http server at port", settings.Port)
+		waitChan <- route.Run(":" + settings.Port)
+	}()
+
 }
 
 func Wait() error {

@@ -23,6 +23,10 @@ import (
 
 type args struct {
 	Port        string `arg:"-p" help:"web server port, default 8090"`
+	Ssl         bool   `help:"enables https, default false"`
+	SslPort     string `help:"web server ssl port, If not set, will be taken from db or set to default 8091"`
+	SslCert     string `help:"path to ssl cert file. If not set, will be generated"`
+	SslKey      string `help:"path to ssl key file. If not set, will be generated"`
 	Path        string `arg:"-d" help:"database dir path"`
 	LogPath     string `arg:"-l" help:"server log file path"`
 	WebLogPath  string `arg:"-w" help:"web access log file path"`
@@ -56,6 +60,10 @@ func main() {
 		params.Port = "8090"
 	}
 
+	if params.SslPort == "" {
+		params.SslPort = "8091"
+	}
+
 	settings.Path = params.Path
 	settings.HttpAuth = params.HttpAuth
 	log.Init(params.LogPath, params.WebLogPath)
@@ -66,12 +74,16 @@ func main() {
 	}
 
 	dnsResolve()
-	Preconfig(params.DontKill)
+	// Preconfig(params.DontKill)
 
 	if params.UI {
 		go func() {
 			time.Sleep(time.Second)
-			browser.OpenURL("http://127.0.0.1:" + params.Port)
+			if params.Ssl {
+				browser.OpenURL("https://127.0.0.1:" + params.SslPort)
+			} else {
+				browser.OpenURL("http://127.0.0.1:" + params.Port)
+			}
 		}()
 	}
 
@@ -91,7 +103,7 @@ func main() {
 		go watchTDir(params.TorrentsDir)
 	}
 
-	server.Start(params.Port, params.RDB, params.SearchWA)
+	server.Start(params.Port, params.SslPort, params.SslCert, params.SslKey, params.Ssl, params.RDB, params.SearchWA)
 	log.TLogln(server.WaitServer())
 	log.Close()
 	time.Sleep(time.Second * 3)

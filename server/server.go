@@ -10,10 +10,30 @@ import (
 	"server/web"
 )
 
-func Start(port string, roSets, searchWA bool) {
+func Start(port, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA bool) {
 	settings.InitSets(roSets, searchWA)
 	if port == "" {
 		port = "8090"
+	}
+	settings.Ssl = sslEnabled
+	settings.BTsets.Ssl = sslEnabled
+	// check if ssl enabled
+	if sslEnabled {
+		// set settings ssl enabled
+		if sslport == "" {
+			if settings.BTsets.SslPort == "" {
+				settings.BTsets.SslPort = "8091"
+			}
+		} else {
+			settings.BTsets.SslPort = sslport
+		}
+
+		// check if ssl cert and key files exist
+		if sslCert != "" && sslKey != "" {
+			// set settings ssl cert and key files
+			settings.BTsets.SslCert = sslCert
+			settings.BTsets.SslKey = sslKey
+		}
 	}
 	log.TLogln("Check web port", port)
 	l, err := net.Listen("tcp", ":"+port)
@@ -26,7 +46,8 @@ func Start(port string, roSets, searchWA bool) {
 	} else {
 		go cleanCache()
 		settings.Port = port
-		web.Start(port)
+		settings.SslPort = settings.BTsets.SslPort
+		web.Start()
 	}
 }
 
