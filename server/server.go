@@ -10,8 +10,40 @@ import (
 	"server/web"
 )
 
-func Start(port string, roSets, searchWA bool) {
+func Start(port, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA bool) {
 	settings.InitSets(roSets, searchWA)
+
+	//// https checks
+	// check if ssl enabled
+	settings.Ssl = sslEnabled
+	settings.BTsets.Ssl = sslEnabled
+	if sslEnabled {
+		// set settings ssl enabled
+		if sslport == "" {
+			if settings.BTsets.SslPort == "" {
+				settings.BTsets.SslPort = "8091"
+			}
+		} else {
+			settings.BTsets.SslPort = sslport
+		}
+		// check if ssl cert and key files exist
+		if sslCert != "" && sslKey != "" {
+			// set settings ssl cert and key files
+			settings.BTsets.SslCert = sslCert
+			settings.BTsets.SslKey = sslKey
+		}
+		log.TLogln("Check web ssl port", settings.BTsets.SslPort)
+		l, err := net.Listen("tcp", ":"+settings.BTsets.SslPort)
+		if l != nil {
+			l.Close()
+		}
+		if err != nil {
+			log.TLogln("Port", settings.BTsets.SslPort, "already in use! Please set different port for HTTP. Abort")
+			os.Exit(1)
+		}
+	}
+
+	// http checks
 	if port == "" {
 		port = "8090"
 	}
@@ -21,13 +53,16 @@ func Start(port string, roSets, searchWA bool) {
 		l.Close()
 	}
 	if err != nil {
-		log.TLogln("Port", port, "already in use! Abort")
+		log.TLogln("Port", port, "already in use! Please set different sslport for HTTPS. Abort")
 		os.Exit(1)
-	} else {
-		go cleanCache()
-		settings.Port = port
-		web.Start(port)
 	}
+
+	// set settings http and https ports. Start web server.
+	go cleanCache()
+	settings.Port = port
+	settings.SslPort = settings.BTsets.SslPort
+	web.Start()
+
 }
 
 func cleanCache() {

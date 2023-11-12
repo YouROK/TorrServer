@@ -21,6 +21,9 @@ func ffp(c *gin.Context) {
 	}
 
 	link := "http://127.0.0.1:" + sets.Port + "/play/" + hash + "/" + indexStr
+	if sets.Ssl {
+		link = "https://127.0.0.1:" + sets.SslPort + "/play/" + hash + "/" + indexStr
+	}
 
 	data, err := ffprobe.ProbeUrl(link)
 	if err != nil {

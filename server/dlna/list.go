@@ -236,13 +236,23 @@ func loadTorrent(path, host string) (ret []interface{}) {
 
 func getLink(host, path string) string {
 	if !strings.HasPrefix(host, "http") {
-		host = "http://" + host
+		if settings.Ssl {
+			host = "https://" + host
+		} else {
+			host = "http://" + host
+		}
+		
 	}
 	pos := strings.LastIndex(host, ":")
 	if pos > 7 {
 		host = host[:pos]
 	}
-	return host + ":" + settings.Port + "/" + path
+	if settings.Ssl {
+		return host + ":" + settings.SslPort + "/" + path
+	} else {
+		return host + ":" + settings.Port + "/" + path
+	}
+	
 }
 
 func getObjFromTorrent(path, parent, host string, torr *torr.Torrent, file *state.TorrentFileStat) (ret interface{}) {

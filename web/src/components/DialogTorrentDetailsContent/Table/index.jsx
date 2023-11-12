@@ -56,7 +56,7 @@ const Table = memo(
               return (
                 (season === selectedSeason || !seasonAmount?.length) && (
                   <tr key={id} className={isViewed ? 'viewed-file-row' : null}>
-                    <td data-label='viewed' className={isViewed ? 'viewed-file-indicator' : null} />
+                    <td data-label='viewed' aria-label='viewed' className={isViewed ? 'viewed-file-indicator' : null} />
                     <td data-label='name'>{shouldDisplayFullFileName ? path : title}</td>
                     {fileHasSeasonText && seasonAmount?.length === 1 && <td data-label='season'>{season}</td>}
                     {fileHasEpisodeText && <td data-label='episode'>{episode}</td>}
