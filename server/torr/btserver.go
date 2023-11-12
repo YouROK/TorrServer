@@ -109,13 +109,13 @@ func (bt *BTServer) configure(ctx context.Context) {
 	bt.config.EstablishedConnsPerTorrent = settings.BTsets.ConnectionsLimit
 	bt.config.TotalHalfOpenConns = 500
 	// Encryption/Obfuscation
-	bt.config.EncryptionPolicy = torrent.EncryptionPolicy{
-		ForceEncryption: settings.BTsets.ForceEncrypt,
+	// bt.config.EncryptionPolicy = torrent.EncryptionPolicy{
+	// 	ForceEncryption: settings.BTsets.ForceEncrypt,
+	// }
+	bt.config.HeaderObfuscationPolicy = torrent.HeaderObfuscationPolicy{
+		RequirePreferred: settings.BTsets.ForceEncrypt,
+		Preferred:        true,
 	}
-	//	bt.config.HeaderObfuscationPolicy = torrent.HeaderObfuscationPolicy{
-	//		RequirePreferred: settings.BTsets.ForceEncrypt,
-	//		Preferred:        true,
-	//	}
 	if settings.BTsets.DownloadRateLimit > 0 {
 		bt.config.DownloadRateLimiter = utils.Limit(settings.BTsets.DownloadRateLimit * 1024)
 	}
