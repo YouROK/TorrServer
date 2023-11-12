@@ -86,8 +86,14 @@ func playList(c *gin.Context) {
 	host := utils.GetScheme(c) + "://" + c.Request.Host
 	list := getM3uList(tor.Status(), host, fromlast)
 	list = "#EXTM3U\n" + list
+	name := strings.ReplaceAll(c.Param("fname"), `/`, "") // strip starting / from param
+	if name == "" {
+		name = tor.Name() + ".m3u"
+	} else {
+		name += ".m3u"
+	}
 
-	sendM3U(c, tor.Name()+".m3u", tor.Hash().HexString(), list)
+	sendM3U(c, name, tor.Hash().HexString(), list)
 }
 
 func sendM3U(c *gin.Context, name, hash string, m3u string) {

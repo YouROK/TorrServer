@@ -299,7 +299,7 @@ info:
   license:
     name: GPL 3.0
   title: Swagger Torrserver API
-  version: "1.0"
+  version: '{version.Version}'
 paths:
   /cache:
     post:
@@ -530,7 +530,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: Depends on what has been asked
+          description: Depends on what action has been asked
           schema:
             $ref: '#/definitions/settings.BTSets'
       summary: Get / Set server settings
@@ -538,7 +538,7 @@ paths:
       - API
   /shutdown:
     get:
-      description: Gracefully shuts down server.
+      description: Gracefully shuts down server after 1 second.
       responses:
         "200":
           description: OK
@@ -618,12 +618,18 @@ paths:
       - API
   /torrent/upload:
     post:
+      consumes:
+      - multipart/form-data
       description: Only one file support.
       parameters:
+      - description: Torrent file to insert
+        in: formData
+        name: file
+        required: true
+        type: file
       - description: Save to DB
         in: formData
         name: save
-        required: true
         type: string
       - description: Torrent title
         in: formData
@@ -643,7 +649,7 @@ paths:
         "200":
           description: Torrent status
           schema:
-            type: string
+            $ref: '#/definitions/state.TorrentStatus'
       summary: Only one file support
       tags:
       - API
@@ -651,7 +657,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Allow to add, get or set torrents to server.
+      description: Allow to add, get or set torrents to server. The action depends
+        of what has been asked.
       parameters:
       - description: Torrent request
         in: body
@@ -664,7 +671,7 @@ paths:
       responses:
         "200":
           description: OK
-      summary: Add / Get / Set torrents
+      summary: Handle torrents informations
       tags:
       - API
   /viewed:

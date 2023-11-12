@@ -19,6 +19,7 @@
 
 TorrServer.iml
 .idea/
+.vscode
 
 src/github.com/
 src/golang.org/

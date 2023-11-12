@@ -11,7 +11,7 @@ import (
 
 // shutdown godoc
 // @Summary		Shuts down server
-// @Description	Gracefully shuts down server.
+// @Description	Gracefully shuts down server after 1 second.
 //
 // @Tags			API
 //
