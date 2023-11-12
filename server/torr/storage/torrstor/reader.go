@@ -25,7 +25,6 @@ type Reader struct {
 	lastAccess int64
 	isUse      bool
 	mu         sync.Mutex
-	ranges     Range
 }
 
 func newReader(file *torrent.File, cache *Cache) *Reader {
@@ -71,21 +70,21 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 		r.readerOn()
 		n, err = r.Reader.Read(p)
 
-		//samsung tv fix xvid/divx
+		// samsung tv fix xvid/divx
 		if r.offset == 0 && len(p) >= 192 {
 			str := strings.ToLower(string(p[112:116]))
 			if str == "xvid" || str == "divx" {
-				p[112] = 0x4D //M
-				p[113] = 0x50 //P
-				p[114] = 0x34 //4
-				p[115] = 0x56 //V
+				p[112] = 0x4D // M
+				p[113] = 0x50 // P
+				p[114] = 0x34 // 4
+				p[115] = 0x56 // V
 			}
 			str = strings.ToLower(string(p[188:192]))
 			if str == "xvid" || str == "divx" {
-				p[188] = 0x4D //M
-				p[189] = 0x50 //P
-				p[190] = 0x34 //4
-				p[191] = 0x56 //V
+				p[188] = 0x4D // M
+				p[189] = 0x50 // P
+				p[190] = 0x34 // 4
+				p[191] = 0x56 // V
 			}
 		}
 
@@ -197,7 +196,7 @@ func (r *Reader) readerOff() {
 func (r *Reader) getUseReaders() int {
 	readers := 0
 	if r.cache != nil {
-		for reader, _ := range r.cache.readers {
+		for reader := range r.cache.readers {
 			if reader.isUse {
 				readers++
 			}

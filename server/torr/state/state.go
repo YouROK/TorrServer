@@ -61,6 +61,8 @@ type TorrentStatus struct {
 	ChunksReadWasted    int64       `json:"chunks_read_wasted,omitempty"`
 	PiecesDirtiedGood   int64       `json:"pieces_dirtied_good,omitempty"`
 	PiecesDirtiedBad    int64       `json:"pieces_dirtied_bad,omitempty"`
+	DurationSeconds     float64     `json:"duration_seconds,omitempty"`
+	BitRate             string      `json:"bit_rate,omitempty"`
 
 	FileStats []*TorrentFileStat `json:"file_stats,omitempty"`
 }

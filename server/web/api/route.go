@@ -39,6 +39,10 @@ func SetupRoute(route *gin.RouterGroup) {
 	route.GET("/playlist/*fname", playList)
 
 	route.GET("/download/:size", download)
+
+	route.GET("/search/*query", rutorSearch)
+
+	route.GET("/ffp/:hash/:id", ffp)
 }
 
 func shutdown(c *gin.Context) {

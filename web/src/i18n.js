@@ -4,6 +4,8 @@ import LanguageDetector from 'i18next-browser-languagedetector'
 import translationEN from 'locales/en/translation.json'
 import translationRU from 'locales/ru/translation.json'
 import translationUA from 'locales/ua/translation.json'
+import translationZH from 'locales/zh/translation.json'
+import translationBG from 'locales/bg/translation.json'
 
 i18n
   .use(LanguageDetector)
@@ -15,6 +17,8 @@ i18n
       en: { translation: translationEN },
       ru: { translation: translationRU },
       ua: { translation: translationUA },
+      zh: { translation: translationZH },
+      bg: { translation: translationBG },
     },
   })
 

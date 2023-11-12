@@ -5,8 +5,14 @@ import IconButton from '@material-ui/core/IconButton'
 import CreditCardIcon from '@material-ui/icons/CreditCard'
 import CloseIcon from '@material-ui/icons/Close'
 import { useTranslation } from 'react-i18next'
+import styled from 'styled-components'
+import { standaloneMedia } from 'style/standaloneMedia'
 
 import DonateDialog from './DonateDialog'
+
+const StyledSnackbar = styled(Snackbar)`
+  ${standaloneMedia('margin-bottom: 90px')};
+`
 
 export default function DonateSnackbar() {
   const { t } = useTranslation()
@@ -22,7 +28,7 @@ export default function DonateSnackbar() {
     <>
       {open && <DonateDialog onClose={() => setOpen(false)} />}
 
-      <Snackbar
+      <StyledSnackbar
         anchorOrigin={{
           vertical: 'bottom',
           horizontal: 'center',

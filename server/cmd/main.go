@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -35,6 +34,7 @@ type args struct {
 	TorrentAddr string `help:"Torrent client address, default :32000"`
 	PubIPv4     string `arg:"-4" help:"set public IPv4 addr"`
 	PubIPv6     string `arg:"-6" help:"set public IPv6 addr"`
+	SearchWA    bool   `arg:"-s" help:"search without auth"`
 }
 
 func (args) Version() string {
@@ -91,7 +91,7 @@ func main() {
 		go watchTDir(params.TorrentsDir)
 	}
 
-	server.Start(params.Port, params.RDB)
+	server.Start(params.Port, params.RDB, params.SearchWA)
 	log.TLogln(server.WaitServer())
 	log.Close()
 	time.Sleep(time.Second * 3)
@@ -126,7 +126,7 @@ func watchTDir(dir string) {
 		path = dir
 	}
 	for {
-		files, err := ioutil.ReadDir(path)
+		files, err := os.ReadDir(path)
 		if err == nil {
 			for _, file := range files {
 				filename := filepath.Join(path, file.Name())
@@ -143,12 +143,20 @@ func watchTDir(dir string) {
 								tor.Drop()
 								os.Remove(filename)
 								time.Sleep(time.Second)
+							} else {
+								log.TLogln("Error get info from torrent")
 							}
+						} else {
+							log.TLogln("Error parse torrent file:", err)
 						}
+					} else {
+						log.TLogln("Error parse file name:", err)
 					}
 				}
 			}
+		} else {
+			log.TLogln("Error read dir:", err)
 		}
-		time.Sleep(time.Second)
+		time.Sleep(time.Second * 5)
 	}
 }

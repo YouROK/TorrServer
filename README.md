@@ -5,13 +5,25 @@ TorrServer, stream torrent to http
 Just download server from releases and exec file\
 https://github.com/YouROK/TorrServer/releases \
 After open browser link http://127.0.0.1:8090 \
-On linux systems you need to set the environment variable before run \
+On linux systems you may need to set the environment variable before run \
 ***export GODEBUG=madvdontneed=1***
+
+#### macOS install / configure / uninstall script
+Just run in Terminal: `curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerMac.sh -o installTorrserverMac.sh && chmod 755 installTorrServerMac.sh && sudo ./installTorrServerMac.sh`
+Alternative install script for Intel Macs: https://github.com/dancheskus/TorrServerMacInstaller
+
+#### Linux on VPS install / configure / uninstall script
+Just run in console: `curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh | sudo bash`
 
 #### Unofficial TorrServer iocage plugin
 On FreeBSD (TrueNAS/FreeNAS) you can use this plugin
 
 https://github.com/filka96/iocage-plugin-TorrServer
+
+#### NAS releases
+https://github.com/vladlenas
+
+Synology NAS packages repo source: https://grigi.lt
 
 ### Build
 Install golang 1.16+ by instruction: https://golang.org/doc/install \
@@ -26,17 +38,39 @@ path/to/Android/sdk/ndk/ver/toolchains/llvm/prebuilt/platform
 #
 ### Server args:
 #### Usage
-TorrServer [--port PORT] [--path PATH] [--logpath LOGPATH] [--rdb] [--httpauth] [--dontkill] [--ui]
+TorrServer-darwin-arm64 [--port PORT] [--path PATH] [--logpath LOGPATH] [--weblogpath WEBLOGPATH] [--rdb] [--httpauth] [--dontkill] [--ui] [--torrentsdir TORRENTSDIR] [--torrentaddr TORRENTADDR] [--pubipv4 PUBIPV4] [--pubipv6 PUBIPV6] [--searchwa]
 
 #### Options
-* --port PORT, -p PORT             web server port
-* --path PATH, -d PATH             database and settings path
-* --logpath LOGPATH, -l LOGPATH    log path
-* --rdb, -r                        start in read-only DB mode
-* --httpauth, -a                   http auth on all requests
-* --dontkill, -k                   dont kill server on signal
-* --ui, -u                         run page torrserver in browser
-* --version                        display version and exit
+* --port PORT, -p PORT   
+  *                 web server port, default 8090
+* --path PATH, -d PATH   
+  *                 database dir path
+* --logpath LOGPATH, -l LOGPATH
+  *                 server log file path
+* --weblogpath WEBLOGPATH, -w WEBLOGPATH
+  *                 web access log file path
+* --rdb, -r              
+  *                 start in read-only DB mode
+* --httpauth, -a         
+  *                 enable http auth on all requests
+* --dontkill, -k         
+  *                 don't kill server on signal
+* --ui, -u               
+  *                 open torrserver page in browser
+* --torrentsdir TORRENTSDIR, -t TORRENTSDIR
+  *                 autoload torrents from dir
+* --torrentaddr TORRENTADDR
+  *                 Torrent client address (format [IP]:PORT, ex. :32000, 127.0.0.1:32768 etc)
+* --pubipv4 PUBIPV4, -4 PUBIPV4
+  *                 set public IPv4 addr
+* --pubipv6 PUBIPV6, -6 PUBIPV6 
+  *                 set public IPv6 addr
+* --searchwa, -s         
+  *                 search without auth
+* --help, -h             
+  *                 display this help and exit
+* --version              
+  *                 display version and exit
 
 
 #
@@ -214,9 +248,9 @@ docker run --rm -d -e TS_PORT=5665 -e TS_DONTKILL=1 -e TS_HTTPAUTH=1 -e TS_RDB=1
 
 #
 ### Donate:
-[PayPal](https://www.paypal.me/yourok) \
-[QIWI](qiwi.com/n/YOUROK85) \
-[YooMoney](https://yoomoney.ru/to/410013733697114/200) 
+[QIWI](https://qiwi.com/n/YOUROK85) \
+[YooMoney](https://yoomoney.ru/to/410013733697114/200) \
+[PayPal](https://www.paypal.me/yourok)
 
 SberBank card: **5484 4000 2285 7839**
 
@@ -226,14 +260,22 @@ YooMoney card: **4048 4150 1812 8179**
 #
 ### Thanks to everyone who tested and helped
 
-###### **Anacrolix Matt Joiner** [github.com/anacrolix](https://github.com/anacrolix/)
+###### @nacrolix **Matt Joiner** [github.com/anacrolix](https://github.com/anacrolix/)
 
-###### **tsynik** [github.com/tsynik](https://github.com/tsynik)
+###### @tsynik [github.com/tsynik](https://github.com/tsynik)
 
-###### **dancheskus** [github.com/dancheskus](https://github.com/dancheskus)
+###### @dancheskus [github.com/dancheskus](https://github.com/dancheskus)
 
-###### **kolsys** [github.com/kolsys](https://github.com/kolsys)
+###### @kolsys [github.com/kolsys](https://github.com/kolsys)
 
-###### **Tw1cker Руслан Пахнев** [github.com/Nemiroff](https://github.com/Nemiroff)
+###### @vladlenas [github.com/vladlenas](https://github.com/vladlenas)
 
-###### **SpAwN_LMG** [github.com/spawnlmg](https://github.com/spawnlmg)
+###### @Nemiroff aka **Tw1cker** [github.com/Nemiroff](https://github.com/Nemiroff)
+
+###### @spawnlmg **SpAwN_LMG** [github.com/spawnlmg](https://github.com/spawnlmg)
+
+###### @TopperBG **Dimitar Maznekov** [github.com/TopperBG](https://github.com/TopperBG)
+
+###### @FaintGhost **Zhang Yaowei** [github.com/FaintGhost](https://github.com/FaintGhost)
+
+###### @Anton111111 **Anton Potekhin** [github.com/Anton111111](https://github.com/Anton111111)

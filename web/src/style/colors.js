@@ -7,6 +7,7 @@ export const themeColors = {
       appSecondaryColor: '#cbe8d9',
       sidebarBGColor: '#575757',
       sidebarFillColor: '#dee3e5',
+      paperColor: '#eeeeee',
     },
     torrentCard: {
       accentCardColor: '#337a57',
@@ -58,6 +59,7 @@ export const themeColors = {
       appSecondaryColor: '#545a5e',
       sidebarBGColor: '#323637',
       sidebarFillColor: '#dee3e5',
+      paperColor: '#323637',
     },
     torrentCard: {
       accentCardColor: '#323637',

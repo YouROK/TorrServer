@@ -1,13 +1,14 @@
 import CssBaseline from '@material-ui/core/CssBaseline'
 import { createContext, useEffect, useState } from 'react'
 import Typography from '@material-ui/core/Typography'
-import IconButton from '@material-ui/core/IconButton'
 import {
   Menu as MenuIcon,
   Close as CloseIcon,
   Brightness4 as Brightness4Icon,
   Brightness5 as Brightness5Icon,
   BrightnessAuto as BrightnessAutoIcon,
+  Sort as SortIcon,
+  SortByAlpha as SortByAlphaIcon,
 } from '@material-ui/icons'
 import { echoHost } from 'utils/Hosts'
 import Div100vh from 'react-div-100vh'
@@ -19,13 +20,18 @@ import useChangeLanguage from 'utils/useChangeLanguage'
 import { ThemeProvider as MuiThemeProvider } from '@material-ui/core/styles'
 import { ThemeProvider as StyledComponentsThemeProvider } from 'styled-components'
 import { useQuery } from 'react-query'
-import { getTorrents } from 'utils/Utils'
+import { getTorrents, isStandaloneApp } from 'utils/Utils'
 import GlobalStyle from 'style/GlobalStyle'
+import { /* lightTheme, */ THEME_MODES, useMaterialUITheme } from 'style/materialUISetup'
+import getStyledComponentsTheme from 'style/getStyledComponentsTheme'
+import checkIsIOS from 'utils/checkIsIOS'
 
-import { AppWrapper, AppHeader, HeaderToggle } from './style'
+import { AppWrapper, AppHeader, HeaderToggle, StyledIconButton } from './style'
 import Sidebar from './Sidebar'
-import { lightTheme, THEME_MODES, useMaterialUITheme } from '../../style/materialUISetup'
-import getStyledComponentsTheme from '../../style/getStyledComponentsTheme'
+import PWAFooter from './PWAFooter'
+import { PWAInstallationGuide } from './PWAInstallationGuide'
+
+const snackbarIsClosed = JSON.parse(localStorage.getItem('snackbarIsClosed'))
 
 export const DarkModeContext = createContext()
 
@@ -43,6 +49,9 @@ export default function App() {
     onError: () => setIsOffline(true),
     onSuccess: () => setIsOffline(false),
   })
+  const [sortABC, setSortABC] = useState(false)
+  const handleClickSortABC = () => setSortABC(true)
+  const handleClickSortDate = () => setSortABC(false)
 
   useEffect(() => {
     axios.get(echoHost()).then(({ data }) => setTorrServerVersion(data))
@@ -63,22 +72,21 @@ export default function App() {
             <Div100vh>
               <AppWrapper>
                 <AppHeader>
-                  <IconButton
-                    edge='start'
-                    color='inherit'
-                    onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-                    style={{ marginRight: '6px' }}
-                  >
+                  <StyledIconButton edge='start' color='inherit' onClick={() => setIsDrawerOpen(!isDrawerOpen)}>
                     {isDrawerOpen ? <CloseIcon /> : <MenuIcon />}
-                  </IconButton>
+                  </StyledIconButton>
 
                   <Typography variant='h6' noWrap>
                     TorrServer {torrServerVersion}
                   </Typography>
 
                   <div
-                    style={{ justifySelf: 'end', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}
+                    style={{ justifySelf: 'end', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}
                   >
+                    <HeaderToggle onClick={() => (sortABC === true ? handleClickSortDate() : handleClickSortABC())}>
+                      {sortABC === true ? <SortByAlphaIcon /> : <SortIcon />}
+                    </HeaderToggle>
+
                     <HeaderToggle
                       onClick={() => {
                         if (currentThemeMode === THEME_MODES.LIGHT) updateThemeMode(THEME_MODES.DARK)
@@ -101,6 +109,10 @@ export default function App() {
                           ? changeLang('ru')
                           : currentLang === 'ru'
                           ? changeLang('ua')
+                          : currentLang === 'ua'
+                          ? changeLang('zh')
+                          : currentLang === 'zh'
+                          ? changeLang('bg')
                           : changeLang('en')
                       }
                     >
@@ -116,13 +128,19 @@ export default function App() {
                   setIsDonationDialogOpen={setIsDonationDialogOpen}
                 />
 
-                <TorrentList isOffline={isOffline} torrents={torrents} isLoading={isLoading} />
+                <TorrentList isOffline={isOffline} torrents={torrents} isLoading={isLoading} sortABC={sortABC} />
 
-                <MuiThemeProvider theme={lightTheme}>
-                  {isDonationDialogOpen && <DonateDialog onClose={() => setIsDonationDialogOpen(false)} />}
-                </MuiThemeProvider>
+                <PWAFooter
+                  isOffline={isOffline}
+                  isLoading={isLoading}
+                  setIsDonationDialogOpen={setIsDonationDialogOpen}
+                />
 
-                {!JSON.parse(localStorage.getItem('snackbarIsClosed')) && <DonateSnackbar />}
+                {/* <MuiThemeProvider theme={lightTheme}> */}
+                {isDonationDialogOpen && <DonateDialog onClose={() => setIsDonationDialogOpen(false)} />}
+                {/* </MuiThemeProvider> */}
+
+                {snackbarIsClosed ? checkIsIOS() && !isStandaloneApp && <PWAInstallationGuide /> : <DonateSnackbar />}
               </AppWrapper>
             </Div100vh>
           </StyledComponentsThemeProvider>

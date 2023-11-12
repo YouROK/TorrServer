@@ -1,6 +1,6 @@
 import { streamHost } from 'utils/Hosts'
 import isEqual from 'lodash/isEqual'
-import { humanizeSize } from 'utils/Utils'
+import { humanizeSize, isStandaloneApp } from 'utils/Utils'
 import ptt from 'parse-torrent-title'
 import { Button } from '@material-ui/core'
 import CopyToClipboard from 'react-copy-to-clipboard'
@@ -26,7 +26,9 @@ const Table = memo(
     const fileHasResolutionText = !!playableFileList?.find(({ path }) => ptt.parse(path).resolution)
 
     // if files in list is more then 1 and no season text detected by ptt.parse, show full name
-    const shouldDisplayFullFileName = playableFileList.length > 1 && !fileHasEpisodeText
+    const shouldDisplayFullFileName = playableFileList?.length > 1 && !fileHasEpisodeText
+
+    const isVlcUsed = JSON.parse(localStorage.getItem('isVlcUsed')) ?? false
 
     return !playableFileList?.length ? (
       'No playable files in this torrent'
@@ -133,11 +135,19 @@ const Table = memo(
                       {t('Preload')}
                     </Button>
 
-                    <a style={{ textDecoration: 'none' }} href={link} target='_blank' rel='noreferrer'>
-                      <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
-                        {t('OpenLink')}
-                      </Button>
-                    </a>
+                    {isVlcUsed && isStandaloneApp ? (
+                      <a style={{ textDecoration: 'none' }} href={`vlc://${link}`}>
+                        <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
+                          VLC
+                        </Button>
+                      </a>
+                    ) : (
+                      <a style={{ textDecoration: 'none' }} href={link} target='_blank' rel='noreferrer'>
+                        <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
+                          {t('OpenLink')}
+                        </Button>
+                      </a>
+                    )}
 
                     <CopyToClipboard text={link}>
                       <Button variant='outlined' color='primary' size='small'>

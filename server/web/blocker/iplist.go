@@ -68,7 +68,7 @@ func (ipl *IPList) Lookup(ip net.IP) (r Range, ok bool) {
 // Return the range the given IP is in. Returns nil if no range is found.
 func (ipl *IPList) lookup(ip net.IP) (Range, bool) {
 	var rng Range
-	var ok = false
+	ok := false
 	for _, r := range ipl.ranges {
 		ok = bytes.Compare(r.First, ip) <= 0 && bytes.Compare(ip, r.Last) <= 0
 		if ok {

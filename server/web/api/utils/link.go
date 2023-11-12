@@ -24,8 +24,8 @@ func ParseFile(file multipart.File) (*torrent.TorrentSpec, error) {
 		return nil, err
 	}
 
-	//	mag := minfo.Magnet(info.Name, minfo.HashInfoBytes())
-	mag := minfo.Magnet(nil, &info)
+	mag := minfo.Magnet(info.Name, minfo.HashInfoBytes())
+	//	mag := minfo.Magnet(nil, &info)
 	return &torrent.TorrentSpec{
 		InfoBytes:   minfo.InfoBytes,
 		Trackers:    [][]string{mag.Trackers},
@@ -106,8 +106,8 @@ func fromHttp(link string) (*torrent.TorrentSpec, error) {
 	if err != nil {
 		return nil, err
 	}
-	//	mag := minfo.Magnet(info.Name, minfo.HashInfoBytes())
-	mag := minfo.Magnet(nil, &info)
+	mag := minfo.Magnet(info.Name, minfo.HashInfoBytes())
+	//	mag := minfo.Magnet(nil, &info)
 
 	return &torrent.TorrentSpec{
 		InfoBytes:   minfo.InfoBytes,
@@ -130,8 +130,8 @@ func fromFile(path string) (*torrent.TorrentSpec, error) {
 		return nil, err
 	}
 
-	//	mag := minfo.Magnet(info.Name, minfo.HashInfoBytes())
-	mag := minfo.Magnet(nil, &info)
+	mag := minfo.Magnet(info.Name, minfo.HashInfoBytes())
+	//	mag := minfo.Magnet(nil, &info)
 	return &torrent.TorrentSpec{
 		InfoBytes:   minfo.InfoBytes,
 		Trackers:    [][]string{mag.Trackers},

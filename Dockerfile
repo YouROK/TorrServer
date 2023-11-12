@@ -6,8 +6,9 @@ WORKDIR /app
 RUN yarn install && yarn run build
 ### FRONT BUILD END ###
 
+
 ### BUILD TORRSERVER MULTIARCH START ###
-FROM --platform=$BUILDPLATFORM golang:1.18-alpine as builder
+FROM --platform=$BUILDPLATFORM golang:1.21.2-alpine as builder
 
 COPY . /opt/src
 COPY --from=front /app/build /opt/src/web/build
@@ -41,6 +42,7 @@ RUN apt-get update && apt-get install -y upx-ucl && upx --best --lzma ./torrserv
 # RUN if [ "$TARGETARCH" == 'amd64' ]; then compress=1; elif [ "$TARGETARCH" == 'arm64' ] && [ -z "$TARGETVARIANT"  ]; then compress=1; else compress=0; fi \
 # && if [[ "$compress" -eq 1 ]]; then ./upx --best --lzma ./torrserver; fi
 ### UPX COMPRESSING END ###
+
 
 ### BUILD MAIN IMAGE START ###
 FROM alpine

@@ -3,8 +3,8 @@ package auth
 import (
 	"encoding/base64"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -28,7 +28,7 @@ func SetupAuth(engine *gin.Engine) *gin.RouterGroup {
 }
 
 func getAccounts() gin.Accounts {
-	buf, err := ioutil.ReadFile(filepath.Join(settings.Path, "accs.db"))
+	buf, err := os.ReadFile(filepath.Join(settings.Path, "accs.db"))
 	if err != nil {
 		return nil
 	}
@@ -62,10 +62,12 @@ func BasicAuth(accounts gin.Accounts) gin.HandlerFunc {
 	pairs := processAccounts(accounts)
 	return func(c *gin.Context) {
 		user, found := pairs.searchCredential(c.Request.Header.Get("Authorization"))
-		if !found {
+		if !found { // always accessible
 			if strings.HasPrefix(c.FullPath(), "/stream") ||
-				strings.HasPrefix(c.FullPath(), "/play") ||
-				(strings.HasPrefix(c.FullPath(), "/playlist") && c.FullPath() != "/playlistall/all.m3u") {
+				c.FullPath() == "/site.webmanifest" ||
+				// https://github.com/YouROK/TorrServer/issues/172
+				(strings.HasPrefix(c.FullPath(), "/play") && c.FullPath() != "/playlistall/all.m3u") ||
+				(settings.SearchWA && strings.HasPrefix(c.FullPath(), "/search")) {
 				c.Set("not_auth", true)
 				return
 			}

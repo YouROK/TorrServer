@@ -29,7 +29,8 @@ func Start() {
 			ifaces, err := net.Interfaces()
 			if err != nil {
 				logger.Levelf(log.Error, "%v", err)
-				os.Exit(1)
+				return
+				// os.Exit(1) // avoid start on Android 13+
 			}
 			for _, i := range ifaces {
 				// interface flags seem to always be 0 on Windows
@@ -66,14 +67,14 @@ func Start() {
 		NoProbe:             true,
 		StallEventSubscribe: true,
 		Icons: []dms.Icon{
-			dms.Icon{
+			{
 				Width:    48,
 				Height:   48,
 				Depth:    24,
 				Mimetype: "image/png",
 				Bytes:    template.Dlnaicon48png,
 			},
-			dms.Icon{
+			{
 				Width:    120,
 				Height:   120,
 				Depth:    24,

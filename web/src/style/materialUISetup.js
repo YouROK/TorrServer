@@ -1,13 +1,13 @@
-import { createMuiTheme, useMediaQuery } from '@material-ui/core'
+import { createTheme, useMediaQuery } from '@material-ui/core'
 import { useEffect, useMemo, useState } from 'react'
 
-import { mainColors } from './colors'
+import { mainColors, themeColors } from './colors'
 
 export const THEME_MODES = { LIGHT: 'light', DARK: 'dark', AUTO: 'auto' }
 
 const typography = { fontFamily: 'Open Sans, sans-serif' }
 
-export const darkTheme = createMuiTheme({
+export const darkTheme = createTheme({
   typography,
   palette: {
     type: THEME_MODES.DARK,
@@ -15,7 +15,7 @@ export const darkTheme = createMuiTheme({
     secondary: { main: mainColors.dark.secondary },
   },
 })
-export const lightTheme = createMuiTheme({
+export const lightTheme = createTheme({
   typography,
   palette: {
     type: THEME_MODES.LIGHT,
@@ -45,7 +45,7 @@ export const useMaterialUITheme = () => {
 
   const muiTheme = useMemo(
     () =>
-      createMuiTheme({
+      createTheme({
         typography,
         palette: {
           type: theme,
@@ -53,6 +53,16 @@ export const useMaterialUITheme = () => {
           secondary: { main: mainColors[theme].secondary },
         },
         overrides: {
+          MuiTypography: {
+            h6: {
+              fontSize: '1.0rem',
+            },
+          },
+          MuiPaper: {
+            root: {
+              backgroundColor: themeColors[theme].app.paperColor,
+            },
+          },
           MuiInputBase: {
             input: {
               color: mainColors[theme].labels,
@@ -74,6 +84,13 @@ export const useMaterialUITheme = () => {
               marginBottom: 8,
               '&$focused': {
                 color: mainColors[theme].labels,
+              },
+            },
+          },
+          MuiFormGroup: {
+            root: {
+              '& .MuiFormHelperText-root': {
+                marginTop: -8,
               },
             },
           },

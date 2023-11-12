@@ -2,7 +2,6 @@ package torr
 
 import (
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -15,9 +14,7 @@ import (
 	sets "server/settings"
 )
 
-var (
-	bts *BTServer
-)
+var bts *BTServer
 
 func InitApiHelper(bt *BTServer) {
 	bts = bt
@@ -145,7 +142,7 @@ func RemTorrent(hashHex string) {
 	hash := metainfo.NewHashFromHex(hashHex)
 	if sets.BTsets.UseDisk && hashHex != "" && hashHex != "/" {
 		name := filepath.Join(sets.BTsets.TorrentsSavePath, hashHex)
-		ff, _ := ioutil.ReadDir(name)
+		ff, _ := os.ReadDir(name)
 		for _, f := range ff {
 			os.Remove(filepath.Join(name, f.Name()))
 		}
@@ -209,7 +206,7 @@ func SetDefSettings() {
 	if sets.ReadOnly {
 		return
 	}
-	sets.SetDefault()
+	sets.SetDefaultConfig()
 	log.TLogln("drop all torrents")
 	dropAllTorrent()
 	time.Sleep(time.Second * 1)
