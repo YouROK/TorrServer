@@ -48,7 +48,7 @@ type BTSets struct {
 	PeersListenPort   int
 
 	// HTTPS
-	SslPort string
+	SslPort int
 	SslCert string
 	SslKey  string
 }

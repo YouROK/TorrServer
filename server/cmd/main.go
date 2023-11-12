@@ -60,10 +60,6 @@ func main() {
 		params.Port = "8090"
 	}
 
-	if params.SslPort == "" {
-		params.SslPort = "8091"
-	}
-
 	settings.Path = params.Path
 	settings.HttpAuth = params.HttpAuth
 	log.Init(params.LogPath, params.WebLogPath)

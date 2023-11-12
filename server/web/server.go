@@ -73,7 +73,6 @@ func Start() {
 		dlna.Start()
 	}
 
-	log.TLogln(settings.BTsets)
 	//check if https enabled
 	if settings.Ssl {
 		//if no cert and key files set in db/settings, generate new self-signed cert and key files
@@ -92,7 +91,7 @@ func Start() {
 			settings.SetBTSets(settings.BTsets)
 		}
 		go func() {
-			log.TLogln("Starting https server at port", settings.SslPort)
+			log.TLogln("Start https server at port", settings.SslPort)
 			waitChan <- route.RunTLS(":"+settings.SslPort, settings.BTsets.SslCert, settings.BTsets.SslKey)
 		}()
 	}

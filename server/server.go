@@ -4,6 +4,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"server/log"
 	"server/settings"
@@ -17,8 +18,9 @@ func Start(port, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA b
 		// set settings ssl enabled
 		settings.Ssl = sslEnabled
 		if sslport == "" {
-			if settings.BTsets.SslPort != "" {
-				sslport = settings.BTsets.SslPort
+			userSSlPort := strconv.Itoa(settings.BTsets.SslPort)
+			if userSSlPort != "0" {
+				sslport = userSSlPort
 			} else {
 				sslport = "8091"
 			}
