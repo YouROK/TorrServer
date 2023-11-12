@@ -22,7 +22,7 @@
     "react-i18next": "^11.10.0",
     "react-measure": "^2.5.2",
     "react-query": "^3.17.0",
-    "react-scripts": "4.0.3",
+    "react-scripts": "5.0.1",
     "react-swipeable-views": "^0.14.0",
     "styled-components": "^5.3.0",
     "uuid": "^8.3.2"
