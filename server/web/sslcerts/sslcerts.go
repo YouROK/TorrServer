@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"server/log"
+	"server/settings"
 	"time"
 )
 
@@ -41,7 +42,7 @@ func generateSelfSignedCert(ips []string) ([]byte, []byte, error) {
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			Organization: []string{"Torrserver"},
+			Organization: []string{"TorrServer"},
 		},
 		NotBefore:             notBefore,
 		NotAfter:              notAfter,
@@ -72,19 +73,19 @@ func generateSelfSignedCert(ips []string) ([]byte, []byte, error) {
 func MakeCertKeyFiles(ips []string) (string, string) {
 	certPEM, privPEM, err := generateSelfSignedCert(ips)
 	if err != nil {
-		log.TLogln("Error generating certificate:", err) 
+		log.TLogln("Error generating certificate:", err)
 		os.Exit(1)
 	}
-	certFile, err := os.Create("server.pem")
+	certFile, err := os.Create(filepath.Join(settings.Path, "server.pem"))
 	if err != nil {
-		log.TLogln("Error creating certificate file:", err) 
+		log.TLogln("Error creating certificate file:", err)
 		os.Exit(1)
 	}
 	defer certFile.Close()
 
-	privFile, err := os.Create("server.key")
+	privFile, err := os.Create(filepath.Join(settings.Path, "server.key"))
 	if err != nil {
-		log.TLogln("Error creating private key file:", err) 
+		log.TLogln("Error creating private key file:", err)
 		os.Exit(1)
 	}
 	defer privFile.Close()
@@ -100,8 +101,8 @@ func MakeCertKeyFiles(ips []string) (string, string) {
 		os.Exit(1)
 	}
 	log.TLogln("Self-signed certificate and private key generated successfully.")
-	
-	return getAbsPath("server.pem"), getAbsPath("server.key")
+
+	return getAbsPath(certFile.Name()), getAbsPath(privFile.Name())
 }
 
 func getAbsPath(fileName string) string {
@@ -119,16 +120,16 @@ func VerifyCertKeyFiles(certFile, keyFile, port string) error {
 	if err != nil {
 		return err
 	}
-   // Check if the certificate chain is expired
-   for _, cert := range cert.Certificate {
-	  x509Cert, err := x509.ParseCertificate(cert)
-	  if err != nil {
-		 return err
-	  }
-	  if x509Cert.NotAfter.Before(time.Now()) {
-		 return errors.New("certificate has expired")
-	  }
-   }
+	// Check if the certificate chain is expired
+	for _, cert := range cert.Certificate {
+		x509Cert, err := x509.ParseCertificate(cert)
+		if err != nil {
+			return err
+		}
+		if x509Cert.NotAfter.Before(time.Now()) {
+			return errors.New("certificate has expired")
+		}
+	}
 	// Create a TLS configuration
 	config := tls.Config{
 		Certificates: []tls.Certificate{cert},

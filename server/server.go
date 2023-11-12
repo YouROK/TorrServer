@@ -12,19 +12,16 @@ import (
 
 func Start(port, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA bool) {
 	settings.InitSets(roSets, searchWA)
-
-	//// https checks
-	// check if ssl enabled
-	settings.Ssl = sslEnabled
-	settings.BTsets.Ssl = sslEnabled
+	// https checks
 	if sslEnabled {
 		// set settings ssl enabled
+		settings.Ssl = sslEnabled
 		if sslport == "" {
-			if settings.BTsets.SslPort == "" {
-				settings.BTsets.SslPort = "8091"
+			if settings.BTsets.SslPort != "" {
+				sslport = settings.BTsets.SslPort
+			} else {
+				sslport = "8091"
 			}
-		} else {
-			settings.BTsets.SslPort = sslport
 		}
 		// check if ssl cert and key files exist
 		if sslCert != "" && sslKey != "" {
@@ -32,17 +29,16 @@ func Start(port, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA b
 			settings.BTsets.SslCert = sslCert
 			settings.BTsets.SslKey = sslKey
 		}
-		log.TLogln("Check web ssl port", settings.BTsets.SslPort)
-		l, err := net.Listen("tcp", ":"+settings.BTsets.SslPort)
+		log.TLogln("Check web ssl port", sslport)
+		l, err := net.Listen("tcp", ":"+sslport)
 		if l != nil {
 			l.Close()
 		}
 		if err != nil {
-			log.TLogln("Port", settings.BTsets.SslPort, "already in use! Please set different port for HTTP. Abort")
+			log.TLogln("Port", sslport, "already in use! Please set different port for HTTPS. Abort")
 			os.Exit(1)
 		}
 	}
-
 	// http checks
 	if port == "" {
 		port = "8090"
@@ -53,14 +49,14 @@ func Start(port, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA b
 		l.Close()
 	}
 	if err != nil {
-		log.TLogln("Port", port, "already in use! Please set different sslport for HTTPS. Abort")
+		log.TLogln("Port", port, "already in use! Please set different sslport for HTTP. Abort")
 		os.Exit(1)
 	}
-
-	// set settings http and https ports. Start web server.
+	// remove old disk caches
 	go cleanCache()
+	// set settings http and https ports. Start web server.
 	settings.Port = port
-	settings.SslPort = settings.BTsets.SslPort
+	settings.SslPort = sslport
 	web.Start()
 
 }

@@ -47,11 +47,10 @@ type BTSets struct {
 	ConnectionsLimit  int
 	PeersListenPort   int
 
-	//Https
-	Ssl		 	bool
-	SslPort     string
-	SslCert     string
-	SslKey      string
+	// HTTPS
+	SslPort string
+	SslCert string
+	SslKey  string
 }
 
 func (v *BTSets) String() string {
