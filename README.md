@@ -44,7 +44,7 @@ TorrServer-darwin-arm64 [--port PORT] [--ssl] [--sslport PORT] [--sslcert PATH] 
 * --port PORT, -p PORT   
   *                 web server port, default 8090
 * --ssl  
-  *                 enables https, default false
+  *                 enables https
 * --sslport PORT
 	*                 web server ssl port, If not set, will be set to default 8091 or taken from db(if stored previously). Accepted if --ssl enabled.
 * --sslcert PATH
