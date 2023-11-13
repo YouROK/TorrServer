@@ -82,9 +82,9 @@ On FreeBSD (TrueNAS/FreeNAS) you can use this plugin: <https://github.com/filka9
 
 - `--port PORT`, `-p PORT` - web server port, default 8090
 - `--ssl` - enables https for web server
-- `--sslport PORT` -  web server ssl port. If not set, will be set to default 8091 or taken from db(if stored previously). Accepted if --ssl enabled.
-- `--sslcert PATH` -  path to ssl cert file. If not set, will be taken from db (if stored previously) or default self-signed certificate/key will be generated. Accepted if --ssl enabled.
-- `--sslkey PATH` - path to ssl key file. If not set, will be taken from db(if stored previously) or default self-signed certificate/key will be generated. Accepted if --ssl enabled.
+- `--sslport PORT` -  web server https port, default 8091. If not set, will be taken from db (if stored previously) or use default.
+- `--sslcert PATH` -  path to ssl cert file. If not set, will be taken from db (if stored previously) or default self-signed certificate/key will be generated.
+- `--sslkey PATH` - path to ssl key file. If not set, will be taken from db (if stored previously) or default self-signed certificate/key will be generated.
 - `--path PATH`, `-d PATH` - database dir path
 - `--logpath LOGPATH`, `-l LOGPATH` - server log file path
 - `--weblogpath WEBLOGPATH`, `-w WEBLOGPATH` - web access log file path
@@ -96,7 +96,7 @@ On FreeBSD (TrueNAS/FreeNAS) you can use this plugin: <https://github.com/filka9
 - `--torrentaddr TORRENTADDR` - Torrent client address (format [IP]:PORT, ex. :32000, 127.0.0.1:32768 etc)
 - `--pubipv4 PUBIPV4`, `-4 PUBIPV4` - set public IPv4 addr
 - `--pubipv6 PUBIPV6`, `-6 PUBIPV6` - set public IPv6 addr
-- `--searchwa`, `-s` - search without auth
+- `--searchwa`, `-s` - allow search without authentication
 - `--help`, `-h` - display this help and exit
 - `--version` - display version and exit
 
