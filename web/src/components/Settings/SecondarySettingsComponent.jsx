@@ -34,6 +34,9 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
     UploadRateLimit,
     ConnectionsLimit,
     PeersListenPort,
+    SslPort,
+    SslCert,
+    SslKey,
   } = settings || {}
 
   return (
@@ -213,6 +216,42 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         <option value={2}>{t('SettingsDialog.RemoveRetrackers')}</option>
         <option value={3}>{t('SettingsDialog.ReplaceRetrackers')}</option>
       </Select>
+      <br />
+      <TextField
+        onChange={inputForm}
+        margin='normal'
+        id='SslPort'
+        label={t('SettingsDialog.SslPort')}
+        helperText={t('SettingsDialog.SslPortHint')}
+        value={SslPort}
+        type='number'
+        variant='outlined'
+        fullWidth
+      />
+      <br />
+      <TextField
+        onChange={inputForm}
+        margin='normal'
+        id='SslCert'
+        label={t('SettingsDialog.SslCert')}
+        helperText={t('SettingsDialog.SslCertHint')}
+        value={SslCert}
+        type='url'
+        variant='outlined'
+        fullWidth
+      />
+      <br />
+      <TextField
+        onChange={inputForm}
+        margin='normal'
+        id='SslKey'
+        label={t('SettingsDialog.SslKey')}
+        helperText={t('SettingsDialog.SslKeyHint')}
+        value={SslKey}
+        type='url'
+        variant='outlined'
+        fullWidth
+      />
       <br />
     </SecondarySettingsContent>
   )

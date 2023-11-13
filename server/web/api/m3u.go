@@ -22,6 +22,16 @@ import (
 	"github.com/pkg/errors"
 )
 
+// allPlayList godoc
+//
+//	@Summary		Get a M3U playlist with all torrents
+//	@Description	Retrieve all torrents and generates a bundled M3U playlist.
+//
+//	@Tags			API
+//
+//	@Produce		audio/x-mpegurl
+//	@Success		200	{file}	file
+//	@Router			/playlistall/all.m3u [get]
 func allPlayList(c *gin.Context) {
 	torrs := torr.ListTorrent()
 
@@ -38,9 +48,19 @@ func allPlayList(c *gin.Context) {
 	sendM3U(c, "all.m3u", hash, list)
 }
 
-// http://127.0.0.1:8090/playlist?hash=...
-// http://127.0.0.1:8090/playlist?hash=...&fromlast
-// http://127.0.0.1:8090/playlist/fname?hash=...
+// playList godoc
+//
+//	@Summary		Get HTTP link of torrent in M3U list
+//	@Description	Get HTTP link of torrent in M3U list.
+//
+//	@Tags			API
+//
+//	@Param			hash		query	string	true	"Torrent hash"
+//	@Param			fromlast	query	bool	false	"From last play file"
+//
+//	@Produce		audio/x-mpegurl
+//	@Success		200	{file}	file
+//	@Router			/playlist [get]
 func playList(c *gin.Context) {
 	hash, _ := c.GetQuery("hash")
 	_, fromlast := c.GetQuery("fromlast")
