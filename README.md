@@ -264,4 +264,4 @@ local:127.0.0.1
 - [lieranderl (Evgeni)](https://github.com/lieranderl)
 - [cocool97](https://github.com/cocool97)
 - [shadeov](https://github.com/shadeov)
-and others
+- and others
