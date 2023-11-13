@@ -146,7 +146,7 @@ func stream(c *gin.Context) {
 		name := strings.ReplaceAll(c.Param("fname"), `/`, "") // strip starting / from param
 		if name == "" {
 			name = tor.Name() + ".m3u"
-		} else {
+		} else if !strings.HasSuffix(strings.ToLower(name), ".m3u") && !strings.HasSuffix(strings.ToLower(name), ".m3u8") {
 			name += ".m3u"
 		}
 		m3ulist := "#EXTM3U\n" + getM3uList(tor.Status(), utils2.GetScheme(c)+"://"+c.Request.Host, fromlast)
@@ -229,8 +229,14 @@ func streamNoAuth(c *gin.Context) {
 
 	// return m3u if query
 	if m3u {
+		name := strings.ReplaceAll(c.Param("fname"), `/`, "") // strip starting / from param
+		if name == "" {
+			name = tor.Name() + ".m3u"
+		} else if !strings.HasSuffix(strings.ToLower(name), ".m3u") && !strings.HasSuffix(strings.ToLower(name), ".m3u8") {
+			name += ".m3u"
+		}
 		m3ulist := "#EXTM3U\n" + getM3uList(tor.Status(), utils2.GetScheme(c)+"://"+c.Request.Host, fromlast)
-		sendM3U(c, tor.Name()+".m3u", tor.Hash().HexString(), m3ulist)
+		sendM3U(c, name, tor.Hash().HexString(), m3ulist)
 		return
 	} else
 	// return play if query

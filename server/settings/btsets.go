@@ -46,6 +46,11 @@ type BTSets struct {
 	UploadRateLimit   int // in kb, 0 - inf
 	ConnectionsLimit  int
 	PeersListenPort   int
+
+	// HTTPS
+	SslPort int
+	SslCert string
+	SslKey  string
 }
 
 func (v *BTSets) String() string {
