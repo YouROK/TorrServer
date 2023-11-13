@@ -18,11 +18,16 @@ func Start(port, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA b
 		// set settings ssl enabled
 		settings.Ssl = sslEnabled
 		if sslport == "" {
-			userSSlPort := strconv.Itoa(settings.BTsets.SslPort)
-			if userSSlPort != "0" {
-				sslport = userSSlPort
+			dbSSlPort := strconv.Itoa(settings.BTsets.SslPort)
+			if dbSSlPort != "0" {
+				sslport = dbSSlPort
 			} else {
 				sslport = "8091"
+			}
+		} else { // store ssl port from params to DB
+			dbSSlPort, err := strconv.Atoi(sslport)
+			if err == nil {
+				settings.BTsets.SslPort = dbSSlPort
 			}
 		}
 		// check if ssl cert and key files exist
