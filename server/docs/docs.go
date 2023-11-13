@@ -49,22 +49,22 @@ const docTemplate = `{
                 }
             }
         },
-        "/download": {
+        "/download/{size}": {
             "get": {
-                "description": "Download the current torrent from given size.",
+                "description": "Download the test file of given size (for speed testing purpose).",
                 "produces": [
                     "application/octet-stream"
                 ],
                 "tags": [
                     "API"
                 ],
-                "summary": "Download the current torrent from given size",
+                "summary": "Generates test file of given size",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Download size",
+                        "description": "Test file size",
                         "name": "size",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     }
                 ],
@@ -369,7 +369,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Depends on what has been asked",
+                        "description": "Depends on what action has been asked",
                         "schema": {
                             "$ref": "#/definitions/settings.BTSets"
                         }
@@ -379,7 +379,7 @@ const docTemplate = `{
         },
         "/shutdown": {
             "get": {
-                "description": "Gracefully shuts down server.",
+                "description": "Gracefully shuts down server after 1 second.",
                 "tags": [
                     "API"
                 ],
@@ -500,6 +500,9 @@ const docTemplate = `{
         "/torrent/upload": {
             "post": {
                 "description": "Only one file support.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -509,11 +512,17 @@ const docTemplate = `{
                 "summary": "Only one file support",
                 "parameters": [
                     {
+                        "type": "file",
+                        "description": "Torrent file to insert",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
                         "type": "string",
                         "description": "Save to DB",
                         "name": "save",
-                        "in": "formData",
-                        "required": true
+                        "in": "formData"
                     },
                     {
                         "type": "string",
@@ -538,7 +547,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Torrent status",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/state.TorrentStatus"
                         }
                     }
                 }
@@ -546,7 +555,7 @@ const docTemplate = `{
         },
         "/torrents": {
             "post": {
-                "description": "Allow to add, get or set torrents to server.",
+                "description": "Allow to add, get or set torrents to server. The action depends of what has been asked.",
                 "consumes": [
                     "application/json"
                 ],
@@ -556,7 +565,7 @@ const docTemplate = `{
                 "tags": [
                     "API"
                 ],
-                "summary": "Add / Get / Set torrents",
+                "summary": "Handle torrents informations",
                 "parameters": [
                     {
                         "description": "Torrent request",
@@ -803,6 +812,16 @@ const docTemplate = `{
                 },
                 "retrackersMode": {
                     "description": "0 - don` + "`" + `t add, 1 - add retrackers (def), 2 - remove retrackers 3 - replace retrackers",
+                    "type": "integer"
+                },
+                "sslCert": {
+                    "type": "string"
+                },
+                "sslKey": {
+                    "type": "string"
+                },
+                "sslPort": {
+                    "description": "HTTPS",
                     "type": "integer"
                 },
                 "torrentDisconnectTimeout": {
@@ -1056,7 +1075,7 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.0",
+	Version:          "{version.Version}",
 	Host:             "",
 	BasePath:         "/",
 	Schemes:          []string{},

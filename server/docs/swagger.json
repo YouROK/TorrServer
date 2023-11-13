@@ -42,22 +42,22 @@
                 }
             }
         },
-        "/download": {
+        "/download/{size}": {
             "get": {
-                "description": "Download the current torrent from given size.",
+                "description": "Download the test file of given size (for speed testing purpose).",
                 "produces": [
                     "application/octet-stream"
                 ],
                 "tags": [
                     "API"
                 ],
-                "summary": "Download the current torrent from given size",
+                "summary": "Generates test file of given size",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Download size",
+                        "description": "Test file size",
                         "name": "size",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     }
                 ],
@@ -805,6 +805,16 @@
                 },
                 "retrackersMode": {
                     "description": "0 - don`t add, 1 - add retrackers (def), 2 - remove retrackers 3 - replace retrackers",
+                    "type": "integer"
+                },
+                "sslCert": {
+                    "type": "string"
+                },
+                "sslKey": {
+                    "type": "string"
+                },
+                "sslPort": {
+                    "description": "HTTPS",
                     "type": "integer"
                 },
                 "torrentDisconnectTimeout": {

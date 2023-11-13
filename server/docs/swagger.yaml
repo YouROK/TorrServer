@@ -130,6 +130,13 @@ definitions:
         description: 0 - don`t add, 1 - add retrackers (def), 2 - remove retrackers
           3 - replace retrackers
         type: integer
+      sslCert:
+        type: string
+      sslKey:
+        type: string
+      sslPort:
+        description: HTTPS
+        type: integer
       torrentDisconnectTimeout:
         description: in seconds
         type: integer
@@ -321,12 +328,12 @@ paths:
       summary: Return cache stats
       tags:
       - API
-  /download:
+  /download/{size}:
     get:
-      description: Download the current torrent from given size.
+      description: Download the test file of given size (for speed testing purpose).
       parameters:
-      - description: Download size
-        in: query
+      - description: Test file size
+        in: path
         name: size
         required: true
         type: string
@@ -337,7 +344,7 @@ paths:
           description: OK
           schema:
             type: file
-      summary: Download the current torrent from given size
+      summary: Generates test file of given size
       tags:
       - API
   /echo:
