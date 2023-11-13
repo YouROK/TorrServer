@@ -38,8 +38,9 @@ allowing the cache size to be adjusted according to the system parameters and th
 - Streaming
 - Local and Remote Server
 - Viewing torrents on various devices
-- Selecting a player for video playback
-- Integration with other apps
+- Integration with other apps through API
+- Cross-browser modern web interface
+- Optional DLNA server
 
 ## Getting Started
 
