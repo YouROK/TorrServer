@@ -3,8 +3,9 @@ package api
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	sets "server/settings"
+
+	"github.com/gin-gonic/gin"
 )
 
 /*
@@ -17,6 +18,19 @@ type viewedReqJS struct {
 	*sets.Viewed
 }
 
+// viewed godoc
+//
+//	@Summary		Set / List / Remove viewed torrents
+//	@Description	Allow to set, list or remove viewed torrents from server.
+//
+//	@Tags			API
+//
+//	@Param			request	body	viewedReqJS	true	"Viewed torrent request"
+//
+//	@Accept			json
+//	@Produce		json
+//	@Success		200 {array} sets.Viewed
+//	@Router			/viewed [post]
 func viewed(c *gin.Context) {
 	var req viewedReqJS
 	err := c.ShouldBindJSON(&req)

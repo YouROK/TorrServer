@@ -5,9 +5,10 @@ import (
 
 	"server/rutor"
 
+	"server/dlna"
+
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"server/dlna"
 
 	sets "server/settings"
 	"server/torr"
@@ -19,6 +20,19 @@ type setsReqJS struct {
 	Sets *sets.BTSets `json:"sets,omitempty"`
 }
 
+// settings godoc
+//
+//	@Summary		Get / Set server settings
+//	@Description	Allow to get or set server settings.
+//
+//	@Tags			API
+//
+//	@Param			request	body	setsReqJS	true	"Settings request"
+//
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	sets.BTSets	"Depends on what action has been asked"
+//	@Router			/settings [post]
 func settings(c *gin.Context) {
 	var req setsReqJS
 	err := c.ShouldBindJSON(&req)

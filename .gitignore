@@ -19,6 +19,7 @@
 
 TorrServer.iml
 .idea/
+.vscode
 
 src/github.com/
 src/golang.org/
@@ -35,3 +36,8 @@ toolchains/
 /toolchain/
 /test/
 /server/web/pages/template/pages/msx
+server/config.db
+/server/web/pages/template/pages/
+server/web/pages/template/route.go
+server/server.pem
+server/server.key

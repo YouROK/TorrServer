@@ -28,6 +28,28 @@ import (
 // only save
 // http://127.0.0.1:8090/stream/fname?link=...&save&title=...&poster=...
 
+// stream godoc
+//
+//	@Summary		Multi usage endpoint
+//	@Description	Multi usage endpoint.
+//
+//	@Tags			API
+//
+//	@Param			link	query	string	true	"Magnet/hash/link to torrent"
+//	@Param			index		query	string	false	"File index in torrent"
+//	@Param			preload		query	string	false	"Should preload torrent"
+//	@Param			stat		query	string	false	"Get statistics from torrent"
+//	@Param			save		query	string	false	"Should save torrent"
+//	@Param			m3u		query	string	false	"Get torrent as M3U playlist"
+//	@Param			fromlast		query	string	false	"Get m3u from last play"
+//	@Param			play		query	string	false	"Start stream torrent"
+//	@Param			title		query	string	true	"Set title of torrent"
+//	@Param			poster		query	string	true	"File index in torrent"
+//	@Param			not_auth		query	string	true	"Set poster link of torrent"
+//
+//	@Produce		application/octet-stream
+//	@Success		200	"Data returned according to query"
+//	@Router			/stream [get]
 func stream(c *gin.Context) {
 	link := c.Query("link")
 	indexStr := c.Query("index")

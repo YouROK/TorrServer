@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/browser"
 
 	"server"
+	"server/docs"
 	"server/log"
 	"server/settings"
 	"server/torr"
@@ -23,6 +24,10 @@ import (
 
 type args struct {
 	Port        string `arg:"-p" help:"web server port, default 8090"`
+	Ssl         bool   `help:"enables https"`
+	SslPort     string `help:"web server ssl port, If not set, will be set to default 8091 or taken from db(if stored previously). Accepted if --ssl enabled."`
+	SslCert     string `help:"path to ssl cert file. If not set, will be taken from db(if stored previously) or default self-signed certificate/key will be generated. Accepted if --ssl enabled."`
+	SslKey      string `help:"path to ssl key file. If not set, will be taken from db(if stored previously) or default self-signed certificate/key will be generated. Accepted if --ssl enabled."`
 	Path        string `arg:"-d" help:"database dir path"`
 	LogPath     string `arg:"-l" help:"server log file path"`
 	WebLogPath  string `arg:"-w" help:"web access log file path"`
@@ -65,13 +70,19 @@ func main() {
 		log.TLogln("Use HTTP Auth file", settings.Path+"/accs.db")
 	}
 
+	docs.SwaggerInfo.Version = version.Version
+
 	dnsResolve()
 	Preconfig(params.DontKill)
 
 	if params.UI {
 		go func() {
 			time.Sleep(time.Second)
-			browser.OpenURL("http://127.0.0.1:" + params.Port)
+			if params.Ssl {
+				browser.OpenURL("https://127.0.0.1:" + params.SslPort)
+			} else {
+				browser.OpenURL("http://127.0.0.1:" + params.Port)
+			}
 		}()
 	}
 
@@ -91,7 +102,7 @@ func main() {
 		go watchTDir(params.TorrentsDir)
 	}
 
-	server.Start(params.Port, params.RDB, params.SearchWA)
+	server.Start(params.Port, params.SslPort, params.SslCert, params.SslKey, params.Ssl, params.RDB, params.SearchWA)
 	log.TLogln(server.WaitServer())
 	log.Close()
 	time.Sleep(time.Second * 3)
