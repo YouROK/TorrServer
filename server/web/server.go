@@ -23,6 +23,9 @@ import (
 	"server/web/blocker"
 	"server/web/pages"
 	"server/web/sslcerts"
+
+	swaggerFiles "github.com/swaggo/files"     // swagger embed files
+	ginSwagger "github.com/swaggo/gin-swagger" // gin-swagger middleware
 )
 
 var (
@@ -30,6 +33,18 @@ var (
 	waitChan = make(chan error)
 )
 
+//	@title			Swagger Torrserver API
+//	@version		{version.Version}
+//	@description	Torrent streaming server.
+
+//	@license.name	GPL 3.0
+
+//	@BasePath	/
+
+//	@securityDefinitions.basic	BasicAuth
+
+// @externalDocs.description	OpenAPI
+// @externalDocs.url			https://swagger.io/resources/open-api/
 func Start() {
 	log.TLogln("Start TorrServer " + version.Version + " torrent " + version.GetTorrentVersion())
 	ips := getLocalIps()
@@ -72,6 +87,8 @@ func Start() {
 	if settings.BTsets.EnableDLNA {
 		dlna.Start()
 	}
+	
+	route.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	//check if https enabled
 	if settings.Ssl {
@@ -113,6 +130,16 @@ func Stop() {
 	waitChan <- nil
 }
 
+// echo godoc
+//
+//	@Summary		Tests server status
+//	@Description	Tests whether server is alive or not
+//
+//	@Tags			API
+//
+//	@Produce		plain
+//	@Success		200	{string}	string	"Server version"
+//	@Router			/echo [get]
 func echo(c *gin.Context) {
 	c.String(200, "%v", version.Version)
 }

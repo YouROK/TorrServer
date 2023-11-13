@@ -21,6 +21,7 @@
     },
     "AddFromLink": "Добавить",
     "AddNewTorrent": "Добавить новый торрент",
+    "ApiDocs": "Документация API",
     "B": "Б",
     "bps": "бит/c",
     "Buffer": "Предзагрузка / Кеш",
@@ -66,6 +67,7 @@
     "MB": "МБ",
     "Mbps": "Мбит/c",
     "Name": "Название",
+    "NasReleases": "Релизы для NAS",
     "NoTorrentsAdded": "Нет торрентов",
     "Offline": "Сервер недоступен",
     "OK": "OK",
@@ -76,7 +78,6 @@
     "Playlist": "Плейлист",
     "Preload": "Предзагр.",
     "ProjectSource": "GitHub проекта",
-    "NasReleases": "Релизы для NAS GitHub",
     "PWAGuide": {
         "Header": "Установить приложение",
         "Description": "Установите приложение на ваше устройство для быстрого доступа в любой момент. Без AppStore. Без загрузки.",

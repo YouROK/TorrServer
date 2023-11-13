@@ -1,12 +1,7 @@
 package api
 
 import (
-	"net/http"
-	"time"
-
 	"github.com/gin-gonic/gin"
-	sets "server/settings"
-	"server/torr"
 )
 
 type requestI struct {
@@ -36,23 +31,11 @@ func SetupRoute(route *gin.RouterGroup) {
 
 	route.GET("/playlistall/all.m3u", allPlayList)
 	route.GET("/playlist", playList)
-	route.GET("/playlist/*fname", playList)
+	route.GET("/playlist/*fname", playList) // Is this endpoint still needed ? `fname` is never used in handler
 
 	route.GET("/download/:size", download)
 
 	route.GET("/search/*query", rutorSearch)
 
 	route.GET("/ffp/:hash/:id", ffp)
-}
-
-func shutdown(c *gin.Context) {
-	if sets.ReadOnly {
-		c.Status(http.StatusForbidden)
-		return
-	}
-	c.Status(200)
-	go func() {
-		time.Sleep(1000)
-		torr.Shutdown()
-	}()
 }

@@ -12,6 +12,20 @@ import (
 	"server/web/api/utils"
 )
 
+// play godoc
+//
+//	@Summary		Play given torrent referenced by hash
+//	@Description	Play given torrent referenced by hash.
+//
+//	@Tags			API
+//
+//	@Param			hash		query	string	true	"Torrent hash"
+//	@Param			id			query	string	true	"File index in torrent"
+//	@Param			not_auth	query	bool	false	"Not authenticated"
+//
+//	@Produce		application/octet-stream
+//	@Success		200	"Torrent data"
+//	@Router			/play [get]
 func play(c *gin.Context) {
 	hash := c.Param("hash")
 	indexStr := c.Param("id")
@@ -69,5 +83,4 @@ func play(c *gin.Context) {
 	}
 
 	tor.Stream(index, c.Request, c.Writer)
-	return
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/browser"
 
 	"server"
+	"server/docs"
 	"server/log"
 	"server/settings"
 	"server/torr"
@@ -68,6 +69,8 @@ func main() {
 	if params.HttpAuth {
 		log.TLogln("Use HTTP Auth file", settings.Path+"/accs.db")
 	}
+
+	docs.SwaggerInfo.Version = version.Version
 
 	dnsResolve()
 	Preconfig(params.DontKill)
