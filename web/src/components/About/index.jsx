@@ -91,6 +91,7 @@ export default function AboutDialog() {
                 <LinkComponent name='FaintGhost' link='https://github.com/FaintGhost' />
                 <LinkComponent name='lieranderl' link='https://github.com/lieranderl' />
                 <LinkComponent name='cocool97' link='https://github.com/cocool97' />
+                <LinkComponent name='shadeov' link='https://github.com/shadeov' />
               </div>
             </Section>
           </div>

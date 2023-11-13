@@ -23,4 +23,7 @@ export default {
   UploadRateLimit: 0,
   ConnectionsLimit: 25,
   PeersListenPort: 0,
+  SslPort: 0,
+  SslCert: '',
+  SslKey: '',
 }

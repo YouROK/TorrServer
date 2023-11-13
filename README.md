@@ -45,7 +45,7 @@ allowing the cache size to be adjusted according to the system parameters and th
 
 ### Installation
 
-Download the application for the required platform in the [releases](https://github.com/YouROK/TorrServer/releases) page. After installation, open the link <http://127.0.0.1:8090> in the browser.'
+Download the application for the required platform in the [releases](https://github.com/YouROK/TorrServer/releases) page. After installation, open the link <http://127.0.0.1:8090> in the browser.
 
 #### Windows
 
@@ -262,3 +262,5 @@ local:127.0.0.1
 - [Anton111111 (Anton Potekhin)](https://github.com/Anton111111)
 - [lieranderl (Evgeni)](https://github.com/lieranderl)
 - [cocool97](https://github.com/cocool97)
+- [shadeov](https://github.com/shadeov)
+and others
