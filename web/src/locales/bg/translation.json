@@ -21,6 +21,7 @@
     },
     "AddFromLink": "Добавете торент",
     "AddNewTorrent": "Добавете нов торент",
+    "ApiDocs": "Документация на API",
     "B": "B",
     "bps": "bps",
     "Buffer": "Предварителен буфер / кеш",
@@ -66,6 +67,7 @@
     "MB": "MB",
     "Mbps": "Mbps",
     "Name": "Име",
+    "NasReleases": "NAS Releases",
     "NoTorrentsAdded": "Няма добавени торенти",
     "Offline": "Извън линия",
     "OK": "OK",
@@ -76,7 +78,6 @@
     "Playlist": "Плейлист",
     "Preload": "Предварително зареждане",
     "ProjectSource": "GitHub на проекта",
-    "NasReleases": "NAS Releases GitHub",
     "PWAGuide": {
         "Header": "Инсталирайте приложение",
         "Description": "Инсталирайте приложението на вашето устройство за лесен достъп до него по всяко време. Няма магазини за приложения. Няма сваляне.",

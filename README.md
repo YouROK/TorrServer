@@ -260,3 +260,5 @@ local:127.0.0.1
 - [TopperBG (Dimitar Maznekov)](https://github.com/TopperBG)
 - [FaintGhost (Zhang Yaowei)](https://github.com/FaintGhost)
 - [Anton111111 (Anton Potekhin)](https://github.com/Anton111111)
+- [lieranderl (Evgeni)](https://github.com/lieranderl)
+- [cocool97](https://github.com/cocool97)

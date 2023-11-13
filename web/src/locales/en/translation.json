@@ -21,6 +21,7 @@
     },
     "AddFromLink": "Add Torrent",
     "AddNewTorrent": "Add new torrent",
+    "ApiDocs": "API Docs",
     "B": "B",
     "bps": "bps",
     "Buffer": "Preload Buffer / Cache",
@@ -66,6 +67,7 @@
     "MB": "MB",
     "Mbps": "Mbps",
     "Name": "Name",
+    "NasReleases": "NAS Releases",
     "NoTorrentsAdded": "No torrents added",
     "Offline": "Offline",
     "OK": "OK",
@@ -76,7 +78,6 @@
     "Playlist": "Playlist",
     "Preload": "Preload",
     "ProjectSource": "Project GitHub",
-    "NasReleases": "NAS Releases GitHub",
     "PWAGuide": {
         "Header": "Install application",
         "Description": "Install the app on your device to easily access it anytime. No app store. No download.",
