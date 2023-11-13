@@ -13,6 +13,9 @@ import (
 
 func Start(port, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA bool) {
 	settings.InitSets(roSets, searchWA)
+	if roSets {
+		log.TLogln("Enabled Read-only DB mode!")
+	}
 	// https checks
 	if sslEnabled {
 		// set settings ssl enabled
