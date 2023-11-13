@@ -170,18 +170,19 @@ Synology NAS packages repo source: https://grigi.lt
 
 #### Server
 
-- Install [Golang](https://golang.org/doc/install) 1.16+
-- Goto dir to source
-- Run build script under linux `build-all.sh`
+- Install [Golang](https://golang.org/doc/install) 1.18+
+- Go to the TorrServer source directory
+- Run build script under linux or macOS `build-all.sh`
 
 #### Web
 
 - Install **npm** and **yarn**
-- Run `yarn build`
+- Go to the web directory
+- Run `NODE_OPTIONS=--openssl-legacy-provider yarn build`
 
 #### Android
 
-For build android server need android toolchain.
+To build an Android server you will need the Android Toolchain.
 
 #### Swagger
 
@@ -222,7 +223,7 @@ The user data file should be located near to the settings. Basic auth, read more
 
 ## Whitelist/Blacklist IP
 
-The lists file should be located near to the settings.
+The lists file should be located in the same directory with config.db.
 
 - Whitelist file name: `wip.txt`
 - Blacklist file name: `bip.txt`
