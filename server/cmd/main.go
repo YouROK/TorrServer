@@ -3,14 +3,15 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/anacrolix/torrent"
-	"github.com/anacrolix/torrent/metainfo"
 	"net"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/metainfo"
 
 	"github.com/alexflint/go-arg"
 	"github.com/pkg/browser"
@@ -183,8 +184,8 @@ func openFile(path string) (*torrent.TorrentSpec, error) {
 		return nil, err
 	}
 
-	mag := minfo.Magnet(info.Name, minfo.HashInfoBytes())
-	//	mag := minfo.Magnet(nil, &info)
+	// mag := minfo.Magnet(info.Name, minfo.HashInfoBytes())
+	mag := minfo.Magnet(nil, &info)
 	return &torrent.TorrentSpec{
 		InfoBytes:   minfo.InfoBytes,
 		Trackers:    [][]string{mag.Trackers},

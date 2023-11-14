@@ -13,9 +13,10 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"time"
+
 	"server/log"
 	"server/settings"
-	"time"
 )
 
 func generateSelfSignedCert(ips []string) ([]byte, []byte, error) {
