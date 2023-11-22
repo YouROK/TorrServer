@@ -44,7 +44,16 @@ const Torrent = ({ torrent }) => {
   const openDeleteTorrentAlert = () => setIsDeleteTorrentOpened(true)
   const closeDeleteTorrentAlert = () => setIsDeleteTorrentOpened(false)
 
-  const { title, name, poster, torrent_size: torrentSize, download_speed: downloadSpeed, hash, stat } = torrent
+  const {
+    title,
+    name,
+    category,
+    poster,
+    torrent_size: torrentSize,
+    download_speed: downloadSpeed,
+    hash,
+    stat,
+  } = torrent
 
   const dropTorrent = () => axios.post(torrentsHost(), { action: 'drop', hash })
   const deleteTorrent = () => axios.post(torrentsHost(), { action: 'rem', hash })
@@ -107,9 +116,15 @@ const Torrent = ({ torrent }) => {
         </TorrentCardButtons>
 
         <TorrentCardDescription>
-          <div className='description-title-wrapper'>
-            <div className='description-section-name'>{t('Name')}</div>
-            <div className='description-torrent-title'>{parsedTitle}</div>
+          <div className='description-wrapper'>
+            <div className='description-title-wrapper'>
+              <div className='description-section-name'>{t('Name')}</div>
+              <div className='description-torrent-title'>{parsedTitle}</div>
+            </div>
+            <div className='description-category-wrapper'>
+              <div className='description-section-name'>{t('Category')}</div>
+              <div className='description-torrent-title'>{category}</div>
+            </div>
           </div>
 
           <div className='description-statistics-wrapper'>

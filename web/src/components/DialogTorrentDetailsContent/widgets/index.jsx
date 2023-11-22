@@ -6,6 +6,7 @@ import {
   Widgets as WidgetsIcon,
   PhotoSizeSelectSmall as PhotoSizeSelectSmallIcon,
   Build as BuildIcon,
+  Category as CategoryIcon,
 } from '@material-ui/icons'
 import { getPeerString, humanizeSize, humanizeSpeed } from 'utils/Utils'
 import { useTranslation } from 'react-i18next'
@@ -123,6 +124,21 @@ export const SizeWidget = ({ data }) => {
       iconBg={iconBGColor}
       valueBg={valueBGColor}
       icon={ViewAgendaIcon}
+    />
+  )
+}
+
+export const CategoryWidget = ({ data }) => {
+  const { t } = useTranslation()
+  const { iconBGColor, valueBGColor } = useGetWidgetColors('category')
+
+  return (
+    <StatisticsField
+      title={t('Category')}
+      value={data}
+      iconBg={iconBGColor}
+      valueBg={valueBGColor}
+      icon={CategoryIcon}
     />
   )
 }

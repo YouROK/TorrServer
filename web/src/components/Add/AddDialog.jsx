@@ -31,6 +31,7 @@ export default function AddDialog({
   const isEditMode = !!originalHash
   const [torrentSource, setTorrentSource] = useState(originalHash || '')
   const [title, setTitle] = useState(originalTitle || '')
+  const [category, setCategory] = useState('Unknown')
   const [originalTorrentTitle, setOriginalTorrentTitle] = useState('')
   const [parsedTitle, setParsedTitle] = useState('')
   const [posterUrl, setPosterUrl] = useState(originalPoster || '')
@@ -207,6 +208,7 @@ export default function AddDialog({
           hash: originalHash,
           title: title || originalName,
           poster: posterUrl,
+          category,
         })
         .finally(handleClose)
     } else if (selectedFile) {
@@ -220,7 +222,14 @@ export default function AddDialog({
     } else {
       // link save
       axios
-        .post(torrentsHost(), { action: 'add', link: torrentSource, title, poster: posterUrl, save_to_db: true })
+        .post(torrentsHost(), {
+          action: 'add',
+          link: torrentSource,
+          title,
+          category,
+          poster: posterUrl,
+          save_to_db: true,
+        })
         .catch(handleClose)
     }
   }
@@ -243,6 +252,7 @@ export default function AddDialog({
         <RightSideComponent
           originalTorrentTitle={originalTorrentTitle}
           setTitle={setTitle}
+          setCategory={setCategory}
           setPosterUrl={setPosterUrl}
           setIsPosterUrlCorrect={setIsPosterUrlCorrect}
           setIsUserInteractedWithPoster={setIsUserInteractedWithPoster}
@@ -250,6 +260,7 @@ export default function AddDialog({
           isTorrentSourceCorrect={isTorrentSourceCorrect}
           isHashAlreadyExists={isHashAlreadyExists}
           title={title}
+          category={category}
           parsedTitle={parsedTitle}
           posterUrl={posterUrl}
           isPosterUrlCorrect={isPosterUrlCorrect}

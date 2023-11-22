@@ -118,7 +118,7 @@ func RouteWebPages(route *gin.RouterGroup) {
 	})
 
 	route.GET("/browserconfig.xml", func(c *gin.Context) {
-		c.Data(200, "application/xml; charset=utf-8", Browserconfigxml)
+		c.Data(200, "text/xml; charset=utf-8", Browserconfigxml)
 	})
 
 	route.GET("/dlnaicon-120.png", func(c *gin.Context) {
@@ -161,28 +161,28 @@ func RouteWebPages(route *gin.RouterGroup) {
 		c.Data(200, "application/manifest+json", Sitewebmanifest)
 	})
 
-	route.GET("/static/js/2.56a11991.chunk.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript; charset=utf-8", Staticjs256a11991chunkjs)
+	route.GET("/static/js/2.41a752aa.chunk.js", func(c *gin.Context) {
+		c.Data(200, "text/javascript; charset=utf-8", Staticjs241a752aachunkjs)
 	})
 
-	route.GET("/static/js/2.56a11991.chunk.js.LICENSE.txt", func(c *gin.Context) {
-		c.Data(200, "text/plain; charset=utf-8", Staticjs256a11991chunkjsLICENSEtxt)
+	route.GET("/static/js/2.41a752aa.chunk.js.LICENSE.txt", func(c *gin.Context) {
+		c.Data(200, "text/plain; charset=utf-8", Staticjs241a752aachunkjsLICENSEtxt)
 	})
 
-	route.GET("/static/js/2.56a11991.chunk.js.map", func(c *gin.Context) {
-		c.Data(200, "application/json", Staticjs256a11991chunkjsmap)
+	route.GET("/static/js/2.41a752aa.chunk.js.map", func(c *gin.Context) {
+		c.Data(200, "application/json", Staticjs241a752aachunkjsmap)
 	})
 
-	route.GET("/static/js/main.5883b760.chunk.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript; charset=utf-8", Staticjsmain5883b760chunkjs)
+	route.GET("/static/js/main.b1d76117.chunk.js", func(c *gin.Context) {
+		c.Data(200, "text/javascript; charset=utf-8", Staticjsmainb1d76117chunkjs)
 	})
 
-	route.GET("/static/js/main.5883b760.chunk.js.map", func(c *gin.Context) {
-		c.Data(200, "application/json", Staticjsmain5883b760chunkjsmap)
+	route.GET("/static/js/main.b1d76117.chunk.js.map", func(c *gin.Context) {
+		c.Data(200, "application/json", Staticjsmainb1d76117chunkjsmap)
 	})
 
 	route.GET("/static/js/runtime-main.f542387e.js", func(c *gin.Context) {
-		c.Data(200, "application/javascript; charset=utf-8", Staticjsruntimemainf542387ejs)
+		c.Data(200, "text/javascript; charset=utf-8", Staticjsruntimemainf542387ejs)
 	})
 
 	route.GET("/static/js/runtime-main.f542387e.js.map", func(c *gin.Context) {

@@ -96,7 +96,7 @@ func stream(c *gin.Context) {
 		data = tor.Data
 	}
 	if tor == nil || tor.Stat == state.TorrentInDB {
-		tor, err = torr.AddTorrent(spec, title, poster, data)
+		tor, err = torr.AddTorrent(spec, title, poster, data, tor.Category)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
@@ -170,6 +170,7 @@ func streamNoAuth(c *gin.Context) {
 	title := c.Query("title")
 	poster := c.Query("poster")
 	data := ""
+	category := c.Query("category")
 
 	if link == "" {
 		c.AbortWithError(http.StatusBadRequest, errors.New("link should not be empty"))
@@ -194,9 +195,10 @@ func streamNoAuth(c *gin.Context) {
 	title = tor.Title
 	poster = tor.Poster
 	data = tor.Data
+	category = tor.Category
 
 	if tor.Stat == state.TorrentInDB {
-		tor, err = torr.AddTorrent(spec, title, poster, data)
+		tor, err = torr.AddTorrent(spec, title, poster, data, category)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return

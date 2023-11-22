@@ -37,7 +37,7 @@ func LoadTorrent(tor *Torrent) *Torrent {
 	return tr
 }
 
-func AddTorrent(spec *torrent.TorrentSpec, title, poster string, data string) (*Torrent, error) {
+func AddTorrent(spec *torrent.TorrentSpec, title, poster string, data string, category string) (*Torrent, error) {
 	torr, err := NewTorrent(spec, bts)
 	if err != nil {
 		log.TLogln("error add torrent:", err)
@@ -55,6 +55,17 @@ func AddTorrent(spec *torrent.TorrentSpec, title, poster string, data string) (*
 			torr.Title = torr.Info().Name
 		}
 	}
+
+	// Category can be override
+	torr.Category = category
+	if torr.Category == "" {
+		if torDB != nil {
+			torr.Category = torDB.Category
+		} else {
+			torr.Category = "Unknown"
+		}
+	}
+
 	if torr.Poster == "" {
 		torr.Poster = poster
 		if torr.Poster == "" && torDB != nil {
