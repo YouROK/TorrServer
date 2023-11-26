@@ -13,7 +13,7 @@ PLATFORMS=(
   'darwin/arm64'
   'freebsd/amd64'
   'freebsd/arm7'
-  'netbsd/arm7h'
+  'netbsd/arm7'
   'linux/mips'
   'linux/mipsle'
   'linux/mips64'
