@@ -4,7 +4,6 @@ PLATFORMS=(
   'linux/amd64'
   'linux/arm64'
   'linux/arm7'
-  'linux/arm7h'
   'linux/arm5'
   'linux/386'
   'windows/amd64'
@@ -13,7 +12,6 @@ PLATFORMS=(
   'darwin/arm64'
   'freebsd/amd64'
   'freebsd/arm7'
-  'netbsd/arm7'
   'linux/mips'
   'linux/mipsle'
   'linux/mips64'
@@ -23,14 +21,9 @@ PLATFORMS=(
 type setopt >/dev/null 2>&1
 
 set_goarm() {
-  if [[ "$1" =~ arm([5-7])(h)? ]]; then
-    if [[ "${BASH_REMATCH[2]}" == "h" ]]; then
-      GOARM="hardfloat"
-    else
-      GOARM="softfloat"
-    fi
+  if [[ "$1" =~ arm([5,7]) ]]; then
     GOARCH="arm"
-    GOARM="${BASH_REMATCH[1]},$GOARM"
+    GOARM="${BASH_REMATCH[1]}"
     GO_ARM="GOARM=${GOARM}"
   else
     GOARM=""
