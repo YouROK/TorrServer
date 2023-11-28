@@ -2,7 +2,7 @@ module server
 
 go 1.20
 
-replace github.com/anacrolix/torrent v1.53.1 => github.com/tsynik/torrent v1.2.11
+replace github.com/anacrolix/torrent v1.53.1 => github.com/tsynik/torrent v1.2.12
 
 require (
 	github.com/agnivade/levenshtein v1.1.1
