@@ -82,11 +82,16 @@ func writeRoute(fname string, fmap map[string]string) {
 	embedStr := `package template
 
 import (
+	"crypto/md5"
+	"fmt"
 	"github.com/gin-gonic/gin"
 )
 
 func RouteWebPages(route *gin.RouterGroup) {
 	route.GET("/", func(c *gin.Context) {
+		etag := fmt.Sprintf("%x", md5.Sum(Indexhtml))
+		c.Header("Cache-Control", "public, max-age=31536000")
+		c.Header("ETag", etag)
 		c.Data(200, "text/html; charset=utf-8", Indexhtml)
 	})
 `
@@ -108,6 +113,9 @@ func RouteWebPages(route *gin.RouterGroup) {
 		}
 		embedStr += `
 	route.GET("` + link + `", func(c *gin.Context) {
+		etag := fmt.Sprintf("%x", md5.Sum(` + fmap[link] + `))
+		c.Header("Cache-Control", "public, max-age=31536000")
+		c.Header("ETag", etag)
 		c.Data(200, "` + fmime + `", ` + fmap[link] + `)
 	})
 `
