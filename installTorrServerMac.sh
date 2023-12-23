@@ -79,6 +79,7 @@ function installTorrServer() {
     echo " Устанавливаем TorrServer $(getLatestRelease)…"
     echo ""
   }
+  user=$(whoami)
   binName="TorrServer-darwin-${architecture}"
   [[ ! -d "$dirInstall" ]] && mkdir -p ${dirInstall} && chmod a+rw ${dirInstall}
   urlBin="https://github.com/YouROK/TorrServer/releases/download/$(getLatestRelease)/${binName}"
@@ -178,6 +179,7 @@ EOF
     sysPath="${HOME}/Library/LaunchAgents"
     [[ ! -d "$sysPath" ]] && mkdir -p ${sysPath}
     cp "$dirInstall/$serviceName.plist" $sysPath
+    sudo chown $user "$sysPath/$serviceName.plist"
     chmod 0644 "$sysPath/$serviceName.plist"
     launchctl load -w "$sysPath/$serviceName.plist" 1>/dev/null 2>&1
   else
