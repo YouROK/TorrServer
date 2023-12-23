@@ -32,10 +32,10 @@ function killRunning() {
 }
 
 function cleanup() {
-  sudo rm -f /Library/LaunchAgents/*torrserver* 1>/dev/null 2>&1
-  sudo rm -f /Library/LaunchDaemons/*torrserver* 1>/dev/null 2>&1
-  sudo rm -f $HOME/Library/LaunchAgents/*torrserver* 1>/dev/null 2>&1
-  sudo rm -f $HOME/Library/LaunchDaemons/*torrserver* 1>/dev/null 2>&1
+  sudo rm -f /Library/LaunchAgents/*torrserver*
+  sudo rm -f /Library/LaunchDaemons/*torrserver*
+  sudo rm -f $HOME/Library/LaunchAgents/*torrserver*
+  sudo rm -f $HOME/Library/LaunchDaemons/*torrserver*
   killRunning
 }
 
@@ -54,7 +54,6 @@ function uninstall() {
     echo ""
   }
   [[ $lang == "en" ]] && read -p ' Are you shure you want to delete TorrServer? (Yes/No) ' answer_del </dev/tty || read -p ' Вы уверены что хотите удалить программу? (Да/Нет) ' answer_del </dev/tty
-  read answer_del
   if [ "$answer_del" != "${answer_del#[YyДд]}" ]; then
     cleanup
     sudo rm -rf $dirInstall
@@ -211,7 +210,7 @@ EOF
     [[ $lang == "en" ]] && echo " Use user \"$isAuthUser\" with password \"$isAuthPass\" for web auth" || echo " Для авторизации введите пользователя $isAuthUser с паролем $isAuthPass"
     echo ""
   fi
-  sleep 60
+  sleep 30
 }
 
 while true; do
