@@ -9,7 +9,7 @@ require (
 	github.com/alexflint/go-arg v1.4.3
 	github.com/anacrolix/dms v1.6.0
 	github.com/anacrolix/log v0.14.5
-	github.com/anacrolix/missinggo v1.3.0
+	github.com/anacrolix/missinggo/v2 v2.7.3
 	github.com/anacrolix/publicip v0.3.0
 	github.com/anacrolix/torrent v1.53.2
 	github.com/gin-contrib/cors v1.5.0
@@ -36,8 +36,8 @@ require (
 	github.com/anacrolix/dht/v2 v2.21.0 // indirect
 	github.com/anacrolix/ffprobe v1.1.0 // indirect
 	github.com/anacrolix/generics v0.0.0-20230911070922-5dd7545c6b13 // indirect
+	github.com/anacrolix/missinggo v1.3.0 // indirect
 	github.com/anacrolix/missinggo/perf v1.0.0 // indirect
-	github.com/anacrolix/missinggo/v2 v2.7.3 // indirect
 	github.com/anacrolix/multiless v0.3.1-0.20221221005021-2d12701f83f7 // indirect
 	github.com/anacrolix/stm v0.5.0 // indirect
 	github.com/anacrolix/sync v0.5.1 // indirect
