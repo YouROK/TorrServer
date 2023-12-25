@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anacrolix/missinggo/httptoo"
+	"github.com/anacrolix/missinggo/v2/httptoo"
 
 	sets "server/settings"
 	"server/torr"
