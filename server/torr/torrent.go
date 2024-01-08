@@ -266,6 +266,9 @@ func (t *Torrent) drop() {
 }
 
 func (t *Torrent) Close() {
+	if t.cache != nil && t.cache.Readers() > 0 {
+		return
+	}
 	t.Stat = state.TorrentClosed
 
 	t.bt.mu.Lock()
