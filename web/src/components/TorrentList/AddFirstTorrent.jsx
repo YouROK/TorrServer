@@ -16,10 +16,11 @@ export default function AddFirstTorrent() {
     <>
       <IconWrapper onClick={() => handleClickOpen(true)} isButton>
         <lord-icon
-          src='https://cdn.lordicon.com/bbnkwdur.json'
+          src='https://cdn.lordicon.com/jkzgajyr.json'
           trigger='loop'
+          delay="2000"
           colors={`primary:#121331,secondary:${primary}`}
-          stroke='26'
+          stroke='light'
           scale='60'
         />
         <div className='icon-label'>{t('NoTorrentsAdded')}</div>
