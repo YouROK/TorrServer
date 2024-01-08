@@ -139,6 +139,9 @@ func SetTorrent(hashHex, title, poster, data string) *Torrent {
 }
 
 func RemTorrent(hashHex string) {
+	if sets.ReadOnly {
+		return
+	}
 	hash := metainfo.NewHashFromHex(hashHex)
 	if bts.RemoveTorrent(hash) {
 		if sets.BTsets.UseDisk && hashHex != "" && hashHex != "/" {
