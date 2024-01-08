@@ -200,10 +200,11 @@ func (bt *BTServer) ListTorrents() map[metainfo.Hash]*Torrent {
 	return list
 }
 
-func (bt *BTServer) RemoveTorrent(hash torrent.InfoHash) {
+func (bt *BTServer) RemoveTorrent(hash torrent.InfoHash) bool {
 	if torr, ok := bt.torrents[hash]; ok {
-		torr.Close()
+		return torr.Close()
 	}
+	return false
 }
 
 func isPrivateIP(ip net.IP) bool {

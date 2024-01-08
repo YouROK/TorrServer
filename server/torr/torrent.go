@@ -265,9 +265,9 @@ func (t *Torrent) drop() {
 	}
 }
 
-func (t *Torrent) Close() {
+func (t *Torrent) Close() bool {
 	if t.cache != nil && t.cache.Readers() > 0 {
-		return
+		return false
 	}
 	t.Stat = state.TorrentClosed
 
@@ -276,6 +276,7 @@ func (t *Torrent) Close() {
 	t.bt.mu.Unlock()
 
 	t.drop()
+	return true
 }
 
 func (t *Torrent) Status() *state.TorrentStatus {

@@ -140,18 +140,19 @@ func SetTorrent(hashHex, title, poster, data string) *Torrent {
 
 func RemTorrent(hashHex string) {
 	hash := metainfo.NewHashFromHex(hashHex)
-	if sets.BTsets.UseDisk && hashHex != "" && hashHex != "/" {
-		name := filepath.Join(sets.BTsets.TorrentsSavePath, hashHex)
-		ff, _ := os.ReadDir(name)
-		for _, f := range ff {
-			os.Remove(filepath.Join(name, f.Name()))
-		}
-		err := os.Remove(name)
-		if err != nil {
-			log.TLogln("Error remove cache:", err)
+	if bts.RemoveTorrent(hash) {
+		if sets.BTsets.UseDisk && hashHex != "" && hashHex != "/" {
+			name := filepath.Join(sets.BTsets.TorrentsSavePath, hashHex)
+			ff, _ := os.ReadDir(name)
+			for _, f := range ff {
+				os.Remove(filepath.Join(name, f.Name()))
+			}
+			err := os.Remove(name)
+			if err != nil {
+				log.TLogln("Error remove cache:", err)
+			}
 		}
 	}
-	bts.RemoveTorrent(hash)
 	RemTorrentDB(hash)
 }
 
