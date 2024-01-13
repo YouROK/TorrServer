@@ -47,4 +47,3 @@ echo "Running with: ${FLAGS}"
 export GODEBUG=madvdontneed=1
 
 /opt/torrserver/${binName} ${FLAGS}
-rm -f /opt/torrserver/${binName}
