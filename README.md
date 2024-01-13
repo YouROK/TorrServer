@@ -245,9 +245,8 @@ local:127.0.0.1
 
 - [QIWI](https://qiwi.com/n/YOUROK85)
 - [YooMoney](https://yoomoney.ru/to/410013733697114/200)
-- [PayPal](https://www.paypal.me/yourok)
 - SberBank Card: **5484 4000 2285 7839**
-- YooMoney Card: **4048 4150 1812 8179**
+
 
 ## Thanks to everyone who tested and helped
 
@@ -264,4 +263,5 @@ local:127.0.0.1
 - [lieranderl (Evgeni)](https://github.com/lieranderl)
 - [cocool97](https://github.com/cocool97)
 - [shadeov](https://github.com/shadeov)
+- [butaford](https://github.com/butaford) Pavel for make docker file and scripts
 - and others
