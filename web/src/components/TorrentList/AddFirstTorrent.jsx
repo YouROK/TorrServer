@@ -18,7 +18,7 @@ export default function AddFirstTorrent() {
         <lord-icon
           src='https://cdn.lordicon.com/jkzgajyr.json'
           trigger='loop'
-          delay="2000"
+          delay='2000'
           colors={`primary:#121331,secondary:${primary}`}
           stroke='light'
           scale='60'
