@@ -171,7 +171,7 @@ Synology NAS packages repo source: https://grigi.lt
 
 #### Server
 
-- Install [Golang](https://golang.org/doc/install) 1.18+
+- Install [Golang](https://golang.org/doc/install) 1.20+
 - Go to the TorrServer source directory
 - Run build script under linux or macOS `build-all.sh`
 
@@ -250,18 +250,18 @@ local:127.0.0.1
 
 ## Thanks to everyone who tested and helped
 
-- [anacrolix (Matt Joiner)](https://github.com/anacrolix)
+- [anacrolix](https://github.com/anacrolix) Matt Joiner
 - [tsynik](https://github.com/tsynik)
-- [dancheskus](https://github.com/dancheskus)
-- [kolsys](https://github.com/kolsys)
-- [vladlenas](https://github.com/vladlenas)
-- [Nemiroff (Tw1cker)](https://github.com/Nemiroff)
-- [spawnlmg (SpAwN_LMG)](https://github.com/spawnlmg)
-- [TopperBG (Dimitar Maznekov)](https://github.com/TopperBG)
-- [FaintGhost (Zhang Yaowei)](https://github.com/FaintGhost)
-- [Anton111111 (Anton Potekhin)](https://github.com/Anton111111)
-- [lieranderl (Evgeni)](https://github.com/lieranderl)
-- [cocool97](https://github.com/cocool97)
-- [shadeov](https://github.com/shadeov)
+- [dancheskus](https://github.com/dancheskus) for web GUI
+- [kolsys](https://github.com/kolsys) for MSX support code
+- [vladlenas](https://github.com/vladlenas) for NAS builds
+- [Nemiroff](https://github.com/Nemiroff) Tw1cker
+- [spawnlmg](https://github.com/spawnlmg) SpAwN_LMG for testing
+- [TopperBG](https://github.com/TopperBG) Dimitar Maznekov for Bulgarian translation
+- [FaintGhost](https://github.com/FaintGhost) Zhang Yaowei for Simplified Chinese translation
+- [Anton111111](https://github.com/Anton111111) Anton Potekhin for sleep on Windows fixes
+- [lieranderl](https://github.com/lieranderl) Evgeni for SSL support code
+- [cocool97](https://github.com/cocool97) for openapi API documentation
+- [shadeov](https://github.com/shadeov) for README improvements
 - [butaford](https://github.com/butaford) Pavel for make docker file and scripts
 - and others

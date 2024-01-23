@@ -2,7 +2,7 @@ module server
 
 go 1.20
 
-replace github.com/anacrolix/torrent v1.53.2 => github.com/tsynik/torrent v1.2.13
+replace github.com/anacrolix/torrent v1.53.3 => github.com/tsynik/torrent v1.2.13
 
 require (
 	github.com/agnivade/levenshtein v1.1.1
@@ -11,7 +11,7 @@ require (
 	github.com/anacrolix/log v0.14.5
 	github.com/anacrolix/missinggo/v2 v2.7.3
 	github.com/anacrolix/publicip v0.3.0
-	github.com/anacrolix/torrent v1.53.2
+	github.com/anacrolix/torrent v1.53.3
 	github.com/gin-contrib/cors v1.5.0
 	github.com/gin-contrib/location v0.0.2
 	github.com/gin-gonic/gin v1.9.1
@@ -32,7 +32,7 @@ require (
 	github.com/RoaringBitmap/roaring v1.7.0 // indirect
 	github.com/alecthomas/atomic v0.1.0-alpha2 // indirect
 	github.com/alexflint/go-scalar v1.2.0 // indirect
-	github.com/anacrolix/chansync v0.3.0 // indirect
+	github.com/anacrolix/chansync v0.4.0 // indirect
 	github.com/anacrolix/dht/v2 v2.21.0 // indirect
 	github.com/anacrolix/ffprobe v1.1.0 // indirect
 	github.com/anacrolix/generics v0.0.0-20230911070922-5dd7545c6b13 // indirect
@@ -57,11 +57,11 @@ require (
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-openapi/jsonpointer v0.20.2 // indirect
 	github.com/go-openapi/jsonreference v0.20.4 // indirect
-	github.com/go-openapi/spec v0.20.13 // indirect
-	github.com/go-openapi/swag v0.22.7 // indirect
+	github.com/go-openapi/spec v0.20.14 // indirect
+	github.com/go-openapi/swag v0.22.8 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/go-playground/validator/v10 v10.16.0 // indirect
+	github.com/go-playground/validator/v10 v10.17.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/google/btree v1.1.2 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
@@ -80,13 +80,13 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	golang.org/x/arch v0.7.0 // indirect
-	golang.org/x/crypto v0.17.0 // indirect
-	golang.org/x/exp v0.0.0-20240103183307-be819d1f06fc // indirect
-	golang.org/x/net v0.19.0 // indirect
+	golang.org/x/crypto v0.18.0 // indirect
+	golang.org/x/exp v0.0.0-20240119083558-1b970713d09a // indirect
+	golang.org/x/net v0.20.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
 	golang.org/x/sys v0.16.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	golang.org/x/tools v0.16.1 // indirect
+	golang.org/x/tools v0.17.0 // indirect
 	google.golang.org/protobuf v1.32.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
