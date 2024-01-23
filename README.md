@@ -252,15 +252,16 @@ local:127.0.0.1
 
 - [anacrolix](https://github.com/anacrolix) Matt Joiner
 - [tsynik](https://github.com/tsynik)
-- [dancheskus](https://github.com/dancheskus) for web GUI
-- [kolsys](https://github.com/kolsys) for MSX support code
+- [dancheskus](https://github.com/dancheskus) for react web GUI and PWA code
+- [kolsys](https://github.com/kolsys) for initial Media Station X support
+- [damiva](https://github.com/damiva) for Media Station X code updates
 - [vladlenas](https://github.com/vladlenas) for NAS builds
 - [Nemiroff](https://github.com/Nemiroff) Tw1cker
 - [spawnlmg](https://github.com/spawnlmg) SpAwN_LMG for testing
-- [TopperBG](https://github.com/TopperBG) Dimitar Maznekov for Bulgarian translation
-- [FaintGhost](https://github.com/FaintGhost) Zhang Yaowei for Simplified Chinese translation
+- [TopperBG](https://github.com/TopperBG) Dimitar Maznekov for Bulgarian web translation
+- [FaintGhost](https://github.com/FaintGhost) Zhang Yaowei for Simplified Chinese web translation
 - [Anton111111](https://github.com/Anton111111) Anton Potekhin for sleep on Windows fixes
-- [lieranderl](https://github.com/lieranderl) Evgeni for SSL support code
+- [lieranderl](https://github.com/lieranderl) Evgeni for adding SSL support code
 - [cocool97](https://github.com/cocool97) for openapi API documentation
 - [shadeov](https://github.com/shadeov) for README improvements
 - [butaford](https://github.com/butaford) Pavel for make docker file and scripts
