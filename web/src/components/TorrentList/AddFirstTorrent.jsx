@@ -19,7 +19,7 @@ export default function AddFirstTorrent() {
           src='https://cdn.lordicon.com/jkzgajyr.json'
           trigger='loop'
           delay='2000'
-          colors={`primary:#121331,secondary:${primary}`}
+          colors={`primary:#575757,secondary:${primary}`}
           stroke='light'
           scale='60'
         />
