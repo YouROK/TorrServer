@@ -19,13 +19,13 @@ import (
 //
 //	@Tags			API
 //
-//	@Param			hash		query	string	true	"Torrent hash"
-//	@Param			id			query	string	true	"File index in torrent"
+//	@Param			hash		path	string	true	"Torrent hash"
+//	@Param			id			path	string	true	"File index in torrent"
 //	@Param			not_auth	query	bool	false	"Not authenticated"
 //
 //	@Produce		application/octet-stream
 //	@Success		200	"Torrent data"
-//	@Router			/play [get]
+//	@Router			/play/{hash}/{id} [get]
 func play(c *gin.Context) {
 	hash := c.Param("hash")
 	indexStr := c.Param("id")
