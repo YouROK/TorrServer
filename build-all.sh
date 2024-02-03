@@ -54,6 +54,12 @@ echo "Build web"
 export NODE_OPTIONS=--openssl-legacy-provider
 $GOBIN run gen_web.go
 
+#### Update api docs
+echo "Build docs"
+$GOBIN install github.com/swaggo/swag/cmd/swag@latest
+cd "${ROOT}/server" || exit 1
+swag init -g web/server.go
+
 #### Build server
 echo "Build server"
 cd "${ROOT}/server" || exit 1
