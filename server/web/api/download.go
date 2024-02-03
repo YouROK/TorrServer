@@ -47,7 +47,7 @@ func (f *fileReader) Seek(offset int64, whence int) (int64, error) {
 //
 //	@Tags			API
 //
-//	@Param			size	path	string	true	"Test file size"
+//	@Param			size	path	string	true	"Test file size (in MB)"
 //
 //	@Produce		application/octet-stream
 //	@Success		200 {file} file
