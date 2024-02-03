@@ -62,7 +62,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Test file size",
+                        "description": "Test file size (in MB)",
                         "name": "size",
                         "in": "path",
                         "required": true
@@ -98,7 +98,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ffp": {
+        "/ffp/{hash}/{id}": {
             "get": {
                 "description": "Gather informations using ffprobe.",
                 "produces": [
@@ -113,14 +113,14 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Torrent hash",
                         "name": "hash",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "File index in torrent",
                         "name": "id",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     }
                 ],
@@ -217,7 +217,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/play": {
+        "/play/{hash}/{id}": {
             "get": {
                 "description": "Play given torrent referenced by hash.",
                 "produces": [
@@ -232,14 +232,14 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Torrent hash",
                         "name": "hash",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "File index in torrent",
                         "name": "id",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
