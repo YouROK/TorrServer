@@ -39,7 +39,11 @@ export default function LeftSideComponent({
   }
 
   const [isTorrentSourceActive, setIsTorrentSourceActive] = useState(false)
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop: handleCapture, accept: '.torrent' })
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop: handleCapture,
+    accept: '.torrent',
+    multiple: false,
+  })
 
   const handleTorrentSourceChange = ({ target: { value } }) => setTorrentSource(value)
 
