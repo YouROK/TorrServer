@@ -148,32 +148,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/msx": {
-            "get": {
-                "description": "Multi usage endpoint.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "MSX"
-                ],
-                "summary": "Multi usage endpoint",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Magnet/hash/link to torrent",
-                        "name": "link",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Data returned according to query"
-                    }
-                }
-            }
-        },
         "/msx/imdb": {
             "get": {
                 "description": "Get MSX IMDB informations.",
@@ -191,7 +165,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/msx/imdb/:id": {
+        "/msx/imdb/{id}": {
             "get": {
                 "description": "Get MSX IMDB informations.",
                 "produces": [
@@ -213,6 +187,32 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "JSON MSX IMDB informations"
+                    }
+                }
+            }
+        },
+        "/msx/{pth}": {
+            "get": {
+                "description": "Multi usage endpoint.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MSX"
+                ],
+                "summary": "Multi usage endpoint",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Route MSX pages",
+                        "name": "link",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Data returned according to path"
                     }
                 }
             }

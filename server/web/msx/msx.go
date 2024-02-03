@@ -43,11 +43,11 @@ func SetupRoute(r *gin.RouterGroup) {
 //
 //	@Tags			MSX
 //
-//	@Param			link	query	string	true	"Magnet/hash/link to torrent"
+//	@Param			link	path	string	true	"Route MSX pages"
 //
 //	@Produce		json
-//	@Success		200	"Data returned according to query"
-//	@Router			/msx [get]
+//	@Success		200	"Data returned according to path"
+//	@Router			/msx/{pth} [get]
 func msxPTH(c *gin.Context) {
 	js := []string{"http://msx.benzac.de/js/tvx-plugin.min.js"}
 	switch p := c.Param("pth"); p {
@@ -114,7 +114,7 @@ func msxIMDB(c *gin.Context) {
 //
 // @Produce		json
 // @Success		200	"JSON MSX IMDB informations"
-// @Router			/msx/imdb/:id [get]
+// @Router			/msx/imdb/{id} [get]
 func msxIMDBID(c *gin.Context) {
 	idb.Lock()
 	defer idb.Unlock()
