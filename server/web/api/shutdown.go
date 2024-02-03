@@ -2,9 +2,10 @@ package api
 
 import (
 	"net/http"
+	"time"
+
 	sets "server/settings"
 	"server/torr"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )

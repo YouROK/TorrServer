@@ -241,7 +241,6 @@ func getLink(host, path string) string {
 		// } else {
 		host = "http://" + host
 		// }
-
 	}
 	pos := strings.LastIndex(host, ":")
 	if pos > 7 {

@@ -18,12 +18,12 @@ import (
 //
 //	@Tags			API
 //
-//	@Param			hash	query	string	true	"Torrent hash"
-//	@Param			id		query	string	true	"File index in torrent"
+//	@Param			hash	path	string	true	"Torrent hash"
+//	@Param			id		path	string	true	"File index in torrent"
 //
 //	@Produce		json
 //	@Success		200	"Data returned from ffprobe"
-//	@Router			/ffp [get]
+//	@Router			/ffp/{hash}/{id} [get]
 func ffp(c *gin.Context) {
 	hash := c.Param("hash")
 	indexStr := c.Param("id")

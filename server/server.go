@@ -68,7 +68,6 @@ func Start(port, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA b
 	settings.Port = port
 	settings.SslPort = sslport
 	web.Start()
-
 }
 
 func cleanCache() {

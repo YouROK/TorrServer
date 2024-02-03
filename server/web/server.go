@@ -87,20 +87,20 @@ func Start() {
 	if settings.BTsets.EnableDLNA {
 		dlna.Start()
 	}
-	
+
 	route.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	//check if https enabled
+	// check if https enabled
 	if settings.Ssl {
-		//if no cert and key files set in db/settings, generate new self-signed cert and key files
+		// if no cert and key files set in db/settings, generate new self-signed cert and key files
 		if settings.BTsets.SslCert == "" || settings.BTsets.SslKey == "" {
 			settings.BTsets.SslCert, settings.BTsets.SslKey = sslcerts.MakeCertKeyFiles(ips)
 			log.TLogln("Saving path to ssl cert and key in db", settings.BTsets.SslCert, settings.BTsets.SslKey)
 			settings.SetBTSets(settings.BTsets)
 		}
-		//verify if cert and key files are valid
+		// verify if cert and key files are valid
 		err = sslcerts.VerifyCertKeyFiles(settings.BTsets.SslCert, settings.BTsets.SslKey, settings.SslPort)
-		//if not valid, generate new self-signed cert and key files
+		// if not valid, generate new self-signed cert and key files
 		if err != nil {
 			log.TLogln("Error checking certificate and private key files:", err)
 			settings.BTsets.SslCert, settings.BTsets.SslKey = sslcerts.MakeCertKeyFiles(ips)
@@ -117,7 +117,6 @@ func Start() {
 		log.TLogln("Start http server at port", settings.Port)
 		waitChan <- route.Run(":" + settings.Port)
 	}()
-
 }
 
 func Wait() error {

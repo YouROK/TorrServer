@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/anacrolix/dms/dlna"
-	"github.com/anacrolix/missinggo/httptoo"
+	"github.com/anacrolix/missinggo/v2/httptoo"
 	"github.com/anacrolix/torrent"
 
 	mt "server/mimetype"

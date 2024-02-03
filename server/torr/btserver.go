@@ -88,14 +88,13 @@ func (bt *BTServer) configure(ctx context.Context) {
 	upnpID := "TorrServer/" + version.Version
 	cliVers := userAgent
 
-	//	bt.config.AlwaysWantConns = true
 	bt.config.Debug = settings.BTsets.EnableDebug
 	bt.config.DisableIPv6 = !settings.BTsets.EnableIPv6
 	bt.config.DisableTCP = settings.BTsets.DisableTCP
 	bt.config.DisableUTP = settings.BTsets.DisableUTP
 	//	https://github.com/anacrolix/torrent/issues/703
-	//  bt.config.DisableWebtorrent = true // TODO: check memory usage
-	//  bt.config.DisableWebseeds = false
+	bt.config.DisableWebtorrent = true //	NE
+	bt.config.DisableWebseeds = false  //	NE
 	bt.config.NoDefaultPortForwarding = settings.BTsets.DisableUPNP
 	bt.config.NoDHT = settings.BTsets.DisableDHT
 	bt.config.DisablePEX = settings.BTsets.DisablePEX
@@ -109,13 +108,13 @@ func (bt *BTServer) configure(ctx context.Context) {
 	bt.config.EstablishedConnsPerTorrent = settings.BTsets.ConnectionsLimit
 	bt.config.TotalHalfOpenConns = 500
 	// Encryption/Obfuscation
-	// bt.config.EncryptionPolicy = torrent.EncryptionPolicy{
-	// 	ForceEncryption: settings.BTsets.ForceEncrypt,
-	// }
-	bt.config.HeaderObfuscationPolicy = torrent.HeaderObfuscationPolicy{
-		RequirePreferred: settings.BTsets.ForceEncrypt,
-		Preferred:        true,
-	}
+	// bt.config.EncryptionPolicy = torrent.EncryptionPolicy{ //	OE
+	//	ForceEncryption: settings.BTsets.ForceEncrypt, //	OE
+	// } //	OE
+	bt.config.HeaderObfuscationPolicy = torrent.HeaderObfuscationPolicy{ //	NE
+		RequirePreferred: settings.BTsets.ForceEncrypt, //	NE
+		Preferred:        true,                         //	NE
+	} //	NE
 	if settings.BTsets.DownloadRateLimit > 0 {
 		bt.config.DownloadRateLimiter = utils.Limit(settings.BTsets.DownloadRateLimit * 1024)
 	}
@@ -130,21 +129,8 @@ func (bt *BTServer) configure(ctx context.Context) {
 			log.Println("Set listen port", settings.BTsets.PeersListenPort)
 			bt.config.ListenPort = settings.BTsets.PeersListenPort
 		} else {
-			// lport := 32000
-			// for {
-			// 	log.Println("Check listen port", lport)
-			// 	l, err := net.Listen("tcp", ":"+strconv.Itoa(lport))
-			// 	if l != nil {
-			// 		l.Close()
-			// 	}
-			// 	if err == nil {
-			// 		break
-			// 	}
-			// 	lport++
-			// }
-			// log.Println("Set listen port", lport)
 			log.Println("Set listen port to random autoselect (0)")
-			bt.config.ListenPort = 0 // lport
+			bt.config.ListenPort = 0
 		}
 	}
 
@@ -200,10 +186,11 @@ func (bt *BTServer) ListTorrents() map[metainfo.Hash]*Torrent {
 	return list
 }
 
-func (bt *BTServer) RemoveTorrent(hash torrent.InfoHash) {
+func (bt *BTServer) RemoveTorrent(hash torrent.InfoHash) bool {
 	if torr, ok := bt.torrents[hash]; ok {
-		torr.Close()
+		return torr.Close()
 	}
+	return false
 }
 
 func isPrivateIP(ip net.IP) bool {

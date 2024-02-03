@@ -10,6 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/metainfo"
+
 	"github.com/alexflint/go-arg"
 	"github.com/pkg/browser"
 
@@ -19,7 +22,6 @@ import (
 	"server/settings"
 	"server/torr"
 	"server/version"
-	"server/web/api/utils"
 )
 
 type args struct {
@@ -142,7 +144,7 @@ func watchTDir(dir string) {
 			for _, file := range files {
 				filename := filepath.Join(path, file.Name())
 				if strings.ToLower(filepath.Ext(file.Name())) == ".torrent" {
-					sp, err := utils.ParseLink("file://" + filename)
+					sp, err := openFile(filename)
 					if err == nil {
 						tor, err := torr.AddTorrent(sp, "", "", "")
 						if err == nil {
@@ -170,4 +172,24 @@ func watchTDir(dir string) {
 		}
 		time.Sleep(time.Second * 5)
 	}
+}
+
+func openFile(path string) (*torrent.TorrentSpec, error) {
+	minfo, err := metainfo.LoadFromFile(path)
+	if err != nil {
+		return nil, err
+	}
+	info, err := minfo.UnmarshalInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	// mag := minfo.Magnet(info.Name, minfo.HashInfoBytes())
+	mag := minfo.Magnet(nil, &info)
+	return &torrent.TorrentSpec{
+		InfoBytes:   minfo.InfoBytes,
+		Trackers:    [][]string{mag.Trackers},
+		DisplayName: info.Name,
+		InfoHash:    minfo.HashInfoBytes(),
+	}, nil
 }
