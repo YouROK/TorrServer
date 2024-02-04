@@ -68,10 +68,6 @@ func (v *TDB) Get(xpath, name string) []byte {
 }
 
 func (v *TDB) Set(xpath, name string, value []byte) {
-	if ReadOnly {
-		return
-	}
-
 	spath := strings.Split(xpath, "/")
 	if len(spath) == 0 {
 		return
@@ -139,10 +135,6 @@ func (v *TDB) List(xpath string) []string {
 }
 
 func (v *TDB) Rem(xpath, name string) {
-	if ReadOnly {
-		return
-	}
-
 	spath := strings.Split(xpath, "/")
 	if len(spath) == 0 {
 		return
