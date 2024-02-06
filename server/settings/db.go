@@ -15,7 +15,7 @@ type TDB struct {
 	db   *bolt.DB
 }
 
-func NewTDB() *TDB {
+func NewTDB() TorrServerDB {
 	db, err := bolt.Open(filepath.Join(Path, "config.db"), 0o666, &bolt.Options{Timeout: 5 * time.Second})
 	if err != nil {
 		log.TLogln(err)

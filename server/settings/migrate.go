@@ -2,13 +2,16 @@ package settings
 
 import (
 	"encoding/binary"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
-
-	bolt "go.etcd.io/bbolt"
+	"reflect"
 	"server/log"
 	"server/web/api/utils"
+
+	bolt "go.etcd.io/bbolt"
 )
 
 var dbTorrentsName = []byte("Torrents")
@@ -22,7 +25,8 @@ type torrentOldDB struct {
 	Timestamp int64
 }
 
-func Migrate() {
+// Migrate from torrserver.db to config.db
+func Migrate1() {
 	if _, err := os.Lstat(filepath.Join(Path, "torrserver.db")); os.IsNotExist(err) {
 		return
 	}
@@ -99,4 +103,88 @@ func Migrate() {
 
 func b2i(v []byte) int64 {
 	return int64(binary.BigEndian.Uint64(v))
+}
+
+/*
+	=== Migrate 2 ===
+
+Migrate 'Settings' and 'Viewed' buckets from BBolt ('config.db')
+to separate JSON files ('settings.json' and 'viewed.json')
+
+'Torrents' data continues to remain in the BBolt database ('config.db')
+due to the fact that BLOBs are stored there
+
+To make user be able to roll settings back, no data is deleted from 'config.db' file.
+*/
+func Migrate2(bboltDB, jsonDB TorrServerDB) error {
+	var err error = nil
+
+	const XPATH_SETTINGS = "Settings"
+	const NAME_BITTORR = "BitTorr"
+	const XPATH_VIEWED = "Viewed"
+
+	if BTsets != nil {
+		msg := "Migrate0002 MUST be called before initializing BTSets"
+		log.TLogln(msg)
+		os.Exit(1)
+	}
+
+	isByteArraysEqualJson := func(a, b []byte) (bool, error) {
+		var objectA interface{}
+		var objectB interface{}
+		var err error = nil
+		if err = json.Unmarshal(a, &objectA); err == nil {
+			if err = json.Unmarshal(b, &objectB); err == nil {
+				return reflect.DeepEqual(objectA, objectB), nil
+			} else {
+				err = fmt.Errorf("Error unmashalling B: %s", err.Error())
+			}
+		} else {
+			err = fmt.Errorf("Error unmashalling A: %s", err.Error())
+		}
+		return false, err
+	}
+
+	migrateXPath := func(xPath, name string) error {
+		if jsonDB.Get(xPath, name) == nil {
+			bboltDBBlob := bboltDB.Get(xPath, name)
+			if bboltDBBlob != nil {
+				log.TLogln(fmt.Sprintf("Attempting to migrate %s->%s from TDB to JsonDB", xPath, name))
+				jsonDB.Set(xPath, name, bboltDBBlob)
+				jsonDBBlob := jsonDB.Get(xPath, name)
+				if isEqual, err := isByteArraysEqualJson(bboltDBBlob, jsonDBBlob); err == nil {
+					if isEqual {
+						log.TLogln(fmt.Sprintf("Migrated %s->%s successful", xPath, name))
+					} else {
+						msg := fmt.Sprintf("Failed to migrate %s->%s TDB to JsonDB: equality check failed", xPath, name)
+						log.TLogln(msg)
+						return errors.New(msg)
+					}
+				} else {
+					msg := fmt.Sprintf("Failed to migrate %s->%s TDB to JsonDB: %s", xPath, name, err)
+					log.TLogln(msg)
+					return errors.New(msg)
+				}
+			}
+		}
+		return nil
+	}
+
+	if err = migrateXPath(XPATH_SETTINGS, NAME_BITTORR); err != nil {
+		return err
+	}
+
+	jsonDBViewedNames := jsonDB.List(XPATH_VIEWED)
+	if len(jsonDBViewedNames) <= 0 {
+		bboltDBViewedNames := bboltDB.List(XPATH_VIEWED)
+		if len(bboltDBViewedNames) > 0 {
+			for _, name := range bboltDBViewedNames {
+				err = migrateXPath(XPATH_VIEWED, name)
+				if err != nil {
+					break
+				}
+			}
+		}
+	}
+	return err
 }
