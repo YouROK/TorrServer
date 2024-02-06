@@ -1,5 +1,7 @@
 package settings
 
+import "server/log"
+
 type DBReadCache struct {
 	db        TorrServerDB
 	listCache map[string][]string
@@ -33,6 +35,10 @@ func (v *DBReadCache) Get(xPath, name string) []byte {
 }
 
 func (v *DBReadCache) Set(xPath, name string, value []byte) {
+	if ReadOnly {
+		log.TLogln("DB.Set: Read-only DB mode!", name)
+		return
+	}
 	cacheKey := v.makeDataCacheKey(xPath, name)
 	v.dataCache[cacheKey] = value
 	delete(v.listCache, xPath)
@@ -49,6 +55,10 @@ func (v *DBReadCache) List(xPath string) []string {
 }
 
 func (v *DBReadCache) Rem(xPath, name string) {
+	if ReadOnly {
+		log.TLogln("DB.Rem: Read-only DB mode!", name)
+		return
+	}
 	cacheKey := v.makeDataCacheKey(xPath, name)
 	delete(v.dataCache, cacheKey)
 	delete(v.listCache, xPath)
