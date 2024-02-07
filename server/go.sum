@@ -48,8 +48,8 @@ github.com/anacrolix/log v0.3.0/go.mod h1:lWvLTqzAnCWPJA08T2HCstZi0L1y2Wyvm3FJgw
 github.com/anacrolix/log v0.6.0/go.mod h1:lWvLTqzAnCWPJA08T2HCstZi0L1y2Wyvm3FJgwU9jwU=
 github.com/anacrolix/log v0.13.1/go.mod h1:D4+CvN8SnruK6zIFS/xPoRJmtvtnxs+CSfDQ+BFxZ68=
 github.com/anacrolix/log v0.14.2/go.mod h1:1OmJESOtxQGNMlUO5rcv96Vpp9mfMqXXbe2RdinFLdY=
-github.com/anacrolix/log v0.14.5 h1:OkMjBquVSRb742LkecSGDGaGpNoSrw4syRIm0eRdmrg=
-github.com/anacrolix/log v0.14.5/go.mod h1:1OmJESOtxQGNMlUO5rcv96Vpp9mfMqXXbe2RdinFLdY=
+github.com/anacrolix/log v0.14.6-0.20240207013547-dfa5cb14b878 h1:qF2xGiWxd0botliWzEE8CyKkg3jhB9fCSjbmcgp+HkY=
+github.com/anacrolix/log v0.14.6-0.20240207013547-dfa5cb14b878/go.mod h1:m0poRtlr41mriZlXBQ9SOVZ8yZBkLjOkDhd5Li5pITA=
 github.com/anacrolix/missinggo v1.1.0/go.mod h1:MBJu3Sk/k3ZfGYcS7z18gwfu72Ey/xopPFJJbTi5yIo=
 github.com/anacrolix/missinggo v1.1.2-0.20190815015349-b888af804467/go.mod h1:MBJu3Sk/k3ZfGYcS7z18gwfu72Ey/xopPFJJbTi5yIo=
 github.com/anacrolix/missinggo v1.2.1/go.mod h1:J5cMhif8jPmFoC3+Uvob3OXXNIhOUikzMt+uUjeM21Y=

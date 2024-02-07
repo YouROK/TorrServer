@@ -8,7 +8,7 @@ require (
 	github.com/agnivade/levenshtein v1.1.1
 	github.com/alexflint/go-arg v1.4.3
 	github.com/anacrolix/dms v1.6.0
-	github.com/anacrolix/log v0.14.5
+	github.com/anacrolix/log v0.14.6-0.20240207013547-dfa5cb14b878
 	github.com/anacrolix/missinggo/v2 v2.7.3
 	github.com/anacrolix/publicip v0.3.0
 	github.com/anacrolix/torrent v1.53.3
@@ -70,7 +70,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.6 // indirect
-	github.com/leodido/go-urn v1.3.0 // indirect
+	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
