@@ -20,6 +20,7 @@ var (
 	PubIPv4  string
 	PubIPv6  string
 	TorAddr  string
+	MaxSize  int64
 )
 
 func InitSets(readOnly, searchWA bool) {

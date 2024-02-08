@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -42,6 +43,7 @@ type args struct {
 	PubIPv4     string `arg:"-4" help:"set public IPv4 addr"`
 	PubIPv6     string `arg:"-6" help:"set public IPv6 addr"`
 	SearchWA    bool   `arg:"-s" help:"search without auth"`
+	MaxSize     string `arg:"-m" help:"max allowed stream size"`
 }
 
 func (args) Version() string {
@@ -102,6 +104,13 @@ func main() {
 
 	if params.TorrentsDir != "" {
 		go watchTDir(params.TorrentsDir)
+	}
+
+	if params.MaxSize != "" {
+		maxSize, err := strconv.ParseInt(params.MaxSize, 10, 64)
+		if err == nil {
+			settings.MaxSize = maxSize
+		}
 	}
 
 	server.Start(params.Port, params.SslPort, params.SslCert, params.SslKey, params.Ssl, params.RDB, params.SearchWA)
