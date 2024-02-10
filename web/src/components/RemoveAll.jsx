@@ -10,25 +10,12 @@ import { useTranslation } from 'react-i18next'
 const fnRemoveAll = () => {
   fetch(torrentsHost(), {
     method: 'post',
-    body: JSON.stringify({ action: 'list' }),
+    body: JSON.stringify({ action: 'wipe' }),
     headers: {
       Accept: 'application/json, text/plain, */*',
       'Content-Type': 'application/json',
     },
   })
-    .then(res => res.json())
-    .then(json => {
-      json.forEach(torr => {
-        fetch(torrentsHost(), {
-          method: 'post',
-          body: JSON.stringify({ action: 'rem', hash: torr.hash }),
-          headers: {
-            Accept: 'application/json, text/plain, */*',
-            'Content-Type': 'application/json',
-          },
-        })
-      })
-    })
 }
 
 export default function RemoveAll({ isOffline, isLoading }) {
