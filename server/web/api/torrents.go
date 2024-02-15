@@ -72,6 +72,10 @@ func torrents(c *gin.Context) {
 		{
 			dropTorrent(req, c)
 		}
+	case "wipe":
+		{
+			wipeTorrents(req, c)
+		}
 	}
 }
 
@@ -182,5 +186,18 @@ func dropTorrent(req torrReqJS, c *gin.Context) {
 		return
 	}
 	torr.DropTorrent(req.Hash)
+	c.Status(200)
+}
+
+func wipeTorrents(req torrReqJS, c *gin.Context) {
+	torrents := torr.ListTorrent()
+	for _, t := range torrents {
+		torr.RemTorrent(t.TorrentSpec.InfoHash.HexString())
+	}
+	// TODO: remove (copied todo from remTorrent())
+	if set.BTsets.EnableDLNA {
+		dlna.Stop()
+		dlna.Start()
+	}
 	c.Status(200)
 }

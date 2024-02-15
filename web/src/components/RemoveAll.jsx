@@ -6,29 +6,17 @@ import DeleteIcon from '@material-ui/icons/Delete'
 import { useState } from 'react'
 import { torrentsHost } from 'utils/Hosts'
 import { useTranslation } from 'react-i18next'
+import UnsafeButton from './UnsafeButton'
 
 const fnRemoveAll = () => {
   fetch(torrentsHost(), {
     method: 'post',
-    body: JSON.stringify({ action: 'list' }),
+    body: JSON.stringify({ action: 'wipe' }),
     headers: {
       Accept: 'application/json, text/plain, */*',
       'Content-Type': 'application/json',
     },
   })
-    .then(res => res.json())
-    .then(json => {
-      json.forEach(torr => {
-        fetch(torrentsHost(), {
-          method: 'post',
-          body: JSON.stringify({ action: 'rem', hash: torr.hash }),
-          headers: {
-            Accept: 'application/json, text/plain, */*',
-            'Content-Type': 'application/json',
-          },
-        })
-      })
-    })
 }
 
 export default function RemoveAll({ isOffline, isLoading }) {
@@ -54,7 +42,9 @@ export default function RemoveAll({ isOffline, isLoading }) {
             {t('Cancel')}
           </Button>
 
-          <Button
+          <UnsafeButton
+            timeout={5}
+            startIcon={<DeleteIcon />}
             variant='contained'
             onClick={() => {
               fnRemoveAll()
@@ -64,7 +54,7 @@ export default function RemoveAll({ isOffline, isLoading }) {
             autoFocus
           >
             {t('OK')}
-          </Button>
+          </UnsafeButton>
         </DialogActions>
       </Dialog>
     </>
