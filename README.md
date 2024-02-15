@@ -265,4 +265,5 @@ local:127.0.0.1
 - [cocool97](https://github.com/cocool97) for openapi API documentation
 - [shadeov](https://github.com/shadeov) for README improvements
 - [butaford](https://github.com/butaford) Pavel for make docker file and scripts
+- [filimonic](https://github.com/filimonic) Alexey D. Filimonov
 - and others

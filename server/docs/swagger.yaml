@@ -332,7 +332,7 @@ paths:
     get:
       description: Download the test file of given size (for speed testing purpose).
       parameters:
-      - description: Test file size
+      - description: Test file size (in MB)
         in: path
         name: size
         required: true
@@ -360,17 +360,17 @@ paths:
       summary: Tests server status
       tags:
       - API
-  /ffp:
+  /ffp/{hash}/{id}:
     get:
       description: Gather informations using ffprobe.
       parameters:
       - description: Torrent hash
-        in: query
+        in: path
         name: hash
         required: true
         type: string
       - description: File index in torrent
-        in: query
+        in: path
         name: id
         required: true
         type: string
@@ -393,12 +393,12 @@ paths:
       summary: Get HTML of magnet links
       tags:
       - Pages
-  /msx:
+  /msx/{pth}:
     get:
       description: Multi usage endpoint.
       parameters:
-      - description: Magnet/hash/link to torrent
-        in: query
+      - description: Route MSX pages
+        in: path
         name: link
         required: true
         type: string
@@ -406,7 +406,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: Data returned according to query
+          description: Data returned according to path
       summary: Multi usage endpoint
       tags:
       - MSX
@@ -421,7 +421,7 @@ paths:
       summary: Get MSX IMDB informations
       tags:
       - MSX
-  /msx/imdb/:id:
+  /msx/imdb/{id}:
     get:
       description: Get MSX IMDB informations.
       parameters:
@@ -438,17 +438,17 @@ paths:
       summary: Get MSX IMDB informations
       tags:
       - MSX
-  /play:
+  /play/{hash}/{id}:
     get:
       description: Play given torrent referenced by hash.
       parameters:
       - description: Torrent hash
-        in: query
+        in: path
         name: hash
         required: true
         type: string
       - description: File index in torrent
-        in: query
+        in: path
         name: id
         required: true
         type: string
