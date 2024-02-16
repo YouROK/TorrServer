@@ -2,6 +2,7 @@ package torr
 
 import (
 	"errors"
+	utils2 "server/utils"
 	"sort"
 	"sync"
 	"time"
@@ -331,7 +332,7 @@ func (t *Torrent) Status() *state.TorrentStatus {
 
 			files := t.Files()
 			sort.Slice(files, func(i, j int) bool {
-				return files[i].Path() < files[j].Path()
+				return utils2.CompareStrings(files[i].Path(), files[j].Path())
 			})
 			for i, f := range files {
 				st.FileStats = append(st.FileStats, &state.TorrentFileStat{
