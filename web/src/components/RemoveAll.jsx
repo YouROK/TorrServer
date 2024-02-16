@@ -6,6 +6,7 @@ import DeleteIcon from '@material-ui/icons/Delete'
 import { useState } from 'react'
 import { torrentsHost } from 'utils/Hosts'
 import { useTranslation } from 'react-i18next'
+
 import UnsafeButton from './UnsafeButton'
 
 const fnRemoveAll = () => {
