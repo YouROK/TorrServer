@@ -6,6 +6,7 @@ import { shutdownHost } from 'utils/Hosts'
 import { useTranslation } from 'react-i18next'
 import { isStandaloneApp } from 'utils/Utils'
 import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
+
 import UnsafeButton from './UnsafeButton'
 
 export default function CloseServer({ isOffline, isLoading }) {
