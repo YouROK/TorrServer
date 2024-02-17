@@ -65,7 +65,7 @@ func Start() {
 		FriendlyName:        getDefaultFriendlyName(),
 		NoTranscode:         true,
 		NoProbe:             true,
-		StallEventSubscribe: true,
+		StallEventSubscribe: false,
 		Icons: []dms.Icon{
 			{
 				Width:    48,
