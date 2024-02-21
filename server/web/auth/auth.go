@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"unsafe"
 
 	"github.com/gin-gonic/gin"
@@ -68,12 +69,16 @@ func BasicAuth(accounts gin.Accounts) gin.HandlerFunc {
 	}
 }
 
-func CheckAuth() gin.HandlerFunc {
+func CheckAuth(exclude ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if !settings.HttpAuth {
 			return
 		}
 		
+		if slices.Contains(exclude, c.FullPath()) {
+			return
+		}
+
 		if _, ok := c.Get(gin.AuthUserKey); ok {
 			return
 		}

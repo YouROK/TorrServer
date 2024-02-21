@@ -11,7 +11,7 @@ import (
 )
 
 func SetupRoute(route gin.IRouter) {
-	authorized := route.Group("/", auth.CheckAuth())
+	authorized := route.Group("/", auth.CheckAuth("/site.webmanifest"))
 
 	template.RouteWebPages(authorized)
 	authorized.GET("/stat", statPage)
