@@ -6,13 +6,16 @@ import (
 
 	"server/settings"
 	"server/torr"
+	"server/web/auth"
 	"server/web/pages/template"
 )
 
-func SetupRoute(route *gin.RouterGroup) {
-	template.RouteWebPages(route)
-	route.GET("/stat", statPage)
-	route.GET("/magnets", getTorrents)
+func SetupRoute(route gin.IRouter) {
+	authorized := route.Group("/", auth.CheckAuth())
+
+	template.RouteWebPages(authorized)
+	authorized.GET("/stat", statPage)
+	authorized.GET("/magnets", getTorrents)
 }
 
 // stat godoc

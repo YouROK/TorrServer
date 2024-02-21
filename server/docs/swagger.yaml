@@ -452,10 +452,6 @@ paths:
         name: id
         required: true
         type: string
-      - description: Not authenticated
-        in: query
-        name: not_auth
-        type: boolean
       produces:
       - application/octet-stream
       responses:
@@ -592,7 +588,7 @@ paths:
         in: query
         name: m3u
         type: string
-      - description: Get m3u from last play
+      - description: Get M3U from last played file
         in: query
         name: fromlast
         type: string
@@ -605,14 +601,9 @@ paths:
         name: title
         required: true
         type: string
-      - description: File index in torrent
-        in: query
-        name: poster
-        required: true
-        type: string
       - description: Set poster link of torrent
         in: query
-        name: not_auth
+        name: poster
         required: true
         type: string
       produces:

@@ -71,19 +71,14 @@ func Start() {
 
 	route := gin.New()
 	route.Use(log.WebLogger(), blocker.Blocker(), gin.Recovery(), cors.New(corsCfg), location.Default())
+	auth.SetupAuth(route)
 
 	route.GET("/echo", echo)
 
-	routeAuth := auth.SetupAuth(route)
-	if routeAuth != nil {
-		api.SetupRoute(routeAuth)
-		msx.SetupRoute(routeAuth)
-		pages.SetupRoute(routeAuth)
-	} else {
-		api.SetupRoute(&route.RouterGroup)
-		msx.SetupRoute(&route.RouterGroup)
-		pages.SetupRoute(&route.RouterGroup)
-	}
+	api.SetupRoute(route)
+	msx.SetupRoute(route)
+	pages.SetupRoute(route)
+
 	if settings.BTsets.EnableDLNA {
 		dlna.Start()
 	}

@@ -241,12 +241,6 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Not authenticated",
-                        "name": "not_auth",
-                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -458,7 +452,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Get m3u from last play",
+                        "description": "Get M3U from last played file",
                         "name": "fromlast",
                         "in": "query"
                     },
@@ -477,15 +471,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "File index in torrent",
-                        "name": "poster",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
                         "description": "Set poster link of torrent",
-                        "name": "not_auth",
+                        "name": "poster",
                         "in": "query",
                         "required": true
                     }
