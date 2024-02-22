@@ -1,8 +1,6 @@
 package pages
 
 import (
-	"slices"
-
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/gin-gonic/gin"
 
@@ -10,6 +8,8 @@ import (
 	"server/torr"
 	"server/web/auth"
 	"server/web/pages/template"
+
+	"golang.org/x/exp/slices"
 )
 
 func SetupRoute(route gin.IRouter) {
