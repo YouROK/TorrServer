@@ -51,7 +51,7 @@ export const PeersWidget = ({ data }) => {
   return (
     <StatisticsField
       title={t('Peers')}
-      value={getPeerString(data) || '0 · 0 / 0'}
+      value={getPeerString(data) || '0 / 0 · 0'}
       iconBg={iconBGColor}
       valueBg={valueBGColor}
       icon={SwapVerticalCircleIcon}
