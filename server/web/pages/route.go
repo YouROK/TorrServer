@@ -1,6 +1,8 @@
 package pages
 
 import (
+	"slices"
+
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/gin-gonic/gin"
 
@@ -11,9 +13,18 @@ import (
 )
 
 func SetupRoute(route gin.IRouter) {
-	authorized := route.Group("/", auth.CheckAuth("/site.webmanifest"))
+	authorized := route.Group("/", auth.CheckAuth())
 
-	template.RouteWebPages(authorized)
+	webPagesAuth := route.Group("/", func() gin.HandlerFunc {
+		return func(c *gin.Context) {
+			if slices.Contains([]string{"/site.webmanifest"}, c.FullPath()) {
+				return
+			}
+			auth.CheckAuth()(c)
+		}
+	}())
+
+	template.RouteWebPages(webPagesAuth)
 	authorized.GET("/stat", statPage)
 	authorized.GET("/magnets", getTorrents)
 }
