@@ -475,6 +475,13 @@ const docTemplate = `{
                         "name": "poster",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Stream / playlist without authentication",
+                        "name": "not_auth",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
