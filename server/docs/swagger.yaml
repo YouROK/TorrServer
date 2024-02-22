@@ -606,11 +606,6 @@ paths:
         name: poster
         required: true
         type: string
-      - description: Stream / playlist without authentication
-        in: query
-        name: poster
-        required: true
-        type: string
       produces:
       - application/octet-stream
       responses:
