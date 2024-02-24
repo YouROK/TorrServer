@@ -314,6 +314,21 @@ func (c *Cache) NewReader(file *torrent.File) *Reader {
 	return newReader(file, c)
 }
 
+func (c *Cache) GetUseReaders() int {
+	if c == nil {
+		return 0
+	}
+	c.muReaders.Lock()
+	defer c.muReaders.Unlock()
+	readers := 0
+	for reader := range c.readers {
+		if reader.isUse {
+			readers++
+		}
+	}
+	return readers
+}
+
 func (c *Cache) Readers() int {
 	if c == nil {
 		return 0
