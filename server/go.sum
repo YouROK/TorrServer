@@ -30,8 +30,8 @@ github.com/alexflint/go-scalar v1.2.0 h1:WR7JPKkeNpnYIOfHRa7ivM21aWAdHD0gEWHCx+W
 github.com/alexflint/go-scalar v1.2.0/go.mod h1:LoFvNMqS1CPrMVltza4LvnGKhaSpc3oyLEBUZVhhS2o=
 github.com/anacrolix/chansync v0.4.0 h1:Md0HM7zYCAO4KwNwgcIRgxNsMxiRuk7D1Ha0Uo+2y60=
 github.com/anacrolix/chansync v0.4.0/go.mod h1:DZsatdsdXxD0WiwcGl0nJVwyjCKMDv+knl1q2iBjA2k=
-github.com/anacrolix/dht/v2 v2.21.0 h1:8nzI+faaynY9jOKmVgdmBZVrTo8B7ZE/LKEgN3Vl/Bs=
-github.com/anacrolix/dht/v2 v2.21.0/go.mod h1:SDGC+sEs1pnO2sJGYuhvIis7T8749dDHNfcjtdH4e3g=
+github.com/anacrolix/dht/v2 v2.21.1 h1:s1rKkfLLcmBHKv4v/mtMkIeHIEptzEFiB6xVu54+5/o=
+github.com/anacrolix/dht/v2 v2.21.1/go.mod h1:SDGC+sEs1pnO2sJGYuhvIis7T8749dDHNfcjtdH4e3g=
 github.com/anacrolix/dms v1.6.0 h1:v2g1Y+Fc/ICSEc+7M6B92oFcfcqa5LXYPhE4Hcm5tVA=
 github.com/anacrolix/dms v1.6.0/go.mod h1:5fAMpBcPFG4WQFh91zhf2E7/KYZ3/WmmRAf/WMoL0Q0=
 github.com/anacrolix/envpprof v0.0.0-20180404065416-323002cec2fa/go.mod h1:KgHhUaQMc8cC0+cEflSgCFNFbKwi5h54gqtVn8yhP7c=
@@ -42,8 +42,8 @@ github.com/anacrolix/ffprobe v1.0.0/go.mod h1:BIw+Bjol6CWjm/CRWrVLk2Vy+UYlkgmBZ0
 github.com/anacrolix/ffprobe v1.1.0 h1:eKBudnERW9zRJ0+ge6FzkQ0pWLyq142+FJrwRwSRMT4=
 github.com/anacrolix/ffprobe v1.1.0/go.mod h1:MXe+zG/RRa5OdIf5+VYYfS/CfsSqOH7RrvGIqJBzqhI=
 github.com/anacrolix/generics v0.0.0-20230113004304-d6428d516633/go.mod h1:ff2rHB/joTV03aMSSn/AZNnaIpUw0h3njetGsaXcMy8=
-github.com/anacrolix/generics v0.0.0-20230911070922-5dd7545c6b13 h1:qwOprPTDMM3BASJRf84mmZnTXRsPGGJ8xoHKQS7m3so=
-github.com/anacrolix/generics v0.0.0-20230911070922-5dd7545c6b13/go.mod h1:ff2rHB/joTV03aMSSn/AZNnaIpUw0h3njetGsaXcMy8=
+github.com/anacrolix/generics v0.0.1 h1:4WVhK6iLb3UAAAQP6I3uYlMOHcp9FqJC9j4n81Wv9Ks=
+github.com/anacrolix/generics v0.0.1/go.mod h1:ff2rHB/joTV03aMSSn/AZNnaIpUw0h3njetGsaXcMy8=
 github.com/anacrolix/log v0.3.0/go.mod h1:lWvLTqzAnCWPJA08T2HCstZi0L1y2Wyvm3FJgwU9jwU=
 github.com/anacrolix/log v0.6.0/go.mod h1:lWvLTqzAnCWPJA08T2HCstZi0L1y2Wyvm3FJgwU9jwU=
 github.com/anacrolix/log v0.13.1/go.mod h1:D4+CvN8SnruK6zIFS/xPoRJmtvtnxs+CSfDQ+BFxZ68=
@@ -96,8 +96,8 @@ github.com/bradfitz/iter v0.0.0-20191230175014-e8f45d346db8 h1:GKTyiRCL6zVf5wWaq
 github.com/bradfitz/iter v0.0.0-20191230175014-e8f45d346db8/go.mod h1:spo1JLcs67NmW1aVLEgtA8Yy1elc+X8y5SRW1sFW4Og=
 github.com/bytedance/sonic v1.5.0/go.mod h1:ED5hyg4y6t3/9Ku1R6dU/4KyJ48DZ4jPhfY1O2AihPM=
 github.com/bytedance/sonic v1.10.0-rc/go.mod h1:ElCzW+ufi8qKqNW0FY314xriJhyJhuoJ3gFZdAHF7NM=
-github.com/bytedance/sonic v1.10.2 h1:GQebETVBxYB7JGWJtLBi07OVzWwt+8dWA00gEVW2ZFE=
-github.com/bytedance/sonic v1.10.2/go.mod h1:iZcSUejdk5aukTND/Eu/ivjQuEL0Cu9/rf50Hi0u/g4=
+github.com/bytedance/sonic v1.11.0 h1:FwNNv6Vu4z2Onf1++LNzxB/QhitD8wuTdpZzMTGITWo=
+github.com/bytedance/sonic v1.11.0/go.mod h1:iZcSUejdk5aukTND/Eu/ivjQuEL0Cu9/rf50Hi0u/g4=
 github.com/cespare/xxhash/v2 v2.1.1/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/chenzhuoyu/base64x v0.0.0-20211019084208-fb5309c8db06/go.mod h1:DH46F32mSOjUmXrMHnKwZdA8wcEefY7UVqBKYGjpdQY=
 github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311/go.mod h1:b583jCggY9gE99b6G5LEC39OIiVsWj+R97kbl5odCEk=
@@ -332,8 +332,8 @@ github.com/swaggo/swag v1.16.3/go.mod h1:DImHIuOFXKpMFAQjcC7FG4m3Dg4+QuUgUzJmKjI
 github.com/tinylib/msgp v1.0.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tinylib/msgp v1.1.0/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tinylib/msgp v1.1.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
-github.com/tsynik/torrent v1.2.13 h1:PyOTz6dpzsoIT0IhiEmg6H5VD+mFqF93Q2L9iFyqPtQ=
-github.com/tsynik/torrent v1.2.13/go.mod h1:NDxg14AwVqi3PWt1oStYLnyUxHYHX3qGKBAZVh/6Jk8=
+github.com/tsynik/torrent v1.2.15 h1:f76Jhtz8MtgCwCBO396hzz9wsuF8+N1OdcB+YNh3d7k=
+github.com/tsynik/torrent v1.2.15/go.mod h1:ZDW51KV/sGhccWk3HVpd2YXJvQLDDVByOfYZ7pVRFWc=
 github.com/twitchyliquid64/golang-asm v0.15.1 h1:SU5vSMR7hnwNxj24w34ZyCi/FmDZTkS4MhqMhdFk5YI=
 github.com/twitchyliquid64/golang-asm v0.15.1/go.mod h1:a1lVb/DtPvCB8fslRZhAngC2+aY1QWCk3Cedj/Gdt08=
 github.com/ugorji/go v1.1.7/go.mod h1:kZn38zHttfInRq0xu/PH0az30d+z6vm202qpg1oXVMw=
