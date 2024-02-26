@@ -3,10 +3,11 @@ package template
 import (
 	"crypto/md5"
 	"fmt"
+
 	"github.com/gin-gonic/gin"
 )
 
-func RouteWebPages(route *gin.RouterGroup) {
+func RouteWebPages(route gin.IRouter) {
 	route.GET("/", func(c *gin.Context) {
 		etag := fmt.Sprintf("%x", md5.Sum(Indexhtml))
 		c.Header("Cache-Control", "public, max-age=31536000")
