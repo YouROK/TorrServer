@@ -266,4 +266,5 @@ local:127.0.0.1
 - [shadeov](https://github.com/shadeov) for README improvements
 - [butaford](https://github.com/butaford) Pavel for make docker file and scripts
 - [filimonic](https://github.com/filimonic) Alexey D. Filimonov
+- [leporel](https://github.com/leporel) Viacheslav Evseev
 - and others
