@@ -45,6 +45,6 @@ func SetupRoute(route gin.IRouter) {
 	} else {
 		authorized.GET("/search/*query", rutorSearch)
 	}
-	
+
 	authorized.GET("/ffp/:hash/:id", ffp)
 }

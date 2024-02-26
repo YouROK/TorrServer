@@ -33,7 +33,7 @@ func asset(c *gin.Context, t string, d []byte) {
 
 func SetupRoute(r gin.IRouter) {
 	authorized := r.Group("/", auth.CheckAuth())
-	
+
 	authorized.GET("/msx/:pth", msxPTH)
 	authorized.GET("/msx/imdb", msxIMDB)
 	authorized.GET("/msx/imdb/:id", msxIMDBID)

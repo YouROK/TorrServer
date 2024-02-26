@@ -7,9 +7,10 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"server/log"
 	"strings"
 	"sync"
+
+	"server/log"
 )
 
 type JsonDB struct {
@@ -155,5 +156,4 @@ func (v *JsonDB) log(s string, params ...interface{}) {
 	} else {
 		log.TLogln(fmt.Sprintf("JsonDB: %s", s))
 	}
-
 }

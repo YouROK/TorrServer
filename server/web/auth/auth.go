@@ -20,7 +20,7 @@ func SetupAuth(engine *gin.Engine) {
 	}
 	accs := getAccounts()
 	if accs == nil {
-		return 
+		return
 	}
 	engine.Use(BasicAuth(accs))
 }
@@ -58,11 +58,11 @@ func (a authPairs) searchCredential(authValue string) (string, bool) {
 
 func BasicAuth(accounts gin.Accounts) gin.HandlerFunc {
 	pairs := processAccounts(accounts)
-	return func(c *gin.Context) {		
+	return func(c *gin.Context) {
 		c.Set("auth_required", true)
 
 		user, found := pairs.searchCredential(c.Request.Header.Get("Authorization"))
-		if found { 
+		if found {
 			c.Set(gin.AuthUserKey, user)
 		}
 	}
@@ -77,7 +77,7 @@ func CheckAuth() gin.HandlerFunc {
 		if _, ok := c.Get(gin.AuthUserKey); ok {
 			return
 		}
-					
+
 		c.Header("WWW-Authenticate", "Basic realm=Authorization Required")
 		c.AbortWithStatus(http.StatusUnauthorized)
 	}

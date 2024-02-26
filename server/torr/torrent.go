@@ -2,10 +2,11 @@ package torr
 
 import (
 	"errors"
-	utils2 "server/utils"
 	"sort"
 	"sync"
 	"time"
+
+	utils2 "server/utils"
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"

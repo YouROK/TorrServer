@@ -2,7 +2,7 @@ module server
 
 go 1.20
 
-replace github.com/anacrolix/torrent v1.54.1 => github.com/tsynik/torrent v1.2.15
+replace github.com/anacrolix/torrent v1.54.1 => github.com/tsynik/torrent v1.2.16
 
 require (
 	github.com/agnivade/levenshtein v1.1.1
@@ -21,8 +21,8 @@ require (
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.3
-	go.etcd.io/bbolt v1.3.8
-	golang.org/x/exp v0.0.0-20240213143201-ec583247a57a
+	go.etcd.io/bbolt v1.3.9
+	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225
 	golang.org/x/image v0.15.0
 	golang.org/x/time v0.5.0
 	gopkg.in/vansante/go-ffprobe.v2 v2.1.1
@@ -42,12 +42,12 @@ require (
 	github.com/anacrolix/multiless v0.3.1-0.20221221005021-2d12701f83f7 // indirect
 	github.com/anacrolix/stm v0.5.0 // indirect
 	github.com/anacrolix/sync v0.5.1 // indirect
-	github.com/anacrolix/upnp v0.1.3 // indirect
+	github.com/anacrolix/upnp v0.1.4 // indirect
 	github.com/anacrolix/utp v0.2.0 // indirect
 	github.com/benbjohnson/immutable v0.4.3 // indirect
 	github.com/bits-and-blooms/bitset v1.13.0 // indirect
 	github.com/bradfitz/iter v0.0.0-20191230175014-e8f45d346db8 // indirect
-	github.com/bytedance/sonic v1.11.0 // indirect
+	github.com/bytedance/sonic v1.11.1 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
 	github.com/chenzhuoyu/iasm v0.9.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -69,7 +69,7 @@ require (
 	github.com/huandu/xstrings v1.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/cpuid/v2 v2.2.6 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
