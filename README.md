@@ -81,12 +81,12 @@ On FreeBSD (TrueNAS/FreeNAS) you can use this plugin: <https://github.com/filka9
 
 ### Server args
 
-- `--port PORT`, `-p PORT` - web server port, default 8090
+- `--port PORT`, `-p PORT` - web server port (default 8090)
 - `--ssl` - enables https for web server
-- `--sslport PORT` -  web server https port, default 8091. If not set, will be taken from db (if stored previously) or use default.
+- `--sslport PORT` -  web server https port (default 8091). If not set, will be taken from db (if stored previously) or the default will be used.
 - `--sslcert PATH` -  path to ssl cert file. If not set, will be taken from db (if stored previously) or default self-signed certificate/key will be generated.
 - `--sslkey PATH` - path to ssl key file. If not set, will be taken from db (if stored previously) or default self-signed certificate/key will be generated.
-- `--path PATH`, `-d PATH` - database dir path
+- `--path PATH`, `-d PATH` - database and config dir path
 - `--logpath LOGPATH`, `-l LOGPATH` - server log file path
 - `--weblogpath WEBLOGPATH`, `-w WEBLOGPATH` - web access log file path
 - `--rdb`, `-r` - start in read-only DB mode
