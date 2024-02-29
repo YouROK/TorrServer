@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"server/version"
+	"server/web/auth"
 
 	"github.com/gin-gonic/gin"
 )
@@ -30,10 +31,12 @@ func asset(c *gin.Context, t string, d []byte) {
 	c.Data(200, t+"; charset=UTF-8", d)
 }
 
-func SetupRoute(r *gin.RouterGroup) {
-	r.GET("/msx/:pth", msxPTH)
-	r.GET("/msx/imdb", msxIMDB)
-	r.GET("/msx/imdb/:id", msxIMDBID)
+func SetupRoute(r gin.IRouter) {
+	authorized := r.Group("/", auth.CheckAuth())
+
+	authorized.GET("/msx/:pth", msxPTH)
+	authorized.GET("/msx/imdb", msxIMDB)
+	authorized.GET("/msx/imdb/:id", msxIMDBID)
 }
 
 // msxPTH godoc

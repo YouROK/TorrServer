@@ -20,8 +20,9 @@ export function humanizeSpeed(speed) {
 }
 
 export function getPeerString(torrent) {
-  if (!torrent || !torrent.connected_seeders) return null
-  return `${torrent.connected_seeders} · ${torrent.active_peers} / ${torrent.total_peers}`
+  if (!torrent || !torrent.active_peers) return null
+  const seeders = typeof torrent.connected_seeders !== 'undefined' ? torrent.connected_seeders : 0
+  return `${torrent.active_peers} / ${torrent.total_peers} · ${seeders}`
 }
 
 export const shortenText = (text, sympolAmount) =>

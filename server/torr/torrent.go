@@ -2,10 +2,11 @@ package torr
 
 import (
 	"errors"
-	utils2 "server/utils"
 	"sort"
 	"sync"
 	"time"
+
+	utils2 "server/utils"
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
@@ -267,7 +268,7 @@ func (t *Torrent) drop() {
 }
 
 func (t *Torrent) Close() bool {
-	if t.cache != nil && t.cache.Readers() > 0 {
+	if t.cache != nil && t.cache.GetUseReaders() > 0 {
 		return false
 	}
 	t.Stat = state.TorrentClosed

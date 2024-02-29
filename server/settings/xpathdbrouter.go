@@ -4,10 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"server/log"
-	"slices"
 	"sort"
 	"strings"
+
+	"server/log"
+
+	"golang.org/x/exp/slices"
 )
 
 type XPathDBRouter struct {

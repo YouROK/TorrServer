@@ -6,13 +6,27 @@ import (
 
 	"server/settings"
 	"server/torr"
+	"server/web/auth"
 	"server/web/pages/template"
+
+	"golang.org/x/exp/slices"
 )
 
-func SetupRoute(route *gin.RouterGroup) {
-	template.RouteWebPages(route)
-	route.GET("/stat", statPage)
-	route.GET("/magnets", getTorrents)
+func SetupRoute(route gin.IRouter) {
+	authorized := route.Group("/", auth.CheckAuth())
+
+	webPagesAuth := route.Group("/", func() gin.HandlerFunc {
+		return func(c *gin.Context) {
+			if slices.Contains([]string{"/site.webmanifest"}, c.FullPath()) {
+				return
+			}
+			auth.CheckAuth()(c)
+		}
+	}())
+
+	template.RouteWebPages(webPagesAuth)
+	authorized.GET("/stat", statPage)
+	authorized.GET("/magnets", getTorrents)
 }
 
 // stat godoc

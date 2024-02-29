@@ -62,7 +62,7 @@ func (t *Torrent) Preload(index int, size int64) {
 		// Запуск лога в отдельном потоке
 		go func() {
 			for t.Stat == state.TorrentPreload {
-				stat := fmt.Sprint(file.Torrent().InfoHash().HexString(), " ", utils2.Format(float64(t.PreloadedBytes)), "/", utils2.Format(float64(t.PreloadSize)), " Speed:", utils2.Format(t.DownloadSpeed), " Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
+				stat := fmt.Sprint(file.Torrent().InfoHash().HexString(), " ", utils2.Format(float64(t.PreloadedBytes)), "/", utils2.Format(float64(t.PreloadSize)), " Speed:", utils2.Format(t.DownloadSpeed), " Peers:", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers, " [Seeds:", t.Torrent.Stats().ConnectedSeeders, "]")
 				log.TLogln("Preload:", stat)
 				t.AddExpiredTime(time.Second * time.Duration(settings.BTsets.TorrentDisconnectTimeout))
 				time.Sleep(time.Second)
@@ -158,7 +158,7 @@ func (t *Torrent) Preload(index int, size int64) {
 
 		wg.Wait()
 	}
-	log.TLogln("End preload:", file.Torrent().InfoHash().HexString(), "Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
+	log.TLogln("End preload:", file.Torrent().InfoHash().HexString(), "Peers:", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers, "[ Seeds:", t.Torrent.Stats().ConnectedSeeders, "]")
 }
 
 func (t *Torrent) findFileIndex(index int) *torrent.File {

@@ -241,12 +241,6 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Not authenticated",
-                        "name": "not_auth",
-                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -479,13 +473,6 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Set poster link of torrent",
                         "name": "poster",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Stream / playlist without authentication",
-                        "name": "not_auth",
                         "in": "query",
                         "required": true
                     }

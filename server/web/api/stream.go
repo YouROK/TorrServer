@@ -45,7 +45,6 @@ import (
 //	@Param			play		query	string	false	"Start stream torrent"
 //	@Param			title		query	string	true	"Set title of torrent"
 //	@Param			poster		query	string	true	"Set poster link of torrent"
-//	@Param			not_auth		query	string	true	"Stream / playlist without authentication"
 //
 //	@Produce		application/octet-stream
 //	@Success		200	"Data returned according to query"
@@ -62,7 +61,7 @@ func stream(c *gin.Context) {
 	title := c.Query("title")
 	poster := c.Query("poster")
 	data := ""
-	notAuth := c.GetBool("not_auth")
+	notAuth := c.GetBool("auth_required") && c.GetString(gin.AuthUserKey) == ""
 
 	if notAuth && (play || m3u) {
 		streamNoAuth(c)
