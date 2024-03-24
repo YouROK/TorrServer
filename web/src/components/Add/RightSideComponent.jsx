@@ -12,6 +12,7 @@ import {
   useTheme,
 } from '@material-ui/core'
 import { HighlightOff as HighlightOffIcon } from '@material-ui/icons'
+import { TORRENT_CATEGORIES } from 'components/categories'
 
 import {
   ClearPosterButton,
@@ -68,8 +69,6 @@ export default function RightSideComponent({
     checkImageURL(url).then(setIsPosterUrlCorrect)
     setIsUserInteractedWithPoster(true)
   }
-
-  const torrentCategories = ['Movies', 'Series', 'Music', 'Other', 'Unknown']
 
   return (
     <RightSide>
@@ -151,8 +150,8 @@ export default function RightSideComponent({
             fullWidth
             defaultValue='Unknown'
           >
-            {torrentCategories.map(category => (
-              <MenuItem value={category}>{category}</MenuItem>
+            {TORRENT_CATEGORIES.map(category => (
+              <MenuItem value={category.name}>{category.name}</MenuItem>
             ))}
           </Select>
         </FormControl>
