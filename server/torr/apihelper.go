@@ -150,19 +150,24 @@ func SetTorrent(hashHex, title, poster, data string) *Torrent {
 }
 
 func RemTorrent(hashHex string) {
+	if sets.ReadOnly {
+		log.TLogln("API RemTorrent: Read-only DB mode!", hashHex)
+		return
+	}
 	hash := metainfo.NewHashFromHex(hashHex)
-	if sets.BTsets.UseDisk && hashHex != "" && hashHex != "/" {
-		name := filepath.Join(sets.BTsets.TorrentsSavePath, hashHex)
-		ff, _ := os.ReadDir(name)
-		for _, f := range ff {
-			os.Remove(filepath.Join(name, f.Name()))
-		}
-		err := os.Remove(name)
-		if err != nil {
-			log.TLogln("Error remove cache:", err)
+	if bts.RemoveTorrent(hash) {
+		if sets.BTsets.UseDisk && hashHex != "" && hashHex != "/" {
+			name := filepath.Join(sets.BTsets.TorrentsSavePath, hashHex)
+			ff, _ := os.ReadDir(name)
+			for _, f := range ff {
+				os.Remove(filepath.Join(name, f.Name()))
+			}
+			err := os.Remove(name)
+			if err != nil {
+				log.TLogln("Error remove cache:", err)
+			}
 		}
 	}
-	bts.RemoveTorrent(hash)
 	RemTorrentDB(hash)
 }
 
@@ -199,6 +204,7 @@ func DropTorrent(hashHex string) {
 
 func SetSettings(set *sets.BTSets) {
 	if sets.ReadOnly {
+		log.TLogln("API SetSettings: Read-only DB mode!")
 		return
 	}
 	sets.SetBTSets(set)
@@ -215,6 +221,7 @@ func SetSettings(set *sets.BTSets) {
 
 func SetDefSettings() {
 	if sets.ReadOnly {
+		log.TLogln("API SetDefSettings: Read-only DB mode!")
 		return
 	}
 	sets.SetDefaultConfig()

@@ -45,7 +45,7 @@ func Start(port, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA b
 			l.Close()
 		}
 		if err != nil {
-			log.TLogln("Port", sslport, "already in use! Please set different port for HTTPS. Abort")
+			log.TLogln("Port", sslport, "already in use! Please set different ssl port for HTTPS. Abort")
 			os.Exit(1)
 		}
 	}
@@ -59,7 +59,7 @@ func Start(port, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA b
 		l.Close()
 	}
 	if err != nil {
-		log.TLogln("Port", port, "already in use! Please set different sslport for HTTP. Abort")
+		log.TLogln("Port", port, "already in use! Please set different port for HTTP. Abort")
 		os.Exit(1)
 	}
 	// remove old disk caches

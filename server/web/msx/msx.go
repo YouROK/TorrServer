@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"server/version"
+	"server/web/auth"
 
 	"github.com/gin-gonic/gin"
 )
@@ -30,10 +31,12 @@ func asset(c *gin.Context, t string, d []byte) {
 	c.Data(200, t+"; charset=UTF-8", d)
 }
 
-func SetupRoute(r *gin.RouterGroup) {
-	r.GET("/msx/:pth", msxPTH)
-	r.GET("/msx/imdb", msxIMDB)
-	r.GET("/msx/imdb/:id", msxIMDBID)
+func SetupRoute(r gin.IRouter) {
+	authorized := r.Group("/", auth.CheckAuth())
+
+	authorized.GET("/msx/:pth", msxPTH)
+	authorized.GET("/msx/imdb", msxIMDB)
+	authorized.GET("/msx/imdb/:id", msxIMDBID)
 }
 
 // msxPTH godoc
@@ -43,11 +46,11 @@ func SetupRoute(r *gin.RouterGroup) {
 //
 //	@Tags			MSX
 //
-//	@Param			link	query	string	true	"Magnet/hash/link to torrent"
+//	@Param			link	path	string	true	"Route MSX pages"
 //
 //	@Produce		json
-//	@Success		200	"Data returned according to query"
-//	@Router			/msx [get]
+//	@Success		200	"Data returned according to path"
+//	@Router			/msx/{pth} [get]
 func msxPTH(c *gin.Context) {
 	js := []string{"http://msx.benzac.de/js/tvx-plugin.min.js"}
 	switch p := c.Param("pth"); p {
@@ -114,7 +117,7 @@ func msxIMDB(c *gin.Context) {
 //
 // @Produce		json
 // @Success		200	"JSON MSX IMDB informations"
-// @Router			/msx/imdb/:id [get]
+// @Router			/msx/imdb/{id} [get]
 func msxIMDBID(c *gin.Context) {
 	idb.Lock()
 	defer idb.Unlock()

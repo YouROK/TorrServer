@@ -62,10 +62,10 @@ curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrSe
 
 #### macOS
 
-Run in console
+Run in Terminal.app
 
 ```bash
-curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerMac.sh -o installTorrserverMac.sh && chmod 755 installTorrServerMac.sh && sudo ./installTorrServerMac.sh
+curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerMac.sh -o installTorrserverMac.sh && chmod 755 installTorrServerMac.sh && bash ./installTorrServerMac.sh
 ```
 
 Alternative install script for Intel Macs: <https://github.com/dancheskus/TorrServerMacInstaller>
@@ -81,12 +81,12 @@ On FreeBSD (TrueNAS/FreeNAS) you can use this plugin: <https://github.com/filka9
 
 ### Server args
 
-- `--port PORT`, `-p PORT` - web server port, default 8090
+- `--port PORT`, `-p PORT` - web server port (default 8090)
 - `--ssl` - enables https for web server
-- `--sslport PORT` -  web server https port, default 8091. If not set, will be taken from db (if stored previously) or use default.
+- `--sslport PORT` -  web server https port (default 8091). If not set, will be taken from db (if stored previously) or the default will be used.
 - `--sslcert PATH` -  path to ssl cert file. If not set, will be taken from db (if stored previously) or default self-signed certificate/key will be generated.
 - `--sslkey PATH` - path to ssl key file. If not set, will be taken from db (if stored previously) or default self-signed certificate/key will be generated.
-- `--path PATH`, `-d PATH` - database dir path
+- `--path PATH`, `-d PATH` - database and config dir path
 - `--logpath LOGPATH`, `-l LOGPATH` - server log file path
 - `--weblogpath WEBLOGPATH`, `-w WEBLOGPATH` - web access log file path
 - `--rdb`, `-r` - start in read-only DB mode
@@ -171,7 +171,7 @@ Synology NAS packages repo source: https://grigi.lt
 
 #### Server
 
-- Install [Golang](https://golang.org/doc/install) 1.18+
+- Install [Golang](https://golang.org/doc/install) 1.20+
 - Go to the TorrServer source directory
 - Run build script under linux or macOS `build-all.sh`
 
@@ -245,23 +245,26 @@ local:127.0.0.1
 
 - [QIWI](https://qiwi.com/n/YOUROK85)
 - [YooMoney](https://yoomoney.ru/to/410013733697114/200)
-- [PayPal](https://www.paypal.me/yourok)
 - SberBank Card: **5484 4000 2285 7839**
-- YooMoney Card: **4048 4150 1812 8179**
+
 
 ## Thanks to everyone who tested and helped
 
-- [anacrolix (Matt Joiner)](https://github.com/anacrolix)
+- [anacrolix](https://github.com/anacrolix) Matt Joiner
 - [tsynik](https://github.com/tsynik)
-- [dancheskus](https://github.com/dancheskus)
-- [kolsys](https://github.com/kolsys)
-- [vladlenas](https://github.com/vladlenas)
-- [Nemiroff (Tw1cker)](https://github.com/Nemiroff)
-- [spawnlmg (SpAwN_LMG)](https://github.com/spawnlmg)
-- [TopperBG (Dimitar Maznekov)](https://github.com/TopperBG)
-- [FaintGhost (Zhang Yaowei)](https://github.com/FaintGhost)
-- [Anton111111 (Anton Potekhin)](https://github.com/Anton111111)
-- [lieranderl (Evgeni)](https://github.com/lieranderl)
-- [cocool97](https://github.com/cocool97)
-- [shadeov](https://github.com/shadeov)
+- [dancheskus](https://github.com/dancheskus) for react web GUI and PWA code
+- [kolsys](https://github.com/kolsys) for initial Media Station X support
+- [damiva](https://github.com/damiva) for Media Station X code updates
+- [vladlenas](https://github.com/vladlenas) for NAS builds
+- [Nemiroff](https://github.com/Nemiroff) Tw1cker
+- [spawnlmg](https://github.com/spawnlmg) SpAwN_LMG for testing
+- [TopperBG](https://github.com/TopperBG) Dimitar Maznekov for Bulgarian web translation
+- [FaintGhost](https://github.com/FaintGhost) Zhang Yaowei for Simplified Chinese web translation
+- [Anton111111](https://github.com/Anton111111) Anton Potekhin for sleep on Windows fixes
+- [lieranderl](https://github.com/lieranderl) Evgeni for adding SSL support code
+- [cocool97](https://github.com/cocool97) for openapi API documentation
+- [shadeov](https://github.com/shadeov) for README improvements
+- [butaford](https://github.com/butaford) Pavel for make docker file and scripts
+- [filimonic](https://github.com/filimonic) Alexey D. Filimonov
+- [leporel](https://github.com/leporel) Viacheslav Evseev
 - and others

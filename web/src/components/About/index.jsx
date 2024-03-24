@@ -85,13 +85,16 @@ export default function AboutDialog() {
                 <LinkComponent name='tw1cker' link='https://github.com/Nemiroff' />
                 <LinkComponent name='SpAwN_LMG' link='https://github.com/spawnlmg' />
                 <LinkComponent name='damiva' link='https://github.com/damiva' />
+                <LinkComponent name='Vladlenas' link='https://github.com/vladlenas' />
                 <LinkComponent name='Anton Potekhin' link='https://github.com/Anton111111' />
                 <LinkComponent name='FaintGhost' link='https://github.com/FaintGhost' />
                 <LinkComponent name='TopperBG' link='https://github.com/TopperBG' />
-                <LinkComponent name='FaintGhost' link='https://github.com/FaintGhost' />
-                <LinkComponent name='lieranderl' link='https://github.com/lieranderl' />
+                <LinkComponent name='Evgeni' link='https://github.com/lieranderl' />
                 <LinkComponent name='cocool97' link='https://github.com/cocool97' />
                 <LinkComponent name='shadeov' link='https://github.com/shadeov' />
+                <LinkComponent name='Pavel' link='https://github.com/butaford' />
+                <LinkComponent name='Alexey Filimonov' link='https://github.com/filimonic' />
+                <LinkComponent name='Viacheslav Evseev' link='https://github.com/leporel' />
               </div>
             </Section>
           </div>

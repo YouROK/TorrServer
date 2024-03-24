@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -25,12 +26,12 @@ import (
 )
 
 type args struct {
-	Port        string `arg:"-p" help:"web server port, default 8090"`
+	Port        string `arg:"-p" help:"web server port (default 8090)"`
 	Ssl         bool   `help:"enables https"`
 	SslPort     string `help:"web server ssl port, If not set, will be set to default 8091 or taken from db(if stored previously). Accepted if --ssl enabled."`
 	SslCert     string `help:"path to ssl cert file. If not set, will be taken from db(if stored previously) or default self-signed certificate/key will be generated. Accepted if --ssl enabled."`
 	SslKey      string `help:"path to ssl key file. If not set, will be taken from db(if stored previously) or default self-signed certificate/key will be generated. Accepted if --ssl enabled."`
-	Path        string `arg:"-d" help:"database dir path"`
+	Path        string `arg:"-d" help:"database and config dir path"`
 	LogPath     string `arg:"-l" help:"server log file path"`
 	WebLogPath  string `arg:"-w" help:"web access log file path"`
 	RDB         bool   `arg:"-r" help:"start in read-only DB mode"`
@@ -38,10 +39,11 @@ type args struct {
 	DontKill    bool   `arg:"-k" help:"don't kill server on signal"`
 	UI          bool   `arg:"-u" help:"open torrserver page in browser"`
 	TorrentsDir string `arg:"-t" help:"autoload torrents from dir"`
-	TorrentAddr string `help:"Torrent client address, default :32000"`
+	TorrentAddr string `help:"Torrent client address, like 127.0.0.1:1337 (default :PeersListenPort)"`
 	PubIPv4     string `arg:"-4" help:"set public IPv4 addr"`
 	PubIPv6     string `arg:"-6" help:"set public IPv6 addr"`
 	SearchWA    bool   `arg:"-s" help:"search without auth"`
+	MaxSize     string `arg:"-m" help:"max allowed stream size (in Bytes)"`
 }
 
 func (args) Version() string {
@@ -102,6 +104,13 @@ func main() {
 
 	if params.TorrentsDir != "" {
 		go watchTDir(params.TorrentsDir)
+	}
+
+	if params.MaxSize != "" {
+		maxSize, err := strconv.ParseInt(params.MaxSize, 10, 64)
+		if err == nil {
+			settings.MaxSize = maxSize
+		}
 	}
 
 	server.Start(params.Port, params.SslPort, params.SslCert, params.SslKey, params.Ssl, params.RDB, params.SearchWA)

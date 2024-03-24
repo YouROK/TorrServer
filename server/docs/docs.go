@@ -62,7 +62,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Test file size",
+                        "description": "Test file size (in MB)",
                         "name": "size",
                         "in": "path",
                         "required": true
@@ -98,7 +98,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ffp": {
+        "/ffp/{hash}/{id}": {
             "get": {
                 "description": "Gather informations using ffprobe.",
                 "produces": [
@@ -113,14 +113,14 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Torrent hash",
                         "name": "hash",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "File index in torrent",
                         "name": "id",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     }
                 ],
@@ -148,32 +148,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/msx": {
-            "get": {
-                "description": "Multi usage endpoint.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "MSX"
-                ],
-                "summary": "Multi usage endpoint",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Magnet/hash/link to torrent",
-                        "name": "link",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Data returned according to query"
-                    }
-                }
-            }
-        },
         "/msx/imdb": {
             "get": {
                 "description": "Get MSX IMDB informations.",
@@ -191,7 +165,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/msx/imdb/:id": {
+        "/msx/imdb/{id}": {
             "get": {
                 "description": "Get MSX IMDB informations.",
                 "produces": [
@@ -217,7 +191,33 @@ const docTemplate = `{
                 }
             }
         },
-        "/play": {
+        "/msx/{pth}": {
+            "get": {
+                "description": "Multi usage endpoint.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MSX"
+                ],
+                "summary": "Multi usage endpoint",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Route MSX pages",
+                        "name": "link",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Data returned according to path"
+                    }
+                }
+            }
+        },
+        "/play/{hash}/{id}": {
             "get": {
                 "description": "Play given torrent referenced by hash.",
                 "produces": [
@@ -232,21 +232,15 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Torrent hash",
                         "name": "hash",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "File index in torrent",
                         "name": "id",
-                        "in": "query",
+                        "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Not authenticated",
-                        "name": "not_auth",
-                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -458,7 +452,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Get m3u from last play",
+                        "description": "Get M3U from last played file",
                         "name": "fromlast",
                         "in": "query"
                     },
@@ -477,15 +471,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "File index in torrent",
-                        "name": "poster",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
                         "description": "Set poster link of torrent",
-                        "name": "not_auth",
+                        "name": "poster",
                         "in": "query",
                         "required": true
                     }
