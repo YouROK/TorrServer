@@ -21,6 +21,7 @@ type torrReqJS struct {
 	Link     string `json:"link,omitempty"`
 	Hash     string `json:"hash,omitempty"`
 	Title    string `json:"title,omitempty"`
+	Category string `json:"category,omitempty"`
 	Poster   string `json:"poster,omitempty"`
 	Data     string `json:"data,omitempty"`
 	SaveToDB bool   `json:"save_to_db,omitempty"`
@@ -94,7 +95,10 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 		return
 	}
 
-	tor, err := torr.AddTorrent(torrSpec, req.Title, req.Poster, req.Data)
+	tor, err := torr.AddTorrent(torrSpec, req.Title, req.Poster, req.Data, req.Category)
+
+	log.TLogln("Final torrent category: ", tor.Category)
+
 	if err != nil {
 		log.TLogln("error add torrent:", err)
 		c.AbortWithError(http.StatusInternalServerError, err)
@@ -149,7 +153,7 @@ func setTorrent(req torrReqJS, c *gin.Context) {
 		c.AbortWithError(http.StatusBadRequest, errors.New("hash is empty"))
 		return
 	}
-	torr.SetTorrent(req.Hash, req.Title, req.Poster, req.Data)
+	torr.SetTorrent(req.Hash, req.Title, req.Poster, req.Category, req.Data)
 	c.Status(200)
 }
 

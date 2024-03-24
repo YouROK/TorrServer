@@ -11,10 +11,13 @@ import RemoveAll from 'components/RemoveAll'
 import AboutDialog from 'components/About'
 import CloseServer from 'components/CloseServer'
 import { memo } from 'react'
+import CheckIcon from '@material-ui/icons/Check'
+import { TORRENT_CATEGORIES } from 'components/categories'
+import FilterByCategory from 'components/FilterByCategory'
 
 import { AppSidebarStyle } from './style'
 
-const Sidebar = ({ isDrawerOpen, setIsDonationDialogOpen, isOffline, isLoading }) => {
+const Sidebar = ({ isDrawerOpen, setIsDonationDialogOpen, isOffline, isLoading, setGlobalFilterCategory }) => {
   const { t } = useTranslation()
 
   return (
@@ -23,6 +26,20 @@ const Sidebar = ({ isDrawerOpen, setIsDonationDialogOpen, isOffline, isLoading }
         <AddDialogButton isOffline={isOffline} isLoading={isLoading} />
 
         <RemoveAll isOffline={isOffline} isLoading={isLoading} />
+      </List>
+
+      <Divider />
+
+      <List>
+        <FilterByCategory categoryName='All' icon={<CheckIcon />} setGlobalFilterCategory={setGlobalFilterCategory} />
+        {TORRENT_CATEGORIES.map(category => (
+          <FilterByCategory
+            key={category.name}
+            categoryName={category.name}
+            icon={category.icon}
+            setGlobalFilterCategory={setGlobalFilterCategory}
+          />
+        ))}
       </List>
 
       <Divider />

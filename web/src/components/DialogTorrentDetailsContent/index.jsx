@@ -27,7 +27,7 @@ import {
   TorrentFilesSection,
   Divider,
 } from './style'
-import { DownlodSpeedWidget, UploadSpeedWidget, PeersWidget, SizeWidget, StatusWidget } from './widgets'
+import { DownlodSpeedWidget, UploadSpeedWidget, PeersWidget, SizeWidget, StatusWidget, CategoryWidget } from './widgets'
 import TorrentFunctions from './TorrentFunctions'
 import { isFilePlayable } from './helpers'
 
@@ -51,6 +51,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
     poster,
     hash,
     title,
+    category,
     name,
     stat,
     download_speed: downloadSpeed,
@@ -184,6 +185,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                   <PeersWidget data={torrent} />
                   <SizeWidget data={torrentSize} />
                   <StatusWidget stat={stat} />
+                  <CategoryWidget data={category} />
                 </WidgetWrapper>
 
                 <Divider />

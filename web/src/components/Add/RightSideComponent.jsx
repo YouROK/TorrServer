@@ -1,8 +1,18 @@
 import { useTranslation } from 'react-i18next'
 import { rgba } from 'polished'
 import { NoImageIcon } from 'icons'
-import { IconButton, InputAdornment, TextField, useTheme } from '@material-ui/core'
+import {
+  FormControl,
+  IconButton,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
+  useTheme,
+} from '@material-ui/core'
 import { HighlightOff as HighlightOffIcon } from '@material-ui/icons'
+import { TORRENT_CATEGORIES } from 'components/categories'
 
 import {
   ClearPosterButton,
@@ -18,6 +28,7 @@ import { checkImageURL } from './helpers'
 
 export default function RightSideComponent({
   setTitle,
+  setCategory,
   setPosterUrl,
   setIsPosterUrlCorrect,
   setIsUserInteractedWithPoster,
@@ -25,6 +36,7 @@ export default function RightSideComponent({
   isTorrentSourceCorrect,
   isHashAlreadyExists,
   title,
+  category,
   parsedTitle,
   posterUrl,
   isPosterUrlCorrect,
@@ -45,6 +57,7 @@ export default function RightSideComponent({
   const primary = useTheme().palette.primary.main
 
   const handleTitleChange = ({ target: { value } }) => setTitle(value)
+  const handleCategoryChange = ({ target: { value } }) => setCategory(value)
   const handlePosterUrlChange = ({ target: { value } }) => {
     setPosterUrl(value)
     checkImageURL(value).then(setIsPosterUrlCorrect)
@@ -123,6 +136,25 @@ export default function RightSideComponent({
           variant='outlined'
           fullWidth
         />
+
+        <FormControl fullWidth>
+          <InputLabel id='torrent-category-select-label'>Torrent category</InputLabel>
+          <Select
+            labelId='torrent-category-select-label'
+            id='torrent-category-select'
+            value={category}
+            label='Torrent category'
+            margin='dense'
+            onChange={handleCategoryChange}
+            variant='outlined'
+            fullWidth
+            defaultValue='Unknown'
+          >
+            {TORRENT_CATEGORIES.map(category => (
+              <MenuItem value={category.name}>{category.name}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
         <PosterWrapper>
           <Poster poster={+isPosterUrlCorrect}>

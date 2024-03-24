@@ -22,6 +22,7 @@ func AddTorrentDB(torr *Torrent) {
 	t := new(settings.TorrentDB)
 	t.TorrentSpec = torr.TorrentSpec
 	t.Title = torr.Title
+	t.Category = torr.Category
 	if torr.Data == "" {
 		files := new(tsFiles)
 		files.TorrServer.Files = torr.Status().FileStats
@@ -74,6 +75,7 @@ func ListTorrentsDB() map[metainfo.Hash]*Torrent {
 		torr.Poster = db.Poster
 		torr.Timestamp = db.Timestamp
 		torr.Size = db.Size
+		torr.Category = db.Category
 		torr.Data = db.Data
 		torr.Stat = state.TorrentInDB
 		ret[torr.TorrentSpec.InfoHash] = torr

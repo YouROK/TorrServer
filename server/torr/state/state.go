@@ -32,6 +32,7 @@ const (
 
 type TorrentStatus struct {
 	Title               string      `json:"title"`
+	Category            string      `json:"category"`
 	Poster              string      `json:"poster"`
 	Data                string      `json:"data,omitempty"`
 	Timestamp           int64       `json:"timestamp"`

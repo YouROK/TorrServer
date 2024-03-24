@@ -41,3 +41,5 @@ server/config.db
 server/web/pages/template/route.go
 server/server.pem
 server/server.key
+settings.json
+viewed.json

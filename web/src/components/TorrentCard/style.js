@@ -110,6 +110,15 @@ export const TorrentCardDescription = styled.div`
       gap: 3px;
     }
 
+    .description-wrapper {
+      display: flex;
+      flex-direction: row;
+    }
+
+    .description-wrapper > * {
+      flex: 1;
+    }
+
     .description-title-wrapper {
       display: flex;
       flex-direction: column;
@@ -126,6 +135,12 @@ export const TorrentCardDescription = styled.div`
         font-size: 0.5rem;
         line-height: 10px;
       }
+    }
+
+    .description-category-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: end;
     }
 
     .description-status-wrapper {
