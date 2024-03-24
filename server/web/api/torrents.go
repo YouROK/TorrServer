@@ -153,7 +153,7 @@ func setTorrent(req torrReqJS, c *gin.Context) {
 		c.AbortWithError(http.StatusBadRequest, errors.New("hash is empty"))
 		return
 	}
-	torr.SetTorrent(req.Hash, req.Title, req.Poster, req.Data)
+	torr.SetTorrent(req.Hash, req.Title, req.Poster, req.Category, req.Data)
 	c.Status(200)
 }
 

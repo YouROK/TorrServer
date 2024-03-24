@@ -185,7 +185,14 @@ const Torrent = ({ torrent }) => {
       </Dialog>
 
       {isEditDialogOpen && (
-        <AddDialog hash={hash} title={title} name={name} poster={poster} handleClose={handleCloseEditDialog} />
+        <AddDialog
+          hash={hash}
+          title={title}
+          name={name}
+          poster={poster}
+          handleClose={handleCloseEditDialog}
+          category={category}
+        />
       )}
     </>
   )

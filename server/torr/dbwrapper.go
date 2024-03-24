@@ -75,6 +75,7 @@ func ListTorrentsDB() map[metainfo.Hash]*Torrent {
 		torr.Poster = db.Poster
 		torr.Timestamp = db.Timestamp
 		torr.Size = db.Size
+		torr.Category = db.Category
 		torr.Data = db.Data
 		torr.Stat = state.TorrentInDB
 		ret[torr.TorrentSpec.InfoHash] = torr

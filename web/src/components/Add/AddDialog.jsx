@@ -26,12 +26,13 @@ export default function AddDialog({
   title: originalTitle,
   name: originalName,
   poster: originalPoster,
+  category: originalCategory,
 }) {
   const { t } = useTranslation()
   const isEditMode = !!originalHash
   const [torrentSource, setTorrentSource] = useState(originalHash || '')
   const [title, setTitle] = useState(originalTitle || '')
-  const [category, setCategory] = useState('Unknown')
+  const [category, setCategory] = useState(originalCategory || '')
   const [originalTorrentTitle, setOriginalTorrentTitle] = useState('')
   const [parsedTitle, setParsedTitle] = useState('')
   const [posterUrl, setPosterUrl] = useState(originalPoster || '')
@@ -248,7 +249,6 @@ export default function AddDialog({
             setTorrentSource={setTorrentSource}
           />
         )}
-
         <RightSideComponent
           originalTorrentTitle={originalTorrentTitle}
           setTitle={setTitle}

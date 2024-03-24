@@ -69,6 +69,8 @@ export default function RightSideComponent({
     setIsUserInteractedWithPoster(true)
   }
 
+  const torrentCategories = ['Movies', 'Series', 'Music', 'Other', 'Unknown']
+
   return (
     <RightSide>
       <RightSideContainer isHidden={!isTorrentSourceCorrect || (isHashAlreadyExists && !isEditMode)}>
@@ -113,26 +115,6 @@ export default function RightSideComponent({
                 ),
               }}
             />
-
-            <FormControl fullWidth>
-              <InputLabel id='torrent-category-select-label'>Torrent category</InputLabel>
-              <Select
-                labelId='torrent-category-select-label'
-                id='torrent-category-select'
-                value={category}
-                label='Torrent category'
-                margin='dense'
-                onChange={handleCategoryChange}
-                variant='outlined'
-                fullWidth
-              >
-                <MenuItem value='Films'>Films</MenuItem>
-                <MenuItem value='Series'>Series</MenuItem>
-                <MenuItem value='Music'>Music</MenuItem>
-                <MenuItem value='Other'>Other</MenuItem>
-                <MenuItem value='Unknown'>Unknown</MenuItem>
-              </Select>
-            </FormControl>
           </>
         ) : (
           <TextField
@@ -155,6 +137,25 @@ export default function RightSideComponent({
           variant='outlined'
           fullWidth
         />
+
+        <FormControl fullWidth>
+          <InputLabel id='torrent-category-select-label'>Torrent category</InputLabel>
+          <Select
+            labelId='torrent-category-select-label'
+            id='torrent-category-select'
+            value={category}
+            label='Torrent category'
+            margin='dense'
+            onChange={handleCategoryChange}
+            variant='outlined'
+            fullWidth
+            defaultValue='Unknown'
+          >
+            {torrentCategories.map(category => (
+              <MenuItem value={category}>{category}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
         <PosterWrapper>
           <Poster poster={+isPosterUrlCorrect}>
