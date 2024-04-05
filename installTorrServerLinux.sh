@@ -82,7 +82,7 @@ function uninstall() {
     echo " Это действие удалит все данные TorrServer включая базу данных торрентов и настройки по указанному выше пути!"
     echo ""
   }
-  [[ $lang == "en" ]] && read -p ' Are you shure you want to delete TorrServer? (Yes/No) ' answer_del </dev/tty || read -p ' Вы уверены что хотите удалить программу? (Да/Нет) ' answer_del </dev/tty
+  [[ $lang == "en" ]] && read -p ' Are you shure you want to delete TorrServer? (Yes/No) ' answer_del </dev/tty || read -p ' Вы уверены что хотите удалить программу? (Yes/No) ' answer_del </dev/tty
   if [ "$answer_del" != "${answer_del#[YyДд]}" ]; then
     cleanup
     cleanAll
@@ -252,7 +252,7 @@ function installTorrServer() {
   [[ $lang == "en" ]] && echo " Install and configure TorrServer…" || echo " Устанавливаем и настраиваем TorrServer…"
   if checkInstalled; then
     if ! checkInstalledVersion; then
-      [[ $lang == "en" ]] && read -p ' Want to update TorrServer? (Yes/No) ' answer_up </dev/tty || read -p ' Хотите обновить TorrServer? (Да/Нет) ' answer_up </dev/tty
+      [[ $lang == "en" ]] && read -p ' Want to update TorrServer? (Yes/No) ' answer_up </dev/tty || read -p ' Хотите обновить TorrServer? (Yes/No) ' answer_up </dev/tty
       if [ "$answer_up" != "${answer_up#[YyДд]}" ]; then
         UpdateVersion
       fi
@@ -291,7 +291,7 @@ function installTorrServer() {
     WantedBy = multi-user.target
 EOF
   [ -z $servicePort ] && {
-    [[ $lang == "en" ]] && read -p ' Change TorrServer web-port? (Yes/No) ' answer_cp </dev/tty || read -p ' Хотите изменить порт для TorrServer? (Да/Нет) ' answer_cp </dev/tty
+    [[ $lang == "en" ]] && read -p ' Change TorrServer web-port? (Yes/No) ' answer_cp </dev/tty || read -p ' Хотите изменить порт для TorrServer? (Yes/No) ' answer_cp </dev/tty
     if [ "$answer_cp" != "${answer_cp#[YyДд]}" ]; then
       [[ $lang == "en" ]] && read -p ' Enter port number: ' answer_port </dev/tty || read -p ' Введите номер порта: ' answer_port </dev/tty
       servicePort=$answer_port
@@ -300,7 +300,7 @@ EOF
     fi
   }
   [ -z $isAuth ] && {
-    [[ $lang == "en" ]] && read -p ' Enable server authorization? (Yes/No) ' answer_auth </dev/tty || read -p ' Включить авторизацию на сервере? (Да/Нет) ' answer_auth </dev/tty
+    [[ $lang == "en" ]] && read -p ' Enable server authorization? (Yes/No) ' answer_auth </dev/tty || read -p ' Включить авторизацию на сервере? (Yes/No) ' answer_auth </dev/tty
     if [ "$answer_auth" != "${answer_auth#[YyДд]}" ]; then
       isAuth=1
     else
@@ -328,7 +328,7 @@ EOF
 EOF
   fi
   [ -z $isRdb ] && {
-    [[ $lang == "en" ]] && read -p ' Start TorrServer in public read-only mode? (Yes/No) ' answer_rdb </dev/tty || read -p ' Запускать TorrServer в публичном режиме без возможности изменения настроек через веб сервера? (Да/Нет) ' answer_rdb </dev/tty
+    [[ $lang == "en" ]] && read -p ' Start TorrServer in public read-only mode? (Yes/No) ' answer_rdb </dev/tty || read -p ' Запускать TorrServer в публичном режиме без возможности изменения настроек через веб сервера? (Yes/No) ' answer_rdb </dev/tty
     if [ "$answer_rdb" != "${answer_rdb#[YyДд]}" ]; then
       isRdb=1
     else
@@ -348,7 +348,7 @@ EOF
     sed -i 's|DAEMON_OPTIONS="--port|DAEMON_OPTIONS="--rdb --port|' $dirInstall/$serviceName.config
   fi
   [ -z $isLog ] && {
-    [[ $lang == "en" ]] && read -p ' Enable TorrServer log output to file? (Yes/No) ' answer_log </dev/tty || read -p ' Включить запись журнала работы TorrServer в файл? (Да/Нет) ' answer_log </dev/tty
+    [[ $lang == "en" ]] && read -p ' Enable TorrServer log output to file? (Yes/No) ' answer_log </dev/tty || read -p ' Включить запись журнала работы TorrServer в файл? (Yes/No) ' answer_log </dev/tty
     if [ "$answer_log" != "${answer_log#[YyДд]}" ]; then
       sed -i "s|--path|--logpath $dirInstall/$serviceName.log --path|" "$dirInstall/$serviceName.config"
       [[ $lang == "en" ]] && echo " - TorrServer log stored at $dirInstall/$serviceName.log" || echo " - лог TorrServer располагается по пути $dirInstall/$serviceName.log"
