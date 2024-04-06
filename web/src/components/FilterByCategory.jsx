@@ -6,10 +6,6 @@ import { useTranslation } from 'react-i18next'
 export default function FilterByCategory({ categoryKey, categoryName, setGlobalFilterCategory, icon }) {
   const onClick = () => {
     setGlobalFilterCategory(categoryKey)
-    // if (process.env.NODE_ENV !== 'production') {
-      // eslint-disable-next-line no-console
-      // console.log('FilterByCategory categoryKey: %s categoryName: %s', categoryKey, categoryName)
-    // }
   }
   const { t } = useTranslation()
 
