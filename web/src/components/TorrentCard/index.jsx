@@ -116,15 +116,12 @@ const Torrent = ({ torrent }) => {
         </TorrentCardButtons>
 
         <TorrentCardDescription>
-          <div className='description-wrapper'>
-            <div className='description-title-wrapper'>
-              <div className='description-section-name'>{t('Name')}</div>
-              <div className='description-torrent-title'>{parsedTitle}</div>
+          <div className='description-title-wrapper'>
+            <div className='description-section-name'>
+              {t('Name')}
+              <div className='description-category-wrapper'>{category}</div>
             </div>
-            <div className='description-category-wrapper'>
-              <div className='description-section-name'>{t('Category')}</div>
-              <div className='description-torrent-title'>{category}</div>
-            </div>
+            <div className='description-torrent-title'>{parsedTitle}</div>
           </div>
 
           <div className='description-statistics-wrapper'>

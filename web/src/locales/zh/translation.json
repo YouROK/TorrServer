@@ -9,6 +9,7 @@
             "Or": "或",
             "ClickOrDrag": "点击/拖放上传 (.torrent)"
         },
+        "CategoryHelperText": "Torrent 类别",
         "CustomTorrentTitle": "自定义标题（可选）",
         "CustomTorrentTitleHelperText": "编写自定义标题以查找海报",
         "HashExists": "这个种子已经在数据库中",
@@ -28,6 +29,14 @@
     "BufferNote": "在设置中将播放前预加载缓存设置为大于 32 MB 以更改预加载大小",
     "Cache": "缓存",
     "Cancel": "取消",
+    "Category": "类别",
+    "CategoryLabel": {
+        "Movies": "电影",
+        "Series": "系列",
+        "Music": "音乐",
+        "Other": "其他",
+        "None": "没有任何"
+    },
     "Clear": "清除",
     "Close": "关闭",
     "CloseServer?": "你想关闭服务器吗？",

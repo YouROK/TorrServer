@@ -94,6 +94,7 @@ export const TorrentCardButtons = styled.div`
 export const TorrentCardDescription = styled.div`
   ${({
     theme: {
+      app: { sidebarBGColor },
       torrentCard: { cardSecondaryColor, accentCardColor },
     },
   }) => css`
@@ -110,21 +111,17 @@ export const TorrentCardDescription = styled.div`
       gap: 3px;
     }
 
-    .description-wrapper {
-      display: flex;
-      flex-direction: row;
-    }
-
-    .description-wrapper > * {
-      flex: 1;
-    }
-
     .description-title-wrapper {
       display: flex;
       flex-direction: column;
     }
 
     .description-section-name {
+      display: flex;
+      flex-wrap: nowrap;
+      justify-content: space-between;
+      self-align: end;
+
       text-transform: uppercase;
       font-size: 10px;
       font-weight: 600;
@@ -138,9 +135,8 @@ export const TorrentCardDescription = styled.div`
     }
 
     .description-category-wrapper {
-      display: flex;
-      flex-direction: column;
-      align-items: end;
+      display: inline-flex;
+      color: ${sidebarBGColor};
     }
 
     .description-status-wrapper {

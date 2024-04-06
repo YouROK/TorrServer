@@ -61,8 +61,8 @@ func AddTorrent(spec *torrent.TorrentSpec, title, poster string, data string, ca
 	if torr.Category == "" {
 		if torDB != nil {
 			torr.Category = torDB.Category
-		} else {
-			torr.Category = "Unknown"
+			// } else {
+			// 	torr.Category = "None"
 		}
 	}
 
@@ -72,6 +72,7 @@ func AddTorrent(spec *torrent.TorrentSpec, title, poster string, data string, ca
 			torr.Poster = torDB.Poster
 		}
 	}
+
 	if torr.Data == "" {
 		torr.Data = data
 		if torr.Data == "" && torDB != nil {

@@ -3,9 +3,9 @@ import { rgba } from 'polished'
 import { NoImageIcon } from 'icons'
 import {
   FormControl,
+  FormHelperText,
   IconButton,
   InputAdornment,
-  InputLabel,
   MenuItem,
   Select,
   TextField,
@@ -136,19 +136,19 @@ export default function RightSideComponent({
           variant='outlined'
           fullWidth
         />
-
         <FormControl fullWidth>
-          <InputLabel id='torrent-category-select-label'>Torrent category</InputLabel>
+          <FormHelperText style={{ padding: '0.2em 1.2em 0.5em 1.2em' }}>
+            {t('AddDialog.CategoryHelperText')}
+          </FormHelperText>
           <Select
             labelId='torrent-category-select-label'
             id='torrent-category-select'
             value={category}
-            label='Torrent category'
             margin='dense'
             onChange={handleCategoryChange}
             variant='outlined'
             fullWidth
-            defaultValue='Unknown'
+            defaultValue='Other'
           >
             {TORRENT_CATEGORIES.map(category => (
               <MenuItem value={category.name}>{category.name}</MenuItem>
