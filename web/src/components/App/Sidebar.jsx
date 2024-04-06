@@ -12,6 +12,7 @@ import AboutDialog from 'components/About'
 import CloseServer from 'components/CloseServer'
 import { memo } from 'react'
 import CheckIcon from '@material-ui/icons/Check'
+import ClearIcon from '@material-ui/icons/Clear'
 import { TORRENT_CATEGORIES } from 'components/categories'
 import FilterByCategory from 'components/FilterByCategory'
 
@@ -47,6 +48,13 @@ const Sidebar = ({ isDrawerOpen, setIsDonationDialogOpen, isOffline, isLoading, 
             setGlobalFilterCategory={setGlobalFilterCategory}
           />
         ))}
+        <FilterByCategory
+          key='uncategorized'
+          categoryKey=''
+          categoryName={t('Uncategorized')}
+          icon={<ClearIcon />}
+          setGlobalFilterCategory={setGlobalFilterCategory}
+        />
       </List>
 
       <Divider />

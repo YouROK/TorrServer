@@ -11,7 +11,7 @@ import {
   TextField,
   useTheme,
 } from '@material-ui/core'
-import { HighlightOff as HighlightOffIcon } from '@material-ui/icons'
+import { HighlightOff as HighlightOffIcon, Clear } from '@material-ui/icons'
 import { TORRENT_CATEGORIES } from 'components/categories'
 
 import {
@@ -148,7 +148,21 @@ export default function RightSideComponent({
             onChange={handleCategoryChange}
             variant='outlined'
             fullWidth
-            defaultValue='other'
+            defaultValue=''
+            IconComponent={
+              category.length > 1
+                ? () => (
+                    <IconButton
+                      size='small'
+                      onClick={(e) => {
+                        setCategory("");
+                      }}
+                    >
+                      <Clear />
+                    </IconButton>
+                  )
+                : undefined
+            }
           >
             {TORRENT_CATEGORIES.map(category => (
               <MenuItem key={category.key} value={category.key}>

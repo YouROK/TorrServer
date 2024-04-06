@@ -167,6 +167,25 @@ https://github.com/vladlenas
 
 Synology NAS packages repo source: https://grigi.lt
 
+### Development
+
+#### Go server
+
+To run the Go server locally, just run
+
+```bash
+cd server
+go run ./cmd
+```
+
+#### Web development
+
+To run the web server locally, just run
+
+```bash
+yarn start
+```
+
 ### Build
 
 #### Server
@@ -262,7 +281,7 @@ local:127.0.0.1
 - [FaintGhost](https://github.com/FaintGhost) Zhang Yaowei for Simplified Chinese web translation
 - [Anton111111](https://github.com/Anton111111) Anton Potekhin for sleep on Windows fixes
 - [lieranderl](https://github.com/lieranderl) Evgeni for adding SSL support code
-- [cocool97](https://github.com/cocool97) for openapi API documentation
+- [cocool97](https://github.com/cocool97) for openapi API documentation and torrent categories
 - [shadeov](https://github.com/shadeov) for README improvements
 - [butaford](https://github.com/butaford) Pavel for make docker file and scripts
 - [filimonic](https://github.com/filimonic) Alexey D. Filimonov
