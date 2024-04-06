@@ -55,6 +55,7 @@ func GetTorrentDB(hash metainfo.Hash) *Torrent {
 			torr.Size = db.Size
 			torr.Data = db.Data
 			torr.Stat = state.TorrentInDB
+			torr.Category = db.Category
 			return torr
 		}
 	}

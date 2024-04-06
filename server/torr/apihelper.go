@@ -108,6 +108,7 @@ func GetTorrent(hashHex string) *Torrent {
 				tr.Data = tor.Data
 				tr.Size = tor.Size
 				tr.Timestamp = tor.Timestamp
+				tr.Category = tor.Category
 				tr.GotInfo()
 			}
 		}()

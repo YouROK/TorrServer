@@ -132,13 +132,17 @@ export const CategoryWidget = ({ data }) => {
   const { t } = useTranslation()
   const { iconBGColor, valueBGColor } = useGetWidgetColors('category')
 
-  return (
-    <StatisticsField
-      title={t('Category')}
-      value={data}
-      iconBg={iconBGColor}
-      valueBg={valueBGColor}
-      icon={CategoryIcon}
-    />
-  )
+  if (data) {
+    return (
+      <StatisticsField
+        title={t('Category')}
+        value={data}
+        iconBg={iconBGColor}
+        valueBg={valueBGColor}
+        icon={CategoryIcon}
+      />
+    )
+  }
+
+  return null
 }
