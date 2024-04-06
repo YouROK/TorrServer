@@ -148,11 +148,11 @@ export default function RightSideComponent({
             onChange={handleCategoryChange}
             variant='outlined'
             fullWidth
-            defaultValue='Other'
+            defaultValue='other'
           >
             {TORRENT_CATEGORIES.map(category => (
-              <MenuItem key={category.name} value={category.name}>
-                {category.name}
+              <MenuItem key={category.key} value={category.key}>
+                {t(category.name)}
               </MenuItem>
             ))}
           </Select>

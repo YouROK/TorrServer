@@ -1,11 +1,13 @@
 import TorrentCard from 'components/TorrentCard'
 import CircularProgress from '@material-ui/core/CircularProgress'
 import { TorrentListWrapper, CenteredGrid } from 'components/App/style'
+// import { useTranslation } from 'react-i18next'
 
 import NoServerConnection from './NoServerConnection'
 import AddFirstTorrent from './AddFirstTorrent'
 
 export default function TorrentList({ isOffline, isLoading, sortABC, torrents, sortCategory }) {
+  // const { t } = useTranslation()
   if (isLoading || isOffline || !torrents.length) {
     return (
       <CenteredGrid>
@@ -20,7 +22,7 @@ export default function TorrentList({ isOffline, isLoading, sortABC, torrents, s
     )
   }
 
-  const filteredTorrents = torrents.filter(torrent => sortCategory === 'All' || torrent.category === sortCategory)
+  const filteredTorrents = torrents.filter(torrent => sortCategory === 'all' || torrent.category === sortCategory)
 
   return sortABC ? (
     <TorrentListWrapper>

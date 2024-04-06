@@ -31,11 +31,18 @@ const Sidebar = ({ isDrawerOpen, setIsDonationDialogOpen, isOffline, isLoading, 
       <Divider />
 
       <List>
-        <FilterByCategory categoryName='All' icon={<CheckIcon />} setGlobalFilterCategory={setGlobalFilterCategory} />
+        <FilterByCategory
+          key='all'
+          categoryKey='all'
+          categoryName={t('All')}
+          icon={<CheckIcon />}
+          setGlobalFilterCategory={setGlobalFilterCategory}
+        />
         {TORRENT_CATEGORIES.map(category => (
           <FilterByCategory
-            key={category.name}
-            categoryName={category.name}
+            key={category.key}
+            categoryKey={category.key}
+            categoryName={t(category.name)}
             icon={category.icon}
             setGlobalFilterCategory={setGlobalFilterCategory}
           />

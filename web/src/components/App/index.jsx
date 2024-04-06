@@ -43,7 +43,7 @@ export default function App() {
   const [isDarkMode, currentThemeMode, updateThemeMode, muiTheme] = useMaterialUITheme()
   const [currentLang, changeLang] = useChangeLanguage()
   const [isOffline, setIsOffline] = useState(false)
-  const [globalCategoryFilter, setGlobalFilterCategory] = useState('All')
+  const [globalCategoryFilter, setGlobalFilterCategory] = useState('all')
   const { data: torrents, isLoading } = useQuery('torrents', getTorrents, {
     retry: 1,
     refetchInterval: 1000,
