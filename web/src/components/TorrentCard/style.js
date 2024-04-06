@@ -116,12 +116,19 @@ export const TorrentCardDescription = styled.div`
       flex-direction: column;
     }
 
-    .description-section-name {
+    .description-title-wrapper > .description-section-name {
       display: flex;
       flex-wrap: nowrap;
       justify-content: space-between;
       self-align: end;
+    }
 
+    .description-category-wrapper {
+      display: inline-flex;
+      color: ${sidebarBGColor};
+    }
+
+    .description-section-name {
       text-transform: uppercase;
       font-size: 10px;
       font-weight: 600;
@@ -132,11 +139,6 @@ export const TorrentCardDescription = styled.div`
         font-size: 0.5rem;
         line-height: 10px;
       }
-    }
-
-    .description-category-wrapper {
-      display: inline-flex;
-      color: ${sidebarBGColor};
     }
 
     .description-status-wrapper {

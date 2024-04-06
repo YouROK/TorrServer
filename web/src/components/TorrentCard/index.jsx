@@ -124,7 +124,7 @@ const Torrent = ({ torrent }) => {
             <div className='description-section-name'>
               {t('Name')}
               <div className='description-category-wrapper'>
-                {catIndex >= 0 ? t(catArray.name) : ''/* {category} */}
+                {catIndex >= 0 ? t(catArray.name) : '' /* {category} */}
               </div>
             </div>
             <div className='description-torrent-title'>{parsedTitle}</div>
