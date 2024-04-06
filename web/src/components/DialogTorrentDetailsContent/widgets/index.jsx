@@ -11,6 +11,7 @@ import {
 import { getPeerString, humanizeSize, humanizeSpeed } from 'utils/Utils'
 import { useTranslation } from 'react-i18next'
 import { GETTING_INFO, IN_DB, CLOSED, PRELOAD, WORKING } from 'torrentStates'
+import { TORRENT_CATEGORIES } from 'components/categories'
 
 import StatisticsField from '../StatisticsField'
 import useGetWidgetColors from './useGetWidgetColors'
@@ -131,12 +132,15 @@ export const SizeWidget = ({ data }) => {
 export const CategoryWidget = ({ data }) => {
   const { t } = useTranslation()
   const { iconBGColor, valueBGColor } = useGetWidgetColors('category')
+  // main categories
+  const catIndex = TORRENT_CATEGORIES.findIndex(e => e.key === data)
+  const catArray = TORRENT_CATEGORIES.find(e => e.key === data)
 
   if (data) {
     return (
       <StatisticsField
         title={t('Category')}
-        value={data}
+        value={catIndex >= 0 ? t(catArray.name) : data}
         iconBg={iconBGColor}
         valueBg={valueBGColor}
         icon={CategoryIcon}

@@ -82,7 +82,7 @@ const Torrent = ({ torrent }) => {
   const fullPlaylistLink = `${playlistTorrHost()}/${encodeURIComponent(parsedTitle || 'file')}.m3u?link=${hash}&m3u`
 
   const detailedInfoDialogRef = useOnStandaloneAppOutsideClick(closeDetailedInfo)
-  // FIXME
+  // main categories
   const catIndex = TORRENT_CATEGORIES.findIndex(e => e.key === category)
   const catArray = TORRENT_CATEGORIES.find(e => e.key === category)
 
@@ -123,9 +123,7 @@ const Torrent = ({ torrent }) => {
           <div className='description-title-wrapper'>
             <div className='description-section-name'>
               {t('Name')}
-              <div className='description-category-wrapper'>
-                {catIndex >= 0 ? t(catArray.name) : '' /* {category} */}
-              </div>
+              <div className='description-category-wrapper'>{catIndex  >= 0 ? t(catArray.name) : category}</div>
             </div>
             <div className='description-torrent-title'>{parsedTitle}</div>
           </div>
