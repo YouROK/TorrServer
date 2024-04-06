@@ -151,7 +151,9 @@ export default function RightSideComponent({
             defaultValue='Other'
           >
             {TORRENT_CATEGORIES.map(category => (
-              <MenuItem value={category.name}>{category.name}</MenuItem>
+              <MenuItem key={category.name} value={category.name}>
+                {category.name}
+              </MenuItem>
             ))}
           </Select>
         </FormControl>
