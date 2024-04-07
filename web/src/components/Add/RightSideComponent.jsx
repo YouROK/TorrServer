@@ -173,7 +173,7 @@ export default function RightSideComponent({
           >
             {category.length > 1 && catIndex < 0 ? (
               <MenuItem key={category} value={category}>
-                {t(category)}
+                {category}
               </MenuItem>
             ) : (
               ''

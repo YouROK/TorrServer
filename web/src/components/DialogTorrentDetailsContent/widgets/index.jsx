@@ -140,7 +140,7 @@ export const CategoryWidget = ({ data }) => {
     return (
       <StatisticsField
         title={t('Category')}
-        value={catIndex >= 0 ? t(catArray.name) : data}
+        value={catIndex >= 0 ? t(catArray.name) : data.length > 1 ? data.charAt(0).toUpperCase() + data.slice(1) : data}
         iconBg={iconBGColor}
         valueBg={valueBGColor}
         icon={CategoryIcon}
