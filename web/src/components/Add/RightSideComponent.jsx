@@ -11,7 +11,7 @@ import {
   TextField,
   useTheme,
 } from '@material-ui/core'
-import { HighlightOff as HighlightOffIcon, Clear } from '@material-ui/icons'
+import { HighlightOff as HighlightOffIcon } from '@material-ui/icons'
 import { TORRENT_CATEGORIES } from 'components/categories'
 
 import {
@@ -69,6 +69,9 @@ export default function RightSideComponent({
     checkImageURL(url).then(setIsPosterUrlCorrect)
     setIsUserInteractedWithPoster(true)
   }
+  // main categories
+  const catIndex = TORRENT_CATEGORIES.findIndex(e => e.key === category)
+  // const catArray = TORRENT_CATEGORIES.find(e => e.key === category)
 
   return (
     <RightSide>
@@ -168,6 +171,14 @@ export default function RightSideComponent({
                 : undefined
             }
           >
+            {category.length > 1 && catIndex < 0 ? (
+              <MenuItem key={category} value={category}>
+                {t(category)}
+              </MenuItem>
+            ) : (
+              ''
+            )}
+
             {TORRENT_CATEGORIES.map(category => (
               <MenuItem key={category.key} value={category.key}>
                 {t(category.name)}
