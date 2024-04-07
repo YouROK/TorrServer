@@ -79,6 +79,7 @@ export default function RightSideComponent({
               value={originalTorrentTitle}
               margin='dense'
               label={t('AddDialog.OriginalTorrentTitle')}
+              style={{ marginTop: '1em' }}
               type='text'
               variant='outlined'
               fullWidth
@@ -100,7 +101,8 @@ export default function RightSideComponent({
                 endAdornment: (
                   <InputAdornment position='end'>
                     <IconButton
-                      style={{ padding: '1px' }}
+                      size='small'
+                      style={{ padding: '1px', marginRight: '-6px' }}
                       onClick={() => {
                         setTitle('')
                         setIsCustomTitleEnabled(!isCustomTitleEnabled)
@@ -108,7 +110,7 @@ export default function RightSideComponent({
                         setIsUserInteractedWithPoster(false)
                       }}
                     >
-                      <HighlightOffIcon style={{ color: isCustomTitleEnabled ? primary : rgba('#ccc', 0.5) }} />
+                      <HighlightOffIcon style={{ color: isCustomTitleEnabled ? primary : rgba('#ccc', 0.25) }} />
                     </IconButton>
                   </InputAdornment>
                 ),
@@ -121,6 +123,7 @@ export default function RightSideComponent({
             value={title}
             margin='dense'
             label={t('AddDialog.TitleBlank')}
+            style={{ marginTop: '1em' }}
             type='text'
             variant='outlined'
             fullWidth
@@ -154,11 +157,12 @@ export default function RightSideComponent({
                 ? () => (
                     <IconButton
                       size='small'
-                      onClick={(e) => {
-                        setCategory("");
+                      style={{ padding: '1px', marginLeft: '6px', marginRight: '8px' }}
+                      onClick={() => {
+                        setCategory('')
                       }}
                     >
-                      <Clear />
+                      <HighlightOffIcon style={{ color: primary }} />
                     </IconButton>
                   )
                 : undefined

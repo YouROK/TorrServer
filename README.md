@@ -186,6 +186,8 @@ To run the web server locally, just run
 yarn start
 ```
 
+More info at https://github.com/YouROK/TorrServer/tree/master/web#readme
+
 ### Build
 
 #### Server
