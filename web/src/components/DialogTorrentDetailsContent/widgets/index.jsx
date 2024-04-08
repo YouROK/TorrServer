@@ -6,10 +6,12 @@ import {
   Widgets as WidgetsIcon,
   PhotoSizeSelectSmall as PhotoSizeSelectSmallIcon,
   Build as BuildIcon,
+  Category as CategoryIcon,
 } from '@material-ui/icons'
 import { getPeerString, humanizeSize, humanizeSpeed } from 'utils/Utils'
 import { useTranslation } from 'react-i18next'
 import { GETTING_INFO, IN_DB, CLOSED, PRELOAD, WORKING } from 'torrentStates'
+import { TORRENT_CATEGORIES } from 'components/categories'
 
 import StatisticsField from '../StatisticsField'
 import useGetWidgetColors from './useGetWidgetColors'
@@ -125,4 +127,26 @@ export const SizeWidget = ({ data }) => {
       icon={ViewAgendaIcon}
     />
   )
+}
+
+export const CategoryWidget = ({ data }) => {
+  const { t } = useTranslation()
+  const { iconBGColor, valueBGColor } = useGetWidgetColors('category')
+  // main categories
+  const catIndex = TORRENT_CATEGORIES.findIndex(e => e.key === data)
+  const catArray = TORRENT_CATEGORIES.find(e => e.key === data)
+
+  if (data) {
+    return (
+      <StatisticsField
+        title={t('Category')}
+        value={catIndex >= 0 ? t(catArray.name) : data.length > 1 ? data.charAt(0).toUpperCase() + data.slice(1) : data}
+        iconBg={iconBGColor}
+        valueBg={valueBGColor}
+        icon={CategoryIcon}
+      />
+    )
+  }
+
+  return null
 }

@@ -19,6 +19,7 @@ import AddDialog from 'components/Add/AddDialog'
 import { StyledDialog } from 'style/CustomMaterialUiStyles'
 import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
 import { GETTING_INFO, IN_DB, CLOSED, PRELOAD, WORKING } from 'torrentStates'
+import { TORRENT_CATEGORIES } from 'components/categories'
 
 import {
   StatusIndicators,
@@ -44,7 +45,16 @@ const Torrent = ({ torrent }) => {
   const openDeleteTorrentAlert = () => setIsDeleteTorrentOpened(true)
   const closeDeleteTorrentAlert = () => setIsDeleteTorrentOpened(false)
 
-  const { title, name, poster, torrent_size: torrentSize, download_speed: downloadSpeed, hash, stat } = torrent
+  const {
+    title,
+    name,
+    category,
+    poster,
+    torrent_size: torrentSize,
+    download_speed: downloadSpeed,
+    hash,
+    stat,
+  } = torrent
 
   const dropTorrent = () => axios.post(torrentsHost(), { action: 'drop', hash })
   const deleteTorrent = () => axios.post(torrentsHost(), { action: 'rem', hash })
@@ -72,6 +82,9 @@ const Torrent = ({ torrent }) => {
   const fullPlaylistLink = `${playlistTorrHost()}/${encodeURIComponent(parsedTitle || 'file')}.m3u?link=${hash}&m3u`
 
   const detailedInfoDialogRef = useOnStandaloneAppOutsideClick(closeDetailedInfo)
+  // main categories
+  const catIndex = TORRENT_CATEGORIES.findIndex(e => e.key === category)
+  const catArray = TORRENT_CATEGORIES.find(e => e.key === category)
 
   return (
     <>
@@ -108,7 +121,9 @@ const Torrent = ({ torrent }) => {
 
         <TorrentCardDescription>
           <div className='description-title-wrapper'>
-            <div className='description-section-name'>{t('Name')}</div>
+            <div className='description-section-name'>
+              {category ? (catIndex >= 0 ? t(catArray.name) : category) : t('Name')}
+            </div>
             <div className='description-torrent-title'>{parsedTitle}</div>
           </div>
 
@@ -170,7 +185,14 @@ const Torrent = ({ torrent }) => {
       </Dialog>
 
       {isEditDialogOpen && (
-        <AddDialog hash={hash} title={title} name={name} poster={poster} handleClose={handleCloseEditDialog} />
+        <AddDialog
+          hash={hash}
+          title={title}
+          name={name}
+          poster={poster}
+          handleClose={handleCloseEditDialog}
+          category={category}
+        />
       )}
     </>
   )

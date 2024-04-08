@@ -56,6 +56,7 @@ export default function LeftSideComponent({
           margin='dense'
           label={t('AddDialog.TorrentSourceLink')}
           helperText={t('AddDialog.TorrentSourceOptions')}
+          style={{ marginTop: '1em' }}
           type='text'
           fullWidth
           variant='outlined'

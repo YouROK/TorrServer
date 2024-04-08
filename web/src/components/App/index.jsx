@@ -43,6 +43,7 @@ export default function App() {
   const [isDarkMode, currentThemeMode, updateThemeMode, muiTheme] = useMaterialUITheme()
   const [currentLang, changeLang] = useChangeLanguage()
   const [isOffline, setIsOffline] = useState(false)
+  const [globalCategoryFilter, setGlobalFilterCategory] = useState('all')
   const { data: torrents, isLoading } = useQuery('torrents', getTorrents, {
     retry: 1,
     refetchInterval: 1000,
@@ -126,9 +127,16 @@ export default function App() {
                   isLoading={isLoading}
                   isDrawerOpen={isDrawerOpen}
                   setIsDonationDialogOpen={setIsDonationDialogOpen}
+                  setGlobalFilterCategory={setGlobalFilterCategory}
                 />
 
-                <TorrentList isOffline={isOffline} torrents={torrents} isLoading={isLoading} sortABC={sortABC} />
+                <TorrentList
+                  isOffline={isOffline}
+                  torrents={torrents}
+                  isLoading={isLoading}
+                  sortABC={sortABC}
+                  sortCategory={globalCategoryFilter}
+                />
 
                 <PWAFooter
                   isOffline={isOffline}

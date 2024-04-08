@@ -9,7 +9,7 @@
 >
 > `http://192.168.78.4:8090/` - wrong
 3. in `.env` file add TMDB api key
-4. `yarn start`
+4. `NODE_OPTIONS=--openssl-legacy-provider yarn start`
 
 ### Eslint
 > Prettier will fix the code every time the code is saved

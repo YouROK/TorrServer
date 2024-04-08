@@ -20,9 +20,10 @@ import (
 )
 
 type Torrent struct {
-	Title  string
-	Poster string
-	Data   string
+	Title    string
+	Category string
+	Poster   string
+	Data     string
 	*torrent.TorrentSpec
 
 	Stat      state.TorrentStat
@@ -290,6 +291,7 @@ func (t *Torrent) Status() *state.TorrentStatus {
 	st.Stat = t.Stat
 	st.StatString = t.Stat.String()
 	st.Title = t.Title
+	st.Category = t.Category
 	st.Poster = t.Poster
 	st.Data = t.Data
 	st.Timestamp = t.Timestamp

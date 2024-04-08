@@ -1,8 +1,18 @@
 import { useTranslation } from 'react-i18next'
 import { rgba } from 'polished'
 import { NoImageIcon } from 'icons'
-import { IconButton, InputAdornment, TextField, useTheme } from '@material-ui/core'
+import {
+  FormControl,
+  FormHelperText,
+  IconButton,
+  InputAdornment,
+  MenuItem,
+  Select,
+  TextField,
+  useTheme,
+} from '@material-ui/core'
 import { HighlightOff as HighlightOffIcon } from '@material-ui/icons'
+import { TORRENT_CATEGORIES } from 'components/categories'
 
 import {
   ClearPosterButton,
@@ -18,6 +28,7 @@ import { checkImageURL } from './helpers'
 
 export default function RightSideComponent({
   setTitle,
+  setCategory,
   setPosterUrl,
   setIsPosterUrlCorrect,
   setIsUserInteractedWithPoster,
@@ -25,6 +36,7 @@ export default function RightSideComponent({
   isTorrentSourceCorrect,
   isHashAlreadyExists,
   title,
+  category,
   parsedTitle,
   posterUrl,
   isPosterUrlCorrect,
@@ -45,6 +57,7 @@ export default function RightSideComponent({
   const primary = useTheme().palette.primary.main
 
   const handleTitleChange = ({ target: { value } }) => setTitle(value)
+  const handleCategoryChange = ({ target: { value } }) => setCategory(value)
   const handlePosterUrlChange = ({ target: { value } }) => {
     setPosterUrl(value)
     checkImageURL(value).then(setIsPosterUrlCorrect)
@@ -56,6 +69,9 @@ export default function RightSideComponent({
     checkImageURL(url).then(setIsPosterUrlCorrect)
     setIsUserInteractedWithPoster(true)
   }
+  // main categories
+  const catIndex = TORRENT_CATEGORIES.findIndex(e => e.key === category)
+  // const catArray = TORRENT_CATEGORIES.find(e => e.key === category)
 
   return (
     <RightSide>
@@ -66,6 +82,7 @@ export default function RightSideComponent({
               value={originalTorrentTitle}
               margin='dense'
               label={t('AddDialog.OriginalTorrentTitle')}
+              style={{ marginTop: '1em' }}
               type='text'
               variant='outlined'
               fullWidth
@@ -87,7 +104,8 @@ export default function RightSideComponent({
                 endAdornment: (
                   <InputAdornment position='end'>
                     <IconButton
-                      style={{ padding: '1px' }}
+                      size='small'
+                      style={{ padding: '1px', marginRight: '-6px' }}
                       onClick={() => {
                         setTitle('')
                         setIsCustomTitleEnabled(!isCustomTitleEnabled)
@@ -95,7 +113,7 @@ export default function RightSideComponent({
                         setIsUserInteractedWithPoster(false)
                       }}
                     >
-                      <HighlightOffIcon style={{ color: isCustomTitleEnabled ? primary : rgba('#ccc', 0.5) }} />
+                      <HighlightOffIcon style={{ color: isCustomTitleEnabled ? primary : rgba('#ccc', 0.25) }} />
                     </IconButton>
                   </InputAdornment>
                 ),
@@ -108,6 +126,7 @@ export default function RightSideComponent({
             value={title}
             margin='dense'
             label={t('AddDialog.TitleBlank')}
+            style={{ marginTop: '1em' }}
             type='text'
             variant='outlined'
             fullWidth
@@ -123,6 +142,50 @@ export default function RightSideComponent({
           variant='outlined'
           fullWidth
         />
+        <FormControl fullWidth>
+          <FormHelperText style={{ padding: '0.2em 1.2em 0.5em 1.2em' }}>
+            {t('AddDialog.CategoryHelperText')}
+          </FormHelperText>
+          <Select
+            labelId='torrent-category-select-label'
+            id='torrent-category-select'
+            value={category}
+            margin='dense'
+            onChange={handleCategoryChange}
+            variant='outlined'
+            fullWidth
+            defaultValue=''
+            IconComponent={
+              category.length > 1
+                ? () => (
+                    <IconButton
+                      size='small'
+                      style={{ padding: '1px', marginLeft: '6px', marginRight: '8px' }}
+                      onClick={() => {
+                        setCategory('')
+                      }}
+                    >
+                      <HighlightOffIcon style={{ color: primary }} />
+                    </IconButton>
+                  )
+                : undefined
+            }
+          >
+            {category.length > 1 && catIndex < 0 ? (
+              <MenuItem key={category} value={category}>
+                {category}
+              </MenuItem>
+            ) : (
+              ''
+            )}
+
+            {TORRENT_CATEGORIES.map(category => (
+              <MenuItem key={category.key} value={category.key}>
+                {t(category.name)}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
         <PosterWrapper>
           <Poster poster={+isPosterUrlCorrect}>

@@ -37,7 +37,7 @@ func LoadTorrent(tor *Torrent) *Torrent {
 	return tr
 }
 
-func AddTorrent(spec *torrent.TorrentSpec, title, poster string, data string) (*Torrent, error) {
+func AddTorrent(spec *torrent.TorrentSpec, title, poster string, data string, category string) (*Torrent, error) {
 	torr, err := NewTorrent(spec, bts)
 	if err != nil {
 		log.TLogln("error add torrent:", err)
@@ -55,12 +55,24 @@ func AddTorrent(spec *torrent.TorrentSpec, title, poster string, data string) (*
 			torr.Title = torr.Info().Name
 		}
 	}
+
+	// Category can be override
+	torr.Category = category
+	if torr.Category == "" {
+		if torDB != nil {
+			torr.Category = torDB.Category
+			// } else {
+			// 	torr.Category = "None"
+		}
+	}
+
 	if torr.Poster == "" {
 		torr.Poster = poster
 		if torr.Poster == "" && torDB != nil {
 			torr.Poster = torDB.Poster
 		}
 	}
+
 	if torr.Data == "" {
 		torr.Data = data
 		if torr.Data == "" && torDB != nil {
@@ -96,6 +108,7 @@ func GetTorrent(hashHex string) *Torrent {
 				tr.Data = tor.Data
 				tr.Size = tor.Size
 				tr.Timestamp = tor.Timestamp
+				tr.Category = tor.Category
 				tr.GotInfo()
 			}
 		}()
@@ -103,7 +116,7 @@ func GetTorrent(hashHex string) *Torrent {
 	return tor
 }
 
-func SetTorrent(hashHex, title, poster, data string) *Torrent {
+func SetTorrent(hashHex, title, poster, category string, data string) *Torrent {
 	hash := metainfo.NewHashFromHex(hashHex)
 	torr := bts.GetTorrent(hash)
 	torrDb := GetTorrentDB(hash)
@@ -122,12 +135,14 @@ func SetTorrent(hashHex, title, poster, data string) *Torrent {
 		}
 		torr.Title = title
 		torr.Poster = poster
+		torr.Category = category
 		torr.Data = data
 	}
 
 	if torrDb != nil {
 		torrDb.Title = title
 		torrDb.Poster = poster
+		torrDb.Category = category
 		torrDb.Data = data
 		AddTorrentDB(torrDb)
 	}
