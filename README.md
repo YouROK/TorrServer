@@ -230,9 +230,9 @@ Enter current ip address and port of server _e.g. 127.0.0.1:8090_
 
 API documentation is hosted as Swagger format available at path `/swagger/index.html`.
 
-### API Authentication
+## Authentication
 
-The user data file should be located near to the settings. Basic auth, read more in wiki <https://en.wikipedia.org/wiki/Basic_access_authentication>.
+The users data file should be located near to the settings. Basic auth, read more in wiki <https://en.wikipedia.org/wiki/Basic_access_authentication>.
 
 `accs.db` in JSON format:
 
@@ -242,6 +242,7 @@ The user data file should be located near to the settings. Basic auth, read more
     "User2": "Pass2"
 }
 ```
+Note: You should enable authentication with -a (--httpauth) TorrServer startup option.
 
 ## Whitelist/Blacklist IP
 
