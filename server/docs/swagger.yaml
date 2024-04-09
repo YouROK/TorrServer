@@ -18,6 +18,8 @@ definitions:
     properties:
       action:
         type: string
+      category:
+        type: string
       data:
         type: string
       hash:
@@ -242,6 +244,8 @@ definitions:
         type: integer
       bytes_written_data:
         type: integer
+      category:
+        type: string
       chunks_read:
         type: integer
       chunks_read_useful:
@@ -632,6 +636,10 @@ paths:
       - description: Torrent title
         in: formData
         name: title
+        type: string
+      - description: Torrent category
+        in: formData
+        name: category
         type: string
       - description: Torrent poster
         in: formData

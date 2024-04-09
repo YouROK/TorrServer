@@ -519,6 +519,12 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "Torrent category",
+                        "name": "category",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
                         "description": "Torrent poster",
                         "name": "poster",
                         "in": "formData"
@@ -636,6 +642,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "action": {
+                    "type": "string"
+                },
+                "category": {
                     "type": "string"
                 },
                 "data": {
@@ -964,6 +973,9 @@ const docTemplate = `{
                 },
                 "bytes_written_data": {
                     "type": "integer"
+                },
+                "category": {
+                    "type": "string"
                 },
                 "chunks_read": {
                     "type": "integer"
