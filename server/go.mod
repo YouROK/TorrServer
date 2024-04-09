@@ -2,7 +2,7 @@ module server
 
 go 1.20
 
-replace github.com/anacrolix/torrent v1.54.1 => github.com/tsynik/torrent v1.2.16
+replace github.com/anacrolix/torrent v1.54.1 => github.com/tsynik/torrent v1.2.17
 
 require (
 	github.com/agnivade/levenshtein v1.1.1
@@ -22,7 +22,7 @@ require (
 	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.3
 	go.etcd.io/bbolt v1.3.9
-	golang.org/x/exp v0.0.0-20240404231335-c0f41cb1a7a0
+	golang.org/x/exp v0.0.0-20240409090435-93d18d7e34b8
 	golang.org/x/image v0.15.0
 	golang.org/x/time v0.5.0
 	gopkg.in/vansante/go-ffprobe.v2 v2.1.1
@@ -30,7 +30,7 @@ require (
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
-	github.com/RoaringBitmap/roaring v1.9.1 // indirect
+	github.com/RoaringBitmap/roaring v1.9.2 // indirect
 	github.com/alecthomas/atomic v0.1.0-alpha2 // indirect
 	github.com/alexflint/go-scalar v1.2.0 // indirect
 	github.com/anacrolix/chansync v0.4.0 // indirect
