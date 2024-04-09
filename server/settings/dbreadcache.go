@@ -1,11 +1,15 @@
 package settings
 
-import "server/log"
+import (
+	"server/log"
+	"sync"
+)
 
 type DBReadCache struct {
-	db        TorrServerDB
-	listCache map[string][]string
-	dataCache map[[2]string][]byte
+	db             TorrServerDB
+	listCache      map[string][]string
+	dataCache      map[[2]string][]byte
+	dataCacheMutex sync.RWMutex
 }
 
 func NewDBReadCache(db TorrServerDB) TorrServerDB {
@@ -26,11 +30,16 @@ func (v *DBReadCache) CloseDB() {
 
 func (v *DBReadCache) Get(xPath, name string) []byte {
 	cacheKey := v.makeDataCacheKey(xPath, name)
+	v.dataCacheMutex.RLock()
+	defer v.dataCacheMutex.RUnlock()
 	if data, ok := v.dataCache[cacheKey]; ok {
 		return data
 	}
+	v.dataCacheMutex.RUnlock()
 	data := v.db.Get(xPath, name)
+	v.dataCacheMutex.Lock()
 	v.dataCache[cacheKey] = data
+	v.dataCacheMutex.Unlock()
 	return data
 }
 
@@ -40,7 +49,9 @@ func (v *DBReadCache) Set(xPath, name string, value []byte) {
 		return
 	}
 	cacheKey := v.makeDataCacheKey(xPath, name)
+	v.dataCacheMutex.Lock()
 	v.dataCache[cacheKey] = value
+	v.dataCacheMutex.Unlock()
 	delete(v.listCache, xPath)
 	v.db.Set(xPath, name, value)
 }
