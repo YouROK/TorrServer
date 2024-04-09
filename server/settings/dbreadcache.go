@@ -31,8 +31,8 @@ func (v *DBReadCache) CloseDB() {
 func (v *DBReadCache) Get(xPath, name string) []byte {
 	cacheKey := v.makeDataCacheKey(xPath, name)
 	v.dataCacheMutex.RLock()
-	defer v.dataCacheMutex.RUnlock()
 	if data, ok := v.dataCache[cacheKey]; ok {
+		defer v.dataCacheMutex.RUnlock()
 		return data
 	}
 	v.dataCacheMutex.RUnlock()
