@@ -1,8 +1,9 @@
 package settings
 
 import (
-	"server/log"
 	"sync"
+
+	"server/log"
 )
 
 type DBReadCache struct {
