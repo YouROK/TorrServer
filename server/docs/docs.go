@@ -475,6 +475,12 @@ const docTemplate = `{
                         "name": "poster",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Set category of torrent, used in web: movie, tv, music, other",
+                        "name": "category",
+                        "in": "query"
                     }
                 ],
                 "responses": {

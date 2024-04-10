@@ -610,6 +610,10 @@ paths:
         name: poster
         required: true
         type: string
+      - description: 'Set category of torrent, used in web: movie, tv, music, other'
+        in: query
+        name: category
+        type: string
       produces:
       - application/octet-stream
       responses:
