@@ -97,7 +97,7 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 
 	tor, err := torr.AddTorrent(torrSpec, req.Title, req.Poster, req.Data, req.Category)
 
-	log.TLogln("Final torrent category: ", tor.Category)
+	log.TLogln("Final torrent category:", tor.Category)
 
 	if err != nil {
 		log.TLogln("error add torrent:", err)

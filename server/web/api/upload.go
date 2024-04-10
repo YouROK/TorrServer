@@ -56,7 +56,7 @@ func torrentUpload(c *gin.Context) {
 	}
 	var tor *torr.Torrent
 	for name, file := range form.File {
-		log.TLogln("add torrent file", name)
+		log.TLogln("add .torrent", name)
 
 		torrFile, err := file[0].Open()
 		if err != nil {
@@ -72,6 +72,9 @@ func torrentUpload(c *gin.Context) {
 		}
 
 		tor, err = torr.AddTorrent(spec, title, poster, data, category)
+
+		log.TLogln("Final torrent category:", tor.Category)
+
 		if err != nil {
 			log.TLogln("error upload torrent:", err)
 			continue

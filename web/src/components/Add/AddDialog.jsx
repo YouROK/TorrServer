@@ -218,6 +218,7 @@ export default function AddDialog({
       data.append('save', 'true')
       data.append('file', selectedFile)
       title && data.append('title', title)
+      category && data.append('category', category)
       posterUrl && data.append('poster', posterUrl)
       axios.post(torrentUploadHost(), data).catch(handleClose)
     } else {
