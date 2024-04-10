@@ -8,6 +8,7 @@ import (
 type DBReadCache struct {
 	db             TorrServerDB
 	listCache      map[string][]string
+	listCacheMutex sync.RWMutex
 	dataCache      map[[2]string][]byte
 	dataCacheMutex sync.RWMutex
 }
@@ -57,11 +58,16 @@ func (v *DBReadCache) Set(xPath, name string, value []byte) {
 }
 
 func (v *DBReadCache) List(xPath string) []string {
+	v.listCacheMutex.RLock()
 	if names, ok := v.listCache[xPath]; ok {
+		defer v.listCacheMutex.RUnlock()
 		return names
 	}
+	v.listCacheMutex.RUnlock()
 	names := v.db.List(xPath)
+	v.listCacheMutex.Lock()
 	v.listCache[xPath] = names
+	v.listCacheMutex.Unlock()
 	return names
 }
 
