@@ -66,7 +66,7 @@ cd "${ROOT}/server" || exit 1
 $GOBIN clean -i -r -cache --modcache
 $GOBIN mod tidy
 
-BUILD_FLAGS="-ldflags=${LDFLAGS} -tags=nosqlite"
+BUILD_FLAGS="-ldflags=${LDFLAGS} -tags=nosqlite -trimpath"
 
 #####################################
 ### X86 build section
