@@ -35,16 +35,17 @@ import (
 //
 //	@Tags			API
 //
-//	@Param			link	query	string	true	"Magnet/hash/link to torrent"
+//	@Param			link		query	string	true	"Magnet/hash/link to torrent"
 //	@Param			index		query	string	false	"File index in torrent"
 //	@Param			preload		query	string	false	"Should preload torrent"
 //	@Param			stat		query	string	false	"Get statistics from torrent"
 //	@Param			save		query	string	false	"Should save torrent"
-//	@Param			m3u		query	string	false	"Get torrent as M3U playlist"
-//	@Param			fromlast		query	string	false	"Get M3U from last played file"
+//	@Param			m3u			query	string	false	"Get torrent as M3U playlist"
+//	@Param			fromlast	query	string	false	"Get M3U from last played file"
 //	@Param			play		query	string	false	"Start stream torrent"
 //	@Param			title		query	string	true	"Set title of torrent"
 //	@Param			poster		query	string	true	"Set poster link of torrent"
+//	@Param			category	query	string	false	"Set category of torrent, used in web: movie, tv, music, other"
 //
 //	@Produce		application/octet-stream
 //	@Success		200	"Data returned according to query"
@@ -60,6 +61,8 @@ func stream(c *gin.Context) {
 	_, play := c.GetQuery("play")
 	title := c.Query("title")
 	poster := c.Query("poster")
+	category, _ := c.GetQuery("category")
+
 	data := ""
 	notAuth := c.GetBool("auth_required") && c.GetString(gin.AuthUserKey) == ""
 
@@ -93,9 +96,10 @@ func stream(c *gin.Context) {
 		title = tor.Title
 		poster = tor.Poster
 		data = tor.Data
+		category = tor.Category
 	}
 	if tor == nil || tor.Stat == state.TorrentInDB {
-		tor, err = torr.AddTorrent(spec, title, poster, data, tor.Category)
+		tor, err = torr.AddTorrent(spec, title, poster, data, category)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
