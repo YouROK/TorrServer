@@ -466,15 +466,13 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Set title of torrent",
                         "name": "title",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "Set poster link of torrent",
                         "name": "poster",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "string",
