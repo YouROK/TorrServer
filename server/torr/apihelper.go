@@ -136,14 +136,18 @@ func SetTorrent(hashHex, title, poster, category string, data string) *Torrent {
 		torr.Title = title
 		torr.Poster = poster
 		torr.Category = category
-		torr.Data = data
+		if data != "" {
+			torr.Data = data
+		}
 	}
 
 	if torrDb != nil {
 		torrDb.Title = title
 		torrDb.Poster = poster
 		torrDb.Category = category
-		torrDb.Data = data
+		if data != "" {
+			torrDb.Data = data
+		}
 		AddTorrentDB(torrDb)
 	}
 	if torr != nil {
