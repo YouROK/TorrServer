@@ -25,7 +25,7 @@ type viewedReqJS struct {
 //
 //	@Tags			API
 //
-//	@Param			request	body	viewedReqJS	true	"Viewed torrent request"
+//	@Param			request	body	viewedReqJS	true	"Viewed torrent request. Available params for action: set, rem, list"
 //
 //	@Accept			json
 //	@Produce		json

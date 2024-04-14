@@ -27,11 +27,11 @@ type setsReqJS struct {
 //
 //	@Tags			API
 //
-//	@Param			request	body	setsReqJS	true	"Settings request"
+//	@Param			request	body	setsReqJS	true	"Settings request. Available params for action: get, set, def"
 //
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	sets.BTSets	"Depends on what action has been asked"
+//	@Success		200	{object}	sets.BTSets	"Settings JSON or nothing. Depends on what action has been asked."
 //	@Router			/settings [post]
 func settings(c *gin.Context) {
 	var req setsReqJS

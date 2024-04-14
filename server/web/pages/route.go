@@ -31,13 +31,13 @@ func SetupRoute(route gin.IRouter) {
 
 // stat godoc
 //
-//	@Summary		Stat server
-//	@Description	Stat server.
+//	@Summary		TorrServer Statistics
+//	@Description	Show server and torrents statistics.
 //
 //	@Tags			Pages
 //
 //	@Produce		text/plain
-//	@Success		200	"Stats"
+//	@Success		200	"TorrServer statistics"
 //	@Router			/stat [get]
 func statPage(c *gin.Context) {
 	torr.WriteStatus(c.Writer)
@@ -52,7 +52,7 @@ func statPage(c *gin.Context) {
 //	@Tags			Pages
 //
 //	@Produce		text/html
-//	@Success		200	"Magnet links"
+//	@Success		200	"HTML with Magnet links"
 //	@Router			/magnets [get]
 func getTorrents(c *gin.Context) {
 	list := settings.ListTorrent()

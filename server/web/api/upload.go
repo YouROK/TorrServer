@@ -12,7 +12,7 @@ import (
 
 // torrentUpload godoc
 //
-//	@Summary		Only one file support
+//	@Summary		Add .torrent file
 //	@Description	Only one file support.
 //
 //	@Tags			API
