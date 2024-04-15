@@ -510,7 +510,7 @@ esac
 
 while true; do
   echo ""
-  [[ $lang == "en" ]] && read -p " Want to install or configure TorrServer? (Yes|No) Type Delete to uninstall. " ydn </dev/tty || read -p " Хотите установить, обновить или настроить TorrServer? (Да|Нет) Для удаления введите «Удалить» " ydn </dev/tty
+  [[ $lang == "en" ]] && read -p " Want to install or configure TorrServer? (Yes|No) Type Delete to uninstall. " ydn </dev/tty || read -p " Хотите установить, обновить или настроить TorrServer? (Yes|No) Для удаления введите «Delete» " ydn </dev/tty
   case $ydn in
     [YyДд]*)
       initialCheck
