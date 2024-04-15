@@ -2,11 +2,16 @@
 username="torrserver" # system user to add || root
 dirInstall="/opt/torrserver" # путь установки torrserver
 serviceName="torrserver" # имя службы: systemctl status torrserver.service
-scriptname=$(basename "$(test -L "$0" && readlink "$0" || echo "$0")")
+scriptname=$(basename "$(test -L "$0" && readlink "$0" || echo -e "$0")")
+declare -A colors=( [black]=0 [red]=1 [green]=2 [yellow]=3 [blue]=4 [magenta]=5 [cyan]=6 [white]=7 )
 
 #################################
 #       F U N C T I O N S       #
 #################################
+
+colorize() {
+    printf "%s%s%s" "$(tput setaf "${colors[$1]:-7}")" "$2" "$(tput op)"
+}
 
 function isRoot() {
   if [ $EUID -ne 0 ]; then
@@ -19,15 +24,15 @@ function addUser() {
     [[ $username == "root" ]] && return 0
     egrep "^$username" /etc/passwd >/dev/null
     if [ $? -eq 0 ]; then
-      [[ $lang == "en" ]] && echo " - $username user exists!" || echo " - пользователь $username найден!"
+      [[ $lang == "en" ]] && echo -e " - $username user exists!" || echo -e " - пользователь $username найден!"
       return 0
     else
       useradd --home-dir "$dirInstall" --create-home --shell /bin/false -c "TorrServer" "$username"
       [ $? -eq 0 ] && {
         chmod 755 "$dirInstall"
-        [[ $lang == "en" ]] && echo " - User $username has been added to system!" || echo " - пользователь $username добавлен!"
+        [[ $lang == "en" ]] && echo -e " - User $username has been added to system!" || echo -e " - пользователь $username добавлен!"
       } || {
-        [[ $lang == "en" ]] && echo " - Failed to add $username user!" || echo " - не удалось добавить пользователя $username!"
+        [[ $lang == "en" ]] && echo -e " - Failed to add $username user!" || echo -e " - не удалось добавить пользователя $username!"
       }
     fi
   fi
@@ -40,12 +45,12 @@ function delUser() {
     if [ $? -eq 0 ]; then
       userdel --remove "$username" 2>/dev/null # --force 
       [ $? -eq 0 ] && {
-        [[ $lang == "en" ]] && echo " - User $username has been removed from system!" || echo " - Пользователь $username удален!"
+        [[ $lang == "en" ]] && echo -e " - User $username has been removed from system!" || echo -e " - Пользователь $username удален!"
       } || {
-        [[ $lang == "en" ]] && echo " - Failed to remove $username user!" || echo " - не удалось удалить пользователя $username!"
+        [[ $lang == "en" ]] && echo -e " - Failed to remove $username user!" || echo -e " - не удалось удалить пользователя $username!"
       }
     else
-      [[ $lang == "en" ]] && echo " - $username - no such user!" || echo " - пользователь $username не найден!"
+      [[ $lang == "en" ]] && echo -e " - $username - no such user!" || echo -e " - пользователь $username не найден!"
       return 1
     fi
   fi
@@ -70,26 +75,26 @@ function uninstall() {
   checkArch
   checkInstalled
   [[ $lang == "en" ]] && {
-    echo ""
-    echo " TorrServer install dir - ${dirInstall}"
-    echo ""
-    echo " This action will delete TorrServer including all it's torrents, settings and files on path above!"
-    echo ""
+    echo -e ""
+    echo -e " TorrServer install dir - ${dirInstall}"
+    echo -e ""
+    echo -e " This action will delete TorrServer including all it's torrents, settings and files on path above!"
+    echo -e ""
   } || {
-    echo ""
-    echo " Директория c TorrServer - ${dirInstall}"
-    echo ""
-    echo " Это действие удалит все данные TorrServer включая базу данных торрентов и настройки по указанному выше пути!"
-    echo ""
+    echo -e ""
+    echo -e " Директория c TorrServer - ${dirInstall}"
+    echo -e ""
+    echo -e " Это действие удалит все данные TorrServer включая базу данных торрентов и настройки по указанному выше пути!"
+    echo -e ""
   }
-  [[ $lang == "en" ]] && read -p ' Are you shure you want to delete TorrServer? (Yes/No) ' answer_del </dev/tty || read -p ' Вы уверены что хотите удалить программу? (Yes/No) ' answer_del </dev/tty
+  [[ $lang == "en" ]] && read -p " Are you shure you want to delete TorrServer? ($(colorize red Y)es/$(colorize yellow N)o) " answer_del </dev/tty || read -p " Вы уверены что хотите удалить программу? ($(colorize red Y)es/$(colorize yellow N)o) " answer_del </dev/tty
   if [ "$answer_del" != "${answer_del#[YyДд]}" ]; then
     cleanup
     cleanAll
-    [[ $lang == "en" ]] && echo " - TorrServer uninstalled!" || echo " - TorrServer удален из системы!"
-    echo ""
+    [[ $lang == "en" ]] && echo -e " - TorrServer uninstalled!" || echo -e " - TorrServer удален из системы!"
+    echo -e ""
   else
-    echo ""
+    echo -e ""
   fi
 }
 
@@ -134,25 +139,25 @@ function checkOS() {
     source /etc/os-release
     if [[ $ID == "debian" || $ID == "raspbian" ]]; then
       if [[ $VERSION_ID -lt 6 ]]; then
-        echo " Ваша версия Debian не поддерживается."
-        echo ""
-        echo " Скрипт поддерживает только Debian >=6"
-        echo ""
+        echo -e " Ваша версия Debian не поддерживается."
+        echo -e ""
+        echo -e " Скрипт поддерживает только Debian >=6"
+        echo -e ""
         exit 1
       fi
     elif [[ $ID == "ubuntu" ]]; then
       OS="ubuntu"
-      MAJOR_UBUNTU_VERSION=$(echo "$VERSION_ID" | cut -d '.' -f1)
+      MAJOR_UBUNTU_VERSION=$(echo -e "$VERSION_ID" | cut -d '.' -f1)
       if [[ $MAJOR_UBUNTU_VERSION -lt 10 ]]; then
-        echo " Ваша версия Ubuntu не поддерживается."
-        echo ""
-        echo " Скрипт поддерживает только Ubuntu >=10"
-        echo ""
+        echo -e " Ваша версия Ubuntu не поддерживается."
+        echo -e ""
+        echo -e " Скрипт поддерживает только Ubuntu >=10"
+        echo -e ""
         exit 1
       fi
     fi
     if ! dpkg -s $PKGS >/dev/null 2>&1; then
-      [[ $lang == "en" ]] && echo " Installing missing packages…" || echo " Устанавливаем недостающие пакеты…"
+      [[ $lang == "en" ]] && echo -e " Installing missing packages…" || echo -e " Устанавливаем недостающие пакеты…"
       sleep 1
       apt -y install $PKGS
     fi
@@ -166,10 +171,10 @@ function checkOS() {
     if [[ $ID == "centos" || $ID == "rocky" || $ID == "redhat" ]]; then
       OS="centos"
       if [[ ! $VERSION_ID =~ (6|7|8) ]]; then
-        echo " Ваша версия CentOS/RockyLinux/RedHat не поддерживается."
-        echo ""
-        echo " Скрипт поддерживает только CentOS/RockyLinux/RedHat версии 6,7 и 8."
-        echo ""
+        echo -e " Ваша версия CentOS/RockyLinux/RedHat не поддерживается."
+        echo -e ""
+        echo -e " Скрипт поддерживает только CentOS/RockyLinux/RedHat версии 6,7 и 8."
+        echo -e ""
         exit 1
       fi
       [ -z "$(rpm -qa curl)" ] && yum -y install curl
@@ -178,9 +183,9 @@ function checkOS() {
     if [[ $ID == "ol" ]]; then
       OS="oracle"
       if [[ ! $VERSION_ID =~ (6|7|8) ]]; then
-        echo " Ваша версия Oracle Linux не поддерживается."
-        echo ""
-        echo " Скрипт поддерживает только Oracle Linux версии 6,7 и 8."
+        echo -e " Ваша версия Oracle Linux не поддерживается."
+        echo -e ""
+        echo -e " Скрипт поддерживает только Oracle Linux версии 6,7 и 8."
         exit 1
       fi
       [ -z "$(rpm -qa curl)" ] && yum -y install curl
@@ -189,10 +194,10 @@ function checkOS() {
     if [[ $ID == "amzn" ]]; then
       OS="amzn"
       if [[ $VERSION_ID != "2" ]]; then
-        echo " Ваша версия Amazon Linux не поддерживается."
-        echo ""
-        echo " Скрипт поддерживает только Amazon Linux 2."
-        echo ""
+        echo -e " Ваша версия Amazon Linux не поддерживается."
+        echo -e ""
+        echo -e " Скрипт поддерживает только Amazon Linux 2."
+        echo -e ""
         exit 1
       fi
       [ -z "$(rpm -qa curl)" ] && yum -y install curl
@@ -203,7 +208,7 @@ function checkOS() {
     [ -z $(pacman -Qqe curl 2>/dev/null) ] &&  pacman -Sy --noconfirm curl
     [ -z $(pacman -Qqe iputils 2>/dev/null) ] &&  pacman -Sy --noconfirm iputils
   else
-    echo " Похоже, что вы запускаете этот установщик в системе отличной от Debian, Ubuntu, Fedora, CentOS, Amazon Linux, Oracle Linux или Arch Linux."
+    echo -e " Похоже, что вы запускаете этот установщик в системе отличной от Debian, Ubuntu, Fedora, CentOS, Amazon Linux, Oracle Linux или Arch Linux."
     exit 1
   fi
 }
@@ -216,26 +221,26 @@ function checkArch() {
     aarch64) architecture="arm64" ;;
     armv7|armv7l) architecture="arm7" ;;
     armv6|armv6l) architecture="arm5" ;;
-    *) [[ $lang == "en" ]] && { echo " Unsupported Arch. Can't continue."; exit 1; } || { echo " Не поддерживаемая архитектура. Продолжение невозможно."; exit 1; } ;;
+    *) [[ $lang == "en" ]] && { echo -e " Unsupported Arch. Can't continue."; exit 1; } || { echo -e " Не поддерживаемая архитектура. Продолжение невозможно."; exit 1; } ;;
   esac
 }
 
 function checkInternet() {
-  [ -z "`which ping`" ] && echo " Сначала установите iputils-ping" && exit 1
-  [[ $lang == "en" ]] && echo " Check Internet access…" || echo " Проверяем соединение с Интернетом…"
+  [ -z "`which ping`" ] && echo -e " Сначала установите iputils-ping" && exit 1
+  [[ $lang == "en" ]] && echo -e " Check Internet access…" || echo -e " Проверяем соединение с Интернетом…"
   if ! ping -c 2 google.com &> /dev/null; then
-    [[ $lang == "en" ]] && echo " - No Internet. Check your network and DNS settings." || echo " - Нет Интернета. Проверьте ваше соединение, а также разрешение имен DNS."
+    [[ $lang == "en" ]] && echo -e " - No Internet. Check your network and DNS settings." || echo -e " - Нет Интернета. Проверьте ваше соединение, а также разрешение имен DNS."
     exit 1
   fi
-  [[ $lang == "en" ]] && echo " - Have Internet Access" || echo " - соединение с Интернетом успешно"
+  [[ $lang == "en" ]] && echo -e " - Have Internet Access" || echo -e " - соединение с Интернетом успешно"
 }
 
 function initialCheck() {
   if ! isRoot; then
-    [[ $lang == "en" ]] && echo " Script must run as root or user with sudo privileges. Example: sudo $scriptname" || echo " Вам нужно запустить скрипт от root или пользователя с правами sudo. Пример: sudo $scriptname"
+    [[ $lang == "en" ]] && echo -e " Script must run as root or user with sudo privileges. Example: sudo $scriptname" || echo -e " Вам нужно запустить скрипт от root или пользователя с правами sudo. Пример: sudo $scriptname"
     exit 1
   fi
-  # [ -z "`which curl`" ] && echo " Сначала установите curl" && exit 1
+  # [ -z "`which curl`" ] && echo -e " Сначала установите curl" && exit 1
   checkOS
   checkArch
   checkInternet
@@ -249,10 +254,10 @@ function getLatestRelease() {
 }
 
 function installTorrServer() {
-  [[ $lang == "en" ]] && echo " Install and configure TorrServer…" || echo " Устанавливаем и настраиваем TorrServer…"
+  [[ $lang == "en" ]] && echo -e " Install and configure TorrServer…" || echo -e " Устанавливаем и настраиваем TorrServer…"
   if checkInstalled; then
     if ! checkInstalledVersion; then
-      [[ $lang == "en" ]] && read -p ' Want to update TorrServer? (Yes/No) ' answer_up </dev/tty || read -p ' Хотите обновить TorrServer? (Yes/No) ' answer_up </dev/tty
+      [[ $lang == "en" ]] && read -p " Want to update TorrServer? ($(colorize green Y)es/$(colorize yellow N)o) " answer_up </dev/tty || read -p " Хотите обновить TorrServer? ($(colorize green Y)es/$(colorize yellow N)o) " answer_up </dev/tty
       if [ "$answer_up" != "${answer_up#[YyДд]}" ]; then
         UpdateVersion
       fi
@@ -291,16 +296,16 @@ function installTorrServer() {
     WantedBy = multi-user.target
 EOF
   [ -z $servicePort ] && {
-    [[ $lang == "en" ]] && read -p ' Change TorrServer web-port? (Yes/No) ' answer_cp </dev/tty || read -p ' Хотите изменить порт для TorrServer? (Yes/No) ' answer_cp </dev/tty
+    [[ $lang == "en" ]] && read -p " Change TorrServer web-port? ($(colorize yellow Y)es/$(colorize green N)o) " answer_cp </dev/tty || read -p " Хотите изменить порт для TorrServer? ($(colorize yellow Y)es/$(colorize green N)o) " answer_cp </dev/tty
     if [ "$answer_cp" != "${answer_cp#[YyДд]}" ]; then
-      [[ $lang == "en" ]] && read -p ' Enter port number: ' answer_port </dev/tty || read -p ' Введите номер порта: ' answer_port </dev/tty
+      [[ $lang == "en" ]] && read -p " Enter port number: " answer_port </dev/tty || read -p " Введите номер порта: " answer_port </dev/tty
       servicePort=$answer_port
     else
       servicePort="8090"
     fi
   }
   [ -z $isAuth ] && {
-    [[ $lang == "en" ]] && read -p ' Enable server authorization? (Yes/No) ' answer_auth </dev/tty || read -p ' Включить авторизацию на сервере? (Yes/No) ' answer_auth </dev/tty
+    [[ $lang == "en" ]] && read -p " Enable server authorization? ($(colorize green Y)es/$(colorize yellow N)o) " answer_auth </dev/tty || read -p " Включить авторизацию на сервере? ($(colorize green Y)es/$(colorize yellow N)o) " answer_auth </dev/tty
     if [ "$answer_auth" != "${answer_auth#[YyДд]}" ]; then
       isAuth=1
     else
@@ -309,15 +314,15 @@ EOF
   }
   if [ $isAuth -eq 1 ]; then
     [[ ! -f "$dirInstall/accs.db" ]] && {
-      [[ $lang == "en" ]] && read -p ' User: ' answer_user </dev/tty || read -p ' Пользователь: ' answer_user </dev/tty
+      [[ $lang == "en" ]] && read -p " User: " answer_user </dev/tty || read -p " Пользователь: " answer_user </dev/tty
       isAuthUser=$answer_user
-      [[ $lang == "en" ]] && read -p ' Password: ' answer_pass </dev/tty || read -p ' Пароль: ' answer_pass </dev/tty
+      [[ $lang == "en" ]] && read -p " Password: " answer_pass </dev/tty || read -p " Пароль: " answer_pass </dev/tty
       isAuthPass=$answer_pass
-      [[ $lang == "en" ]] && echo " Store $isAuthUser:$isAuthPass to ${dirInstall}/accs.db" || echo " Сохраняем $isAuthUser:$isAuthPass в ${dirInstall}/accs.db"
+      [[ $lang == "en" ]] && echo -e " Store $isAuthUser:$isAuthPass to ${dirInstall}/accs.db" || echo -e " Сохраняем $isAuthUser:$isAuthPass в ${dirInstall}/accs.db"
       echo -e "{\n  \"$isAuthUser\": \"$isAuthPass\"\n}" > $dirInstall/accs.db
     } || {
     	auth=$(cat "$dirInstall/accs.db"|head -2|tail -1|tr -d '[:space:]'|tr -d '"')
-      [[ $lang == "en" ]] && echo " - Use existing auth from ${dirInstall}/accs.db - $auth" || echo " - Используйте реквизиты из ${dirInstall}/accs.db для авторизации - $auth"
+      [[ $lang == "en" ]] && echo -e " - Use existing auth from ${dirInstall}/accs.db - $auth" || echo -e " - Используйте реквизиты из ${dirInstall}/accs.db для авторизации - $auth"
     }
     cat << EOF > $dirInstall/$serviceName.config
     DAEMON_OPTIONS="--port $servicePort --path $dirInstall --httpauth"
@@ -328,7 +333,7 @@ EOF
 EOF
   fi
   [ -z $isRdb ] && {
-    [[ $lang == "en" ]] && read -p ' Start TorrServer in public read-only mode? (Yes/No) ' answer_rdb </dev/tty || read -p ' Запускать TorrServer в публичном режиме без возможности изменения настроек через веб сервера? (Yes/No) ' answer_rdb </dev/tty
+    [[ $lang == "en" ]] && read -p " Start TorrServer in public read-only mode? ($(colorize yellow Y)es/$(colorize green N)o) " answer_rdb </dev/tty || read -p " Запускать TorrServer в публичном режиме без возможности изменения настроек через веб сервера? ($(colorize yellow Y)es/$(colorize green N)o) " answer_rdb </dev/tty
     if [ "$answer_rdb" != "${answer_rdb#[YyДд]}" ]; then
       isRdb=1
     else
@@ -337,21 +342,21 @@ EOF
   }
   if [ $isRdb -eq 1 ]; then
     [[ $lang == "en" ]] && {
-      echo " Set database to read-only mode…"
-      echo " To change remove --rdb option from $dirInstall/$serviceName.config"
-      echo " or rerun install script without parameters"
+      echo -e " Set database to read-only mode…"
+      echo -e " To change remove --rdb option from $dirInstall/$serviceName.config"
+      echo -e " or rerun install script without parameters"
     } || {
-      echo " База данных устанавливается в режим «только для чтения»…"
-      echo " Для изменения отредактируйте $dirInstall/$serviceName.config, убрав опцию --rdb"
-      echo " или запустите интерактивную установку без параметров повторно"
+      echo -e " База данных устанавливается в режим «только для чтения»…"
+      echo -e " Для изменения отредактируйте $dirInstall/$serviceName.config, убрав опцию --rdb"
+      echo -e " или запустите интерактивную установку без параметров повторно"
     }
     sed -i 's|DAEMON_OPTIONS="--port|DAEMON_OPTIONS="--rdb --port|' $dirInstall/$serviceName.config
   fi
   [ -z $isLog ] && {
-    [[ $lang == "en" ]] && read -p ' Enable TorrServer log output to file? (Yes/No) ' answer_log </dev/tty || read -p ' Включить запись журнала работы TorrServer в файл? (Yes/No) ' answer_log </dev/tty
+    [[ $lang == "en" ]] && read -p " Enable TorrServer log output to file? ($(colorize yellow Y)es/$(colorize green N)o) " answer_log </dev/tty || read -p " Включить запись журнала работы TorrServer в файл? ($(colorize yellow Y)es/$(colorize green N)o) " answer_log </dev/tty
     if [ "$answer_log" != "${answer_log#[YyДд]}" ]; then
       sed -i "s|--path|--logpath $dirInstall/$serviceName.log --path|" "$dirInstall/$serviceName.config"
-      [[ $lang == "en" ]] && echo " - TorrServer log stored at $dirInstall/$serviceName.log" || echo " - лог TorrServer располагается по пути $dirInstall/$serviceName.log"
+      [[ $lang == "en" ]] && echo -e " - TorrServer log stored at $dirInstall/$serviceName.log" || echo -e " - лог TorrServer располагается по пути $dirInstall/$serviceName.log"
     fi
   }
 
@@ -359,27 +364,27 @@ EOF
   sed -i 's/^[ \t]*//' $dirInstall/$serviceName.service
   sed -i 's/^[ \t]*//' $dirInstall/$serviceName.config
 
-  [[ $lang == "en" ]] && echo " Starting TorrServer…" || echo " Запускаем службу TorrServer…"
+  [[ $lang == "en" ]] && echo -e " Starting TorrServer…" || echo -e " Запускаем службу TorrServer…"
   systemctl daemon-reload 2>/dev/null
   systemctl enable $serviceName.service 2>/dev/null # enable --now
   systemctl restart $serviceName.service 2>/dev/null
   getIP
   [[ $lang == "en" ]] && {
-    echo ""
-    echo " TorrServer $(getLatestRelease) installed to ${dirInstall}"
-    echo ""
-    echo " You can now open your browser at http://${serverIP}:${servicePort} to access TorrServer web GUI."
-    echo ""
+    echo -e ""
+    echo -e " TorrServer $(getLatestRelease) installed to ${dirInstall}"
+    echo -e ""
+    echo -e " You can now open your browser at http://${serverIP}:${servicePort} to access TorrServer web GUI."
+    echo -e ""
   } || {
-    echo ""
-    echo " TorrServer $(getLatestRelease) установлен в директории ${dirInstall}"
-    echo ""
-    echo " Теперь вы можете открыть браузер по адресу http://${serverIP}:${servicePort} для доступа к вебу TorrServer"
-    echo ""
+    echo -e ""
+    echo -e " TorrServer $(getLatestRelease) установлен в директории ${dirInstall}"
+    echo -e ""
+    echo -e " Теперь вы можете открыть браузер по адресу http://${serverIP}:${servicePort} для доступа к вебу TorrServer"
+    echo -e ""
   }
   if [[ $isAuth -eq 1 && $isAuthUser > 0 ]]; then
-    [[ $lang == "en" ]] && echo " Use user \"$isAuthUser\" with password \"$isAuthPass\" for authentication" || echo " Для авторизации используйте пользователя «$isAuthUser» с паролем «$isAuthPass»"
-  echo ""
+    [[ $lang == "en" ]] && echo -e " Use user \"$isAuthUser\" with password \"$isAuthPass\" for authentication" || echo -e " Для авторизации используйте пользователя «$isAuthUser» с паролем «$isAuthPass»"
+  echo -e ""
   fi
 }
 
@@ -389,9 +394,9 @@ function checkInstalled() {
   fi
   binName="TorrServer-linux-${architecture}"
   if [[ -f "$dirInstall/$binName" ]] || [[ $(stat -c%s "$dirInstall/$binName" 2>/dev/null) -ne 0 ]]; then
-    [[ $lang == "en" ]] && echo " - TorrServer found in $dirInstall" || echo " - TorrServer найден в директории $dirInstall"
+    [[ $lang == "en" ]] && echo -e " - TorrServer found in $dirInstall" || echo -e " - TorrServer найден в директории $dirInstall"
   else
-    [[ $lang == "en" ]] && echo " - TorrServer not found. It's not installed or have zero size." || echo " - TorrServer не найден, возможно он не установлен или размер бинарника равен 0."
+    [[ $lang == "en" ]] && echo -e " - TorrServer not found. It's not installed or have zero size." || echo -e " - TorrServer не найден, возможно он не установлен или размер бинарника равен 0."
     return 1
   fi
 }
@@ -399,20 +404,20 @@ function checkInstalled() {
 function checkInstalledVersion() {
   binName="TorrServer-linux-${architecture}"
   if [[ -z "$(getLatestRelease)" ]]; then
-    [[ $lang == "en" ]] && echo " - No update. Can be server issue." || echo " - Не найдено обновление. Возможно сервер не доступен."
+    [[ $lang == "en" ]] && echo -e " - No update. Can be server issue." || echo -e " - Не найдено обновление. Возможно сервер не доступен."
     exit 1
   fi
   if [[ "$(getLatestRelease)" == "$($dirInstall/$binName --version 2>/dev/null | awk '{print $2}')" ]]; then
-    [[ $lang == "en" ]] && echo " - You have latest TorrServer $(getLatestRelease)" || echo " - Установлен TorrServer последней версии $(getLatestRelease)"
+    [[ $lang == "en" ]] && echo -e " - You have latest TorrServer $(getLatestRelease)" || echo -e " - Установлен TorrServer последней версии $(getLatestRelease)"
   else
     [[ $lang == "en" ]] && {
-      echo " - TorrServer update found!"
-      echo "   installed: \"$($dirInstall/$binName --version 2>/dev/null | awk '{print $2}')\""
-      echo "   available: \"$(getLatestRelease)\""
+      echo -e " - TorrServer update found!"
+      echo -e "   installed: \"$($dirInstall/$binName --version 2>/dev/null | awk '{print $2}')\""
+      echo -e "   available: \"$(getLatestRelease)\""
     } || {
-      echo " - Доступно обновление сервера"
-      echo "   установлен: \"$($dirInstall/$binName --version 2>/dev/null | awk '{print $2}')\""
-      echo "   обновление: \"$(getLatestRelease)\""
+      echo -e " - Доступно обновление сервера"
+      echo -e "   установлен: \"$($dirInstall/$binName --version 2>/dev/null | awk '{print $2}')\""
+      echo -e "   обновление: \"$(getLatestRelease)\""
     }
     return 1
   fi
@@ -474,8 +479,8 @@ case $1 in
     initialCheck
     downgradeRelease="$2"
     [ -z "$downgradeRelease" ] &&
-      echo " Вы не указали номер версии" &&
-      echo " Наберите $scriptname -d|-down|down <версия>, например $scriptname -d 101" &&
+      echo -e " Вы не указали номер версии" &&
+      echo -e " Наберите $scriptname -d|-down|down <версия>, например $scriptname -d 101" &&
       exit 1
     if checkInstalled; then
       DowngradeVersion
@@ -491,26 +496,26 @@ case $1 in
     exit
     ;;
   *)
-    echo ""
-    echo " Choose Language:"
-    echo " [1] English"
-    echo " [2] Русский"
-    read -p ' Your language (Ваш язык): ' answer_lang </dev/tty
+    echo -e ""
+    echo -e " Choose Language:"
+    echo -e " [$(colorize green 1)] English"
+    echo -e " [$(colorize yellow 2)] Русский"
+    read -p " Your language (Ваш язык): " answer_lang </dev/tty
     if [ "$answer_lang" != "${answer_lang#[2]}" ]; then
       lang="ru"
     fi
-    echo ""
-    echo "============================================================="
-    [[ $lang == "en" ]] && echo " TorrServer install and configuration script for Linux " || echo " Скрипт установки, удаления и настройки TorrServer для Linux "
-    echo "============================================================="
-    echo ""
-    [[ $lang == "en" ]] && echo " Enter $scriptname -h or --help or help for all available commands" || echo " Наберите $scriptname -h или --help или help для вызова справки всех доступных команд"
+    echo -e ""
+    echo -e "============================================================="
+    [[ $lang == "en" ]] && echo -e " TorrServer install and configuration script for Linux " || echo -e " Скрипт установки, удаления и настройки TorrServer для Linux "
+    echo -e "============================================================="
+    echo -e ""
+    [[ $lang == "en" ]] && echo -e " Enter $scriptname -h or --help or help for all available commands" || echo -e " Наберите $scriptname -h или --help или help для вызова справки всех доступных команд"
     ;;
 esac
 
 while true; do
-  echo ""
-  [[ $lang == "en" ]] && read -p " Want to install or configure TorrServer? (Yes|No) Type Delete to uninstall. " ydn </dev/tty || read -p " Хотите установить, обновить или настроить TorrServer? (Yes|No) Для удаления введите «Delete» " ydn </dev/tty
+  echo -e ""
+  [[ $lang == "en" ]] && read -p " Want to install or configure TorrServer? ($(colorize green Y)es|$(colorize yellow N)o) Type $(colorize red D)elete to uninstall. " ydn </dev/tty || read -p " Хотите установить, обновить или настроить TorrServer? ($(colorize green Y)es|$(colorize yellow N)o) Для удаления введите «$(colorize red D)elete» " ydn </dev/tty
   case $ydn in
     [YyДд]*)
       initialCheck
@@ -524,11 +529,11 @@ while true; do
     [NnНн]*)
       break
       ;;
-    *) [[ $lang == "en" ]] && echo " Enter Yes, No or Delete" || echo " Ввведите Да, Нет или Удалить"
+    *) [[ $lang == "en" ]] && echo -e " Enter $(colorize green Y)es, $(colorize yellow N)o or $(colorize red D)elete" || echo -e " Ввведите $(colorize green Y)es, $(colorize yellow N)o или $(colorize red D)elete"
     	;;
   esac
 done
 
-echo " Have Fun!"
-echo ""
+echo -e " Have Fun!"
+echo -e ""
 sleep 3
