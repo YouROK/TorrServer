@@ -1,4 +1,4 @@
-name: d
+name: demo
 
 on:
   release:
