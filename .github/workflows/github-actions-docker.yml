@@ -47,5 +47,3 @@ jobs:
           tags: |
             ghcr.io/${{ env.REG_REPO }}:${{ github.event.release.tag_name }}
             ghcr.io/${{ env.REG_REPO }}:latest
-//dmo
-            
