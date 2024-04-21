@@ -2,7 +2,7 @@ name: ci
 
 on:
   release:
-    types: [published
+    types: [published]
 
 jobs:
   docker:
