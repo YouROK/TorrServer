@@ -21,6 +21,7 @@ type torrReqJS struct {
 	Link     string `json:"link,omitempty"`
 	Hash     string `json:"hash,omitempty"`
 	Title    string `json:"title,omitempty"`
+	Category string `json:"category,omitempty"`
 	Poster   string `json:"poster,omitempty"`
 	Data     string `json:"data,omitempty"`
 	SaveToDB bool   `json:"save_to_db,omitempty"`
@@ -29,11 +30,11 @@ type torrReqJS struct {
 // torrents godoc
 //
 //	@Summary		Handle torrents informations
-//	@Description	Allow to add, get or set torrents to server. The action depends of what has been asked.
+//	@Description	Allow to list, add, remove, get, set, drop, wipe torrents on server. The action depends of what has been asked.
 //
 //	@Tags			API
 //
-//	@Param			request	body	torrReqJS	true	"Torrent request"
+//	@Param			request	body	torrReqJS	true	"Torrent request. Available params for action: add, get, set, rem, list, drop, wipe. link required for add, hash required for get, set, rem, drop."
 //
 //	@Accept			json
 //	@Produce		json
@@ -94,7 +95,15 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 		return
 	}
 
-	tor, err := torr.AddTorrent(torrSpec, req.Title, req.Poster, req.Data)
+	tor, err := torr.AddTorrent(torrSpec, req.Title, req.Poster, req.Data, req.Category)
+
+	if tor.Data != "" {
+		log.TLogln("torrent data:", tor.Data)
+	}
+	if tor.Category != "" {
+		log.TLogln("torrent category:", tor.Category)
+	}
+
 	if err != nil {
 		log.TLogln("error add torrent:", err)
 		c.AbortWithError(http.StatusInternalServerError, err)
@@ -149,7 +158,7 @@ func setTorrent(req torrReqJS, c *gin.Context) {
 		c.AbortWithError(http.StatusBadRequest, errors.New("hash is empty"))
 		return
 	}
-	torr.SetTorrent(req.Hash, req.Title, req.Poster, req.Data)
+	torr.SetTorrent(req.Hash, req.Title, req.Poster, req.Category, req.Data)
 	c.Status(200)
 }
 

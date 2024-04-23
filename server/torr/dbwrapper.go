@@ -4,10 +4,9 @@ import (
 	"encoding/json"
 	"time"
 
-	"server/torr/utils"
-
 	"server/settings"
 	"server/torr/state"
+	"server/torr/utils"
 
 	"github.com/anacrolix/torrent/metainfo"
 )
@@ -22,12 +21,15 @@ func AddTorrentDB(torr *Torrent) {
 	t := new(settings.TorrentDB)
 	t.TorrentSpec = torr.TorrentSpec
 	t.Title = torr.Title
+	t.Category = torr.Category
 	if torr.Data == "" {
 		files := new(tsFiles)
 		files.TorrServer.Files = torr.Status().FileStats
-		buf, _ := json.Marshal(files)
-		t.Data = string(buf)
-		torr.Data = t.Data
+		buf, err := json.Marshal(files)
+		if err == nil {
+			t.Data = string(buf)
+			torr.Data = t.Data
+		}
 	} else {
 		t.Data = torr.Data
 	}
@@ -50,6 +52,7 @@ func GetTorrentDB(hash metainfo.Hash) *Torrent {
 			torr.TorrentSpec = db.TorrentSpec
 			torr.Title = db.Title
 			torr.Poster = db.Poster
+			torr.Category = db.Category
 			torr.Timestamp = db.Timestamp
 			torr.Size = db.Size
 			torr.Data = db.Data
@@ -72,6 +75,7 @@ func ListTorrentsDB() map[metainfo.Hash]*Torrent {
 		torr.TorrentSpec = db.TorrentSpec
 		torr.Title = db.Title
 		torr.Poster = db.Poster
+		torr.Category = db.Category
 		torr.Timestamp = db.Timestamp
 		torr.Size = db.Size
 		torr.Data = db.Data

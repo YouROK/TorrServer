@@ -13,6 +13,7 @@ const colors = {
     piecesLength: { iconBGColor: '#0982c8', valueBGColor: '#098cd7' },
     status: { iconBGColor: '#aea25b', valueBGColor: '#b4aa6e' },
     size: { iconBGColor: '#9b01ad', valueBGColor: '#ac03bf' },
+    category: { iconBGColor: '#914820', valueBGColor: '#c9632c' },
   },
   dark: {
     downloadSpeed: { iconBGColor: '#0c6600', valueBGColor: '#0d7000' },
@@ -22,6 +23,7 @@ const colors = {
     piecesLength: { iconBGColor: '#07659c', valueBGColor: '#0872af' },
     status: { iconBGColor: '#938948', valueBGColor: '#9f9450' },
     size: { iconBGColor: '#81008f', valueBGColor: '#9102a1' },
+    category: { iconBGColor: '#914820', valueBGColor: '#c9632c' },
   },
 }
 

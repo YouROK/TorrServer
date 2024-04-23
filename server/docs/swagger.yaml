@@ -18,6 +18,8 @@ definitions:
     properties:
       action:
         type: string
+      category:
+        type: string
       data:
         type: string
       hash:
@@ -242,6 +244,8 @@ definitions:
         type: integer
       bytes_written_data:
         type: integer
+      category:
+        type: string
       chunks_read:
         type: integer
       chunks_read_useful:
@@ -389,7 +393,7 @@ paths:
       - text/html
       responses:
         "200":
-          description: Magnet links
+          description: HTML with Magnet links
       summary: Get HTML of magnet links
       tags:
       - Pages
@@ -523,7 +527,7 @@ paths:
       - application/json
       description: Allow to get or set server settings.
       parameters:
-      - description: Settings request
+      - description: 'Settings request. Available params for action: get, set, def'
         in: body
         name: request
         required: true
@@ -533,7 +537,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: Depends on what action has been asked
+          description: Settings JSON or nothing. Depends on what action has been asked.
           schema:
             $ref: '#/definitions/settings.BTSets'
       summary: Get / Set server settings
@@ -550,13 +554,13 @@ paths:
       - API
   /stat:
     get:
-      description: Stat server.
+      description: Show server and torrents statistics.
       produces:
       - text/plain
       responses:
         "200":
-          description: Stats
-      summary: Stat server
+          description: TorrServer statistics
+      summary: TorrServer Statistics
       tags:
       - Pages
   /stream:
@@ -599,12 +603,14 @@ paths:
       - description: Set title of torrent
         in: query
         name: title
-        required: true
         type: string
       - description: Set poster link of torrent
         in: query
         name: poster
-        required: true
+        type: string
+      - description: 'Set category of torrent, used in web: movie, tv, music, other'
+        in: query
+        name: category
         type: string
       produces:
       - application/octet-stream
@@ -633,6 +639,10 @@ paths:
         in: formData
         name: title
         type: string
+      - description: Torrent category
+        in: formData
+        name: category
+        type: string
       - description: Torrent poster
         in: formData
         name: poster
@@ -648,17 +658,19 @@ paths:
           description: Torrent status
           schema:
             $ref: '#/definitions/state.TorrentStatus'
-      summary: Only one file support
+      summary: Add .torrent file
       tags:
       - API
   /torrents:
     post:
       consumes:
       - application/json
-      description: Allow to add, get or set torrents to server. The action depends
-        of what has been asked.
+      description: Allow to list, add, remove, get, set, drop, wipe torrents on server.
+        The action depends of what has been asked.
       parameters:
-      - description: Torrent request
+      - description: 'Torrent request. Available params for action: add, get, set,
+          rem, list, drop, wipe. link required for add, hash required for get, set,
+          rem, drop.'
         in: body
         name: request
         required: true
@@ -678,7 +690,8 @@ paths:
       - application/json
       description: Allow to set, list or remove viewed torrents from server.
       parameters:
-      - description: Viewed torrent request
+      - description: 'Viewed torrent request. Available params for action: set, rem,
+          list'
         in: body
         name: request
         required: true
