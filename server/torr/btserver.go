@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/anacrolix/publicip"
 	"github.com/anacrolix/torrent"
@@ -93,8 +94,10 @@ func (bt *BTServer) configure(ctx context.Context) {
 	bt.config.DisableTCP = settings.BTsets.DisableTCP
 	bt.config.DisableUTP = settings.BTsets.DisableUTP
 	//	https://github.com/anacrolix/torrent/issues/703
-	bt.config.DisableWebtorrent = true //	NE
-	bt.config.DisableWebseeds = false  //	NE
+	bt.config.DisableWebtorrent = false           //	NE
+	bt.config.DisableWebseeds = false             //	NE
+	bt.config.HandshakesTimeout = 3 * time.Second // NE
+	bt.config.PieceHashersPerTorrent = 1          // NE
 	bt.config.NoDefaultPortForwarding = settings.BTsets.DisableUPNP
 	bt.config.NoDHT = settings.BTsets.DisableDHT
 	bt.config.DisablePEX = settings.BTsets.DisablePEX

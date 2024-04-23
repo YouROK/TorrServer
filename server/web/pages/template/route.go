@@ -3,6 +3,7 @@ package template
 import (
 	"crypto/md5"
 	"fmt"
+
 	"github.com/gin-gonic/gin"
 )
 
