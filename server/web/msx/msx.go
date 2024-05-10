@@ -24,6 +24,14 @@ func SetupRoute(r gin.IRouter) {
 	authorized.Any("/msx", func(c *gin.Context) {
 		if l := c.Query("url"); l != "" {
 			proxy(c, l, c.QueryArray("header")...)
+		} else if l = c.Query("indb"); l != "" {
+			var r bool
+			for _, t := range settings.ListTorrent() {
+				if r = t.InfoHash.HexString() == l; r {
+					break
+				}
+			}
+			c.JSON(200, r)
 		} else if c.Request.Method == "POST" {
 			serve(c)
 		} else {
