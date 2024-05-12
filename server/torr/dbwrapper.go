@@ -2,7 +2,6 @@ package torr
 
 import (
 	"encoding/json"
-	"time"
 
 	"server/settings"
 	"server/torr/state"
@@ -40,7 +39,9 @@ func AddTorrentDB(torr *Torrent) {
 	if t.Size == 0 && torr.Torrent != nil {
 		t.Size = torr.Torrent.Length()
 	}
-	t.Timestamp = time.Now().Unix()
+	// don't override timestamp from DB on edit
+	t.Timestamp = torr.Timestamp // time.Now().Unix()
+
 	settings.AddTorrent(t)
 }
 
