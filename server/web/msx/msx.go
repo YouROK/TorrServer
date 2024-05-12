@@ -7,12 +7,13 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
+	"strings"
+
 	"server/settings"
 	"server/torr"
 	"server/version"
 	"server/web/auth"
-	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -76,6 +77,7 @@ func SetupRoute(r gin.IRouter) {
 		}
 	})
 }
+
 func proxy(c *gin.Context, u string, h ...string) {
 	if u == "" {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -95,6 +97,7 @@ func proxy(c *gin.Context, u string, h ...string) {
 		}
 	}
 }
+
 func serve(c *gin.Context) {
 	var j struct {
 		Data struct {
@@ -142,6 +145,7 @@ func serve(c *gin.Context) {
 		c.JSON(200, map[string]any{"response": map[string]any{"status": http.StatusOK, "data": r}})
 	}
 }
+
 func files(c *gin.Context, p string) {
 	if d, e := os.ReadDir(p); e == nil {
 		var ds, fs []map[string]any
