@@ -143,7 +143,10 @@ func (t *Torrent) GotInfo() bool {
 }
 
 func (t *Torrent) AddExpiredTime(duration time.Duration) {
-	t.expiredTime = time.Now().Add(duration)
+	newExpiredTime := time.Now().Add(duration)
+	if t.expiredTime.Before(newExpiredTime) {
+		t.expiredTime = newExpiredTime
+	}
 }
 
 func (t *Torrent) watch() {
