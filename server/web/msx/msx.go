@@ -2,6 +2,8 @@ package msx
 
 import (
 	"encoding/json"
+	"errors"
+	"io/fs"
 	"net/http"
 	"os"
 	"strconv"
@@ -22,18 +24,39 @@ var parameter = param
 
 func SetupRoute(r gin.IRouter) {
 	authorized := r.Group("/", auth.CheckAuth())
-	authorized.GET("/msx/inf", func(c *gin.Context) {
+	authorized.GET("/msx/stg", func(c *gin.Context) {
+		r := map[string]any{"version": version.Version, "search": settings.BTsets.EnableRutorSearch}
 		if p, o := c.GetQuery("parameter"); o {
 			if p == "" {
 				p = param
 			}
 			parameter = p
 		}
-		r := map[string]any{"version": version.Version, "search": settings.BTsets.EnableRutorSearch}
-		if f, e := os.Stat(files); e == nil {
-			r[files] = !f.IsDir()
+		r["parameter"] = parameter
+		if p, o := c.GetQuery(files); o {
+			e := os.Remove(files)
+			if os.IsNotExist(e) {
+				e = nil
+			}
+			if e == nil && p != "" {
+				var f fs.FileInfo
+				if f, e = os.Stat(p); e == nil {
+					if !f.IsDir() {
+						e = errors.New(p + " is not a folder")
+					} else {
+						e = os.Symlink(p, files)
+					}
+				}
+			}
+			if e == nil {
+				r[files] = p
+			} else {
+				r = map[string]any{"error": e.Error()}
+			}
+		} else if l, e := os.Readlink(files); e == nil {
+			r[files] = l
 		} else if !os.IsNotExist(e) {
-			r[files] = e.Error()
+			r["error"] = e.Error()
 		}
 		c.JSON(200, r)
 	})
@@ -76,8 +99,8 @@ func SetupRoute(r gin.IRouter) {
 	authorized.GET("/msx/start.json", func(c *gin.Context) {
 		c.JSON(200, map[string]any{"name": "TorrServer", "version": version.Version, "parameter": parameter})
 	})
-	authorized.GET("/msx/:pth", func(c *gin.Context) {
-		proxy(c, "https://damiva.github.io"+c.Request.URL.Path)
+	authorized.GET("/msx/", func(c *gin.Context) {
+		proxy(c, "https://damiva.github.io"+c.Request.URL.EscapedPath())
 	})
 	authorized.GET("/imdb/:id", func(c *gin.Context) {
 		i, l, j := c.Param("id"), "", false
