@@ -63,6 +63,7 @@ func loadNewTracker() {
 	}
 	resp, err := http.Get("https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best_ip.txt")
 	if err == nil {
+		defer resp.Body.Close()
 		buf, err := io.ReadAll(resp.Body)
 		if err == nil {
 			arr := strings.Split(string(buf), "\n")
