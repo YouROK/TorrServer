@@ -22,7 +22,7 @@ const (
 	files = `files`
 	base  = `https://damiva.github.io/msx`
 	htmlB = `<!DOCTYPE html><html><head><title>TorrServer MSX Plugin</title><meta charset="UTF-8" /><meta name="author" content="damiva" /><script type="text/javascript" src="http://msx.benzac.de/js/tvx-plugin.min.js"></script><script type="text/javascript" src="`
-	htmlE = `"></script></head><body></body></html>`
+	htmlE = `.js"></script></head><body></body></html>`
 )
 
 var start = struct {
@@ -80,7 +80,7 @@ func SetupRoute(r gin.IRouter) {
 		}
 	})
 	authorized.GET("/msx/*pth", func(c *gin.Context) {
-		if p := c.Param("pth"); path.Ext(p) == "" {
+		if p := c.Param("pth"); !strings.HasSuffix(p, "/") && path.Ext(p) == "" {
 			c.Data(200, "text/html;charset=UTF-8", append(append(append([]byte(htmlB), base...), p...), htmlE...))
 		} else {
 			proxy(c, base+p)
