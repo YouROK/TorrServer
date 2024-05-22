@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 
@@ -17,19 +18,120 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const files, param = "files", "menu:request:interaction:init@{PREFIX}{SERVER}/msx/plugin.html"
+const (
+	files = `files`
+	base  = `https://damiva.github.io/msx`
+	htmlB = `<!DOCTYPE html><html><head><title>TorrServer MSX Plugin</title><meta charset="UTF-8" /><meta name="author" content="damiva" /><script type="text/javascript" src="http://msx.benzac.de/js/tvx-plugin.min.js"></script><script type="text/javascript" src="`
+	htmlE = `.js"></script></head><body></body></html>`
+)
 
-var parameter = param
+var start = struct {
+	N string `json:"name"`
+	V string `json:"version"`
+	P string `json:"parameter"`
+}{"TorrServer", version.Version, "menu:request:interaction:init@{PREFIX}{SERVER}/msx/ts"}
 
 func SetupRoute(r gin.IRouter) {
 	authorized := r.Group("/", auth.CheckAuth())
-	authorized.Any("/msx", mng)
-	authorized.GET("/msx/*pth", func(c *gin.Context) { proxy(c, "https://damiva.github.io/msx"+c.Param("pth")) })
+	authorized.GET("/msx/start.json", func(c *gin.Context) {
+		c.JSON(200, &start)
+	})
+	authorized.POST("/msx/start,json", func(c *gin.Context) {
+		if e := c.Bind(&start); e != nil {
+			c.AbortWithError(http.StatusBadRequest, e)
+		}
+	})
+	authorized.Any("/msx/proxy", func(c *gin.Context) {
+		proxy(c, c.Query("url"), c.QueryArray("header")...)
+	})
+	authorized.GET("/msx/trn", func(c *gin.Context) {
+		if h := c.Query("hash"); h != "" {
+			var r bool
+			for _, t := range settings.ListTorrent() {
+				if r = (t != nil && t.InfoHash.HexString() == h); r {
+					break
+				}
+			}
+			c.JSON(200, r)
+		} else {
+			c.AbortWithStatus(http.StatusBadRequest)
+		}
+	})
+	authorized.POST("/msx/trn", func(c *gin.Context) {
+		if j := struct{ Data string }{Data: c.Query("hash")}; j.Data != "" {
+			st, sc := trn(j.Data)
+			if sc != "" {
+				sc = "{col:" + sc + "}"
+			}
+			msx(c, map[string]string{"action": "player:label:position:{VALUE}{tb}{tb}" + sc + st})
+		} else if e := c.Bind(&j); e != nil {
+			msx(c, e)
+		} else if j.Data == "" {
+			msx(c, errors.New("data is not set"))
+		} else {
+			st, sc := trn(j.Data[strings.LastIndexByte(j.Data, ':')+1:])
+			msx(c, map[string]any{"stamp": st, "stampColor": sc, "live": map[string]any{
+				"stamp": st, "stampColor": sc, "live": map[string]any{
+					"type": "airtime", "duration": 1000, "over": map[string]any{
+						"action": "execute:" + utils.GetScheme(c) + c.Request.Host + c.Request.URL.Path, "data": j.Data,
+					},
+				},
+			}})
+		}
+	})
+	authorized.GET("/msx/*pth", func(c *gin.Context) {
+		if p := c.Param("pth"); !strings.HasSuffix(p, "/") && path.Ext(p) == "" {
+			c.Data(200, "text/html;charset=UTF-8", append(append(append([]byte(htmlB), base...), p...), htmlE...))
+		} else {
+			proxy(c, base+p)
+		}
+	})
 
-	authorized.GET("/files", fls)
+	authorized.GET("/files", func(c *gin.Context) {
+		if l, e := os.Readlink(files); e == nil || os.IsNotExist(e) {
+			c.JSON(200, l)
+		} else {
+			c.AbortWithError(http.StatusInternalServerError, e)
+		}
+	})
+	authorized.POST("/files", func(c *gin.Context) {
+		var l string
+		if e := c.Bind(&l); e != nil {
+			c.AbortWithError(http.StatusBadRequest, e)
+		} else if e = os.Remove(files); e != nil && !os.IsNotExist(e) {
+			c.AbortWithError(http.StatusInternalServerError, e)
+		} else if l != "" {
+			if e = os.Symlink(l, files); e != nil {
+				c.AbortWithError(http.StatusInternalServerError, e)
+			}
+		}
+	})
 	authorized.StaticFS("/files/", gin.Dir(files, true))
 
-	authorized.GET("/imdb/:id", imdb)
+	authorized.GET("/imdb/:id", func(c *gin.Context) {
+		i, l, j := strings.TrimPrefix(c.Param("id"), "/"), "", false
+		if j = strings.HasSuffix(i, ".json"); !j {
+			i += ".json"
+		}
+		if r, e := http.Get("https://v2.sg.media-imdb.com/suggestion/h/" + i); e == nil {
+			if r.StatusCode == http.StatusOK {
+				var j struct {
+					D []struct{ I struct{ ImageUrl string } }
+				}
+				if e = json.NewDecoder(r.Body).Decode(&j); e == nil && len(j.D) > 0 {
+					l = j.D[0].I.ImageUrl
+				}
+			}
+			r.Body.Close()
+		}
+		if j {
+			c.JSON(200, l)
+		} else if l == "" {
+			c.Status(http.StatusNotFound)
+		} else {
+			c.Redirect(http.StatusMovedPermanently, l)
+		}
+	})
 }
 func proxy(c *gin.Context, u string, h ...string) {
 	if u == "" {
@@ -50,141 +152,36 @@ func proxy(c *gin.Context, u string, h ...string) {
 		}
 	}
 }
-func mng(c *gin.Context) {
-	if p := c.Query("url"); p != "" {
-		proxy(c, p, c.QueryArray("header")...)
-	} else if c.Request.Method == "POST" {
-		trn(c)
-	} else if p = c.Query("indb"); p != "" {
-		var r bool
-		for _, t := range settings.ListTorrent() {
-			if r = (t != nil && t.InfoHash.HexString() == p); r {
-				break
+func trn(h string) (st, sc string) {
+	if h := torr.GetTorrent(h); h != nil {
+		if h := h.Status(); h != nil && h.Stat < 5 {
+			switch h.Stat {
+			case 4:
+				sc = "msx-red"
+			case 3:
+				sc = "msx-green"
+			default:
+				sc = "msx-yellow"
 			}
+			st = "{ico:north} " + strconv.Itoa(h.ActivePeers) + " / " + strconv.Itoa(h.TotalPeers) + " {ico:south} " + strconv.Itoa(h.ConnectedSeeders)
 		}
-		c.JSON(200, r)
-	} else {
-		if p, o := c.GetQuery("parameter"); o {
-			if p == "" {
-				parameter = param
-			} else {
-				parameter = p
-			}
-		}
-		c.JSON(200, map[string]any{"version": version.Version, "search": settings.BTsets.EnableRutorSearch, "parameter": parameter})
 	}
+	return
 }
-func trn(c *gin.Context) {
-	var (
-		h, a string
-		q    struct{ Data any }
-		r    struct {
-			R struct {
-				S int    `json:"status"`
-				T string `json:"text"`
-				M string `json:"message,omitempty"`
-				D any    `json:"data,omitempty"`
-			} `json:"response"`
-		}
-	)
-	if e := json.NewDecoder(c.Request.Body).Decode(&q); e != nil {
-		r.R.M = e.Error()
-	} else if s, o := q.Data.(string); o {
-		a, h = s, a[strings.LastIndexByte(s, ':')+1:]
-	} else if s, o := q.Data.(map[string]any); o {
-		if s, o := s["info"].(map[string]any); o {
-			if s, o := s["content"].(map[string]any); o {
-				h, _ = s["flag"].(string)
-			}
-		}
+func msx(c *gin.Context, a any) {
+	var r struct {
+		R struct {
+			S int    `json:"status"`
+			T string `json:"text"`
+			M string `json:"message,omitempty"`
+			D any    `json:"data,omitempty"`
+		} `json:"response"`
 	}
-	if h != "" {
-		var st, sc string
-		if h := torr.GetTorrent(h); h != nil {
-			if h := h.Status(); h != nil && h.Stat < 5 {
-				switch h.Stat {
-				case 4:
-					sc = "msx-red"
-				case 3:
-					sc = "msx-green"
-				default:
-					sc = "msx-yellow"
-				}
-				st = "{ico:north} " + strconv.Itoa(h.ActivePeers) + " / " + strconv.Itoa(h.TotalPeers) + " {ico:south} " + strconv.Itoa(h.ConnectedSeeders)
-			}
-		}
-		if a != "" {
-			r.R.D = map[string]any{"action": a, "data": map[string]any{
-				"stamp": st, "stampColor": sc, "live": map[string]any{
-					"type": "airtime", "duration": 1000, "over": map[string]any{
-						"action": "execute:" + utils.GetScheme(c) + c.Request.Host + c.Request.URL.Path, "data": a,
-					},
-				},
-			}}
-		} else {
-			if sc != "" {
-				sc = "{col:" + sc + "}"
-			}
-			r.R.D = map[string]string{"action": "player:label:position:{VALUE}{tb}{tb}" + sc + st}
-		}
-	} else if r.R.M == "" {
-		r.R.M = "wrong data struct"
-	}
-	if r.R.D == nil {
-		r.R.S = http.StatusBadRequest
+	if e, o := a.(error); o {
+		r.R.S, r.R.M = http.StatusBadRequest, e.Error()
 	} else {
-		r.R.S = http.StatusOK
+		r.R.S, r.R.D = http.StatusOK, a
 	}
 	r.R.T = http.StatusText(r.R.S)
 	c.JSON(200, &r)
-}
-func fls(c *gin.Context) {
-	var e error
-	p, o := c.GetQuery("path")
-	if o {
-		if e = os.Remove(files); e != nil && os.IsNotExist(e) {
-			e = nil
-		}
-		if e == nil && p != "" {
-			var f os.FileInfo
-			if f, e = os.Stat(p); e == nil {
-				if f.IsDir() {
-					e = os.Symlink(p, files)
-				} else {
-					e = errors.New(p + " is not a directory")
-				}
-			}
-		}
-	} else if p, e = os.Readlink(files); e != nil && os.IsNotExist(e) {
-		e = nil
-	}
-	if e == nil {
-		c.JSON(200, p)
-	} else {
-		c.AbortWithError(http.StatusInternalServerError, e)
-	}
-}
-func imdb(c *gin.Context) {
-	i, l, j := strings.TrimPrefix(c.Param("id"), "/"), "", false
-	if j = strings.HasSuffix(i, ".json"); !j {
-		i += ".json"
-	}
-	if r, e := http.Get("https://v2.sg.media-imdb.com/suggestion/h/" + i); e == nil {
-		if r.StatusCode == http.StatusOK {
-			var j struct {
-				D []struct{ I struct{ ImageUrl string } }
-			}
-			if e = json.NewDecoder(r.Body).Decode(&j); e == nil && len(j.D) > 0 {
-				l = j.D[0].I.ImageUrl
-			}
-		}
-		r.Body.Close()
-	}
-	if j {
-		c.JSON(200, l)
-	} else if l == "" {
-		c.Status(http.StatusNotFound)
-	} else {
-		c.Redirect(http.StatusMovedPermanently, l)
-	}
 }
