@@ -36,7 +36,7 @@ func SetupRoute(r gin.IRouter) {
 	authorized.GET("/msx/start.json", func(c *gin.Context) {
 		c.JSON(200, &start)
 	})
-	authorized.POST("/msx/start,json", func(c *gin.Context) {
+	authorized.POST("/msx/start.json", func(c *gin.Context) {
 		if e := c.Bind(&start); e != nil {
 			c.AbortWithError(http.StatusBadRequest, e)
 		}
