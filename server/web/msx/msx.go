@@ -133,6 +133,7 @@ func SetupRoute(r gin.IRouter) {
 		}
 	})
 }
+
 func proxy(c *gin.Context, u string, h ...string) {
 	if u == "" {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -152,6 +153,7 @@ func proxy(c *gin.Context, u string, h ...string) {
 		}
 	}
 }
+
 func trn(h string) (st, sc string) {
 	if h := torr.GetTorrent(h); h != nil {
 		if h := h.Status(); h != nil && h.Stat < 5 {
@@ -168,6 +170,7 @@ func trn(h string) (st, sc string) {
 	}
 	return
 }
+
 func msx(c *gin.Context, a any) {
 	var r struct {
 		R struct {
