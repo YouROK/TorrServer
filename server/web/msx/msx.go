@@ -20,9 +20,19 @@ import (
 
 const (
 	files = `files`
-	base  = `https://damiva.github.io/msx`
-	htmlB = `<!DOCTYPE html><html><head><title>TorrServer MSX Plugin</title><meta charset="UTF-8" /><meta name="author" content="damiva" /><script type="text/javascript" src="http://msx.benzac.de/js/tvx-plugin.min.js"></script><script type="text/javascript" src="`
-	htmlE = `.js"></script></head><body></body></html>`
+	base  = `https://damiva.github.io/msx/`
+	htmlB = `<!DOCTYPE html>
+<html>
+	<head>
+		<title>TorrServer MSX Plugin</title>
+		<meta charset="UTF-8" />
+		<meta name="author" content="damiva" />
+		<script type="text/javascript" src="http://msx.benzac.de/js/tvx-plugin.min.js">
+		</script><script type="text/javascript" src="`
+	htmlE = `.js"></script>
+	</head>
+	<body></body>
+</html>`
 )
 
 var start = struct {
@@ -33,60 +43,28 @@ var start = struct {
 
 func SetupRoute(r gin.IRouter) {
 	authorized := r.Group("/", auth.CheckAuth())
-	authorized.GET("/msx/start.json", func(c *gin.Context) {
-		c.JSON(200, &start)
-	})
-	authorized.POST("/msx/start.json", func(c *gin.Context) {
-		if e := c.Bind(&start); e != nil {
-			c.AbortWithError(http.StatusBadRequest, e)
-		}
-	})
-	authorized.Any("/msx/proxy", func(c *gin.Context) {
-		proxy(c, c.Query("url"), c.QueryArray("header")...)
-	})
-	authorized.GET("/msx/trn", func(c *gin.Context) {
-		if h := c.Query("hash"); h != "" {
-			var r bool
-			for _, t := range settings.ListTorrent() {
-				if r = (t != nil && t.InfoHash.HexString() == h); r {
-					break
-				}
+	//MSX:
+	authorized.Any("/msx/*pth", func(c *gin.Context) {
+		switch p := strings.TrimPrefix(c.Param("pth"), "/"); p {
+		case "start.json":
+			if c.Request.Method != "POST" {
+				c.JSON(200, &start)
+			} else if e := json.NewDecoder(c.Request.Body).Decode(&start); e != nil {
+				c.AbortWithError(http.StatusBadRequest, e)
 			}
-			c.JSON(200, r)
-		} else {
-			c.AbortWithStatus(http.StatusBadRequest)
-		}
-	})
-	authorized.POST("/msx/trn", func(c *gin.Context) {
-		if j := struct{ Data string }{Data: c.Query("hash")}; j.Data != "" {
-			st, sc := trn(j.Data)
-			if sc != "" {
-				sc = "{col:" + sc + "}"
+		case "proxy":
+			proxy(c, c.Query("url"), c.QueryArray("header")...)
+		case "torrent":
+			torrent(c)
+		default:
+			if !strings.HasSuffix(p, "/") && path.Ext(p) == "" {
+				c.Data(200, "text/html;charset=UTF-8", append(append(append([]byte(htmlB), base...), p...), htmlE...))
+			} else {
+				proxy(c, base+p)
 			}
-			msx(c, map[string]string{"action": "player:label:position:{VALUE}{tb}{tb}" + sc + st})
-		} else if e := c.Bind(&j); e != nil {
-			msx(c, e)
-		} else if j.Data == "" {
-			msx(c, errors.New("data is not set"))
-		} else {
-			st, sc := trn(j.Data[strings.LastIndexByte(j.Data, ':')+1:])
-			msx(c, map[string]any{"stamp": st, "stampColor": sc, "live": map[string]any{
-				"stamp": st, "stampColor": sc, "live": map[string]any{
-					"type": "airtime", "duration": 1000, "over": map[string]any{
-						"action": "execute:" + utils.GetScheme(c) + c.Request.Host + c.Request.URL.Path, "data": j.Data,
-					},
-				},
-			}})
 		}
 	})
-	authorized.GET("/msx/*pth", func(c *gin.Context) {
-		if p := c.Param("pth"); !strings.HasSuffix(p, "/") && path.Ext(p) == "" {
-			c.Data(200, "text/html;charset=UTF-8", append(append(append([]byte(htmlB), base...), p...), htmlE...))
-		} else {
-			proxy(c, base+p)
-		}
-	})
-
+	//files:
 	authorized.GET("/files", func(c *gin.Context) {
 		if l, e := os.Readlink(files); e == nil || os.IsNotExist(e) {
 			c.JSON(200, l)
@@ -107,7 +85,7 @@ func SetupRoute(r gin.IRouter) {
 		}
 	})
 	authorized.StaticFS("/files/", gin.Dir(files, true))
-
+	//IMDB:
 	authorized.GET("/imdb/:id", func(c *gin.Context) {
 		i, l, j := strings.TrimPrefix(c.Param("id"), "/"), "", false
 		if j = strings.HasSuffix(i, ".json"); !j {
@@ -154,7 +132,7 @@ func proxy(c *gin.Context, u string, h ...string) {
 	}
 }
 
-func trn(h string) (st, sc string) {
+func trnGet(h string) (st, sc string) {
 	if h := torr.GetTorrent(h); h != nil {
 		if h := h.Status(); h != nil && h.Stat < 5 {
 			switch h.Stat {
@@ -170,8 +148,7 @@ func trn(h string) (st, sc string) {
 	}
 	return
 }
-
-func msx(c *gin.Context, a any) {
+func response(c *gin.Context, a any) {
 	var r struct {
 		R struct {
 			S int    `json:"status"`
@@ -187,4 +164,36 @@ func msx(c *gin.Context, a any) {
 	}
 	r.R.T = http.StatusText(r.R.S)
 	c.JSON(200, &r)
+}
+func torrent(c *gin.Context) {
+	if c.Request.Method != "POST" {
+		r := false
+		if h := c.Query("hash"); h != "" {
+			for _, t := range settings.ListTorrent() {
+				if r = (t != nil && t.InfoHash.HexString() == h); r {
+					break
+				}
+			}
+		}
+		c.JSON(200, r)
+	} else if j := struct{ Data string }{Data: c.Query("hash")}; j.Data != "" {
+		st, sc := trnGet(j.Data)
+		if sc != "" {
+			sc = "{col:" + sc + "}"
+		}
+		response(c, map[string]string{"action": "player:label:position:{VALUE}{tb}{tb}" + sc + st})
+	} else if e := json.NewDecoder(c.Request.Body).Decode(&j); e != nil {
+		response(c, e)
+	} else if j.Data == "" {
+		response(c, errors.New("data is not set"))
+	} else {
+		st, sc := trnGet(j.Data[strings.LastIndexByte(j.Data, ':')+1:])
+		response(c, map[string]any{"action": j.Data, "data": map[string]any{
+			"stamp": st, "stampColor": sc, "live": map[string]any{
+				"type": "airtime", "duration": 1000, "over": map[string]any{
+					"action": "execute:" + utils.GetScheme(c) + c.Request.Host + c.Request.URL.Path, "data": j.Data,
+				},
+			},
+		}})
+	}
 }
