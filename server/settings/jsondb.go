@@ -41,7 +41,6 @@ func (v *JsonDB) CloseDB() {
 func (v *JsonDB) Set(xPath, name string, value []byte) {
 	var err error = nil
 	jsonObj := map[string]interface{}{}
-
 	if err := json.Unmarshal(value, &jsonObj); err == nil {
 		if filename, err := v.xPathToFilename(xPath); err == nil {
 			v.lock(filename)
@@ -101,8 +100,9 @@ func (v *JsonDB) Rem(xPath, name string) {
 		defer v.unlock(filename)
 		if root, err := v.readJsonFileAsMap(filename); err == nil {
 			delete(root, name)
-			v.writeMapAsJsonFile(filename, root)
-			return
+			if err = v.writeMapAsJsonFile(filename, root); err == nil {
+				return
+			}
 		}
 	}
 	v.log(fmt.Sprintf("Rem: error removing entry %s->%s", xPath, name), err)
@@ -135,7 +135,9 @@ func (v *JsonDB) readJsonFileAsMap(filename string) (map[string]interface{}, err
 	jsonData := map[string]interface{}{}
 	path := filepath.Join(v.Path, filename)
 	if fileData, err := os.ReadFile(path); err == nil {
-		err = json.Unmarshal(fileData, &jsonData)
+		if err = json.Unmarshal(fileData, &jsonData); err != nil {
+			v.log(fmt.Sprintf("readJsonFileAsMap fileData: %s error", fileData), err)
+		}
 	}
 	return jsonData, err
 }
@@ -143,9 +145,10 @@ func (v *JsonDB) readJsonFileAsMap(filename string) (map[string]interface{}, err
 func (v *JsonDB) writeMapAsJsonFile(filename string, o map[string]interface{}) error {
 	var err error = nil
 	path := filepath.Join(v.Path, filename)
-
 	if fileData, err := json.MarshalIndent(o, "", "  "); err == nil {
-		err = os.WriteFile(path, fileData, v.fileMode)
+		if err = os.WriteFile(path, fileData, v.fileMode); err != nil {
+			v.log(fmt.Sprintf("writeMapAsJsonFile path: %s, fileMode: %s, fileData: %s error", path, v.fileMode, fileData), err)
+		}
 	}
 	return err
 }

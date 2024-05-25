@@ -43,7 +43,7 @@ var start = struct {
 
 func SetupRoute(r gin.IRouter) {
 	authorized := r.Group("/", auth.CheckAuth())
-	//MSX:
+	// MSX:
 	authorized.Any("/msx/*pth", func(c *gin.Context) {
 		switch p := strings.TrimPrefix(c.Param("pth"), "/"); p {
 		case "start.json":
@@ -64,7 +64,7 @@ func SetupRoute(r gin.IRouter) {
 			}
 		}
 	})
-	//files:
+	// files:
 	authorized.GET("/files", func(c *gin.Context) {
 		if l, e := os.Readlink(files); e == nil || os.IsNotExist(e) {
 			c.JSON(200, l)
@@ -85,7 +85,7 @@ func SetupRoute(r gin.IRouter) {
 		}
 	})
 	authorized.StaticFS("/files/", gin.Dir(files, true))
-	//IMDB:
+	// IMDB:
 	authorized.GET("/imdb/:id", func(c *gin.Context) {
 		i, l, j := strings.TrimPrefix(c.Param("id"), "/"), "", false
 		if j = strings.HasSuffix(i, ".json"); !j {
@@ -148,6 +148,7 @@ func trnGet(h string) (st, sc string) {
 	}
 	return
 }
+
 func response(c *gin.Context, a any) {
 	var r struct {
 		R struct {
@@ -165,6 +166,7 @@ func response(c *gin.Context, a any) {
 	r.R.T = http.StatusText(r.R.S)
 	c.JSON(200, &r)
 }
+
 func torrent(c *gin.Context) {
 	if c.Request.Method != "POST" {
 		r := false
