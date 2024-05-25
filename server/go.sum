@@ -321,8 +321,8 @@ github.com/swaggo/swag v1.16.3/go.mod h1:DImHIuOFXKpMFAQjcC7FG4m3Dg4+QuUgUzJmKjI
 github.com/tinylib/msgp v1.0.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tinylib/msgp v1.1.0/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tinylib/msgp v1.1.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
-github.com/tsynik/torrent v1.2.19 h1:N75+mhpjpDYphXfT+3lz59bIHdsQKr45pgGK2mLTpmY=
-github.com/tsynik/torrent v1.2.19/go.mod h1:C5byvvOO9wEdqWHHkjSp2+AH9kinJ2r1Z4GhT1xkRdI=
+github.com/tsynik/torrent v1.2.20 h1:le186IAsZGDw8snVPnWqMFkbfjMqu697j+GkKeqEQOY=
+github.com/tsynik/torrent v1.2.20/go.mod h1:C5byvvOO9wEdqWHHkjSp2+AH9kinJ2r1Z4GhT1xkRdI=
 github.com/twitchyliquid64/golang-asm v0.15.1 h1:SU5vSMR7hnwNxj24w34ZyCi/FmDZTkS4MhqMhdFk5YI=
 github.com/twitchyliquid64/golang-asm v0.15.1/go.mod h1:a1lVb/DtPvCB8fslRZhAngC2+aY1QWCk3Cedj/Gdt08=
 github.com/ugorji/go/codec v1.2.12 h1:9LC83zGrHhuUA9l16C9AHXAqEV/2wBQ4nkvumAE65EE=
