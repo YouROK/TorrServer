@@ -73,7 +73,9 @@ func main() {
 	if params.HttpAuth {
 		log.TLogln("Use HTTP Auth file", settings.Path+"/accs.db")
 	}
-
+	if params.RDB {
+		log.TLogln("Running in Read-only DB mode!")
+	}
 	docs.SwaggerInfo.Version = version.Version
 
 	dnsResolve()

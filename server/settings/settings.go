@@ -1,7 +1,6 @@
 package settings
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -49,7 +48,7 @@ func InitSets(readOnly, searchWA bool) {
 
 	// We migrate settings here, it must be done before loadBTSets()
 	if err := Migrate2(bboltDB, jsonDB); err != nil {
-		log.TLogln(fmt.Sprintf("Migrate2 failed"))
+		log.TLogln("Migrate2 failed")
 		os.Exit(1)
 	}
 	loadBTSets()

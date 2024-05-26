@@ -397,51 +397,6 @@ paths:
       summary: Get HTML of magnet links
       tags:
       - Pages
-  /msx/{pth}:
-    get:
-      description: Multi usage endpoint.
-      parameters:
-      - description: Route MSX pages
-        in: path
-        name: link
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Data returned according to path
-      summary: Multi usage endpoint
-      tags:
-      - MSX
-  /msx/imdb:
-    get:
-      description: Get MSX IMDB informations.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: JSON MSX IMDB informations
-      summary: Get MSX IMDB informations
-      tags:
-      - MSX
-  /msx/imdb/{id}:
-    get:
-      description: Get MSX IMDB informations.
-      parameters:
-      - description: IMDB ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: JSON MSX IMDB informations
-      summary: Get MSX IMDB informations
-      tags:
-      - MSX
   /play/{hash}/{id}:
     get:
       description: Play given torrent referenced by hash.

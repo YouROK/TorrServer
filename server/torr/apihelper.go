@@ -56,13 +56,10 @@ func AddTorrent(spec *torrent.TorrentSpec, title, poster string, data string, ca
 		}
 	}
 
-	// Category can be override
-	torr.Category = category
 	if torr.Category == "" {
-		if torDB != nil {
+		torr.Category = category
+		if torr.Category == "" && torDB != nil {
 			torr.Category = torDB.Category
-			// } else {
-			// 	torr.Category = "None"
 		}
 	}
 
@@ -140,7 +137,7 @@ func SetTorrent(hashHex, title, poster, category string, data string) *Torrent {
 			torr.Data = data
 		}
 	}
-
+	// update torrent data in DB
 	if torrDb != nil {
 		torrDb.Title = title
 		torrDb.Poster = poster
