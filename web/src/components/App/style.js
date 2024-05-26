@@ -78,6 +78,7 @@ export const AppSidebarStyle = styled.div`
     color: ${sidebarFillColor};
     white-space: nowrap;
     /* hide scrollbars */
+    overflow-y: scroll;
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* Internet Explorer 10+ */
     ::-webkit-scrollbar { 
