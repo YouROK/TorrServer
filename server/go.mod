@@ -6,7 +6,7 @@ toolchain go1.22.2
 
 require (
 	github.com/agnivade/levenshtein v1.1.1
-	github.com/alexflint/go-arg v1.4.3
+	github.com/alexflint/go-arg v1.5.0
 	github.com/anacrolix/dms v1.6.0
 	github.com/anacrolix/log v0.15.2
 	github.com/anacrolix/missinggo/v2 v2.7.3
