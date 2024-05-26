@@ -138,10 +138,10 @@ func Migrate2(bboltDB, jsonDB TorrServerDB) error {
 			if err = json.Unmarshal(b, &objectB); err == nil {
 				return reflect.DeepEqual(objectA, objectB), nil
 			} else {
-				err = fmt.Errorf("Error unmashalling B: %s", err.Error())
+				err = fmt.Errorf("error unmashalling B: %s", err.Error())
 			}
 		} else {
-			err = fmt.Errorf("Error unmashalling A: %s", err.Error())
+			err = fmt.Errorf("error unmashalling A: %s", err.Error())
 		}
 		return false, err
 	}

@@ -1,7 +1,6 @@
 package settings
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"sort"
@@ -33,7 +32,7 @@ func (v *XPathDBRouter) RegisterRoute(db TorrServerDB, xPath string) error {
 	newRoute := v.xPathToRoute(xPath)
 
 	if slices.Contains(v.routes, newRoute) {
-		return errors.New(fmt.Sprintf("route \"%s\" already in routing table", newRoute))
+		return fmt.Errorf("route \"%s\" already in routing table", newRoute)
 	}
 
 	// First DB becomes Default DB with default route
