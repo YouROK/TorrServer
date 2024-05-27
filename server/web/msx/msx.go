@@ -8,6 +8,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"time"
 
 	"server/settings"
 	"server/torr"
@@ -29,7 +30,7 @@ const (
 		<meta name="author" content="damiva" />
 		<script type="text/javascript" src="http://msx.benzac.de/js/tvx-plugin.min.js">
 		</script><script type="text/javascript" src="`
-	htmlE = `.js"></script>
+	htmlE = `"></script>
 	</head>
 	<body></body>
 </html>`
@@ -57,8 +58,9 @@ func SetupRoute(r gin.IRouter) {
 		case "torrent":
 			torrent(c)
 		default:
-			if !strings.HasSuffix(p, "/") && path.Ext(p) == "" {
-				c.Data(200, "text/html;charset=UTF-8", append(append(append([]byte(htmlB), base...), p...), htmlE...))
+			if p != "" && !strings.HasSuffix(p, "/") && path.Ext(p) == "" {
+				p = base + p + `.js?t=` + strconv.FormatInt(time.Now().Unix(), 16)
+				c.Data(200, "text/html;charset=UTF-8", append(append([]byte(htmlB), p...), htmlE...))
 			} else {
 				proxy(c, base+p)
 			}
