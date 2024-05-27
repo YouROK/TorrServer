@@ -64,9 +64,9 @@ func Start() {
 	// corsCfg.AllowAllOrigins = true
 	// corsCfg.AllowHeaders = []string{"*"}
 	// corsCfg.AllowMethods = []string{"*"}
-	// corsCfg.AllowPrivateNetwork = true
 	corsCfg := cors.DefaultConfig()
 	corsCfg.AllowAllOrigins = true
+	corsCfg.AllowPrivateNetwork = true
 	corsCfg.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "X-Requested-With", "Accept", "Authorization"}
 
 	route := gin.New()
