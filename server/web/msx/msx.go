@@ -195,7 +195,7 @@ func torrent(c *gin.Context) {
 		response(c, map[string]any{"action": j.Data, "data": map[string]any{
 			"stamp": st, "stampColor": sc, "live": map[string]any{
 				"type": "airtime", "duration": 1000, "over": map[string]any{
-					"action": "execute:" + utils.GetScheme(c) + c.Request.Host + c.Request.URL.Path, "data": j.Data,
+					"action": "execute:" + utils.GetScheme(c) + "://" + c.Request.Host + c.Request.URL.Path, "data": j.Data,
 				},
 			},
 		}})
