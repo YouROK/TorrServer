@@ -2,6 +2,7 @@ package msx
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -56,7 +57,7 @@ func SetupRoute(r gin.IRouter) {
 		c.JSON(200, map[string]string{"name": "TorrServer", "version": version.Version, "parameter": param})
 	})
 	authorized.POST("/msx/start.json", func(c *gin.Context) {
-		if e := json.NewDecoder(c.Request.Body).Decode(&param); e != nil {
+		if e := c.BindJSON(&param); e != nil {
 			c.AbortWithError(http.StatusBadRequest, e)
 		}
 	})
@@ -86,7 +87,7 @@ func SetupRoute(r gin.IRouter) {
 				sc = "{col:" + sc + "}"
 			}
 			r.R.S, r.R.D = http.StatusOK, map[string]any{"action": "player:label:position:{LABEL}{tb}{tb}" + sc + st}
-		} else if e := json.NewDecoder(c.Request.Body).Decode(&j); e != nil {
+		} else if e := c.BindJSON(&j); e != nil {
 			r.R.S, r.R.M = http.StatusBadRequest, e.Error()
 		} else if j.Data == "" {
 			r.R.S, r.R.M = http.StatusBadRequest, "data is not set"
@@ -155,12 +156,16 @@ func SetupRoute(r gin.IRouter) {
 	})
 	authorized.POST("/files", func(c *gin.Context) {
 		var l string
-		if e := c.Bind(&l); e != nil {
+		if e := c.BindJSON(&l); e != nil {
 			c.AbortWithError(http.StatusBadRequest, e)
 		} else if e = os.Remove(filepath.Join(settings.Path, files)); e != nil && !os.IsNotExist(e) {
 			c.AbortWithError(http.StatusInternalServerError, e)
 		} else if l != "" {
-			if e = os.Symlink(l, filepath.Join(settings.Path, files)); e != nil {
+			if f, e := os.Stat(l); e != nil {
+				c.AbortWithError(http.StatusBadRequest, e)
+			} else if !f.IsDir() {
+				c.AbortWithError(http.StatusBadRequest, errors.New(l+" is not a directory"))
+			} else if e = os.Symlink(l, filepath.Join(settings.Path, files)); e != nil {
 				c.AbortWithError(http.StatusInternalServerError, e)
 			}
 		}
