@@ -6,13 +6,14 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
+
 	"server/settings"
 	"server/torr"
 	"server/utils"
 	"server/version"
 	"server/web/auth"
-	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -37,6 +38,7 @@ func trn(h string) (st, sc string) {
 	}
 	return
 }
+
 func rsp(c *gin.Context, r *http.Response, e error) {
 	if e != nil {
 		c.AbortWithError(http.StatusInternalServerError, e)
@@ -48,7 +50,7 @@ func rsp(c *gin.Context, r *http.Response, e error) {
 
 func SetupRoute(r gin.IRouter) {
 	authorized := r.Group("/", auth.CheckAuth())
-	//MSX:
+	// MSX:
 	authorized.GET("/msx/", func(c *gin.Context) {
 		r, e := http.Get("http://" + base)
 		rsp(c, r, e)
@@ -145,7 +147,7 @@ func SetupRoute(r gin.IRouter) {
 			c.Redirect(http.StatusMovedPermanently, l)
 		}
 	})
-	//Files:
+	// Files:
 	authorized.StaticFS("/files/", gin.Dir(filepath.Join(settings.Path, files), true))
 	authorized.GET("/files", func(c *gin.Context) {
 		if l, e := os.Readlink(filepath.Join(settings.Path, files)); e == nil || os.IsNotExist(e) {
