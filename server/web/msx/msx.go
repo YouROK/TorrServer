@@ -88,7 +88,7 @@ func SetupRoute(r gin.IRouter) {
 			if sc != "" {
 				sc = "{col:" + sc + "}"
 			}
-			r.R.S, r.R.D = http.StatusOK, map[string]any{"action": "player:label:position:{LABEL}{tb}{tb}" + sc + st}
+			r.R.S, r.R.D = http.StatusOK, map[string]any{"action": "player:label:position:{VALUE}{tb}{tb}" + sc + st}
 		} else if e := c.BindJSON(&j); e != nil {
 			r.R.S, r.R.M = http.StatusBadRequest, e.Error()
 		} else if j.Data == "" {
