@@ -98,7 +98,7 @@ func SetupRoute(r gin.IRouter) {
 			r.R.D = map[string]any{"stamp": st, "stampColor": sc}
 			if sc != "" {
 				r.R.D["live"] = map[string]any{
-					"type": "airtime", "duration": 1000, "over": map[string]any{
+					"type": "airtime", "duration": 3000, "over": map[string]any{
 						"action": "execute:" + utils.GetScheme(c) + "://" + c.Request.Host + c.Request.URL.Path, "data": j.Data,
 					},
 				}
