@@ -136,7 +136,7 @@ func (v *JsonDB) readJsonFileAsMap(filename string) (map[string]interface{}, err
 	path := filepath.Join(v.Path, filename)
 	if fileData, err := os.ReadFile(path); err == nil {
 		if err = json.Unmarshal(fileData, &jsonData); err != nil {
-			v.log(fmt.Sprintf("readJsonFileAsMap fileData: %s error", fileData), err)
+			v.log(fmt.Sprintf("readJsonFileAsMap(%s) fileData: %s error", filename, fileData), err)
 		}
 	}
 	return jsonData, err
