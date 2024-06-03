@@ -81,7 +81,7 @@ export const AppSidebarStyle = styled.div`
     overflow-y: scroll;
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* Internet Explorer 10+ */
-    ::-webkit-scrollbar { 
+    ::-webkit-scrollbar {
       display: none; /* Safari and Chrome */
       width: 0; /* Remove scrollbar space */
       background: transparent;
