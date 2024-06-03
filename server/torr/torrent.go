@@ -134,7 +134,7 @@ func (t *Torrent) GotInfo() bool {
 	t.Stat = state.TorrentGettingInfo
 	if t.WaitInfo() {
 		t.Stat = state.TorrentWorking
-		t.AddExpiredTime(time.Minute + time.Second*time.Duration(settings.BTsets.TorrentDisconnectTimeout))
+		t.AddExpiredTime(time.Second * time.Duration(settings.BTsets.TorrentDisconnectTimeout))
 		return true
 	} else {
 		t.Close()
