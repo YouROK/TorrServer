@@ -1,3 +1,4 @@
+
 package msx
 
 import (
@@ -6,14 +7,13 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
-
 	"server/settings"
 	"server/torr"
 	"server/utils"
 	"server/version"
 	"server/web/auth"
+	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -38,7 +38,6 @@ func trn(h string) (st, sc string) {
 	}
 	return
 }
-
 func rsp(c *gin.Context, r *http.Response, e error) {
 	if e != nil {
 		c.AbortWithError(http.StatusInternalServerError, e)
@@ -50,13 +49,21 @@ func rsp(c *gin.Context, r *http.Response, e error) {
 
 func SetupRoute(r gin.IRouter) {
 	authorized := r.Group("/", auth.CheckAuth())
-	// MSX:
+	//MSX:
 	authorized.GET("/msx/", func(c *gin.Context) {
 		r, e := http.Get("http://" + base)
 		rsp(c, r, e)
 	})
 	authorized.GET("/msx/start.json", func(c *gin.Context) {
-		c.JSON(200, map[string]string{"name": "TorrServer", "version": version.Version, "parameter": param})
+		c.JSON(200, map[string]any{
+			"name":      "TorrServer",
+			"version":   version.Version,
+			"parameter": param,
+			"launcher": map[string]string{
+				"type":  "start",
+				"image": utils.GetScheme(c) + c.Request.Host + "/logo.png",
+			},
+		})
 	})
 	authorized.POST("/msx/start.json", func(c *gin.Context) {
 		if e := c.BindJSON(&param); e != nil {
@@ -88,7 +95,7 @@ func SetupRoute(r gin.IRouter) {
 			if sc != "" {
 				sc = "{col:" + sc + "}"
 			}
-			r.R.S, r.R.D = http.StatusOK, map[string]any{"action": "player:label:position:{VALUE}{tb}{tb}" + sc + st}
+			r.R.S, r.R.D = http.StatusOK, map[string]any{"action": "player:label:position:{LABEL}{tb}{tb}" + sc + st}
 		} else if e := c.BindJSON(&j); e != nil {
 			r.R.S, r.R.M = http.StatusBadRequest, e.Error()
 		} else if j.Data == "" {
@@ -98,7 +105,7 @@ func SetupRoute(r gin.IRouter) {
 			r.R.D = map[string]any{"stamp": st, "stampColor": sc}
 			if sc != "" {
 				r.R.D["live"] = map[string]any{
-					"type": "airtime", "duration": 3000, "over": map[string]any{
+					"type": "airtime", "duration": 1000, "over": map[string]any{
 						"action": "execute:" + utils.GetScheme(c) + "://" + c.Request.Host + c.Request.URL.Path, "data": j.Data,
 					},
 				}
@@ -147,7 +154,7 @@ func SetupRoute(r gin.IRouter) {
 			c.Redirect(http.StatusMovedPermanently, l)
 		}
 	})
-	// Files:
+	//Files:
 	authorized.StaticFS("/files/", gin.Dir(filepath.Join(settings.Path, files), true))
 	authorized.GET("/files", func(c *gin.Context) {
 		if l, e := os.Readlink(filepath.Join(settings.Path, files)); e == nil || os.IsNotExist(e) {
