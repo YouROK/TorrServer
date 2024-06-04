@@ -1,4 +1,3 @@
-
 package msx
 
 import (
@@ -95,7 +94,7 @@ func SetupRoute(r gin.IRouter) {
 			if sc != "" {
 				sc = "{col:" + sc + "}"
 			}
-			r.R.S, r.R.D = http.StatusOK, map[string]any{"action": "player:label:position:{LABEL}{tb}{tb}" + sc + st}
+			r.R.S, r.R.D = http.StatusOK, map[string]any{"action": "player:label:position:{VALUE}{tb}{tb}" + sc + st}
 		} else if e := c.BindJSON(&j); e != nil {
 			r.R.S, r.R.M = http.StatusBadRequest, e.Error()
 		} else if j.Data == "" {
@@ -105,7 +104,7 @@ func SetupRoute(r gin.IRouter) {
 			r.R.D = map[string]any{"stamp": st, "stampColor": sc}
 			if sc != "" {
 				r.R.D["live"] = map[string]any{
-					"type": "airtime", "duration": 1000, "over": map[string]any{
+					"type": "airtime", "duration": 3000, "over": map[string]any{
 						"action": "execute:" + utils.GetScheme(c) + "://" + c.Request.Host + c.Request.URL.Path, "data": j.Data,
 					},
 				}
