@@ -56,7 +56,15 @@ func SetupRoute(r gin.IRouter) {
 		rsp(c, r, e)
 	})
 	authorized.GET("/msx/start.json", func(c *gin.Context) {
-		c.JSON(200, map[string]string{"name": "TorrServer", "version": version.Version, "parameter": param})
+		c.JSON(200, map[string]any{
+			"name":      "TorrServer",
+			"version":   version.Version,
+			"parameter": param,
+			"launcher": map[string]any{
+				"type":  "start",
+				"image": utils.GetScheme(c) + "://" + c.Request.Host + "/logo.png",
+			},
+		})
 	})
 	authorized.POST("/msx/start.json", func(c *gin.Context) {
 		if e := c.BindJSON(&param); e != nil {
