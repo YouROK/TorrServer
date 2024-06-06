@@ -145,6 +145,7 @@
         "RemoveCacheOnDropDesc": "Якщо виключено, тоді кеш видаляється при видалені торенту.",
         "RemoveRetrackers": "Видалити",
         "ReplaceRetrackers": "Замінити",
+        "ResponsiveMode": "Увімкнути адаптивний режим читання",
         "RetrackersMode": "Ретрекери",
         "ResetToDefault": "Базові налаштування",
         "Settings": "Налаштування",

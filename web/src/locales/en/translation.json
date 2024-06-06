@@ -145,6 +145,7 @@
         "RemoveCacheOnDropDesc": "If disabled, cache removed on delete torrent.",
         "RemoveRetrackers": "Remove retrackers",
         "ReplaceRetrackers": "Replace retrackers",
+        "ResponsiveMode": "Enable responsive reader mode",
         "RetrackersMode": "Retrackers Mode",
         "ResetToDefault": "Reset to default",
         "Settings": "Settings",

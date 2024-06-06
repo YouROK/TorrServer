@@ -145,6 +145,7 @@
         "RemoveCacheOnDropDesc": "如果禁用，缓存会在删除种子时移除。",
         "RemoveRetrackers": "删除retrackers",
         "ReplaceRetrackers": "替换retrackers",
+        "ResponsiveMode": "启用响应式阅读器模式",
         "RetrackersMode": "Retrackers模式",
         "ResetToDefault": "重置为默认值",
         "Settings": "设置",
