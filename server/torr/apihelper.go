@@ -87,9 +87,13 @@ func SaveTorrentToDB(torr *Torrent) {
 
 func GetTorrent(hashHex string) *Torrent {
 	hash := metainfo.NewHashFromHex(hashHex)
+	timeout := time.Second * time.Duration(sets.BTsets.TorrentDisconnectTimeout)
+	if timeout > time.Minute {
+		timeout = time.Minute
+	}
 	tor := bts.GetTorrent(hash)
 	if tor != nil {
-		tor.AddExpiredTime(time.Minute)
+		tor.AddExpiredTime(timeout)
 		return tor
 	}
 

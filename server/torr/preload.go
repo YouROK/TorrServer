@@ -59,12 +59,16 @@ func (t *Torrent) Preload(index int, size int64) {
 	}
 
 	if t.Info() != nil {
+		timeout := time.Second * time.Duration(settings.BTsets.TorrentDisconnectTimeout)
+		if timeout > time.Minute {
+			timeout = time.Minute
+		}
 		// Запуск лога в отдельном потоке
 		go func() {
 			for t.Stat == state.TorrentPreload {
 				stat := fmt.Sprint(file.Torrent().InfoHash().HexString(), " ", utils2.Format(float64(t.PreloadedBytes)), "/", utils2.Format(float64(t.PreloadSize)), " Speed:", utils2.Format(t.DownloadSpeed), " Peers:", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers, " [Seeds:", t.Torrent.Stats().ConnectedSeeders, "]")
 				log.TLogln("Preload:", stat)
-				t.AddExpiredTime(time.Second * time.Duration(settings.BTsets.TorrentDisconnectTimeout))
+				t.AddExpiredTime(timeout)
 				time.Sleep(time.Second)
 			}
 		}()

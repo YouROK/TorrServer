@@ -85,6 +85,11 @@ func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 		return tor, nil
 	}
 
+	timeout := time.Second * time.Duration(settings.BTsets.TorrentDisconnectTimeout)
+	if timeout > time.Minute {
+		timeout = time.Minute
+	}
+
 	torr := new(Torrent)
 	torr.Torrent = goTorrent
 	torr.Stat = state.TorrentAdded
@@ -92,7 +97,7 @@ func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 	torr.bt = bt
 	torr.closed = goTorrent.Closed()
 	torr.TorrentSpec = spec
-	torr.AddExpiredTime(time.Second * time.Duration(settings.BTsets.TorrentDisconnectTimeout))
+	torr.AddExpiredTime(timeout)
 	torr.Timestamp = time.Now().Unix()
 
 	go torr.watch()
