@@ -77,6 +77,15 @@ export const AppSidebarStyle = styled.div`
     background: ${sidebarBGColor};
     color: ${sidebarFillColor};
     white-space: nowrap;
+    /* hide scrollbars */
+    overflow-y: scroll;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer 10+ */
+    ::-webkit-scrollbar {
+      display: none; /* Safari and Chrome */
+      width: 0; /* Remove scrollbar space */
+      background: transparent;
+    }
 
     svg {
       fill: ${sidebarFillColor};

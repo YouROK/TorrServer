@@ -7,23 +7,31 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/metainfo"
 
 	"github.com/alexflint/go-arg"
 	"github.com/pkg/browser"
 
 	"server"
+	"server/docs"
 	"server/log"
 	"server/settings"
 	"server/torr"
 	"server/version"
-	"server/web/api/utils"
 )
 
 type args struct {
-	Port        string `arg:"-p" help:"web server port, default 8090"`
-	Path        string `arg:"-d" help:"database dir path"`
+	Port        string `arg:"-p" help:"web server port (default 8090)"`
+	Ssl         bool   `help:"enables https"`
+	SslPort     string `help:"web server ssl port, If not set, will be set to default 8091 or taken from db(if stored previously). Accepted if --ssl enabled."`
+	SslCert     string `help:"path to ssl cert file. If not set, will be taken from db(if stored previously) or default self-signed certificate/key will be generated. Accepted if --ssl enabled."`
+	SslKey      string `help:"path to ssl key file. If not set, will be taken from db(if stored previously) or default self-signed certificate/key will be generated. Accepted if --ssl enabled."`
+	Path        string `arg:"-d" help:"database and config dir path"`
 	LogPath     string `arg:"-l" help:"server log file path"`
 	WebLogPath  string `arg:"-w" help:"web access log file path"`
 	RDB         bool   `arg:"-r" help:"start in read-only DB mode"`
@@ -31,10 +39,11 @@ type args struct {
 	DontKill    bool   `arg:"-k" help:"don't kill server on signal"`
 	UI          bool   `arg:"-u" help:"open torrserver page in browser"`
 	TorrentsDir string `arg:"-t" help:"autoload torrents from dir"`
-	TorrentAddr string `help:"Torrent client address, default :32000"`
+	TorrentAddr string `help:"Torrent client address, like 127.0.0.1:1337 (default :PeersListenPort)"`
 	PubIPv4     string `arg:"-4" help:"set public IPv4 addr"`
 	PubIPv6     string `arg:"-6" help:"set public IPv6 addr"`
 	SearchWA    bool   `arg:"-s" help:"search without auth"`
+	MaxSize     string `arg:"-m" help:"max allowed stream size (in Bytes)"`
 }
 
 func (args) Version() string {
@@ -64,6 +73,10 @@ func main() {
 	if params.HttpAuth {
 		log.TLogln("Use HTTP Auth file", settings.Path+"/accs.db")
 	}
+	if params.RDB {
+		log.TLogln("Running in Read-only DB mode!")
+	}
+	docs.SwaggerInfo.Version = version.Version
 
 	dnsResolve()
 	Preconfig(params.DontKill)
@@ -71,7 +84,11 @@ func main() {
 	if params.UI {
 		go func() {
 			time.Sleep(time.Second)
-			browser.OpenURL("http://127.0.0.1:" + params.Port)
+			if params.Ssl {
+				browser.OpenURL("https://127.0.0.1:" + params.SslPort)
+			} else {
+				browser.OpenURL("http://127.0.0.1:" + params.Port)
+			}
 		}()
 	}
 
@@ -91,7 +108,14 @@ func main() {
 		go watchTDir(params.TorrentsDir)
 	}
 
-	server.Start(params.Port, params.RDB, params.SearchWA)
+	if params.MaxSize != "" {
+		maxSize, err := strconv.ParseInt(params.MaxSize, 10, 64)
+		if err == nil {
+			settings.MaxSize = maxSize
+		}
+	}
+
+	server.Start(params.Port, params.SslPort, params.SslCert, params.SslKey, params.Ssl, params.RDB, params.SearchWA)
 	log.TLogln(server.WaitServer())
 	log.Close()
 	time.Sleep(time.Second * 3)
@@ -131,9 +155,9 @@ func watchTDir(dir string) {
 			for _, file := range files {
 				filename := filepath.Join(path, file.Name())
 				if strings.ToLower(filepath.Ext(file.Name())) == ".torrent" {
-					sp, err := utils.ParseLink("file://" + filename)
+					sp, err := openFile(filename)
 					if err == nil {
-						tor, err := torr.AddTorrent(sp, "", "", "")
+						tor, err := torr.AddTorrent(sp, "", "", "", "")
 						if err == nil {
 							if tor.GotInfo() {
 								if tor.Title == "" {
@@ -143,12 +167,40 @@ func watchTDir(dir string) {
 								tor.Drop()
 								os.Remove(filename)
 								time.Sleep(time.Second)
+							} else {
+								log.TLogln("Error get info from torrent")
 							}
+						} else {
+							log.TLogln("Error parse torrent file:", err)
 						}
+					} else {
+						log.TLogln("Error parse file name:", err)
 					}
 				}
 			}
+		} else {
+			log.TLogln("Error read dir:", err)
 		}
-		time.Sleep(time.Second)
+		time.Sleep(time.Second * 5)
 	}
+}
+
+func openFile(path string) (*torrent.TorrentSpec, error) {
+	minfo, err := metainfo.LoadFromFile(path)
+	if err != nil {
+		return nil, err
+	}
+	info, err := minfo.UnmarshalInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	// mag := minfo.Magnet(info.Name, minfo.HashInfoBytes())
+	mag := minfo.Magnet(nil, &info)
+	return &torrent.TorrentSpec{
+		InfoBytes:   minfo.InfoBytes,
+		Trackers:    [][]string{mag.Trackers},
+		DisplayName: info.Name,
+		InfoHash:    minfo.HashInfoBytes(),
+	}, nil
 }

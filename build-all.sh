@@ -11,6 +11,7 @@ PLATFORMS=(
   'darwin/amd64'
   'darwin/arm64'
   'freebsd/amd64'
+  'freebsd/arm7'
   'linux/mips'
   'linux/mipsle'
   'linux/mips64'
@@ -53,13 +54,19 @@ echo "Build web"
 export NODE_OPTIONS=--openssl-legacy-provider
 $GOBIN run gen_web.go
 
+#### Update api docs
+echo "Build docs"
+$GOBIN install github.com/swaggo/swag/cmd/swag@latest
+cd "${ROOT}/server" || exit 1
+swag init -g web/server.go
+
 #### Build server
 echo "Build server"
 cd "${ROOT}/server" || exit 1
 $GOBIN clean -i -r -cache --modcache
 $GOBIN mod tidy
 
-BUILD_FLAGS="-ldflags=${LDFLAGS} -tags=nosqlite"
+BUILD_FLAGS="-ldflags=${LDFLAGS} -tags=nosqlite -trimpath"
 
 #####################################
 ### X86 build section

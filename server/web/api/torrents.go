@@ -21,11 +21,25 @@ type torrReqJS struct {
 	Link     string `json:"link,omitempty"`
 	Hash     string `json:"hash,omitempty"`
 	Title    string `json:"title,omitempty"`
+	Category string `json:"category,omitempty"`
 	Poster   string `json:"poster,omitempty"`
 	Data     string `json:"data,omitempty"`
 	SaveToDB bool   `json:"save_to_db,omitempty"`
 }
 
+// torrents godoc
+//
+//	@Summary		Handle torrents informations
+//	@Description	Allow to list, add, remove, get, set, drop, wipe torrents on server. The action depends of what has been asked.
+//
+//	@Tags			API
+//
+//	@Param			request	body	torrReqJS	true	"Torrent request. Available params for action: add, get, set, rem, list, drop, wipe. link required for add, hash required for get, set, rem, drop."
+//
+//	@Accept			json
+//	@Produce		json
+//	@Success		200
+//	@Router			/torrents [post]
 func torrents(c *gin.Context) {
 	var req torrReqJS
 	err := c.ShouldBindJSON(&req)
@@ -53,13 +67,16 @@ func torrents(c *gin.Context) {
 		}
 	case "list":
 		{
-			listTorrent(req, c)
+			listTorrents(c)
 		}
 	case "drop":
 		{
 			dropTorrent(req, c)
 		}
-
+	case "wipe":
+		{
+			wipeTorrents(c)
+		}
 	}
 }
 
@@ -78,7 +95,15 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 		return
 	}
 
-	tor, err := torr.AddTorrent(torrSpec, req.Title, req.Poster, req.Data)
+	tor, err := torr.AddTorrent(torrSpec, req.Title, req.Poster, req.Data, req.Category)
+
+	if tor.Data != "" && set.BTsets.EnableDebug {
+		log.TLogln("torrent data:", tor.Data)
+	}
+	if tor.Category != "" && set.BTsets.EnableDebug {
+		log.TLogln("torrent category:", tor.Category)
+	}
+
 	if err != nil {
 		log.TLogln("error add torrent:", err)
 		c.AbortWithError(http.StatusInternalServerError, err)
@@ -133,7 +158,7 @@ func setTorrent(req torrReqJS, c *gin.Context) {
 		c.AbortWithError(http.StatusBadRequest, errors.New("hash is empty"))
 		return
 	}
-	torr.SetTorrent(req.Hash, req.Title, req.Poster, req.Data)
+	torr.SetTorrent(req.Hash, req.Title, req.Poster, req.Category, req.Data)
 	c.Status(200)
 }
 
@@ -151,7 +176,7 @@ func remTorrent(req torrReqJS, c *gin.Context) {
 	c.Status(200)
 }
 
-func listTorrent(req torrReqJS, c *gin.Context) {
+func listTorrents(c *gin.Context) {
 	list := torr.ListTorrent()
 	if len(list) == 0 {
 		c.JSON(200, []*state.TorrentStatus{})
@@ -170,5 +195,18 @@ func dropTorrent(req torrReqJS, c *gin.Context) {
 		return
 	}
 	torr.DropTorrent(req.Hash)
+	c.Status(200)
+}
+
+func wipeTorrents(c *gin.Context) {
+	torrents := torr.ListTorrent()
+	for _, t := range torrents {
+		torr.RemTorrent(t.TorrentSpec.InfoHash.HexString())
+	}
+	// TODO: remove (copied todo from remTorrent())
+	if set.BTsets.EnableDLNA {
+		dlna.Stop()
+		dlna.Start()
+	}
 	c.Status(200)
 }

@@ -115,6 +115,18 @@ export const TorrentCardDescription = styled.div`
       flex-direction: column;
     }
 
+    // .description-title-wrapper > .description-section-name {
+    //   display: flex;
+    //   flex-wrap: nowrap;
+    //   justify-content: space-between;
+    //   self-align: end;
+    // }
+
+    // .description-category-wrapper {
+    //   display: inline-flex;
+    //   color: #1a1a1a;
+    // }
+
     .description-section-name {
       text-transform: uppercase;
       font-size: 10px;

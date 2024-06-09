@@ -2,6 +2,7 @@ package torrstor
 
 import (
 	"errors"
+
 	"github.com/anacrolix/torrent/storage"
 )
 

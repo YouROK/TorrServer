@@ -37,7 +37,7 @@ func LoadTorrent(tor *Torrent) *Torrent {
 	return tr
 }
 
-func AddTorrent(spec *torrent.TorrentSpec, title, poster string, data string) (*Torrent, error) {
+func AddTorrent(spec *torrent.TorrentSpec, title, poster string, data string, category string) (*Torrent, error) {
 	torr, err := NewTorrent(spec, bts)
 	if err != nil {
 		log.TLogln("error add torrent:", err)
@@ -55,12 +55,21 @@ func AddTorrent(spec *torrent.TorrentSpec, title, poster string, data string) (*
 			torr.Title = torr.Info().Name
 		}
 	}
+
+	if torr.Category == "" {
+		torr.Category = category
+		if torr.Category == "" && torDB != nil {
+			torr.Category = torDB.Category
+		}
+	}
+
 	if torr.Poster == "" {
 		torr.Poster = poster
 		if torr.Poster == "" && torDB != nil {
 			torr.Poster = torDB.Poster
 		}
 	}
+
 	if torr.Data == "" {
 		torr.Data = data
 		if torr.Data == "" && torDB != nil {
@@ -78,9 +87,13 @@ func SaveTorrentToDB(torr *Torrent) {
 
 func GetTorrent(hashHex string) *Torrent {
 	hash := metainfo.NewHashFromHex(hashHex)
+	timeout := time.Second * time.Duration(sets.BTsets.TorrentDisconnectTimeout)
+	if timeout > time.Minute {
+		timeout = time.Minute
+	}
 	tor := bts.GetTorrent(hash)
 	if tor != nil {
-		tor.AddExpiredTime(time.Minute)
+		tor.AddExpiredTime(timeout)
 		return tor
 	}
 
@@ -96,6 +109,7 @@ func GetTorrent(hashHex string) *Torrent {
 				tr.Data = tor.Data
 				tr.Size = tor.Size
 				tr.Timestamp = tor.Timestamp
+				tr.Category = tor.Category
 				tr.GotInfo()
 			}
 		}()
@@ -103,7 +117,7 @@ func GetTorrent(hashHex string) *Torrent {
 	return tor
 }
 
-func SetTorrent(hashHex, title, poster, data string) *Torrent {
+func SetTorrent(hashHex, title, poster, category string, data string) *Torrent {
 	hash := metainfo.NewHashFromHex(hashHex)
 	torr := bts.GetTorrent(hash)
 	torrDb := GetTorrentDB(hash)
@@ -122,13 +136,19 @@ func SetTorrent(hashHex, title, poster, data string) *Torrent {
 		}
 		torr.Title = title
 		torr.Poster = poster
-		torr.Data = data
+		torr.Category = category
+		if data != "" {
+			torr.Data = data
+		}
 	}
-
+	// update torrent data in DB
 	if torrDb != nil {
 		torrDb.Title = title
 		torrDb.Poster = poster
-		torrDb.Data = data
+		torrDb.Category = category
+		if data != "" {
+			torrDb.Data = data
+		}
 		AddTorrentDB(torrDb)
 	}
 	if torr != nil {
@@ -139,19 +159,24 @@ func SetTorrent(hashHex, title, poster, data string) *Torrent {
 }
 
 func RemTorrent(hashHex string) {
+	if sets.ReadOnly {
+		log.TLogln("API RemTorrent: Read-only DB mode!", hashHex)
+		return
+	}
 	hash := metainfo.NewHashFromHex(hashHex)
-	if sets.BTsets.UseDisk && hashHex != "" && hashHex != "/" {
-		name := filepath.Join(sets.BTsets.TorrentsSavePath, hashHex)
-		ff, _ := os.ReadDir(name)
-		for _, f := range ff {
-			os.Remove(filepath.Join(name, f.Name()))
-		}
-		err := os.Remove(name)
-		if err != nil {
-			log.TLogln("Error remove cache:", err)
+	if bts.RemoveTorrent(hash) {
+		if sets.BTsets.UseDisk && hashHex != "" && hashHex != "/" {
+			name := filepath.Join(sets.BTsets.TorrentsSavePath, hashHex)
+			ff, _ := os.ReadDir(name)
+			for _, f := range ff {
+				os.Remove(filepath.Join(name, f.Name()))
+			}
+			err := os.Remove(name)
+			if err != nil {
+				log.TLogln("Error remove cache:", err)
+			}
 		}
 	}
-	bts.RemoveTorrent(hash)
 	RemTorrentDB(hash)
 }
 
@@ -188,6 +213,7 @@ func DropTorrent(hashHex string) {
 
 func SetSettings(set *sets.BTSets) {
 	if sets.ReadOnly {
+		log.TLogln("API SetSettings: Read-only DB mode!")
 		return
 	}
 	sets.SetBTSets(set)
@@ -204,6 +230,7 @@ func SetSettings(set *sets.BTSets) {
 
 func SetDefSettings() {
 	if sets.ReadOnly {
+		log.TLogln("API SetDefSettings: Read-only DB mode!")
 		return
 	}
 	sets.SetDefaultConfig()

@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Button, DialogActions, DialogTitle, ListItemIcon, ListItemText } from '@material-ui/core'
 import { StyledDialog, StyledMenuButtonWrapper } from 'style/CustomMaterialUiStyles'
-import { PowerSettingsNew as PowerSettingsNewIcon } from '@material-ui/icons'
+import { PowerSettingsNew as PowerSettingsNewIcon, PowerOff as PowerOffIcon } from '@material-ui/icons'
 import { shutdownHost } from 'utils/Hosts'
 import { useTranslation } from 'react-i18next'
 import { isStandaloneApp } from 'utils/Utils'
 import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
+
+import UnsafeButton from './UnsafeButton'
 
 export default function CloseServer({ isOffline, isLoading }) {
   const { t } = useTranslation()
@@ -41,7 +43,9 @@ export default function CloseServer({ isOffline, isLoading }) {
             {t('Cancel')}
           </Button>
 
-          <Button
+          <UnsafeButton
+            timeout={5}
+            startIcon={<PowerOffIcon />}
             variant='contained'
             onClick={() => {
               fetch(shutdownHost())
@@ -51,7 +55,7 @@ export default function CloseServer({ isOffline, isLoading }) {
             autoFocus
           >
             {t('TurnOff')}
-          </Button>
+          </UnsafeButton>
         </DialogActions>
       </StyledDialog>
     </>

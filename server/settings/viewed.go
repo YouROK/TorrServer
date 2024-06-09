@@ -93,8 +93,6 @@ func ListViewed(hash string) []*Viewed {
 		return ret
 	}
 
-	if err != nil {
-		log.TLogln("Error list viewed:", err)
-	}
+	log.TLogln("Error list viewed:", err)
 	return []*Viewed{}
 }

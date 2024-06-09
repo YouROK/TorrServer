@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anacrolix/missinggo/httptoo"
+	"github.com/anacrolix/missinggo/v2/httptoo"
 
 	sets "server/settings"
 	"server/torr"
@@ -22,6 +22,16 @@ import (
 	"github.com/pkg/errors"
 )
 
+// allPlayList godoc
+//
+//	@Summary		Get a M3U playlist with all torrents
+//	@Description	Retrieve all torrents and generates a bundled M3U playlist.
+//
+//	@Tags			API
+//
+//	@Produce		audio/x-mpegurl
+//	@Success		200	{file}	file
+//	@Router			/playlistall/all.m3u [get]
 func allPlayList(c *gin.Context) {
 	torrs := torr.ListTorrent()
 
@@ -38,8 +48,19 @@ func allPlayList(c *gin.Context) {
 	sendM3U(c, "all.m3u", hash, list)
 }
 
-// http://127.0.0.1:8090/playlist?hash=...
-// http://127.0.0.1:8090/playlist?hash=...&fromlast
+// playList godoc
+//
+//	@Summary		Get HTTP link of torrent in M3U list
+//	@Description	Get HTTP link of torrent in M3U list.
+//
+//	@Tags			API
+//
+//	@Param			hash		query	string	true	"Torrent hash"
+//	@Param			fromlast	query	bool	false	"From last play file"
+//
+//	@Produce		audio/x-mpegurl
+//	@Success		200	{file}	file
+//	@Router			/playlist [get]
 func playList(c *gin.Context) {
 	hash, _ := c.GetQuery("hash")
 	_, fromlast := c.GetQuery("fromlast")
@@ -65,8 +86,14 @@ func playList(c *gin.Context) {
 	host := utils.GetScheme(c) + "://" + c.Request.Host
 	list := getM3uList(tor.Status(), host, fromlast)
 	list = "#EXTM3U\n" + list
+	name := strings.ReplaceAll(c.Param("fname"), `/`, "") // strip starting / from param
+	if name == "" {
+		name = tor.Name() + ".m3u"
+	} else if !strings.HasSuffix(strings.ToLower(name), ".m3u") && !strings.HasSuffix(strings.ToLower(name), ".m3u8") {
+		name += ".m3u"
+	}
 
-	sendM3U(c, tor.Name()+".m3u", tor.Hash().HexString(), list)
+	sendM3U(c, name, tor.Hash().HexString(), list)
 }
 
 func sendM3U(c *gin.Context, name, hash string, m3u string) {

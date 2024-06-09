@@ -46,6 +46,14 @@ type BTSets struct {
 	UploadRateLimit   int // in kb, 0 - inf
 	ConnectionsLimit  int
 	PeersListenPort   int
+
+	// HTTPS
+	SslPort int
+	SslCert string
+	SslKey  string
+
+	// Reader
+	ResponsiveMode bool // enable Responsive reader (don't wait pieceComplete)
 }
 
 func (v *BTSets) String() string {
@@ -145,6 +153,6 @@ func loadBTSets() {
 		}
 		log.TLogln("Error unmarshal btsets", err)
 	}
-
+	// initialize defaults on error
 	SetDefaultConfig()
 }

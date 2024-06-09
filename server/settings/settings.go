@@ -8,27 +8,51 @@ import (
 )
 
 var (
-	tdb      *TDB
+	tdb      TorrServerDB
 	Path     string
 	Port     string
+	Ssl      bool
+	SslPort  string
 	ReadOnly bool
 	HttpAuth bool
 	SearchWA bool
 	PubIPv4  string
 	PubIPv6  string
 	TorAddr  string
+	MaxSize  int64
 )
 
 func InitSets(readOnly, searchWA bool) {
 	ReadOnly = readOnly
 	SearchWA = searchWA
-	tdb = NewTDB()
-	if tdb == nil {
-		log.TLogln("Error open db:", filepath.Join(Path, "config.db"))
+
+	bboltDB := NewTDB()
+	if bboltDB == nil {
+		log.TLogln("Error open bboltDB:", filepath.Join(Path, "config.db"))
+		os.Exit(1)
+	}
+
+	jsonDB := NewJsonDB()
+	if jsonDB == nil {
+		log.TLogln("Error open jsonDB")
+		os.Exit(1)
+	}
+
+	dbRouter := NewXPathDBRouter()
+	// First registered DB becomes default route
+	dbRouter.RegisterRoute(jsonDB, "Settings")
+	dbRouter.RegisterRoute(jsonDB, "Viewed")
+	dbRouter.RegisterRoute(bboltDB, "Torrents")
+
+	tdb = NewDBReadCache(dbRouter)
+
+	// We migrate settings here, it must be done before loadBTSets()
+	if err := Migrate2(bboltDB, jsonDB); err != nil {
+		log.TLogln("Migrate2 failed")
 		os.Exit(1)
 	}
 	loadBTSets()
-	Migrate()
+	Migrate1()
 }
 
 func CloseDB() {

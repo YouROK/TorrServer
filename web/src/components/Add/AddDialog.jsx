@@ -26,11 +26,13 @@ export default function AddDialog({
   title: originalTitle,
   name: originalName,
   poster: originalPoster,
+  category: originalCategory,
 }) {
   const { t } = useTranslation()
   const isEditMode = !!originalHash
   const [torrentSource, setTorrentSource] = useState(originalHash || '')
   const [title, setTitle] = useState(originalTitle || '')
+  const [category, setCategory] = useState(originalCategory || '')
   const [originalTorrentTitle, setOriginalTorrentTitle] = useState('')
   const [parsedTitle, setParsedTitle] = useState('')
   const [posterUrl, setPosterUrl] = useState(originalPoster || '')
@@ -207,6 +209,7 @@ export default function AddDialog({
           hash: originalHash,
           title: title || originalName,
           poster: posterUrl,
+          category,
         })
         .finally(handleClose)
     } else if (selectedFile) {
@@ -215,12 +218,20 @@ export default function AddDialog({
       data.append('save', 'true')
       data.append('file', selectedFile)
       title && data.append('title', title)
+      category && data.append('category', category)
       posterUrl && data.append('poster', posterUrl)
       axios.post(torrentUploadHost(), data).catch(handleClose)
     } else {
       // link save
       axios
-        .post(torrentsHost(), { action: 'add', link: torrentSource, title, poster: posterUrl, save_to_db: true })
+        .post(torrentsHost(), {
+          action: 'add',
+          link: torrentSource,
+          title,
+          category,
+          poster: posterUrl,
+          save_to_db: true,
+        })
         .catch(handleClose)
     }
   }
@@ -239,10 +250,10 @@ export default function AddDialog({
             setTorrentSource={setTorrentSource}
           />
         )}
-
         <RightSideComponent
           originalTorrentTitle={originalTorrentTitle}
           setTitle={setTitle}
+          setCategory={setCategory}
           setPosterUrl={setPosterUrl}
           setIsPosterUrlCorrect={setIsPosterUrlCorrect}
           setIsUserInteractedWithPoster={setIsUserInteractedWithPoster}
@@ -250,6 +261,7 @@ export default function AddDialog({
           isTorrentSourceCorrect={isTorrentSourceCorrect}
           isHashAlreadyExists={isHashAlreadyExists}
           title={title}
+          category={category}
           parsedTitle={parsedTitle}
           posterUrl={posterUrl}
           isPosterUrlCorrect={isPosterUrlCorrect}

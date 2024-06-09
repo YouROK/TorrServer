@@ -59,18 +59,25 @@ func (t *Torrent) Preload(index int, size int64) {
 	}
 
 	if t.Info() != nil {
+		timeout := time.Second * time.Duration(settings.BTsets.TorrentDisconnectTimeout)
+		if timeout > time.Minute {
+			timeout = time.Minute
+		}
 		// Запуск лога в отдельном потоке
 		go func() {
 			for t.Stat == state.TorrentPreload {
-				stat := fmt.Sprint(file.Torrent().InfoHash().HexString(), " ", utils2.Format(float64(t.PreloadedBytes)), "/", utils2.Format(float64(t.PreloadSize)), " Speed:", utils2.Format(t.DownloadSpeed), " Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
+				stat := fmt.Sprint(file.Torrent().InfoHash().HexString(), " ", utils2.Format(float64(t.PreloadedBytes)), "/", utils2.Format(float64(t.PreloadSize)), " Speed:", utils2.Format(t.DownloadSpeed), " Peers:", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers, " [Seeds:", t.Torrent.Stats().ConnectedSeeders, "]")
 				log.TLogln("Preload:", stat)
-				t.AddExpiredTime(time.Second * time.Duration(settings.BTsets.TorrentDisconnectTimeout))
+				t.AddExpiredTime(timeout)
 				time.Sleep(time.Second)
 			}
 		}()
 
 		if ffprobe.Exists() {
 			link := "http://127.0.0.1:" + settings.Port + "/play/" + t.Hash().HexString() + "/" + strconv.Itoa(index)
+			if settings.Ssl {
+				link = "https://127.0.0.1:" + settings.SslPort + "/play/" + t.Hash().HexString() + "/" + strconv.Itoa(index)
+			}
 			if data, err := ffprobe.ProbeUrl(link); err == nil {
 				t.BitRate = data.Format.BitRate
 				t.DurationSeconds = data.Format.DurationSeconds
@@ -155,7 +162,7 @@ func (t *Torrent) Preload(index int, size int64) {
 
 		wg.Wait()
 	}
-	log.TLogln("End preload:", file.Torrent().InfoHash().HexString(), "Peers:[", t.Torrent.Stats().ConnectedSeeders, "]", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers)
+	log.TLogln("End preload:", file.Torrent().InfoHash().HexString(), "Peers:", t.Torrent.Stats().ActivePeers, "/", t.Torrent.Stats().TotalPeers, "[ Seeds:", t.Torrent.Stats().ConnectedSeeders, "]")
 }
 
 func (t *Torrent) findFileIndex(index int) *torrent.File {

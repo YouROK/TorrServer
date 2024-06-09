@@ -39,7 +39,11 @@ export default function LeftSideComponent({
   }
 
   const [isTorrentSourceActive, setIsTorrentSourceActive] = useState(false)
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop: handleCapture, accept: '.torrent' })
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop: handleCapture,
+    accept: '.torrent',
+    multiple: false,
+  })
 
   const handleTorrentSourceChange = ({ target: { value } }) => setTorrentSource(value)
 
@@ -52,6 +56,7 @@ export default function LeftSideComponent({
           margin='dense'
           label={t('AddDialog.TorrentSourceLink')}
           helperText={t('AddDialog.TorrentSourceOptions')}
+          style={{ marginTop: '1em' }}
           type='text'
           fullWidth
           variant='outlined'
