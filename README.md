@@ -218,11 +218,13 @@ cd server; swag init -g web/server.go
 swag fmt
 ```
 
-### MSX Install
+### Smart TV (using Media Station X)
 
-Open msx and goto: Settings -> Start Parameter -> Setup
+1. Install **Media Station X** on your Smart TV (see [platform support](https://msx.benzac.de/info/?tab=PlatformSupport))
 
-Enter current ip address and port of server _e.g. 127.0.0.1:8090_
+2. Open it and go to: **Settings -> Start Parameter -> Setup**
+
+3. Enter current ip and port of the TorrServe(r), e.g. `127.0.0.1:8090`
 
 ## API
 
