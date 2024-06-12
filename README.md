@@ -74,7 +74,7 @@ Alternative install script for Intel Macs: <https://github.com/dancheskus/TorrSe
 
 On FreeBSD (TrueNAS/FreeNAS) you can use this plugin: <https://github.com/filka96/iocage-plugin-TorrServer>
 
-#### For NAS Systems (Unofficial)
+#### NAS Systems (Unofficial)
 
 - Several releases are available through this link: <https://github.com/vladlenas>
 - **Synology NAS** packages repo source: <https://grigi.lt>
@@ -162,12 +162,15 @@ services:
 
 ```
 
-#### NAS releases
-https://github.com/vladlenas
+### Smart TV (using Media Station X)
 
-Synology NAS packages repo source: https://grigi.lt
+1. Install **Media Station X** on your Smart TV (see [platform support](https://msx.benzac.de/info/?tab=PlatformSupport))
 
-### Development
+2. Open it and go to: **Settings -> Start Parameter -> Setup**
+
+3. Enter current ip and port of the TorrServe(r), e.g. `127.0.0.1:8090`
+
+## Development
 
 #### Go server
 
@@ -217,15 +220,6 @@ cd server; swag init -g web/server.go
 # Documentation can be linted using
 swag fmt
 ```
-
-### Smart TV (using Media Station X)
-
-1. Install **Media Station X** on your Smart TV (see [platform support](https://msx.benzac.de/info/?tab=PlatformSupport))
-
-2. Open it and go to: **Settings -> Start Parameter -> Setup**
-
-3. Enter current ip and port of the TorrServe(r), e.g. `127.0.0.1:8090`
-
 ## API
 
 ### API Docs
@@ -267,7 +261,6 @@ local:127.0.0.1
 
 ## Donate
 
-- [QIWI](https://qiwi.com/n/YOUROK85)
 - [YooMoney](https://yoomoney.ru/to/410013733697114/200)
 - SberBank Card: **5484 4000 2285 7839**
 
