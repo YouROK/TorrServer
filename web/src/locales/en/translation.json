@@ -155,6 +155,8 @@
         "SslCertHint": "Path to SSL Certificate",
         "SslKey": "SSL Key",
         "SslKeyHint": "Path to SSL Key",
+        "TMDBApiKey": "TMDB API key",
+        "TMDBApiKeyHint": "TMDB is an open-source database for movies & shows. Leave this field blank to not use it",
         "TorrentDisconnectTimeout": "Torrent Disconnect Timeout",
         "TorrentsSavePath": "Torrents Save Path",
         "Upload": "Upload",

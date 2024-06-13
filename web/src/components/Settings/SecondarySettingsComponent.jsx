@@ -22,6 +22,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
     EnableDLNA,
     EnableIPv6,
     FriendlyName,
+    TMDBApiKey,
     EnableRutorSearch,
     ForceEncrypt,
     DisableTCP,
@@ -188,6 +189,19 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         variant='outlined'
         fullWidth
       />
+      
+      <TextField
+        onChange={inputForm}
+        margin='normal'
+        id='TMDBApiKey'
+        label={t('SettingsDialog.TMDBApiKey')}
+        helperText={t('SettingsDialog.TMDBApiKeyHint')}
+        value={TMDBApiKey}
+        type='text'
+        variant='outlined'
+        fullWidth
+      />
+
       <FormGroup>
         <FormControlLabel
           control={<Switch checked={EnableRutorSearch} onChange={inputForm} id='EnableRutorSearch' color='secondary' />}
