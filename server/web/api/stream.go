@@ -198,10 +198,17 @@ func streamNoAuth(c *gin.Context) {
 		return
 	}
 
-	title = tor.Title
-	poster = tor.Poster
+	if title == "" {
+		title = tor.Title
+	}
+	if poster == "" {
+		poster = tor.Poster
+	}
+	if category == "" {
+		category = tor.Category
+	}
+
 	data = tor.Data
-	category = tor.Category
 
 	if tor.Stat == state.TorrentInDB {
 		tor, err = torr.AddTorrent(spec, title, poster, data, category)
