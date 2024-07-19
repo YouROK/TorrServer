@@ -247,10 +247,9 @@ function initialCheck() {
 }
 
 function getLatestRelease() {
-  curl -s "https://api.github.com/repos/YouROK/TorrServer/releases" |
+  curl -s "https://api.github.com/repos/YouROK/TorrServer/releases/latest" |
   grep -iE '"tag_name":|"version":' |
-  sed -E 's/.*"([^"]+)".*/\1/' |
-  head -1
+  sed -E 's/.*"([^"]+)".*/\1/'
 }
 
 function installTorrServer() {
