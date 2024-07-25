@@ -247,10 +247,9 @@ function initialCheck() {
 }
 
 function getLatestRelease() {
-  curl -s "https://api.github.com/repos/YouROK/TorrServer/releases" |
+  curl -s "https://api.github.com/repos/YouROK/TorrServer/releases/latest" |
   grep -iE '"tag_name":|"version":' |
-  sed -E 's/.*"([^"]+)".*/\1/' |
-  head -1
+  sed -E 's/.*"([^"]+)".*/\1/'
 }
 
 function installTorrServer() {
@@ -266,7 +265,7 @@ function installTorrServer() {
   binName="TorrServer-linux-${architecture}"
   [[ ! -d "$dirInstall" ]] && mkdir -p ${dirInstall}
   [[ ! -d "/usr/local/lib/systemd/system" ]] && mkdir -p "/usr/local/lib/systemd/system"
-  urlBin="https://github.com/YouROK/TorrServer/releases/download/$(getLatestRelease)/${binName}"
+  urlBin="https://github.com/YouROK/TorrServer/releases/latest/download/${binName}"
   if [[ ! -f "$dirInstall/$binName" ]] | [[ ! -x "$dirInstall/$binName" ]] || [[ $(stat -c%s "$dirInstall/$binName" 2>/dev/null) -eq 0 ]]; then
     curl -L --progress-bar -# -o "$dirInstall/$binName" "$urlBin"
     chmod +x "$dirInstall/$binName"
@@ -426,7 +425,7 @@ function checkInstalledVersion() {
 function UpdateVersion() {
   systemctl stop $serviceName.service
   binName="TorrServer-linux-${architecture}"
-  urlBin="https://github.com/YouROK/TorrServer/releases/download/$(getLatestRelease)/${binName}"
+  urlBin="https://github.com/YouROK/TorrServer/releases/latest/download/${binName}"
   curl -L --progress-bar -# -o "$dirInstall/$binName" "$urlBin"
   chmod +x "$dirInstall/$binName"
   systemctl start $serviceName.service
