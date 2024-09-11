@@ -44,7 +44,7 @@ GOBIN="go"
 
 $GOBIN version
 
-LDFLAGS="'-s -w'"
+LDFLAGS="'-s -w -checklinkname=0'"
 FAILURES=""
 ROOT=${PWD}
 OUTPUT="${ROOT}/dist/TorrServer"
