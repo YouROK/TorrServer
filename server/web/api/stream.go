@@ -172,11 +172,6 @@ func streamNoAuth(c *gin.Context) {
 	_, m3u := c.GetQuery("m3u")
 	_, fromlast := c.GetQuery("fromlast")
 	_, play := c.GetQuery("play")
-	title := c.Query("title")
-	poster := c.Query("poster")
-	category := c.Query("category")
-
-	data := ""
 
 	if link == "" {
 		c.AbortWithError(http.StatusBadRequest, errors.New("link should not be empty"))
@@ -198,10 +193,22 @@ func streamNoAuth(c *gin.Context) {
 		return
 	}
 
-	title = tor.Title
-	poster = tor.Poster
-	data = tor.Data
-	category = tor.Category
+	title := c.Query("title")
+	if title == "" {
+		title = tor.Title
+	}
+
+	poster := c.Query("poster")
+	if poster == "" {
+		poster = tor.Poster
+	}
+
+	category := c.Query("category")
+	if category == "" {
+		category = tor.Category
+	}
+
+	data := tor.Data
 
 	if tor.Stat == state.TorrentInDB {
 		tor, err = torr.AddTorrent(spec, title, poster, data, category)
@@ -234,7 +241,6 @@ func streamNoAuth(c *gin.Context) {
 	if preload {
 		torr.Preload(tor, index)
 	}
-
 	// return m3u if query
 	if m3u {
 		name := strings.ReplaceAll(c.Param("fname"), `/`, "") // strip starting / from param

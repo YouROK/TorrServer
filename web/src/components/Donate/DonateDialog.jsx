@@ -24,7 +24,7 @@ export default function DonateDialog({ onClose }) {
         <ButtonGroup variant='outlined' color='secondary' aria-label='contained primary button group'>
           <Button onClick={() => window.open('https://boosty.to/yourok', '_blank')}>Boosty</Button>
           <Button onClick={() => window.open('https://yoomoney.ru/to/410013733697114', '_blank')}>IO.Money</Button>
-          <Button onClick={() => window.open('https://qiwi.com/n/YOUROK85', '_blank')}>QIWI</Button>
+          {/* <Button onClick={() => window.open('https://qiwi.com/n/YOUROK85', '_blank')}>QIWI</Button> */}
           {/* <Button onClick={() => window.open('https://www.paypal.com/paypalme/yourok', '_blank')}>PayPal</Button> */}
         </ButtonGroup>
         {/* </ListItem> */}

@@ -57,7 +57,7 @@ export default function AboutDialog() {
           <HeaderSection>
             <div>{t('About')}</div>
             {torrServerVersion}
-            <img src='/icon.png' alt='ts-icon' />
+            <img src='icon.png' alt='ts-icon' />
           </HeaderSection>
 
           <div style={{ overflow: 'auto' }}>

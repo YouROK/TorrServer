@@ -56,7 +56,15 @@ func SetupRoute(r gin.IRouter) {
 		rsp(c, r, e)
 	})
 	authorized.GET("/msx/start.json", func(c *gin.Context) {
-		c.JSON(200, map[string]string{"name": "TorrServer", "version": version.Version, "parameter": param})
+		c.JSON(http.StatusOK, map[string]any{
+			"name":      "TorrServer",
+			"version":   version.Version,
+			"parameter": param,
+			"launcher": map[string]any{
+				"type":  "start",
+				"image": utils.GetScheme(c) + "://" + c.Request.Host + "/logo.png",
+			},
+		})
 	})
 	authorized.POST("/msx/start.json", func(c *gin.Context) {
 		if e := c.BindJSON(&param); e != nil {
@@ -72,7 +80,7 @@ func SetupRoute(r gin.IRouter) {
 				}
 			}
 		}
-		c.JSON(200, r)
+		c.JSON(http.StatusOK, r)
 	})
 	authorized.POST("/msx/trn", func(c *gin.Context) {
 		var r struct {
@@ -106,7 +114,7 @@ func SetupRoute(r gin.IRouter) {
 			r.R.S, r.R.D = http.StatusOK, map[string]any{"action": j.Data, "data": r.R.D}
 		}
 		r.R.T = http.StatusText(r.R.S)
-		c.JSON(200, &r)
+		c.JSON(http.StatusOK, &r)
 	})
 	authorized.Any("/msx/proxy", func(c *gin.Context) {
 		if u := c.Query("url"); u == "" {
@@ -124,36 +132,32 @@ func SetupRoute(r gin.IRouter) {
 		}
 	})
 	authorized.GET("/msx/imdb/:id", func(c *gin.Context) {
-		i, l, j := strings.TrimPrefix(c.Param("id"), "/"), "", false
+		i, j := strings.TrimPrefix(c.Param("id"), "/"), false
 		if j = strings.HasSuffix(i, ".json"); !j {
 			i += ".json"
 		}
-		if r, e := http.Get("https://v2.sg.media-imdb.com/suggestion/h/" + i); e == nil {
-			if r.StatusCode == http.StatusOK {
-				var j struct {
-					D []struct{ I struct{ ImageUrl string } }
-				}
-				if e = json.NewDecoder(r.Body).Decode(&j); e == nil && len(j.D) > 0 {
-					l = j.D[0].I.ImageUrl
-				}
-			}
-			r.Body.Close()
-		}
-		if j {
-			c.JSON(200, l)
-		} else if l == "" {
-			c.Status(http.StatusNotFound)
+		if r, e := http.Get("https://v2.sg.media-imdb.com/suggestion/h/" + i); e != nil || r.StatusCode != http.StatusOK || j {
+			rsp(c, r, e)
 		} else {
-			c.Redirect(http.StatusMovedPermanently, l)
+			var j struct {
+				D []struct{ I struct{ ImageUrl string } }
+			}
+			if e = json.NewDecoder(r.Body).Decode(&j); e != nil {
+				c.AbortWithError(http.StatusInternalServerError, e)
+			} else if len(j.D) == 0 || j.D[0].I.ImageUrl == "" {
+				c.Status(http.StatusNotFound)
+			} else {
+				c.Redirect(http.StatusMovedPermanently, j.D[0].I.ImageUrl)
+			}
 		}
 	})
 	// Files:
 	authorized.StaticFS("/files/", gin.Dir(filepath.Join(settings.Path, files), true))
 	authorized.GET("/files", func(c *gin.Context) {
 		if l, e := os.Readlink(filepath.Join(settings.Path, files)); e == nil || os.IsNotExist(e) {
-			c.JSON(200, l)
+			c.JSON(http.StatusOK, l)
 		} else {
-			c.AbortWithError(http.StatusInternalServerError, e)
+			c.JSON(http.StatusInternalServerError, e.Error)
 		}
 	})
 	authorized.POST("/files", func(c *gin.Context) {
