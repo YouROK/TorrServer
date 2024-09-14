@@ -1,7 +1,6 @@
 package torrstor
 
 import (
-	"context"
 	"sync"
 
 	"server/torr/storage"
@@ -25,7 +24,7 @@ func NewStorage(capacity int64) *Storage {
 	return stor
 }
 
-func (s *Storage) OpenTorrent(_ context.Context, info *metainfo.Info, infoHash metainfo.Hash) (ts.TorrentImpl, error) {
+func (s *Storage) OpenTorrent(info *metainfo.Info, infoHash metainfo.Hash) (ts.TorrentImpl, error) {
 	capFunc := func() (int64, bool) { //	NE
 		return s.capacity, true //	NE
 	} //	NE
