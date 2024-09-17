@@ -147,6 +147,7 @@ services:
     torrserver:
         image: ghcr.io/yourok/torrserver
         container_name: torrserver
+        network_mode: host    # to allow DLNA feature
         environment:
             - TS_PORT=5665
             - TS_DONTKILL=1
@@ -159,6 +160,7 @@ services:
         ports:
             - '5665:5665'
         restart: unless-stopped
+        
 
 ```
 
