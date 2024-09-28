@@ -31,6 +31,9 @@ type BTSets struct {
 	EnableDLNA   bool
 	FriendlyName string
 
+	// TMDB API Key
+	TMDBApiKey string
+
 	// Rutor
 	EnableRutorSearch bool
 
