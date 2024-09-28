@@ -2,14 +2,13 @@ package httpfs
 
 import (
 	"strings"
-	"reflect"
 	"net/http"
 	"net/url"
     "strconv"
+	"server/log"
 	"github.com/gin-gonic/gin"
 	"server/torr"
 	"github.com/pkg/errors"
-    "fmt"
 	"github.com/anacrolix/torrent"
 
 	"server/torr/state"
@@ -35,9 +34,11 @@ func listDir(path string, folders [] string, files []string) string {
     return result
 }
 
+
+
 func HandleHttpfs(c *gin.Context) {
     path := c.Param("path")
-    fmt.Println("Path: " + path)
+    log.TLogln("URL path", path)
     path = strings.Trim(path, "/")
 
     if path == "" {
@@ -48,11 +49,9 @@ func HandleHttpfs(c *gin.Context) {
         folders := strings.Split(path, "/")
         trName := folders[0]
         folderPath := strings.Join(folders[1:], "/")
-        fmt.Println("trName " + trName)
-        fmt.Println("folderPath " + folderPath)
-        for _, item := range torr.ListTorrent() {
-            fmt.Println("Torrents found " + item.Title)
-        }
+//         for _, item := range torr.ListTorrent() {
+//             log.TLogln("Torrents found", item.Title)
+//         }
         requestedTorrents := sf.Filter(torr.ListTorrent(), func(item * torr.Torrent) bool { return item.Title == trName })
         if len(requestedTorrents) != 1 {
 		    c.AbortWithError(http.StatusBadRequest, errors.New("Torrent not found" + trName + ": " + strconv.Itoa(len(requestedTorrents))))
@@ -72,31 +71,14 @@ func HandleHttpfs(c *gin.Context) {
             }
         }
 
-        for _, item := range requestedTorrent.Files() {
-            fmt.Println("Requested files: " + item.Path())
-        }
-
         newArray := sf.Filter(requestedTorrent.Files(), func(item * torrent.File) bool { return strings.HasPrefix(item.Path(), folderPath) })
 
-        for _, item := range newArray {
-            fooType := reflect.TypeOf(item.FileInfo())
-            for i := 0; i < fooType.NumMethod(); i++ {
-                method := fooType.Method(i)
-                fmt.Println(method.Name)
-            }
-            for i := 0; i < fooType.NumMethod(); i++ {
-                method := fooType.Method(i)
-                fmt.Println(method.Name)
-            }
-            for i := 0; i < fooType.NumField(); i++ {
-                fmt.Println(fooType.Field(i).Name)
-            }
-
-            fmt.Println("Filtered files: " + item.Path() + " sha1: ")// + item.FileInfo())
-        }
-
+//         for _, item := range newArray {
+//             log.TLogln("Filtered files", item.Path(), " sha1: ")// + item.FileInfo())
+//         }
+//
         if len(newArray) == 1 && newArray[0].Path() == folderPath {
-            fmt.Println("Downloading file: " + newArray[0].Path())
+            log.TLogln("Downloading file:", requestedTorrent.Title, ":", newArray[0].Path())
             var index = -1
             for i, item := range requestedTorrent.Files() {
                 if item.Path() == folderPath {
@@ -116,7 +98,6 @@ func HandleHttpfs(c *gin.Context) {
 
             for _, item := range newArray {
                 p := strings.TrimPrefix(item.Path(), folderPath + "/")
-                fmt.Println("Checking: " + p)
                 if strings.Contains(p, "/") {
                     folders = append(folders, strings.Split(p, "/")[0])
                 } else {
