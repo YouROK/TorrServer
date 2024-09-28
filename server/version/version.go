@@ -8,7 +8,6 @@ import (
 
 const Version = "MatriX.134.NE"
 
-
 func GetTorrentVersion() string {
 	bi, ok := debug.ReadBuildInfo()
 	if !ok {
