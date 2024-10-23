@@ -21,13 +21,6 @@ import (
 )
 
 func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter) error {
-	// Log arguments
-	log.Printf("Stream called with fileID: %d, req: %v, resp: %v\n", fileID, req, resp)
-	// Log the request fully
-	log.Printf("Request: %+v\n", req)
-	// Log the response fully
-	log.Printf("Response: %+v\n", resp)
-
 	if !t.GotInfo() {
 		http.NotFound(resp, req)
 		return errors.New("torrent don't get info")

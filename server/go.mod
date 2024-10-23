@@ -1,8 +1,6 @@
 module server
 
-go 1.21
-
-toolchain go1.23.1
+go 1.20
 
 replace github.com/anacrolix/torrent v1.54.1 => github.com/tsynik/torrent v1.2.22
 
