@@ -92,6 +92,7 @@ On FreeBSD (TrueNAS/FreeNAS) you can use this plugin: <https://github.com/filka9
 - `--rdb`, `-r` - start in read-only DB mode
 - `--httpauth`, `-a` - enable http auth on all requests
 - `--dontkill`, `-k` - don't kill server on signal
+- `--downloaddir PATH` - path to download directory (usually where torrent downloader like qbittorrent stores downloaded files). Used for streaming torrents if they're already downloaded. (default: `{config_dir}/downloads`)
 - `--ui`, `-u` - open torrserver page in browser
 - `--torrentsdir TORRENTSDIR`, `-t TORRENTSDIR` - autoload torrents from dir
 - `--torrentaddr TORRENTADDR` - Torrent client address (format [IP]:PORT, ex. :32000, 127.0.0.1:32768 etc)
@@ -104,7 +105,7 @@ On FreeBSD (TrueNAS/FreeNAS) you can use this plugin: <https://github.com/filka9
 Example:
 
 ```bash
-TorrServer-darwin-arm64 [--port PORT] [--path PATH] [--logpath LOGPATH] [--weblogpath WEBLOGPATH] [--rdb] [--httpauth] [--dontkill] [--ui] [--torrentsdir TORRENTSDIR] [--torrentaddr TORRENTADDR] [--pubipv4 PUBIPV4] [--pubipv6 PUBIPV6] [--searchwa]
+TorrServer-darwin-arm64 [--port PORT] [--ssl] [--sslport SSLPORT] [--sslcert SSLCERT] [--sslkey SSLKEY] [--path PATH] [--logpath LOGPATH] [--weblogpath WEBLOGPATH] [--rdb] [--httpauth] [--dontkill] [--ui] [--torrentsdir TORRENTSDIR] [--torrentaddr TORRENTADDR] [--pubipv4 PUBIPV4] [--pubipv6 PUBIPV6] [--searchwa] [--maxsize MAXSIZE] [--downloaddir DOWNLOADDIR]
 ```
 
 ### Running in Docker & Docker Compose
@@ -126,6 +127,7 @@ docker run --rm -d --name torrserver -v ~/ts:/opt/ts -p 8090:8090 ghcr.io/yourok
 - `TS_HTTPAUTH` - 1, and place auth file into `~/ts/config` folder for enabling basic auth
 - `TS_RDB` - if 1, then the enabling `--rdb` flag
 - `TS_DONTKILL` - if 1, then the enabling `--dontkill` flag
+- `TS_DOWNLOAD_DIR` - path to download directory (usually where torrent downloader like qbittorrent stores downloaded files). Used for streaming torrents if they're already downloaded.
 - `TS_PORT` - for changind default port to **5555** (example), also u need to change `-p 8090:8090` to `-p 5555:5555` (example)
 - `TS_CONF_PATH` - for overriding torrserver config path inside container. Example `/opt/tsss`
 - `TS_TORR_DIR` - for overriding torrents directory. Example `/opt/torr_files`
