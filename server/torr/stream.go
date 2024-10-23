@@ -7,6 +7,8 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/anacrolix/dms/dlna"
@@ -19,6 +21,13 @@ import (
 )
 
 func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter) error {
+	// Log arguments
+	log.Printf("Stream called with fileID: %d, req: %v, resp: %v\n", fileID, req, resp)
+	// Log the request fully
+	log.Printf("Request: %+v\n", req)
+	// Log the response fully
+	log.Printf("Response: %+v\n", resp)
+
 	if !t.GotInfo() {
 		http.NotFound(resp, req)
 		return errors.New("torrent don't get info")
@@ -52,6 +61,39 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 		return fmt.Errorf("file size exceeded max allowed %d bytes", sets.MaxSize)
 	}
 
+	torrDir := sets.DownloadDir
+	localFilePath := filepath.Join(torrDir, file.Path())
+
+	if _, err := os.Stat(localFilePath); err == nil {
+		// File exists, serve it directly
+		if sets.BTsets.EnableDebug {
+			log.Printf("Serving local file: %s\n", localFilePath)
+		}
+
+		// Set appropriate headers
+		resp.Header().Set("Connection", "close")
+		etag := hex.EncodeToString([]byte(fmt.Sprintf("%s/%s", t.Hash().HexString(), file.Path())))
+		resp.Header().Set("ETag", httptoo.EncodeQuotedString(etag))
+
+		// DLNA headers
+		resp.Header().Set("transferMode.dlna.org", "Streaming")
+		mime, err := mt.MimeTypeByPath(file.Path())
+		if err == nil && mime.IsMedia() {
+			resp.Header().Set("content-type", mime.String())
+		}
+		if req.Header.Get("getContentFeatures.dlna.org") != "" {
+			resp.Header().Set("contentFeatures.dlna.org", dlna.ContentFeatures{
+				SupportRange:    true,
+				SupportTimeSeek: true,
+			}.String())
+		}
+
+		// Serve the local file
+		http.ServeFile(resp, req, localFilePath)
+		return nil
+	}
+
+	// If the file doesn't exist locally, continue with the existing torrent streaming logic
 	reader := t.NewReader(file)
 	if sets.BTsets.ResponsiveMode {
 		reader.SetResponsive()

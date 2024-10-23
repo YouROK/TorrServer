@@ -44,6 +44,7 @@ type args struct {
 	PubIPv6     string `arg:"-6" help:"set public IPv6 addr"`
 	SearchWA    bool   `arg:"-s" help:"search without auth"`
 	MaxSize     string `arg:"-m" help:"max allowed stream size (in Bytes)"`
+	DownloadDir string `arg:"-x" help:"path to download directory"`
 }
 
 func (args) Version() string {
@@ -114,6 +115,20 @@ func main() {
 			settings.MaxSize = maxSize
 		}
 	}
+
+	if params.DownloadDir != "" {
+		settings.DownloadDir = params.DownloadDir
+	} else {
+		// Set a default download directory if not provided
+		settings.DownloadDir = filepath.Join(settings.Path, "downloads")
+	}
+
+	// Ensure the download directory exists
+	if err := os.MkdirAll(settings.DownloadDir, 0755); err != nil {
+		log.TLogln("Error creating download directory:", err)
+	}
+
+	log.TLogln("Download directory set to:", settings.DownloadDir)
 
 	server.Start(params.Port, params.SslPort, params.SslCert, params.SslKey, params.Ssl, params.RDB, params.SearchWA)
 	log.TLogln(server.WaitServer())
