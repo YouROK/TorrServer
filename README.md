@@ -166,6 +166,56 @@ services:
 
 ```
 
+Example with qbittorrent:
+
+*NOTE: To enable VueTorrent UI you need to go to Tools->Options, enable "Use alternative WebUI", set value to /app/vuetorrent and Save*
+
+```yml
+# docker-compose.yml
+
+services:
+  torrserver:
+    image: ghcr.io/yourok/torrserver
+    # Or build locally:
+    # build:
+    #   dockerfile: Dockerfile
+    container_name: torrserver
+    environment:
+      - TS_PORT=5665
+      - TS_DONTKILL=1
+      - TS_HTTPAUTH=0
+      - TS_CONF_PATH=/opt/ts/config
+      - TS_TORR_DIR=/opt/ts/torrents
+      - TS_DOWNLOAD_DIR=/downloads
+    volumes:
+      - './CACHE:/opt/ts/torrents'
+      - './CONFIG:/opt/ts/config'
+      - qbittorrent-data:/downloads:ro
+    ports:
+      - '5665:5665'
+    restart: unless-stopped
+
+  qbittorrent:
+    container_name: qbittorrent
+    image: ghcr.io/hotio/qbittorrent  # preloaded with VueTorrent
+    ports:
+      - "5666:5666"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - UMASK=002
+      - TZ=Etc/UTC
+      - WEBUI_PORTS=5666/tcp,5666/udp
+    volumes:
+      - qbittorrent-config:/config
+      - qbittorrent-data:/app/qBittorrent/downloads
+
+volumes:
+  qbittorrent-config:
+  qbittorrent-data:
+
+```
+
 ### Smart TV (using Media Station X)
 
 1. Install **Media Station X** on your Smart TV (see [platform support](https://msx.benzac.de/info/?tab=PlatformSupport))
