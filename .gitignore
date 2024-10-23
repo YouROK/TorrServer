@@ -43,3 +43,6 @@ server/server.pem
 server/server.key
 settings.json
 viewed.json
+
+CONFIG/
+CACHE/
