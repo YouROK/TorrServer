@@ -11,7 +11,7 @@ require (
 	github.com/anacrolix/log v0.16.0
 	github.com/anacrolix/missinggo/v2 v2.8.0
 	github.com/anacrolix/publicip v0.3.1
-	github.com/anacrolix/torrent v1.57.2-0.20241017235801-4d8437a05621
+	github.com/anacrolix/torrent v1.58.0
 	github.com/gin-contrib/cors v1.7.2
 	github.com/gin-contrib/location v1.0.1
 	github.com/gin-gonic/gin v1.10.0
