@@ -2,6 +2,8 @@ package settings
 
 import (
 	"encoding/json"
+	"server/log"
+	"server/settings/sqlite_models"
 	"sort"
 	"sync"
 
@@ -79,4 +81,41 @@ func RemTorrent(hash metainfo.Hash) {
 	mu.Lock()
 	tdb.Rem("Torrents", hash.HexString())
 	mu.Unlock()
+}
+
+func (t TorrentDB) toSQLTorrent() sqlite_models.SQLTorrent {
+	return sqlite_models.SQLTorrent{
+		Hash:        t.InfoHash.HexString(),
+		Category:    t.Category,
+		Poster:      t.Poster,
+		Size:        t.Size,
+		Title:       t.Title,
+		DisplayName: t.DisplayName,
+		ChunkSize:   t.ChunkSize,
+		Data:        t.Data,
+	}
+}
+
+func fromSQLTorrent(sqlTorrent sqlite_models.SQLTorrent) TorrentDB {
+	buf, err := json.Marshal(sqlTorrent.Files)
+	if err != nil {
+		log.TLogln(err)
+		buf = []byte{}
+	}
+
+	return TorrentDB{
+		Title:     sqlTorrent.Title,
+		Category:  sqlTorrent.Category,
+		Poster:    sqlTorrent.Poster,
+		Timestamp: sqlTorrent.UpdatedAt.Unix(),
+		Size:      sqlTorrent.Size,
+		TorrentSpec: &torrent.TorrentSpec{
+			DisplayName: sqlTorrent.DisplayName,
+			ChunkSize:   sqlTorrent.ChunkSize,
+			Storage:     nil,
+			InfoHash:    metainfo.NewHashFromHex(sqlTorrent.Hash),
+			InfoBytes:   nil,
+		},
+		Data: string(buf),
+	}
 }

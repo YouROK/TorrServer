@@ -26,24 +26,25 @@ import (
 )
 
 type args struct {
-	Port        string `arg:"-p" help:"web server port (default 8090)"`
-	Ssl         bool   `help:"enables https"`
-	SslPort     string `help:"web server ssl port, If not set, will be set to default 8091 or taken from db(if stored previously). Accepted if --ssl enabled."`
-	SslCert     string `help:"path to ssl cert file. If not set, will be taken from db(if stored previously) or default self-signed certificate/key will be generated. Accepted if --ssl enabled."`
-	SslKey      string `help:"path to ssl key file. If not set, will be taken from db(if stored previously) or default self-signed certificate/key will be generated. Accepted if --ssl enabled."`
-	Path        string `arg:"-d" help:"database and config dir path"`
-	LogPath     string `arg:"-l" help:"server log file path"`
-	WebLogPath  string `arg:"-w" help:"web access log file path"`
-	RDB         bool   `arg:"-r" help:"start in read-only DB mode"`
-	HttpAuth    bool   `arg:"-a" help:"enable http auth on all requests"`
-	DontKill    bool   `arg:"-k" help:"don't kill server on signal"`
-	UI          bool   `arg:"-u" help:"open torrserver page in browser"`
-	TorrentsDir string `arg:"-t" help:"autoload torrents from dir"`
-	TorrentAddr string `help:"Torrent client address, like 127.0.0.1:1337 (default :PeersListenPort)"`
-	PubIPv4     string `arg:"-4" help:"set public IPv4 addr"`
-	PubIPv6     string `arg:"-6" help:"set public IPv6 addr"`
-	SearchWA    bool   `arg:"-s" help:"search without auth"`
-	MaxSize     string `arg:"-m" help:"max allowed stream size (in Bytes)"`
+	Port             string `arg:"-p" help:"web server port (default 8090)"`
+	Ssl              bool   `help:"enables https"`
+	SslPort          string `help:"web server ssl port, If not set, will be set to default 8091 or taken from db(if stored previously). Accepted if --ssl enabled."`
+	SslCert          string `help:"path to ssl cert file. If not set, will be taken from db(if stored previously) or default self-signed certificate/key will be generated. Accepted if --ssl enabled."`
+	SslKey           string `help:"path to ssl key file. If not set, will be taken from db(if stored previously) or default self-signed certificate/key will be generated. Accepted if --ssl enabled."`
+	Path             string `arg:"-d" help:"database and config dir path"`
+	LogPath          string `arg:"-l" help:"server log file path"`
+	WebLogPath       string `arg:"-w" help:"web access log file path"`
+	RDB              bool   `arg:"-r" help:"start in read-only DB mode"`
+	HttpAuth         bool   `arg:"-a" help:"enable http auth on all requests"`
+	DontKill         bool   `arg:"-k" help:"don't kill server on signal"`
+	UI               bool   `arg:"-u" help:"open torrserver page in browser"`
+	TorrentsDir      string `arg:"-t" help:"autoload torrents from dir"`
+	TorrentAddr      string `help:"Torrent client address, like 127.0.0.1:1337 (default :PeersListenPort)"`
+	PubIPv4          string `arg:"-4" help:"set public IPv4 addr"`
+	PubIPv6          string `arg:"-6" help:"set public IPv6 addr"`
+	SearchWA         bool   `arg:"-s" help:"search without auth"`
+	MaxSize          string `arg:"-m" help:"max allowed stream size (in Bytes)"`
+	UseLegacyBackend bool   `arg:"-b" help:"Use legacy storage backend (json + bolt)"`
 }
 
 func (args) Version() string {
@@ -115,7 +116,7 @@ func main() {
 		}
 	}
 
-	server.Start(params.Port, params.SslPort, params.SslCert, params.SslKey, params.Ssl, params.RDB, params.SearchWA)
+	server.Start(params.Port, params.SslPort, params.SslCert, params.SslKey, params.Ssl, params.RDB, params.SearchWA, params.UseLegacyBackend)
 	log.TLogln(server.WaitServer())
 	log.Close()
 	time.Sleep(time.Second * 3)
