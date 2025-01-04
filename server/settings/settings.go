@@ -55,8 +55,8 @@ func InitSets(readOnly, searchWA bool, useLegacyBackend bool) {
 	} else {
 		log.TLogln("Using SQLite storage backends...")
 
-		sqliteDB := NewSqliteDB(filepath.Join(Path, "torrserver.db"))
-		if sqliteDB == nil {
+		sqliteDB, err := NewSqliteDB(filepath.Join(Path, "torrserver.db"))
+		if err != nil {
 			log.TLogln("Error creating sqlite database")
 			os.Exit(1)
 		}
