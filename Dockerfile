@@ -1,14 +1,27 @@
 ### FRONT BUILD START ###
-FROM --platform=$BUILDPLATFORM node:16-alpine as front
-COPY ./web /app
+FROM --platform=$BUILDPLATFORM node:16-alpine AS front
+
 WORKDIR /app
+
+ARG REACT_APP_SERVER_HOST=
+ARG REACT_APP_TMDB_API_KEY=
+ARG PUBLIC_URL=
+
+ENV REACT_APP_SERVER_HOST=$REACT_APP_SERVER_HOST
+ENV REACT_APP_TMDB_API_KEY=$REACT_APP_TMDB_API_KEY
+ENV PUBLIC_URL=$PUBLIC_URL
+
+COPY ./web/package.json .
+RUN yarn install
+
 # Build front once upon multiarch build
-RUN yarn install && yarn run build
+COPY ./web .
+RUN yarn run build
 ### FRONT BUILD END ###
 
 
 ### BUILD TORRSERVER MULTIARCH START ###
-FROM --platform=$BUILDPLATFORM golang:1.21.2-alpine as builder
+FROM --platform=$BUILDPLATFORM golang:1.21.2-alpine AS builder
 
 COPY . /opt/src
 COPY --from=front /app/build /opt/src/web/build
@@ -31,11 +44,11 @@ RUN apk add --update g++ \
 
 
 ### UPX COMPRESSING START ###
-FROM debian:buster-slim as compressed
+FROM debian:buster-slim AS compressed
 
 COPY --from=builder /opt/src/server/torrserver ./torrserver
 
-RUN apt-get update && apt-get install -y upx-ucl && upx --best --lzma ./torrserver
+# RUN apt-get update && apt-get install -y upx-ucl && upx --best --lzma ./torrserver
 # Compress torrserver only for amd64 and arm64 no variant platforms
 # ARG TARGETARCH
 # ARG TARGETVARIANT
