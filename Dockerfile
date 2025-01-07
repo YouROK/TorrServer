@@ -48,7 +48,7 @@ FROM debian:buster-slim AS compressed
 
 COPY --from=builder /opt/src/server/torrserver ./torrserver
 
-# RUN apt-get update && apt-get install -y upx-ucl && upx --best --lzma ./torrserver
+RUN apt-get update && apt-get install -y upx-ucl && upx --best --lzma ./torrserver
 # Compress torrserver only for amd64 and arm64 no variant platforms
 # ARG TARGETARCH
 # ARG TARGETVARIANT
