@@ -13,7 +13,7 @@ type SQLTorrent struct {
 	Title       string
 	DisplayName string
 	ChunkSize   int
-	Data        string `gorm:"-"`
+	Trackers    []byte
 	Files       []SQLTorrentFile
 }
 

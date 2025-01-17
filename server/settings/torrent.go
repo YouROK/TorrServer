@@ -83,8 +83,13 @@ func RemTorrent(hash metainfo.Hash) {
 	mu.Unlock()
 }
 
-func (t TorrentDB) toSQLTorrent() sqlite_models.SQLTorrent {
-	return sqlite_models.SQLTorrent{
+func (t TorrentDB) toSQLTorrent() *sqlite_models.SQLTorrent {
+	value, err := json.Marshal(t.Trackers)
+	if err != nil {
+		return nil
+	}
+
+	return &sqlite_models.SQLTorrent{
 		Hash:        t.InfoHash.HexString(),
 		Category:    t.Category,
 		Poster:      t.Poster,
@@ -92,15 +97,16 @@ func (t TorrentDB) toSQLTorrent() sqlite_models.SQLTorrent {
 		Title:       t.Title,
 		DisplayName: t.DisplayName,
 		ChunkSize:   t.ChunkSize,
-		Data:        t.Data,
+		Trackers:    value,
 	}
 }
 
 func fromSQLTorrent(sqlTorrent sqlite_models.SQLTorrent) TorrentDB {
-	buf, err := json.Marshal(sqlTorrent.Files)
+	var trackers [][]string
+	err := json.Unmarshal(sqlTorrent.Trackers, &trackers)
 	if err != nil {
-		log.TLogln(err)
-		buf = []byte{}
+		log.TLogln("cannot unmarshal trackers...")
+		return TorrentDB{}
 	}
 
 	return TorrentDB{
@@ -115,7 +121,7 @@ func fromSQLTorrent(sqlTorrent sqlite_models.SQLTorrent) TorrentDB {
 			Storage:     nil,
 			InfoHash:    metainfo.NewHashFromHex(sqlTorrent.Hash),
 			InfoBytes:   nil,
+			Trackers:    trackers,
 		},
-		Data: string(buf),
 	}
 }

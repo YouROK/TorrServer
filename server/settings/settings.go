@@ -67,7 +67,7 @@ func InitSets(readOnly, searchWA bool, useLegacyBackend bool) {
 			os.Exit(1)
 		}
 
-		SettingsStorage, ViewedStorage, TorrentsStorage = jsonDB, jsonDB, sqliteDB
+		SettingsStorage, ViewedStorage, TorrentsStorage = jsonDB, sqliteDB, sqliteDB
 	}
 
 	dbRouter := NewXPathDBRouter()

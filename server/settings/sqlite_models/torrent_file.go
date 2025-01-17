@@ -7,6 +7,8 @@ type SQLTorrentFile struct {
 	SQLTorrentID uint   `gorm:"uniqueIndex:uniqueTorrentFileIndex"`
 	Path         string `gorm:"uniqueIndex:uniqueTorrentFileIndex"`
 	Length       int64
+	FileIndex    int
+	Viewed       bool
 }
 
 func (SQLTorrentFile) TableName() string {
