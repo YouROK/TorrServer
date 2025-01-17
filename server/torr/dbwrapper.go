@@ -3,6 +3,7 @@ package torr
 import (
 	"encoding/json"
 
+	"server/models"
 	"server/settings"
 	"server/torr/state"
 	"server/torr/utils"
@@ -10,19 +11,13 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 )
 
-type tsFiles struct {
-	TorrServer struct {
-		Files []*state.TorrentFileStat `json:"Files"`
-	} `json:"TorrServer"`
-}
-
 func AddTorrentDB(torr *Torrent) {
 	t := new(settings.TorrentDB)
 	t.TorrentSpec = torr.TorrentSpec
 	t.Title = torr.Title
 	t.Category = torr.Category
 	if torr.Data == "" {
-		files := new(tsFiles)
+		files := new(models.TsFiles)
 		files.TorrServer.Files = torr.Status().FileStats
 		buf, err := json.Marshal(files)
 		if err == nil {

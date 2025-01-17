@@ -11,8 +11,8 @@ import (
 	"server/web"
 )
 
-func Start(port, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA bool) {
-	settings.InitSets(roSets, searchWA)
+func Start(port, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA bool, useLegacyBackend bool) {
+	settings.InitSets(roSets, searchWA, useLegacyBackend)
 	// https checks
 	if sslEnabled {
 		// set settings ssl enabled

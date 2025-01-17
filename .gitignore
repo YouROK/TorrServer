@@ -43,3 +43,4 @@ server/server.pem
 server/server.key
 settings.json
 viewed.json
+torrserver.db*
