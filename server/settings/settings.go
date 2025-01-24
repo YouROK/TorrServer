@@ -10,6 +10,7 @@ import (
 var (
 	tdb      TorrServerDB
 	Path     string
+	IP       string
 	Port     string
 	Ssl      bool
 	SslPort  string

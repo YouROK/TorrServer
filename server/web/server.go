@@ -103,14 +103,14 @@ func Start() {
 			settings.SetBTSets(settings.BTsets)
 		}
 		go func() {
-			log.TLogln("Start https server at port", settings.SslPort)
-			waitChan <- route.RunTLS(":"+settings.SslPort, settings.BTsets.SslCert, settings.BTsets.SslKey)
+			log.TLogln("Start https server at", settings.IP+":"+settings.SslPort)
+			waitChan <- route.RunTLS(settings.IP+":"+settings.SslPort, settings.BTsets.SslCert, settings.BTsets.SslKey)
 		}()
 	}
 
 	go func() {
-		log.TLogln("Start http server at port", settings.Port)
-		waitChan <- route.Run(":" + settings.Port)
+		log.TLogln("Start http server at", settings.IP+":"+settings.Port)
+		waitChan <- route.Run(settings.IP + ":" + settings.Port)
 	}()
 }
 
