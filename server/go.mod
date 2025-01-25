@@ -4,7 +4,10 @@ go 1.21
 
 toolchain go1.23.2
 
-replace github.com/anacrolix/torrent v1.54.1 => github.com/tsynik/torrent v1.2.22
+replace (
+	github.com/anacrolix/torrent v1.54.1 => github.com/tsynik/torrent v1.2.22
+	github.com/anacrolix/upnp v0.1.4 => github.com/tsynik/upnp v0.1.5
+)
 
 require (
 	github.com/agnivade/levenshtein v1.1.1
