@@ -182,7 +182,7 @@ func getDefaultFriendlyName() string {
 			if runtime.GOOS != "windows" && (i.Flags&net.FlagLoopback != 0 || i.Flags&net.FlagUp == 0 || i.Flags&net.FlagMulticast == 0) {
 				continue
 			}
-			addrs, _ := i.Addrs()
+			addrs, _ := anet.InterfaceAddrsByInterface(&i)
 			for _, addr := range addrs {
 				var ip net.IP
 				switch v := addr.(type) {

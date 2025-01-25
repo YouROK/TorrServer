@@ -147,7 +147,7 @@ func getLocalIps() []string {
 	}
 	var list []string
 	for _, i := range ifaces {
-		addrs, _ := i.Addrs()
+		addrs, _ := anet.InterfaceAddrsByInterface(&i)
 		if i.Flags&net.FlagUp == net.FlagUp {
 			for _, addr := range addrs {
 				var ip net.IP

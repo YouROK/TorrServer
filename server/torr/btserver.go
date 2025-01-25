@@ -214,7 +214,7 @@ func getPublicIp4() net.IP {
 		return nil
 	}
 	for _, i := range ifaces {
-		addrs, _ := i.Addrs()
+		addrs, _ := anet.InterfaceAddrsByInterface(&i)
 		if i.Flags&net.FlagUp == net.FlagUp {
 			for _, addr := range addrs {
 				var ip net.IP
@@ -240,7 +240,7 @@ func getPublicIp6() net.IP {
 		return nil
 	}
 	for _, i := range ifaces {
-		addrs, _ := i.Addrs()
+		addrs, _ := anet.InterfaceAddrsByInterface(&i)
 		if i.Flags&net.FlagUp == net.FlagUp {
 			for _, addr := range addrs {
 				var ip net.IP
