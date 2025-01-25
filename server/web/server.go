@@ -10,6 +10,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/location"
 	"github.com/gin-gonic/gin"
+	"github.com/wlynxg/anet"
 
 	"server/dlna"
 	"server/settings"
@@ -139,7 +140,7 @@ func echo(c *gin.Context) {
 }
 
 func getLocalIps() []string {
-	ifaces, err := net.Interfaces()
+	ifaces, err := anet.Interfaces()
 	if err != nil {
 		log.TLogln("Error get local IPs")
 		return nil

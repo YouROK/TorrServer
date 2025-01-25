@@ -13,6 +13,7 @@ import (
 
 	"github.com/anacrolix/dms/dlna/dms"
 	"github.com/anacrolix/log"
+	"github.com/wlynxg/anet"
 
 	"server/settings"
 	"server/web/pages/template"
@@ -26,7 +27,7 @@ func Start() {
 		Logger: logger.WithNames("dms", "server"),
 		Interfaces: func() (ifs []net.Interface) {
 			var err error
-			ifaces, err := net.Interfaces()
+			ifaces, err := anet.Interfaces()
 			if err != nil {
 				logger.Levelf(log.Error, "%v", err)
 				return
@@ -171,7 +172,7 @@ func getDefaultFriendlyName() string {
 	}
 
 	if host == "localhost" { // useless host, use 1st IP
-		ifaces, err := net.Interfaces()
+		ifaces, err := anet.Interfaces()
 		if err != nil {
 			return ret + ": " + userName + "@" + host
 		}
