@@ -54,5 +54,6 @@ func SetupRoute(route gin.IRouter) {
 	authorized.GET("/ffp/:hash/:id", ffp)
 
 	authorized.GET("/httpfs", func(c *gin.Context) { c.Redirect(http.StatusFound, "/httpfs/") })
+	authorized.HEAD("/httpfs/*path", httpfs.HandleHttpfs)
 	authorized.GET("/httpfs/*path", httpfs.HandleHttpfs)
 }
