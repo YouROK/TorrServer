@@ -48,12 +48,12 @@ func InitSets(readOnly, searchWA bool) {
 	tdb = NewDBReadCache(dbRouter)
 
 	// We migrate settings here, it must be done before loadBTSets()
-	if err := Migrate2(bboltDB, jsonDB); err != nil {
-		log.TLogln("Migrate2 failed")
+	if err := MigrateToJson(bboltDB, jsonDB); err != nil {
+		log.TLogln("MigrateToJson failed")
 		os.Exit(1)
 	}
 	loadBTSets()
-	Migrate1()
+	MigrateTorrents()
 }
 
 func CloseDB() {
