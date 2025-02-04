@@ -11,7 +11,7 @@ import (
 	"server/web"
 )
 
-func Start(port, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA bool) {
+func Start(port, ip, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA bool) {
 	settings.InitSets(roSets, searchWA)
 	// https checks
 	if sslEnabled {
@@ -37,7 +37,7 @@ func Start(port, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA b
 			settings.BTsets.SslKey = sslKey
 		}
 		log.TLogln("Check web ssl port", sslport)
-		l, err := net.Listen("tcp", ":"+sslport)
+		l, err := net.Listen("tcp", ip+":"+sslport)
 		if l != nil {
 			l.Close()
 		}
@@ -50,8 +50,9 @@ func Start(port, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA b
 	if port == "" {
 		port = "8090"
 	}
+
 	log.TLogln("Check web port", port)
-	l, err := net.Listen("tcp", ":"+port)
+	l, err := net.Listen("tcp", ip+":"+port)
 	if l != nil {
 		l.Close()
 	}
@@ -64,6 +65,7 @@ func Start(port, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA b
 	// set settings http and https ports. Start web server.
 	settings.Port = port
 	settings.SslPort = sslport
+	settings.IP = ip
 	web.Start()
 }
 

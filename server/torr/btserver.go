@@ -10,6 +10,7 @@ import (
 	"github.com/anacrolix/publicip"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
+	"github.com/wlynxg/anet"
 
 	"server/settings"
 	"server/torr/storage/torrstor"
@@ -207,13 +208,13 @@ func isPrivateIP(ip net.IP) bool {
 }
 
 func getPublicIp4() net.IP {
-	ifaces, err := net.Interfaces()
+	ifaces, err := anet.Interfaces()
 	if err != nil {
 		log.Println("Error get public IPv4")
 		return nil
 	}
 	for _, i := range ifaces {
-		addrs, _ := i.Addrs()
+		addrs, _ := anet.InterfaceAddrsByInterface(&i)
 		if i.Flags&net.FlagUp == net.FlagUp {
 			for _, addr := range addrs {
 				var ip net.IP
@@ -233,13 +234,13 @@ func getPublicIp4() net.IP {
 }
 
 func getPublicIp6() net.IP {
-	ifaces, err := net.Interfaces()
+	ifaces, err := anet.Interfaces()
 	if err != nil {
 		log.Println("Error get public IPv6")
 		return nil
 	}
 	for _, i := range ifaces {
-		addrs, _ := i.Addrs()
+		addrs, _ := anet.InterfaceAddrsByInterface(&i)
 		if i.Flags&net.FlagUp == net.FlagUp {
 			for _, addr := range addrs {
 				var ip net.IP

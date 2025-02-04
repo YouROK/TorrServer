@@ -30,7 +30,6 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "build-js": "yarn run build && npx gulp",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "lint": "eslint --ext .js,.jsx src --color",
@@ -60,9 +59,6 @@
     "eslint-config-airbnb": "^18.2.1",
     "eslint-config-prettier": "^8.10.0",
     "eslint-plugin-prettier": "^3.4.0",
-    "gulp": "^4.0.2",
-    "gulp-inline-source": "^4.0.0",
-    "gulp-replace": "^1.1.4",
     "prettier": "^2.8.8"
   },
   "description": "",
