@@ -151,6 +151,9 @@ func (bt *BTServer) configure(ctx context.Context) {
 			log.Printf("error getting public ipv4 address: %v", err)
 		}
 	}
+	if bt.config.PublicIp4.To4() == nil { // possible IPv6 from publicip.Get4(ctx)
+		bt.config.PublicIp4 = nil
+	}
 	if bt.config.PublicIp4 != nil {
 		log.Println("PublicIp4:", bt.config.PublicIp4)
 	}
@@ -166,6 +169,9 @@ func (bt *BTServer) configure(ctx context.Context) {
 		if err != nil {
 			log.Printf("error getting public ipv6 address: %v", err)
 		}
+	}
+	if bt.config.PublicIp6.To16() == nil { // just 4 sure it's valid IPv6
+		bt.config.PublicIp6 = nil
 	}
 	if bt.config.PublicIp6 != nil {
 		log.Println("PublicIp6:", bt.config.PublicIp6)
