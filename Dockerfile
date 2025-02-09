@@ -11,7 +11,7 @@ ENV REACT_APP_SERVER_HOST=$REACT_APP_SERVER_HOST
 ENV REACT_APP_TMDB_API_KEY=$REACT_APP_TMDB_API_KEY
 ENV PUBLIC_URL=$PUBLIC_URL
 
-COPY ./web/package.json .
+COPY ./web/package.json ./web/yarn.lock ./
 RUN yarn install
 
 # Build front once upon multiarch build
