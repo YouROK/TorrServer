@@ -91,11 +91,12 @@ const Torrent = ({ torrent }) => {
   const getFileLink = (path, id) =>
     `${streamHost()}/${encodeURIComponent(path.split('\\').pop().split('/').pop())}?link=${hash}&index=${id}&play`
 
-  const fileList = JSON.parse(torrent.data).TorrServer.Files
+  const fileList = JSON.parse(torrent.data)?.TorrServer?.Files
   const playableVideoList = fileList.length ? fileList?.filter(({ path }) => isFilePlayable(path)) : []
   const getVideoCaption = (path, id) => {
     const captionFile = fileList.find(file => Number(file.id) === Number(id) + 1)
-    return getFileLink(captionFile.path, captionFile.id)
+
+    return captionFile ? getFileLink(captionFile?.path, captionFile?.id) : ''
   }
   return (
     <>
