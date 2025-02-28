@@ -4,6 +4,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"server/tgbot"
 	"strconv"
 
 	"server/log"
@@ -11,7 +12,7 @@ import (
 	"server/web"
 )
 
-func Start(port, ip, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA bool) {
+func Start(port, ip, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA bool, tgtoken string) {
 	settings.InitSets(roSets, searchWA)
 	// https checks
 	if sslEnabled {
@@ -66,6 +67,8 @@ func Start(port, ip, sslport, sslCert, sslKey string, sslEnabled, roSets, search
 	settings.Port = port
 	settings.SslPort = sslport
 	settings.IP = ip
+
+	tgbot.Start(tgtoken)
 	web.Start()
 }
 
