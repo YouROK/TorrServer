@@ -118,7 +118,7 @@ docker run --rm -d --name torrserver -p 8090:8090 ghcr.io/yourok/torrserver:late
 For running in persistence mode, just mount volume to container by adding `-v ~/ts:/opt/ts`, where `~/ts` folder path is just example, but you could use it anyway... Result example command:
 
 ```bash
-docker run --rm -d --name torrserver -v ~/ts:/opt/ts -p 8090:8090 ghcr.io/yourok/torrserver:latest
+docker run --rm -d --name torrserver -v ~/ts:/opt/ts -e TS_PATH=/opt/ts -p 8090:8090 ghcr.io/yourok/torrserver:latest
 ```
 
 #### Environments
@@ -127,7 +127,7 @@ docker run --rm -d --name torrserver -v ~/ts:/opt/ts -p 8090:8090 ghcr.io/yourok
 - `TS_RDB` - if 1, then the enabling `--rdb` flag
 - `TS_DONTKILL` - if 1, then the enabling `--dontkill` flag
 - `TS_PORT` - for changind default port to **5555** (example), also u need to change `-p 8090:8090` to `-p 5555:5555` (example)
-- `TS_CONF_PATH` - for overriding torrserver config path inside container. Example `/opt/tsss`
+- `TS_PATH` - for overriding torrserver database and config dir path path inside container. Example `/opt/tsss`
 - `TS_TORR_DIR` - for overriding torrents directory. Example `/opt/torr_files`
 - `TS_LOG_PATH` - for overriding log path. Example `/opt/torrserver.log`
 
