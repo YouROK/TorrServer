@@ -124,12 +124,12 @@ docker run --rm -d --name torrserver -v ~/ts:/opt/ts -e TS_PATH=/opt/ts -p 8090:
 #### Environments
 
 - `TS_HTTPAUTH` - 1, and place auth file into `~/ts/config` folder for enabling basic auth
-- `TS_RDB` - if 1, then the enabling `--rdb` flag
-- `TS_DONTKILL` - if 1, then the enabling `--dontkill` flag
-- `TS_PORT` - for changind default port to **5555** (example), also u need to change `-p 8090:8090` to `-p 5555:5555` (example)
-- `TS_PATH` - for overriding torrserver database and config dir path path inside container. Example `/opt/tsss`
-- `TS_TORR_DIR` - for overriding torrents directory. Example `/opt/torr_files`
-- `TS_LOG_PATH` - for overriding log path. Example `/opt/torrserver.log`
+- `TS_RDB` - if 1, then the `--rdb` flag is enabled
+- `TS_DONTKILL` - if 1, then the `--dontkill` flag is enabled
+- `TS_PORT` - to change the default port to **5555** (example), you also need to change `-p 8090:8090` to `-p 5555:5555` (example)
+- `TS_CONF_PATH` - for overriding torrserver database and config dir path inside container. Example `/opt/ts`
+- `TS_TORR_DIR` - for overriding torrents watch directory. Example `/opt/torr_files`
+- `TS_LOG_PATH` - for overriding log file path. Example `/opt/torrserver.log`
 
 Example with full overrided command (on default values):
 
