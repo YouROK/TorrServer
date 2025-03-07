@@ -47,7 +47,7 @@ var (
 // @externalDocs.url			https://swagger.io/resources/open-api/
 func Start() {
 	log.TLogln("Start TorrServer " + version.Version + " torrent " + version.GetTorrentVersion())
-	ips := getLocalIps()
+	ips := GetLocalIps()
 	if len(ips) > 0 {
 		log.TLogln("Local IPs:", ips)
 	}
@@ -60,10 +60,6 @@ func Start() {
 
 	gin.SetMode(gin.ReleaseMode)
 
-	// corsCfg := cors.DefaultConfig()
-	// corsCfg.AllowAllOrigins = true
-	// corsCfg.AllowHeaders = []string{"*"}
-	// corsCfg.AllowMethods = []string{"*"}
 	corsCfg := cors.DefaultConfig()
 	corsCfg.AllowAllOrigins = true
 	corsCfg.AllowPrivateNetwork = true
@@ -138,7 +134,7 @@ func echo(c *gin.Context) {
 	c.String(200, "%v", version.Version)
 }
 
-func getLocalIps() []string {
+func GetLocalIps() []string {
 	ifaces, err := net.Interfaces()
 	if err != nil {
 		log.TLogln("Error get local IPs")
