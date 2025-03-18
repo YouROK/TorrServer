@@ -3,9 +3,9 @@ FROM --platform=$BUILDPLATFORM node:16-alpine AS front
 
 WORKDIR /app
 
-ARG REACT_APP_SERVER_HOST=
-ARG REACT_APP_TMDB_API_KEY=
-ARG PUBLIC_URL=
+ARG REACT_APP_SERVER_HOST='.'
+ARG REACT_APP_TMDB_API_KEY=''
+ARG PUBLIC_URL=''
 
 ENV REACT_APP_SERVER_HOST=$REACT_APP_SERVER_HOST
 ENV REACT_APP_TMDB_API_KEY=$REACT_APP_TMDB_API_KEY
@@ -21,7 +21,7 @@ RUN yarn run build
 
 
 ### BUILD TORRSERVER MULTIARCH START ###
-FROM --platform=$BUILDPLATFORM golang:1.21.2-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.24.0-alpine AS builder
 
 COPY . /opt/src
 COPY --from=front /app/build /opt/src/web/build
