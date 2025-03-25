@@ -10,6 +10,7 @@ import (
 
 type Config struct {
 	HostTG   string
+	HostWeb  string
 	WhiteIds []int64
 	BlackIds []int64
 }

@@ -4,10 +4,13 @@ import (
 	"github.com/dustin/go-humanize"
 	tele "gopkg.in/telebot.v4"
 	"path/filepath"
+	"server/log"
 	"server/settings"
+	"server/tgbot/config"
 	"server/torr"
 	"server/web"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -26,14 +29,23 @@ func files(c tele.Context) error {
 				t = torr.GetTorrent(args[1])
 			}
 			c.Bot().Delete(msg)
-			host := settings.PubIPv4
+			host := config.Cfg.HostWeb
 			if host == "" {
-				ips := web.GetLocalIps()
-				if len(ips) == 0 {
-					host = "127.0.0.1"
-				} else {
-					host = ips[0]
+				host = settings.PubIPv4
+				if host == "" {
+					ips := web.GetLocalIps()
+					if len(ips) == 0 {
+						host = "127.0.0.1"
+					} else {
+						host = ips[0]
+					}
 				}
+			}
+			if !strings.Contains(host, ":") {
+				host += ":" + settings.Port
+			}
+			if !strings.HasPrefix(host, "http") {
+				host = "http://" + host
 			}
 
 			t = torr.GetTorrent(args[1])
@@ -49,12 +61,16 @@ func files(c tele.Context) error {
 			i := len(txt)
 			for _, f := range ti.FileStats {
 				btn := filesKbd.Data("#"+strconv.Itoa(f.Id)+": "+humanize.Bytes(uint64(f.Length))+"\n"+filepath.Base(f.Path), "upload", ti.Hash, strconv.Itoa(f.Id))
-				link := filesKbd.URL("Ссылка", "http://"+host+":"+settings.Port+"/stream/"+filepath.Base(f.Path)+"?link="+t.Hash().HexString()+"&index="+strconv.Itoa(f.Id)+"&play")
+				link := filesKbd.URL("Ссылка", host+"/stream/"+filepath.Base(f.Path)+"?link="+t.Hash().HexString()+"&index="+strconv.Itoa(f.Id)+"&play")
 				files = append(files, filesKbd.Row(btn, link))
 				if i+len(txt) > 1024 || len(files) > 99 {
 					filesKbd := &tele.ReplyMarkup{}
 					filesKbd.Inline(files...)
-					c.Send(txt, filesKbd)
+					err = c.Send(txt, filesKbd)
+					if err != nil {
+						log.TLogln("Error send message files:", err)
+						return
+					}
 					files = files[:0]
 					i = len(txt)
 				}
@@ -63,7 +79,11 @@ func files(c tele.Context) error {
 
 			if len(files) > 0 {
 				filesKbd.Inline(files...)
-				c.Send(txt, filesKbd)
+				err = c.Send(txt, filesKbd)
+				if err != nil {
+					log.TLogln("Error send message files:", err)
+					return
+				}
 			}
 
 			if len(files) > 1 {
@@ -75,7 +95,11 @@ func files(c tele.Context) error {
 				files = files[:0]
 				files = append(files, filesKbd.Row(filesKbd.Data("Скачать все файлы", "uploadall", ti.Hash)))
 				filesKbd.Inline(files...)
-				c.Send(txt, filesKbd)
+				err = c.Send(txt, filesKbd)
+				if err != nil {
+					log.TLogln("Error send message files:", err)
+					return
+				}
 			}
 		}()
 	}
