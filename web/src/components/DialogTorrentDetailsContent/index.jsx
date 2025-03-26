@@ -80,7 +80,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
   }, [playableFileList, seasonAmount])
 
   useEffect(() => {
-    setPlayableFileList(torrentFileList?.filter(({ path }) => isFilePlayable(path)))
+    setPlayableFileList(torrentFileList)
   }, [torrentFileList])
 
   useEffect(() => {

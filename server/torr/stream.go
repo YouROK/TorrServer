@@ -74,8 +74,10 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 	// DLNA headers
 	resp.Header().Set("transferMode.dlna.org", "Streaming")
 	mime, err := mt.MimeTypeByPath(file.Path())
-	if err == nil && mime.IsMedia() {
+	if err == nil {
 		resp.Header().Set("content-type", mime.String())
+	} else {
+		resp.Header().Set("content-type", "application/octet-stream")
 	}
 	if req.Header.Get("getContentFeatures.dlna.org") != "" {
 		resp.Header().Set("contentFeatures.dlna.org", dlna.ContentFeatures{

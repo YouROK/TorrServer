@@ -31,7 +31,7 @@ const Table = memo(
     const isVlcUsed = JSON.parse(localStorage.getItem('isVlcUsed')) ?? false
 
     return !playableFileList?.length ? (
-      'No playable files in this torrent'
+      'No files in this torrent'
     ) : (
       <>
         <TableStyle>
