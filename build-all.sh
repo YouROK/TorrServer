@@ -16,6 +16,8 @@ PLATFORMS=(
   'linux/mipsle'
   'linux/mips64'
   'linux/mips64le'
+  'linux/riscv64'
+  'linux/riscv'
 )
 
 type setopt >/dev/null 2>&1
