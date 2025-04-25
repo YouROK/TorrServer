@@ -87,6 +87,7 @@ func cleanCache() {
 	torrs := settings.ListTorrent()
 
 	log.TLogln("Remove unused cache in dir:", settings.BTsets.TorrentsSavePath)
+	keep := map[string]bool{}
 	for _, d := range dirs {
 		if len(d.Name()) != 40 {
 			// Not a hash
@@ -94,11 +95,17 @@ func cleanCache() {
 		}
 
 		if !settings.BTsets.RemoveCacheOnDrop {
+			keep[d.Name()] = true
 			for _, t := range torrs {
-				if d.IsDir() && d.Name() != t.InfoHash.HexString() {
+				if d.IsDir() && d.Name() == t.InfoHash.HexString() {
+					keep[d.Name()] = false
+					break
+				}
+			}
+			for hash, del := range keep {
+				if del && hash == d.Name() {
 					log.TLogln("Remove unused cache:", d.Name())
 					removeAllFiles(filepath.Join(settings.BTsets.TorrentsSavePath, d.Name()))
-					break
 				}
 			}
 		} else {
@@ -108,6 +115,7 @@ func cleanCache() {
 			}
 		}
 	}
+
 }
 
 func removeAllFiles(path string) {
