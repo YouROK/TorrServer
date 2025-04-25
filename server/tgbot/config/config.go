@@ -24,6 +24,7 @@ func LoadConfig() {
 	if err != nil {
 		Cfg.WhiteIds = []int64{}
 		Cfg.BlackIds = []int64{}
+		Cfg.HostTG = "https://api.telegram.org"
 		buf, _ = json.MarshalIndent(Cfg, "", " ")
 		if buf != nil {
 			os.WriteFile(fn, buf, 0666)
@@ -33,5 +34,8 @@ func LoadConfig() {
 	err = json.Unmarshal(buf, &Cfg)
 	if err != nil {
 		log.TLogln("Error read tg config:", err)
+	}
+	if Cfg.HostTG == "" {
+		Cfg.HostTG = "https://api.telegram.org"
 	}
 }
