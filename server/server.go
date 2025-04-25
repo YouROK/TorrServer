@@ -68,7 +68,9 @@ func Start(port, ip, sslport, sslCert, sslKey string, sslEnabled, roSets, search
 	settings.SslPort = sslport
 	settings.IP = ip
 
-	tgbot.Start(tgtoken)
+	if tgtoken != "" {
+		tgbot.Start(tgtoken)
+	}
 	web.Start()
 }
 
