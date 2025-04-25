@@ -111,12 +111,22 @@ func Start(token string) {
 
 func help(c tele.Context) error {
 	id := strconv.FormatInt(c.Sender().ID, 10)
+	var arr []string
+	if c.Sender().Username != "" {
+		arr = append(arr, c.Sender().Username)
+	}
+	if c.Sender().FirstName != "" {
+		arr = append(arr, c.Sender().FirstName)
+	}
+	if c.Sender().LastName != "" {
+		arr = append(arr, c.Sender().LastName)
+	}
 	return c.Send("Бот для управления TorrServer\n\n" +
 		"Список комманд:\n" +
 		"  /help - Эта справка\n" +
 		"  /list - Показать список торрентов на сервере\n" +
 		"  /clear - Удалить все торренты\n\n" +
-		"Ваш id: <code>" + id + "</code>, " + strings.Join([]string{c.Sender().Username, c.Sender().FirstName, c.Sender().LastName}, ", "))
+		"Ваш id: <code>" + id + "</code>, " + strings.Join(arr, ", "))
 }
 
 func isHash(txt string) bool {
