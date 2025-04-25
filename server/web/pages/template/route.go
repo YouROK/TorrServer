@@ -280,52 +280,52 @@ func RouteWebPages(route gin.IRouter) {
 		c.Data(200, "application/manifest+json", Sitewebmanifest)
 	})
 
-	route.GET("/static/js/2.8ba34ef5.chunk.js", func(c *gin.Context) {
-		etag := fmt.Sprintf("%x", md5.Sum(Staticjs28ba34ef5chunkjs))
+	route.GET("/static/js/2.292d2615.chunk.js", func(c *gin.Context) {
+		etag := fmt.Sprintf("%x", md5.Sum(Staticjs2292d2615chunkjs))
 		c.Header("Cache-Control", "public, max-age=31536000")
 		c.Header("ETag", etag)
-		c.Data(200, "application/javascript; charset=utf-8", Staticjs28ba34ef5chunkjs)
+		c.Data(200, "text/javascript; charset=utf-8", Staticjs2292d2615chunkjs)
 	})
 
-	route.GET("/static/js/2.8ba34ef5.chunk.js.LICENSE.txt", func(c *gin.Context) {
-		etag := fmt.Sprintf("%x", md5.Sum(Staticjs28ba34ef5chunkjsLICENSEtxt))
+	route.GET("/static/js/2.292d2615.chunk.js.LICENSE.txt", func(c *gin.Context) {
+		etag := fmt.Sprintf("%x", md5.Sum(Staticjs2292d2615chunkjsLICENSEtxt))
 		c.Header("Cache-Control", "public, max-age=31536000")
 		c.Header("ETag", etag)
-		c.Data(200, "text/plain; charset=utf-8", Staticjs28ba34ef5chunkjsLICENSEtxt)
+		c.Data(200, "text/plain; charset=utf-8", Staticjs2292d2615chunkjsLICENSEtxt)
 	})
 
-	route.GET("/static/js/2.8ba34ef5.chunk.js.map", func(c *gin.Context) {
-		etag := fmt.Sprintf("%x", md5.Sum(Staticjs28ba34ef5chunkjsmap))
+	route.GET("/static/js/2.292d2615.chunk.js.map", func(c *gin.Context) {
+		etag := fmt.Sprintf("%x", md5.Sum(Staticjs2292d2615chunkjsmap))
 		c.Header("Cache-Control", "public, max-age=31536000")
 		c.Header("ETag", etag)
-		c.Data(200, "application/json", Staticjs28ba34ef5chunkjsmap)
+		c.Data(200, "application/json", Staticjs2292d2615chunkjsmap)
 	})
 
-	route.GET("/static/js/main.eb9f8ba6.chunk.js", func(c *gin.Context) {
-		etag := fmt.Sprintf("%x", md5.Sum(Staticjsmaineb9f8ba6chunkjs))
+	route.GET("/static/js/main.88d118ab.chunk.js", func(c *gin.Context) {
+		etag := fmt.Sprintf("%x", md5.Sum(Staticjsmain88d118abchunkjs))
 		c.Header("Cache-Control", "public, max-age=31536000")
 		c.Header("ETag", etag)
-		c.Data(200, "application/javascript; charset=utf-8", Staticjsmaineb9f8ba6chunkjs)
+		c.Data(200, "text/javascript; charset=utf-8", Staticjsmain88d118abchunkjs)
 	})
 
-	route.GET("/static/js/main.eb9f8ba6.chunk.js.map", func(c *gin.Context) {
-		etag := fmt.Sprintf("%x", md5.Sum(Staticjsmaineb9f8ba6chunkjsmap))
+	route.GET("/static/js/main.88d118ab.chunk.js.map", func(c *gin.Context) {
+		etag := fmt.Sprintf("%x", md5.Sum(Staticjsmain88d118abchunkjsmap))
 		c.Header("Cache-Control", "public, max-age=31536000")
 		c.Header("ETag", etag)
-		c.Data(200, "application/json", Staticjsmaineb9f8ba6chunkjsmap)
+		c.Data(200, "application/json", Staticjsmain88d118abchunkjsmap)
 	})
 
-	route.GET("/static/js/runtime-main.f542387e.js", func(c *gin.Context) {
-		etag := fmt.Sprintf("%x", md5.Sum(Staticjsruntimemainf542387ejs))
+	route.GET("/static/js/runtime-main.5ed86a79.js", func(c *gin.Context) {
+		etag := fmt.Sprintf("%x", md5.Sum(Staticjsruntimemain5ed86a79js))
 		c.Header("Cache-Control", "public, max-age=31536000")
 		c.Header("ETag", etag)
-		c.Data(200, "application/javascript; charset=utf-8", Staticjsruntimemainf542387ejs)
+		c.Data(200, "text/javascript; charset=utf-8", Staticjsruntimemain5ed86a79js)
 	})
 
-	route.GET("/static/js/runtime-main.f542387e.js.map", func(c *gin.Context) {
-		etag := fmt.Sprintf("%x", md5.Sum(Staticjsruntimemainf542387ejsmap))
+	route.GET("/static/js/runtime-main.5ed86a79.js.map", func(c *gin.Context) {
+		etag := fmt.Sprintf("%x", md5.Sum(Staticjsruntimemain5ed86a79jsmap))
 		c.Header("Cache-Control", "public, max-age=31536000")
 		c.Header("ETag", etag)
-		c.Data(200, "application/json", Staticjsruntimemainf542387ejsmap)
+		c.Data(200, "application/json", Staticjsruntimemain5ed86a79jsmap)
 	})
 }
