@@ -10,6 +10,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/location"
 	"github.com/gin-gonic/gin"
+	"github.com/wlynxg/anet"
 
 	"server/dlna"
 	"server/settings"
@@ -60,6 +61,10 @@ func Start() {
 
 	gin.SetMode(gin.ReleaseMode)
 
+	// corsCfg := cors.DefaultConfig()
+	// corsCfg.AllowAllOrigins = true
+	// corsCfg.AllowHeaders = []string{"*"}
+	// corsCfg.AllowMethods = []string{"*"}
 	corsCfg := cors.DefaultConfig()
 	corsCfg.AllowAllOrigins = true
 	corsCfg.AllowPrivateNetwork = true
@@ -135,14 +140,14 @@ func echo(c *gin.Context) {
 }
 
 func GetLocalIps() []string {
-	ifaces, err := net.Interfaces()
+	ifaces, err := anet.Interfaces()
 	if err != nil {
 		log.TLogln("Error get local IPs")
 		return nil
 	}
 	var list []string
 	for _, i := range ifaces {
-		addrs, _ := i.Addrs()
+		addrs, _ := anet.InterfaceAddrsByInterface(&i)
 		if i.Flags&net.FlagUp == net.FlagUp {
 			for _, addr := range addrs {
 				var ip net.IP

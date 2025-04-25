@@ -38,7 +38,7 @@ func Start(port, ip, sslport, sslCert, sslKey string, sslEnabled, roSets, search
 			settings.BTsets.SslKey = sslKey
 		}
 		log.TLogln("Check web ssl port", sslport)
-		l, err := net.Listen("tcp", ":"+sslport)
+		l, err := net.Listen("tcp", ip+":"+sslport)
 		if l != nil {
 			l.Close()
 		}

@@ -10,6 +10,7 @@ import (
 	"github.com/anacrolix/publicip"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
+	"github.com/wlynxg/anet"
 
 	"server/settings"
 	"server/torr/storage/torrstor"
@@ -150,6 +151,9 @@ func (bt *BTServer) configure(ctx context.Context) {
 			log.Printf("error getting public ipv4 address: %v", err)
 		}
 	}
+	if bt.config.PublicIp4.To4() == nil { // possible IPv6 from publicip.Get4(ctx)
+		bt.config.PublicIp4 = nil
+	}
 	if bt.config.PublicIp4 != nil {
 		log.Println("PublicIp4:", bt.config.PublicIp4)
 	}
@@ -165,6 +169,9 @@ func (bt *BTServer) configure(ctx context.Context) {
 		if err != nil {
 			log.Printf("error getting public ipv6 address: %v", err)
 		}
+	}
+	if bt.config.PublicIp6.To16() == nil { // just 4 sure it's valid IPv6
+		bt.config.PublicIp6 = nil
 	}
 	if bt.config.PublicIp6 != nil {
 		log.Println("PublicIp6:", bt.config.PublicIp6)
@@ -207,13 +214,13 @@ func isPrivateIP(ip net.IP) bool {
 }
 
 func getPublicIp4() net.IP {
-	ifaces, err := net.Interfaces()
+	ifaces, err := anet.Interfaces()
 	if err != nil {
 		log.Println("Error get public IPv4")
 		return nil
 	}
 	for _, i := range ifaces {
-		addrs, _ := i.Addrs()
+		addrs, _ := anet.InterfaceAddrsByInterface(&i)
 		if i.Flags&net.FlagUp == net.FlagUp {
 			for _, addr := range addrs {
 				var ip net.IP
@@ -233,13 +240,13 @@ func getPublicIp4() net.IP {
 }
 
 func getPublicIp6() net.IP {
-	ifaces, err := net.Interfaces()
+	ifaces, err := anet.Interfaces()
 	if err != nil {
 		log.Println("Error get public IPv6")
 		return nil
 	}
 	for _, i := range ifaces {
-		addrs, _ := i.Addrs()
+		addrs, _ := anet.InterfaceAddrsByInterface(&i)
 		if i.Flags&net.FlagUp == net.FlagUp {
 			for _, addr := range addrs {
 				var ip net.IP

@@ -13,6 +13,7 @@ import (
 
 	"github.com/anacrolix/dms/dlna/dms"
 	"github.com/anacrolix/log"
+	"github.com/wlynxg/anet"
 
 	"server/settings"
 	"server/web/pages/template"
@@ -26,7 +27,7 @@ func Start() {
 		Logger: logger.WithNames("dms", "server"),
 		Interfaces: func() (ifs []net.Interface) {
 			var err error
-			ifaces, err := net.Interfaces()
+			ifaces, err := anet.Interfaces()
 			if err != nil {
 				logger.Levelf(log.Error, "%v", err)
 				return
@@ -45,7 +46,7 @@ func Start() {
 			port := 9080
 			for {
 				logger.Levelf(log.Info, "Check dlna port %d", port)
-				m, err := net.Listen("tcp", ":"+strconv.Itoa(port))
+				m, err := net.Listen("tcp", settings.IP+":"+strconv.Itoa(port))
 				if m != nil {
 					m.Close()
 				}
@@ -55,7 +56,7 @@ func Start() {
 				port++
 			}
 			logger.Levelf(log.Info, "Set dlna port %d", port)
-			conn, err := net.Listen("tcp", ":"+strconv.Itoa(port))
+			conn, err := net.Listen("tcp", settings.IP+":"+strconv.Itoa(port))
 			if err != nil {
 				logger.Levelf(log.Error, "%v", err)
 				os.Exit(1)
@@ -171,7 +172,7 @@ func getDefaultFriendlyName() string {
 	}
 
 	if host == "localhost" { // useless host, use 1st IP
-		ifaces, err := net.Interfaces()
+		ifaces, err := anet.Interfaces()
 		if err != nil {
 			return ret + ": " + userName + "@" + host
 		}
@@ -181,7 +182,7 @@ func getDefaultFriendlyName() string {
 			if runtime.GOOS != "windows" && (i.Flags&net.FlagLoopback != 0 || i.Flags&net.FlagUp == 0 || i.Flags&net.FlagMulticast == 0) {
 				continue
 			}
-			addrs, _ := i.Addrs()
+			addrs, _ := anet.InterfaceAddrsByInterface(&i)
 			for _, addr := range addrs {
 				var ip net.IP
 				switch v := addr.(type) {

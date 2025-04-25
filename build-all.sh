@@ -16,6 +16,8 @@ PLATFORMS=(
   'linux/mipsle'
   'linux/mips64'
   'linux/mips64le'
+  'linux/riscv64'
+  'linux/riscv'
 )
 
 type setopt >/dev/null 2>&1
@@ -44,7 +46,7 @@ GOBIN="go"
 
 $GOBIN version
 
-LDFLAGS="'-s -w'"
+LDFLAGS="'-s -w -checklinkname=0'"
 FAILURES=""
 ROOT=${PWD}
 OUTPUT="${ROOT}/dist/TorrServer"
