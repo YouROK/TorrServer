@@ -98,7 +98,7 @@ func (bt *BTServer) configure(ctx context.Context) {
 	bt.config.DisableWebtorrent = true            //	NE
 	bt.config.DisableWebseeds = false             //	NE
 	bt.config.HandshakesTimeout = 3 * time.Second //	NE
-	bt.config.PieceHashersPerTorrent = 1          //	NE
+	bt.config.PieceHashersPerTorrent = 2          //	NE
 	bt.config.NoDefaultPortForwarding = settings.BTsets.DisableUPNP
 	bt.config.NoDHT = settings.BTsets.DisableDHT
 	bt.config.DisablePEX = settings.BTsets.DisablePEX
