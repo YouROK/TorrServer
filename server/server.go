@@ -4,6 +4,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"server/tgbot"
 	"strconv"
 
 	"server/log"
@@ -11,7 +12,7 @@ import (
 	"server/web"
 )
 
-func Start(port, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA bool) {
+func Start(port, ip, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA bool, tgtoken string) {
 	settings.InitSets(roSets, searchWA)
 	// https checks
 	if sslEnabled {
@@ -37,7 +38,7 @@ func Start(port, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA b
 			settings.BTsets.SslKey = sslKey
 		}
 		log.TLogln("Check web ssl port", sslport)
-		l, err := net.Listen("tcp", ":"+sslport)
+		l, err := net.Listen("tcp", ip+":"+sslport)
 		if l != nil {
 			l.Close()
 		}
@@ -50,8 +51,9 @@ func Start(port, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA b
 	if port == "" {
 		port = "8090"
 	}
+
 	log.TLogln("Check web port", port)
-	l, err := net.Listen("tcp", ":"+port)
+	l, err := net.Listen("tcp", ip+":"+port)
 	if l != nil {
 		l.Close()
 	}
@@ -64,6 +66,11 @@ func Start(port, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA b
 	// set settings http and https ports. Start web server.
 	settings.Port = port
 	settings.SslPort = sslport
+	settings.IP = ip
+
+	if tgtoken != "" {
+		tgbot.Start(tgtoken)
+	}
 	web.Start()
 }
 
@@ -80,6 +87,7 @@ func cleanCache() {
 	torrs := settings.ListTorrent()
 
 	log.TLogln("Remove unused cache in dir:", settings.BTsets.TorrentsSavePath)
+	keep := map[string]bool{}
 	for _, d := range dirs {
 		if len(d.Name()) != 40 {
 			// Not a hash
@@ -87,11 +95,17 @@ func cleanCache() {
 		}
 
 		if !settings.BTsets.RemoveCacheOnDrop {
+			keep[d.Name()] = true
 			for _, t := range torrs {
-				if d.IsDir() && d.Name() != t.InfoHash.HexString() {
+				if d.IsDir() && d.Name() == t.InfoHash.HexString() {
+					keep[d.Name()] = false
+					break
+				}
+			}
+			for hash, del := range keep {
+				if del && hash == d.Name() {
 					log.TLogln("Remove unused cache:", d.Name())
 					removeAllFiles(filepath.Join(settings.BTsets.TorrentsSavePath, d.Name()))
-					break
 				}
 			}
 		} else {
@@ -101,6 +115,7 @@ func cleanCache() {
 			}
 		}
 	}
+
 }
 
 func removeAllFiles(path string) {

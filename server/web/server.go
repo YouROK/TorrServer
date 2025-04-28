@@ -10,6 +10,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/location"
 	"github.com/gin-gonic/gin"
+	"github.com/wlynxg/anet"
 
 	"server/dlna"
 	"server/settings"
@@ -47,7 +48,7 @@ var (
 // @externalDocs.url			https://swagger.io/resources/open-api/
 func Start() {
 	log.TLogln("Start TorrServer " + version.Version + " torrent " + version.GetTorrentVersion())
-	ips := getLocalIps()
+	ips := GetLocalIps()
 	if len(ips) > 0 {
 		log.TLogln("Local IPs:", ips)
 	}
@@ -103,14 +104,14 @@ func Start() {
 			settings.SetBTSets(settings.BTsets)
 		}
 		go func() {
-			log.TLogln("Start https server at port", settings.SslPort)
-			waitChan <- route.RunTLS(":"+settings.SslPort, settings.BTsets.SslCert, settings.BTsets.SslKey)
+			log.TLogln("Start https server at", settings.IP+":"+settings.SslPort)
+			waitChan <- route.RunTLS(settings.IP+":"+settings.SslPort, settings.BTsets.SslCert, settings.BTsets.SslKey)
 		}()
 	}
 
 	go func() {
-		log.TLogln("Start http server at port", settings.Port)
-		waitChan <- route.Run(":" + settings.Port)
+		log.TLogln("Start http server at", settings.IP+":"+settings.Port)
+		waitChan <- route.Run(settings.IP + ":" + settings.Port)
 	}()
 }
 
@@ -138,15 +139,15 @@ func echo(c *gin.Context) {
 	c.String(200, "%v", version.Version)
 }
 
-func getLocalIps() []string {
-	ifaces, err := net.Interfaces()
+func GetLocalIps() []string {
+	ifaces, err := anet.Interfaces()
 	if err != nil {
 		log.TLogln("Error get local IPs")
 		return nil
 	}
 	var list []string
 	for _, i := range ifaces {
-		addrs, _ := i.Addrs()
+		addrs, _ := anet.InterfaceAddrsByInterface(&i)
 		if i.Flags&net.FlagUp == net.FlagUp {
 			for _, addr := range addrs {
 				var ip net.IP

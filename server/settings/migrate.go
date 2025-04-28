@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"time"
 
 	"server/log"
 	"server/web/api/utils"
@@ -27,13 +28,14 @@ type torrentOldDB struct {
 }
 
 // Migrate from torrserver.db to config.db
-func Migrate1() {
+func MigrateTorrents() {
 	if _, err := os.Lstat(filepath.Join(Path, "torrserver.db")); os.IsNotExist(err) {
 		return
 	}
 
-	db, err := bolt.Open(filepath.Join(Path, "torrserver.db"), 0o666, nil)
+	db, err := bolt.Open(filepath.Join(Path, "torrserver.db"), 0o666, &bolt.Options{Timeout: 5 * time.Second})
 	if err != nil {
+		log.TLogln("MigrateTorrents", err)
 		return
 	}
 
@@ -107,7 +109,7 @@ func b2i(v []byte) int64 {
 }
 
 /*
-	=== Migrate 2 ===
+	=== MigrateToJson ===
 
 Migrate 'Settings' and 'Viewed' buckets from BBolt ('config.db')
 to separate JSON files ('settings.json' and 'viewed.json')
@@ -117,7 +119,7 @@ due to the fact that BLOBs are stored there
 
 To make user be able to roll settings back, no data is deleted from 'config.db' file.
 */
-func Migrate2(bboltDB, jsonDB TorrServerDB) error {
+func MigrateToJson(bboltDB, jsonDB TorrServerDB) error {
 	var err error = nil
 
 	const XPATH_SETTINGS = "Settings"
