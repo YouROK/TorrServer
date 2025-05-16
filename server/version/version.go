@@ -3,7 +3,6 @@ package version
 import (
 	"log"
 	"runtime/debug"
-	// "github.com/anacrolix/torrent"
 )
 
 const Version = "MatriX.135"
