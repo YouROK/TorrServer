@@ -34,12 +34,5 @@ toolchains/
 /src/go.etcd.io/
 /src/google.golang.org/
 /toolchain/
-/test/
 /server/web/pages/template/pages/msx
-server/config.db
-/server/web/pages/template/pages/
-server/web/pages/template/route.go
-server/server.pem
-server/server.key
-settings.json
-viewed.json
+

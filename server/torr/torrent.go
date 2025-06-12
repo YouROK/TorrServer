@@ -277,7 +277,7 @@ func (t *Torrent) drop() {
 }
 
 func (t *Torrent) Close() bool {
-	if t.cache != nil && t.cache.GetUseReaders() > 0 {
+	if settings.ReadOnly && t.cache != nil && t.cache.GetUseReaders() > 0 {
 		return false
 	}
 	t.Stat = state.TorrentClosed

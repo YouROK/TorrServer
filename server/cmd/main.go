@@ -45,6 +45,7 @@ type args struct {
 	PubIPv6     string `arg:"-6" help:"set public IPv6 addr"`
 	SearchWA    bool   `arg:"-s" help:"search without auth"`
 	MaxSize     string `arg:"-m" help:"max allowed stream size (in Bytes)"`
+	TGToken     string `arg:"-T" help:"telegram bot token"`
 }
 
 func (args) Version() string {
@@ -116,7 +117,7 @@ func main() {
 		}
 	}
 
-	server.Start(params.Port, params.IP, params.SslPort, params.SslCert, params.SslKey, params.Ssl, params.RDB, params.SearchWA)
+	server.Start(params.Port, params.IP, params.SslPort, params.SslCert, params.SslKey, params.Ssl, params.RDB, params.SearchWA, params.TGToken)
 	log.TLogln(server.WaitServer())
 	log.Close()
 	time.Sleep(time.Second * 3)

@@ -48,7 +48,7 @@ var (
 // @externalDocs.url			https://swagger.io/resources/open-api/
 func Start() {
 	log.TLogln("Start TorrServer " + version.Version + " torrent " + version.GetTorrentVersion())
-	ips := getLocalIps()
+	ips := GetLocalIps()
 	if len(ips) > 0 {
 		log.TLogln("Local IPs:", ips)
 	}
@@ -139,7 +139,7 @@ func echo(c *gin.Context) {
 	c.String(200, "%v", version.Version)
 }
 
-func getLocalIps() []string {
+func GetLocalIps() []string {
 	ifaces, err := anet.Interfaces()
 	if err != nil {
 		log.TLogln("Error get local IPs")
