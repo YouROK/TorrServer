@@ -17,6 +17,7 @@ require (
 	github.com/anacrolix/missinggo/v2 v2.8.0
 	github.com/anacrolix/publicip v0.3.1
 	github.com/anacrolix/torrent v1.58.0
+	github.com/dustin/go-humanize v1.0.1
 	github.com/gin-contrib/cors v1.7.2
 	github.com/gin-contrib/location v1.0.1
 	github.com/gin-gonic/gin v1.10.0
@@ -31,7 +32,13 @@ require (
 	golang.org/x/exp v0.0.0-20250207012021-f9890c6ad9f3
 	golang.org/x/image v0.18.0
 	golang.org/x/time v0.10.0
+	gopkg.in/telebot.v4 v4.0.0-beta.5
 	gopkg.in/vansante/go-ffprobe.v2 v2.2.0
+)
+
+require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	google.golang.org/protobuf v1.34.1 // indirect
 )
 
 require (
@@ -58,8 +65,6 @@ require (
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/edsrzf/mmap-go v1.2.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.7 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
@@ -95,6 +100,5 @@ require (
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/tools v0.29.0 // indirect
-	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
