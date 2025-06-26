@@ -1,104 +1,119 @@
 import {
   Box,
   CircularProgress,
-  Dialog,
   DialogContent,
   DialogTitle,
   IconButton,
+  Menu,
+  MenuItem,
   Slider,
+  Tooltip,
   Typography,
+  useMediaQuery,
 } from '@material-ui/core'
-import { makeStyles } from '@material-ui/core/styles'
+import { makeStyles, withStyles } from '@material-ui/core/styles'
 import CloseIcon from '@material-ui/icons/Close'
-import FastForwardIcon from '@material-ui/icons/FastForward'
-import FastRewindIcon from '@material-ui/icons/FastRewind'
+import Forward10Icon from '@material-ui/icons/Forward10'
 import FullscreenIcon from '@material-ui/icons/Fullscreen'
 import FullscreenExitIcon from '@material-ui/icons/FullscreenExit'
+import GetAppIcon from '@material-ui/icons/GetApp'
 import PauseIcon from '@material-ui/icons/Pause'
+import PictureInPictureIcon from '@material-ui/icons/PictureInPicture'
 import PlayArrowIcon from '@material-ui/icons/PlayArrow'
+import Replay10Icon from '@material-ui/icons/Replay10'
+import SpeedIcon from '@material-ui/icons/Speed'
 import VolumeOffIcon from '@material-ui/icons/VolumeOff'
 import VolumeUpIcon from '@material-ui/icons/VolumeUp'
-import React, { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { StyledDialog } from 'style/CustomMaterialUiStyles'
 import { useTranslation } from 'react-i18next'
 
 import { StyledButton } from './TorrentCard/style'
+
+function getMimeType(url) {
+  const ext = url.split('?')[0].split('.').pop().toLowerCase()
+  switch (ext) {
+    case 'mp4':
+      return 'video/mp4'
+    case 'ogg':
+      return 'video/ogg'
+    case 'webm':
+      return 'video/webm'
+    default:
+      return ''
+  }
+}
+
+const PrettoSlider = withStyles(theme => ({
+  root: {
+    color: '#00a572',
+    height: 6,
+    [theme?.breakpoints?.down?.('sm')]: {
+      height: 0,
+    },
+  },
+  thumb: {
+    height: 18,
+    width: 18,
+    backgroundColor: '#fff',
+    border: '2px solid currentColor',
+    marginTop: -6,
+    marginLeft: -12,
+    [theme?.breakpoints?.down?.('sm')]: {
+      height: 15,
+      width: 15,
+      marginTop: -5,
+      marginLeft: -7,
+    },
+  },
+  track: {
+    height: 6,
+    borderRadius: 4,
+    [theme?.breakpoints?.down?.('sm')]: {
+      height: 5,
+    },
+  },
+  rail: {
+    height: 6,
+    borderRadius: 4,
+    [theme?.breakpoints?.down?.('sm')]: {
+      height: 6,
+    },
+  },
+}))(Slider)
 
 const useStyles = makeStyles(theme => ({
   dialogPaper: {
     backgroundColor: '#fff',
     borderRadius: theme.spacing(1),
-    border: `4px solid #00a572`,
   },
   header: {
     backgroundColor: '#00a572',
     color: '#fff',
-    margin: 0,
     padding: theme.spacing(1, 2),
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  dialogContent: {
-    padding: 0,
-    overflowX: 'hidden', // Remove horizontal scroll
+  videoWrapper: {
+    position: 'relative',
+    width: '100%',
+    backgroundColor: '#000',
+    overflow: 'hidden',
+    '&:hover $controls, &:hover $centralControl, &:hover $skipButton': {
+      opacity: 1,
+    },
   },
   video: {
     width: '100%',
     display: 'block',
-    backgroundColor: '#000', // Fallback background
-    minHeight: '300px', // Ensure the video area is visible
-    cursor: 'pointer', // Indicate clickable video
-  },
-  playButton: {},
-  controls: {
-    backgroundColor: '#fff',
-    borderTop: `2px solid #00a572`,
-    padding: theme.spacing(1),
-  },
-  progressSlider: {
-    margin: 0,
-  },
-  controlRow: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'start',
-    flexWrap: 'nowrap',
-  },
-  volumeControl: {
-    display: 'flex',
-    alignItems: 'center',
-    position: 'relative',
     cursor: 'pointer',
-  },
-  // Updated vertical volume slider container positioned above the volume button.
-  volumeSliderContainer: {
-    position: 'absolute',
-    bottom: 'calc(100%)', // Positioned above the volume button
-    left: '50%',
-    transform: 'translateX(-50%)',
-    height: 150,
-    width: 30,
-    backgroundColor: '#fff',
-    border: `1px solid #00a572`,
-    borderRadius: theme.spacing(0.5),
-    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
-    padding: theme.spacing(1),
-    zIndex: 10,
-    display: 'flex',
-    justifyContent: 'center',
-  },
-  // Customize vertical slider appearance.
-  volumeSlider: {
-    color: '#00a572',
-    height: '100%',
-    '& .MuiSlider-track': {
-      color: '#00a572',
-    },
-    '& .MuiSlider-thumb': {
-      border: '2px solid #00a572',
+    [theme.breakpoints.down('sm')]: {
+      height: '94.5vh',
+      width: '100vw',
+      objectFit: 'contain',
     },
   },
-  // Loading overlay styles.
   loadingOverlay: {
     position: 'absolute',
     top: 0,
@@ -108,58 +123,89 @@ const useStyles = makeStyles(theme => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(2, 2, 2, 0.44)',
-    zIndex: 2,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    zIndex: 4,
   },
-  // Ripple container that covers the video.
-  rippleContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    pointerEvents: 'none',
-    overflow: 'hidden',
-    zIndex: 3,
-  },
-  // Ripple circle animation.
-  ripple: {
-    position: 'absolute',
-    width: 20,
-    height: 20,
-    backgroundColor: 'rgba(0, 165, 114, 0.4)',
-    borderRadius: '50%',
-    transform: 'scale(0)',
-    animation: '$rippleEffect 600ms ease-out',
-  },
-  '@keyframes rippleEffect': {
-    '0%': {
-      transform: 'scale(0)',
-      opacity: 0.7,
-    },
-    '100%': {
-      transform: 'scale(8)',
-      opacity: 0,
-    },
-  },
-  // Ripple icon animation.
-  rippleIcon: {
+  centralControl: {
     position: 'absolute',
     top: '50%',
     left: '50%',
-    transform: 'translate(-50%, -50%) scale(0.5)',
-    color: '#00a572',
-    animation: '$rippleIconEffect 600ms ease-out',
+    transform: 'translate(-50%, -50%)',
+    borderRadius: '50%',
+    padding: theme.spacing(1),
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    opacity: 0,
+    transition: 'opacity 200ms',
+    zIndex: 3,
+    color: '#fff',
+    pointerEvents: 'none',
+    animation: '$pulse 0.6s ease-out',
   },
-  '@keyframes rippleIconEffect': {
-    '0%': {
+  skipButton: {
+    position: 'absolute',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    padding: theme.spacing(1),
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    color: '#fff',
+    opacity: 0,
+    transition: 'opacity 200ms',
+    zIndex: 3,
+    '&:hover': { backgroundColor: 'rgba(0,0,0,0.6)' },
+  },
+  leftSkip: { left: theme.spacing(2) },
+  rightSkip: { right: theme.spacing(2) },
+  controls: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    width: '100%',
+    background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
+    padding: theme.spacing(0, 3, 2, 3),
+    transition: 'opacity 200ms',
+    opacity: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(0.5),
+    zIndex: 3,
+    pointerEvents: 'auto',
+    [theme.breakpoints.down('sm')]: {
       opacity: 1,
-      transform: 'translate(-50%, -50%) scale(0.5)',
+      padding: theme.spacing(0, 1, 2, 1),
+      gap: theme.spacing(0),
+      background: 'linear-gradient(to top, rgba(0,0,0,0.95), transparent)',
     },
-    '100%': {
-      opacity: 0,
-      transform: 'translate(-50%, -50%) scale(1.5)',
+  },
+  timeRow: {
+    color: '#fff',
+    paddingLeft: theme.spacing(2),
+    [theme.breakpoints.down('sm')]: {
+      paddingLeft: theme.spacing(1),
+      fontSize: 9,
     },
+  },
+  slider: {
+    color: '#00e68a',
+    '& .MuiSlider-thumb': { backgroundColor: '#00e68a' },
+    '& .MuiSlider-track': { borderRadius: 2 },
+  },
+  controlRow: {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  iconButton: {
+    color: '#fff',
+    padding: 12,
+    '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' },
+    [theme.breakpoints.down('sm')]: {
+      padding: 10,
+    },
+  },
+  speedMenu: { minWidth: 100 },
+  '@keyframes pulse': {
+    '0%': { transform: 'translate(-50%, -50%) scale(0.5)', opacity: 0 },
+    '50%': { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+    '100%': { transform: 'translate(-50%, -50%) scale(1.3)', opacity: 0 },
   },
 }))
 
@@ -175,321 +221,271 @@ const formatTime = seconds => {
   return `${hh}:${mm}:${ss}`
 }
 
-/**
- * VideoPlayer component
- *
- * Props:
- * - videoSrc: string (URL of the video file)
- * - captionSrc: string (optional URL for captions, e.g. VTT file)
- * - title: string (optional title for the video)
- */
 const VideoPlayer = ({ videoSrc, captionSrc = '', title, onNotSupported }) => {
   const classes = useStyles()
+  const isMobile = useMediaQuery('@media (max-width:930px)')
   const videoRef = useRef(null)
-  const containerRef = useRef(null)
   const { t } = useTranslation()
-  const [ripples, setRipples] = useState([])
-  const [isSupported, setIsSupported] = useState(false)
   const [open, setOpen] = useState(false)
-  const [isPlaying, setIsPlaying] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [playing, setPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
-  const [volume, setVolume] = useState(1) // Range: 0 to 1
   const [muted, setMuted] = useState(false)
-  const [isFullScreen, setIsFullScreen] = useState(false)
-  const [showVolumeSlider, setShowVolumeSlider] = useState(false)
-  const [loading, setLoading] = useState(true) // Loading state
+  const [volume, setVolume] = useState(1)
+  const [fullscreen, setFullscreen] = useState(false)
+  const [anchorEl, setAnchorEl] = useState(null)
+  const [speed, setSpeed] = useState(1)
 
-  // Unified hover events for volume control.
-  const handleVolumeEnter = () => {
-    setShowVolumeSlider(true)
-  }
-  const handleVolumeLeave = () => {
-    setShowVolumeSlider(false)
-  }
-
-  // Determine MIME type based on file extension.
-  const getMimeType = url => {
-    const ext = url.split('?')[0].split('.').pop().toLowerCase()
-    switch (ext) {
-      case 'mp4':
-        return 'video/mp4'
-      case 'ogg':
-        return 'video/ogg'
-      case 'webm':
-        return 'video/webm'
-      default:
-        return ''
-    }
-  }
-
-  // Check if the browser supports the provided video type.
   useEffect(() => {
-    if (!videoSrc) {
-      setIsSupported(false)
-      onNotSupported()
-      return
-    }
-    const mimeType = getMimeType(videoSrc)
-    if (!mimeType) {
-      setIsSupported(false)
-      onNotSupported()
-      return
-    }
-    const videoElem = document.createElement('video')
-    const canPlay = videoElem.canPlayType(mimeType)
-    setIsSupported(!!canPlay && canPlay !== '')
-    if (!(!!canPlay && canPlay !== '')) {
-      onNotSupported()
-    }
+    const vid = document.createElement('video')
+    if (!vid.canPlayType(getMimeType(videoSrc))) onNotSupported()
   }, [videoSrc, onNotSupported])
 
-  // Listen for full screen changes.
+  const handlePlayPause = () => {
+    if (!videoRef.current) return
+    playing ? videoRef.current.pause() : videoRef.current.play()
+  }
+
+  const togglePlay = () => setPlaying(p => !p)
+  const handleTimeUpdate = () => setCurrentTime(videoRef.current.currentTime)
+  const handleLoaded = () => {
+    setDuration(videoRef.current.duration)
+    setLoading(false)
+  }
+  const handleSeek = (_, val) => {
+    videoRef.current.currentTime = val
+    handleTimeUpdate()
+  }
+  const handleVolume = (_, val) => {
+    const v = val / 100
+    videoRef.current.volume = v
+    setVolume(v)
+    setMuted(v === 0)
+  }
+  const toggleMute = () => {
+    videoRef.current.muted = !muted
+    setMuted(m => !m)
+  }
+
+  const skip = secs => {
+    videoRef.current.currentTime = Math.min(Math.max(videoRef.current.currentTime + secs, 0), duration)
+    handleTimeUpdate()
+  }
+
+  const enterFull = () => videoRef.current.requestFullscreen()
+  const exitFull = () => document.exitFullscreen()
+
   useEffect(() => {
-    const handleFullScreenChange = () => {
-      setIsFullScreen(!!document.fullscreenElement)
-    }
-    document.addEventListener('fullscreenchange', handleFullScreenChange)
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullScreenChange)
-    }
+    const onFull = () => setFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', onFull)
+    return () => document.removeEventListener('fullscreenchange', onFull)
   }, [])
 
-  // When the dialog opens, start playing the video.
-  const handleDialogEntered = () => {
-    if (videoRef.current) {
-      videoRef.current
-        .play()
-        .then(() => setIsPlaying(true))
-        .catch(error => {
-          console.error('Error attempting to play', error)
-          setIsPlaying(false)
-        })
-    }
+  const openSpeedMenu = e => setAnchorEl(e.currentTarget)
+  const closeSpeedMenu = () => setAnchorEl(null)
+  const changeSpeed = val => {
+    videoRef.current.playbackRate = val
+    setSpeed(val)
+    closeSpeedMenu()
+  }
+  const downloadVideo = () => {
+    const a = document.createElement('a')
+    a.href = videoSrc
+    a.download = ''
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
   }
 
-  // Toggle between play and pause.
-  const handleTogglePlay = () => {
-    if (!videoRef.current) return
-    if (isPlaying) {
-      videoRef.current.pause()
-      setIsPlaying(false)
-    } else {
-      videoRef.current
-        .play()
-        .then(() => setIsPlaying(true))
-        .catch(error => console.error('Error attempting to play', error))
-    }
-  }
-
-  // Handle click on video: toggle play/pause and create a ripple.
-  const handleVideoClick = e => {
-    // Determine the new state icon.
-    const newType = isPlaying ? 'play' : 'pause'
-    handleTogglePlay()
-
-    // Get click coordinates relative to the container.
-    const rect = containerRef.current.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    const id = Date.now()
-    setRipples(prev => [...prev, { id, x, y, type: newType }])
-    // Remove ripple after animation.
-    setTimeout(() => {
-      setRipples(prev => prev.filter(r => r.id !== id))
-    }, 600)
-  }
-
-  const handleSkipBackward = () => {
-    if (!videoRef.current) return
-    videoRef.current.currentTime = Math.max(videoRef.current.currentTime - 10, 0)
-    setCurrentTime(videoRef.current.currentTime)
-  }
-
-  const handleSkipForward = () => {
-    if (!videoRef.current) return
-    videoRef.current.currentTime = Math.min(videoRef.current.currentTime + 10, duration)
-    setCurrentTime(videoRef.current.currentTime)
-  }
-
-  const handleToggleMute = () => {
-    if (!videoRef.current) return
-    if (muted) {
-      videoRef.current.muted = false
-      setMuted(false)
-      if (videoRef.current.volume === 0) {
-        videoRef.current.volume = 0.5
-        setVolume(0.5)
+  const handleKey = useCallback(
+    e => {
+      if (!open) return
+      switch (e.key) {
+        case ' ':
+          e.preventDefault()
+          handlePlayPause()
+          break
+        case 'ArrowRight':
+          e.preventDefault()
+          skip(10)
+          break
+        case 'ArrowLeft':
+          e.preventDefault()
+          skip(-10)
+          break
+        default:
+          break
       }
-    } else {
-      videoRef.current.muted = true
-      setMuted(true)
-    }
-  }
+    },
+    [open, duration, playing],
+  )
+  useEffect(() => {
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [handleKey])
 
-  const handleVolumeSliderChange = (event, newValue) => {
-    if (videoRef.current) {
-      const newVolume = newValue / 100
-      videoRef.current.volume = newVolume
-      setVolume(newVolume)
-      if (newVolume === 0) {
-        videoRef.current.muted = true
-        setMuted(true)
-      } else {
-        videoRef.current.muted = false
-        setMuted(false)
-      }
-    }
-  }
-
-  const handleTimeUpdate = e => {
-    setCurrentTime(e.target.currentTime)
-  }
-
-  const handleLoadedMetadata = e => {
-    setDuration(e.target.duration)
-    setCurrentTime(e.target.currentTime)
-    setLoading(false) // Hide loader when metadata is loaded
-  }
-
-  const handleSliderChange = (event, newValue) => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = newValue
-    }
-    setCurrentTime(newValue)
-  }
-
-  const handleToggleFullScreen = () => {
-    if (!document.fullscreenElement) {
-      if (videoRef.current.requestFullscreen) {
-        videoRef.current.requestFullscreen()
-      }
-    } else if (document.exitFullscreen) {
-      document.exitFullscreen()
-    }
-  }
-
-  if (!isSupported) {
-    return null
-  }
-  // Uncomment for debugging: console.log("captionSrc", captionSrc);
   return (
     <>
       <StyledButton onClick={() => setOpen(true)}>
         <PlayArrowIcon />
         <span>{t('Play')}</span>
       </StyledButton>
-
-      <Dialog
+      <StyledDialog
         open={open}
         onClose={() => setOpen(false)}
         maxWidth='lg'
-        maxHeight='lg'
         fullWidth
-        onEntered={handleDialogEntered}
+        fullScreen={isMobile}
         classes={{ paper: classes.dialogPaper }}
       >
-        <DialogTitle disableTypography className={classes.header}>
-          <h2 style={{ margin: 0, textOverflow: 'ellipsis' }}>{title ?? 'Video Player'}</h2>
-          <IconButton onClick={() => setOpen(false)} style={{ color: '#fff' }}>
-            <CloseIcon />
+        <DialogTitle className={classes.header} disableTypography>
+          <Typography variant='h6' noWrap>
+            {title || 'Video Player'}
+          </Typography>
+          <IconButton size='medium' onClick={() => setOpen(false)} className={classes.iconButton}>
+            <CloseIcon fontSize='medium' />
           </IconButton>
         </DialogTitle>
-        <DialogContent className={classes.dialogContent}>
-          <Box position='relative' ref={containerRef}>
-            {/* Video with click-to-toggle play/pause */}
+        <DialogContent style={{ padding: 0 }}>
+          <Box className={classes.videoWrapper} onClick={handlePlayPause} style={isMobile ? { minHeight: 240 } : {}}>
             <video
+              autoPlay
               ref={videoRef}
               src={videoSrc}
-              autoPlay
-              className={classes.video}
-              onClick={handleVideoClick}
               onTimeUpdate={handleTimeUpdate}
-              onLoadedMetadata={handleLoadedMetadata}
+              onLoadedMetadata={handleLoaded}
+              onPlay={togglePlay}
+              onPause={togglePlay}
+              className={classes.video}
             >
-              {/* {captionSrc && ( */}
-              <track default kind='captions' src={captionSrc} label='Captions' />
-              {/* )} */}
+              <track kind='captions' srcLang='en' label='English captions' src={captionSrc} default />
             </video>
             {loading && (
               <Box className={classes.loadingOverlay}>
-                <CircularProgress size={40} />
+                <CircularProgress fontSize='medium' />
               </Box>
             )}
-            {/* Ripple overlay */}
-            <Box className={classes.rippleContainer}>
-              {ripples.map(ripple => (
-                <React.Fragment key={ripple.id}>
-                  <Box className={classes.ripple} style={{ left: ripple.x - 10, top: ripple.y - 10 }} />
-                  <Box className={classes.rippleIcon} style={{ left: ripple.x, top: ripple.y }}>
-                    {ripple.type === 'play' ? <PlayArrowIcon fontSize='large' /> : <PauseIcon fontSize='large' />}
-                  </Box>
-                </React.Fragment>
-              ))}
-            </Box>
-          </Box>
+            <IconButton
+              size='medium'
+              className={classes.centralControl}
+              style={{
+                opacity: playing ? 0 : 1,
+              }}
+            >
+              <PlayArrowIcon fontSize='medium' />
+            </IconButton>
+            <Box className={classes.controls} onClick={e => e.stopPropagation()}>
+              {isMobile && (
+                <Box className={classes.timeRow}>
+                  <Typography variant='body2'>
+                    {formatTime(currentTime)} / {formatTime(duration)}
+                  </Typography>
+                </Box>
+              )}
+              <PrettoSlider
+                className={classes.slider}
+                value={currentTime}
+                max={duration}
+                onChange={handleSeek}
+                size='medium'
+              />
+              <Box className={classes.controlRow}>
+                <Tooltip title={playing ? 'Pause' : 'Play'}>
+                  <IconButton size='medium' onClick={handlePlayPause} className={classes.iconButton}>
+                    {playing ? <PauseIcon fontSize='medium' /> : <PlayArrowIcon fontSize='medium' />}
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title='Rewind 10 Sec'>
+                  <IconButton
+                    size='medium'
+                    className={classes.iconButton}
+                    onClick={e => {
+                      e.stopPropagation()
+                      skip(-10)
+                    }}
+                  >
+                    <Replay10Icon fontSize='medium' />
+                  </IconButton>
+                </Tooltip>
 
-          <Box className={classes.controls}>
-            {/* Time display with progress slider */}
-            <Box display='flex' alignItems='center' justifyContent='space-between'>
-              <Typography variant='body2'>{formatTime(currentTime)}</Typography>
-              <Box flexGrow={1} mx={2}>
-                <Slider
-                  className={classes.progressSlider}
-                  value={currentTime}
-                  max={duration}
-                  onChange={handleSliderChange}
-                  aria-labelledby='video-progress'
-                />
-              </Box>
-              <Typography variant='body2'>{formatTime(duration)}</Typography>
-            </Box>
-
-            <Box className={classes.controlRow}>
-              <IconButton onClick={handleSkipBackward}>
-                <FastRewindIcon fontSize='large' className={classes.playButton} />
-              </IconButton>
-              <IconButton onClick={handleTogglePlay}>
-                {isPlaying ? (
-                  <PauseIcon fontSize='large' className={classes.playButton} />
-                ) : (
-                  <PlayArrowIcon fontSize='large' className={classes.playButton} />
+                <Tooltip title='Forward 10 Sec'>
+                  <IconButton
+                    size='medium'
+                    className={classes.iconButton}
+                    onClick={e => {
+                      e.stopPropagation()
+                      skip(10)
+                    }}
+                  >
+                    <Forward10Icon fontSize='medium' />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title={muted ? 'Unmute' : 'Mute'}>
+                  <IconButton size='medium' className={classes.iconButton} onClick={toggleMute}>
+                    {muted ? <VolumeOffIcon fontSize='medium' /> : <VolumeUpIcon fontSize='medium' />}
+                  </IconButton>
+                </Tooltip>
+                {!isMobile && (
+                  <Slider
+                    className={classes.slider}
+                    value={volume * 100}
+                    onChange={handleVolume}
+                    size='medium'
+                    style={{ width: 70 }}
+                  />
                 )}
-              </IconButton>
-              <IconButton onClick={handleSkipForward}>
-                <FastForwardIcon fontSize='large' className={classes.playButton} />
-              </IconButton>
-              <Box className={classes.volumeControl} onMouseEnter={handleVolumeEnter} onMouseLeave={handleVolumeLeave}>
-                <IconButton onClick={handleToggleMute}>
-                  {muted ? (
-                    <VolumeOffIcon fontSize='large' className={classes.playButton} />
-                  ) : (
-                    <VolumeUpIcon fontSize='large' className={classes.playButton} />
-                  )}
-                </IconButton>
-                {showVolumeSlider && (
-                  <Box className={classes.volumeSliderContainer}>
-                    <Slider
-                      orientation='vertical'
-                      className={classes.volumeSlider}
-                      value={volume * 100}
-                      onChange={handleVolumeSliderChange}
-                      aria-labelledby='volume-slider'
-                    />
+                {!isMobile && (
+                  <Box className={classes.timeRow}>
+                    <Typography variant='body2'>
+                      {formatTime(currentTime)} / {formatTime(duration)}
+                    </Typography>
                   </Box>
                 )}
+                <Box flexGrow={1} />
+                <Tooltip title='Speed'>
+                  <IconButton size='medium' onClick={openSpeedMenu} className={classes.iconButton}>
+                    <SpeedIcon fontSize='medium' />
+                  </IconButton>
+                </Tooltip>
+                <Menu
+                  anchorEl={anchorEl}
+                  open={Boolean(anchorEl)}
+                  onClose={closeSpeedMenu}
+                  className={classes.speedMenu}
+                >
+                  {[0.5, 1, 1.5, 2].map(r => (
+                    <MenuItem key={r} selected={r === speed} onClick={() => changeSpeed(r)}>
+                      {r}x
+                    </MenuItem>
+                  ))}
+                </Menu>
+                <Tooltip title='PIP'>
+                  <IconButton
+                    size='medium'
+                    className={classes.iconButton}
+                    onClick={() => videoRef.current.requestPictureInPicture()}
+                  >
+                    <PictureInPictureIcon fontSize='medium' />
+                  </IconButton>
+                </Tooltip>
+
+                <Tooltip title='Download'>
+                  <IconButton size='medium' className={classes.iconButton} onClick={downloadVideo}>
+                    <GetAppIcon fontSize='medium' />
+                  </IconButton>
+                </Tooltip>
+
+                <Tooltip title={fullscreen ? 'Exit Fullscreen' : 'Fullscreen'}>
+                  <IconButton size='medium' onClick={fullscreen ? exitFull : enterFull} className={classes.iconButton}>
+                    {fullscreen ? <FullscreenExitIcon fontSize='medium' /> : <FullscreenIcon fontSize='medium' />}
+                  </IconButton>
+                </Tooltip>
               </Box>
-              <IconButton style={{ marginLeft: 'auto' }} onClick={handleToggleFullScreen}>
-                {isFullScreen ? (
-                  <FullscreenExitIcon fontSize='large' className={classes.playButton} />
-                ) : (
-                  <FullscreenIcon fontSize='large' className={classes.playButton} />
-                )}
-              </IconButton>
             </Box>
           </Box>
         </DialogContent>
-      </Dialog>
+      </StyledDialog>
     </>
   )
 }
