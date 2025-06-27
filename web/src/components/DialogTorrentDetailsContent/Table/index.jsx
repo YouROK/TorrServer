@@ -6,9 +6,10 @@ import { Button } from '@material-ui/core'
 import CopyToClipboard from 'react-copy-to-clipboard'
 import { useTranslation } from 'react-i18next'
 
+import VideoPlayer from '../../VideoPlayer'
 import { TableStyle, ShortTableWrapper, ShortTable } from './style'
 
-const { memo } = require('react')
+const { memo, useState } = require('react')
 
 // russian episode detection support
 ptt.addHandler('episode', /(\d{1,4})[- |. ]серия|серия[- |. ](\d{1,4})/i, { type: 'integer' })
@@ -18,6 +19,7 @@ ptt.addHandler('season', /сезон[- |. ](\d{1,3})|(\d{1,3})[- |. ]сезон/
 const Table = memo(
   ({ playableFileList, viewedFileList, selectedSeason, seasonAmount, hash }) => {
     const { t } = useTranslation()
+    const [isSupported, setIsSupported] = useState(true)
     const preloadBuffer = fileId => fetch(`${streamHost()}?link=${hash}&index=${fileId}&preload`)
     const getFileLink = (path, id) =>
       `${streamHost()}/${encodeURIComponent(path.split('\\').pop().split('/').pop())}?link=${hash}&index=${id}&play`
@@ -67,13 +69,15 @@ const Table = memo(
                         <Button onClick={() => preloadBuffer(id)} variant='outlined' color='primary' size='small'>
                           {t('Preload')}
                         </Button>
-
-                        <a style={{ textDecoration: 'none' }} href={link} target='_blank' rel='noreferrer'>
-                          <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
-                            {t('OpenLink')}
-                          </Button>
-                        </a>
-
+                        {isSupported ? (
+                          <VideoPlayer title={title} videoSrc={link} onNotSupported={() => setIsSupported(false)} />
+                        ) : (
+                          <a style={{ textDecoration: 'none' }} href={link} target='_blank' rel='noreferrer'>
+                            <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
+                              {t('OpenLink')}
+                            </Button>
+                          </a>
+                        )}
                         <CopyToClipboard text={link}>
                           <Button variant='outlined' color='primary' size='small'>
                             {t('CopyLink')}
