@@ -391,12 +391,12 @@ const VideoPlayer = ({ videoSrc, captionSrc = '', title, onNotSupported }) => {
                 size='medium'
               />
               <Box className={classes.controlRow}>
-                <Tooltip title={playing ? 'Pause' : 'Play'}>
+                <Tooltip title={playing ? t('Pause') : t('Play')}>
                   <IconButton size='medium' onClick={handlePlayPause} className={classes.iconButton}>
                     {playing ? <PauseIcon fontSize='medium' /> : <PlayArrowIcon fontSize='medium' />}
                   </IconButton>
                 </Tooltip>
-                <Tooltip title='Rewind 10 Sec'>
+                <Tooltip title={t('Rewind-10-Sec')}>
                   <IconButton
                     size='medium'
                     className={classes.iconButton}
@@ -409,7 +409,7 @@ const VideoPlayer = ({ videoSrc, captionSrc = '', title, onNotSupported }) => {
                   </IconButton>
                 </Tooltip>
 
-                <Tooltip title='Forward 10 Sec'>
+                <Tooltip title={t('Forward-10-Sec')}>
                   <IconButton
                     size='medium'
                     className={classes.iconButton}
@@ -421,7 +421,7 @@ const VideoPlayer = ({ videoSrc, captionSrc = '', title, onNotSupported }) => {
                     <Forward10Icon fontSize='medium' />
                   </IconButton>
                 </Tooltip>
-                <Tooltip title={muted ? 'Unmute' : 'Mute'}>
+                <Tooltip title={muted ? t('Unmute') : t('Mute')}>
                   <IconButton size='medium' className={classes.iconButton} onClick={toggleMute}>
                     {muted ? <VolumeOffIcon fontSize='medium' /> : <VolumeUpIcon fontSize='medium' />}
                   </IconButton>
@@ -443,7 +443,7 @@ const VideoPlayer = ({ videoSrc, captionSrc = '', title, onNotSupported }) => {
                   </Box>
                 )}
                 <Box flexGrow={1} />
-                <Tooltip title='Speed'>
+                <Tooltip title={t('Speed')}>
                   <IconButton size='medium' onClick={openSpeedMenu} className={classes.iconButton}>
                     <SpeedIcon fontSize='medium' />
                   </IconButton>
@@ -460,7 +460,7 @@ const VideoPlayer = ({ videoSrc, captionSrc = '', title, onNotSupported }) => {
                     </MenuItem>
                   ))}
                 </Menu>
-                <Tooltip title='PIP'>
+                <Tooltip title={t('PIP')}>
                   <IconButton
                     size='medium'
                     className={classes.iconButton}
@@ -470,13 +470,13 @@ const VideoPlayer = ({ videoSrc, captionSrc = '', title, onNotSupported }) => {
                   </IconButton>
                 </Tooltip>
 
-                <Tooltip title='Download'>
+                <Tooltip title={t('Download')}>
                   <IconButton size='medium' className={classes.iconButton} onClick={downloadVideo}>
                     <GetAppIcon fontSize='medium' />
                   </IconButton>
                 </Tooltip>
 
-                <Tooltip title={fullscreen ? 'Exit Fullscreen' : 'Fullscreen'}>
+                <Tooltip title={fullscreen ? t('ExitFullscreen') : t('Fullscreen')}>
                   <IconButton size='medium' onClick={fullscreen ? exitFull : enterFull} className={classes.iconButton}>
                     {fullscreen ? <FullscreenExitIcon fontSize='medium' /> : <FullscreenIcon fontSize='medium' />}
                   </IconButton>

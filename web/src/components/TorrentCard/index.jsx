@@ -93,10 +93,12 @@ const Torrent = ({ torrent }) => {
 
   const fileList = torrent?.data ? JSON.parse(torrent?.data)?.TorrServer?.Files : []
   const playableVideoList = fileList.length ? fileList?.filter(({ path }) => isFilePlayable(path)) : []
-  const getVideoCaption = (path, id) => {
-    const captionFile = fileList.find(file => Number(file.id) === Number(id) + 1)
-
-    return captionFile ? getFileLink(captionFile?.path, captionFile?.id) : ''
+  const getVideoCaption = path => {
+    // Get base name without extension
+    const baseName = path.replace(/\.[^/.]+$/, '')
+    // Find a file with the same base name and a subtitle extension
+    const captionFile = fileList.find(file => file.path.startsWith(baseName) && /\.(srt|vtt)$/i.test(file.path))
+    return captionFile ? getFileLink(captionFile.path, captionFile.id) : ''
   }
   return (
     <>
@@ -115,7 +117,7 @@ const Torrent = ({ torrent }) => {
             <VideoPlayer
               title={title}
               videoSrc={getFileLink(playableVideoList[0].path, playableVideoList[0].id)}
-              captionSrc={getVideoCaption(playableVideoList[0].path, playableVideoList[0].id)}
+              captionSrc={getVideoCaption(playableVideoList[0].path)}
               onNotSupported={() => setIsSupported(false)}
             />
           ) : (
