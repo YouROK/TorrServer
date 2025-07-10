@@ -16,6 +16,7 @@ require (
 	github.com/anacrolix/log v0.16.0
 	github.com/anacrolix/missinggo/v2 v2.8.0
 	github.com/anacrolix/publicip v0.3.1
+	github.com/kljensen/snowball v0.9.0
 	github.com/anacrolix/torrent v1.58.1
 	github.com/dustin/go-humanize v1.0.1
 	github.com/gin-contrib/cors v1.7.5
@@ -34,6 +35,11 @@ require (
 	golang.org/x/time v0.12.0
 	gopkg.in/telebot.v4 v4.0.0-beta.5
 	gopkg.in/vansante/go-ffprobe.v2 v2.2.1
+)
+
+require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	google.golang.org/protobuf v1.34.1 // indirect
 )
 
 require (
