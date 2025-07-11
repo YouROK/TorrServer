@@ -36,6 +36,7 @@ function getMimeType(url) {
     case 'mp4':
       return 'video/mp4'
     case 'ogg':
+    case 'ogv':
       return 'video/ogg'
     case 'webm':
       return 'video/webm'
