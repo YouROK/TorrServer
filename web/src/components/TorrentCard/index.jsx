@@ -92,7 +92,7 @@ const Torrent = ({ torrent }) => {
   const getFileLink = (path, id) =>
     `${streamHost()}/${encodeURIComponent(path.split('\\').pop().split('/').pop())}?link=${hash}&index=${id}&play`
 
-  const fileList = data && JSON.parse(data).TorrServer?.Files || []
+  const fileList = (data && JSON.parse(data).TorrServer?.Files) || []
   const playableVideoList = fileList.filter(({ path }) => isFilePlayable(path))
   const getVideoCaption = path => {
     // Get base name without extension
