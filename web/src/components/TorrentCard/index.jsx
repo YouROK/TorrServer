@@ -114,7 +114,7 @@ const Torrent = ({ torrent }) => {
             <span>{t('Details')}</span>
           </StyledButton>
 
-          {playableVideoList.length === 1 && isSupported ? (
+          {playableVideoList?.length === 1 && isSupported ? (
             <VideoPlayer
               title={title}
               videoSrc={getFileLink(playableVideoList[0].path, playableVideoList[0].id)}
