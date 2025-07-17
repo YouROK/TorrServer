@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"maps"
 	"net"
 	"sync"
 
@@ -187,9 +188,7 @@ func (bt *BTServer) GetTorrent(hash torrent.InfoHash) *Torrent {
 
 func (bt *BTServer) ListTorrents() map[metainfo.Hash]*Torrent {
 	list := make(map[metainfo.Hash]*Torrent)
-	for k, v := range bt.torrents {
-		list[k] = v
-	}
+	maps.Copy(list, bt.torrents)
 	return list
 }
 
