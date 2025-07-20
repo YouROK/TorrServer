@@ -18,6 +18,7 @@ require (
 	github.com/anacrolix/publicip v0.3.1
 	github.com/anacrolix/torrent v1.58.1
 	github.com/dustin/go-humanize v1.0.1
+	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gin-contrib/cors v1.7.5
 	github.com/gin-contrib/location v1.0.3
 	github.com/gin-gonic/gin v1.10.1

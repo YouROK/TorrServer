@@ -17,6 +17,8 @@ import (
 	"github.com/alexflint/go-arg"
 	"github.com/pkg/browser"
 
+	"github.com/fsnotify/fsnotify"
+
 	"server"
 	"server/docs"
 	"server/log"
@@ -146,44 +148,63 @@ func dnsResolve() {
 }
 
 func watchTDir(dir string) {
-	time.Sleep(5 * time.Second)
 	path, err := filepath.Abs(dir)
 	if err != nil {
 		path = dir
 	}
+
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.TLogln("Error creating watcher:", err)
+	}
+	defer watcher.Close()
+
+	err = watcher.Add(path)
+	if err != nil {
+		log.TLogln("Error adding directory to watcher:", err)
+	}
+
 	for {
-		files, err := os.ReadDir(path)
-		if err == nil {
-			for _, file := range files {
-				filename := filepath.Join(path, file.Name())
-				if strings.ToLower(filepath.Ext(file.Name())) == ".torrent" {
+		select {
+		case event, ok := <-watcher.Events:
+			if !ok {
+				return
+			}
+			if event.Op&fsnotify.Create == fsnotify.Create || event.Op&fsnotify.Write == fsnotify.Write {
+				filename := event.Name
+				if strings.ToLower(filepath.Ext(filename)) == ".torrent" {
+					time.Sleep(2 * time.Second)
 					sp, err := openFile(filename)
-					if err == nil {
-						tor, err := torr.AddTorrent(sp, "", "", "", "")
-						if err == nil {
-							if tor.GotInfo() {
-								if tor.Title == "" {
-									tor.Title = tor.Name()
-								}
-								torr.SaveTorrentToDB(tor)
-								tor.Drop()
-								os.Remove(filename)
-								time.Sleep(time.Second)
-							} else {
-								log.TLogln("Error get info from torrent")
-							}
-						} else {
-							log.TLogln("Error parse torrent file:", err)
+					if err != nil {
+						log.TLogln("Error opening torrent file:", err)
+						continue
+					}
+					tor, err := torr.AddTorrent(sp, "", "", "", "")
+					if err != nil {
+						log.TLogln("Error adding torrent:", err)
+						continue
+					}
+					if tor.GotInfo() {
+						if tor.Title == "" {
+							tor.Title = tor.Name()
+						}
+						torr.SaveTorrentToDB(tor)
+						tor.Drop()
+						if err := os.Remove(filename); err != nil {
+							log.TLogln("Error removing torrent file:", err)
 						}
 					} else {
-						log.TLogln("Error parse file name:", err)
+						log.TLogln("Error getting torrent info")
 					}
 				}
 			}
-		} else {
-			log.TLogln("Error read dir:", err)
+
+		case err, ok := <-watcher.Errors:
+			if !ok {
+				return
+			}
+			log.TLogln("Watcher error:", err)
 		}
-		time.Sleep(time.Second * 5)
 	}
 }
 
