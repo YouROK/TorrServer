@@ -670,7 +670,8 @@
             "properties": {
                 "cacheSize": {
                     "description": "Cache",
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "connectionsLimit": {
                     "type": "integer"
@@ -784,10 +785,12 @@
             "type": "object",
             "properties": {
                 "capacity": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "filled": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "hash": {
                     "type": "string"
@@ -802,7 +805,8 @@
                     "type": "integer"
                 },
                 "piecesLength": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "readers": {
                     "type": "array",
@@ -825,13 +829,15 @@
                     "type": "integer"
                 },
                 "length": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "priority": {
                     "type": "integer"
                 },
                 "size": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 }
             }
         },

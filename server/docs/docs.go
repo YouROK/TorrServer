@@ -677,7 +677,8 @@ const docTemplate = `{
             "properties": {
                 "cacheSize": {
                     "description": "Cache",
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "connectionsLimit": {
                     "type": "integer"
@@ -791,10 +792,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "capacity": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "filled": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "hash": {
                     "type": "string"
@@ -809,7 +812,8 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "piecesLength": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "readers": {
                     "type": "array",
@@ -832,13 +836,15 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "length": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "priority": {
                     "type": "integer"
                 },
                 "size": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 }
             }
         },
