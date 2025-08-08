@@ -264,7 +264,8 @@ local:127.0.0.1
 ## Donate
 
 - [YooMoney](https://yoomoney.ru/to/410013733697114/200)
-- SberBank Card: **5484 4000 2285 7839**
+- [Boosty](https://boosty.to/yourok)
+- [TBank](https://www.tbank.ru/cf/742qEMhKhKn)
 
 
 ## Thanks to everyone who tested and helped
