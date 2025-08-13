@@ -3,15 +3,17 @@ package upload
 import (
 	"errors"
 	"fmt"
-	tele "gopkg.in/telebot.v4"
 	"log"
 	"math"
 	"path/filepath"
-	"server/torr"
-	"server/torr/state"
 	"strconv"
 	"sync"
 	"time"
+
+	tele "gopkg.in/telebot.v4"
+
+	"server/torr"
+	"server/torr/state"
 )
 
 type Worker struct {

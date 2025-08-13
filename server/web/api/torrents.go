@@ -96,14 +96,12 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 	}
 
 	tor, err := torr.AddTorrent(torrSpec, req.Title, req.Poster, req.Data, req.Category)
-
 	// if tor.Data != "" && set.BTsets.EnableDebug {
 	// 	log.TLogln("torrent data:", tor.Data)
 	// }
 	// if tor.Category != "" && set.BTsets.EnableDebug {
 	// 	log.TLogln("torrent category:", tor.Category)
 	// }
-
 	if err != nil {
 		log.TLogln("error add torrent:", err)
 		c.AbortWithError(http.StatusInternalServerError, err)

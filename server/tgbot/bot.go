@@ -2,15 +2,17 @@ package tgbot
 
 import (
 	"errors"
-	tele "gopkg.in/telebot.v4"
-	"gopkg.in/telebot.v4/middleware"
 	"net/http"
-	"server/log"
-	"server/tgbot/config"
-	up "server/tgbot/upload"
 	"strconv"
 	"strings"
 	"time"
+
+	tele "gopkg.in/telebot.v4"
+	"gopkg.in/telebot.v4/middleware"
+
+	"server/log"
+	"server/tgbot/config"
+	up "server/tgbot/upload"
 )
 
 func Start(token string) {
@@ -39,7 +41,7 @@ func Start(token string) {
 		b.Use(middleware.Blacklist(config.Cfg.BlackIds...))
 	}
 
-	//Commands
+	// Commands
 	b.Handle("help", help)
 	b.Handle("Help", help)
 	b.Handle("/help", help)
@@ -50,7 +52,7 @@ func Start(token string) {
 	b.Handle("/list", list)
 	b.Handle("/clear", clear)
 
-	//Text
+	// Text
 	b.Handle(tele.OnText, func(c tele.Context) error {
 		txt := c.Text()
 		if strings.HasPrefix(strings.ToLower(txt), "magnet:") || isHash(txt) {

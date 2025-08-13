@@ -4,8 +4,9 @@ import (
 	"bufio"
 	"os"
 	"path/filepath"
-	"server/log"
 	"strings"
+
+	"server/log"
 
 	"server/settings"
 

@@ -4,8 +4,9 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	"server/tgbot"
 	"strconv"
+
+	"server/tgbot"
 
 	"server/log"
 	"server/settings"
@@ -115,7 +116,6 @@ func cleanCache() {
 			}
 		}
 	}
-
 }
 
 func removeAllFiles(path string) {

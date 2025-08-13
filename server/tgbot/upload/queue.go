@@ -2,11 +2,12 @@ package upload
 
 import (
 	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/dustin/go-humanize"
 	tele "gopkg.in/telebot.v4"
 	"server/torr"
-	"strconv"
-	"time"
 )
 
 type DLQueue struct {
@@ -18,9 +19,7 @@ type DLQueue struct {
 	updateMsg *tele.Message
 }
 
-var (
-	manager = &Manager{}
-)
+var manager = &Manager{}
 
 func Start() {
 	manager.Start()

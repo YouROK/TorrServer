@@ -1,17 +1,19 @@
 package tgbot
 
 import (
+	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/dustin/go-humanize"
 	tele "gopkg.in/telebot.v4"
-	"path/filepath"
+
 	"server/log"
 	"server/settings"
 	"server/tgbot/config"
 	"server/torr"
 	"server/web"
-	"strconv"
-	"strings"
-	"time"
 )
 
 func files(c tele.Context) error {
