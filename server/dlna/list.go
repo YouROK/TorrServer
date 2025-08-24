@@ -197,7 +197,7 @@ func getTorrentMeta(path, host string) (ret interface{}) {
 
 func loadTorrent(path, host string) (ret []interface{}) {
 	hash := filepath.Base(filepath.Dir(path))
-	if hash == "/" {
+	if hash == "/" || hash == "\\" {
 		hash = filepath.Base(path)
 	}
 	if len(hash) != 40 {
