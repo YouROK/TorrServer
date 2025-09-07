@@ -23,6 +23,7 @@ require (
 	github.com/kljensen/snowball v0.9.0
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/pkg/errors v0.9.1
+	github.com/sa-/slicefunk v0.1.4
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.3

@@ -57,6 +57,8 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 		reader.SetResponsive()
 	}
 
+
+
 	host, port, err := net.SplitHostPort(req.RemoteAddr)
 	if sets.BTsets.EnableDebug {
 		if err != nil {
