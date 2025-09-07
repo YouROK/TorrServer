@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  reverseproxy:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: ["python", "proxy.py", "http://95.142.46.84:5665"]
+    depends_on:
+      - backend
+  backend:
+    image: kennethreitz/httpbin
+    ports:
+      - "8000:80"
