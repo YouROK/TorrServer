@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import asyncio
+from tracemalloc import start
 import aiohttp
 from aiohttp import web
 import sys
@@ -9,12 +10,13 @@ import traceback
 
 CHUNK_SIZE = 1024 * 1024  # Default chunk size: 1MB
 m3u = "http://95.142.46.84:5665/playlistall/all.m3u"
+# http://0.0.0.0:8080/playlistall/all.m3u
 # http://0.0.0.0:8080/stream/Wednesday.S02.1080p.NF.WEB-DL-EniaHD.m3u?link=e143d60dabde0af9d263abab362e870201fc8acf&m3u&fn=file.m3u
 # http://0.0.0.0:8080/stream/Wednesday.S02E01.Here.We.Woe.Again.1080p.NF.WEB-DL-EniaHD.mkv?link=e143d60dabde0af9d263abab362e870201fc8acf&index=1&play
 # Response cache: {(method, path, query, body): (status, headers, body)}
 
 
-lock = asyncio.Lock()
+globalLock = asyncio.Lock()
 cache_path = "cache"
 if not os.path.exists(cache_path):
     os.makedirs(cache_path)
@@ -29,16 +31,17 @@ class Chunk:
     def len(self):
         return os.path.getsize(self.file)
 
-    def offset(self):
-        return self.offset
     def data(self, start = 0, size = -1):
         with open(self.file, "rb") as f:
-            # print('Reading chunk from', self.file, 'start', start, 'size', size)
             f.seek(start)
-            return f.read(size if size >= 0 else None)
-    
+            dt = f.read(min(self.len() - start, size) if size >= 0 else None)
+            return dt
+
+priority = {}
+
 class CacheEntry:
-    def __init__(self, headReponseHeaders, url, headers, params, method):
+    def __init__(self, key, headReponseHeaders, url, headers, params, method):
+        self.key = key
         self.initialResponseHeaders = headReponseHeaders
         
         self.len = int(headReponseHeaders['Content-Length'])
@@ -60,13 +63,15 @@ class CacheEntry:
             while True:
                 if offset >= self.len:
                     break
-                found_key = max((k for k in self.chunks.keys() if k <= offset), default=None)
-
+                found_key = max((k for k, c  in self.chunks.items() if k <= offset and c.offset + c.len() > offset), default=None)
                 if found_key is None:
                     print(f"Waiting {offset}")
+                    priority[self.key] = offset
                     await asyncio.sleep(1)
                     continue
+    
                 dt = self.chunks[found_key].data(offset - found_key, CHUNK_SIZE)
+                # print(f"Reading f:{found_key}, o:{offset}, l:{len(dt)}")
                 yield dt
                 offset += len(dt)
 
@@ -75,10 +80,15 @@ class CacheEntry:
 class Cache:
     def __init__(self):
         self.store = {}
+
+    async def allItems(self):
+        async with globalLock:
+            return dict(self.store)
+        
     async def getOrCreate(self, key, headResponseHeaders, method, url, headers, params) -> CacheEntry:
-        async with lock:
+        async with globalLock:
             if key not in self.store:
-                self.store[key] = CacheEntry(headReponseHeaders=headResponseHeaders, method=method, url=url, headers=headers, params=params)
+                self.store[key] = CacheEntry(key, headReponseHeaders=headResponseHeaders, method=method, url=url, headers=headers, params=params)
         return self.store.get(key)
 
 response_cache = Cache()
@@ -113,14 +123,24 @@ def find_hole(chunks: dict[int, Chunk], size):
     return (None, None)
 
 async def downloader():
-    print("Downloader started")
     while True:
-        await asyncio.sleep(1)
-        async with lock:
-            keys = response_cache.store.keys()
-            for key in keys:
-                cached: CacheEntry = response_cache.store[key]
-                (startOffset, endOffset) = find_hole(cached.chunks, cached.len)
+        try:
+            await asyncio.sleep(1)
+            keys = await response_cache.allItems()
+            if len(priority) > 0:
+                keysP = dict(priority.keys())
+                keys = [(k, v) for k, v in keys.items() if k in keysP]
+            print(f"Downloader started {keys}")
+            for key, cached in keys.items():
+
+                # print(f"Downloader checking key {key}, {len(cached.chunks)} chunks")
+                if priority.get(key) is not None:
+                    print(f"Priority download for key {key} at offset {priority[key]}")
+                    startOffset = priority[key]
+                    endOffset = startOffset + CHUNK_SIZE * 10
+                    priority.pop(key, None)
+                else:
+                    (startOffset, endOffset) = find_hole(cached.chunks, cached.len)
                 if startOffset is None:
                     continue
                 endOffset = min(endOffset, startOffset + CHUNK_SIZE * 10)
@@ -163,12 +183,15 @@ async def downloader():
                             (start, end) = (0, size - 1)
                         else:
                             (start, end) = [int(i) for i in start_end.split("-")]
-                        print(f"Content-Range: {start}-{end}/{size}")
+                        # print(f"Content-Range: {start}-{end}/{size}")
                         offset = start
                         async for chunk in resp.content.iter_chunked(CHUNK_SIZE):
+                            # print(f"Downloaded chunk at offset {offset}, size {len(chunk)} for key {key}")
                             cached.set(offset, chunk)
                             offset += len(chunk)
-
+        except Exception as e:
+            print(f"downloader error: {e}", file=sys.stderr)
+            traceback.print_exc()
 
 async def proxy_handler(request):
     try:
@@ -180,7 +203,7 @@ async def proxy_handler(request):
         body = await request.read()
         cache_key = (method, path, tuple(sorted(params.items())), body)
         # if "Range" not in headers.keys():
-        if "stream" not in path:
+        if "stream" not in path or "m3u" in path:
             print(f"Simple handler {cache_key}, {headers}")
             return await simple_proxy_handler(request)
         
@@ -214,17 +237,18 @@ async def proxy_handler(request):
 
         start = (range and range[0]) or 0
         stream = cached.get(start)
+        headHeaders = dict(headHeaders)
         if range is not None:
             end = range[1] if len(range) > 1 and range[1] is not None else cached.len - 1
             content_range_header = f"bytes {start}-{end}/{cached.len}"
-            headHeaders = dict(headHeaders)
             headHeaders["Content-Range"] = content_range_header
             headHeaders["Content-Length"] = f"{end - start + 1}"
             headHeaders["Accept-Ranges"] = 'bytes'
-            print(f"Serving with headers: {headHeaders}")
+        print(f"Serving with headers: {headHeaders}")
 
         response = web.StreamResponse(status=206, headers=headHeaders)
         await response.prepare(request)
+        print("Sending chunks")
         async for chunk in stream:
             await response.write(chunk)
             # await response.drain()
