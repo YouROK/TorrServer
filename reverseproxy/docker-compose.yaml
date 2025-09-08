@@ -1,15 +1,19 @@
 version: '3.8'
 services:
   reverseproxy:
-    build: .
+    image: registry.rudolf.keenetic.link/torr_cache
+    volumes:
+      - data:/app/cache:rw
     ports:
       - "8080:8080"
     environment:
       - PYTHONUNBUFFERED=1
     command: ["python", "proxy.py", "http://95.142.46.84:5665"]
-    depends_on:
-      - backend
-  backend:
-    image: kennethreitz/httpbin
-    ports:
-      - "8000:80"
+
+volumes:
+  data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=192.168.1.96
+      device: :/media/DATA/runtime/torrCacher/TorrServer/reverseproxy/cache

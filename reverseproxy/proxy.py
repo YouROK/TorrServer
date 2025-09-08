@@ -138,11 +138,16 @@ async def downloader():
                 # print(f"Downloader checking key {key}, {len(cached.chunks)} chunks")
                 if priority.get(key) is not None:
                     print(f"Priority download for key {key} at offset {priority[key]}")
-                    (startOffset, endOffset) = find_hole(cached.chunks, cached.len, priority[key])
-                    if startOffset is None:
-                        (startOffset, endOffset) = find_hole(cached.chunks, cached.len)
-                    if startOffset is None:
-                        priority.pop(key, None)
+                    startOffset = priority[key]
+                    endOffset = startOffset + CHUNK_SIZE * 10
+                    # (startOffset, endOffset) = find_hole(cached.chunks, cached.len, priority[key])
+                    # if startOffset is None:
+                    #     (startOffset, endOffset) = find_hole(cached.chunks, cached.len)
+                    # else:
+                    #     startOffset = max(startOffset, priority[key])
+                    #     endOffset = startOffset + CHUNK_SIZE * 10
+                    # if startOffset is None:
+                    priority.pop(key, None)
                 else:
                     (startOffset, endOffset) = find_hole(cached.chunks, cached.len)
                 if startOffset is None:
@@ -234,7 +239,8 @@ async def proxy_handler(request):
             print(f"HEAD response status: {head_resp.status}")
             print(f"HEAD response headers: {head_resp.headers}")
             headHeaders = head_resp.headers
-        cache_key = (method, path, (tuple(sorted(params.items())), body, tuple(sorted(headHeaders.items()))).__hash__())
+        cache_key = (method, path, (headHeaders['Etag'][:20].__hash__()))
+        # cache_key = (method, path, (tuple(sorted(params.items())), body, tuple(sorted(headHeaders.items()))).__hash__())
         print(f"Cache key: {cache_key}")
         print(f"Range requested: {range}")
         cached = await response_cache.getOrCreate(cache_key, headHeaders, method=method, url = backend_url + path, headers=head_headers, params=params)
