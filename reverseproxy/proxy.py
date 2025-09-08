@@ -12,24 +12,51 @@ m3u = "http://95.142.46.84:5665/playlistall/all.m3u"
 # http://0.0.0.0:8080/stream/Wednesday.S02.1080p.NF.WEB-DL-EniaHD.m3u?link=e143d60dabde0af9d263abab362e870201fc8acf&m3u&fn=file.m3u
 # http://0.0.0.0:8080/stream/Wednesday.S02E01.Here.We.Woe.Again.1080p.NF.WEB-DL-EniaHD.mkv?link=e143d60dabde0af9d263abab362e870201fc8acf&index=1&play
 # Response cache: {(method, path, query, body): (status, headers, body)}
-lock = asyncio.Lock()
 
+
+lock = asyncio.Lock()
+cache_path = "cache"
+if not os.path.exists(cache_path):
+    os.makedirs(cache_path)
+class Chunk:
+    def __init__(self, path, offset, data = None):
+        self.path = path
+        self.offset = offset
+        self.file = os.path.join(cache_path, path, str(offset).zfill(15))
+        if data is not None:
+            with open(self.file, "wb") as f:
+                f.write(data)
+    def len(self):
+        return os.path.getsize(self.file)
+
+    def offset(self):
+        return self.offset
+    def data(self, start = 0, size = -1):
+        with open(self.file, "rb") as f:
+            # print('Reading chunk from', self.file, 'start', start, 'size', size)
+            f.seek(start)
+            return f.read(size if size >= 0 else None)
+    
 class CacheEntry:
     def __init__(self, headReponseHeaders, url, headers, params, method):
         self.initialResponseHeaders = headReponseHeaders
-        self.chunks: dict[int, bytes] = {}
+        
         self.len = int(headReponseHeaders['Content-Length'])
         self.url = url
         self.headers = headers
         self.params = params
         self.method = method
+        self.cachePath = self.initialResponseHeaders['Etag'][1:10]
+        os.makedirs(os.path.join(cache_path, self.cachePath), exist_ok=True)
+        self.chunks: dict[int, Chunk] = {int(l): Chunk(self.cachePath, int(l), None) for l in os.listdir(os.path.join(cache_path, self.cachePath))}
+        print(f"CacheEntry created for {url} with {len(self.chunks)} chunks")
 
-    def set(self, offset, chunk):
+    def set(self, offset, chunk: bytes):
         # TODO Verify overlapping chinks consistency
         # TODO Merge
-        self.chunks[offset] = chunk
+        self.chunks[offset] = Chunk(self.cachePath, offset, chunk)
     def get(self, offset):
-        async def get_chunk_length(offset):
+        async def get_chunk_length(offset: int):
             while True:
                 if offset >= self.len:
                     break
@@ -39,8 +66,9 @@ class CacheEntry:
                     print(f"Waiting {offset}")
                     await asyncio.sleep(1)
                     continue
-                yield self.chunks[found_key]
-                offset += len(self.chunks[found_key])
+                dt = self.chunks[found_key].data(offset - found_key, CHUNK_SIZE)
+                yield dt
+                offset += len(dt)
 
         return get_chunk_length(offset)
 
@@ -65,6 +93,7 @@ async def simple_proxy_handler(request):
 
     async with aiohttp.ClientSession() as session:
         async with session.request(method, backend_url + path, headers=headers, params=params, data=body) as resp:
+            print("Response status:", resp.headers)
             response = web.StreamResponse(status=resp.status, headers=resp.headers)
             await response.prepare(request)
             async for chunk in resp.content.iter_chunked(CHUNK_SIZE):
@@ -72,15 +101,15 @@ async def simple_proxy_handler(request):
             await response.write_eof()
             return response
 
-def find_hole(chunks, size):
+def find_hole(chunks: dict[int, Chunk], size):
     if len(chunks) == 0:
         return (0, size)
     sorted_chunks = sorted(chunks.keys())
     for i in range(len(sorted_chunks) - 1):
-        if sorted_chunks[i] + len(chunks[sorted_chunks[i]]) < sorted_chunks[i + 1]:
-            return (sorted_chunks[i] + len(chunks[sorted_chunks[i]]), sorted_chunks[i + 1])
-    if sorted_chunks[-1] + len(chunks[sorted_chunks[-1]]) < size:
-        return (sorted_chunks[-1] + len(chunks[sorted_chunks[-1]]), size)
+        if sorted_chunks[i] + chunks[sorted_chunks[i]].len() < sorted_chunks[i + 1]:
+            return (sorted_chunks[i] + chunks[sorted_chunks[i]].len(), sorted_chunks[i + 1])
+    if sorted_chunks[-1] + chunks[sorted_chunks[-1]].len() < size:
+        return (sorted_chunks[-1] + chunks[sorted_chunks[-1]].len(), size)
     return (None, None)
 
 async def downloader():
@@ -150,19 +179,25 @@ async def proxy_handler(request):
         method = request.method
         body = await request.read()
         cache_key = (method, path, tuple(sorted(params.items())), body)
-        if "Range" not in headers.keys():
-            print(f"Simple handler {cache_key}")
+        # if "Range" not in headers.keys():
+        if "stream" not in path:
+            print(f"Simple handler {cache_key}, {headers}")
             return await simple_proxy_handler(request)
+        
+        if "Range" not in headers.keys():
+            headers["Range"] = "bytes=0-"
+            
         range = headers.get("Range")
-        if "bytes" not in range:
-            raise ValueError("Only bytes range supported")
-        range = range.replace("bytes=", "")
-        def to_int_or_none(s):
-            try:
-                return int(s)
-            except ValueError:
-                return None
-        range = [to_int_or_none(i) for r in range.split(",") for i in r.split("-") ]
+        if range is not None:
+            if "bytes" not in range:
+                raise ValueError("Only bytes range supported")
+            range = range.replace("bytes=", "")
+            def to_int_or_none(s):
+                try:
+                    return int(s)
+                except ValueError:
+                    return None
+            range = [to_int_or_none(i) for r in range.split(",") for i in r.split("-") ]
         
         # Make a HEAD request to get resource info
         async with aiohttp.ClientSession() as session:
@@ -176,18 +211,32 @@ async def proxy_handler(request):
         print(f"Cache key: {cache_key}")
         print(f"Range requested: {range}")
         cached = await response_cache.getOrCreate(cache_key, headHeaders, method=method, url = backend_url + path, headers=head_headers, params=params)
-        stream = cached.get(range[0] or 0)
+
+        start = (range and range[0]) or 0
+        stream = cached.get(start)
+        if range is not None:
+            end = range[1] if len(range) > 1 and range[1] is not None else cached.len - 1
+            content_range_header = f"bytes {start}-{end}/{cached.len}"
+            headHeaders = dict(headHeaders)
+            headHeaders["Content-Range"] = content_range_header
+            headHeaders["Content-Length"] = f"{end - start + 1}"
+            headHeaders["Accept-Ranges"] = 'bytes'
+            print(f"Serving with headers: {headHeaders}")
 
         response = web.StreamResponse(status=206, headers=headHeaders)
         await response.prepare(request)
         async for chunk in stream:
             await response.write(chunk)
+            # await response.drain()
         await response.write_eof()
         return response
 
     except aiohttp.ClientConnectionResetError as e:
         print(f"ClientConnectionResetError: {e}", file=sys.stderr)
         return web.Response(status=500, text=f"Internal Server Error: {e}")
+    # except aiohttp.ConnectionResetError as e:
+    #     print(f"ConnectionResetError: {e}", file=sys.stderr)
+    #     return web.Response(status=500, text=f"Internal Server Error: {e}")
     except Exception as e:
         print(f"proxy_handler error: {e}", file=sys.stderr)
         traceback.print_exc()
