@@ -49,7 +49,7 @@ class CacheEntry:
         self.headers = headers
         self.params = params
         self.method = method
-        self.cachePath = self.initialResponseHeaders['Etag'][1:10]
+        self.cachePath = (self.url + self.initialResponseHeaders['Etag'][:20]).replace("/", "_").replace(":", "_").replace("?", "_").replace("&", "_").replace("=", "_")
         os.makedirs(os.path.join(cache_path, self.cachePath), exist_ok=True)
         self.chunks: dict[int, Chunk] = {int(l): Chunk(self.cachePath, int(l), None) for l in os.listdir(os.path.join(cache_path, self.cachePath))}
         print(f"CacheEntry created for {url} with {len(self.chunks)} chunks")
@@ -111,11 +111,13 @@ async def simple_proxy_handler(request):
             await response.write_eof()
             return response
 
-def find_hole(chunks: dict[int, Chunk], size):
+def find_hole(chunks: dict[int, Chunk], size, start_offset=0):
     if len(chunks) == 0:
         return (0, size)
     sorted_chunks = sorted(chunks.keys())
     for i in range(len(sorted_chunks) - 1):
+        if sorted_chunks[i + 1] < start_offset:
+            continue
         if sorted_chunks[i] + chunks[sorted_chunks[i]].len() < sorted_chunks[i + 1]:
             return (sorted_chunks[i] + chunks[sorted_chunks[i]].len(), sorted_chunks[i + 1])
     if sorted_chunks[-1] + chunks[sorted_chunks[-1]].len() < size:
@@ -128,17 +130,19 @@ async def downloader():
             await asyncio.sleep(1)
             keys = await response_cache.allItems()
             if len(priority) > 0:
-                keysP = dict(priority.keys())
-                keys = [(k, v) for k, v in keys.items() if k in keysP]
+                keysP = dict(priority)
+                keys = {k: v for k, v in keys.items() if k in keysP.keys()}
             print(f"Downloader started {keys}")
             for key, cached in keys.items():
 
                 # print(f"Downloader checking key {key}, {len(cached.chunks)} chunks")
                 if priority.get(key) is not None:
                     print(f"Priority download for key {key} at offset {priority[key]}")
-                    startOffset = priority[key]
-                    endOffset = startOffset + CHUNK_SIZE * 10
-                    priority.pop(key, None)
+                    (startOffset, endOffset) = find_hole(cached.chunks, cached.len, priority[key])
+                    if startOffset is None:
+                        (startOffset, endOffset) = find_hole(cached.chunks, cached.len)
+                    if startOffset is None:
+                        priority.pop(key, None)
                 else:
                     (startOffset, endOffset) = find_hole(cached.chunks, cached.len)
                 if startOffset is None:
@@ -173,7 +177,7 @@ async def downloader():
                     async with session.request(cached.method, cached.url, headers=headers_with_range, params=cached.params) as resp:
 
                         # Stream response in chunks
-                        print(f"Response headers: {resp.headers}")
+                        # print(f"Response headers: {resp.headers}")
                         if "Content-Range" not in resp.headers:
                             raise ValueError("No Content-Range in response for Range request")
                         if "bytes" not in resp.headers["Content-Range"]:
@@ -188,6 +192,7 @@ async def downloader():
                         async for chunk in resp.content.iter_chunked(CHUNK_SIZE):
                             # print(f"Downloaded chunk at offset {offset}, size {len(chunk)} for key {key}")
                             cached.set(offset, chunk)
+                            await asyncio.sleep(0)
                             offset += len(chunk)
         except Exception as e:
             print(f"downloader error: {e}", file=sys.stderr)
@@ -201,10 +206,9 @@ async def proxy_handler(request):
         path = request.rel_url.path
         method = request.method
         body = await request.read()
-        cache_key = (method, path, tuple(sorted(params.items())), body)
         # if "Range" not in headers.keys():
         if "stream" not in path or "m3u" in path:
-            print(f"Simple handler {cache_key}, {headers}")
+            print(f"Simple handler {method}, {path}, {tuple(sorted(params.items()))}, {body}, {headers}")
             return await simple_proxy_handler(request)
         
         if "Range" not in headers.keys():
@@ -230,7 +234,7 @@ async def proxy_handler(request):
             print(f"HEAD response status: {head_resp.status}")
             print(f"HEAD response headers: {head_resp.headers}")
             headHeaders = head_resp.headers
-        cache_key = (method, path, tuple(sorted(params.items())), body, tuple(sorted(headHeaders.items())))                
+        cache_key = (method, path, (tuple(sorted(params.items())), body, tuple(sorted(headHeaders.items()))).__hash__())
         print(f"Cache key: {cache_key}")
         print(f"Range requested: {range}")
         cached = await response_cache.getOrCreate(cache_key, headHeaders, method=method, url = backend_url + path, headers=head_headers, params=params)
@@ -251,6 +255,7 @@ async def proxy_handler(request):
         print("Sending chunks")
         async for chunk in stream:
             await response.write(chunk)
+            await asyncio.sleep(0)
             # await response.drain()
         await response.write_eof()
         return response
