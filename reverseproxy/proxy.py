@@ -16,7 +16,6 @@ m3u = "http://95.142.46.84:5665/playlistall/all.m3u"
 # Response cache: {(method, path, query, body): (status, headers, body)}
 
 
-globalLock = asyncio.Lock()
 cache_path = "cache"
 if not os.path.exists(cache_path):
     os.makedirs(cache_path)
@@ -41,6 +40,7 @@ priority = {}
 
 class CacheEntry:
     def __init__(self, key, headReponseHeaders, url, headers, params, method):
+        self.lock = asyncio.Lock()
         self.key = key
         self.initialResponseHeaders = headReponseHeaders
         
@@ -55,15 +55,15 @@ class CacheEntry:
         print(f"CacheEntry created for {url} with {len(self.chunks)} chunks")
 
     def set(self, offset, chunk: bytes):
-        # TODO Verify overlapping chinks consistency
-        # TODO Merge
-        self.chunks[offset] = Chunk(self.cachePath, offset, chunk)
+        with self.lock:
+            self.chunks[offset] = Chunk(self.cachePath, offset, chunk)
     def get(self, offset):
         async def get_chunk_length(offset: int):
             while True:
                 if offset >= self.len:
                     break
-                found_key = max((k for k, c  in self.chunks.items() if k <= offset and c.offset + c.len() > offset), default=None)
+                with self.lock:
+                    found_key = max((k for k, c in self.chunks.items() if k <= offset and c.offset + c.len() > offset), default=None)
                 if found_key is None:
                     print(f"Waiting {offset}")
                     priority[self.key] = offset
@@ -71,7 +71,8 @@ class CacheEntry:
                     continue
     
                 dt = self.chunks[found_key].data(offset - found_key, CHUNK_SIZE)
-                # print(f"Reading f:{found_key}, o:{offset}, l:{len(dt)}")
+                if len(dt) == 0:
+                    raise ValueError("Empty chunk data")
                 yield dt
                 offset += len(dt)
 
@@ -80,15 +81,18 @@ class CacheEntry:
 class Cache:
     def __init__(self):
         self.store = {}
+        self.lock = asyncio.Lock()
 
     async def allItems(self):
-        async with globalLock:
+        async with self.lock:
             return dict(self.store)
         
     async def getOrCreate(self, key, headResponseHeaders, method, url, headers, params) -> CacheEntry:
-        async with globalLock:
+        async with self.lock:
             if key not in self.store:
                 self.store[key] = CacheEntry(key, headReponseHeaders=headResponseHeaders, method=method, url=url, headers=headers, params=params)
+            else:
+                raise Exception(f"Cache entry already exists {key}")
         return self.store.get(key)
 
 response_cache = Cache()
@@ -124,10 +128,21 @@ def find_hole(chunks: dict[int, Chunk], size, start_offset=0):
         return (sorted_chunks[-1] + chunks[sorted_chunks[-1]].len(), size)
     return (None, None)
 
+async def merger():
+    # TODO
+    # TODO Locks
+    pass
+
+async def verifirer():
+    # TODO
+    # TODO Locks
+    pass
+
+
 async def downloader():
     while True:
         try:
-            await asyncio.sleep(1)
+            await asyncio.sleep(1) # TODO Change to signals
             keys = await response_cache.allItems()
             if len(priority) > 0:
                 keysP = dict(priority)
@@ -140,6 +155,7 @@ async def downloader():
                     print(f"Priority download for key {key} at offset {priority[key]}")
                     startOffset = priority[key]
                     endOffset = startOffset + CHUNK_SIZE * 10
+                    # TODO Improve logic
                     # (startOffset, endOffset) = find_hole(cached.chunks, cached.len, priority[key])
                     # if startOffset is None:
                     #     (startOffset, endOffset) = find_hole(cached.chunks, cached.len)
@@ -150,29 +166,11 @@ async def downloader():
                     priority.pop(key, None)
                 else:
                     (startOffset, endOffset) = find_hole(cached.chunks, cached.len)
+                    # TODO Limit speed if no priority
                 if startOffset is None:
                     continue
                 endOffset = min(endOffset, startOffset + CHUNK_SIZE * 10)
-                # while len(cached.chunks) > 1:
-                #     first = sorted(cached.chunks.keys())[0]
-                #     second = sorted(cached.chunks.keys())[1]
-                #     if first + len(cached.chunks[first]) == second:
-                #         print(f"Merging chunks {first} and {second} for key {key}")
-                #         cached.chunks[first] += cached.chunks[second]
-                #         del cached.chunks[second]
-                #     else:
-                #         break
-                # if len(cached.chunks) == 0:
-                #     startOffset = 0
-                #     endOffset = cached.len
-                # else:
-                #     startKey = sorted(cached.chunks.keys())[0]
-                #     startOffset = startKey + cached.chunks[startKey]
-                #     if len(cached.chunks) > 1:
-                #         startKey = sorted(cached.chunks.keys())[1]
-                #         endOffset = startKey + cached.chunks[startKey]
-                #     else:
-                #         endOffset = cached.len
+
                 print(f"Downloading startOffset {startOffset}..{endOffset} for key {key}")
                 rangeHeader = {"Range": f"bytes={startOffset}-{endOffset-1}"}
                 async with aiohttp.ClientSession() as session:

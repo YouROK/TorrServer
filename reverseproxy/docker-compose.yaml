@@ -16,4 +16,4 @@ volumes:
     driver_opts:
       type: nfs
       o: addr=192.168.1.96
-      device: :/media/DATA/runtime/torrCacher/TorrServer/reverseproxy/cache
+      device: :/media/DATA/runtime/torrCacher
