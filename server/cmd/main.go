@@ -46,6 +46,7 @@ type args struct {
 	SearchWA    bool   `arg:"-s" help:"search without auth"`
 	MaxSize     string `arg:"-m" help:"max allowed stream size (in Bytes)"`
 	TGToken     string `arg:"-T" help:"telegram bot token"`
+	JlfnAddr    string `arg:"-j" help:"jellyfin path"`
 }
 
 func (args) Version() string {
@@ -102,6 +103,10 @@ func main() {
 		settings.PubIPv4 = params.PubIPv4
 	}
 
+	if params.JlfnAddr != "" {
+		settings.JlfnAddr = params.JlfnAddr
+	}
+	
 	if params.PubIPv6 != "" {
 		settings.PubIPv6 = params.PubIPv6
 	}
@@ -117,7 +122,7 @@ func main() {
 		}
 	}
 
-	server.Start(params.Port, params.IP, params.SslPort, params.SslCert, params.SslKey, params.Ssl, params.RDB, params.SearchWA, params.TGToken)
+	server.Start(params.Port, params.IP, params.SslPort, params.SslCert, params.SslKey, params.Ssl, params.RDB, params.SearchWA, params.TGToken, params.JlfnAddr)
 	log.TLogln(server.WaitServer())
 	log.Close()
 	time.Sleep(time.Second * 3)
