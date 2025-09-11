@@ -43,7 +43,6 @@ class Chunk:
             f.seek(0, os.SEEK_END)
             f.write(data)
             f.flush()
-            os.fsync(f.fileno())
     
     def __repr__(self):
         return f"Chunk(offset={self.offset}, file={self.file}, length={self.len()})"
@@ -223,17 +222,20 @@ async def downloader():
                         else:
                             (start, end) = [int(i) for i in start_end.split("-")]
                         # print(f"Content-Range: {start}-{end}/{size}")
-                        newChunk: Chunk = None
-                        offset = start
+                        # 1newChunk: Chunk = None
+                        receivedBytes: bytes = b""
                         receivedBytesTotal = 0
-                        async for receivedBytes in resp.content.iter_chunked(CHUNK_SIZE):
-                            if newChunk is None:
-                                newChunk = await cached.set(offset, receivedBytes)
-                            else:
-                                newChunk.append(receivedBytes)
-                            # print(f"Downloaded off:{offset},sz:{len(receivedBytes)},chunk{newChunk.offset} for key {key}")
-                            receivedBytesTotal += len(receivedBytes)
-                            offset += len(receivedBytes)
+
+                        async for receivedBytesLoc in resp.content.iter_chunked(CHUNK_SIZE):
+                            receivedBytes += receivedBytesLoc
+                            # 1if newChunk is None:
+                            # 1    newChunk = await cached.set(offset, receivedBytesLoc)
+                            # 1else:
+                            # 1    newChunk.append(receivedBytesLoc)
+                            # 1print(f"Downloaded off:{offset},sz:{len(receivedBytes)},chunk{newChunk.offset} for key {key}")
+                            receivedBytesTotal += len(receivedBytesLoc)
+
+                        await cached.set(start, receivedBytes) # 2
                         limiter.consumed(receivedBytesTotal)
                         delay = limiter.delay()
                         print(f"Sleep {delay}, {receivedBytesTotal}, est {limiter._estimated_speed} bytes/second")
