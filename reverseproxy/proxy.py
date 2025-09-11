@@ -92,7 +92,7 @@ class CacheEntry:
                 if found_chunk is None:
                     print(f"Waiting {offset}")
                     log = {k: (c.offset, c.offset + c.len()) for k, c in self.chunks.items()}
-                    print(f"Chunk keys {log}")
+                    # print(f"Chunk keys {log}")
                     priority[self.key] = offset
                     await asyncio.sleep(1)
                     continue
