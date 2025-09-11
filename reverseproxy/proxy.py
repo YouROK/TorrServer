@@ -188,6 +188,7 @@ async def downloader():
                 continue
             print(f"Downloader started {keys[0]}")
             (key, cached, startFrom) = keys[0]
+            startOffset = None
             if startFrom is not None:
                 (startOffset, endOffset) = find_hole(cached.chunks, cached.len, startFrom)
                 if startOffset is not None:
