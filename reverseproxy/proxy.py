@@ -90,11 +90,11 @@ class CacheEntry:
                         found_chunk = None
                         
                     # found_key = max((k for k, c in self.chunks.items() if k <= offset and c.offset + c.len() > offset), default=None)
+                priority[self.key] = offset
                 if found_chunk is None:
-                    print(f"Waiting {offset}")
-                    log = {k: (c.offset, c.offset + c.len()) for k, c in self.chunks.items()}
+                    # print(f"Waiting {offset}")
+                    # log = {k: (c.offset, c.offset + c.len()) for k, c in self.chunks.items()}
                     # print(f"Chunk keys {log}")
-                    priority[self.key] = offset
                     await asyncio.sleep(1)
                     continue
     
@@ -141,9 +141,10 @@ async def simple_proxy_handler(request):
             await response.write_eof()
             return response
 
-def find_hole(chunks: SortedDict[int, Chunk], size, start_offset=0):
+def find_hole(entry: CacheEntry, start_offset=0):
+    chunks = entry.chunks
     if len(chunks) == 0:
-        return (0, size)
+        return (0, entry.len)
     # TODO Lock with merger
     keys = chunks.bisect_right(start_offset) - 1
     keys = list(chunks.islice(keys, len(chunks)))
@@ -153,8 +154,8 @@ def find_hole(chunks: SortedDict[int, Chunk], size, start_offset=0):
         curr: Chunk = chunks[keys[i]]
         if curr.offset + curr.len() < keys[i + 1]:
             return (curr.offset + curr.len(), keys[i + 1])
-    if keys[-1] + chunks[keys[-1]].len() < size:
-        return (keys[-1] + chunks[keys[-1]].len(), size)
+    if keys[-1] + chunks[keys[-1]].len() < entry.len:
+        return (keys[-1] + chunks[keys[-1]].len(), entry.len)
     return (None, None)
 
 async def merger():
@@ -173,30 +174,29 @@ async def downloader():
         try:
             await asyncio.sleep(0)
             keys = await response_cache.allItems()
-            if len(priority) > 0:
-                keysP = dict(priority)
-                # TODO Sort by distance to hole
-                keys = [(k, v, priority[k]) for k, v in keys.items() if k in keysP.keys()]
-            else:
-                keys = [(k, v, None) for k, v in keys.items()]
-
-            if len(keys) == 0:
+            queuekeys = [(k, v, priority[k]) for k, v in keys.items() if k in priority.keys() and find_hole(v, priority[k])[0] is not None]
+            queuekeys.sort(key=lambda x: find_hole(x[1], x[2])[0] - x[2])
+            queuekeys += [(k, v, None) for k, v in keys.items()]
+            queuekeys = [(k,v,p) for k,v,p in queuekeys if find_hole(v, p or 0)[0] is not None]
+            
+            if len(queuekeys) == 0:
                 print(f"Nothing to download, sleeping")
                 await asyncio.sleep(10)
                 continue
 
-            for key, cached, startFrom in keys:
+            priority.clear()
+            for key, cached, startFrom in queuekeys:
                 startOffset = None
                 endOffset = None
                 if startFrom is not None:
-                    (startOffset, endOffset) = find_hole(cached.chunks, cached.len, startFrom)
+                    (startOffset, endOffset) = find_hole(cached, startFrom)
                     if startOffset is not None:
                         startOffset = max(startOffset, startFrom)
                         endOffset = startOffset + CHUNK_SIZE * 10
                     priority.pop(key, None)
 
                 if startOffset is None:
-                    (startOffset, endOffset) = find_hole(cached.chunks, cached.len)
+                    (startOffset, endOffset) = find_hole(cached)
 
                 if startOffset is None:
                     continue
