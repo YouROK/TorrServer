@@ -7,6 +7,7 @@ import sys
 import json
 import os
 import traceback
+from sortedcontainers import SortedDict
 
 CHUNK_SIZE = 1024 * 1024  # Default chunk size: 1MB
 m3u = "http://95.142.46.84:5665/playlistall/all.m3u"
@@ -35,6 +36,16 @@ class Chunk:
             f.seek(start)
             dt = f.read(min(self.len() - start, size) if size >= 0 else None)
             return dt
+    def append(self, data):
+        with open(self.file, "r+b") as f:
+            f.seek(0, os.SEEK_END)
+            f.write(data)
+            f.flush()
+            os.fsync(f.fileno())
+    
+    def __repr__(self):
+        return f"Chunk(offset={self.offset}, file={self.file}, length={self.len()})"
+
 
 priority = {}
 
@@ -51,26 +62,42 @@ class CacheEntry:
         self.method = method
         self.cachePath = (self.url + self.initialResponseHeaders['Etag'][:20]).replace("/", "_").replace(":", "_").replace("?", "_").replace("&", "_").replace("=", "_")
         os.makedirs(os.path.join(cache_path, self.cachePath), exist_ok=True)
-        self.chunks: dict[int, Chunk] = {int(l): Chunk(self.cachePath, int(l), None) for l in os.listdir(os.path.join(cache_path, self.cachePath))}
-        print(f"CacheEntry created for {url} with {len(self.chunks)} chunks")
+        self.chunks: SortedDict[int, Chunk] = SortedDict({
+            int(l): Chunk(self.cachePath, int(l), None) 
+            for l in os.listdir(os.path.join(cache_path, self.cachePath))
+        })
+        print(f"CacheEntry created for {url} with {self.chunks} chunks")
 
-    def set(self, offset, chunk: bytes):
-        with self.lock:
+    async def set(self, offset, chunk: bytes):
+        async with self.lock:
             self.chunks[offset] = Chunk(self.cachePath, offset, chunk)
+            return self.chunks[offset]
+
     def get(self, offset):
         async def get_chunk_length(offset: int):
             while True:
                 if offset >= self.len:
                     break
-                with self.lock:
-                    found_key = max((k for k, c in self.chunks.items() if k <= offset and c.offset + c.len() > offset), default=None)
-                if found_key is None:
+                async with self.lock:
+                    found_index = self.chunks.bisect_right(offset) - 1
+                    print(f"Found index {found_index} for offset {offset}")
+                    found_chunk: Chunk = None
+                    if found_index >= 0:
+                        found_chunk = self.chunks[self.chunks.keys()[found_index]]
+                        print(f"Found chunk {found_chunk}, {found_chunk.offset}, {found_chunk.len()}")
+                    if found_chunk is not None and found_chunk.offset + found_chunk.len() <= offset:
+                        found_chunk = None
+                        
+                    # found_key = max((k for k, c in self.chunks.items() if k <= offset and c.offset + c.len() > offset), default=None)
+                if found_chunk is None:
                     print(f"Waiting {offset}")
+                    log = {k: (c.offset, c.offset + c.len()) for k, c in self.chunks.items()}
+                    print(f"Chunk keys {log}")
                     priority[self.key] = offset
                     await asyncio.sleep(1)
                     continue
     
-                dt = self.chunks[found_key].data(offset - found_key, CHUNK_SIZE)
+                dt = found_chunk.data(offset - found_chunk.offset, CHUNK_SIZE)
                 if len(dt) == 0:
                     raise ValueError("Empty chunk data")
                 yield dt
@@ -80,10 +107,10 @@ class CacheEntry:
 
 class Cache:
     def __init__(self):
-        self.store = {}
+        self.store: dict[any, CacheEntry] = {}
         self.lock = asyncio.Lock()
 
-    async def allItems(self):
+    async def allItems(self) -> dict[any, CacheEntry]:
         async with self.lock:
             return dict(self.store)
         
@@ -91,9 +118,7 @@ class Cache:
         async with self.lock:
             if key not in self.store:
                 self.store[key] = CacheEntry(key, headReponseHeaders=headResponseHeaders, method=method, url=url, headers=headers, params=params)
-            else:
-                raise Exception(f"Cache entry already exists {key}")
-        return self.store.get(key)
+            return self.store.get(key)
 
 response_cache = Cache()
 
@@ -107,7 +132,7 @@ async def simple_proxy_handler(request):
 
     async with aiohttp.ClientSession() as session:
         async with session.request(method, backend_url + path, headers=headers, params=params, data=body) as resp:
-            print("Response status:", resp.headers)
+            # print("Response status:", resp.headers)
             response = web.StreamResponse(status=resp.status, headers=resp.headers)
             await response.prepare(request)
             async for chunk in resp.content.iter_chunked(CHUNK_SIZE):
@@ -115,17 +140,20 @@ async def simple_proxy_handler(request):
             await response.write_eof()
             return response
 
-def find_hole(chunks: dict[int, Chunk], size, start_offset=0):
+def find_hole(chunks: SortedDict[int, Chunk], size, start_offset=0):
     if len(chunks) == 0:
         return (0, size)
-    sorted_chunks = sorted(chunks.keys())
-    for i in range(len(sorted_chunks) - 1):
-        if sorted_chunks[i + 1] < start_offset:
+    # TODO Lock with merger
+    keys = chunks.bisect_right(start_offset) - 1
+    keys = list(chunks.islice(keys, len(chunks)))
+    for i in range(len(keys) - 1):
+        if keys[i + 1] < start_offset:
             continue
-        if sorted_chunks[i] + chunks[sorted_chunks[i]].len() < sorted_chunks[i + 1]:
-            return (sorted_chunks[i] + chunks[sorted_chunks[i]].len(), sorted_chunks[i + 1])
-    if sorted_chunks[-1] + chunks[sorted_chunks[-1]].len() < size:
-        return (sorted_chunks[-1] + chunks[sorted_chunks[-1]].len(), size)
+        curr: Chunk = chunks[keys[i]]
+        if curr.offset + curr.len() < keys[i + 1]:
+            return (curr.offset + curr.len(), keys[i + 1])
+    if keys[-1] + chunks[keys[-1]].len() < size:
+        return (keys[-1] + chunks[keys[-1]].len(), size)
     return (None, None)
 
 async def merger():
@@ -153,15 +181,15 @@ async def downloader():
                 # print(f"Downloader checking key {key}, {len(cached.chunks)} chunks")
                 if priority.get(key) is not None:
                     print(f"Priority download for key {key} at offset {priority[key]}")
-                    startOffset = priority[key]
-                    endOffset = startOffset + CHUNK_SIZE * 10
+                    # startOffset = priority[key]
+                    # endOffset = startOffset + CHUNK_SIZE * 10
                     # TODO Improve logic
-                    # (startOffset, endOffset) = find_hole(cached.chunks, cached.len, priority[key])
-                    # if startOffset is None:
-                    #     (startOffset, endOffset) = find_hole(cached.chunks, cached.len)
-                    # else:
-                    #     startOffset = max(startOffset, priority[key])
-                    #     endOffset = startOffset + CHUNK_SIZE * 10
+                    (startOffset, endOffset) = find_hole(cached.chunks, cached.len, priority[key])
+                    if startOffset is None:
+                        (startOffset, endOffset) = find_hole(cached.chunks, cached.len)
+                    else:
+                        startOffset = max(startOffset, priority[key])
+                        endOffset = startOffset + CHUNK_SIZE * 10
                     # if startOffset is None:
                     priority.pop(key, None)
                 else:
@@ -169,7 +197,7 @@ async def downloader():
                     # TODO Limit speed if no priority
                 if startOffset is None:
                     continue
-                endOffset = min(endOffset, startOffset + CHUNK_SIZE * 10)
+                endOffset = min(endOffset, startOffset + CHUNK_SIZE)
 
                 print(f"Downloading startOffset {startOffset}..{endOffset} for key {key}")
                 rangeHeader = {"Range": f"bytes={startOffset}-{endOffset-1}"}
@@ -191,12 +219,17 @@ async def downloader():
                         else:
                             (start, end) = [int(i) for i in start_end.split("-")]
                         # print(f"Content-Range: {start}-{end}/{size}")
+                        newChunk: Chunk = None
                         offset = start
-                        async for chunk in resp.content.iter_chunked(CHUNK_SIZE):
-                            # print(f"Downloaded chunk at offset {offset}, size {len(chunk)} for key {key}")
-                            cached.set(offset, chunk)
+                        async for receivedBytes in resp.content.iter_chunked(CHUNK_SIZE):
+                            if newChunk is None:
+                                newChunk = await cached.set(offset, receivedBytes)
+                            else:
+                                newChunk.append(receivedBytes)
+                            # print(f"Downloaded off:{offset},sz:{len(receivedBytes)},chunk{newChunk.offset} for key {key}")
                             await asyncio.sleep(0)
-                            offset += len(chunk)
+                            offset += len(receivedBytes)
+                    print(f"Downloading done")
         except Exception as e:
             print(f"downloader error: {e}", file=sys.stderr)
             traceback.print_exc()
@@ -211,7 +244,7 @@ async def proxy_handler(request):
         body = await request.read()
         # if "Range" not in headers.keys():
         if "stream" not in path or "m3u" in path:
-            print(f"Simple handler {method}, {path}, {tuple(sorted(params.items()))}, {body}, {headers}")
+            # print(f"Simple handler {method}, {path}, {tuple(sorted(params.items()))}, {body}, {headers}")
             return await simple_proxy_handler(request)
         
         if "Range" not in headers.keys():
@@ -237,6 +270,9 @@ async def proxy_handler(request):
             print(f"HEAD response status: {head_resp.status}")
             print(f"HEAD response headers: {head_resp.headers}")
             headHeaders = head_resp.headers
+            if head_resp.status != 200:
+                return web.Response(status=head_resp.status, text=f"Upstream server returned status {head_resp.status}")
+
         cache_key = (method, path, (headHeaders['Etag'][:20].__hash__()))
         # cache_key = (method, path, (tuple(sorted(params.items())), body, tuple(sorted(headHeaders.items()))).__hash__())
         print(f"Cache key: {cache_key}")
