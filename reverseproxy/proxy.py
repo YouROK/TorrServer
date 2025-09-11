@@ -187,6 +187,8 @@ async def downloader():
                 continue
 
             for key, cached, startFrom in keys:
+                startOffset = None
+                endOffset = None
                 if startFrom is not None:
                     (startOffset, endOffset) = find_hole(cached.chunks, cached.len, startFrom)
                     if startOffset is not None:
