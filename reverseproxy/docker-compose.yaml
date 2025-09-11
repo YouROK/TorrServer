@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   reverseproxy:
-    image: registry.rudolf.keenetic.link/torr_cache
+    image: registry.rudolf.keenetic.link/torr_cache:${version}
     volumes:
       - data:/app/cache:rw
     ports:
