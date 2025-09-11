@@ -168,7 +168,6 @@ async def verifirer():
     # TODO Locks
     pass
 
-
 async def downloader():
     limiter = DownloadSpeedLimiter(200000)
     while True:
@@ -177,73 +176,73 @@ async def downloader():
             keys = await response_cache.allItems()
             if len(priority) > 0:
                 keysP = dict(priority)
-                # TODO Sort by hole distance from desired offset
+                # TODO Sort by distance to hole
                 keys = [(k, v, priority[k]) for k, v in keys.items() if k in keysP.keys()]
             else:
-                keys = sorted([(k, v, None) for k, v in keys.items()])
+                keys = [(k, v, None) for k, v in keys.items()]
 
             if len(keys) == 0:
                 print(f"Nothing to download, sleeping")
                 await asyncio.sleep(10)
                 continue
-            print(f"Downloader started {keys[0]}")
-            (key, cached, startFrom) = keys[0]
-            startOffset = None
-            if startFrom is not None:
-                (startOffset, endOffset) = find_hole(cached.chunks, cached.len, startFrom)
-                if startOffset is not None:
-                    startOffset = max(startOffset, startFrom)
-                    endOffset = startOffset + CHUNK_SIZE * 10
-                priority.pop(key, None)
 
-            if startOffset is None:
-                (startOffset, endOffset) = find_hole(cached.chunks, cached.len)
+            for key, cached, startFrom in keys:
+                if startFrom is not None:
+                    (startOffset, endOffset) = find_hole(cached.chunks, cached.len, startFrom)
+                    if startOffset is not None:
+                        startOffset = max(startOffset, startFrom)
+                        endOffset = startOffset + CHUNK_SIZE * 10
+                    priority.pop(key, None)
 
-            if startOffset is None:
-                continue
-            endOffset = min(endOffset, startOffset + CHUNK_SIZE)
+                if startOffset is None:
+                    (startOffset, endOffset) = find_hole(cached.chunks, cached.len)
 
-            print(f"Downloading startOffset {startOffset}..{endOffset} for key {key}")
-            rangeHeader = {"Range": f"bytes={startOffset}-{endOffset-1}"}
-            async with aiohttp.ClientSession() as session:
-                # TODO data=body
-                headers_with_range = dict(cached.headers)
-                headers_with_range.update(rangeHeader)
-                async with session.request(cached.method, cached.url, headers=headers_with_range, params=cached.params) as resp:
+                if startOffset is None:
+                    continue
+                endOffset = min(endOffset, startOffset + CHUNK_SIZE)
 
-                    # Stream response in chunks
-                    # print(f"Response headers: {resp.headers}")
-                    if "Content-Range" not in resp.headers:
-                        raise ValueError("No Content-Range in response for Range request")
-                    if "bytes" not in resp.headers["Content-Range"]:
-                        raise ValueError("Only bytes Content-Range supported")
-                    (start_end, size) = resp.headers["Content-Range"].replace("bytes ", "").split("/")
-                    if start_end == "*":
-                        (start, end) = (0, size - 1)
-                    else:
-                        (start, end) = [int(i) for i in start_end.split("-")]
-                    # print(f"Content-Range: {start}-{end}/{size}")
-                    newChunk: Chunk = None
-                    offset = start
-                    receivedBytesTotal = 0
-                    async for receivedBytes in resp.content.iter_chunked(CHUNK_SIZE):
-                        if newChunk is None:
-                            newChunk = await cached.set(offset, receivedBytes)
+                print(f"Downloading startOffset {startOffset}..{endOffset} for key {key}")
+                rangeHeader = {"Range": f"bytes={startOffset}-{endOffset-1}"}
+                async with aiohttp.ClientSession() as session:
+                    # TODO data=body
+                    headers_with_range = dict(cached.headers)
+                    headers_with_range.update(rangeHeader)
+                    async with session.request(cached.method, cached.url, headers=headers_with_range, params=cached.params) as resp:
+
+                        # Stream response in chunks
+                        # print(f"Response headers: {resp.headers}")
+                        if "Content-Range" not in resp.headers:
+                            raise ValueError("No Content-Range in response for Range request")
+                        if "bytes" not in resp.headers["Content-Range"]:
+                            raise ValueError("Only bytes Content-Range supported")
+                        (start_end, size) = resp.headers["Content-Range"].replace("bytes ", "").split("/")
+                        if start_end == "*":
+                            (start, end) = (0, size - 1)
                         else:
-                            newChunk.append(receivedBytes)
-                        # print(f"Downloaded off:{offset},sz:{len(receivedBytes)},chunk{newChunk.offset} for key {key}")
-                        receivedBytesTotal += len(receivedBytes)
-                        offset += len(receivedBytes)
-                    limiter.consumed(receivedBytesTotal)
-                    delay = limiter.delay()
-                    print(f"Sleep {delay}, {receivedBytesTotal}, est {limiter._estimated_speed} bytes/second")
-                    if startFrom is None:
-                        await asyncio.sleep(delay)
-                    else:
-                        print(f"Skip sleep for priority download")
-                        await asyncio.sleep(0)
-                    
+                            (start, end) = [int(i) for i in start_end.split("-")]
+                        # print(f"Content-Range: {start}-{end}/{size}")
+                        newChunk: Chunk = None
+                        offset = start
+                        receivedBytesTotal = 0
+                        async for receivedBytes in resp.content.iter_chunked(CHUNK_SIZE):
+                            if newChunk is None:
+                                newChunk = await cached.set(offset, receivedBytes)
+                            else:
+                                newChunk.append(receivedBytes)
+                            # print(f"Downloaded off:{offset},sz:{len(receivedBytes)},chunk{newChunk.offset} for key {key}")
+                            receivedBytesTotal += len(receivedBytes)
+                            offset += len(receivedBytes)
+                        limiter.consumed(receivedBytesTotal)
+                        delay = limiter.delay()
+                        print(f"Sleep {delay}, {receivedBytesTotal}, est {limiter._estimated_speed} bytes/second")
+                        if startFrom is None:
+                            await asyncio.sleep(delay)
+                        else:
+                            print(f"Skip sleep for priority download")
+                            await asyncio.sleep(0)
+                        
                 print(f"Downloading done")
+                break
         except Exception as e:
             print(f"downloader error: {e}", file=sys.stderr)
             traceback.print_exc()
