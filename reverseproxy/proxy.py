@@ -80,11 +80,11 @@ class CacheEntry:
                     break
                 async with self.lock:
                     found_index = self.chunks.bisect_right(offset) - 1
-                    print(f"Found index {found_index} for offset {offset}")
+                    # print(f"Found index {found_index} for offset {offset}")
                     found_chunk: Chunk = None
                     if found_index >= 0:
                         found_chunk = self.chunks[self.chunks.keys()[found_index]]
-                        print(f"Found chunk {found_chunk}, {found_chunk.offset}, {found_chunk.len()}")
+                        # print(f"Found chunk {found_chunk}, {found_chunk.offset}, {found_chunk.len()}")
                     if found_chunk is not None and found_chunk.offset + found_chunk.len() <= offset:
                         found_chunk = None
                         
