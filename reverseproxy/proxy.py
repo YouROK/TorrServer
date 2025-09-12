@@ -12,11 +12,6 @@ from sortedcontainers import SortedDict
 from throttler import DownloadSpeedLimiter
 
 CHUNK_SIZE = 1024 * 1024  # Default chunk size: 1MB
-m3u = "http://95.142.46.84:5665/playlistall/all.m3u"
-# http://0.0.0.0:8080/playlistall/all.m3u
-# http://0.0.0.0:8080/stream/Wednesday.S02.1080p.NF.WEB-DL-EniaHD.m3u?link=e143d60dabde0af9d263abab362e870201fc8acf&m3u&fn=file.m3u
-# http://0.0.0.0:8080/stream/Wednesday.S02E01.Here.We.Woe.Again.1080p.NF.WEB-DL-EniaHD.mkv?link=e143d60dabde0af9d263abab362e870201fc8acf&index=1&play
-# Response cache: {(method, path, query, body): (status, headers, body)}
 
 
 cache_path = "cache"
@@ -77,6 +72,7 @@ class CacheEntry:
     def get(self, offset):
         async def get_chunk_length(offset: int):
             while True:
+                await asyncio.sleep(0)
                 if offset >= self.len:
                     break
                 async with self.lock:
@@ -90,12 +86,13 @@ class CacheEntry:
                         found_chunk = None
                         
                     # found_key = max((k for k, c in self.chunks.items() if k <= offset and c.offset + c.len() > offset), default=None)
-                priority[self.key] = offset
+                # print(f"Raising priority {self.key}, {offset}")
                 if found_chunk is None:
                     # print(f"Waiting {offset}")
                     # log = {k: (c.offset, c.offset + c.len()) for k, c in self.chunks.items()}
                     # print(f"Chunk keys {log}")
                     await asyncio.sleep(1)
+                    yield b""
                     continue
     
                 dt = found_chunk.data(offset - found_chunk.offset, CHUNK_SIZE)
@@ -169,6 +166,7 @@ async def verifirer():
     pass
 
 async def downloader():
+    global priority
     limiter = DownloadSpeedLimiter(200000)
     while True:
         try:
@@ -184,7 +182,7 @@ async def downloader():
                 await asyncio.sleep(10)
                 continue
 
-            priority.clear()
+            priority = {}
             for key, cached, startFrom in queuekeys:
                 startOffset = None
                 endOffset = None
@@ -193,7 +191,6 @@ async def downloader():
                     if startOffset is not None:
                         startOffset = max(startOffset, startFrom)
                         endOffset = startOffset + CHUNK_SIZE * 10
-                    priority.pop(key, None)
 
                 if startOffset is None:
                     (startOffset, endOffset) = find_hole(cached)
@@ -302,7 +299,6 @@ async def proxy_handler(request):
         cached = await response_cache.getOrCreate(cache_key, headHeaders, method=method, url = backend_url + path, headers=head_headers, params=params)
 
         start = (range and range[0]) or 0
-        stream = cached.get(start)
         headHeaders = dict(headHeaders)
         if range is not None:
             end = range[1] if len(range) > 1 and range[1] is not None else cached.len - 1
@@ -315,10 +311,17 @@ async def proxy_handler(request):
         response = web.StreamResponse(status=206, headers=headHeaders)
         await response.prepare(request)
         print("Sending chunks")
+        stream = cached.get(start)
+        leftBytes = (end - start + 1) if range is not None else cached.len - start
         async for chunk in stream:
-            await response.write(chunk)
+            if 'NoPriority' not in headers.keys():
+                priority[cache_key] = start
+            await response.write(chunk[:min(len(chunk), leftBytes)])
+            leftBytes -= len(chunk)
+            # print(f"Sending chunks {cache_key} {len(chunk)}")
+            if leftBytes <= 0:
+                break
             await asyncio.sleep(0)
-            # await response.drain()
         await response.write_eof()
         return response
 
@@ -340,6 +343,13 @@ async def server(app):
     site = web.TCPSite(runner, '0.0.0.0', 8080)
     await site.start()   
 
+async def root_m3u_downloader(m3u_url):
+    from m3u_download import process_m3u
+    await asyncio.sleep(2)
+    while True:
+        await process_m3u(m3u_url, None)
+        print(f"Root M3U downloader sleeping for 1 hour")
+        await asyncio.sleep(10 * 60)
 
 def main():
     if len(sys.argv) < 2:
@@ -352,6 +362,14 @@ def main():
     loop = asyncio.new_event_loop()
     loop.create_task(downloader())
     loop.create_task(server(app))
+# http://0.0.0.0:8080/stream/Wednesday.S02.1080p.NF.WEB-DL-EniaHD.m3u?link=e143d60dabde0af9d263abab362e870201fc8acf&m3u&fn=file.m3u
+# m3u = "http://95.142.46.84:5665/playlistall/all.m3u"
+# http://0.0.0.0:8080/playlistall/all.m3u
+# http://0.0.0.0:8080/stream/Wednesday.S02.1080p.NF.WEB-DL-EniaHD.m3u?link=e143d60dabde0af9d263abab362e870201fc8acf&m3u&fn=file.m3u
+# http://0.0.0.0:8080/stream/Wednesday.S02E01.Here.We.Woe.Again.1080p.NF.WEB-DL-EniaHD.mkv?link=e143d60dabde0af9d263abab362e870201fc8acf&index=1&play
+# Response cache: {(method, path, query, body): (status, headers, body)}
+
+    loop.create_task(root_m3u_downloader("http://0.0.0.0:8080/playlistall/all.m3u"))
 
     loop.run_forever()
 

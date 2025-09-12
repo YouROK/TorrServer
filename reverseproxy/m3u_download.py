@@ -3,6 +3,7 @@
 import os
 import sys
 import asyncio
+import traceback
 import aiohttp
 import aiofiles
 import urllib.parse
@@ -17,6 +18,28 @@ def is_url(string):
         return all([result.scheme, result.netloc])
     except:
         return False
+
+async def download_head(session, url):
+    """Download a file from URL to the specified destination asynchronously.
+    If head is a number, download only the first head bytes.
+    """
+    try:
+        print(f"Downloading: {url} (HEAD)")
+        headers = {}
+        headers['Range'] = f'bytes=0-100'
+        headers['NoPriority'] = f'NoPriority'
+        async with session.get(url, headers=headers) as response:
+            response.raise_for_status()
+            total_size = int(response.headers.get('content-length', 0))
+            downloaded = 0
+            async for chunk in response.content.iter_chunked(8192):
+                if chunk:
+                    downloaded += len(chunk)
+        return True
+    except Exception as e:
+        print(f"Error downloading {url}: {str(e)}")
+        return False
+
 
 
 async def download_file(session, url, destination):
@@ -59,27 +82,34 @@ async def process_m3u(m3u_url, output_dir):
                     continue
                 file_url = line if is_url(line) else urljoin(base_url, line)
                 path_part = urlparse(file_url).path
+                if '.m3u' in path_part:
+                    tasks.append(process_m3u(file_url, output_dir))
+                    continue
                 if path_part.startswith('/'):
                     path_part = path_part[1:]
                 path_part = urllib.parse.unquote(path_part)
-                local_path = os.path.join(output_dir, path_part)
-                tasks.append(download_file(session, file_url, local_path))
+
+                if output_dir is None:
+                    tasks.append(download_head(session, file_url))
+                else:
+                    local_path = os.path.join(output_dir, path_part)
+                    tasks.append(download_file(session, file_url, local_path))
+                
             await asyncio.gather(*tasks)
+            await session.close()
         return True
     except Exception as e:
         print(f"Error processing M3U file: {str(e)}")
+        traceback.print_exc()
         return False
 
 
-def main():
+if __name__ == "__main__":
+# m3u = "http://192.168.1.96:8080/playlistall/all.m3u"
     if len(sys.argv) < 2:
         print("Usage: python m3u_download.py <m3u_url> [output_directory]")
         sys.exit(1)
     m3u_url = sys.argv[1]
-    output_dir = sys.argv[2] if len(sys.argv) > 2 else '.'
+    output_dir = sys.argv[2] if len(sys.argv) > 2 else None
     print(f"Downloading content from {m3u_url} to {output_dir}")
     asyncio.run(process_m3u(m3u_url, output_dir))
-
-
-if __name__ == "__main__":
-    main()
