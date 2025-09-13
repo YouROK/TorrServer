@@ -176,11 +176,15 @@ def find_hole(entry: CacheEntry, start_offset=0):
 
 async def merger():
     while True:
-        if await response_cache.mergeAnyTwo():
-            # await asyncio.sleep(0.1)
-            await asyncio.sleep(10)
-        else:
-            await asyncio.sleep(30)
+        try:
+            if await response_cache.mergeAnyTwo():
+                # await asyncio.sleep(0.1)
+                await asyncio.sleep(10)
+                return
+        except Exception as e:
+            print(f"merger error: {e}", file=sys.stderr)
+            traceback.print_exc()
+        await asyncio.sleep(30)
 
 async def verifirer():
     # TODO
