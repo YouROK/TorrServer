@@ -117,6 +117,25 @@ class Cache:
             if key not in self.store:
                 self.store[key] = CacheEntry(key, headReponseHeaders=headResponseHeaders, method=method, url=url, headers=headers, params=params)
             return self.store.get(key)
+    async def mergeAnyTwo(self):
+        async with self.lock:
+            for entry in self.store.values():
+                keysI = list(entry.chunks.keys()[:-1])
+                for key in keysI:
+                    chunk1:Chunk = entry.chunks[key]
+                    chunk2:Chunk = entry.chunks[entry.chunks.keys()[entry.chunks.bisect_right(key + 1) - 1]]  
+                    if chunk2 is None:
+                        continue
+                    if chunk1.offset >= chunk2.offset:
+                        continue
+                    if chunk1.offset + chunk1.len() - chunk2.offset >= chunk2.len():
+                        continue
+                    print(f"Merging {chunk1}+{chunk2}[{chunk1.offset + chunk1.len() - chunk2.offset}:] from {entry.key}")
+                    # chunk1.append(chunk2.data(chunk1.offset + chunk1.len() - chunk2.offset, -1))
+                    # del entry.chunks[chunk2.offset]
+                    # os.remove(chunk2.file)
+                    return True
+        return False
 
 response_cache = Cache()
 
@@ -156,9 +175,12 @@ def find_hole(entry: CacheEntry, start_offset=0):
     return (None, None)
 
 async def merger():
-    # TODO
-    # TODO Locks
-    pass
+    while True:
+        if await response_cache.mergeAnyTwo():
+            # await asyncio.sleep(0.1)
+            await asyncio.sleep(10)
+        else:
+            await asyncio.sleep(30)
 
 async def verifirer():
     # TODO
@@ -364,6 +386,7 @@ def main():
     app.router.add_route('*', '/{tail:.*}', proxy_handler)
     loop = asyncio.new_event_loop()
     loop.create_task(downloader())
+    loop.create_task(merger())
     loop.create_task(server(app))
 # http://0.0.0.0:8080/stream/Wednesday.S02.1080p.NF.WEB-DL-EniaHD.m3u?link=e143d60dabde0af9d263abab362e870201fc8acf&m3u&fn=file.m3u
 # m3u = "http://95.142.46.84:5665/playlistall/all.m3u"
