@@ -134,6 +134,9 @@ class Cache:
                         if chunk1.offset + chunk1.len() - chunk2.offset >= chunk2.len():
                             print(f"Chunk1 {chunk1} already covers Chunk2 {chunk2} in {entry.key}: {chunk1.offset + chunk1.len() - chunk2.offset >= chunk2.len()}")
                             continue
+                        if chunk1.offset + chunk1.len() < chunk2.offset:
+                            print(f"Chunk1 {chunk1} has gap after Chunk2 {chunk2} in {entry.key}: {chunk1.offset + chunk1.len() - chunk2.offset >= chunk2.len()}")
+                            continue
                         print(f"Merging {chunk1}+{chunk2}[{chunk1.offset + chunk1.len() - chunk2.offset}:] from {entry.key}")
                         chunk1.append(chunk2.data(chunk1.offset + chunk1.len() - chunk2.offset, -1))
                         del entry.chunks[chunk2.offset]
