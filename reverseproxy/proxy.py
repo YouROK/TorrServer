@@ -125,10 +125,13 @@ class Cache:
                     chunk1:Chunk = entry.chunks[key]
                     chunk2:Chunk = entry.chunks[entry.chunks.keys()[entry.chunks.bisect_right(key + 1) - 1]]  
                     if chunk2 is None:
+                        print(f"No chunk2 for {key} in {entry.key}")
                         continue
                     if chunk1.offset >= chunk2.offset:
+                        print(f"Chunk1 {chunk1} is not before Chunk2 {chunk2} in {entry.key}")
                         continue
                     if chunk1.offset + chunk1.len() - chunk2.offset >= chunk2.len():
+                        print(f"Chunk1 {chunk1} already covers Chunk2 {chunk2} in {entry.key}: {chunk1.offset + chunk1.len() - chunk2.offset >= chunk2.len()}")
                         continue
                     print(f"Merging {chunk1}+{chunk2}[{chunk1.offset + chunk1.len() - chunk2.offset}:] from {entry.key}")
                     # chunk1.append(chunk2.data(chunk1.offset + chunk1.len() - chunk2.offset, -1))
