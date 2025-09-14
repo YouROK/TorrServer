@@ -209,22 +209,18 @@ async def downloader():
         try:
             async with aiohttp.ClientSession() as session:
                 while True:
-                    print(f"C1")
                     await asyncio.sleep(0)
+                    print(f"Checking for downloads...")
                     keys = await response_cache.allItems()
                     queuekeys = [(k, v, priority[k]) for k, v in keys.items() if k in priority.keys() and find_hole(v, priority[k])[0] is not None]
-                    print(f"C1.1")
                     queuekeys.sort(key=lambda x: find_hole(x[1], x[2])[0] - x[2])
-                    print(f"C1.2")
                     queuekeys += [(k, v, None) for k, v in keys.items()]
-                    print(f"C1.3")
                     queuekeys = [(k,v,p) for k,v,p in queuekeys if find_hole(v, p or 0)[0] is not None]
                     
                     if len(queuekeys) == 0:
                         print(f"Nothing to download, sleeping")
                         await asyncio.sleep(10)
                         continue
-                    print(f"C2")
                     priority = {}
                     for key, cached, startFrom in queuekeys:
                         startOffset = None
@@ -234,11 +230,9 @@ async def downloader():
                             if startOffset is not None:
                                 startOffset = max(startOffset, startFrom)
                                 endOffset = startOffset + CHUNK_SIZE * 10
-                        print(f"C3")
 
                         if startOffset is None:
                             (startOffset, endOffset) = find_hole(cached)
-                        print(f"C4")
 
                         if startOffset is None:
                             continue
