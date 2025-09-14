@@ -120,24 +120,25 @@ class Cache:
     async def mergeAnyTwo(self):
         async with self.lock:
             for entry in self.store.values():
-                keysI = list(entry.chunks.keys())
-                for keyI in range(len(keysI) - 1):
-                    chunk1:Chunk = entry.chunks[keysI[keyI]]
-                    chunk2:Chunk = entry.chunks[keysI[keyI+1]]
-                    if chunk2 is None:
-                        print(f"No chunk2 for {keysI[keyI]} in {entry.key}")
-                        continue
-                    if chunk1.offset >= chunk2.offset:
-                        print(f"Chunk1 {chunk1} is not before Chunk2 {chunk2} in {entry.key}")
-                        continue
-                    if chunk1.offset + chunk1.len() - chunk2.offset >= chunk2.len():
-                        print(f"Chunk1 {chunk1} already covers Chunk2 {chunk2} in {entry.key}: {chunk1.offset + chunk1.len() - chunk2.offset >= chunk2.len()}")
-                        continue
-                    print(f"Merging {chunk1}+{chunk2}[{chunk1.offset + chunk1.len() - chunk2.offset}:] from {entry.key}")
-                    # chunk1.append(chunk2.data(chunk1.offset + chunk1.len() - chunk2.offset, -1))
-                    # del entry.chunks[chunk2.offset]
-                    # os.remove(chunk2.file)
-                    return True
+                async with entry.lock:
+                    keysI = list(entry.chunks.keys())
+                    for keyI in range(len(keysI) - 1):
+                        chunk1:Chunk = entry.chunks[keysI[keyI]]
+                        chunk2:Chunk = entry.chunks[keysI[keyI+1]]
+                        if chunk2 is None:
+                            print(f"No chunk2 for {keysI[keyI]} in {entry.key}")
+                            continue
+                        if chunk1.offset >= chunk2.offset:
+                            print(f"Chunk1 {chunk1} is not before Chunk2 {chunk2} in {entry.key}")
+                            continue
+                        if chunk1.offset + chunk1.len() - chunk2.offset >= chunk2.len():
+                            print(f"Chunk1 {chunk1} already covers Chunk2 {chunk2} in {entry.key}: {chunk1.offset + chunk1.len() - chunk2.offset >= chunk2.len()}")
+                            continue
+                        print(f"Merging {chunk1}+{chunk2}[{chunk1.offset + chunk1.len() - chunk2.offset}:] from {entry.key}")
+                        chunk1.append(chunk2.data(chunk1.offset + chunk1.len() - chunk2.offset, -1))
+                        del entry.chunks[chunk2.offset]
+                        os.remove(chunk2.file)
+                        return True
         return False
 
 response_cache = Cache()
@@ -181,8 +182,7 @@ async def merger():
     while True:
         try:
             if await response_cache.mergeAnyTwo():
-                # await asyncio.sleep(0.1)
-                await asyncio.sleep(10)
+                await asyncio.sleep(0.1)
                 continue
         except Exception as e:
             print(f"merger error: {e}", file=sys.stderr)
@@ -236,7 +236,7 @@ async def downloader():
                             continue
                         endOffset = min(endOffset, startOffset + CHUNK_SIZE)
 
-                        print(f"Downloading startOffset {startOffset}..{endOffset} for key {key}")
+                        print(f"Downloading startOffset {startOffset}..{endOffset} for key {key} ({startOffset * 100.0/cached.len}%)")
                         rangeHeader = {"Range": f"bytes={startOffset}-{endOffset-1}"}
                         headers_with_range = dict(cached.headers)
                         headers_with_range.update(rangeHeader)
@@ -260,11 +260,6 @@ async def downloader():
 
                             async for receivedBytesLoc in resp.content.iter_chunked(CHUNK_SIZE):
                                 receivedBytes += receivedBytesLoc
-                                # 1if newChunk is None:
-                                # 1    newChunk = await cached.set(offset, receivedBytesLoc)
-                                # 1else:
-                                # 1    newChunk.append(receivedBytesLoc)
-                                # 1print(f"Downloaded off:{offset},sz:{len(receivedBytes)},chunk{newChunk.offset} for key {key}")
                                 receivedBytesTotal += len(receivedBytesLoc)
 
                             await cached.set(start, receivedBytes) # 2
@@ -399,14 +394,12 @@ def main():
     loop.create_task(merger())
     loop.create_task(server(app))
 # http://0.0.0.0:8080/stream/Wednesday.S02.1080p.NF.WEB-DL-EniaHD.m3u?link=e143d60dabde0af9d263abab362e870201fc8acf&m3u&fn=file.m3u
-# m3u = "http://95.142.46.84:5665/playlistall/all.m3u"
 # http://0.0.0.0:8080/playlistall/all.m3u
 # http://0.0.0.0:8080/stream/Wednesday.S02.1080p.NF.WEB-DL-EniaHD.m3u?link=e143d60dabde0af9d263abab362e870201fc8acf&m3u&fn=file.m3u
 # http://0.0.0.0:8080/stream/Wednesday.S02E01.Here.We.Woe.Again.1080p.NF.WEB-DL-EniaHD.mkv?link=e143d60dabde0af9d263abab362e870201fc8acf&index=1&play
-# Response cache: {(method, path, query, body): (status, headers, body)}
 
     loop.create_task(root_m3u_downloader("http://0.0.0.0:8080/playlistall/all.m3u"))
-
+    # loop.create_task(root_m3u_downloader("http://0.0.0.0:8080/stream/Tears%20of%20Steel.m3u?link=209c8226b299b308beaf2b9cd3fb49212dbd13ec&m3u"))
     loop.run_forever()
 
     
