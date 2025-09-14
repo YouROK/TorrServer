@@ -181,7 +181,10 @@ def find_hole(entry: CacheEntry, start_offset=0):
 async def merger():
     while True:
         try:
-            if await response_cache.mergeAnyTwo():
+            cnt = 0
+            if await response_cache.mergeAnyTwo() and cnt < 1000:
+                cnt += 1
+            if cnt > 0:
                 await asyncio.sleep(0.1)
                 continue
         except Exception as e:
