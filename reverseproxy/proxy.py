@@ -25,9 +25,9 @@ class Chunk:
         if data is not None:
             with open(self.file, "wb") as f:
                 f.write(data)
-        self.len = os.path.getsize(self.file)
+        self._len = os.path.getsize(self.file)
     def len(self):
-        return self.len
+        return self._len
 
     def data(self, start = 0, size = -1):
         with open(self.file, "rb") as f:
@@ -39,7 +39,7 @@ class Chunk:
             f.seek(0, os.SEEK_END)
             f.write(data)
             f.flush()
-        self.len = os.path.getsize(self.file)
+        self._len = os.path.getsize(self.file)
     
     def __repr__(self):
         return f"Chunk(offset={self.offset}, file={self.file}, length={self.len()})"
