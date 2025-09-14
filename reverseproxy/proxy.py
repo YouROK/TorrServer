@@ -321,8 +321,8 @@ async def proxy_handler(request):
             head_headers = dict(headers)
             head_headers.pop("Range", None)
             head_resp = await session.head(backend_url + path, headers=head_headers, params=params)
-            print(f"HEAD response status: {head_resp.status}")
-            print(f"HEAD response headers: {head_resp.headers}")
+            # print(f"HEAD response status: {head_resp.status}")
+            # print(f"HEAD response headers: {head_resp.headers}")
             headHeaders = head_resp.headers
             if head_resp.status != 200:
                 return web.Response(status=head_resp.status, text=f"Upstream server returned status {head_resp.status}")
@@ -330,7 +330,7 @@ async def proxy_handler(request):
         cache_key = (method, path, (headHeaders['Etag'][:20].__hash__()))
         # cache_key = (method, path, (tuple(sorted(params.items())), body, tuple(sorted(headHeaders.items()))).__hash__())
         print(f"Cache key: {cache_key}")
-        print(f"Range requested: {range}")
+        # print(f"Range requested: {range}")
         cached = await response_cache.getOrCreate(cache_key, headHeaders, method=method, url = backend_url + path, headers=head_headers, params=params)
 
         start = (range and range[0]) or 0
@@ -341,11 +341,11 @@ async def proxy_handler(request):
             headHeaders["Content-Range"] = content_range_header
             headHeaders["Content-Length"] = f"{end - start + 1}"
             headHeaders["Accept-Ranges"] = 'bytes'
-        print(f"Serving with headers: {headHeaders}")
+        # print(f"Serving with headers: {headHeaders}")
 
         response = web.StreamResponse(status=206, headers=headHeaders)
         await response.prepare(request)
-        print("Sending chunks")
+        # print("Sending chunks")
         stream = cached.get(start)
         leftBytes = (end - start + 1) if range is not None else cached.len - start
         async for chunk in stream:
