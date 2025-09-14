@@ -183,7 +183,7 @@ async def merger():
             if await response_cache.mergeAnyTwo():
                 # await asyncio.sleep(0.1)
                 await asyncio.sleep(10)
-                return
+                continue
         except Exception as e:
             print(f"merger error: {e}", file=sys.stderr)
             traceback.print_exc()
