@@ -25,8 +25,9 @@ class Chunk:
         if data is not None:
             with open(self.file, "wb") as f:
                 f.write(data)
+        self._len = os.path.getsize(self.file)
     def len(self):
-        return os.path.getsize(self.file)
+        return self._len
 
     def data(self, start = 0, size = -1):
         with open(self.file, "rb") as f:
@@ -38,6 +39,7 @@ class Chunk:
             f.seek(0, os.SEEK_END)
             f.write(data)
             f.flush()
+        self._len = os.path.getsize(self.file)
     
     def __repr__(self):
         return f"Chunk(offset={self.offset}, file={self.file}, length={self.len()})"
@@ -117,6 +119,32 @@ class Cache:
             if key not in self.store:
                 self.store[key] = CacheEntry(key, headReponseHeaders=headResponseHeaders, method=method, url=url, headers=headers, params=params)
             return self.store.get(key)
+    async def mergeAnyTwo(self):
+        async with self.lock:
+            for entry in self.store.values():
+                async with entry.lock:
+                    keysI = list(entry.chunks.keys())
+                    for keyI in range(len(keysI) - 1):
+                        chunk1:Chunk = entry.chunks[keysI[keyI]]
+                        chunk2:Chunk = entry.chunks[keysI[keyI+1]]
+                        if chunk2 is None:
+                            print(f"No chunk2 for {keysI[keyI]} in {entry.key}")
+                            continue
+                        if chunk1.offset >= chunk2.offset:
+                            print(f"Chunk1 {chunk1} is not before Chunk2 {chunk2} in {entry.key}")
+                            continue
+                        if chunk1.offset + chunk1.len() - chunk2.offset >= chunk2.len():
+                            print(f"Chunk1 {chunk1} already covers Chunk2 {chunk2} in {entry.key}: {chunk1.offset + chunk1.len() - chunk2.offset >= chunk2.len()}")
+                            continue
+                        if chunk1.offset + chunk1.len() < chunk2.offset:
+                            print(f"Chunk1 {chunk1} has gap after Chunk2 {chunk2} in {entry.key}: {chunk1.offset + chunk1.len() - chunk2.offset >= chunk2.len()}")
+                            continue
+                        print(f"Merging {chunk1}+{chunk2}[{chunk1.offset + chunk1.len() - chunk2.offset}:] from {entry.key}")
+                        chunk1.append(chunk2.data(chunk1.offset + chunk1.len() - chunk2.offset, -1))
+                        del entry.chunks[chunk2.offset]
+                        os.remove(chunk2.file)
+                        return True
+        return False
 
 response_cache = Cache()
 
@@ -156,9 +184,18 @@ def find_hole(entry: CacheEntry, start_offset=0):
     return (None, None)
 
 async def merger():
-    # TODO
-    # TODO Locks
-    pass
+    while True:
+        try:
+            cnt = 0
+            if await response_cache.mergeAnyTwo() and cnt < 1000:
+                cnt += 1
+            if cnt > 0:
+                await asyncio.sleep(0.1)
+                continue
+        except Exception as e:
+            print(f"merger error: {e}", file=sys.stderr)
+            traceback.print_exc()
+        await asyncio.sleep(30)
 
 async def verifirer():
     # TODO
@@ -170,80 +207,75 @@ async def downloader():
     limiter = DownloadSpeedLimiter(200000)
     while True:
         try:
-            await asyncio.sleep(0)
-            keys = await response_cache.allItems()
-            queuekeys = [(k, v, priority[k]) for k, v in keys.items() if k in priority.keys() and find_hole(v, priority[k])[0] is not None]
-            queuekeys.sort(key=lambda x: find_hole(x[1], x[2])[0] - x[2])
-            queuekeys += [(k, v, None) for k, v in keys.items()]
-            queuekeys = [(k,v,p) for k,v,p in queuekeys if find_hole(v, p or 0)[0] is not None]
-            
-            if len(queuekeys) == 0:
-                print(f"Nothing to download, sleeping")
-                await asyncio.sleep(10)
-                continue
+            async with aiohttp.ClientSession() as session:
+                while True:
+                    await asyncio.sleep(0)
+                    print(f"Checking for downloads...")
+                    keys = await response_cache.allItems()
+                    queuekeys = [(k, v, priority[k]) for k, v in keys.items() if k in priority.keys() and find_hole(v, priority[k])[0] is not None]
+                    queuekeys.sort(key=lambda x: find_hole(x[1], x[2])[0] - x[2])
+                    queuekeys += [(k, v, None) for k, v in keys.items()]
+                    queuekeys = [(k,v,p) for k,v,p in queuekeys if find_hole(v, p or 0)[0] is not None]
+                    
+                    if len(queuekeys) == 0:
+                        print(f"Nothing to download, sleeping")
+                        await asyncio.sleep(10)
+                        continue
+                    priority = {}
+                    for key, cached, startFrom in queuekeys:
+                        startOffset = None
+                        endOffset = None
+                        if startFrom is not None:
+                            (startOffset, endOffset) = find_hole(cached, startFrom)
+                            if startOffset is not None:
+                                startOffset = max(startOffset, startFrom)
+                                endOffset = startOffset + CHUNK_SIZE * 10
 
-            priority = {}
-            for key, cached, startFrom in queuekeys:
-                startOffset = None
-                endOffset = None
-                if startFrom is not None:
-                    (startOffset, endOffset) = find_hole(cached, startFrom)
-                    if startOffset is not None:
-                        startOffset = max(startOffset, startFrom)
-                        endOffset = startOffset + CHUNK_SIZE * 10
+                        if startOffset is None:
+                            (startOffset, endOffset) = find_hole(cached)
 
-                if startOffset is None:
-                    (startOffset, endOffset) = find_hole(cached)
+                        if startOffset is None:
+                            continue
+                        endOffset = min(endOffset, startOffset + CHUNK_SIZE)
 
-                if startOffset is None:
-                    continue
-                endOffset = min(endOffset, startOffset + CHUNK_SIZE)
+                        print(f"Downloading startOffset {startOffset}..{endOffset} for key {key} ({startOffset * 100.0/cached.len}%)")
+                        rangeHeader = {"Range": f"bytes={startOffset}-{endOffset-1}"}
+                        headers_with_range = dict(cached.headers)
+                        headers_with_range.update(rangeHeader)
+                        async with session.request(cached.method, cached.url, headers=headers_with_range, params=cached.params) as resp:
 
-                print(f"Downloading startOffset {startOffset}..{endOffset} for key {key}")
-                rangeHeader = {"Range": f"bytes={startOffset}-{endOffset-1}"}
-                async with aiohttp.ClientSession() as session:
-                    # TODO data=body
-                    headers_with_range = dict(cached.headers)
-                    headers_with_range.update(rangeHeader)
-                    async with session.request(cached.method, cached.url, headers=headers_with_range, params=cached.params) as resp:
+                            # Stream response in chunks
+                            # print(f"Response headers: {resp.headers}")
+                            if "Content-Range" not in resp.headers:
+                                raise ValueError("No Content-Range in response for Range request")
+                            if "bytes" not in resp.headers["Content-Range"]:
+                                raise ValueError("Only bytes Content-Range supported")
+                            (start_end, size) = resp.headers["Content-Range"].replace("bytes ", "").split("/")
+                            if start_end == "*":
+                                (start, end) = (0, size - 1)
+                            else:
+                                (start, end) = [int(i) for i in start_end.split("-")]
+                            # print(f"Content-Range: {start}-{end}/{size}")
+                            # 1newChunk: Chunk = None
+                            receivedBytes: bytes = b""
+                            receivedBytesTotal = 0
 
-                        # Stream response in chunks
-                        # print(f"Response headers: {resp.headers}")
-                        if "Content-Range" not in resp.headers:
-                            raise ValueError("No Content-Range in response for Range request")
-                        if "bytes" not in resp.headers["Content-Range"]:
-                            raise ValueError("Only bytes Content-Range supported")
-                        (start_end, size) = resp.headers["Content-Range"].replace("bytes ", "").split("/")
-                        if start_end == "*":
-                            (start, end) = (0, size - 1)
-                        else:
-                            (start, end) = [int(i) for i in start_end.split("-")]
-                        # print(f"Content-Range: {start}-{end}/{size}")
-                        # 1newChunk: Chunk = None
-                        receivedBytes: bytes = b""
-                        receivedBytesTotal = 0
+                            async for receivedBytesLoc in resp.content.iter_chunked(CHUNK_SIZE):
+                                receivedBytes += receivedBytesLoc
+                                receivedBytesTotal += len(receivedBytesLoc)
 
-                        async for receivedBytesLoc in resp.content.iter_chunked(CHUNK_SIZE):
-                            receivedBytes += receivedBytesLoc
-                            # 1if newChunk is None:
-                            # 1    newChunk = await cached.set(offset, receivedBytesLoc)
-                            # 1else:
-                            # 1    newChunk.append(receivedBytesLoc)
-                            # 1print(f"Downloaded off:{offset},sz:{len(receivedBytes)},chunk{newChunk.offset} for key {key}")
-                            receivedBytesTotal += len(receivedBytesLoc)
-
-                        await cached.set(start, receivedBytes) # 2
-                        limiter.consumed(receivedBytesTotal)
-                        delay = limiter.delay()
-                        print(f"Sleep {delay}, {receivedBytesTotal}, est {limiter._estimated_speed} bytes/second")
-                        if startFrom is None:
-                            await asyncio.sleep(delay)
-                        else:
-                            print(f"Skip sleep for priority download")
-                            await asyncio.sleep(0)
-                        
-                print(f"Downloading done")
-                break
+                            await cached.set(start, receivedBytes) # 2
+                            limiter.consumed(receivedBytesTotal)
+                            delay = limiter.delay()
+                            print(f"Sleep {delay}, {receivedBytesTotal}, est {limiter._estimated_speed} bytes/second")
+                            if startFrom is None:
+                                await asyncio.sleep(delay)
+                            else:
+                                print(f"Skip sleep for priority download")
+                                await asyncio.sleep(0)
+                            
+                        print(f"Downloading done")
+                        break
         except Exception as e:
             print(f"downloader error: {e}", file=sys.stderr)
             traceback.print_exc()
@@ -286,8 +318,8 @@ async def proxy_handler(request):
             head_headers = dict(headers)
             head_headers.pop("Range", None)
             head_resp = await session.head(backend_url + path, headers=head_headers, params=params)
-            print(f"HEAD response status: {head_resp.status}")
-            print(f"HEAD response headers: {head_resp.headers}")
+            # print(f"HEAD response status: {head_resp.status}")
+            # print(f"HEAD response headers: {head_resp.headers}")
             headHeaders = head_resp.headers
             if head_resp.status != 200:
                 return web.Response(status=head_resp.status, text=f"Upstream server returned status {head_resp.status}")
@@ -295,7 +327,7 @@ async def proxy_handler(request):
         cache_key = (method, path, (headHeaders['Etag'][:20].__hash__()))
         # cache_key = (method, path, (tuple(sorted(params.items())), body, tuple(sorted(headHeaders.items()))).__hash__())
         print(f"Cache key: {cache_key}")
-        print(f"Range requested: {range}")
+        # print(f"Range requested: {range}")
         cached = await response_cache.getOrCreate(cache_key, headHeaders, method=method, url = backend_url + path, headers=head_headers, params=params)
 
         start = (range and range[0]) or 0
@@ -306,11 +338,11 @@ async def proxy_handler(request):
             headHeaders["Content-Range"] = content_range_header
             headHeaders["Content-Length"] = f"{end - start + 1}"
             headHeaders["Accept-Ranges"] = 'bytes'
-        print(f"Serving with headers: {headHeaders}")
+        # print(f"Serving with headers: {headHeaders}")
 
         response = web.StreamResponse(status=206, headers=headHeaders)
         await response.prepare(request)
-        print("Sending chunks")
+        # print("Sending chunks")
         stream = cached.get(start)
         leftBytes = (end - start + 1) if range is not None else cached.len - start
         async for chunk in stream:
@@ -361,16 +393,15 @@ def main():
     app.router.add_route('*', '/{tail:.*}', proxy_handler)
     loop = asyncio.new_event_loop()
     loop.create_task(downloader())
+    loop.create_task(merger())
     loop.create_task(server(app))
 # http://0.0.0.0:8080/stream/Wednesday.S02.1080p.NF.WEB-DL-EniaHD.m3u?link=e143d60dabde0af9d263abab362e870201fc8acf&m3u&fn=file.m3u
-# m3u = "http://95.142.46.84:5665/playlistall/all.m3u"
 # http://0.0.0.0:8080/playlistall/all.m3u
 # http://0.0.0.0:8080/stream/Wednesday.S02.1080p.NF.WEB-DL-EniaHD.m3u?link=e143d60dabde0af9d263abab362e870201fc8acf&m3u&fn=file.m3u
 # http://0.0.0.0:8080/stream/Wednesday.S02E01.Here.We.Woe.Again.1080p.NF.WEB-DL-EniaHD.mkv?link=e143d60dabde0af9d263abab362e870201fc8acf&index=1&play
-# Response cache: {(method, path, query, body): (status, headers, body)}
 
     loop.create_task(root_m3u_downloader("http://0.0.0.0:8080/playlistall/all.m3u"))
-
+    # loop.create_task(root_m3u_downloader("http://0.0.0.0:8080/stream/Tears%20of%20Steel.m3u?link=209c8226b299b308beaf2b9cd3fb49212dbd13ec&m3u"))
     loop.run_forever()
 
     
