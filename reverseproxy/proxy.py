@@ -46,6 +46,35 @@ class Chunk:
 
 
 priority = {}
+async def stats_handler(request):
+    items = await response_cache.allItems()
+    cache_dump = {}
+    for k, v in items.items():
+        cache_dump[str(k)] = {
+            'key': str(v.key),
+            'len': f"{v.len:_}",
+            'chd': f"{sum(i.len() for i in v.chunks.values()):_}",
+            'url': v.url,
+            'headers': dict(v.headers),
+            'params': dict(v.params),
+            'method': v.method,
+            'cachePath': v.cachePath,
+            'chunks': f"{len(v.chunks.keys()):_}",
+        }
+    stats = {
+        'size': {
+            'total': sum([x['len']for x in cache_dump.values()]),
+            'cached': sum([x['chd']for x in cache_dump.values()]),
+            'chunks': sum([x['chunks']for x in cache_dump.values()]),
+            'download_speed': f"{limiter._estimated_speed:_}"
+        },
+        'items': cache_dump,
+        'priority': {str(k): v for k, v in priority.items()}
+    }
+    return web.Response(
+        text=json.dumps(stats, indent=2, ensure_ascii=False),
+        content_type='application/json'
+    )
 
 class CacheEntry:
     def __init__(self, key, headReponseHeaders, url, headers, params, method):
@@ -202,9 +231,10 @@ async def verifirer():
     # TODO Locks
     pass
 
+limiter = DownloadSpeedLimiter(200000)
+
 async def downloader():
     global priority
-    limiter = DownloadSpeedLimiter(200000)
     while True:
         try:
             async with aiohttp.ClientSession() as session:
@@ -390,6 +420,7 @@ def main():
         backend_url = sys.argv[1]
     app = web.Application()
     app['backend_url'] = backend_url
+    app.router.add_get('/stats', stats_handler)
     app.router.add_route('*', '/{tail:.*}', proxy_handler)
     loop = asyncio.new_event_loop()
     loop.create_task(downloader())
