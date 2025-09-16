@@ -63,9 +63,10 @@ async def stats_handler(request):
         }
     stats = {
         'size': {
-            'total': sum([x['len']for x in cache_dump.values()]),
-            'cached': sum([x['chd']for x in cache_dump.values()]),
-            'chunks': sum([x['chunks']for x in cache_dump.values()]),
+            'total_size': f"{sum([v.len for k,v  in items.items()]):_}",
+            'chunks_size': f"{sum([v1.len() for k,v in items.items() for v1 in v.chunks.values()]):_}",
+            'chunks_cnt': f"{sum([len(v.chunks) for k,v in items.items()]):_}",
+            'total_cnt': f"{sum([1 for k,v  in items.items()]):_}",
             'download_speed': f"{limiter._estimated_speed:_}"
         },
         'items': cache_dump,
@@ -249,6 +250,11 @@ async def downloader():
                     
                     if len(queuekeys) == 0:
                         print(f"Nothing to download, sleeping")
+                        await asyncio.sleep(10)
+                        continue
+                    if limiter.max_speed == 0:
+                        print(f"Download disabled, sleeping")
+                        limiter._estimated_speed = 0
                         await asyncio.sleep(10)
                         continue
                     priority = {}
