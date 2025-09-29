@@ -61,7 +61,7 @@ version: '3.6'
 services:
   torrserver:
     container_name: torrserver
-    image: yourok/torrserver
+    image: ghcr.io/yourok/torrserver
     restart: unless-stopped
     environment:
       - TS_PORT=8090
