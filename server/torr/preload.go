@@ -6,6 +6,10 @@ import (
 	"strconv"
 	"sync"
 	"time"
+	"os"
+	"path/filepath"
+	"net/url"
+	"strings"
 
 	"server/ffprobe"
 
@@ -17,7 +21,77 @@ import (
 	utils2 "server/utils"
 )
 
-func (t *Torrent) Preload(index int, size int64) {
+func CreatestrmfilePreload(hash string, host string) {
+	
+	
+	tor := GetTorrent(hash)
+	if tor == nil {
+		return
+	}
+
+	if tor.Stat == state.TorrentInDB {
+		tor = LoadTorrent(tor)
+		if tor == nil {
+			return
+		}
+	}
+	
+	torrents := tor.Status()
+
+	from := 0
+
+	// Создаем базовый путь для сохранения
+	
+	CatPath := ""
+	if len(torrents.FileStats) > 1 {
+		CatPath = "torrSerials"
+	} else {
+		CatPath = "torrFilms"
+	}
+		
+	basePath := settings.JlfnAddr
+	torname := tor.Name()
+	basePath = filepath.Join(basePath, CatPath)
+	basePath = filepath.Join(basePath, torname)
+	
+	for i, f := range torrents.FileStats {
+		if i >= from {
+			if utils2.GetMimeType(f.Path) != "*/*" {
+				list := ""
+								
+				name := filepath.Base(f.Path)
+				list += host + "/stream/" + url.PathEscape(name) + "?link=" + torrents.Hash + "&index=" + fmt.Sprint(f.Id) + "&play"
+				
+				// Создаем имя файла .strm на основе имени файла
+				strmName := filepath.Base(f.Path)
+				strmName = strings.ReplaceAll(strmName, `/`, "") // strip starting / from param
+				
+				// Добавляем расширение .strm если его нет
+				if !strings.HasSuffix(strings.ToLower(strmName), ".strm") {
+					strmName += ".strm"
+				}
+				
+				// Полный путь к файлу = базовый путь + имя файла
+				
+				fullPath := filepath.Join(basePath, strmName)
+				
+				// Создаем директорию, если не существует
+				if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
+					return
+				}
+				
+				// Создаем и записываем файл
+				if err := os.WriteFile(fullPath, []byte(list), 0644); err != nil {
+					return
+				}
+			}
+		}
+	}
+	
+}
+
+
+func (t *Torrent) Preload(index int, size int64, host string) {
 	if size <= 0 {
 		return
 	}
@@ -31,6 +105,10 @@ func (t *Torrent) Preload(index int, size int64) {
 		time.Sleep(100 * time.Millisecond)
 	}
 
+	if settings.JlfnAddr != "" {
+		CreatestrmfilePreload(t.Hash().HexString(), host)
+	}
+	
 	t.muTorrent.Lock()
 	if t.Stat != state.TorrentWorking {
 		t.muTorrent.Unlock()

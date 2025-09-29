@@ -3,6 +3,11 @@ package api
 import (
 	"net/http"
 	"strings"
+	"os"
+	"path/filepath"
+	"net/url"
+	"fmt"
+	"time"
 
 	"server/dlna"
 	"server/log"
@@ -10,9 +15,11 @@ import (
 	"server/torr"
 	"server/torr/state"
 	"server/web/api/utils"
+	utils2 "server/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+
 )
 
 // Action: add, get, set, rem, list, drop
@@ -57,6 +64,10 @@ func torrents(c *gin.Context) {
 		{
 			getTorrent(req, c)
 		}
+	case "addJlfn":
+		{
+			addJlfn(req, c)
+		}
 	case "set":
 		{
 			setTorrent(req, c)
@@ -94,6 +105,7 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
+	
 
 	tor, err := torr.AddTorrent(torrSpec, req.Title, req.Poster, req.Data, req.Category)
 	// if tor.Data != "" && set.BTsets.EnableDebug {
@@ -150,6 +162,105 @@ func getTorrent(req torrReqJS, c *gin.Context) {
 		c.Status(http.StatusNotFound)
 	}
 }
+
+func addJlfn(req torrReqJS, c *gin.Context) {
+
+	addTorrent(req , c)
+	
+	go func() {
+		time.Sleep(15 * time.Second)
+		req.Link = strings.ReplaceAll(req.Link, "&amp;", "&")
+		torrSpec, err := utils.ParseLink(req.Link)
+		if err != nil {
+			log.TLogln("error parse link:", err)
+			c.AbortWithError(http.StatusBadRequest, err)
+			return
+		}
+	
+		hash := torrSpec.InfoHash.String()
+		log.TLogln("new add torrent", hash)
+	
+		tor := torr.GetTorrent(hash)
+
+		if tor == nil {
+			return
+			log.TLogln("tor", "null")
+		}
+	
+		basePath := set.JlfnAddr
+	
+		if basePath == "" {
+			return
+			log.TLogln("basePath", "null")
+		}
+
+		if tor.Stat == state.TorrentInDB {
+			tor = torr.LoadTorrent(tor)
+			if tor == nil {
+				return
+				log.TLogln("LoadTorrent", "null")
+			}
+		}
+		host := utils2.GetScheme(c) + "://" + c.Request.Host
+		torrents := tor.Status()
+
+		from := 0
+
+		// Создаем базовый путь для сохранения
+		CatPath := ""
+		if len(torrents.FileStats) > 1 {
+			CatPath = "torrSerials"
+		} else {
+			CatPath = "torrFilms"
+		}
+		
+	
+		torname := tor.Name()
+		basePath = filepath.Join(basePath, CatPath)
+		basePath = filepath.Join(basePath, torname)
+	
+		for i, f := range torrents.FileStats {
+			if i >= from {
+				if utils2.GetMimeType(f.Path) != "*/*" {
+					list := ""
+								
+					name := filepath.Base(f.Path)
+					list += host + "/stream/" + url.PathEscape(name) + "?link=" + torrents.Hash + "&index=" + fmt.Sprint(f.Id) + "&play"
+				
+					// Создаем имя файла .strm на основе имени файла
+					strmName := filepath.Base(f.Path)
+					strmName = strings.ReplaceAll(strmName, `/`, "") // strip starting / from param
+				
+					// Добавляем расширение .strm если его нет
+					if !strings.HasSuffix(strings.ToLower(strmName), ".strm") {
+						strmName += ".strm"
+					}
+				
+					// Полный путь к файлу = базовый путь + имя файла
+				
+					fullPath := filepath.Join(basePath, strmName)
+				
+					// Создаем директорию, если не существует
+					if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
+						return
+					}
+				
+					// Создаем и записываем файл
+					if err := os.WriteFile(fullPath, []byte(list), 0644); err != nil {
+						return
+					}
+				}
+			}
+		}
+		go func() {
+			time.Sleep(15 * time.Second)
+			torr.DropTorrent(hash)
+		}()
+	}()
+	
+}
+
+
 
 func setTorrent(req torrReqJS, c *gin.Context) {
 	if req.Hash == "" {

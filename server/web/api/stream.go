@@ -139,7 +139,8 @@ func stream(c *gin.Context) {
 	}
 	// preload torrent
 	if preload {
-		torr.Preload(tor, index)
+		host := utils2.GetScheme(c)+"://"+c.Request.Host
+		torr.Preload(tor, index, host)
 	}
 	// return stat if query
 	if stat {
@@ -239,7 +240,8 @@ func streamNoAuth(c *gin.Context) {
 	}
 	// preload torrent
 	if preload {
-		torr.Preload(tor, index)
+		host := utils2.GetScheme(c)+"://"+c.Request.Host
+		torr.Preload(tor, index, host)
 	}
 	// return m3u if query
 	if m3u {

@@ -263,7 +263,7 @@ func WriteStatus(w io.Writer) {
 	bts.client.WriteStatus(w)
 }
 
-func Preload(torr *Torrent, index int) {
+func Preload(torr *Torrent, index int, host string) {
 	cache := float32(sets.BTsets.CacheSize)
 	preload := float32(sets.BTsets.PreloadCache)
 	size := int64((cache / 100.0) * preload)
@@ -273,5 +273,5 @@ func Preload(torr *Torrent, index int) {
 	if size > sets.BTsets.CacheSize {
 		size = sets.BTsets.CacheSize
 	}
-	torr.Preload(index, size)
+	torr.Preload(index, size, host)
 }

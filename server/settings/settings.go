@@ -20,6 +20,7 @@ var (
 	PubIPv4  string
 	PubIPv6  string
 	TorAddr  string
+	JlfnAddr string
 	MaxSize  int64
 )
 

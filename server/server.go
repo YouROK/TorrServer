@@ -13,7 +13,7 @@ import (
 	"server/web"
 )
 
-func Start(port, ip, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA bool, tgtoken string) {
+func Start(port, ip, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA bool, tgtoken string, JlfnAddr string) {
 	settings.InitSets(roSets, searchWA)
 	// https checks
 	if sslEnabled {
