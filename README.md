@@ -32,6 +32,10 @@ TorrServer is a program that allows users to view torrents online without the ne
 The core functionality of TorrServer includes caching torrents and subsequent data transfer via the HTTP protocol,
 allowing the cache size to be adjusted according to the system parameters and the user's internet connection speed.
 
+## AI Documentation
+
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/YouROK/TorrServer)
+
 ## Features
 
 - Caching
@@ -191,7 +195,7 @@ To run the web server locally, just run
 yarn start
 ```
 
-More info at https://github.com/YouROK/TorrServer/tree/master/web#readme
+More info at <https://github.com/YouROK/TorrServer/tree/master/web#readme>
 
 ### Build
 
@@ -222,6 +226,7 @@ cd server; swag init -g web/server.go
 # Documentation can be linted using
 swag fmt
 ```
+
 ## API
 
 ### API Docs
@@ -240,6 +245,7 @@ The users data file should be located near to the settings. Basic auth, read mor
     "User2": "Pass2"
 }
 ```
+
 Note: You should enable authentication with -a (--httpauth) TorrServer startup option.
 
 ## Whitelist/Blacklist IP
@@ -266,7 +272,6 @@ local:127.0.0.1
 - [YooMoney](https://yoomoney.ru/to/410013733697114/200)
 - [Boosty](https://boosty.to/yourok)
 - [TBank](https://www.tbank.ru/cf/742qEMhKhKn)
-
 
 ## Thanks to everyone who tested and helped
 
