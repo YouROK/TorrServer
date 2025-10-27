@@ -243,10 +243,11 @@ const VideoPlayer = ({ videoSrc, captionSrc = '', title, onNotSupported }) => {
     if (!vid.canPlayType(getMimeType(videoSrc))) onNotSupported()
   }, [videoSrc, onNotSupported])
 
-  const handlePlayPause = () => {
-    if (!videoRef.current) return
-    playing ? videoRef.current.pause() : videoRef.current.play()
-  }
+  const handlePlayPause = useCallback(() => {
+    const video = videoRef.current
+    if (!video) return
+    video.paused ? video.play() : video.pause()
+  }, [])
 
   const togglePlay = () => setPlaying(p => !p)
   const handleTimeUpdate = () => setCurrentTime(videoRef.current.currentTime)
@@ -269,10 +270,16 @@ const VideoPlayer = ({ videoSrc, captionSrc = '', title, onNotSupported }) => {
     setMuted(m => !m)
   }
 
-  const skip = secs => {
-    videoRef.current.currentTime = Math.min(Math.max(videoRef.current.currentTime + secs, 0), duration)
-    handleTimeUpdate()
-  }
+  const skip = useCallback(
+    secs => {
+      const video = videoRef.current
+      if (!video) return
+      const target = Math.min(Math.max(video.currentTime + secs, 0), duration)
+      video.currentTime = target
+      setCurrentTime(target)
+    },
+    [duration],
+  )
 
   const enterFull = () => videoRef.current.requestFullscreen()
   const exitFull = () => document.exitFullscreen()
@@ -319,7 +326,7 @@ const VideoPlayer = ({ videoSrc, captionSrc = '', title, onNotSupported }) => {
           break
       }
     },
-    [open, duration, playing],
+    [open, handlePlayPause, skip],
   )
   useEffect(() => {
     document.addEventListener('keydown', handleKey)
