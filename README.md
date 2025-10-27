@@ -64,6 +64,29 @@ Run in console
 curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh | sudo bash
 ```
 
+The script also supports non-interactive installs, explicit version pinning, user switching, and port overrides. Examples:
+
+- Install a specific release while keeping defaults:  
+
+  ```bash
+  curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh | \
+    sudo bash -s -- --install 135 --silent
+  ```
+
+- Update an existing installation without prompts:  
+
+  ```bash
+  curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh | \
+    sudo bash -s -- --update --silent
+  ```
+
+- Change the systemd service user:  
+
+  ```bash
+  curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh | \
+    sudo bash -s -- --change-user root --silent
+  ```
+
 #### macOS
 
 Run in Terminal.app
