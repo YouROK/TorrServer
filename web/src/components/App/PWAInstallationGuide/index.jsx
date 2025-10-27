@@ -42,7 +42,7 @@ export function PWAInstallationGuide() {
       <StyledContent>
         <p>{t('PWAGuide.Description')}</p>
 
-        <p>{t('PWAGuide.VLC')}</p>
+        <p>{t('PWAGuide.PlayerButtons')}</p>
 
         <p>
           1. {t('PWAGuide.FirstStep')} <IOSShareIcon />
