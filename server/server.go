@@ -13,8 +13,35 @@ import (
 	"server/web"
 )
 
-func Start(port, ip, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA bool, tgtoken string) {
+func Start(port, ip, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA bool, tgtoken, jlfnAddr, jlfnSrv, jlfnApi string, jlfnAutoCreate bool, tmdbApiKey, torrServerHost string) {
 	settings.InitSets(roSets, searchWA)
+	
+	// Set Jellyfin parameters if provided
+	if jlfnAddr != "" {
+		settings.BTsets.JlfnAddr = jlfnAddr
+		log.TLogln("Jellyfin .strm path set to:", jlfnAddr)
+	}
+	if jlfnSrv != "" {
+		settings.BTsets.JlfnSrv = jlfnSrv
+		log.TLogln("Jellyfin server URL set to:", jlfnSrv)
+	}
+	if jlfnApi != "" {
+		settings.BTsets.JlfnApi = jlfnApi
+		log.TLogln("Jellyfin API key configured")
+	}
+	if jlfnAutoCreate {
+		settings.BTsets.JlfnAutoCreate = jlfnAutoCreate
+		log.TLogln("Jellyfin auto-create .strm enabled")
+	}
+	if tmdbApiKey != "" {
+		settings.BTsets.TMDBApiKey = tmdbApiKey
+		log.TLogln("TMDB API key configured")
+	}
+	if torrServerHost != "" {
+		settings.BTsets.TorrServerHost = torrServerHost
+		log.TLogln("TorrServer public host set to:", torrServerHost)
+	}
+	
 	// https checks
 	if sslEnabled {
 		// set settings ssl enabled

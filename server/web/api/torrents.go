@@ -1,15 +1,23 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
+	"net/url"
+	"os"
+	"path/filepath"
+	"regexp"
 	"strings"
+	"time"
 
 	"server/dlna"
 	"server/log"
 	set "server/settings"
+	"server/tmdb"
 	"server/torr"
 	"server/torr/state"
-	"server/web/api/utils"
+	"server/utils"
+	apiutils "server/web/api/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -88,11 +96,22 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 
 	log.TLogln("add torrent", req.Link)
 	req.Link = strings.ReplaceAll(req.Link, "&amp;", "&")
-	torrSpec, err := utils.ParseLink(req.Link)
+	torrSpec, err := apiutils.ParseLink(req.Link)
 	if err != nil {
 		log.TLogln("error parse link:", err)
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
+	}
+
+	// Try to fetch metadata from TMDB if API key is configured
+	if set.BTsets.TMDBApiKey != "" && req.Title == "" {
+		tmdbClient := tmdb.NewClient(set.BTsets.TMDBApiKey)
+		media, err := tmdbClient.SearchAuto(torrSpec.DisplayName)
+		if err == nil {
+			req.Title = media.GetTitle()
+			req.Poster = media.GetPosterURL()
+			log.TLogln("TMDB: Fetched metadata for:", req.Title)
+		}
 	}
 
 	tor, err := torr.AddTorrent(torrSpec, req.Title, req.Poster, req.Data, req.Category)
@@ -126,6 +145,12 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 
 		if req.SaveToDB {
 			torr.SaveTorrentToDB(tor)
+		}
+
+		// Auto-create .strm files if enabled
+		if set.BTsets.JlfnAutoCreate && set.BTsets.JlfnAddr != "" {
+			log.TLogln("Auto-creating .strm files for torrent:", tor.Hash().HexString())
+			createStrmFilesForTorrent(tor, c)
 		}
 	}()
 	// TODO: remove
@@ -207,4 +232,164 @@ func wipeTorrents(c *gin.Context) {
 		dlna.Start()
 	}
 	c.Status(200)
+}
+
+// torrentsJlfn godoc
+//
+//	@Summary		Add torrent for Jellyfin with .strm files creation
+//	@Description	Add torrent and automatically create .strm files for Jellyfin
+//	@Tags			API
+//	@Param			request	body	torrReqJS	true	"Torrent request with link"
+//	@Accept			json
+//	@Produce		json
+//	@Success		200
+//	@Router			/torrents/jlfn [post]
+func torrentsJlfn(c *gin.Context) {
+	var req torrReqJS
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	addJlfn(req, c)
+}
+
+// createStrmFilesForTorrent creates .strm files for a torrent
+func createStrmFilesForTorrent(tor *torr.Torrent, c *gin.Context) {
+	// Wait a bit for torrent to initialize
+	time.Sleep(5 * time.Second)
+
+	// Check base path configuration
+	basePath := set.BTsets.JlfnAddr
+	if basePath == "" {
+		log.TLogln("JlfnAddr not configured, skipping .strm creation")
+		return
+	}
+
+	// Load torrent from DB if needed
+	if tor.Stat == state.TorrentInDB {
+		tor = torr.LoadTorrent(tor)
+		if tor == nil {
+			log.TLogln("Failed to load torrent from DB")
+			return
+		}
+	}
+
+	// Get host for stream URLs
+	// Use configured TorrServerHost if available, otherwise use request host
+	host := set.BTsets.TorrServerHost
+	if host == "" {
+		host = utils.GetScheme(c) + "://" + c.Request.Host
+		log.TLogln("TorrServerHost not configured, using request host:", host)
+	} else {
+		log.TLogln("Using configured TorrServerHost:", host)
+	}
+	torrents := tor.Status()
+
+	// Determine category (serials/films)
+	catPath := ""
+	torName := tor.Name()
+	torTitle := strings.ToLower(torName)
+
+	// Check if it's a series by name patterns
+	seasonPattern := regexp.MustCompile(`s\d+`)
+	episodePattern := regexp.MustCompile(`e\d+`)
+
+	isSeries := seasonPattern.MatchString(torTitle) ||
+		episodePattern.MatchString(torTitle)
+
+	if isSeries {
+		catPath = "torrSerials"
+	} else {
+		catPath = "torrFilms"
+	}
+
+	log.TLogln("Content type detected:", catPath, "for:", torName)
+
+	// Create full path
+	fullBasePath := filepath.Join(basePath, catPath, torName)
+	log.TLogln("Creating .strm files in:", fullBasePath)
+
+	// Create .strm files for each video file
+	for _, f := range torrents.FileStats {
+		if utils.GetMimeType(f.Path) != "*/*" {
+			// Create stream URL
+			fileName := filepath.Base(f.Path)
+			streamURL := fmt.Sprintf("%s/stream/%s?link=%s&index=%d&play",
+				host,
+				url.PathEscape(fileName),
+				torrents.Hash,
+				f.Id)
+
+			// Create .strm filename
+			strmName := filepath.Base(f.Path)
+			strmName = strings.ReplaceAll(strmName, "/", "")
+			strmName = strings.ReplaceAll(strmName, "\\", "")
+
+			// Remove original extension and add .strm
+			ext := filepath.Ext(strmName)
+			if ext != "" {
+				strmName = strings.TrimSuffix(strmName, ext)
+			}
+			strmName += ".strm"
+
+			// Full path to .strm file
+			strmPath := filepath.Join(fullBasePath, strmName)
+
+			// Create directory
+			if err := os.MkdirAll(filepath.Dir(strmPath), 0755); err != nil {
+				log.TLogln("Error creating directory:", err)
+				continue
+			}
+
+			// Write .strm file
+			if err := os.WriteFile(strmPath, []byte(streamURL), 0644); err != nil {
+				log.TLogln("Error writing .strm file:", err)
+				continue
+			}
+
+			log.TLogln("Created .strm file:", strmPath)
+		}
+	}
+
+	log.TLogln("Finished creating .strm files for:", torrents.Hash)
+}
+
+func addJlfn(req torrReqJS, c *gin.Context) {
+	// First, add torrent normally
+	addTorrent(req, c)
+
+	// Then create .strm files asynchronously
+	go func() {
+		// Wait for torrent to initialize
+		time.Sleep(15 * time.Second)
+
+		// Parse link to get hash
+		req.Link = strings.ReplaceAll(req.Link, "&amp;", "&")
+		torrSpec, err := apiutils.ParseLink(req.Link)
+		if err != nil {
+			log.TLogln("error parse link:", err)
+			return
+		}
+
+		hash := torrSpec.InfoHash.String()
+		log.TLogln("Creating .strm files for torrent:", hash)
+
+		// Get torrent
+		tor := torr.GetTorrent(hash)
+		if tor == nil {
+			log.TLogln("Torrent not found:", hash)
+			return
+		}
+
+		// Create .strm files
+		createStrmFilesForTorrent(tor, c)
+
+		// Optionally drop torrent after delay
+		go func() {
+			time.Sleep(15 * time.Second)
+			torr.DropTorrent(hash)
+			log.TLogln("Dropped torrent:", hash)
+		}()
+	}()
 }

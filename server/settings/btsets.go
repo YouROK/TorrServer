@@ -54,6 +54,14 @@ type BTSets struct {
 
 	// Reader
 	ResponsiveMode bool // enable Responsive reader (don't wait pieceComplete)
+
+	// Jellyfin Integration
+	JlfnAddr       string `json:"JlfnAddr,omitempty"` // Path for .strm files (e.g., /media/jellyfin/metadata)
+	JlfnSrv        string `json:"JlfnSrv,omitempty"` // Jellyfin server URL (e.g., http://127.0.0.1:8096)
+	JlfnApi        string `json:"JlfnApi,omitempty"` // Jellyfin API key for future integrations
+	JlfnAutoCreate bool   `json:"JlfnAutoCreate,omitempty"`
+	TMDBApiKey     string `json:"TMDBApiKey,omitempty"` // TMDB API key for metadata and posters
+	TorrServerHost string `json:"TorrServerHost,omitempty"` // Public host for .strm files (e.g., http://192.168.1.197:5665)
 }
 
 func (v *BTSets) String() string {

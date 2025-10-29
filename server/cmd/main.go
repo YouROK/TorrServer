@@ -43,9 +43,15 @@ type args struct {
 	TorrentAddr string `help:"Torrent client address, like 127.0.0.1:1337 (default :PeersListenPort)"`
 	PubIPv4     string `arg:"-4" help:"set public IPv4 addr"`
 	PubIPv6     string `arg:"-6" help:"set public IPv6 addr"`
-	SearchWA    bool   `arg:"-s" help:"search without auth"`
-	MaxSize     string `arg:"-m" help:"max allowed stream size (in Bytes)"`
-	TGToken     string `arg:"-T" help:"telegram bot token"`
+	SearchWA       bool   `arg:"-s" help:"search without auth"`
+	MaxSize        string `arg:"-m" help:"max allowed stream size (in Bytes)"`
+	TGToken        string `arg:"-T" help:"telegram bot token"`
+	JlfnAddr       string `help:"Jellyfin .strm files path (e.g., /media/jellyfin/metadata)"`
+	JlfnSrv        string `help:"Jellyfin server URL (e.g., http://127.0.0.1:8096)"`
+	JlfnApi        string `help:"Jellyfin API key"`
+	JlfnAutoCreate bool   `help:"Auto-create .strm files when adding torrents via web"`
+	TMDBApiKey     string `help:"TMDB API key for metadata and posters"`
+	TorrServerHost string `help:"Public TorrServer URL for .strm files (e.g., http://192.168.1.197:5665)"`
 }
 
 func (args) Version() string {
@@ -117,7 +123,7 @@ func main() {
 		}
 	}
 
-	server.Start(params.Port, params.IP, params.SslPort, params.SslCert, params.SslKey, params.Ssl, params.RDB, params.SearchWA, params.TGToken)
+	server.Start(params.Port, params.IP, params.SslPort, params.SslCert, params.SslKey, params.Ssl, params.RDB, params.SearchWA, params.TGToken, params.JlfnAddr, params.JlfnSrv, params.JlfnApi, params.JlfnAutoCreate, params.TMDBApiKey, params.TorrServerHost)
 	log.TLogln(server.WaitServer())
 	log.Close()
 	time.Sleep(time.Second * 3)

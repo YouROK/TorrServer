@@ -3,6 +3,29 @@ import parseTorrent from 'parse-torrent'
 import ptt from 'parse-torrent-title'
 
 export const getMoviePosters = (movieName, language = 'en') => {
+  // First try our backend API (which uses configured TMDB key from settings)
+  const backendUrl = `/tmdb/search`
+  
+  return axios
+    .post(backendUrl, {
+      query: movieName,
+      language,
+      type: 'multi',
+    })
+    .then(({ data }) => {
+      if (data.success && data.posters && data.posters.length > 0) {
+        return data.posters
+      }
+      // Fallback to old method if backend API fails or no key configured
+      return fallbackTMDBSearch(movieName, language)
+    })
+    .catch(() => fallbackTMDBSearch(movieName, language))
+}
+
+// Fallback method using build-time API key
+const fallbackTMDBSearch = (movieName, language = 'en') => {
+  if (!process.env.REACT_APP_TMDB_API_KEY) return Promise.resolve(null)
+  
   const url = `${window.location.protocol}//api.themoviedb.org/3/search/multi`
   const imgHost = `${window.location.protocol}//${language === 'ru' ? 'imagetmdb.com' : 'image.tmdb.org'}`
 

@@ -20,8 +20,11 @@ func SetupRoute(route gin.IRouter) {
 	authorized.POST("/settings", settings)
 
 	authorized.POST("/torrents", torrents)
+	authorized.POST("/torrents/jlfn", torrentsJlfn)
 
 	authorized.POST("/torrent/upload", torrentUpload)
+	
+	authorized.POST("/tmdb/search", tmdbSearch)
 
 	authorized.POST("/cache", cache)
 

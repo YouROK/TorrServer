@@ -38,6 +38,10 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
     SslPort,
     SslCert,
     SslKey,
+    TMDBApiKey,
+    JlfnAddr,
+    JlfnAutoCreate,
+    TorrServerHost,
   } = settings || {}
 
   return (
@@ -259,6 +263,60 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         fullWidth
       />
       <br />
+
+      <SettingSectionLabel>Jellyfin & TMDB Integration</SettingSectionLabel>
+      
+      <TextField
+        onChange={inputForm}
+        margin='normal'
+        id='TorrServerHost'
+        label='TorrServer Public URL'
+        helperText='Public URL for .strm files (e.g., http://192.168.1.197:5665). Leave empty to auto-detect.'
+        value={TorrServerHost || ''}
+        type='url'
+        variant='outlined'
+        fullWidth
+      />
+      <br />
+      
+      <TextField
+        onChange={inputForm}
+        margin='normal'
+        id='TMDBApiKey'
+        label='TMDB API Key'
+        helperText='API key from themoviedb.org for automatic posters and metadata'
+        value={TMDBApiKey || ''}
+        type='text'
+        variant='outlined'
+        fullWidth
+      />
+      <br />
+
+      <TextField
+        onChange={inputForm}
+        margin='normal'
+        id='JlfnAddr'
+        label='Jellyfin .strm files path'
+        helperText='Path where .strm files will be created (e.g., /data/jellyfin-strm)'
+        value={JlfnAddr || ''}
+        type='text'
+        variant='outlined'
+        fullWidth
+      />
+      <br />
+
+      <FormGroup>
+        <FormControlLabel
+          control={<Switch checked={JlfnAutoCreate} onChange={inputForm} id='JlfnAutoCreate' color='secondary' />}
+          label='Auto-create .strm files'
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>
+          Automatically create .strm files when adding torrents via web interface
+        </FormHelperText>
+      </FormGroup>
+      <br />
+
     </SecondarySettingsContent>
   )
 }
