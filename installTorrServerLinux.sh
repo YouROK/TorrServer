@@ -722,6 +722,7 @@ installPackages() {
         if [[ $SILENT_MODE -eq 0 ]]; then
           echo " $(msg installing_packages)"
         fi
+        apt update >/dev/null 2>&1
         apt -y install "${missing[@]}"
       fi
       ;;
@@ -729,18 +730,37 @@ installPackages() {
       local pkg_manager="$1"
       shift
       packages=("$@")
+      local needs_update=0
       for pkg in "${packages[@]}"; do
         if [[ -z "$(rpm -qa "$pkg" 2>/dev/null)" ]]; then
-          $pkg_manager -y install "$pkg"
+          needs_update=1
+          break
         fi
       done
+      if [[ $needs_update -eq 1 ]]; then
+        if [[ "$pkg_manager" == "dnf" ]]; then
+          dnf makecache -q >/dev/null 2>&1 || true
+        elif [[ "$pkg_manager" == "yum" ]]; then
+          yum makecache fast -q >/dev/null 2>&1 || true
+        fi
+        for pkg in "${packages[@]}"; do
+          if [[ -z "$(rpm -qa "$pkg" 2>/dev/null)" ]]; then
+            $pkg_manager -y install "$pkg"
+          fi
+        done
+      fi
       ;;
     arch)
+      local missing=()
       for pkg in "${packages[@]}"; do
         if [[ -z $(pacman -Qqe "$pkg" 2>/dev/null) ]]; then
-          pacman -Sy --noconfirm "$pkg"
+          missing+=("$pkg")
         fi
       done
+      if [[ ${#missing[@]} -gt 0 ]]; then
+        pacman -Sy --noconfirm >/dev/null 2>&1
+        pacman -S --noconfirm "${missing[@]}"
+      fi
       ;;
   esac
 }
