@@ -34,6 +34,7 @@ servicePort=""
 isAuth=""
 isRdb=""
 isLog=""
+isBbr=""
 isAuthUser=""
 isAuthPass=""
 
@@ -122,6 +123,7 @@ declare -A MSG_EN=(
   [prompt_password]="Password: "
   [enable_rdb]="Start TorrServer in public read-only mode? (Yes/No) "
   [enable_log]="Enable TorrServer log output to file? (Yes/No) "
+  [enable_bbr]="Enable BBR (TCP congestion control)? (Yes/No) "
   [confirm_delete]="Are you sure you want to delete TorrServer? (Yes/No) "
   [yes_no_delete]="Enter Yes, No or Delete"
 
@@ -139,6 +141,20 @@ declare -A MSG_EN=(
   [set_readonly]="Set database to read-only mode…"
   [readonly_hint]="To change remove --rdb option from %s or rerun install script without parameters"
   [log_location]="TorrServer log stored at %s"
+  [bbr_enabled]="BBR TCP congestion control enabled"
+  [bbr_already_configured]="BBR is already configured"
+  [bbr_configured_not_available]="BBR is configured but not available in this kernel"
+  [bbr_config_failed]="Warning: Failed to configure BBR"
+  [bbr_not_available]="BBR is not available in this kernel"
+  [bbr_requires_kernel]="BBR requires Linux kernel 4.9+ with tcp_bbr module"
+  [bbr_settings_in_file]="BBR settings added to %s and will apply after reboot"
+  [bbr_write_failed]="Failed to write to %s"
+  [bbr_current_values]="Current: qdisc=%s, congestion_control=%s"
+  [bbr_settings_will_apply]="BBR settings are in %s and will apply after reboot"
+  [bbr_settings_not_added]="BBR settings were not added to %s"
+  [bbr_activate_failed]="Warning: Could not activate BBR - module not available"
+  [bbr_no_optimization]="Service will start without BBR optimization"
+  [bbr_activate_failed_cc]="Warning: Could not activate BBR (currently: %s)"
   [systemctl_missing]="systemctl is not available. Skipping service management commands."
   [systemctl_failed]="Warning: systemctl %s failed"
   [service_start_failed]="Warning: TorrServer service failed to start. Check systemctl status for details."
@@ -228,6 +244,7 @@ declare -A MSG_RU=(
   [prompt_password]="Пароль: "
   [enable_rdb]="Запускать TorrServer в публичном режиме без возможности изменения настроек через веб сервера? (Yes/No) "
   [enable_log]="Включить запись журнала работы TorrServer в файл? (Yes/No) "
+  [enable_bbr]="Включить BBR (управление перегрузкой TCP)? (Yes/No) "
   [confirm_delete]="Вы уверены что хотите удалить программу? (Yes/No) "
   [yes_no_delete]="Ввведите Yes, No или Delete"
 
@@ -245,6 +262,20 @@ declare -A MSG_RU=(
   [set_readonly]="База данных устанавливается в режим «только для чтения»…"
   [readonly_hint]="Для изменения отредактируйте %s, убрав опцию --rdb или запустите интерактивную установку без параметров повторно"
   [log_location]="лог TorrServer располагается по пути %s"
+  [bbr_enabled]="Включено управление перегрузкой TCP BBR"
+  [bbr_already_configured]="BBR уже настроен"
+  [bbr_configured_not_available]="BBR настроен, но недоступен в этом ядре"
+  [bbr_config_failed]="Предупреждение: Не удалось настроить BBR"
+  [bbr_not_available]="BBR недоступен в этом ядре"
+  [bbr_requires_kernel]="BBR требует Linux kernel 4.9+ с модулем tcp_bbr"
+  [bbr_settings_in_file]="Настройки BBR добавлены в %s и вступят в силу после перезагрузки"
+  [bbr_write_failed]="Не удалось записать в %s"
+  [bbr_current_values]="Текущие значения: qdisc=%s, congestion_control=%s"
+  [bbr_settings_will_apply]="Настройки BBR находятся в %s и вступят в силу после перезагрузки"
+  [bbr_settings_not_added]="Настройки BBR не были добавлены в %s"
+  [bbr_activate_failed]="Предупреждение: Не удалось активировать BBR - модуль недоступен"
+  [bbr_no_optimization]="Служба запустится без оптимизации BBR"
+  [bbr_activate_failed_cc]="Предупреждение: Не удалось активировать BBR (текущее: %s)"
   [systemctl_missing]="systemctl недоступен. Пропускаем команды управления службой."
   [systemctl_failed]="Предупреждение: команда systemctl %s завершилась ошибкой"
   [service_start_failed]="Предупреждение: служба TorrServer не запустилась. Проверьте systemctl status для деталей."
@@ -695,6 +726,7 @@ installPackages() {
         if [[ $SILENT_MODE -eq 0 ]]; then
           echo " $(msg installing_packages)"
         fi
+        apt update >/dev/null 2>&1
         apt -y install "${missing[@]}"
       fi
       ;;
@@ -702,18 +734,37 @@ installPackages() {
       local pkg_manager="$1"
       shift
       packages=("$@")
+      local needs_update=0
       for pkg in "${packages[@]}"; do
         if [[ -z "$(rpm -qa "$pkg" 2>/dev/null)" ]]; then
-          $pkg_manager -y install "$pkg"
+          needs_update=1
+          break
         fi
       done
+      if [[ $needs_update -eq 1 ]]; then
+        if [[ "$pkg_manager" == "dnf" ]]; then
+          dnf makecache -q >/dev/null 2>&1 || true
+        elif [[ "$pkg_manager" == "yum" ]]; then
+          yum makecache fast -q >/dev/null 2>&1 || true
+        fi
+        for pkg in "${packages[@]}"; do
+          if [[ -z "$(rpm -qa "$pkg" 2>/dev/null)" ]]; then
+            $pkg_manager -y install "$pkg"
+          fi
+        done
+      fi
       ;;
     arch)
+      local missing=()
       for pkg in "${packages[@]}"; do
         if [[ -z $(pacman -Qqe "$pkg" 2>/dev/null) ]]; then
-          pacman -Sy --noconfirm "$pkg"
+          missing+=("$pkg")
         fi
       done
+      if [[ ${#missing[@]} -gt 0 ]]; then
+        pacman -Sy --noconfirm >/dev/null 2>&1
+        pacman -S --noconfirm "${missing[@]}"
+      fi
       ;;
   esac
 }
@@ -956,6 +1007,169 @@ WantedBy=multi-user.target
 EOF
 }
 
+# Check if BBR is available in the kernel
+isBBRAvailable() {
+  sysctl net.ipv4.tcp_available_congestion_control 2>/dev/null | grep -qw "bbr"
+}
+
+# Load BBR kernel module
+loadBBRModule() {
+  local max_attempts=3
+  local attempt=0
+
+  while [[ $attempt -lt $max_attempts ]]; do
+    if modprobe tcp_bbr >/dev/null 2>&1; then
+      sleep 0.3
+      if isBBRAvailable; then
+        return 0
+      fi
+    fi
+    ((attempt++))
+    sleep 0.2
+  done
+
+  return 1
+}
+
+# Ensure BBR module loads at boot
+ensureBBRModuleAtBoot() {
+  local modules_dir="/etc/modules-load.d"
+  local modules_file="$modules_dir/bbr.conf"
+
+  [[ -d "$modules_dir" ]] || mkdir -p "$modules_dir" 2>/dev/null || return 1
+  if [[ ! -f "$modules_file" ]] || ! grep -q "^tcp_bbr$" "$modules_file" 2>/dev/null; then
+    echo "tcp_bbr" >> "$modules_file" 2>/dev/null || return 1
+  fi
+  return 0
+}
+
+# Check if BBR is configured in sysctl.conf
+isBBRConfiguredInFile() {
+  local sysctl_file="${1:-/etc/sysctl.conf}"
+  [[ -f "$sysctl_file" ]] && \
+    grep -q "^net.core.default_qdisc=fq" "$sysctl_file" 2>/dev/null && \
+    grep -q "^net.ipv4.tcp_congestion_control=bbr" "$sysctl_file" 2>/dev/null
+}
+
+# Add BBR settings to sysctl.conf
+addBBRToSysctl() {
+  local sysctl_file="${1:-/etc/sysctl.conf}"
+
+  if ! grep -q "^net.core.default_qdisc=fq" "$sysctl_file" 2>/dev/null; then
+    echo "net.core.default_qdisc=fq" >> "$sysctl_file" 2>/dev/null || return 1
+  fi
+  if ! grep -q "^net.ipv4.tcp_congestion_control=bbr" "$sysctl_file" 2>/dev/null; then
+    echo "net.ipv4.tcp_congestion_control=bbr" >> "$sysctl_file" 2>/dev/null || return 1
+  fi
+  return 0
+}
+
+# Check if BBR is currently active in the kernel
+isBBRActive() {
+  local current_cc
+  current_cc=$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo "")
+  [[ "$current_cc" == "bbr" ]]
+}
+
+# Apply BBR settings to kernel (non-critical - returns status for logging only)
+applyBBRSettings() {
+  sysctl -w net.core.default_qdisc=fq >/dev/null 2>&1 || true
+  if sysctl -w net.ipv4.tcp_congestion_control=bbr >/dev/null 2>&1; then
+    sleep 0.2
+    isBBRActive && return 0
+  fi
+  return 1
+}
+
+# Ensure BBR is active (non-critical - always returns success)
+ensureBBRActive() {
+  local sysctl_file="/etc/sysctl.conf"
+
+  ! isBBRConfiguredInFile "$sysctl_file" && return 0
+  isBBRActive && return 0
+
+  if ! isBBRAvailable && ! loadBBRModule; then
+    [[ $SILENT_MODE -eq 0 ]] && {
+      echo " - $(colorize yellow "$(msg bbr_activate_failed)")"
+      echo "   $(colorize yellow "$(msg bbr_no_optimization)")"
+    }
+    return 0
+  fi
+
+  if applyBBRSettings; then
+    [[ $SILENT_MODE -eq 0 ]] && echo " - $(msg bbr_enabled)"
+  else
+    local current_cc
+    current_cc=$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo "unknown")
+    [[ $SILENT_MODE -eq 0 ]] && {
+      echo " - $(colorize yellow "$(msg bbr_activate_failed_cc "$current_cc")")"
+      echo "   $(colorize yellow "$(msg bbr_no_optimization)")"
+      echo "   $(colorize yellow "$(msg bbr_settings_will_apply "$sysctl_file")")"
+    }
+  fi
+  return 0
+}
+
+configureBBR() {
+  [[ $isBbr -ne 1 ]] && return 0
+
+  local sysctl_file="/etc/sysctl.conf"
+
+  # Check if BBR is available or can be loaded first
+  if ! isBBRAvailable && ! loadBBRModule; then
+    # BBR not available - check if it's already in config
+    if isBBRConfiguredInFile "$sysctl_file"; then
+      [[ $SILENT_MODE -eq 0 ]] && {
+        echo " - $(colorize yellow "$(msg bbr_configured_not_available)")"
+        echo "   $(colorize yellow "$(msg bbr_requires_kernel)")"
+        echo "   $(colorize yellow "$(msg bbr_settings_will_apply "$sysctl_file")")"
+        echo "   $(colorize yellow "$(msg bbr_no_optimization)")"
+      }
+    else
+      # Not in config and not available - don't add it
+      [[ $SILENT_MODE -eq 0 ]] && {
+        echo " - $(colorize yellow "$(msg bbr_not_available)")"
+        echo "   $(colorize yellow "$(msg bbr_requires_kernel)")"
+        echo "   $(colorize yellow "$(msg bbr_settings_not_added "$sysctl_file")")"
+        echo "   $(colorize yellow "$(msg bbr_no_optimization)")"
+      }
+    fi
+    return 0
+  fi
+
+  # BBR is available - now configure it
+  if isBBRConfiguredInFile "$sysctl_file"; then
+    [[ $SILENT_MODE -eq 0 ]] && echo " - $(msg bbr_already_configured)"
+  else
+    ! addBBRToSysctl "$sysctl_file" && {
+      [[ $SILENT_MODE -eq 0 ]] && {
+        echo " - $(colorize yellow "$(msg bbr_config_failed)")"
+        echo "   $(colorize yellow "$(msg bbr_write_failed "$sysctl_file")")"
+        echo "   $(colorize yellow "$(msg bbr_no_optimization)")"
+      }
+      return 0
+    }
+  fi
+
+  ensureBBRModuleAtBoot || true
+
+  if applyBBRSettings; then
+    [[ $SILENT_MODE -eq 0 ]] && echo " - $(msg bbr_enabled)"
+    return 0
+  fi
+
+  local current_cc current_qdisc
+  current_cc=$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo "unknown")
+  current_qdisc=$(sysctl -n net.core.default_qdisc 2>/dev/null || echo "unknown")
+  [[ $SILENT_MODE -eq 0 ]] && {
+    echo " - $(colorize yellow "$(msg bbr_config_failed)")"
+    echo "   $(colorize yellow "$(msg bbr_current_values "$current_qdisc" "$current_cc")")"
+    echo "   $(colorize yellow "$(msg bbr_settings_will_apply "$sysctl_file")")"
+    echo "   $(colorize yellow "$(msg bbr_no_optimization)")"
+  }
+  return 0
+}
+
 configureService() {
   # Port configuration
   if [[ -z "$servicePort" ]]; then
@@ -1032,6 +1246,15 @@ EOF
     sed -i "s|--path|--logpath $dirInstall/$serviceName.log --path|" "$dirInstall/$serviceName.config"
     if [[ $SILENT_MODE -eq 0 ]]; then
       printf ' - %s\n' "$(msg log_location "$dirInstall/$serviceName.log")"
+    fi
+  fi
+
+  # BBR configuration
+  if [[ -z "$isBbr" ]]; then
+    if promptYesNo "$(msg enable_bbr)" "n"; then
+      isBbr=1
+    else
+      isBbr=0
     fi
   fi
 }
@@ -1186,6 +1409,9 @@ installTorrServer() {
   createServiceFile
   configureService
 
+  # Configure BBR if enabled (non-critical - always succeeds)
+  configureBBR
+
   # Set up systemd service
   ln -sf "$dirInstall/$serviceName.service" /usr/local/lib/systemd/system/
   sed -i 's/^[ \t]*//' "$dirInstall/$serviceName.service"
@@ -1280,6 +1506,9 @@ UpdateVersion() {
     fi
   fi
 
+  # Ensure BBR is active before starting service (if previously configured)
+  ensureBBRActive
+
   if ! systemctlCmd start "$serviceName.service"; then
     :
   fi
@@ -1315,6 +1544,9 @@ DowngradeVersion() {
       :
     fi
   fi
+
+  # Ensure BBR is active before starting service (if previously configured)
+  ensureBBRActive
 
   if ! systemctlCmd start "$serviceName.service"; then
     :
@@ -1442,6 +1674,7 @@ Default Settings (silent mode):
   - Auth: disabled
   - Read-only mode: disabled
   - Logging: disabled
+  - BBR: enabled
 
 EOF
 }
@@ -1550,6 +1783,7 @@ main() {
         isAuth=0
         isRdb=0
         isLog=0
+        isBbr=1
       fi
 
       if [[ $USE_ROOT_USER -eq 1 ]]; then
