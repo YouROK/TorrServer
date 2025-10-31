@@ -143,6 +143,7 @@ declare -A MSG_EN=(
   [log_location]="TorrServer log stored at %s"
   [bbr_enabled]="BBR TCP congestion control enabled"
   [bbr_already_configured]="BBR is already configured"
+  [bbr_configured_not_available]="BBR is configured but not available in this kernel"
   [bbr_config_failed]="Warning: Failed to configure BBR"
   [bbr_not_available]="BBR is not available in this kernel"
   [bbr_requires_kernel]="BBR requires Linux kernel 4.9+ with tcp_bbr module"
@@ -150,6 +151,7 @@ declare -A MSG_EN=(
   [bbr_write_failed]="Failed to write to %s"
   [bbr_current_values]="Current: qdisc=%s, congestion_control=%s"
   [bbr_settings_will_apply]="BBR settings are in %s and will apply after reboot"
+  [bbr_settings_not_added]="BBR settings were not added to %s"
   [bbr_activate_failed]="Warning: Could not activate BBR - module not available"
   [bbr_no_optimization]="Service will start without BBR optimization"
   [bbr_activate_failed_cc]="Warning: Could not activate BBR (currently: %s)"
@@ -262,6 +264,7 @@ declare -A MSG_RU=(
   [log_location]="лог TorrServer располагается по пути %s"
   [bbr_enabled]="Включено управление перегрузкой TCP BBR"
   [bbr_already_configured]="BBR уже настроен"
+  [bbr_configured_not_available]="BBR настроен, но недоступен в этом ядре"
   [bbr_config_failed]="Предупреждение: Не удалось настроить BBR"
   [bbr_not_available]="BBR недоступен в этом ядре"
   [bbr_requires_kernel]="BBR требует Linux kernel 4.9+ с модулем tcp_bbr"
@@ -269,6 +272,7 @@ declare -A MSG_RU=(
   [bbr_write_failed]="Не удалось записать в %s"
   [bbr_current_values]="Текущие значения: qdisc=%s, congestion_control=%s"
   [bbr_settings_will_apply]="Настройки BBR находятся в %s и вступят в силу после перезагрузки"
+  [bbr_settings_not_added]="Настройки BBR не были добавлены в %s"
   [bbr_activate_failed]="Предупреждение: Не удалось активировать BBR - модуль недоступен"
   [bbr_no_optimization]="Служба запустится без оптимизации BBR"
   [bbr_activate_failed_cc]="Предупреждение: Не удалось активировать BBR (текущее: %s)"
@@ -1111,6 +1115,29 @@ configureBBR() {
 
   local sysctl_file="/etc/sysctl.conf"
 
+  # Check if BBR is available or can be loaded first
+  if ! isBBRAvailable && ! loadBBRModule; then
+    # BBR not available - check if it's already in config
+    if isBBRConfiguredInFile "$sysctl_file"; then
+      [[ $SILENT_MODE -eq 0 ]] && {
+        echo " - $(colorize yellow "$(msg bbr_configured_not_available)")"
+        echo "   $(colorize yellow "$(msg bbr_requires_kernel)")"
+        echo "   $(colorize yellow "$(msg bbr_settings_will_apply "$sysctl_file")")"
+        echo "   $(colorize yellow "$(msg bbr_no_optimization)")"
+      }
+    else
+      # Not in config and not available - don't add it
+      [[ $SILENT_MODE -eq 0 ]] && {
+        echo " - $(colorize yellow "$(msg bbr_not_available)")"
+        echo "   $(colorize yellow "$(msg bbr_requires_kernel)")"
+        echo "   $(colorize yellow "$(msg bbr_settings_not_added "$sysctl_file")")"
+        echo "   $(colorize yellow "$(msg bbr_no_optimization)")"
+      }
+    fi
+    return 0
+  fi
+
+  # BBR is available - now configure it
   if isBBRConfiguredInFile "$sysctl_file"; then
     [[ $SILENT_MODE -eq 0 ]] && echo " - $(msg bbr_already_configured)"
   else
@@ -1122,16 +1149,6 @@ configureBBR() {
       }
       return 0
     }
-  fi
-
-  if ! isBBRAvailable && ! loadBBRModule; then
-    [[ $SILENT_MODE -eq 0 ]] && {
-      echo " - $(colorize yellow "$(msg bbr_not_available)")"
-      echo "   $(colorize yellow "$(msg bbr_requires_kernel)")"
-      echo "   $(colorize yellow "$(msg bbr_settings_in_file "$sysctl_file")")"
-      echo "   $(colorize yellow "$(msg bbr_no_optimization)")"
-    }
-    return 0
   fi
 
   ensureBBRModuleAtBoot || true
