@@ -74,14 +74,9 @@ declare -A MSG_EN=(
 
   # Script info
   [script_title]="TorrServer install and configuration script for Linux"
-  [help_hint]="Enter $scriptname -h or --help or help for all available commands"
 
   # Checks
-  [check_internet]="Check Internet access…"
-  [have_internet]="Have Internet Access"
-  [no_internet]="No Internet. Check your network and DNS settings."
   [need_root]="Script must run as root or user with sudo privileges. Example: sudo $scriptname"
-  [need_ping]="Please install iputils-ping first"
   [unsupported_arch]="Unsupported Arch. Can't continue."
   [unsupported_os]="It looks like you are running this installer on a system other than Debian, Ubuntu, Fedora, CentOS, Amazon Linux, Oracle Linux or Arch Linux."
 
@@ -122,11 +117,11 @@ declare -A MSG_EN=(
   [enable_auth]="Enable server authorization? (Yes/No) "
   [prompt_user]="User: "
   [prompt_password]="Password: "
+  [change_auth_credentials]="Change authentication username and password? (Yes/No) "
   [enable_rdb]="Start TorrServer in public read-only mode? (Yes/No) "
   [enable_log]="Enable TorrServer log output to file? (Yes/No) "
-  [enable_bbr]="Enable BBR (TCP congestion control)? (Yes/No) "
+  [enable_bbr]="Enable BBR (Recommended for better download speed)? (Yes/No) "
   [confirm_delete]="Are you sure you want to delete TorrServer? (Yes/No) "
-  [yes_no_delete]="Enter Yes, No or Delete"
 
   # Uninstall
   [install_dir_label]="TorrServer install dir -"
@@ -149,7 +144,6 @@ declare -A MSG_EN=(
   [bbr_config_failed]="Warning: Failed to configure BBR"
   [bbr_not_available]="BBR is not available in this kernel"
   [bbr_requires_kernel]="BBR requires Linux kernel 4.9+ with tcp_bbr module"
-  [bbr_settings_in_file]="BBR settings added to %s and will apply after reboot"
   [bbr_write_failed]="Failed to write to %s"
   [bbr_current_values]="Current: qdisc=%s, congestion_control=%s"
   [bbr_settings_will_apply]="BBR settings are in %s and will apply after reboot"
@@ -185,6 +179,16 @@ declare -A MSG_EN=(
   # User mode
   [running_as_root]="Service will run as root user"
   [running_as_user]="Service will run as %s user"
+
+  # Error messages
+  [error_username_required]="Error: Username required for --change-user"
+  [error_version_required]="Error: Version number required for downgrade"
+  [error_version_example]="Example: %s -d 101"
+  [error_unknown_option]="Unknown option: %s"
+  [installing_specific_version]="Installing specific version: %s"
+  [service_reconfigured_user]="Service reconfigured for user: %s"
+  [install_first_required]="Please install TorrServer first using: %s --install"
+  [prompt_run_as_root]="Run service as root user? (Yes/No) "
 )
 
 declare -A MSG_RU=(
@@ -197,14 +201,9 @@ declare -A MSG_RU=(
 
   # Script info
   [script_title]="Скрипт установки, удаления и настройки TorrServer для Linux"
-  [help_hint]="Наберите $scriptname -h или --help или help для вызова справки всех доступных команд"
 
   # Checks
-  [check_internet]="Проверяем соединение с Интернетом…"
-  [have_internet]="соединение с Интернетом успешно"
-  [no_internet]="Нет Интернета. Проверьте ваше соединение, а также разрешение имен DNS."
   [need_root]="Вам нужно запустить скрипт от root или пользователя с правами sudo. Пример: sudo $scriptname"
-  [need_ping]="Сначала установите iputils-ping"
   [unsupported_arch]="Не поддерживаемая архитектура. Продолжение невозможно."
   [unsupported_os]="Похоже, что вы запускаете этот установщик в системе отличной от Debian, Ubuntu, Fedora, CentOS, Amazon Linux, Oracle Linux или Arch Linux."
 
@@ -245,11 +244,11 @@ declare -A MSG_RU=(
   [enable_auth]="Включить авторизацию на сервере? (Yes/No) "
   [prompt_user]="Пользователь: "
   [prompt_password]="Пароль: "
+  [change_auth_credentials]="Изменить имя пользователя и пароль для авторизации? (Yes/No) "
   [enable_rdb]="Запускать TorrServer в публичном режиме без возможности изменения настроек через веб сервера? (Yes/No) "
   [enable_log]="Включить запись журнала работы TorrServer в файл? (Yes/No) "
-  [enable_bbr]="Включить BBR (управление перегрузкой TCP)? (Yes/No) "
+  [enable_bbr]="Включить BBR (Рекомендуется для лучшей скорости загрузки)? (Yes/No) "
   [confirm_delete]="Вы уверены что хотите удалить программу? (Yes/No) "
-  [yes_no_delete]="Ввведите Yes, No или Delete"
 
   # Uninstall
   [install_dir_label]="Директория c TorrServer -"
@@ -272,7 +271,6 @@ declare -A MSG_RU=(
   [bbr_config_failed]="Предупреждение: Не удалось настроить BBR"
   [bbr_not_available]="BBR недоступен в этом ядре"
   [bbr_requires_kernel]="BBR требует Linux kernel 4.9+ с модулем tcp_bbr"
-  [bbr_settings_in_file]="Настройки BBR добавлены в %s и вступят в силу после перезагрузки"
   [bbr_write_failed]="Не удалось записать в %s"
   [bbr_current_values]="Текущие значения: qdisc=%s, congestion_control=%s"
   [bbr_settings_will_apply]="Настройки BBR находятся в %s и вступят в силу после перезагрузки"
@@ -308,6 +306,16 @@ declare -A MSG_RU=(
   # User mode
   [running_as_root]="Служба будет запущена от пользователя root"
   [running_as_user]="Служба будет запущена от пользователя %s"
+
+  # Error messages
+  [error_username_required]="Ошибка: Требуется имя пользователя для --change-user"
+  [error_version_required]="Ошибка: Требуется номер версии для понижения версии"
+  [error_version_example]="Пример: %s -d 101"
+  [error_unknown_option]="Неизвестная опция: %s"
+  [installing_specific_version]="Установка конкретной версии: %s"
+  [service_reconfigured_user]="Служба перенастроена для пользователя: %s"
+  [install_first_required]="Пожалуйста, сначала установите TorrServer используя: %s --install"
+  [prompt_run_as_root]="Запустить службу от пользователя root? (Yes/No) "
 )
 
 # Translation function
@@ -394,10 +402,6 @@ getIP() {
   serverIP="$ip"
 }
 
-checkRunning() {
-  pgrep -f '[Tt]orr[Ss]erver'
-}
-
 promptYesNo() {
   local prompt="$1"
   local default="${2:-n}"
@@ -459,26 +463,6 @@ promptInput() {
   local answer
   IFS= read -r -p " $prompt " answer </dev/tty
   echo "${answer:-$default}"
-}
-
-readEnvFromProc() {
-  local pid="$1"
-  local key="$2"
-
-  if [[ -z "$pid" || -z "$key" || ! -r "/proc/$pid/environ" ]]; then
-    return 1
-  fi
-
-  while IFS= read -r -d '' entry; do
-    case "$entry" in
-      "$key"=*)
-  printf '%s' "${entry#"${key}"=}"
-        return 0
-        ;;
-    esac
-  done < "/proc/$pid/environ"
-
-  return 1
 }
 
 systemctlCmd() {
@@ -788,7 +772,7 @@ installPackages() {
     arch)
       local missing=()
       for pkg in "${packages[@]}"; do
-        if [[ -z $(pacman -Qqe "$pkg" 2>/dev/null) ]]; then
+        if ! pacman -Q "$pkg" >/dev/null 2>&1; then
           missing+=("$pkg")
         fi
       done
@@ -1276,6 +1260,15 @@ configureService() {
       auth=$(cat "$dirInstall/accs.db" | head -2 | tail -1 | tr -d '[:space:]' | tr -d '"')
       if [[ $SILENT_MODE -eq 0 ]]; then
         printf ' - %s\n' "$(msg use_existing_auth "${dirInstall}/accs.db" "$auth")"
+        # Ask if user wants to change credentials
+        if promptYesNo "$(msg change_auth_credentials)" "n"; then
+          isAuthUser=$(promptInput "$(msg prompt_user)" "admin")
+          isAuthPass=$(promptInput "$(msg prompt_password)" "admin")
+          if [[ $SILENT_MODE -eq 0 ]]; then
+            printf ' %s\n' "$(msg store_auth "$isAuthUser" "$isAuthPass" "${dirInstall}/accs.db")"
+          fi
+          echo -e "{\n  \"$isAuthUser\": \"$isAuthPass\"\n}" > "$dirInstall/accs.db"
+        fi
       fi
     fi
   fi
@@ -1359,7 +1352,7 @@ EOF
 changeServiceUser() {
   local target_user="$1"
   if [[ -z "$target_user" ]]; then
-    echo "Error: Username required for --change-user"
+    echo " $(msg error_username_required)"
     exit 1
   fi
 
@@ -1442,7 +1435,7 @@ changeServiceUser() {
 installTorrServer() {
   if [[ $SILENT_MODE -eq 0 && $ROOT_PROMPTED -eq 0 ]]; then
     if [[ $USE_ROOT_USER -ne 1 ]]; then
-      if promptYesNo "Run service as root user? (Yes/No)" "n"; then
+      if promptYesNo "$(msg prompt_run_as_root)" "n"; then
         USE_ROOT_USER=1
         username="root"
       fi
@@ -1595,13 +1588,15 @@ installTorrServer() {
   return 0
 }
 
-UpdateVersion() {
-  local target_version
-  target_version=$(getTargetVersion)
+# Common function to update/downgrade TorrServer version
+updateTorrServerVersion() {
+  local target_version="$1"
+  local cancel_message="$2"
+  local use_latest_url="${3:-0}"
 
   if ! checkGlibcCompatibility "$target_version"; then
     if [[ $SILENT_MODE -eq 0 ]]; then
-      echo " - $(msg update_cancelled)"
+      echo " - $(msg "$cancel_message")"
     fi
     return 1
   fi
@@ -1613,10 +1608,10 @@ UpdateVersion() {
   local binName
   binName=$(getBinaryName)
   local urlBin
-  if [[ -n "$specificVersion" ]]; then
-    urlBin=$(buildDownloadUrl "$target_version" "$binName")
-  else
+  if [[ $use_latest_url -eq 1 && -z "$specificVersion" ]]; then
     urlBin=$(buildDownloadUrl "latest" "$binName")
+  else
+    urlBin=$(buildDownloadUrl "$target_version" "$binName")
   fi
 
   downloadBinary "$urlBin" "$dirInstall/$binName" "$target_version"
@@ -1639,43 +1634,16 @@ UpdateVersion() {
   return 0
 }
 
+UpdateVersion() {
+  local target_version
+  target_version=$(getTargetVersion)
+  updateTorrServerVersion "$target_version" "update_cancelled" 1
+}
+
 DowngradeVersion() {
   local target_version
   target_version=$(getVersionTag "$downgradeRelease")
-
-  if ! checkGlibcCompatibility "$target_version"; then
-    if [[ $SILENT_MODE -eq 0 ]]; then
-      echo " - $(msg downgrade_cancelled)"
-    fi
-    return 1
-  fi
-
-  if ! systemctlCmd stop "$serviceName.service"; then
-    :
-  fi
-
-  local binName
-  binName=$(getBinaryName)
-  local urlBin
-  urlBin=$(buildDownloadUrl "$target_version" "$binName")
-  downloadBinary "$urlBin" "$dirInstall/$binName" "$target_version"
-
-  # Update service file to reflect user change
-  if [[ -f "$dirInstall/$serviceName.service" ]]; then
-    createServiceFile
-    if ! systemctlCmd daemon-reload; then
-      :
-    fi
-  fi
-
-  # Ensure BBR is active before starting service (if previously configured)
-  ensureBBRActive
-
-  if ! systemctlCmd start "$serviceName.service"; then
-    :
-  fi
-
-  return 0
+  updateTorrServerVersion "$target_version" "downgrade_cancelled" 0
 }
 
 #############################################
@@ -1747,7 +1715,7 @@ reconfigureTorrServer() {
   # Check if TorrServer is installed
   if ! checkInstalled; then
     echo " - $(msg not_found)"
-    echo " - Please install TorrServer first using: $scriptname --install"
+    echo " - $(msg install_first_required "$scriptname")"
     exit 1
   fi
 
@@ -1896,13 +1864,13 @@ parseArguments() {
             downgradeRelease="$next_arg"
             shift
           else
-            echo "Error: Version number required for downgrade"
-            echo "Example: $scriptname -d 101"
+            echo " $(msg error_version_required)"
+            echo " $(msg error_version_example "$scriptname")"
             exit 1
           fi
         else
-          echo "Error: Version number required for downgrade"
-          echo "Example: $scriptname -d 101"
+          echo " $(msg error_version_required)"
+          echo " $(msg error_version_example "$scriptname")"
           exit 1
         fi
         ;;
@@ -1921,7 +1889,7 @@ parseArguments() {
           changeUserName="$1"
           shift
         else
-          echo "Error: Username required for --change-user"
+          echo " $(msg error_username_required)"
           exit 1
         fi
         ;;
@@ -1939,7 +1907,7 @@ parseArguments() {
         shift
         ;;
       *)
-        echo "Unknown option: $1"
+        echo " $(msg error_unknown_option "$1")"
         helpUsage
         exit 1
         ;;
@@ -1961,7 +1929,7 @@ main() {
   case "$command" in
     install)
       if [[ $SILENT_MODE -eq 0 && -n "$specificVersion" ]]; then
-        echo " - Installing specific version: $specificVersion"
+        echo " - $(msg installing_specific_version "$specificVersion")"
       fi
       initialCheck
 
@@ -1994,7 +1962,7 @@ main() {
           :
         fi
         if [[ $SILENT_MODE -eq 0 ]]; then
-          echo " - Service reconfigured for user: $username"
+          echo " - $(msg service_reconfigured_user "$username")"
         fi
       fi
       exit 0
@@ -2042,7 +2010,7 @@ main() {
       ;;
     change_user)
       if [[ -z "$changeUserName" ]]; then
-        echo "Error: Username required for --change-user"
+        echo " $(msg error_username_required)"
         exit 1
       fi
       if ! isRoot; then
@@ -2060,8 +2028,8 @@ main() {
     echo " $(msg lang_choice)"
     echo " [$(colorize green 1)] $(msg lang_english)"
     echo " [$(colorize yellow 2)] $(msg lang_russian)"
-  local answer_lang
-  answer_lang=$(promptInput "$(msg your_lang)" "1")
+    local answer_lang
+    answer_lang=$(promptInput "$(msg your_lang)" "1")
     if [[ "$answer_lang" == "2" ]]; then
       lang="ru"
     fi
@@ -2070,8 +2038,6 @@ main() {
     echo "============================================================="
     echo " $(msg script_title)"
     echo "============================================================="
-    echo ""
-    echo " $(msg help_hint)"
     echo ""
 
     local user_choice
@@ -2083,7 +2049,7 @@ main() {
     elif [[ "$user_choice" == "yes" ]]; then
       initialCheck
 
-      if promptYesNo "Run service as root user? (Yes/No)" "n"; then
+      if promptYesNo "$(msg prompt_run_as_root)" "n"; then
         USE_ROOT_USER=1
         username="root"
       fi
