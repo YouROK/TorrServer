@@ -120,8 +120,9 @@ declare -A MSG_EN=(
   [change_auth_credentials]="Change authentication username and password? (Yes/No) "
   [enable_rdb]="Start TorrServer in public read-only mode? (Yes/No) "
   [enable_log]="Enable TorrServer log output to file? (Yes/No) "
-  [enable_bbr]="Enable BBR (Recommended for better download speed)? (Yes/No) "
+  [enable_bbr]="Enable BBR (recommended for better download speed)? (Yes/No) "
   [confirm_delete]="Are you sure you want to delete TorrServer? (Yes/No) "
+  [prompt_run_as_root]="Run service as root user? (Yes/No) "
 
   # Uninstall
   [install_dir_label]="TorrServer install dir -"
@@ -188,7 +189,6 @@ declare -A MSG_EN=(
   [installing_specific_version]="Installing specific version: %s"
   [service_reconfigured_user]="Service reconfigured for user: %s"
   [install_first_required]="Please install TorrServer first using: %s --install"
-  [prompt_run_as_root]="Run service as root user? (Yes/No) "
 )
 
 declare -A MSG_RU=(
@@ -247,8 +247,9 @@ declare -A MSG_RU=(
   [change_auth_credentials]="Изменить имя пользователя и пароль для авторизации? (Yes/No) "
   [enable_rdb]="Запускать TorrServer в публичном режиме без возможности изменения настроек через веб сервера? (Yes/No) "
   [enable_log]="Включить запись журнала работы TorrServer в файл? (Yes/No) "
-  [enable_bbr]="Включить BBR (Рекомендуется для лучшей скорости загрузки)? (Yes/No) "
+  [enable_bbr]="Включить BBR (рекомендуется для лучшей скорости загрузки)? (Yes/No) "
   [confirm_delete]="Вы уверены что хотите удалить программу? (Yes/No) "
+  [prompt_run_as_root]="Запускать службу от пользователя root? (Yes/No) "
 
   # Uninstall
   [install_dir_label]="Директория c TorrServer -"
@@ -315,7 +316,6 @@ declare -A MSG_RU=(
   [installing_specific_version]="Установка конкретной версии: %s"
   [service_reconfigured_user]="Служба перенастроена для пользователя: %s"
   [install_first_required]="Пожалуйста, сначала установите TorrServer используя: %s --install"
-  [prompt_run_as_root]="Запустить службу от пользователя root? (Yes/No) "
 )
 
 # Translation function
@@ -1319,7 +1319,7 @@ configureService() {
   fi
 
   # BBR configuration
-  if [[ -z "$isBbr" ]]; then
+  if [[ -z "$isBbr" && ( -z "$isBBRConfiguredInFile" || "$isBBRConfiguredInFile" != "true" ) ]]; then
     if promptYesNo "$(msg enable_bbr)" "n"; then
       isBbr=1
     else
