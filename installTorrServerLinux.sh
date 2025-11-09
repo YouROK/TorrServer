@@ -788,7 +788,7 @@ installPackages() {
     arch)
       local missing=()
       for pkg in "${packages[@]}"; do
-        if [[ -z $(pacman -Qqe "$pkg" 2>/dev/null) ]]; then
+        if ! pacman -Q "$pkg" >/dev/null 2>&1; then
           missing+=("$pkg")
         fi
       done
