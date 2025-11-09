@@ -74,7 +74,6 @@ declare -A MSG_EN=(
 
   # Script info
   [script_title]="TorrServer install and configuration script for Linux"
-  [help_hint]="Enter $scriptname -h or --help or help for all available commands"
 
   # Checks
   [check_internet]="Check Internet access…"
@@ -197,7 +196,6 @@ declare -A MSG_RU=(
 
   # Script info
   [script_title]="Скрипт установки, удаления и настройки TorrServer для Linux"
-  [help_hint]="Наберите $scriptname -h или --help или help для вызова справки всех доступных команд"
 
   # Checks
   [check_internet]="Проверяем соединение с Интернетом…"
