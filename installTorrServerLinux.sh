@@ -1319,7 +1319,7 @@ configureService() {
   fi
 
   # BBR configuration
-  if [[ -z "$isBbr" && ( -z "$isBBRConfiguredInFile" || "$isBBRConfiguredInFile" != "true" ) ]]; then
+  if [[ -z "$isBbr" && ! "$isBBRConfiguredInFile" ]]; then
     if promptYesNo "$(msg enable_bbr)" "n"; then
       isBbr=1
     else
