@@ -1232,12 +1232,6 @@ configureService() {
   else
     # Auth setting exists, ask if user wants to change it
     if [[ $SILENT_MODE -eq 0 ]]; then
-      local current_auth_status
-      if [[ $isAuth -eq 1 ]]; then
-        current_auth_status="enabled"
-      else
-        current_auth_status="disabled"
-      fi
       if promptYesNo "$(msg enable_auth)" "$([[ $isAuth -eq 1 ]] && echo 'y' || echo 'n')"; then
         isAuth=1
       else
