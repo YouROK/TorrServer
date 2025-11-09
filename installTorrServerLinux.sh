@@ -76,11 +76,7 @@ declare -A MSG_EN=(
   [script_title]="TorrServer install and configuration script for Linux"
 
   # Checks
-  [check_internet]="Check Internet access…"
-  [have_internet]="Have Internet Access"
-  [no_internet]="No Internet. Check your network and DNS settings."
   [need_root]="Script must run as root or user with sudo privileges. Example: sudo $scriptname"
-  [need_ping]="Please install iputils-ping first"
   [unsupported_arch]="Unsupported Arch. Can't continue."
   [unsupported_os]="It looks like you are running this installer on a system other than Debian, Ubuntu, Fedora, CentOS, Amazon Linux, Oracle Linux or Arch Linux."
 
@@ -125,7 +121,6 @@ declare -A MSG_EN=(
   [enable_log]="Enable TorrServer log output to file? (Yes/No) "
   [enable_bbr]="Enable BBR (TCP congestion control)? (Yes/No) "
   [confirm_delete]="Are you sure you want to delete TorrServer? (Yes/No) "
-  [yes_no_delete]="Enter Yes, No or Delete"
 
   # Uninstall
   [install_dir_label]="TorrServer install dir -"
@@ -148,7 +143,6 @@ declare -A MSG_EN=(
   [bbr_config_failed]="Warning: Failed to configure BBR"
   [bbr_not_available]="BBR is not available in this kernel"
   [bbr_requires_kernel]="BBR requires Linux kernel 4.9+ with tcp_bbr module"
-  [bbr_settings_in_file]="BBR settings added to %s and will apply after reboot"
   [bbr_write_failed]="Failed to write to %s"
   [bbr_current_values]="Current: qdisc=%s, congestion_control=%s"
   [bbr_settings_will_apply]="BBR settings are in %s and will apply after reboot"
@@ -198,11 +192,7 @@ declare -A MSG_RU=(
   [script_title]="Скрипт установки, удаления и настройки TorrServer для Linux"
 
   # Checks
-  [check_internet]="Проверяем соединение с Интернетом…"
-  [have_internet]="соединение с Интернетом успешно"
-  [no_internet]="Нет Интернета. Проверьте ваше соединение, а также разрешение имен DNS."
   [need_root]="Вам нужно запустить скрипт от root или пользователя с правами sudo. Пример: sudo $scriptname"
-  [need_ping]="Сначала установите iputils-ping"
   [unsupported_arch]="Не поддерживаемая архитектура. Продолжение невозможно."
   [unsupported_os]="Похоже, что вы запускаете этот установщик в системе отличной от Debian, Ubuntu, Fedora, CentOS, Amazon Linux, Oracle Linux или Arch Linux."
 
@@ -247,7 +237,6 @@ declare -A MSG_RU=(
   [enable_log]="Включить запись журнала работы TorrServer в файл? (Yes/No) "
   [enable_bbr]="Включить BBR (управление перегрузкой TCP)? (Yes/No) "
   [confirm_delete]="Вы уверены что хотите удалить программу? (Yes/No) "
-  [yes_no_delete]="Ввведите Yes, No или Delete"
 
   # Uninstall
   [install_dir_label]="Директория c TorrServer -"
@@ -270,7 +259,6 @@ declare -A MSG_RU=(
   [bbr_config_failed]="Предупреждение: Не удалось настроить BBR"
   [bbr_not_available]="BBR недоступен в этом ядре"
   [bbr_requires_kernel]="BBR требует Linux kernel 4.9+ с модулем tcp_bbr"
-  [bbr_settings_in_file]="Настройки BBR добавлены в %s и вступят в силу после перезагрузки"
   [bbr_write_failed]="Не удалось записать в %s"
   [bbr_current_values]="Текущие значения: qdisc=%s, congestion_control=%s"
   [bbr_settings_will_apply]="Настройки BBR находятся в %s и вступят в силу после перезагрузки"
@@ -392,10 +380,6 @@ getIP() {
   serverIP="$ip"
 }
 
-checkRunning() {
-  pgrep -f '[Tt]orr[Ss]erver'
-}
-
 promptYesNo() {
   local prompt="$1"
   local default="${2:-n}"
@@ -457,26 +441,6 @@ promptInput() {
   local answer
   IFS= read -r -p " $prompt " answer </dev/tty
   echo "${answer:-$default}"
-}
-
-readEnvFromProc() {
-  local pid="$1"
-  local key="$2"
-
-  if [[ -z "$pid" || -z "$key" || ! -r "/proc/$pid/environ" ]]; then
-    return 1
-  fi
-
-  while IFS= read -r -d '' entry; do
-    case "$entry" in
-      "$key"=*)
-  printf '%s' "${entry#"${key}"=}"
-        return 0
-        ;;
-    esac
-  done < "/proc/$pid/environ"
-
-  return 1
 }
 
 systemctlCmd() {
@@ -1593,13 +1557,15 @@ installTorrServer() {
   return 0
 }
 
-UpdateVersion() {
-  local target_version
-  target_version=$(getTargetVersion)
+# Common function to update/downgrade TorrServer version
+updateTorrServerVersion() {
+  local target_version="$1"
+  local cancel_message="$2"
+  local use_latest_url="${3:-0}"
 
   if ! checkGlibcCompatibility "$target_version"; then
     if [[ $SILENT_MODE -eq 0 ]]; then
-      echo " - $(msg update_cancelled)"
+      echo " - $(msg "$cancel_message")"
     fi
     return 1
   fi
@@ -1611,10 +1577,10 @@ UpdateVersion() {
   local binName
   binName=$(getBinaryName)
   local urlBin
-  if [[ -n "$specificVersion" ]]; then
-    urlBin=$(buildDownloadUrl "$target_version" "$binName")
-  else
+  if [[ $use_latest_url -eq 1 && -z "$specificVersion" ]]; then
     urlBin=$(buildDownloadUrl "latest" "$binName")
+  else
+    urlBin=$(buildDownloadUrl "$target_version" "$binName")
   fi
 
   downloadBinary "$urlBin" "$dirInstall/$binName" "$target_version"
@@ -1637,43 +1603,16 @@ UpdateVersion() {
   return 0
 }
 
+UpdateVersion() {
+  local target_version
+  target_version=$(getTargetVersion)
+  updateTorrServerVersion "$target_version" "update_cancelled" 1
+}
+
 DowngradeVersion() {
   local target_version
   target_version=$(getVersionTag "$downgradeRelease")
-
-  if ! checkGlibcCompatibility "$target_version"; then
-    if [[ $SILENT_MODE -eq 0 ]]; then
-      echo " - $(msg downgrade_cancelled)"
-    fi
-    return 1
-  fi
-
-  if ! systemctlCmd stop "$serviceName.service"; then
-    :
-  fi
-
-  local binName
-  binName=$(getBinaryName)
-  local urlBin
-  urlBin=$(buildDownloadUrl "$target_version" "$binName")
-  downloadBinary "$urlBin" "$dirInstall/$binName" "$target_version"
-
-  # Update service file to reflect user change
-  if [[ -f "$dirInstall/$serviceName.service" ]]; then
-    createServiceFile
-    if ! systemctlCmd daemon-reload; then
-      :
-    fi
-  fi
-
-  # Ensure BBR is active before starting service (if previously configured)
-  ensureBBRActive
-
-  if ! systemctlCmd start "$serviceName.service"; then
-    :
-  fi
-
-  return 0
+  updateTorrServerVersion "$target_version" "downgrade_cancelled" 0
 }
 
 #############################################
