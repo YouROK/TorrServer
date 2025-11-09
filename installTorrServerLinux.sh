@@ -120,7 +120,7 @@ declare -A MSG_EN=(
   [change_auth_credentials]="Change authentication username and password? (Yes/No) "
   [enable_rdb]="Start TorrServer in public read-only mode? (Yes/No) "
   [enable_log]="Enable TorrServer log output to file? (Yes/No) "
-  [enable_bbr]="Enable BBR (TCP congestion control)? (Yes/No) "
+  [enable_bbr]="Enable BBR (Recommended for better download speed)? (Yes/No) "
   [confirm_delete]="Are you sure you want to delete TorrServer? (Yes/No) "
 
   # Uninstall
@@ -247,7 +247,7 @@ declare -A MSG_RU=(
   [change_auth_credentials]="Изменить имя пользователя и пароль для авторизации? (Yes/No) "
   [enable_rdb]="Запускать TorrServer в публичном режиме без возможности изменения настроек через веб сервера? (Yes/No) "
   [enable_log]="Включить запись журнала работы TorrServer в файл? (Yes/No) "
-  [enable_bbr]="Включить BBR (управление перегрузкой TCP)? (Yes/No) "
+  [enable_bbr]="Включить BBR (Рекомендуется для лучшей скорости загрузки)? (Yes/No) "
   [confirm_delete]="Вы уверены что хотите удалить программу? (Yes/No) "
 
   # Uninstall
