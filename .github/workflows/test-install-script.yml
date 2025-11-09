@@ -22,7 +22,7 @@ on:
 env:
   GLIBC_LIMITED_OSES: "debian-11|almalinux-8|rocky-8|amazonlinux-2"
   MAX_RETRIES: "3"
-  RETRY_DELAY: "2"
+  RETRY_DELAY: "60"
 
 jobs:
   test-script-syntax:
