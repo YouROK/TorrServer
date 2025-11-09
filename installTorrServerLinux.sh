@@ -2060,8 +2060,8 @@ main() {
     echo " $(msg lang_choice)"
     echo " [$(colorize green 1)] $(msg lang_english)"
     echo " [$(colorize yellow 2)] $(msg lang_russian)"
-  local answer_lang
-  answer_lang=$(promptInput "$(msg your_lang)" "1")
+    local answer_lang
+    answer_lang=$(promptInput "$(msg your_lang)" "1")
     if [[ "$answer_lang" == "2" ]]; then
       lang="ru"
     fi
@@ -2070,8 +2070,6 @@ main() {
     echo "============================================================="
     echo " $(msg script_title)"
     echo "============================================================="
-    echo ""
-    echo " $(msg help_hint)"
     echo ""
 
     local user_choice
