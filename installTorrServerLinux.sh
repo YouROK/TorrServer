@@ -117,6 +117,7 @@ declare -A MSG_EN=(
   [enable_auth]="Enable server authorization? (Yes/No) "
   [prompt_user]="User: "
   [prompt_password]="Password: "
+  [change_auth_credentials]="Change authentication username and password? (Yes/No) "
   [enable_rdb]="Start TorrServer in public read-only mode? (Yes/No) "
   [enable_log]="Enable TorrServer log output to file? (Yes/No) "
   [enable_bbr]="Enable BBR (TCP congestion control)? (Yes/No) "
@@ -243,6 +244,7 @@ declare -A MSG_RU=(
   [enable_auth]="Включить авторизацию на сервере? (Yes/No) "
   [prompt_user]="Пользователь: "
   [prompt_password]="Пароль: "
+  [change_auth_credentials]="Изменить имя пользователя и пароль для авторизации? (Yes/No) "
   [enable_rdb]="Запускать TorrServer в публичном режиме без возможности изменения настроек через веб сервера? (Yes/No) "
   [enable_log]="Включить запись журнала работы TorrServer в файл? (Yes/No) "
   [enable_bbr]="Включить BBR (управление перегрузкой TCP)? (Yes/No) "
@@ -1258,6 +1260,15 @@ configureService() {
       auth=$(cat "$dirInstall/accs.db" | head -2 | tail -1 | tr -d '[:space:]' | tr -d '"')
       if [[ $SILENT_MODE -eq 0 ]]; then
         printf ' - %s\n' "$(msg use_existing_auth "${dirInstall}/accs.db" "$auth")"
+        # Ask if user wants to change credentials
+        if promptYesNo "$(msg change_auth_credentials)" "n"; then
+          isAuthUser=$(promptInput "$(msg prompt_user)" "admin")
+          isAuthPass=$(promptInput "$(msg prompt_password)" "admin")
+          if [[ $SILENT_MODE -eq 0 ]]; then
+            printf ' %s\n' "$(msg store_auth "$isAuthUser" "$isAuthPass" "${dirInstall}/accs.db")"
+          fi
+          echo -e "{\n  \"$isAuthUser\": \"$isAuthPass\"\n}" > "$dirInstall/accs.db"
+        fi
       fi
     fi
   fi
