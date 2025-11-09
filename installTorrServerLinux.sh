@@ -116,6 +116,7 @@ declare -A MSG_EN=(
   # Prompts
   [want_update]="Want to update TorrServer? (Yes/No) "
   [want_install]="Want to install or configure TorrServer? (Yes|No) Type Delete to uninstall. "
+  [want_reconfigure]="Do you want to reconfigure TorrServer settings? (Yes/No) "
   [change_port]="Change TorrServer web-port? (Yes/No) "
   [enter_port]="Enter port number: "
   [enable_auth]="Enable server authorization? (Yes/No) "
@@ -136,6 +137,7 @@ declare -A MSG_EN=(
   [found_in]="TorrServer found in"
   [not_found]="TorrServer not found. It's not installed or have zero size."
   [no_version_info]="No version information available. Can be server issue."
+  [config_updated]="Configuration updated successfully"
   [store_auth]="Store %s:%s to %s"
   [use_existing_auth]="Use existing auth from %s - %s"
   [set_readonly]="Set database to read-only mode…"
@@ -237,6 +239,7 @@ declare -A MSG_RU=(
   # Prompts
   [want_update]="Хотите обновить TorrServer? (Yes/No) "
   [want_install]="Хотите установить, обновить или настроить TorrServer? (Yes|No) Для удаления введите «Delete» "
+  [want_reconfigure]="Хотите перенастроить параметры TorrServer? (Yes/No) "
   [change_port]="Хотите изменить порт для TorrServer? (Yes/No) "
   [enter_port]="Введите номер порта: "
   [enable_auth]="Включить авторизацию на сервере? (Yes/No) "
@@ -257,6 +260,7 @@ declare -A MSG_RU=(
   [found_in]="TorrServer найден в директории"
   [not_found]="TorrServer не найден, возможно он не установлен или размер бинарника равен 0."
   [no_version_info]="Информация о версии недоступна. Возможно сервер не доступен."
+  [config_updated]="Конфигурация успешно обновлена"
   [store_auth]="Сохраняем %s:%s в %s"
   [use_existing_auth]="Используйте реквизиты из %s для авторизации - %s"
   [set_readonly]="База данных устанавливается в режим «только для чтения»…"
@@ -413,6 +417,33 @@ promptYesNo() {
     return 0
   else
     return 1
+  fi
+}
+
+promptYesNoDelete() {
+  local prompt="$1"
+  local default="${2:-n}"
+
+  if [[ $SILENT_MODE -eq 1 ]]; then
+    if [[ "$default" == "y" ]]; then
+      echo "yes"
+    else
+      echo "no"
+    fi
+    return
+  fi
+
+  local answer
+  IFS= read -r -p " $prompt " answer </dev/tty
+  answer=$(echo "$answer" | tr '[:upper:]' '[:lower:]' | xargs)
+
+  # Check for Delete (case-insensitive, supports both English and Russian)
+  if [[ "$answer" == "delete" ]] || [[ "$answer" == "удалить" ]] || [[ "$answer" == "удаление" ]]; then
+    echo "delete"
+  elif [[ "$answer" =~ ^[YyДд] ]]; then
+    echo "yes"
+  else
+    echo "no"
   fi
 }
 
@@ -883,26 +914,6 @@ checkArch() {
   esac
 }
 
-checkInternet() {
-  if ! command -v ping >/dev/null 2>&1; then
-    echo " $(msg need_ping)"
-    exit 1
-  fi
-
-  if [[ $SILENT_MODE -eq 0 ]]; then
-    echo " $(msg check_internet)"
-  fi
-
-  if ! ping -c 2 google.com &> /dev/null; then
-    echo " - $(msg no_internet)"
-    exit 1
-  fi
-
-  if [[ $SILENT_MODE -eq 0 ]]; then
-    echo " - $(msg have_internet)"
-  fi
-}
-
 initialCheck() {
   if ! isRoot; then
     echo " $(msg need_root)"
@@ -911,7 +922,6 @@ initialCheck() {
 
   checkOS
   checkArch
-  checkInternet
 }
 
 #############################################
@@ -1170,7 +1180,47 @@ configureBBR() {
   return 0
 }
 
+readExistingConfig() {
+  local config_file="$dirInstall/$serviceName.config"
+
+  if [[ -f "$config_file" ]]; then
+    local daemon_options
+    daemon_options=$(grep "^DAEMON_OPTIONS=" "$config_file" | cut -d'"' -f2)
+
+    # Extract port - use -- to prevent grep from interpreting pattern as option
+    if echo "$daemon_options" | grep -qE -- "--port[[:space:]]+[0-9]+"; then
+      servicePort=$(echo "$daemon_options" | grep -oE -- "--port[[:space:]]+[0-9]+" | awk '{print $2}')
+    fi
+
+    # Check for auth
+    if echo "$daemon_options" | grep -qE -- "--httpauth"; then
+      isAuth=1
+    else
+      isAuth=0
+    fi
+
+    # Check for rdb
+    if echo "$daemon_options" | grep -qE -- "--rdb"; then
+      isRdb=1
+    else
+      isRdb=0
+    fi
+
+    # Check for log
+    if echo "$daemon_options" | grep -qE -- "--logpath"; then
+      isLog=1
+    else
+      isLog=0
+    fi
+  fi
+}
+
 configureService() {
+  # Read existing config if available (for reconfiguration)
+  if [[ -f "$dirInstall/$serviceName.config" ]]; then
+    readExistingConfig
+  fi
+
   # Port configuration
   if [[ -z "$servicePort" ]]; then
     local inferred_default="$DEFAULT_PORT"
@@ -1178,6 +1228,13 @@ configureService() {
       servicePort=$(promptInput "$(msg enter_port)" "$inferred_default")
     else
       servicePort="$inferred_default"
+    fi
+  else
+    # Port exists, ask if user wants to change it
+    if [[ $SILENT_MODE -eq 0 ]]; then
+      if promptYesNo "$(msg change_port)" "n"; then
+        servicePort=$(promptInput "$(msg enter_port)" "$servicePort")
+      fi
     fi
   fi
 
@@ -1187,6 +1244,21 @@ configureService() {
       isAuth=1
     else
       isAuth=0
+    fi
+  else
+    # Auth setting exists, ask if user wants to change it
+    if [[ $SILENT_MODE -eq 0 ]]; then
+      local current_auth_status
+      if [[ $isAuth -eq 1 ]]; then
+        current_auth_status="enabled"
+      else
+        current_auth_status="disabled"
+      fi
+      if promptYesNo "$(msg enable_auth)" "$([[ $isAuth -eq 1 ]] && echo 'y' || echo 'n')"; then
+        isAuth=1
+      else
+        isAuth=0
+      fi
     fi
   fi
 
@@ -1206,14 +1278,6 @@ configureService() {
         printf ' - %s\n' "$(msg use_existing_auth "${dirInstall}/accs.db" "$auth")"
       fi
     fi
-
-    cat << EOF > "$dirInstall/$serviceName.config"
-DAEMON_OPTIONS="--port $servicePort --path $dirInstall --httpauth"
-EOF
-  else
-    cat << EOF > "$dirInstall/$serviceName.config"
-DAEMON_OPTIONS="--port $servicePort --path $dirInstall"
-EOF
   fi
 
   # Read-only database configuration
@@ -1223,14 +1287,20 @@ EOF
     else
       isRdb=0
     fi
+  else
+    # RDB setting exists, ask if user wants to change it
+    if [[ $SILENT_MODE -eq 0 ]]; then
+      if promptYesNo "$(msg enable_rdb)" "$([[ $isRdb -eq 1 ]] && echo 'y' || echo 'n')"; then
+        isRdb=1
+      else
+        isRdb=0
+      fi
+    fi
   fi
 
-  if [[ $isRdb -eq 1 ]]; then
-    if [[ $SILENT_MODE -eq 0 ]]; then
-      echo " $(msg set_readonly)"
-      printf ' %s\n' "$(msg readonly_hint "$dirInstall/$serviceName.config")"
-    fi
-    sed -i 's|DAEMON_OPTIONS="--port|DAEMON_OPTIONS="--rdb --port|' "$dirInstall/$serviceName.config"
+  if [[ $isRdb -eq 1 ]] && [[ $SILENT_MODE -eq 0 ]]; then
+    echo " $(msg set_readonly)"
+    printf ' %s\n' "$(msg readonly_hint "$dirInstall/$serviceName.config")"
   fi
 
   # Logging configuration
@@ -1240,13 +1310,19 @@ EOF
     else
       isLog=0
     fi
+  else
+    # Log setting exists, ask if user wants to change it
+    if [[ $SILENT_MODE -eq 0 ]]; then
+      if promptYesNo "$(msg enable_log)" "$([[ $isLog -eq 1 ]] && echo 'y' || echo 'n')"; then
+        isLog=1
+      else
+        isLog=0
+      fi
+    fi
   fi
 
-  if [[ $isLog -eq 1 ]]; then
-    sed -i "s|--path|--logpath $dirInstall/$serviceName.log --path|" "$dirInstall/$serviceName.config"
-    if [[ $SILENT_MODE -eq 0 ]]; then
-      printf ' - %s\n' "$(msg log_location "$dirInstall/$serviceName.log")"
-    fi
+  if [[ $isLog -eq 1 ]] && [[ $SILENT_MODE -eq 0 ]]; then
+    printf ' - %s\n' "$(msg log_location "$dirInstall/$serviceName.log")"
   fi
 
   # BBR configuration
@@ -1257,6 +1333,27 @@ EOF
       isBbr=0
     fi
   fi
+
+  # Build the complete config file with all options
+  local daemon_options="--port $servicePort"
+
+  if [[ $isRdb -eq 1 ]]; then
+    daemon_options="$daemon_options --rdb"
+  fi
+
+  if [[ $isLog -eq 1 ]]; then
+    daemon_options="$daemon_options --logpath $dirInstall/$serviceName.log"
+  fi
+
+  daemon_options="$daemon_options --path $dirInstall"
+
+  if [[ $isAuth -eq 1 ]]; then
+    daemon_options="$daemon_options --httpauth"
+  fi
+
+  cat << EOF > "$dirInstall/$serviceName.config"
+DAEMON_OPTIONS="$daemon_options"
+EOF
 }
 
 changeServiceUser() {
@@ -1376,9 +1473,35 @@ installTorrServer() {
         return
       fi
     else
-      # Already installed and up to date, just reconfigure if needed
+      # Already installed and up to date, allow reconfiguration
       if [[ $SILENT_MODE -eq 0 ]]; then
         echo " - $(msg running_as_user "$username")"
+        echo ""
+        # Allow user to reconfigure settings
+        if promptYesNo "$(msg want_reconfigure)" "n"; then
+          # Read existing config first
+          if [[ -f "$dirInstall/$serviceName.config" ]]; then
+            readExistingConfig
+          fi
+          # Reconfigure service
+          configureService
+          # Configure BBR if enabled
+          configureBBR
+          # Update service file
+          createServiceFile
+          sed -i 's/^[ \t]*//' "$dirInstall/$serviceName.service"
+          sed -i 's/^[ \t]*//' "$dirInstall/$serviceName.config"
+          # Reload and restart service
+          if ! systemctlCmd daemon-reload; then
+            :
+          fi
+          if ! systemctlCmd restart "$serviceName.service"; then
+            :
+          fi
+          echo ""
+          echo " - $(msg config_updated)"
+          echo ""
+        fi
       fi
       return
     fi
@@ -1617,6 +1740,61 @@ uninstall() {
 }
 
 #############################################
+#     RECONFIGURATION
+#############################################
+
+reconfigureTorrServer() {
+  # Check if TorrServer is installed
+  if ! checkInstalled; then
+    echo " - $(msg not_found)"
+    echo " - Please install TorrServer first using: $scriptname --install"
+    exit 1
+  fi
+
+  # Set username based on USE_ROOT_USER flag
+  if [[ $USE_ROOT_USER -eq 1 ]]; then
+    username="root"
+  fi
+
+  if [[ $SILENT_MODE -eq 0 ]]; then
+    echo " - $(msg running_as_user "$username")"
+    echo ""
+  fi
+
+  # Read existing config first
+  if [[ -f "$dirInstall/$serviceName.config" ]]; then
+    readExistingConfig
+  fi
+
+  # Reconfigure service
+  configureService
+
+  # Configure BBR if enabled
+  configureBBR
+
+  # Update service file
+  createServiceFile
+  sed -i 's/^[ \t]*//' "$dirInstall/$serviceName.service"
+  sed -i 's/^[ \t]*//' "$dirInstall/$serviceName.config"
+
+  # Reload and restart service
+  if ! systemctlCmd daemon-reload; then
+    :
+  fi
+  if ! systemctlCmd restart "$serviceName.service"; then
+    :
+  fi
+
+  if [[ $SILENT_MODE -eq 0 ]]; then
+    echo ""
+    echo " - $(msg config_updated)"
+    echo ""
+  else
+    echo " - $(msg config_updated)"
+  fi
+}
+
+#############################################
 #     HELP & MAIN
 #############################################
 
@@ -1637,6 +1815,8 @@ Commands:
     down VERSION
   -r, --remove                      Uninstall TorrServer
     remove
+  --reconfigure                     Reconfigure TorrServer settings
+    reconfigure
   -C, --change-user USER            Change TorrServer service user (root|torrserver)
     change-user USER
   -h, --help                        Show this help message
@@ -1661,6 +1841,9 @@ Examples:
 
   # Uninstall silently
   sudo $scriptname --remove --silent
+
+  # Reconfigure TorrServer settings interactively
+  sudo $scriptname --reconfigure
 
   # Switch service to run as root
   sudo $scriptname -C root
@@ -1726,6 +1909,10 @@ parseArguments() {
       -r|--remove|remove)
         parsedCommand="remove"
           shift
+        ;;
+      --reconfigure|reconfigure)
+        parsedCommand="reconfigure"
+        shift
         ;;
       -C|--change-user|change-user)
         parsedCommand="change_user"
@@ -1845,6 +2032,14 @@ main() {
       uninstall
       exit 0
       ;;
+    reconfigure)
+      initialCheck
+      if [[ $USE_ROOT_USER -eq 1 ]]; then
+        username="root"
+      fi
+      reconfigureTorrServer
+      exit 0
+      ;;
     change_user)
       if [[ -z "$changeUserName" ]]; then
         echo "Error: Username required for --change-user"
@@ -1879,7 +2074,13 @@ main() {
     echo " $(msg help_hint)"
     echo ""
 
-    if promptYesNo "$(msg want_install)" "n"; then
+    local user_choice
+    user_choice=$(promptYesNoDelete "$(msg want_install)" "n")
+
+    if [[ "$user_choice" == "delete" ]]; then
+      initialCheck
+      uninstall
+    elif [[ "$user_choice" == "yes" ]]; then
       initialCheck
 
       if promptYesNo "Run service as root user? (Yes/No)" "n"; then
