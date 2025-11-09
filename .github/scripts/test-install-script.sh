@@ -15,6 +15,8 @@ readonly SCRIPT_NAME="installTorrServerLinux.sh"
 readonly INSTALL_DIR="/opt/torrserver"
 readonly GLIBC_LIMITED_VERSION="135"
 readonly MIN_GLIBC_VERSION="2.32"
+readonly MAX_RETRIES="${MAX_RETRIES:-3}"
+readonly RETRY_DELAY="${RETRY_DELAY:-2}"
 
 # Helper functions
 log_info() {
@@ -82,12 +84,12 @@ install_rpm_packages() {
 # Install dependencies based on OS
 install_dependencies() {
   if command -v apt-get >/dev/null 2>&1; then
-    apt-get update -qq
-    apt-get install -y -qq curl iputils-ping dnsutils || true
+    retry_command "apt-get update" "apt-get update -qq" 3 1 || true
+    retry_command "apt-get install" "apt-get install -y -qq curl iputils-ping dnsutils" 3 1 || true
   elif command -v dnf >/dev/null 2>&1; then
-    install_rpm_packages dnf iputils bind-utils
+    retry_command "dnf install" "install_rpm_packages dnf iputils bind-utils" 3 1 || true
   elif command -v yum >/dev/null 2>&1; then
-    install_rpm_packages yum iputils bind-utils
+    retry_command "yum install" "install_rpm_packages yum iputils bind-utils" 3 1 || true
   fi
 }
 
@@ -111,22 +113,68 @@ verify_curl_installation() {
   fi
 }
 
+# Retry a command with exponential backoff
+retry_command() {
+  local test_name="$1"
+  local test_command="$2"
+  local max_attempts="${3:-$MAX_RETRIES}"
+  local delay="${4:-$RETRY_DELAY}"
+  local attempt=1
+  local last_error=0
+
+  while [[ $attempt -le $max_attempts ]]; do
+    if eval "$test_command"; then
+      if [[ $attempt -gt 1 ]]; then
+        log_info "$test_name (succeeded on attempt $attempt)"
+      fi
+      return 0
+    else
+      last_error=$?
+      if [[ $attempt -lt $max_attempts ]]; then
+        log_warning "$test_name failed (attempt $attempt/$max_attempts), retrying in ${delay}s..."
+        sleep "$delay"
+        delay=$((delay * 2))
+      fi
+      attempt=$((attempt + 1))
+    fi
+  done
+
+  log_error "$test_name (failed after $max_attempts attempts)"
+  return $last_error
+}
+
 # Run a test command and handle errors
 run_test() {
   local test_name="$1"
   local test_command="$2"
   local skip_on_error="${3:-false}"
+  local use_retry="${4:-true}"
 
-  if eval "$test_command"; then
-    log_info "$test_name"
-    return 0
-  else
-    if [[ "$skip_on_error" == "true" ]]; then
-      log_warning "$test_name (skipped)"
+  if [[ "$use_retry" == "true" ]]; then
+    if retry_command "$test_name" "$test_command"; then
+      log_info "$test_name"
       return 0
     else
-      log_error "$test_name"
-      return 1
+      if [[ "$skip_on_error" == "true" ]]; then
+        log_warning "$test_name (skipped after retries)"
+        return 0
+      else
+        log_error "$test_name"
+        return 1
+      fi
+    fi
+  else
+    if eval "$test_command"; then
+      log_info "$test_name"
+      return 0
+    else
+      if [[ "$skip_on_error" == "true" ]]; then
+        log_warning "$test_name (skipped)"
+        return 0
+      else
+        log_error "$test_name"
+        return 1
+      fi
     fi
   fi
 }
@@ -153,6 +201,7 @@ main() {
   echo "Testing $SCRIPT_NAME"
   echo "OS: $matrix_os"
   echo "User: $test_user"
+  echo "Retry settings: max=$MAX_RETRIES, initial_delay=${RETRY_DELAY}s"
   echo "========================================"
   echo ""
 
@@ -184,17 +233,17 @@ main() {
     if [[ -n "$glibc_msg" ]]; then
       echo "$glibc_msg"
     fi
-    if ./"$SCRIPT_NAME" --install "$GLIBC_LIMITED_VERSION" --silent $root_flag; then
+    if retry_command "Installation" "./$SCRIPT_NAME --install $GLIBC_LIMITED_VERSION --silent $root_flag"; then
       log_info "Installation completed"
     else
-      log_error "Installation failed"
+      log_error "Installation failed after retries"
       exit 1
     fi
   else
-    if ./"$SCRIPT_NAME" --install --silent $root_flag; then
+    if retry_command "Installation" "./$SCRIPT_NAME --install --silent $root_flag"; then
       log_info "Installation completed"
     else
-      log_error "Installation failed"
+      log_error "Installation failed after retries"
       exit 1
     fi
   fi
@@ -216,10 +265,10 @@ main() {
     echo "Note: Skipping version check (latest version requires glibc >= $MIN_GLIBC_VERSION)"
     log_info "Version check skipped (expected)"
   else
-    if ./"$SCRIPT_NAME" --check --silent $root_flag; then
+    if retry_command "Version check" "./$SCRIPT_NAME --check --silent $root_flag"; then
       log_info "Version check completed"
     else
-      log_error "Version check failed"
+      log_error "Version check failed after retries"
       exit 1
     fi
   fi
@@ -231,10 +280,10 @@ main() {
     echo "Note: Skipping update test (latest version requires glibc >= $MIN_GLIBC_VERSION)"
     log_info "Update check skipped (expected)"
   else
-    if ./"$SCRIPT_NAME" --update --silent $root_flag; then
+    if retry_command "Update check" "./$SCRIPT_NAME --update --silent $root_flag"; then
       log_info "Update check completed"
     else
-      log_error "Update check failed"
+      log_error "Update check failed after retries"
       exit 1
     fi
   fi
@@ -242,10 +291,10 @@ main() {
 
   # Test 7: Reconfigure
   log_test "7" "Testing reconfigure command..."
-  if ./"$SCRIPT_NAME" --reconfigure --silent $root_flag; then
+  if retry_command "Reconfigure" "./$SCRIPT_NAME --reconfigure --silent $root_flag"; then
     log_info "Reconfigure completed"
   else
-    log_error "Reconfigure failed"
+    log_error "Reconfigure failed after retries"
     exit 1
   fi
   echo ""
@@ -253,10 +302,10 @@ main() {
   # Test 8: Change user (if not already root)
   if [[ "$test_user" == 'default' ]]; then
     log_test "8" "Testing change-user to root..."
-    if ./"$SCRIPT_NAME" --change-user root --silent; then
+    if retry_command "User change to root" "./$SCRIPT_NAME --change-user root --silent"; then
       log_info "User change to root completed"
     else
-      log_error "User change to root failed"
+      log_error "User change to root failed after retries"
       exit 1
     fi
     echo ""
@@ -264,10 +313,10 @@ main() {
     # Test 8b: Change user back to default (only for Ubuntu to test full flow)
     if [[ "$matrix_os" == 'ubuntu-22.04' ]] || [[ "$matrix_os" == 'ubuntu-24.04' ]]; then
       log_test "8b" "Testing change-user back to default..."
-      if ./"$SCRIPT_NAME" --change-user torrserver --silent; then
+      if retry_command "User change back to default" "./$SCRIPT_NAME --change-user torrserver --silent"; then
         log_info "User change back to default completed"
       else
-        log_error "User change back to default failed"
+        log_error "User change back to default failed after retries"
         exit 1
       fi
       echo ""
@@ -276,10 +325,10 @@ main() {
 
   # Test 9: Cleanup - Uninstall
   log_test "9" "Uninstalling TorrServer..."
-  if ./"$SCRIPT_NAME" --remove --silent; then
+  if retry_command "Uninstallation" "./$SCRIPT_NAME --remove --silent"; then
     log_info "Uninstallation completed"
   else
-    log_error "Uninstallation failed"
+    log_error "Uninstallation failed after retries"
     exit 1
   fi
   echo ""

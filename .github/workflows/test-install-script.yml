@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - feature/**
     paths:
       - "installTorrServerLinux.sh"
       - ".github/workflows/test-install-script.yml"
@@ -22,6 +21,8 @@ on:
 # Version 136+ requires glibc >= 2.32
 env:
   GLIBC_LIMITED_OSES: "debian-11|almalinux-8|rocky-8|amazonlinux-2"
+  MAX_RETRIES: "3"
+  RETRY_DELAY: "2"
 
 jobs:
   test-script-syntax:
@@ -107,6 +108,8 @@ jobs:
             -e MATRIX_OS="${{ matrix.os }}" \
             -e TEST_USER="${{ matrix.test-user }}" \
             -e GLIBC_LIMITED_OSES="${{ env.GLIBC_LIMITED_OSES }}" \
+            -e MAX_RETRIES="${{ env.MAX_RETRIES }}" \
+            -e RETRY_DELAY="${{ env.RETRY_DELAY }}" \
             "${{ steps.get-image.outputs.image }}" \
             bash -c "
               set -e
