@@ -883,26 +883,6 @@ checkArch() {
   esac
 }
 
-checkInternet() {
-  if ! command -v ping >/dev/null 2>&1; then
-    echo " $(msg need_ping)"
-    exit 1
-  fi
-
-  if [[ $SILENT_MODE -eq 0 ]]; then
-    echo " $(msg check_internet)"
-  fi
-
-  if ! ping -c 2 google.com &> /dev/null; then
-    echo " - $(msg no_internet)"
-    exit 1
-  fi
-
-  if [[ $SILENT_MODE -eq 0 ]]; then
-    echo " - $(msg have_internet)"
-  fi
-}
-
 initialCheck() {
   if ! isRoot; then
     echo " $(msg need_root)"
@@ -911,7 +891,6 @@ initialCheck() {
 
   checkOS
   checkArch
-  checkInternet
 }
 
 #############################################
