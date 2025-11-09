@@ -178,6 +178,16 @@ declare -A MSG_EN=(
   # User mode
   [running_as_root]="Service will run as root user"
   [running_as_user]="Service will run as %s user"
+
+  # Error messages
+  [error_username_required]="Error: Username required for --change-user"
+  [error_version_required]="Error: Version number required for downgrade"
+  [error_version_example]="Example: %s -d 101"
+  [error_unknown_option]="Unknown option: %s"
+  [installing_specific_version]="Installing specific version: %s"
+  [service_reconfigured_user]="Service reconfigured for user: %s"
+  [install_first_required]="Please install TorrServer first using: %s --install"
+  [prompt_run_as_root]="Run service as root user? (Yes/No) "
 )
 
 declare -A MSG_RU=(
@@ -294,6 +304,16 @@ declare -A MSG_RU=(
   # User mode
   [running_as_root]="Служба будет запущена от пользователя root"
   [running_as_user]="Служба будет запущена от пользователя %s"
+
+  # Error messages
+  [error_username_required]="Ошибка: Требуется имя пользователя для --change-user"
+  [error_version_required]="Ошибка: Требуется номер версии для понижения версии"
+  [error_version_example]="Пример: %s -d 101"
+  [error_unknown_option]="Неизвестная опция: %s"
+  [installing_specific_version]="Установка конкретной версии: %s"
+  [service_reconfigured_user]="Служба перенастроена для пользователя: %s"
+  [install_first_required]="Пожалуйста, сначала установите TorrServer используя: %s --install"
+  [prompt_run_as_root]="Запустить службу от пользователя root? (Yes/No) "
 )
 
 # Translation function
@@ -1321,7 +1341,7 @@ EOF
 changeServiceUser() {
   local target_user="$1"
   if [[ -z "$target_user" ]]; then
-    echo "Error: Username required for --change-user"
+    echo " $(msg error_username_required)"
     exit 1
   fi
 
@@ -1404,7 +1424,7 @@ changeServiceUser() {
 installTorrServer() {
   if [[ $SILENT_MODE -eq 0 && $ROOT_PROMPTED -eq 0 ]]; then
     if [[ $USE_ROOT_USER -ne 1 ]]; then
-      if promptYesNo "Run service as root user? (Yes/No)" "n"; then
+      if promptYesNo "$(msg prompt_run_as_root)" "n"; then
         USE_ROOT_USER=1
         username="root"
       fi
@@ -1684,7 +1704,7 @@ reconfigureTorrServer() {
   # Check if TorrServer is installed
   if ! checkInstalled; then
     echo " - $(msg not_found)"
-    echo " - Please install TorrServer first using: $scriptname --install"
+    echo " - $(msg install_first_required "$scriptname")"
     exit 1
   fi
 
@@ -1833,13 +1853,13 @@ parseArguments() {
             downgradeRelease="$next_arg"
             shift
           else
-            echo "Error: Version number required for downgrade"
-            echo "Example: $scriptname -d 101"
+            echo " $(msg error_version_required)"
+            echo " $(msg error_version_example "$scriptname")"
             exit 1
           fi
         else
-          echo "Error: Version number required for downgrade"
-          echo "Example: $scriptname -d 101"
+          echo " $(msg error_version_required)"
+          echo " $(msg error_version_example "$scriptname")"
           exit 1
         fi
         ;;
@@ -1858,7 +1878,7 @@ parseArguments() {
           changeUserName="$1"
           shift
         else
-          echo "Error: Username required for --change-user"
+          echo " $(msg error_username_required)"
           exit 1
         fi
         ;;
@@ -1876,7 +1896,7 @@ parseArguments() {
         shift
         ;;
       *)
-        echo "Unknown option: $1"
+        echo " $(msg error_unknown_option "$1")"
         helpUsage
         exit 1
         ;;
@@ -1898,7 +1918,7 @@ main() {
   case "$command" in
     install)
       if [[ $SILENT_MODE -eq 0 && -n "$specificVersion" ]]; then
-        echo " - Installing specific version: $specificVersion"
+        echo " - $(msg installing_specific_version "$specificVersion")"
       fi
       initialCheck
 
@@ -1931,7 +1951,7 @@ main() {
           :
         fi
         if [[ $SILENT_MODE -eq 0 ]]; then
-          echo " - Service reconfigured for user: $username"
+          echo " - $(msg service_reconfigured_user "$username")"
         fi
       fi
       exit 0
@@ -1979,7 +1999,7 @@ main() {
       ;;
     change_user)
       if [[ -z "$changeUserName" ]]; then
-        echo "Error: Username required for --change-user"
+        echo " $(msg error_username_required)"
         exit 1
       fi
       if ! isRoot; then
@@ -2018,7 +2038,7 @@ main() {
     elif [[ "$user_choice" == "yes" ]]; then
       initialCheck
 
-      if promptYesNo "Run service as root user? (Yes/No)" "n"; then
+      if promptYesNo "$(msg prompt_run_as_root)" "n"; then
         USE_ROOT_USER=1
         username="root"
       fi
