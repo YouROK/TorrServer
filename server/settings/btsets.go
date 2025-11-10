@@ -54,6 +54,10 @@ type BTSets struct {
 
 	// Reader
 	ResponsiveMode bool // enable Responsive reader (don't wait pieceComplete)
+
+	// FUSE
+	EnableFUSE bool   // enable FUSE filesystem mount
+	FUSEPath   string // path where to mount FUSE filesystem
 }
 
 func (v *BTSets) String() string {
