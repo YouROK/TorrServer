@@ -122,7 +122,15 @@ retry_command() {
   local attempt=1
   local last_error=0
 
+  # Print command before first attempt
+  if [[ $attempt -eq 1 ]]; then
+    echo "Executing: $test_command"
+  fi
+
   while [[ $attempt -le $max_attempts ]]; do
+    if [[ $attempt -gt 1 ]]; then
+      echo "Retry attempt $attempt/$max_attempts: $test_command"
+    fi
     if eval "$test_command"; then
       if [[ $attempt -gt 1 ]]; then
         log_info "$test_name (succeeded on attempt $attempt)"
@@ -206,26 +214,35 @@ main() {
   echo ""
 
   # Test 1: Check script syntax
+  echo "::group::Test 1: Check script syntax"
   log_test "1" "Checking script syntax..."
+  echo "Executing: bash -n $SCRIPT_NAME"
   if bash -n "$SCRIPT_NAME"; then
     log_info "Script syntax is valid"
   else
     log_error "Script syntax check failed"
+    echo "::endgroup::"
     exit 1
   fi
+  echo "::endgroup::"
   echo ""
 
   # Test 2: Show help
+  echo "::group::Test 2: Test help command"
   log_test "2" "Testing help command..."
+  echo "Executing: ./$SCRIPT_NAME --help"
   if ./"$SCRIPT_NAME" --help > /dev/null; then
     log_info "Help command works"
   else
     log_error "Help command failed"
+    echo "::endgroup::"
     exit 1
   fi
+  echo "::endgroup::"
   echo ""
 
   # Test 3: Install in silent mode
+  echo "::group::Test 3: Install TorrServer"
   log_test "3" "Installing TorrServer (silent mode)..."
   if [[ "$is_glibc_limited" == "true" ]]; then
     local glibc_msg
@@ -237,6 +254,7 @@ main() {
       log_info "Installation completed"
     else
       log_error "Installation failed after retries"
+      echo "::endgroup::"
       exit 1
     fi
   else
@@ -244,22 +262,29 @@ main() {
       log_info "Installation completed"
     else
       log_error "Installation failed after retries"
+      echo "::endgroup::"
       exit 1
     fi
   fi
+  echo "::endgroup::"
   echo ""
 
   # Test 4: Check installation
+  echo "::group::Test 4: Verify installation"
   log_test "4" "Checking installation..."
+  echo "Executing: ls $INSTALL_DIR/TorrServer-linux-*"
   if ls "$INSTALL_DIR"/TorrServer-linux-* >/dev/null 2>&1; then
     log_info "Binary file exists"
   else
     log_error "Binary file not found"
+    echo "::endgroup::"
     exit 1
   fi
+  echo "::endgroup::"
   echo ""
 
   # Test 5: Check version
+  echo "::group::Test 5: Check version"
   log_test "5" "Checking for updates..."
   if [[ "$is_glibc_limited" == "true" ]]; then
     echo "Note: Skipping version check (latest version requires glibc >= $MIN_GLIBC_VERSION)"
@@ -269,12 +294,15 @@ main() {
       log_info "Version check completed"
     else
       log_error "Version check failed after retries"
+      echo "::endgroup::"
       exit 1
     fi
   fi
+  echo "::endgroup::"
   echo ""
 
   # Test 6: Update (if available)
+  echo "::group::Test 6: Test update command"
   log_test "6" "Testing update command..."
   if [[ "$is_glibc_limited" == "true" ]]; then
     echo "Note: Skipping update test (latest version requires glibc >= $MIN_GLIBC_VERSION)"
@@ -284,62 +312,79 @@ main() {
       log_info "Update check completed"
     else
       log_error "Update check failed after retries"
+      echo "::endgroup::"
       exit 1
     fi
   fi
+  echo "::endgroup::"
   echo ""
 
   # Test 7: Reconfigure
+  echo "::group::Test 7: Test reconfigure command"
   log_test "7" "Testing reconfigure command..."
   if retry_command "Reconfigure" "./$SCRIPT_NAME --reconfigure --silent $root_flag"; then
     log_info "Reconfigure completed"
   else
     log_error "Reconfigure failed after retries"
+    echo "::endgroup::"
     exit 1
   fi
+  echo "::endgroup::"
   echo ""
 
   # Test 8: Change user (if not already root)
   if [[ "$test_user" == 'default' ]]; then
+    echo "::group::Test 8: Test change-user to root"
     log_test "8" "Testing change-user to root..."
     if retry_command "User change to root" "./$SCRIPT_NAME --change-user root --silent"; then
       log_info "User change to root completed"
     else
       log_error "User change to root failed after retries"
+      echo "::endgroup::"
       exit 1
     fi
+    echo "::endgroup::"
     echo ""
 
     # Test 8b: Change user back to default (only for Ubuntu to test full flow)
     if [[ "$matrix_os" == 'ubuntu-22.04' ]] || [[ "$matrix_os" == 'ubuntu-24.04' ]]; then
+      echo "::group::Test 8b: Test change-user back to default"
       log_test "8b" "Testing change-user back to default..."
       if retry_command "User change back to default" "./$SCRIPT_NAME --change-user torrserver --silent"; then
         log_info "User change back to default completed"
       else
         log_error "User change back to default failed after retries"
+        echo "::endgroup::"
         exit 1
       fi
+      echo "::endgroup::"
       echo ""
     fi
   fi
 
   # Test 9: Cleanup - Uninstall
+  echo "::group::Test 9: Uninstall TorrServer"
   log_test "9" "Uninstalling TorrServer..."
   if retry_command "Uninstallation" "./$SCRIPT_NAME --remove --silent"; then
     log_info "Uninstallation completed"
   else
     log_error "Uninstallation failed after retries"
+    echo "::endgroup::"
     exit 1
   fi
+  echo "::endgroup::"
   echo ""
 
   # Test 10: Verify cleanup
+  echo "::group::Test 10: Verify cleanup"
   log_test "10" "Verifying cleanup..."
+  echo "Executing: Checking if $INSTALL_DIR is empty or doesn't exist"
   if [[ ! -d "$INSTALL_DIR" ]] || [[ -z "$(ls -A "$INSTALL_DIR" 2>/dev/null)" ]]; then
     log_info "Cleanup verified"
   else
     log_warning "Installation directory still exists (may be expected)"
   fi
+  echo "::endgroup::"
   echo ""
 
   echo "========================================"
@@ -349,6 +394,7 @@ main() {
 
 # Setup and run tests
 setup() {
+  echo "::group::Setup: Install dependencies"
   # Install dependencies
   install_dependencies
 
@@ -357,6 +403,8 @@ setup() {
 
   # Make script executable
   chmod +x "$SCRIPT_NAME"
+  echo "::endgroup::"
+  echo ""
 }
 
 # Run setup and main
