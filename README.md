@@ -70,7 +70,7 @@ The script supports interactive and non-interactive installation, configuration,
 - **Reconfigure**: If TorrServer is already installed, you'll be prompted to reconfigure settings (port, auth, read-only mode, logging, BBR)
 - **Uninstall**: Type `Delete` (or `удалить` in Russian) to uninstall TorrServer
 
-- Download first and set execute permissions:
+**Download first and set execute permissions:**
 
 ```bash
 curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh -o installTorrServerLinux.sh && chmod 755 installTorrServerLinux.sh
