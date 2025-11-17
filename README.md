@@ -68,59 +68,46 @@ The script supports interactive and non-interactive installation, configuration,
 
 - **Install/Update**: Choose to install or update TorrServer
 - **Reconfigure**: If TorrServer is already installed, you'll be prompted to reconfigure settings (port, auth, read-only mode, logging, BBR)
-- **Uninstall**: Type `Delete` (or `удалить` in Russian) to uninstall TorrServer
+- **Uninstall**: Type `Delete` (or `Удалить` in Russian) to uninstall TorrServer
 
-**Command-line options:**
-
-- Download first and set execute permissions:
+**Download first and set execute permissions:**
 
 ```bash
 curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh -o installTorrServerLinux.sh && chmod 755 installTorrServerLinux.sh
 ```
 
-- Install a specific version:
+**Command-line examples:**
 
+- Install a specific version:
   ```bash
   sudo bash ./installTorrServerLinux.sh --install 135 --silent
   ```
-
 - Update to latest version:
-
   ```bash
   sudo bash ./installTorrServerLinux.sh --update --silent
   ```
-
 - Reconfigure settings interactively:
-
   ```bash
   sudo bash ./installTorrServerLinux.sh --reconfigure
   ```
-
 - Check for updates:
-
   ```bash
   sudo bash ./installTorrServerLinux.sh --check
   ```
-
 - Downgrade to a specific version:
-
   ```bash
   sudo bash ./installTorrServerLinux.sh --down 135
   ```
-
 - Remove/uninstall:
-
   ```bash
   sudo bash ./installTorrServerLinux.sh --remove --silent
   ```
-
 - Change the systemd service user:
-
   ```bash
   sudo bash ./installTorrServerLinux.sh --change-user root --silent
   ```
 
-**Available commands:**
+**All available commands:**
 
 - `--install [VERSION]` - Install latest or specific version
 - `--update` - Update to latest version
