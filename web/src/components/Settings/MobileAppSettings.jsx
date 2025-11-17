@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { SecondarySettingsContent, SettingSectionLabel } from './style'
 
-export default function MobileAppSettings({ isVlcUsed, setIsVlcUsed }) {
+export default function MobileAppSettings({ isVlcUsed, setIsVlcUsed, isInfuseUsed, setIsInfuseUsed }) {
   const { t } = useTranslation()
 
   return (
@@ -16,6 +16,12 @@ export default function MobileAppSettings({ isVlcUsed, setIsVlcUsed }) {
           labelPlacement='start'
         />
         <FormHelperText margin='none'>{t('SettingsDialog.UseVLCHint')}</FormHelperText>
+        <FormControlLabel
+          control={<Switch checked={isInfuseUsed} onChange={() => setIsInfuseUsed(prev => !prev)} color='secondary' />}
+          label={t('SettingsDialog.UseInfuse')}
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('SettingsDialog.UseInfuseHint')}</FormHelperText>
       </FormGroup>
     </SecondarySettingsContent>
   )
