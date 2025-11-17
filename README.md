@@ -70,48 +70,54 @@ The script supports interactive and non-interactive installation, configuration,
 - **Reconfigure**: If TorrServer is already installed, you'll be prompted to reconfigure settings (port, auth, read-only mode, logging, BBR)
 - **Uninstall**: Type `Delete` (or `удалить` in Russian) to uninstall TorrServer
 
+- Download first and set execute permissions:
+
+```bash
+curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh -o installTorrServerLinux.sh && chmod 755 installTorrServerLinux.sh
+```
+
 **Command-line options:**
 
-- Install a specific version:  
+- Install a specific version:
 
   ```bash
-  curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh | sudo bash -s -- --install 135 --silent
+  sudo bash ./installTorrServerLinux.sh --install 135 --silent
   ```
 
-- Update to latest version:  
+- Update to latest version:
 
   ```bash
-  curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh | sudo bash -s -- --update --silent
+  sudo bash ./installTorrServerLinux.sh --update --silent
   ```
 
-- Reconfigure settings interactively:  
+- Reconfigure settings interactively:
 
   ```bash
-  sudo ./installTorrServerLinux.sh --reconfigure
+  sudo bash ./installTorrServerLinux.sh --reconfigure
   ```
 
-- Check for updates:  
+- Check for updates:
 
   ```bash
-  sudo ./installTorrServerLinux.sh --check
+  sudo bash ./installTorrServerLinux.sh --check
   ```
 
-- Downgrade to a specific version:  
+- Downgrade to a specific version:
 
   ```bash
-  sudo ./installTorrServerLinux.sh --down 135
+  sudo bash ./installTorrServerLinux.sh --down 135
   ```
 
-- Remove/uninstall:  
+- Remove/uninstall:
 
   ```bash
-  curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh | sudo bash -s -- --remove --silent
+  sudo bash ./installTorrServerLinux.sh --remove --silent
   ```
 
-- Change the systemd service user:  
+- Change the systemd service user:
 
   ```bash
-  curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh | sudo bash -s -- --change-user root --silent
+  sudo bash ./installTorrServerLinux.sh --change-user root --silent
   ```
 
 **Available commands:**
