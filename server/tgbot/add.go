@@ -2,12 +2,13 @@ package tgbot
 
 import (
 	"errors"
+	"strings"
+
 	tele "gopkg.in/telebot.v4"
 	"server/log"
 	set "server/settings"
 	"server/torr"
 	"server/web/api/utils"
-	"strings"
 )
 
 func addTorrent(c tele.Context, link string) error {
@@ -18,7 +19,6 @@ func addTorrent(c tele.Context, link string) error {
 	log.TLogln("tg add torrent", link)
 	link = strings.ReplaceAll(link, "&amp;", "&")
 	torrSpec, err := utils.ParseLink(link)
-
 	if err != nil {
 		log.TLogln("tg error parse link:", err)
 		return err

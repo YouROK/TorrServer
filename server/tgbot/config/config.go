@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+
 	"server/log"
 	"server/settings"
 )
@@ -27,7 +28,7 @@ func LoadConfig() {
 		Cfg.HostTG = "https://api.telegram.org"
 		buf, _ = json.MarshalIndent(Cfg, "", " ")
 		if buf != nil {
-			os.WriteFile(fn, buf, 0666)
+			os.WriteFile(fn, buf, 0o666)
 		}
 		return
 	}

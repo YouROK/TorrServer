@@ -3,9 +3,11 @@ package upload
 import (
 	"errors"
 	"fmt"
-	"github.com/anacrolix/torrent"
 	"log"
 	"path/filepath"
+
+	"github.com/anacrolix/torrent"
+
 	sets "server/settings"
 	"server/tgbot/config"
 	"server/torr"

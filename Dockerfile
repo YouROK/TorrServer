@@ -39,16 +39,16 @@ RUN apk add --update g++ \
 && cd server \
 && go mod tidy \
 && go clean -i -r -cache \
-&& go build -ldflags '-w -s' --o "torrserver" ./cmd 
+&& go build -ldflags '-w -s' --o "torrserver" ./cmd
 ### BUILD TORRSERVER MULTIARCH END ###
 
 
 ### UPX COMPRESSING START ###
-FROM debian:buster-slim AS compressed
+FROM ubuntu AS compressed
 
 COPY --from=builder /opt/src/server/torrserver ./torrserver
 
-RUN apt-get update && apt-get install -y upx-ucl && upx --best --lzma ./torrserver
+RUN apt update && apt install -y upx-ucl && upx --best --lzma ./torrserver
 # Compress torrserver only for amd64 and arm64 no variant platforms
 # ARG TARGETARCH
 # ARG TARGETVARIANT

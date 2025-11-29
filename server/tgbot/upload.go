@@ -1,9 +1,10 @@
 package tgbot
 
 import (
+	"strconv"
+
 	tele "gopkg.in/telebot.v4"
 	up "server/tgbot/upload"
-	"strconv"
 )
 
 func upload(c tele.Context) error {

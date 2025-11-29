@@ -32,6 +32,10 @@ TorrServer is a program that allows users to view torrents online without the ne
 The core functionality of TorrServer includes caching torrents and subsequent data transfer via the HTTP protocol,
 allowing the cache size to be adjusted according to the system parameters and the user's internet connection speed.
 
+## AI Documentation
+
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/YouROK/TorrServer)
+
 ## Features
 
 - Caching
@@ -59,6 +63,62 @@ Run in console
 ```bash
 curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh | sudo bash
 ```
+
+The script supports interactive and non-interactive installation, configuration, updates, and removal. When running the script interactively, you can:
+
+- **Install/Update**: Choose to install or update TorrServer
+- **Reconfigure**: If TorrServer is already installed, you'll be prompted to reconfigure settings (port, auth, read-only mode, logging, BBR)
+- **Uninstall**: Type `Delete` (or `Удалить` in Russian) to uninstall TorrServer
+
+**Download first and set execute permissions:**
+
+```bash
+curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh -o installTorrServerLinux.sh && chmod 755 installTorrServerLinux.sh
+```
+
+**Command-line examples:**
+
+- Install a specific version:
+  ```bash
+  sudo bash ./installTorrServerLinux.sh --install 135 --silent
+  ```
+- Update to latest version:
+  ```bash
+  sudo bash ./installTorrServerLinux.sh --update --silent
+  ```
+- Reconfigure settings interactively:
+  ```bash
+  sudo bash ./installTorrServerLinux.sh --reconfigure
+  ```
+- Check for updates:
+  ```bash
+  sudo bash ./installTorrServerLinux.sh --check
+  ```
+- Downgrade to a specific version:
+  ```bash
+  sudo bash ./installTorrServerLinux.sh --down 135
+  ```
+- Remove/uninstall:
+  ```bash
+  sudo bash ./installTorrServerLinux.sh --remove --silent
+  ```
+- Change the systemd service user:
+  ```bash
+  sudo bash ./installTorrServerLinux.sh --change-user root --silent
+  ```
+
+**All available commands:**
+
+- `--install [VERSION]` - Install latest or specific version
+- `--update` - Update to latest version
+- `--reconfigure` - Reconfigure TorrServer settings (port, auth, read-only mode, logging, BBR)
+- `--check` - Check for updates (version info only)
+- `--down VERSION` - Downgrade to specific version
+- `--remove` - Uninstall TorrServer
+- `--change-user USER` - Change service user (root|torrserver)
+- `--root` - Run service as root user
+- `--silent` - Non-interactive mode with defaults
+- `--help` - Show help message
 
 #### macOS
 
@@ -191,7 +251,7 @@ To run the web server locally, just run
 yarn start
 ```
 
-More info at https://github.com/YouROK/TorrServer/tree/master/web#readme
+More info at <https://github.com/YouROK/TorrServer/tree/master/web#readme>
 
 ### Build
 
@@ -222,6 +282,7 @@ cd server; swag init -g web/server.go
 # Documentation can be linted using
 swag fmt
 ```
+
 ## API
 
 ### API Docs
@@ -240,6 +301,7 @@ The users data file should be located near to the settings. Basic auth, read mor
     "User2": "Pass2"
 }
 ```
+
 Note: You should enable authentication with -a (--httpauth) TorrServer startup option.
 
 ## Whitelist/Blacklist IP
@@ -264,8 +326,8 @@ local:127.0.0.1
 ## Donate
 
 - [YooMoney](https://yoomoney.ru/to/410013733697114/200)
-- SberBank Card: **5484 4000 2285 7839**
-
+- [Boosty](https://boosty.to/yourok)
+- [TBank](https://www.tbank.ru/cf/742qEMhKhKn)
 
 ## Thanks to everyone who tested and helped
 

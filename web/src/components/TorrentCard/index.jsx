@@ -6,7 +6,7 @@ import {
   Delete as DeleteIcon,
 } from '@material-ui/icons'
 import { getPeerString, humanizeSize, humanizeSpeed, removeRedundantCharacters } from 'utils/Utils'
-import { playlistTorrHost, torrentsHost } from 'utils/Hosts'
+import { playlistTorrHost, streamHost, torrentsHost } from 'utils/Hosts'
 import { NoImageIcon } from 'icons'
 import DialogTorrentDetailsContent from 'components/DialogTorrentDetailsContent'
 import Dialog from '@material-ui/core/Dialog'
@@ -20,6 +20,8 @@ import { StyledDialog } from 'style/CustomMaterialUiStyles'
 import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
 import { GETTING_INFO, IN_DB, CLOSED, PRELOAD, WORKING } from 'torrentStates'
 import { TORRENT_CATEGORIES } from 'components/categories'
+import VideoPlayer from 'components/VideoPlayer'
+import { isFilePlayable } from 'components/DialogTorrentDetailsContent/helpers'
 
 import {
   StatusIndicators,
@@ -36,6 +38,7 @@ const Torrent = ({ torrent }) => {
   const { t } = useTranslation()
   const [isDetailedInfoOpened, setIsDetailedInfoOpened] = useState(false)
   const [isDeleteTorrentOpened, setIsDeleteTorrentOpened] = useState(false)
+  const [isSupported, setIsSupported] = useState(true)
 
   const theme = useTheme()
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'))
@@ -54,6 +57,7 @@ const Torrent = ({ torrent }) => {
     download_speed: downloadSpeed,
     hash,
     stat,
+    data,
   } = torrent
 
   const dropTorrent = () => axios.post(torrentsHost(), { action: 'drop', hash })
@@ -85,7 +89,18 @@ const Torrent = ({ torrent }) => {
   // main categories
   const catIndex = TORRENT_CATEGORIES.findIndex(e => e.key === category)
   const catArray = TORRENT_CATEGORIES.find(e => e.key === category)
+  const getFileLink = (path, id) =>
+    `${streamHost()}/${encodeURIComponent(path.split('\\').pop().split('/').pop())}?link=${hash}&index=${id}&play`
 
+  const fileList = (data && JSON.parse(data).TorrServer?.Files) || []
+  const playableVideoList = fileList.filter(({ path }) => isFilePlayable(path))
+  const getVideoCaption = path => {
+    // Get base name without extension
+    const baseName = path.replace(/\.[^/.]+$/, '')
+    // Find a file with the same base name and a subtitle extension
+    const captionFile = fileList.find(file => file.path.startsWith(baseName) && /\.(srt|vtt)$/i.test(file.path))
+    return captionFile ? getFileLink(captionFile.path, captionFile.id) : ''
+  }
   return (
     <>
       <TorrentCard>
@@ -99,14 +114,23 @@ const Torrent = ({ torrent }) => {
             <span>{t('Details')}</span>
           </StyledButton>
 
-          <StyledButton
-            onClick={() => {
-              window.open(fullPlaylistLink, '_blank')
-            }}
-          >
-            <PlayArrowIcon />
-            <span>{t('Playlist')}</span>
-          </StyledButton>
+          {playableVideoList?.length === 1 && isSupported ? (
+            <VideoPlayer
+              title={title}
+              videoSrc={getFileLink(playableVideoList[0].path, playableVideoList[0].id)}
+              captionSrc={getVideoCaption(playableVideoList[0].path)}
+              onNotSupported={() => setIsSupported(false)}
+            />
+          ) : (
+            <StyledButton
+              onClick={() => {
+                window.open(fullPlaylistLink, '_blank')
+              }}
+            >
+              <PlayArrowIcon />
+              <span>{t('Playlist')}</span>
+            </StyledButton>
+          )}
 
           <StyledButton onClick={() => dropTorrent(torrent)}>
             <CloseIcon />
