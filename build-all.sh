@@ -1,22 +1,22 @@
 #!/bin/bash
 
 PLATFORMS=(
-  # 'linux/amd64'
-  # 'linux/arm64'
-  # 'linux/arm7'
-  # 'linux/arm5'
-  # 'linux/386'
+  'linux/amd64'
+  'linux/arm64'
+  'linux/arm7'
+  'linux/arm5'
+  'linux/386'
   'windows/amd64'
-  # 'windows/386'
-  # 'darwin/amd64'
-  # 'darwin/arm64'
-  # 'freebsd/amd64'
-  # 'freebsd/arm7'
-  # 'linux/mips'
-  # 'linux/mipsle'
-  # 'linux/mips64'
-  # 'linux/mips64le'
-  # 'linux/riscv64'
+  'windows/386'
+  'darwin/amd64'
+  'darwin/arm64'
+  'freebsd/amd64'
+  'freebsd/arm7'
+  'linux/mips'
+  'linux/mipsle'
+  'linux/mips64'
+  'linux/mips64le'
+  'linux/riscv64'
 )
 
 type setopt >/dev/null 2>&1
@@ -95,8 +95,8 @@ done
 declare -a COMPILERS=(
   "arm7:armv7a-linux-androideabi21-clang"
   "arm64:aarch64-linux-android21-clang"
-  # "386:i686-linux-android21-clang"
-  # "amd64:x86_64-linux-android21-clang"
+  "386:i686-linux-android21-clang"
+  "amd64:x86_64-linux-android21-clang"
 )
 
 export NDK_VERSION="26.2.11394342" # 25.1.8937393
