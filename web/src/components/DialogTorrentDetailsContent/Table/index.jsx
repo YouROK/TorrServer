@@ -1,6 +1,6 @@
 import { streamHost } from 'utils/Hosts'
 import isEqual from 'lodash/isEqual'
-import { humanizeSize, isStandaloneApp } from 'utils/Utils'
+import { humanizeSize, detectStandaloneApp } from 'utils/Utils'
 import ptt from 'parse-torrent-title'
 import { Button } from '@material-ui/core'
 import CopyToClipboard from 'react-copy-to-clipboard'
@@ -31,6 +31,9 @@ const Table = memo(
     const shouldDisplayFullFileName = playableFileList?.length > 1 && !fileHasEpisodeText
 
     const isVlcUsed = JSON.parse(localStorage.getItem('isVlcUsed')) ?? false
+    const isInfuseUsed = JSON.parse(localStorage.getItem('isInfuseUsed')) ?? false
+    const isStandalone = detectStandaloneApp()
+    const shouldShowOpenLink = !isStandalone || (!isInfuseUsed && !isVlcUsed)
 
     return !playableFileList?.length ? (
       'No playable files in this torrent'
@@ -54,6 +57,7 @@ const Table = memo(
               const { title, resolution, episode, season } = ptt.parse(path)
               const isViewed = viewedFileList?.includes(id)
               const link = getFileLink(path, id)
+              const infuseLink = `infuse://x-callback-url/play?url=${encodeURIComponent(link)}`
 
               return (
                 (season === selectedSeason || !seasonAmount?.length) && (
@@ -69,20 +73,43 @@ const Table = memo(
                         <Button onClick={() => preloadBuffer(id)} variant='outlined' color='primary' size='small'>
                           {t('Preload')}
                         </Button>
+                        {isStandalone && isInfuseUsed && (
+                          <a style={{ textDecoration: 'none' }} href={infuseLink}>
+                            <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
+                              {t('Infuse')}
+                            </Button>
+                          </a>
+                        )}
+                        {isStandalone && isVlcUsed && (
+                          <a style={{ textDecoration: 'none' }} href={`vlc://${link}`}>
+                            <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
+                              VLC
+                            </Button>
+                          </a>
+                        )}
                         {isSupported ? (
                           <VideoPlayer title={title} videoSrc={link} onNotSupported={() => setIsSupported(false)} />
                         ) : (
-                          <a style={{ textDecoration: 'none' }} href={link} target='_blank' rel='noreferrer'>
-                            <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
-                              {t('OpenLink')}
-                            </Button>
-                          </a>
+                          shouldShowOpenLink && (
+                            <a style={{ textDecoration: 'none' }} href={link} target='_blank' rel='noreferrer'>
+                              <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
+                                {t('OpenLink')}
+                              </Button>
+                            </a>
+                          )
                         )}
                         <CopyToClipboard text={link}>
                           <Button variant='outlined' color='primary' size='small'>
                             {t('CopyLink')}
                           </Button>
                         </CopyToClipboard>
+                        {isSupported && shouldShowOpenLink && (
+                          <a style={{ textDecoration: 'none' }} href={link} target='_blank' rel='noreferrer'>
+                            <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
+                              {t('OpenLink')}
+                            </Button>
+                          </a>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -97,6 +124,7 @@ const Table = memo(
             const { title, resolution, episode, season } = ptt.parse(path)
             const isViewed = viewedFileList?.includes(id)
             const link = getFileLink(path, id)
+            const infuseLink = `infuse://x-callback-url/play?url=${encodeURIComponent(link)}`
 
             return (
               (season === selectedSeason || !seasonAmount?.length) && (
@@ -139,13 +167,23 @@ const Table = memo(
                       {t('Preload')}
                     </Button>
 
-                    {isVlcUsed && isStandaloneApp ? (
+                    {isStandalone && isInfuseUsed && (
+                      <a style={{ textDecoration: 'none' }} href={infuseLink}>
+                        <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
+                          {t('Infuse')}
+                        </Button>
+                      </a>
+                    )}
+
+                    {isStandalone && isVlcUsed && (
                       <a style={{ textDecoration: 'none' }} href={`vlc://${link}`}>
                         <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
                           VLC
                         </Button>
                       </a>
-                    ) : (
+                    )}
+
+                    {shouldShowOpenLink && (
                       <a style={{ textDecoration: 'none' }} href={link} target='_blank' rel='noreferrer'>
                         <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
                           {t('OpenLink')}

@@ -76,7 +76,7 @@ export const TableStyle = styled.table`
 
     .button-cell {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       gap: 10px;
     }
 
@@ -184,7 +184,7 @@ export const ShortTable = styled.div`
         padding: 20px;
         border-bottom: 2px solid ${isViewed ? viewedPrimaryColor : defaultPrimaryColor};
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
         align-items: center;
         gap: 20px;
         background: #f3f3f3;
