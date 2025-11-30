@@ -261,21 +261,26 @@ func (c *Cache) setLoadPriority(ranges []Range) {
 			continue
 		}
 		readerPos := r.getReaderPiece()
-		readerRAHPos := r.getReaderRAHPiece()
+		// readerRAHPos := r.getReaderRAHPiece()
 		end := r.getPiecesRange().End
 		count := settings.BTsets.ConnectionsLimit / len(c.readers) // max concurrent loading blocks
 		limit := 0
 		for i := readerPos; i < end && limit < count; i++ {
 			if !c.pieces[i].Complete {
-				if i == readerPos {
-					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNow)
-				} else if i == readerPos+1 {
+				// if i == readerPos {
+				// 	c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNow)
+				// } else if i == readerPos+1 {
+				// 	c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNext)
+				// } else if i > readerPos && i <= readerRAHPos {
+				// 	c.torrent.Piece(i).SetPriority(torrent.PiecePriorityReadahead)
+				// } else if i > readerRAHPos && i <= readerRAHPos+5 && c.torrent.PieceState(i).Priority != torrent.PiecePriorityHigh {
+				// 	c.torrent.Piece(i).SetPriority(torrent.PiecePriorityHigh)
+				// } else if i > readerRAHPos+5 && c.torrent.PieceState(i).Priority != torrent.PiecePriorityNormal {
+				// 	c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNormal)
+				// }
+				if i == readerPos+1 {
 					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNext)
-				} else if i > readerPos && i <= readerRAHPos {
-					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityReadahead)
-				} else if i > readerRAHPos && i <= readerRAHPos+5 && c.torrent.PieceState(i).Priority != torrent.PiecePriorityHigh {
-					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityHigh)
-				} else if i > readerRAHPos+5 && c.torrent.PieceState(i).Priority != torrent.PiecePriorityNormal {
+				} else if c.torrent.PieceState(i).Priority != torrent.PiecePriorityReadahead && c.torrent.PieceState(i).Priority != torrent.PiecePriorityNormal {
 					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNormal)
 				}
 				limit++
