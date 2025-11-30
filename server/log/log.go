@@ -2,9 +2,11 @@ package log
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -118,4 +120,75 @@ func WebLogger() gin.HandlerFunc {
 		)
 		WebLogln(logStr)
 	}
+}
+
+// TorrentLogHandler implements slog.Handler in a minimal way
+type TorrentLogHandler struct {
+	level slog.Level
+}
+
+func NewTorrentLogHandler(level slog.Level) *TorrentLogHandler {
+	return &TorrentLogHandler{level: level}
+}
+
+// slog levels:
+// LevelDebug Level = -4
+// LevelInfo  Level = 0
+// LevelWarn  Level = 4
+// LevelError Level = 8
+func (h *TorrentLogHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	return level >= h.level
+}
+
+func (h *TorrentLogHandler) Handle(ctx context.Context, record slog.Record) error {
+	if !h.Enabled(ctx, record.Level) {
+		return nil
+	}
+
+	// Build the message
+	var builder strings.Builder
+	builder.WriteString("[")
+	builder.WriteString(record.Level.String())
+	builder.WriteString("] ")
+	builder.WriteString(record.Message)
+
+	// Add attributes
+	record.Attrs(func(attr slog.Attr) bool {
+		builder.WriteString(fmt.Sprintf(" %s=%v", attr.Key, attr.Value.Any()))
+		return true
+	})
+
+	TLogln("TORRENT", builder.String())
+	return nil
+}
+
+func (h *TorrentLogHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	// For simplicity, return same handler. Attributes will be added at log time.
+	return h
+}
+
+func (h *TorrentLogHandler) WithGroup(name string) slog.Handler {
+	// For simplicity, ignore groups
+	return h
+}
+
+// TorrentLogger creates a slog.Logger for torrent client
+func DebugTorrentLogger() *slog.Logger {
+	handler := NewTorrentLogHandler(slog.LevelDebug)
+	return slog.New(handler)
+}
+
+func TorrentLogger() *slog.Logger {
+	handler := NewTorrentLogHandler(slog.LevelInfo)
+	return slog.New(handler)
+}
+
+func WarnTorrentLogger() *slog.Logger {
+	handler := NewTorrentLogHandler(slog.LevelWarn)
+	return slog.New(handler)
+}
+
+func ErrorTorrentLogger() *slog.Logger {
+	handler := NewTorrentLogHandler(slog.LevelError)
+	return slog.New(handler)
 }

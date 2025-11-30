@@ -14,6 +14,7 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/wlynxg/anet"
 
+	tslog "server/log"
 	"server/settings"
 	"server/torr/storage/torrstor"
 	"server/torr/utils"
@@ -92,6 +93,14 @@ func (bt *BTServer) configure(ctx context.Context) {
 	cliVers := userAgent
 
 	bt.config.Debug = settings.BTsets.EnableDebug
+	// configure Slogger
+	if settings.BTsets.EnableDebug {
+		bt.config.Slogger = tslog.DebugTorrentLogger()
+		// bt.config.Slogger = log.Default.WithFilterLevel(log.Debug).Slogger()
+	} else {
+		bt.config.Slogger = nil
+		// bt.config.Slogger = tslog.TorrentLogger()
+	}
 	bt.config.DisableIPv6 = !settings.BTsets.EnableIPv6
 	bt.config.DisableTCP = settings.BTsets.DisableTCP
 	bt.config.DisableUTP = settings.BTsets.DisableUTP
