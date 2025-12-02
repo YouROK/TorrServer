@@ -18,6 +18,7 @@ require (
 	github.com/gin-contrib/cors v1.7.6
 	github.com/gin-contrib/location v1.0.3
 	github.com/gin-gonic/gin v1.11.0
+	github.com/hanwen/go-fuse/v2 v2.9.0
 	github.com/kljensen/snowball v0.10.0
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/pkg/errors v0.9.1
