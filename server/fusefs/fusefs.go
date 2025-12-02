@@ -75,7 +75,7 @@ func (ffs *FuseFS) Mount(mountPath string) error {
 	}
 
 	// Ensure mount directory exists
-	err := os.MkdirAll(mountPath, 0755)
+	err := os.MkdirAll(mountPath, 0o755)
 	if err != nil {
 		return err
 	}
@@ -163,7 +163,7 @@ func (ffs *FuseFS) updateTorrents(ctx context.Context) {
 				// Skip this torrent if we can't get a name
 				continue
 			}
-			
+
 			if child := ffs.Inode.GetChild(dirName); child == nil {
 				// Create new torrent directory
 				torrentDir := &TorrentDir{torrent: t}

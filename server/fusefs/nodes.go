@@ -54,7 +54,7 @@ func (td *TorrentDir) Lookup(ctx context.Context, name string, out *fuse.EntryOu
 				file:    file,
 			}
 
-			out.Attr.Mode = fuse.S_IFREG | 0644
+			out.Attr.Mode = fuse.S_IFREG | 0o644
 			out.Attr.Size = uint64(file.Length())
 			out.Attr.Ino = uint64(i + 1)
 
@@ -69,7 +69,7 @@ func (td *TorrentDir) Lookup(ctx context.Context, name string, out *fuse.EntryOu
 }
 
 func (td *TorrentDir) Getattr(ctx context.Context, fh fs.FileHandle, out *fuse.AttrOut) syscall.Errno {
-	out.Mode = fuse.S_IFDIR | 0755
+	out.Mode = fuse.S_IFDIR | 0o755
 	out.Ino = td.Inode.StableAttr().Ino
 	return 0
 }
@@ -93,7 +93,7 @@ func (tf *TorrentFile) Open(ctx context.Context, flags uint32) (fs.FileHandle, u
 }
 
 func (tf *TorrentFile) Getattr(ctx context.Context, fh fs.FileHandle, out *fuse.AttrOut) syscall.Errno {
-	out.Mode = fuse.S_IFREG | 0644
+	out.Mode = fuse.S_IFREG | 0o644
 	out.Size = uint64(tf.file.Length())
 	out.Ino = tf.Inode.StableAttr().Ino
 	return 0
