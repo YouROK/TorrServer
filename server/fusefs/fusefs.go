@@ -6,7 +6,6 @@ package fusefs
 import (
 	"context"
 	"errors"
-	"log"
 	"os"
 	"sync"
 	"syscall"
@@ -15,6 +14,7 @@ import (
 	"github.com/hanwen/go-fuse/v2/fs"
 	"github.com/hanwen/go-fuse/v2/fuse"
 
+	"server/log"
 	"server/torr"
 	"server/torr/storage/torrstor"
 )
@@ -98,7 +98,7 @@ func (ffs *FuseFS) Mount(mountPath string) error {
 	ffs.server = server
 	ffs.enabled = true
 
-	log.Printf("FUSE filesystem mounted at: %s", mountPath)
+	log.TLogln("FUSE filesystem mounted at:", mountPath)
 
 	// Start serving in background
 	go ffs.server.Wait()
@@ -123,7 +123,7 @@ func (ffs *FuseFS) Unmount() error {
 	ffs.server = nil
 	ffs.mountPath = ""
 
-	log.Println("FUSE filesystem unmounted")
+	log.TLogln("FUSE filesystem unmounted")
 	return nil
 }
 
