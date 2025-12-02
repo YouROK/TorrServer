@@ -280,7 +280,7 @@ func (c *Cache) setLoadPriority(ranges []Range) {
 				// }
 				if i == readerPos+1 {
 					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNext)
-				} else if c.torrent.PieceState(i).Priority != torrent.PiecePriorityReadahead && c.torrent.PieceState(i).Priority != torrent.PiecePriorityNormal {
+				} else if i > readerPos && c.torrent.PieceState(i).Priority != torrent.PiecePriorityReadahead && c.torrent.PieceState(i).Priority != torrent.PiecePriorityNormal {
 					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNormal)
 				}
 				limit++
