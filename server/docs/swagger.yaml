@@ -1,5 +1,12 @@
 basePath: /
 definitions:
+  api.FuseMountRequest:
+    properties:
+      mount_path:
+        type: string
+    required:
+    - mount_path
+    type: object
   api.cacheReqJS:
     properties:
       action:
@@ -40,6 +47,15 @@ definitions:
       file_index:
         type: integer
       hash:
+        type: string
+    type: object
+  fusefs.FuseStatus:
+    properties:
+      enabled:
+        type: boolean
+      error:
+        type: string
+      mount_path:
         type: string
     type: object
   models.TorrentDetails:
@@ -108,6 +124,9 @@ definitions:
       enableDebug:
         description: debug logs
         type: boolean
+      enableFUSE:
+        description: FUSE
+        type: boolean
       enableIPv6:
         description: BT Config
         type: boolean
@@ -118,6 +137,9 @@ definitions:
         description: Torrent
         type: boolean
       friendlyName:
+        type: string
+      fusepath:
+        description: path where to mount FUSE filesystem
         type: string
       peersListenPort:
         type: integer
@@ -395,6 +417,56 @@ paths:
       summary: Gather informations using ffprobe
       tags:
       - API
+  /fuse/mount:
+    post:
+      consumes:
+      - application/json
+      description: Mounts the FUSE filesystem at the specified path
+      parameters:
+      - description: Mount request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.FuseMountRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fusefs.FuseStatus'
+      summary: Mount FUSE filesystem
+      tags:
+      - FUSE
+  /fuse/status:
+    get:
+      description: Returns the current status of the FUSE filesystem mount
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fusefs.FuseStatus'
+      summary: Get FUSE filesystem status
+      tags:
+      - FUSE
+  /fuse/unmount:
+    post:
+      consumes:
+      - application/json
+      description: Unmounts the FUSE filesystem
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fusefs.FuseStatus'
+      summary: Unmount FUSE filesystem
+      tags:
+      - FUSE
   /magnets:
     get:
       description: Get HTML of magnet links.
