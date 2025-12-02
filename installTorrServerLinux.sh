@@ -45,6 +45,7 @@ readonly VERSION_PREFIX="MatriX"
 readonly BINARY_NAME_PREFIX="TorrServer-linux"
 readonly MIN_GLIBC_VERSION="2.32"
 readonly MIN_VERSION_REQUIRING_GLIBC=136
+readonly SYSCTL_BBR_FILE="/etc/sysctl.d/90-torrserver.conf"
 
 # Color support
 declare -A colors=([black]=0 [red]=1 [green]=2 [yellow]=3 [blue]=4 [magenta]=5 [cyan]=6 [white]=7)
@@ -1037,23 +1038,20 @@ ensureBBRModuleAtBoot() {
   return 0
 }
 
-# Check if BBR is configured in sysctl.conf
+# Check if BBR is configured in sysctl.d file
 isBBRConfiguredInFile() {
-  local sysctl_file="${1:-/etc/sysctl.conf}"
-  [[ -f "$sysctl_file" ]] && \
-    grep -q "^net.core.default_qdisc=fq" "$sysctl_file" 2>/dev/null && \
-    grep -q "^net.ipv4.tcp_congestion_control=bbr" "$sysctl_file" 2>/dev/null
+  [[ -f "$SYSCTL_BBR_FILE" ]] && \
+    grep -q "^net.core.default_qdisc=fq" "$SYSCTL_BBR_FILE" 2>/dev/null && \
+    grep -q "^net.ipv4.tcp_congestion_control=bbr" "$SYSCTL_BBR_FILE" 2>/dev/null
 }
 
-# Add BBR settings to sysctl.conf
+# Add BBR settings to sysctl.d file
 addBBRToSysctl() {
-  local sysctl_file="${1:-/etc/sysctl.conf}"
-
-  if ! grep -q "^net.core.default_qdisc=fq" "$sysctl_file" 2>/dev/null; then
-    echo "net.core.default_qdisc=fq" >> "$sysctl_file" 2>/dev/null || return 1
+  if ! grep -q "^net.core.default_qdisc=fq" "$SYSCTL_BBR_FILE" 2>/dev/null; then
+    echo "net.core.default_qdisc=fq" >> "$SYSCTL_BBR_FILE" 2>/dev/null || return 1
   fi
-  if ! grep -q "^net.ipv4.tcp_congestion_control=bbr" "$sysctl_file" 2>/dev/null; then
-    echo "net.ipv4.tcp_congestion_control=bbr" >> "$sysctl_file" 2>/dev/null || return 1
+  if ! grep -q "^net.ipv4.tcp_congestion_control=bbr" "$SYSCTL_BBR_FILE" 2>/dev/null; then
+    echo "net.ipv4.tcp_congestion_control=bbr" >> "$SYSCTL_BBR_FILE" 2>/dev/null || return 1
   fi
   return 0
 }
@@ -1077,9 +1075,7 @@ applyBBRSettings() {
 
 # Ensure BBR is active (non-critical - always returns success)
 ensureBBRActive() {
-  local sysctl_file="/etc/sysctl.conf"
-
-  ! isBBRConfiguredInFile "$sysctl_file" && return 0
+  ! isBBRConfiguredInFile && return 0
   isBBRActive && return 0
 
   if ! isBBRAvailable && ! loadBBRModule; then
@@ -1098,7 +1094,7 @@ ensureBBRActive() {
     [[ $SILENT_MODE -eq 0 ]] && {
       echo " - $(colorize yellow "$(msg bbr_activate_failed_cc "$current_cc")")"
       echo "   $(colorize yellow "$(msg bbr_no_optimization)")"
-      echo "   $(colorize yellow "$(msg bbr_settings_will_apply "$sysctl_file")")"
+      echo "   $(colorize yellow "$(msg bbr_settings_will_apply "$SYSCTL_BBR_FILE")")"
     }
   fi
   return 0
@@ -1107,16 +1103,14 @@ ensureBBRActive() {
 configureBBR() {
   [[ $isBbr -ne 1 ]] && return 0
 
-  local sysctl_file="/etc/sysctl.conf"
-
   # Check if BBR is available or can be loaded first
   if ! isBBRAvailable && ! loadBBRModule; then
     # BBR not available - check if it's already in config
-    if isBBRConfiguredInFile "$sysctl_file"; then
+    if isBBRConfiguredInFile; then
       [[ $SILENT_MODE -eq 0 ]] && {
         echo " - $(colorize yellow "$(msg bbr_configured_not_available)")"
         echo "   $(colorize yellow "$(msg bbr_requires_kernel)")"
-        echo "   $(colorize yellow "$(msg bbr_settings_will_apply "$sysctl_file")")"
+        echo "   $(colorize yellow "$(msg bbr_settings_will_apply "$SYSCTL_BBR_FILE")")"
         echo "   $(colorize yellow "$(msg bbr_no_optimization)")"
       }
     else
@@ -1124,7 +1118,7 @@ configureBBR() {
       [[ $SILENT_MODE -eq 0 ]] && {
         echo " - $(colorize yellow "$(msg bbr_not_available)")"
         echo "   $(colorize yellow "$(msg bbr_requires_kernel)")"
-        echo "   $(colorize yellow "$(msg bbr_settings_not_added "$sysctl_file")")"
+        echo "   $(colorize yellow "$(msg bbr_settings_not_added "$SYSCTL_BBR_FILE")")"
         echo "   $(colorize yellow "$(msg bbr_no_optimization)")"
       }
     fi
@@ -1132,13 +1126,13 @@ configureBBR() {
   fi
 
   # BBR is available - now configure it
-  if isBBRConfiguredInFile "$sysctl_file"; then
+  if isBBRConfiguredInFile; then
     [[ $SILENT_MODE -eq 0 ]] && echo " - $(msg bbr_already_configured)"
   else
-    ! addBBRToSysctl "$sysctl_file" && {
+    ! addBBRToSysctl && {
       [[ $SILENT_MODE -eq 0 ]] && {
         echo " - $(colorize yellow "$(msg bbr_config_failed)")"
-        echo "   $(colorize yellow "$(msg bbr_write_failed "$sysctl_file")")"
+        echo "   $(colorize yellow "$(msg bbr_write_failed "$SYSCTL_BBR_FILE")")"
         echo "   $(colorize yellow "$(msg bbr_no_optimization)")"
       }
       return 0
@@ -1158,7 +1152,7 @@ configureBBR() {
   [[ $SILENT_MODE -eq 0 ]] && {
     echo " - $(colorize yellow "$(msg bbr_config_failed)")"
     echo "   $(colorize yellow "$(msg bbr_current_values "$current_qdisc" "$current_cc")")"
-    echo "   $(colorize yellow "$(msg bbr_settings_will_apply "$sysctl_file")")"
+    echo "   $(colorize yellow "$(msg bbr_settings_will_apply "$SYSCTL_BBR_FILE")")"
     echo "   $(colorize yellow "$(msg bbr_no_optimization)")"
   }
   return 0
