@@ -98,6 +98,7 @@ func (bt *BTServer) configure(ctx context.Context) {
 		bt.config.Slogger = tslog.DebugTorrentLogger()
 		// bt.config.Slogger = log.Default.WithFilterLevel(log.Debug).Slogger()
 	} else {
+		// TODO: expose library errors except reader
 		bt.config.Slogger = nil
 		// bt.config.Slogger = tslog.TorrentLogger()
 	}
