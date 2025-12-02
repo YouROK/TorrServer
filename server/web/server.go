@@ -84,6 +84,9 @@ func Start() {
 		dlna.Start()
 	}
 
+	// Auto-mount FUSE filesystem if enabled
+	api.FuseAutoMount()
+
 	route.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// check if https enabled
@@ -121,6 +124,8 @@ func Wait() error {
 
 func Stop() {
 	dlna.Stop()
+	// Unmount FUSE filesystem if mounted
+	api.FuseCleanup()
 	BTS.Disconnect()
 	waitChan <- nil
 }
