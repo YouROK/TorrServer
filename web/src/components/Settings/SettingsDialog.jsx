@@ -33,6 +33,7 @@ export default function SettingsDialog({ handleClose }) {
   const [preloadCachePercentage, setPreloadCachePercentage] = useState(0)
   const [isProMode, setIsProMode] = useState(JSON.parse(localStorage.getItem('isProMode')) || false)
   const [isVlcUsed, setIsVlcUsed] = useState(JSON.parse(localStorage.getItem('isVlcUsed')) ?? false)
+  const [isInfuseUsed, setIsInfuseUsed] = useState(JSON.parse(localStorage.getItem('isInfuseUsed')) ?? false)
 
   useEffect(() => {
     axios.post(settingsHost(), { action: 'get' }).then(({ data }) => {
@@ -50,6 +51,7 @@ export default function SettingsDialog({ handleClose }) {
     sets.PreloadCache = preloadCachePercentage
     axios.post(settingsHost(), { action: 'set', sets })
     localStorage.setItem('isVlcUsed', isVlcUsed)
+    localStorage.setItem('isInfuseUsed', isInfuseUsed)
   }
 
   const inputForm = ({ target: { type, value, checked, id } }) => {
@@ -163,7 +165,12 @@ export default function SettingsDialog({ handleClose }) {
 
               {isStandaloneApp && (
                 <TabPanel value={selectedTab} index={2} dir={direction}>
-                  <MobileAppSettings isVlcUsed={isVlcUsed} setIsVlcUsed={setIsVlcUsed} />
+                  <MobileAppSettings
+                    isVlcUsed={isVlcUsed}
+                    setIsVlcUsed={setIsVlcUsed}
+                    isInfuseUsed={isInfuseUsed}
+                    setIsInfuseUsed={setIsInfuseUsed}
+                  />
                 </TabPanel>
               )}
             </SwipeableViews>
