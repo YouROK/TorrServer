@@ -77,6 +77,7 @@ func (ffs *FuseFS) Mount(mountPath string) error {
 	// Ensure mount directory exists
 	err := os.MkdirAll(mountPath, 0o755)
 	if err != nil {
+		log.TLogln("Error create FUSE mount point dir:", err)
 		return err
 	}
 
@@ -98,7 +99,7 @@ func (ffs *FuseFS) Mount(mountPath string) error {
 	ffs.server = server
 	ffs.enabled = true
 
-	log.TLogln("FUSE filesystem mounted at:", mountPath)
+	log.TLogln("FUSE filesystem mounted at", mountPath)
 
 	// Start serving in background
 	go ffs.server.Wait()
@@ -151,6 +152,13 @@ func (ffs *FuseFS) OnAdd(ctx context.Context) {
 func (ffs *FuseFS) updateTorrents(ctx context.Context) {
 	torrents := torr.ListTorrent()
 
+	// Get current children
+	currentChildren := make(map[string]bool)
+	for name := range ffs.Inode.Children() {
+		currentChildren[name] = true
+	}
+
+	// Add or update torrent directories
 	for _, t := range torrents {
 		if t != nil && t.GotInfo() {
 			// Get torrent name safely
@@ -163,13 +171,32 @@ func (ffs *FuseFS) updateTorrents(ctx context.Context) {
 				// Skip this torrent if we can't get a name
 				continue
 			}
-
+			// Check if this directory already exists
 			if child := ffs.Inode.GetChild(dirName); child == nil {
-				// Create new torrent directory
-				torrentDir := &TorrentDir{torrent: t}
-				ffs.Inode.AddChild(dirName, ffs.Inode.NewPersistentInode(ctx, torrentDir, fs.StableAttr{Mode: fuse.S_IFDIR}), false)
+				// Create new torrent directory with a unique instance
+				torrentDir := &TorrentDir{
+					torrent: t,
+					Inode:   fs.Inode{},
+				}
+				ch := ffs.Inode.NewPersistentInode(ctx, torrentDir, fs.StableAttr{
+					Mode: fuse.S_IFDIR,
+					Ino:  getTorrentInode(t), // Use torrent's hash as inode
+				})
+				ffs.Inode.AddChild(dirName, ch, false)
+			} else {
+				// Update existing directory with correct torrent reference
+				if dir, ok := child.Operations().(*TorrentDir); ok {
+					dir.torrent = t // Update the torrent reference
+				}
 			}
+
+			delete(currentChildren, dirName)
 		}
+	}
+
+	// Remove directories for torrents that no longer exist
+	for dirName := range currentChildren {
+		ffs.Inode.RmChild(dirName)
 	}
 }
 
