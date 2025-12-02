@@ -6,6 +6,8 @@ package fusefs
 import (
 	"context"
 	"io"
+	"server/log"
+	"server/settings"
 	"syscall"
 
 	"github.com/hanwen/go-fuse/v2/fs"
@@ -47,6 +49,16 @@ func (td *TorrentDir) Lookup(ctx context.Context, name string, out *fuse.EntryOu
 	if files == nil {
 		return nil, syscall.ENOENT
 	}
+
+	if settings.BTsets.EnableDebug {
+		log.TLogln("TorrentDir.Lookup called for:", name)
+		log.TLogln("Current torrent title:", td.torrent.Title)
+		log.TLogln("Current torrent hash:", td.torrent.Hash().String())
+	}
+
+	// Get base inode from torrent hash
+	baseInode := getTorrentInode(td.torrent)
+
 	for i, file := range files {
 		if sanitizeName(file.DisplayPath()) == name {
 			torrentFile := &TorrentFile{
@@ -56,7 +68,8 @@ func (td *TorrentDir) Lookup(ctx context.Context, name string, out *fuse.EntryOu
 
 			out.Attr.Mode = fuse.S_IFREG | 0o644
 			out.Attr.Size = uint64(file.Length())
-			out.Attr.Ino = uint64(i + 1)
+			// Unique inode: base + file index
+			out.Attr.Ino = baseInode + uint64(i+1)
 
 			return td.Inode.NewPersistentInode(ctx, torrentFile, fs.StableAttr{
 				Mode: fuse.S_IFREG,
@@ -78,6 +91,13 @@ func (td *TorrentDir) Getattr(ctx context.Context, fh fs.FileHandle, out *fuse.A
 func (tf *TorrentFile) Open(ctx context.Context, flags uint32) (fs.FileHandle, uint32, syscall.Errno) {
 	tf.mu.Lock()
 	defer tf.mu.Unlock()
+
+	if settings.BTsets.EnableDebug {
+		log.TLogln("TorrentFile.Open called")
+		log.TLogln("File path:", tf.file.DisplayPath())
+		log.TLogln("File size:", tf.file.Length())
+		log.TLogln("Torrent title:", tf.torrent.Title)
+	}
 
 	if tf.reader == nil {
 		reader := tf.torrent.NewReader(tf.file)

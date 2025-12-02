@@ -52,7 +52,5 @@ func SetupRoute(route gin.IRouter) {
 	authorized.GET("/ffp/:hash/:id", ffp)
 
 	// FUSE filesystem routes
-	authorized.GET("/fuse/status", fuseStatus)
-	authorized.POST("/fuse/mount", fuseMount)
-	authorized.POST("/fuse/unmount", fuseUnmount)
+	setupFuseRoutes(authorized)
 }

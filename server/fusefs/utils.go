@@ -4,10 +4,48 @@
 package fusefs
 
 import (
+	"hash/fnv"
 	"path/filepath"
 	"regexp"
+	"server/torr"
 	"strings"
 )
+
+// Hash to inode conversion
+func hashToInode(hash [20]byte) uint64 {
+	var inode uint64
+	for i := 0; i < 8; i++ {
+		inode = (inode << 8) | uint64(hash[i])
+	}
+	// Ensure it's not zero
+	if inode == 0 {
+		inode = 1
+	}
+	return inode
+}
+
+// Generate inode from string (useful for consistent inodes for same paths)
+func inodeFromString(s string) uint64 {
+	h := fnv.New64a()
+	h.Write([]byte(s))
+	return h.Sum64()
+}
+
+// Get torrent inode base
+func getTorrentInode(t *torr.Torrent) uint64 {
+	return hashToInode(t.Hash())
+}
+
+// For torrent directories - combine torrent hash with path
+func getTorrentDirIno(torrentHash, dirName string) uint64 {
+	return inodeFromString(torrentHash + ":" + dirName)
+}
+
+// For torrent files - combine torrent hash with file path
+func getTorrentFileIno(torrentHash, filePath string, index int) uint64 {
+	// Use both string hash and index for extra uniqueness
+	return inodeFromString(torrentHash+":"+filePath) + uint64(index)
+}
 
 // sanitizeName cleans up file/directory names for filesystem compatibility
 func sanitizeName(name string) string {
