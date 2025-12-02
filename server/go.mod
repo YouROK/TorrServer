@@ -4,19 +4,16 @@ go 1.24.0
 
 toolchain go1.24.10
 
-replace (
-	github.com/ajwerner/btree => github.com/anacrolix/btree v0.0.0-20251103085645-fd1051eb0009
-	github.com/anacrolix/upnp v0.1.4 => github.com/tsynik/upnp v0.1.5
-)
+replace github.com/anacrolix/upnp v0.1.4 => github.com/tsynik/upnp v0.1.5
 
 require (
 	github.com/agnivade/levenshtein v1.2.1
-	github.com/alexflint/go-arg v1.5.0
+	github.com/alexflint/go-arg v1.6.0
 	github.com/anacrolix/dms v1.7.2
 	github.com/anacrolix/log v0.17.1-0.20251118025802-918f1157b7bb
 	github.com/anacrolix/missinggo/v2 v2.10.0
 	github.com/anacrolix/publicip v0.3.1
-	github.com/anacrolix/torrent v1.59.2-0.20251128043617-9c6ae5c2a967
+	github.com/anacrolix/torrent v1.59.2-0.20251201070025-62f62628d9b8
 	github.com/dustin/go-humanize v1.0.1
 	github.com/gin-contrib/cors v1.7.6
 	github.com/gin-contrib/location v1.0.3
@@ -39,9 +36,9 @@ require (
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/RoaringBitmap/roaring v1.9.4 // indirect
-	github.com/ajwerner/btree v0.0.0-20211221152037-f427b3e689c0 // indirect
 	github.com/alecthomas/atomic v0.1.0-alpha2 // indirect
 	github.com/alexflint/go-scalar v1.2.0 // indirect
+	github.com/anacrolix/btree v0.0.0-20251201064447-d86c3fa41bd8 // indirect
 	github.com/anacrolix/chansync v0.7.0 // indirect
 	github.com/anacrolix/dht/v2 v2.23.0 // indirect
 	github.com/anacrolix/envpprof v1.4.0 // indirect
@@ -108,7 +105,7 @@ require (
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pion/datachannel v1.5.10 // indirect
 	github.com/pion/dtls/v3 v3.0.7 // indirect
-	github.com/pion/ice/v4 v4.0.11 // indirect
+	github.com/pion/ice/v4 v4.0.12 // indirect
 	github.com/pion/interceptor v0.1.42 // indirect
 	github.com/pion/logging v0.2.4 // indirect
 	github.com/pion/mdns/v2 v2.1.0 // indirect
