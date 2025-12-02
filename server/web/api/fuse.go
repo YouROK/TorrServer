@@ -44,8 +44,6 @@ func fuseStatus(c *gin.Context) {
 //	@Produce		json
 //	@Param			request	body		FuseMountRequest	true	"Mount request"
 //	@Success		200		{object}	fusefs.FuseStatus
-//	@Failure		400		{object}	HTTPError
-//	@Failure		500		{object}	HTTPError
 //	@Router			/fuse/mount [post]
 func fuseMount(c *gin.Context) {
 	var req FuseMountRequest
@@ -95,8 +93,6 @@ func fuseMount(c *gin.Context) {
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{object}	fusefs.FuseStatus
-//	@Failure		400	{object}	HTTPError
-//	@Failure		500	{object}	HTTPError
 //	@Router			/fuse/unmount [post]
 func fuseUnmount(c *gin.Context) {
 	ffs := fusefs.GetFuseFS()
