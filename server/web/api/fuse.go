@@ -128,7 +128,7 @@ func FuseAutoMount() {
 			err := ffs.Mount(config.BTsets.FUSEPath)
 			if err != nil {
 				// Log error but don't fail startup
-				log.TLogln("Failed to auto-mount FUSE filesystem: %v", err)
+				log.TLogln("Failed to auto-mount FUSE filesystem:", err)
 			}
 		}
 	}
