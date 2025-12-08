@@ -134,6 +134,7 @@ func SetDefaultConfig() {
 	sets.RetrackersMode = 1
 	sets.TorrentDisconnectTimeout = 30
 	sets.ReaderReadAHead = 95 // 95%
+	sets.ResponsiveMode = true
 	BTsets = sets
 	if !ReadOnly {
 		buf, err := json.Marshal(BTsets)
