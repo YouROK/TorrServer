@@ -57,7 +57,8 @@ const Table = memo(
               const { title, resolution, episode, season } = ptt.parse(path)
               const isViewed = viewedFileList?.includes(id)
               const link = getFileLink(path, id)
-              const infuseLink = `infuse://x-callback-url/play?url=${encodeURIComponent(link)}`
+              const fullLink = new URL(link, window.location.href)
+              const infuseLink = `infuse://x-callback-url/play?url=${encodeURIComponent(fullLink)}`
 
               return (
                 (season === selectedSeason || !seasonAmount?.length) && (
@@ -81,7 +82,7 @@ const Table = memo(
                           </a>
                         )}
                         {isStandalone && isVlcUsed && (
-                          <a style={{ textDecoration: 'none' }} href={`vlc://${link}`}>
+                          <a style={{ textDecoration: 'none' }} href={`vlc://${fullLink}`}>
                             <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
                               VLC
                             </Button>
@@ -98,7 +99,7 @@ const Table = memo(
                             </a>
                           )
                         )}
-                        <CopyToClipboard text={link}>
+                        <CopyToClipboard text={fullLink}>
                           <Button variant='outlined' color='primary' size='small'>
                             {t('CopyLink')}
                           </Button>
@@ -124,7 +125,8 @@ const Table = memo(
             const { title, resolution, episode, season } = ptt.parse(path)
             const isViewed = viewedFileList?.includes(id)
             const link = getFileLink(path, id)
-            const infuseLink = `infuse://x-callback-url/play?url=${encodeURIComponent(link)}`
+            const fullLink = new URL(link, window.location.href)
+            const infuseLink = `infuse://x-callback-url/play?url=${encodeURIComponent(fullLink)}`
 
             return (
               (season === selectedSeason || !seasonAmount?.length) && (
@@ -176,7 +178,7 @@ const Table = memo(
                     )}
 
                     {isStandalone && isVlcUsed && (
-                      <a style={{ textDecoration: 'none' }} href={`vlc://${link}`}>
+                      <a style={{ textDecoration: 'none' }} href={`vlc://${fullLink}`}>
                         <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
                           VLC
                         </Button>
@@ -191,7 +193,7 @@ const Table = memo(
                       </a>
                     )}
 
-                    <CopyToClipboard text={link}>
+                    <CopyToClipboard text={fullLink}>
                       <Button variant='outlined' color='primary' size='small'>
                         {t('CopyLink')}
                       </Button>

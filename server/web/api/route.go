@@ -50,4 +50,7 @@ func SetupRoute(route gin.IRouter) {
 	}
 
 	authorized.GET("/ffp/:hash/:id", ffp)
+
+	// FUSE filesystem routes
+	setupFuseRoutes(authorized)
 }
