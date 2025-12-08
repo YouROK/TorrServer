@@ -47,7 +47,7 @@ var (
 // @externalDocs.description	OpenAPI
 // @externalDocs.url			https://swagger.io/resources/open-api/
 func Start() {
-	log.TLogln("Start TorrServer " + version.Version + " torrent " + version.GetTorrentVersion())
+	log.TLogln("Start TorrServer " + version.Version + " anacrolix/torrent " + version.GetTorrentVersion())
 	ips := GetLocalIps()
 	if len(ips) > 0 {
 		log.TLogln("Local IPs:", ips)

@@ -127,7 +127,7 @@ func main() {
 func dnsResolve() {
 	addrs, err := net.LookupHost("www.google.com")
 	if len(addrs) == 0 {
-		log.TLogln("Check dns failed", addrs, err)
+		log.TLogln("System DNS check failed", addrs, err)
 
 		fn := func(ctx context.Context, network, address string) (net.Conn, error) {
 			d := net.Dialer{}
@@ -139,9 +139,9 @@ func dnsResolve() {
 		}
 
 		addrs, err = net.LookupHost("www.google.com")
-		log.TLogln("Check cloudflare dns", addrs, err)
+		log.TLogln("Check CloudFlare DNS", addrs, err)
 	} else {
-		log.TLogln("Check dns OK", addrs, err)
+		log.TLogln("System DNS OK", addrs, err)
 	}
 }
 
