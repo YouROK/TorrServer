@@ -97,8 +97,8 @@ func (bt *BTServer) configure(ctx context.Context) {
 	if settings.BTsets.EnableDebug {
 		bt.config.Slogger = tslog.DebugTorrentLogger()
 		// bt.config.Slogger = log.Default.WithFilterLevel(log.Debug).Slogger()
-	} else {
-		bt.config.Slogger = tslog.WarnTorrentLogger()
+		// } else {
+		// 	bt.config.Slogger = tslog.WarnTorrentLogger()
 	}
 	bt.config.DisableIPv6 = !settings.BTsets.EnableIPv6
 	bt.config.DisableTCP = settings.BTsets.DisableTCP
