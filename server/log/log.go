@@ -144,6 +144,9 @@ func (h *TorrentLogHandler) Handle(ctx context.Context, record slog.Record) erro
 	if !h.Enabled(ctx, record.Level) {
 		return nil
 	}
+	if strings.Contains(record.Source().Function, "*reader") {
+		return nil // Skip this log message
+	}
 
 	// Build the message
 	var builder strings.Builder

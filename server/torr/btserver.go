@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+
 	"maps"
 	"net"
 	"sync"
@@ -96,15 +97,15 @@ func (bt *BTServer) configure(ctx context.Context) {
 	// configure Slogger
 	if settings.BTsets.EnableDebug {
 		bt.config.Slogger = tslog.DebugTorrentLogger()
-		// bt.config.Slogger = log.Default.WithFilterLevel(log.Debug).Slogger()
-		// } else {
-		// 	bt.config.Slogger = tslog.WarnTorrentLogger()
+		// bt.config.Slogger = analog.Default.WithFilterLevel(log.Debug).Slogger()
+	} else {
+		bt.config.Slogger = tslog.WarnTorrentLogger()
 	}
 	bt.config.DisableIPv6 = !settings.BTsets.EnableIPv6
 	bt.config.DisableTCP = settings.BTsets.DisableTCP
 	bt.config.DisableUTP = settings.BTsets.DisableUTP
 	//	https://github.com/anacrolix/torrent/issues/703
-	bt.config.DisableWebtorrent = false           //	NE
+	bt.config.DisableWebtorrent = true            //	NE
 	bt.config.DisableWebseeds = false             //	NE
 	bt.config.HandshakesTimeout = 3 * time.Second //	NE
 	bt.config.PieceHashersPerTorrent = 2          //	NE
