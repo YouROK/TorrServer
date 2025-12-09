@@ -25,6 +25,13 @@ export default function AboutDialog() {
 
   const onClose = () => setOpen(false)
   const ref = useOnStandaloneAppOutsideClick(onClose)
+  const getBasePath = () => {
+    if (typeof window !== 'undefined') {
+      return window.location.pathname.split('/')[1] || ''
+    }
+    return ''
+  }
+  const basePath = getBasePath()
 
   return (
     <>
@@ -57,7 +64,7 @@ export default function AboutDialog() {
           <HeaderSection>
             <div>{t('About')}</div>
             {torrServerVersion}
-            <img src='icon.png' alt='ts-icon' />
+            <img src={`${basePath}/icon.png`} alt='ts-icon' />
           </HeaderSection>
 
           <div style={{ overflow: 'auto' }}>
