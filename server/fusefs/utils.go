@@ -7,8 +7,9 @@ import (
 	"hash/fnv"
 	"path/filepath"
 	"regexp"
-	"server/torr"
 	"strings"
+
+	"server/torr"
 )
 
 // Hash to inode conversion

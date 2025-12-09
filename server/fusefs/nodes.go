@@ -6,9 +6,10 @@ package fusefs
 import (
 	"context"
 	"io"
+	"syscall"
+
 	"server/log"
 	"server/settings"
-	"syscall"
 
 	"github.com/hanwen/go-fuse/v2/fs"
 	"github.com/hanwen/go-fuse/v2/fuse"
