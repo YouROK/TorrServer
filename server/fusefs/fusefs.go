@@ -160,7 +160,7 @@ func (ffs *FuseFS) updateTorrents(ctx context.Context) {
 
 	// Add or update torrent directories
 	for _, t := range torrents {
-		if t != nil && t.GotInfo() {
+		if t != nil {
 			// Get torrent name safely
 			var dirName string
 			if t.Torrent != nil && t.Torrent.Info() != nil {

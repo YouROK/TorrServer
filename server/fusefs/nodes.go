@@ -8,7 +8,9 @@ import (
 	"io"
 	"server/log"
 	"server/settings"
+	"server/torr"
 	"syscall"
+	"time"
 
 	"github.com/hanwen/go-fuse/v2/fs"
 	"github.com/hanwen/go-fuse/v2/fuse"
@@ -16,8 +18,19 @@ import (
 
 // Readdir lists the files in a torrent directory
 func (td *TorrentDir) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
-	if td.torrent == nil || !td.torrent.GotInfo() {
+	if td.torrent == nil {
 		return nil, syscall.ENOENT
+	}
+
+	if !td.torrent.GotInfo() {
+		for i := 0; i < 10; i++ {
+			tor := torr.GetTorrent(td.torrent.Hash().String())
+			if tor.GotInfo() {
+				td.torrent = tor
+				break
+			}
+			time.Sleep(time.Second)
+		}
 	}
 
 	files := td.torrent.Files()
