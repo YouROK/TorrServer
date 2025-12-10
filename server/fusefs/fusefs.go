@@ -153,9 +153,9 @@ func (ffs *FuseFS) updateTorrents(ctx context.Context) {
 	torrents := torr.ListTorrent()
 
 	// Get current children
-	currentChildren := make(map[string]bool)
+	currentChildren := make(map[string]struct{})
 	for name := range ffs.Inode.Children() {
-		currentChildren[name] = true
+		currentChildren[name] = struct{}{}
 	}
 
 	// Add or update torrent directories
@@ -163,12 +163,14 @@ func (ffs *FuseFS) updateTorrents(ctx context.Context) {
 		if t != nil {
 			// Get torrent name safely
 			var dirName string
-			if t.Torrent != nil && t.Torrent.Info() != nil {
-				dirName = sanitizeName(t.Torrent.Name())
-			} else if t.Title != "" {
+			if t.Title != "" {
 				dirName = sanitizeName(t.Title)
+			} else if t.Torrent != nil && t.Torrent.Info() != nil {
+				dirName = sanitizeName(t.Torrent.Name())
+			} else if len(t.Hash().HexString()) > 0 {
+				dirName = t.Hash().HexString()
 			} else {
-				// Skip this torrent if we can't get a name
+				// no name, skip
 				continue
 			}
 			// Check if this directory already exists

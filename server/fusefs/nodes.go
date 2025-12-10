@@ -9,6 +9,7 @@ import (
 	"server/log"
 	"server/settings"
 	"server/torr"
+	"strings"
 	"syscall"
 	"time"
 
@@ -38,17 +39,53 @@ func (td *TorrentDir) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno)
 		return nil, syscall.ENOENT
 	}
 
-	entries := []fuse.DirEntry{}
-
-	for i, file := range files {
-		fileName := sanitizeName(file.DisplayPath())
-		entries = append(entries, fuse.DirEntry{
-			Name: fileName,
-			Ino:  uint64(i + 1),
-			Mode: fuse.S_IFREG,
-		})
+	fullPath := getCurrentDirPath(&td.Inode)
+	parts := strings.Split(fullPath, "/")
+	relPrefix := ""
+	if len(parts) > 1 {
+		relPrefix = strings.Join(parts[1:], "/")
 	}
 
+	entriesMap := make(map[string]fuse.DirEntry)
+
+	for _, file := range files {
+		rel := file.DisplayPath()
+		if relPrefix != "" {
+			if !strings.HasPrefix(rel, relPrefix+"/") && rel != relPrefix {
+				continue
+			}
+			rel = strings.TrimPrefix(rel, relPrefix+"/")
+		}
+
+		elems := strings.Split(rel, "/")
+		if len(elems) == 1 {
+			// файл текущего уровня
+			n := sanitizeName(elems[0])
+			if _, ok := entriesMap[n]; !ok {
+				entriesMap[n] = fuse.DirEntry{
+					Name: n,
+					Ino:  inodeFromString(relPrefix + "/" + elems[0]),
+					Mode: fuse.S_IFREG,
+				}
+			}
+		} else {
+			// подкаталог
+			orig := elems[0]
+			n := sanitizeName(orig)
+			if _, ok := entriesMap[n]; !ok {
+				entriesMap[n] = fuse.DirEntry{
+					Name: n,
+					Ino:  inodeFromString(relPrefix + "/" + orig),
+					Mode: fuse.S_IFDIR,
+				}
+			}
+		}
+	}
+
+	entries := make([]fuse.DirEntry, 0, len(entriesMap))
+	for _, e := range entriesMap {
+		entries = append(entries, e)
+	}
 	return fs.NewListDirStream(entries), 0
 }
 
@@ -63,30 +100,69 @@ func (td *TorrentDir) Lookup(ctx context.Context, name string, out *fuse.EntryOu
 		return nil, syscall.ENOENT
 	}
 
-	if settings.BTsets.EnableDebug {
-		log.TLogln("TorrentDir.Lookup called for:", name)
-		log.TLogln("Current torrent title:", td.torrent.Title)
-		log.TLogln("Current torrent hash:", td.torrent.Hash().String())
+	fullPath := getCurrentDirPath(&td.Inode)
+	parts := strings.Split(fullPath, "/")
+	relPrefix := ""
+	if len(parts) > 1 {
+		relPrefix = strings.Join(parts[1:], "/")
 	}
 
-	// Get base inode from torrent hash
 	baseInode := getTorrentInode(td.torrent)
 
 	for i, file := range files {
-		if sanitizeName(file.DisplayPath()) == name {
-			torrentFile := &TorrentFile{
+		rel := file.DisplayPath()
+		if relPrefix != "" {
+			if !strings.HasPrefix(rel, relPrefix+"/") && rel != relPrefix {
+				continue
+			}
+			rel = strings.TrimPrefix(rel, relPrefix+"/")
+		}
+
+		elems := strings.Split(rel, "/")
+		if len(elems) == 1 {
+			if sanitizeName(elems[0]) != name {
+				continue
+			}
+
+			tf := &TorrentFile{
 				torrent: td.torrent,
 				file:    file,
 			}
 
 			out.Attr.Mode = fuse.S_IFREG | 0o644
 			out.Attr.Size = uint64(file.Length())
-			// Unique inode: base + file index
 			out.Attr.Ino = baseInode + uint64(i+1)
 
-			return td.Inode.NewPersistentInode(ctx, torrentFile, fs.StableAttr{
+			return td.Inode.NewPersistentInode(ctx, tf, fs.StableAttr{
 				Mode: fuse.S_IFREG,
 				Ino:  out.Attr.Ino,
+			}), 0
+		}
+	}
+
+	for _, file := range files {
+		rel := file.DisplayPath()
+		if relPrefix != "" {
+			if !strings.HasPrefix(rel, relPrefix+"/") && rel != relPrefix {
+				continue
+			}
+			rel = strings.TrimPrefix(rel, relPrefix+"/")
+		}
+
+		elems := strings.Split(rel, "/")
+		if len(elems) > 1 && sanitizeName(elems[0]) == name {
+			childDir := &TorrentDir{
+				torrent: td.torrent,
+			}
+			origDirName := elems[0]
+			ino := inodeFromString(relPrefix + "/" + origDirName)
+
+			out.Attr.Mode = fuse.S_IFDIR | 0o755
+			out.Attr.Ino = ino
+
+			return td.Inode.NewPersistentInode(ctx, childDir, fs.StableAttr{
+				Mode: fuse.S_IFDIR,
+				Ino:  ino,
 			}), 0
 		}
 	}

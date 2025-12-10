@@ -9,7 +9,47 @@ import (
 	"regexp"
 	"server/torr"
 	"strings"
+
+	"github.com/hanwen/go-fuse/v2/fs"
 )
+
+// Получить текущий путь директории через итерацию родителей
+func getCurrentDirPath(dir *fs.Inode) string {
+	path := ""
+	curr := dir
+
+	for _, i := curr.Parent(); i != nil; {
+		name, parent := curr.Parent()
+		if name == "" {
+			break
+		}
+		path = name + "/" + path
+		curr = parent
+	}
+
+	return strings.Trim(path, "/")
+}
+
+// Для TorrentDir получить уровень вложенности
+func getDirLevel(dir *fs.Inode) int {
+	level := 0
+	curr := dir
+	for _, i := curr.Parent(); i != nil; {
+		_, parent := curr.Parent()
+		if parent == nil {
+			break
+		}
+		level++
+		curr = parent
+	}
+	return level
+}
+
+func inodeFromString(s string) uint64 {
+	h := fnv.New64a()
+	h.Write([]byte(s))
+	return h.Sum64()
+}
 
 // Hash to inode conversion
 func hashToInode(hash [20]byte) uint64 {
@@ -24,27 +64,9 @@ func hashToInode(hash [20]byte) uint64 {
 	return inode
 }
 
-// Generate inode from string (useful for consistent inodes for same paths)
-func inodeFromString(s string) uint64 {
-	h := fnv.New64a()
-	h.Write([]byte(s))
-	return h.Sum64()
-}
-
 // Get torrent inode base
 func getTorrentInode(t *torr.Torrent) uint64 {
 	return hashToInode(t.Hash())
-}
-
-// For torrent directories - combine torrent hash with path
-func getTorrentDirIno(torrentHash, dirName string) uint64 {
-	return inodeFromString(torrentHash + ":" + dirName)
-}
-
-// For torrent files - combine torrent hash with file path
-func getTorrentFileIno(torrentHash, filePath string, index int) uint64 {
-	// Use both string hash and index for extra uniqueness
-	return inodeFromString(torrentHash+":"+filePath) + uint64(index)
 }
 
 // sanitizeName cleans up file/directory names for filesystem compatibility
@@ -73,11 +95,6 @@ func sanitizeName(name string) string {
 	}
 
 	return name
-}
-
-// joinPath safely joins path components
-func joinPath(base, name string) string {
-	return filepath.Join(base, sanitizeName(name))
 }
 
 // GetStatus returns the current status of the FUSE filesystem
