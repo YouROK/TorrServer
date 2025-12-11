@@ -4,6 +4,7 @@
 package fusefs
 
 import (
+	"context"
 	"hash/fnv"
 	"path/filepath"
 	"regexp"
@@ -11,9 +12,9 @@ import (
 	"strings"
 
 	"github.com/hanwen/go-fuse/v2/fs"
+	"github.com/hanwen/go-fuse/v2/fuse"
 )
 
-// Получить текущий путь директории через итерацию родителей
 func getCurrentDirPath(dir *fs.Inode) string {
 	path := ""
 	curr := dir
@@ -30,7 +31,6 @@ func getCurrentDirPath(dir *fs.Inode) string {
 	return strings.Trim(path, "/")
 }
 
-// Для TorrentDir получить уровень вложенности
 func getDirLevel(dir *fs.Inode) int {
 	level := 0
 	curr := dir
@@ -95,6 +95,99 @@ func sanitizeName(name string) string {
 	}
 
 	return name
+}
+
+// update the filesystem with current torrents
+func updateTorrents(ffs *FuseFS, ctx context.Context) {
+	torrents := torr.ListTorrent()
+
+	type catState struct {
+		inode    *fs.Inode
+		torrents map[string]struct{}
+	}
+	categories := make(map[string]*catState)
+
+	for name, child := range ffs.Inode.Children() {
+		if _, ok := child.Operations().(*CategoryDir); ok {
+			categories[name] = &catState{
+				inode:    child,
+				torrents: make(map[string]struct{}),
+			}
+		}
+	}
+
+	for _, t := range torrents {
+		if t == nil {
+			continue
+		}
+
+		catName := t.Category
+		if strings.TrimSpace(catName) == "" {
+			catName = "other"
+		}
+		catName = sanitizeName(catName)
+
+		cs, ok := categories[catName]
+		if !ok {
+			catDir := &CategoryDir{category: catName}
+			catInode := ffs.Inode.NewPersistentInode(ctx, catDir, fs.StableAttr{
+				Mode: fuse.S_IFDIR,
+				Ino:  inodeFromString("cat/" + catName),
+			})
+			ffs.Inode.AddChild(catName, catInode, false)
+
+			cs = &catState{
+				inode:    catInode,
+				torrents: make(map[string]struct{}),
+			}
+			categories[catName] = cs
+		}
+
+		var dirName string
+		if t.Title != "" {
+			dirName = sanitizeName(t.Title)
+		} else if t.Torrent != nil && t.Torrent.Info() != nil {
+			dirName = sanitizeName(t.Torrent.Name())
+		} else if len(t.Hash().HexString()) > 0 {
+			dirName = t.Hash().HexString()
+		} else {
+			continue
+		}
+
+		catInode := cs.inode
+		if child := catInode.GetChild(dirName); child == nil {
+			torrentDir := &TorrentDir{
+				torrent:       t,
+				isTorrentRoot: true,
+				Inode:         fs.Inode{},
+			}
+
+			ch := catInode.NewPersistentInode(ctx, torrentDir, fs.StableAttr{
+				Mode: fuse.S_IFDIR,
+				Ino:  getTorrentInode(t),
+			})
+			catInode.AddChild(dirName, ch, false)
+		} else if dir, ok := child.Operations().(*TorrentDir); ok {
+			dir.torrent = t
+		}
+
+		cs.torrents[dirName] = struct{}{}
+	}
+
+	for catName, cs := range categories {
+		for name, child := range cs.inode.Children() {
+			if _, ok := child.Operations().(*TorrentDir); !ok {
+				continue
+			}
+			if _, alive := cs.torrents[name]; !alive {
+				cs.inode.RmChild(name)
+			}
+		}
+
+		if len(cs.inode.Children()) == 0 {
+			ffs.Inode.RmChild(catName)
+		}
+	}
 }
 
 // GetStatus returns the current status of the FUSE filesystem

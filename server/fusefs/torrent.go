@@ -9,13 +9,30 @@ import (
 	"server/log"
 	"server/settings"
 	"server/torr"
+	"server/torr/storage/torrstor"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
+	"github.com/anacrolix/torrent"
 	"github.com/hanwen/go-fuse/v2/fs"
 	"github.com/hanwen/go-fuse/v2/fuse"
 )
+
+type TorrentDir struct {
+	fs.Inode
+	isTorrentRoot bool
+	torrent       *torr.Torrent
+}
+
+type TorrentFile struct {
+	fs.Inode
+	torrent *torr.Torrent
+	file    *torrent.File
+	reader  *torrstor.Reader
+	mu      sync.Mutex
+}
 
 // Readdir lists the files in a torrent directory
 func (td *TorrentDir) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
@@ -41,9 +58,10 @@ func (td *TorrentDir) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno)
 
 	fullPath := getCurrentDirPath(&td.Inode)
 	parts := strings.Split(fullPath, "/")
+
 	relPrefix := ""
-	if len(parts) > 1 {
-		relPrefix = strings.Join(parts[1:], "/")
+	if len(parts) > 2 {
+		relPrefix = strings.Join(parts[2:], "/")
 	}
 
 	entriesMap := make(map[string]fuse.DirEntry)
@@ -102,9 +120,10 @@ func (td *TorrentDir) Lookup(ctx context.Context, name string, out *fuse.EntryOu
 
 	fullPath := getCurrentDirPath(&td.Inode)
 	parts := strings.Split(fullPath, "/")
+
 	relPrefix := ""
-	if len(parts) > 1 {
-		relPrefix = strings.Join(parts[1:], "/")
+	if len(parts) > 2 {
+		relPrefix = strings.Join(parts[2:], "/")
 	}
 
 	baseInode := getTorrentInode(td.torrent)
@@ -171,7 +190,11 @@ func (td *TorrentDir) Lookup(ctx context.Context, name string, out *fuse.EntryOu
 }
 
 func (td *TorrentDir) Getattr(ctx context.Context, fh fs.FileHandle, out *fuse.AttrOut) syscall.Errno {
-	out.Mode = fuse.S_IFDIR | 0o755
+	if td.isTorrentRoot {
+		out.Mode = fuse.S_IFDIR | 0o777
+	} else {
+		out.Mode = fuse.S_IFDIR | 0o755
+	}
 	out.Ino = td.Inode.StableAttr().Ino
 	return 0
 }

@@ -10,13 +10,10 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/anacrolix/torrent"
 	"github.com/hanwen/go-fuse/v2/fs"
 	"github.com/hanwen/go-fuse/v2/fuse"
 
 	"server/log"
-	"server/torr"
-	"server/torr/storage/torrstor"
 )
 
 // FUSE filesystem for TorrServer
@@ -26,21 +23,6 @@ type FuseFS struct {
 	server    *fuse.Server
 	mu        sync.RWMutex
 	enabled   bool
-}
-
-// directory containing torrent files
-type TorrentDir struct {
-	fs.Inode
-	torrent *torr.Torrent
-}
-
-// file within a torrent
-type TorrentFile struct {
-	fs.Inode
-	torrent *torr.Torrent
-	file    *torrent.File
-	reader  *torrstor.Reader
-	mu      sync.Mutex
 }
 
 var (
@@ -89,6 +71,8 @@ func (ffs *FuseFS) Mount(mountPath string) error {
 			Name:       "torrserver",
 			FsName:     "torrserver-fuse",
 		},
+		UID: uint32(os.Getuid()),
+		GID: uint32(os.Getgid()),
 	}
 
 	server, err := fs.Mount(mountPath, ffs, opts)
@@ -145,66 +129,12 @@ func (ffs *FuseFS) GetMountPath() string {
 // OnAdd is called when the node is added to the in-memory tree
 func (ffs *FuseFS) OnAdd(ctx context.Context) {
 	// Initialize root directory with current torrents
-	ffs.updateTorrents(ctx)
-}
-
-// update the filesystem with current torrents
-func (ffs *FuseFS) updateTorrents(ctx context.Context) {
-	torrents := torr.ListTorrent()
-
-	// Get current children
-	currentChildren := make(map[string]struct{})
-	for name := range ffs.Inode.Children() {
-		currentChildren[name] = struct{}{}
-	}
-
-	// Add or update torrent directories
-	for _, t := range torrents {
-		if t != nil {
-			// Get torrent name safely
-			var dirName string
-			if t.Title != "" {
-				dirName = sanitizeName(t.Title)
-			} else if t.Torrent != nil && t.Torrent.Info() != nil {
-				dirName = sanitizeName(t.Torrent.Name())
-			} else if len(t.Hash().HexString()) > 0 {
-				dirName = t.Hash().HexString()
-			} else {
-				// no name, skip
-				continue
-			}
-			// Check if this directory already exists
-			if child := ffs.Inode.GetChild(dirName); child == nil {
-				// Create new torrent directory with a unique instance
-				torrentDir := &TorrentDir{
-					torrent: t,
-					Inode:   fs.Inode{},
-				}
-				ch := ffs.Inode.NewPersistentInode(ctx, torrentDir, fs.StableAttr{
-					Mode: fuse.S_IFDIR,
-					Ino:  getTorrentInode(t), // Use torrent's hash as inode
-				})
-				ffs.Inode.AddChild(dirName, ch, false)
-			} else {
-				// Update existing directory with correct torrent reference
-				if dir, ok := child.Operations().(*TorrentDir); ok {
-					dir.torrent = t // Update the torrent reference
-				}
-			}
-
-			delete(currentChildren, dirName)
-		}
-	}
-
-	// Remove directories for torrents that no longer exist
-	for dirName := range currentChildren {
-		ffs.Inode.RmChild(dirName)
-	}
+	updateTorrents(ffs, ctx)
 }
 
 // contents of the root directory (all torrents)
 func (ffs *FuseFS) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
-	ffs.updateTorrents(ctx)
+	updateTorrents(ffs, ctx)
 
 	entries := []fuse.DirEntry{}
 	for name, child := range ffs.Inode.Children() {
@@ -220,7 +150,7 @@ func (ffs *FuseFS) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
 
 // find a child node by name
 func (ffs *FuseFS) Lookup(ctx context.Context, name string, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
-	ffs.updateTorrents(ctx)
+	updateTorrents(ffs, ctx)
 
 	child := ffs.Inode.GetChild(name)
 	if child == nil {
@@ -228,4 +158,20 @@ func (ffs *FuseFS) Lookup(ctx context.Context, name string, out *fuse.EntryOut) 
 	}
 
 	return child, 0
+}
+
+func (ffs *FuseFS) Getattr(ctx context.Context, fh fs.FileHandle, out *fuse.AttrOut) syscall.Errno {
+	out.Mode = fuse.S_IFDIR | 0o755
+	out.Ino = ffs.Inode.StableAttr().Ino
+	return 0
+}
+
+func (ffs *FuseFS) Create(ctx context.Context, name string, flags uint32, mode uint32, out *fuse.EntryOut) (node *fs.Inode, fh fs.FileHandle, fuseFlags uint32, errno syscall.Errno) {
+	uploadNode := &UploadNode{name: name}
+	ch := ffs.Inode.NewPersistentInode(ctx, uploadNode, fs.StableAttr{
+		Mode: fuse.S_IFREG | 0o666,
+	})
+
+	handle := &UploadHandle{node: uploadNode, category: "other"}
+	return ch, handle, 0, 0
 }
