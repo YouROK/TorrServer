@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"server/log"
 	"server/settings"
 
 	"github.com/anacrolix/torrent"
@@ -107,17 +108,26 @@ func OpenTorrentFile(path string) (*torrent.TorrentSpec, error) {
 	if err != nil {
 		return nil, err
 	}
-	info, err := minfo.UnmarshalInfo()
+	// TODO: check Trackers and DisplayName in TorrentSpec
+	spec, err := torrent.TorrentSpecFromMetaInfoErr(minfo)
 	if err != nil {
+		log.TLogln("Error parse torrent file:", err)
 		return nil, err
 	}
 
+	return spec, nil
+
+	// info, err := minfo.UnmarshalInfo()
+	// if err != nil {
+	// 	return nil, err
+	// }
+
 	// mag := minfo.Magnet(info.Name, minfo.HashInfoBytes())
-	mag := minfo.Magnet(nil, &info)
-	return &torrent.TorrentSpec{
-		InfoBytes:   minfo.InfoBytes,
-		Trackers:    [][]string{mag.Trackers},
-		DisplayName: info.Name,
-		InfoHash:    minfo.HashInfoBytes(),
-	}, nil
+	// mag := minfo.Magnet(nil, &info)
+	// return &torrent.TorrentSpec{
+	// 	InfoBytes:   minfo.InfoBytes,
+	// 	Trackers:    [][]string{mag.Trackers},
+	// 	DisplayName: info.Name,
+	// 	InfoHash:    minfo.HashInfoBytes(),
+	// }, nil
 }

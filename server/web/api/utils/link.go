@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"server/log"
+
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 )
@@ -31,8 +33,10 @@ func ParseFile(file multipart.File) (*torrent.TorrentSpec, error) {
 	// 	InfoHash:    minfo.HashInfoBytes(),
 	// }, nil
 
+	// TODO: check Trackers and DisplayName in TorrentSpec
 	spec, err := torrent.TorrentSpecFromMetaInfoErr(minfo)
 	if err != nil {
+		log.TLogln("Error parse torrent info in ParseFile:", err)
 		return nil, err
 	}
 	return spec, nil
@@ -77,8 +81,10 @@ func fromMagnet(link string) (*torrent.TorrentSpec, error) {
 	// 	InfoHash:    mag.InfoHash,
 	// }, nil
 
+	// TODO: check Trackers and DisplayName in TorrentSpec
 	spec, err := torrent.TorrentSpecFromMagnetUri(link)
 	if err != nil {
+		log.TLogln("Error parse torrent info fromMagnet:", err)
 		return nil, err
 	}
 	return spec, nil
@@ -126,8 +132,10 @@ func fromHttp(link string) (*torrent.TorrentSpec, error) {
 	// 	InfoHash:    minfo.HashInfoBytes(),
 	// }, nil
 
+	// TODO: check Trackers and DisplayName in TorrentSpec
 	spec, err := torrent.TorrentSpecFromMetaInfoErr(minfo)
 	if err != nil {
+		log.TLogln("Error parse torrent info fromHttp:", err)
 		return nil, err
 	}
 	return spec, nil
@@ -154,8 +162,10 @@ func fromFile(path string) (*torrent.TorrentSpec, error) {
 	// 	InfoHash:    minfo.HashInfoBytes(),
 	// }, nil
 
+	// TODO: check Trackers and DisplayName in TorrentSpec
 	spec, err := torrent.TorrentSpecFromMetaInfoErr(minfo)
 	if err != nil {
+		log.TLogln("Error parse torrent info fromFile:", err)
 		return nil, err
 	}
 	return spec, nil

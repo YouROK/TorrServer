@@ -50,20 +50,27 @@ func (h *UploadHandle) Release(ctx context.Context) syscall.Errno {
 		log.TLogln("Error read torrent file:", err)
 		return 0
 	}
-	info, err := minfo.UnmarshalInfo()
+	// TODO: check Trackers and DisplayName in TorrentSpec
+	tspec, err := torrent.TorrentSpecFromMetaInfoErr(minfo)
 	if err != nil {
 		log.TLogln("Error parse torrent file:", err)
 		return 0
 	}
 
+	// info, err := minfo.UnmarshalInfo()
+	// if err != nil {
+	// 	log.TLogln("Error parse torrent file:", err)
+	// 	return 0
+	// }
+
 	// mag := minfo.Magnet(info.Name, minfo.HashInfoBytes())
-	mag := minfo.Magnet(nil, &info)
-	tspec := &torrent.TorrentSpec{
-		InfoBytes:   minfo.InfoBytes,
-		Trackers:    [][]string{mag.Trackers},
-		DisplayName: info.Name,
-		InfoHash:    minfo.HashInfoBytes(),
-	}
+	// mag := minfo.Magnet(nil, &info)
+	// tspec := &torrent.TorrentSpec{
+	// 	InfoBytes:   minfo.InfoBytes,
+	// 	Trackers:    [][]string{mag.Trackers},
+	// 	DisplayName: info.Name,
+	// 	InfoHash:    minfo.HashInfoBytes(),
+	// }
 
 	tor, err := torr.AddTorrent(tspec, "", "", "", h.category)
 	if err != nil {
