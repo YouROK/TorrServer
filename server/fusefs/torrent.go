@@ -6,14 +6,15 @@ package fusefs
 import (
 	"context"
 	"io"
-	"server/log"
-	"server/settings"
-	"server/torr"
-	"server/torr/storage/torrstor"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
+
+	"server/log"
+	"server/settings"
+	"server/torr"
+	"server/torr/storage/torrstor"
 
 	"github.com/anacrolix/torrent"
 	"github.com/hanwen/go-fuse/v2/fs"

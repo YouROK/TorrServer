@@ -5,8 +5,9 @@ package fusefs
 
 import (
 	"context"
-	"server/torr"
 	"syscall"
+
+	"server/torr"
 
 	"github.com/hanwen/go-fuse/v2/fs"
 	"github.com/hanwen/go-fuse/v2/fuse"

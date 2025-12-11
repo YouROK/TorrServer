@@ -8,8 +8,9 @@ import (
 	"hash/fnv"
 	"path/filepath"
 	"regexp"
-	"server/torr"
 	"strings"
+
+	"server/torr"
 
 	"github.com/hanwen/go-fuse/v2/fs"
 	"github.com/hanwen/go-fuse/v2/fuse"
