@@ -122,13 +122,21 @@ func WebLogger() gin.HandlerFunc {
 	}
 }
 
-// TorrentLogHandler implements slog.Handler in a minimal way
+// TorrentLogHandler implements filtered slog.Handler in a minimal way
 type TorrentLogHandler struct {
-	level slog.Level
+	level          slog.Level
+	bannedPrefixes []string
 }
 
 func NewTorrentLogHandler(level slog.Level) *TorrentLogHandler {
-	return &TorrentLogHandler{level: level}
+	return &TorrentLogHandler{
+		level: level,
+		bannedPrefixes: []string{
+			// "github.com/anacrolix/torrent",
+			"reader",
+			"readAt",
+		},
+	}
 }
 
 // slog levels:
@@ -144,24 +152,29 @@ func (h *TorrentLogHandler) Handle(ctx context.Context, record slog.Record) erro
 	if !h.Enabled(ctx, record.Level) {
 		return nil
 	}
-	if strings.Contains(record.Source().Function, "*reader") {
-		return nil // Skip this log message
+
+	msg := record.Message
+
+	for _, prefix := range h.bannedPrefixes {
+		if strings.Contains(msg, prefix) {
+			return nil
+		}
 	}
 
-	// Build the message
-	var builder strings.Builder
-	builder.WriteString("[")
-	builder.WriteString(record.Level.String())
-	builder.WriteString("] ")
-	builder.WriteString(record.Message)
+	var buf bytes.Buffer
+	fmt.Fprintf(&buf, "TORRENT [%s] %s", record.Level.String(), msg)
 
-	// Add attributes
 	record.Attrs(func(attr slog.Attr) bool {
-		builder.WriteString(fmt.Sprintf(" %s=%v", attr.Key, attr.Value.Any()))
+		fmt.Fprintf(&buf, " %s=%v", attr.Key, attr.Value.Any())
 		return true
 	})
 
-	TLogln("TORRENT", builder.String())
+	buf.WriteByte('\n')
+
+	if logFile != nil {
+		logFile.Write(buf.Bytes())
+	}
+
 	return nil
 }
 
@@ -194,4 +207,16 @@ func WarnTorrentLogger() *slog.Logger {
 func ErrorTorrentLogger() *slog.Logger {
 	handler := NewTorrentLogHandler(slog.LevelError)
 	return slog.New(handler)
+}
+
+// FIXME: recursion in
+// log/slog.AnyValue(...)
+// log/slog.argsToAttr(...)
+// log/slog.(*Record).Add(...)
+// log/slog.(*Logger).log(...)
+// github.com/anacrolix/torrent.(*reader).readAt(...)
+func NullTorrentLogger() *slog.Logger {
+	return slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{
+		Level: slog.LevelError + 1000, // Log nothing
+	}))
 }
