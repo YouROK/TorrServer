@@ -11,6 +11,8 @@ import (
 
 	"server/settings"
 
+	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/metainfo"
 	"golang.org/x/time/rate"
 )
 
@@ -98,4 +100,24 @@ func Limit(i int) *rate.Limiter {
 		l = rate.NewLimiter(rate.Limit(i), b)
 	}
 	return l
+}
+
+func OpenTorrentFile(path string) (*torrent.TorrentSpec, error) {
+	minfo, err := metainfo.LoadFromFile(path)
+	if err != nil {
+		return nil, err
+	}
+	info, err := minfo.UnmarshalInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	// mag := minfo.Magnet(info.Name, minfo.HashInfoBytes())
+	mag := minfo.Magnet(nil, &info)
+	return &torrent.TorrentSpec{
+		InfoBytes:   minfo.InfoBytes,
+		Trackers:    [][]string{mag.Trackers},
+		DisplayName: info.Name,
+		InfoHash:    minfo.HashInfoBytes(),
+	}, nil
 }
