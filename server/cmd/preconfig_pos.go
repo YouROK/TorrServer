@@ -6,8 +6,9 @@ package main
 import (
 	"os"
 	"os/signal"
-	"server"
 	"syscall"
+
+	"server"
 
 	"server/log"
 	"server/settings"

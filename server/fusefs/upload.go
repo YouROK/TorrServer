@@ -6,10 +6,11 @@ package fusefs
 import (
 	"bytes"
 	"context"
-	"server/log"
-	"server/torr"
 	"syscall"
 	"time"
+
+	"server/log"
+	"server/torr"
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
