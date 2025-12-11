@@ -589,6 +589,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/torznab/search": {
+            "get": {
+                "description": "Makes a torznab search.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Makes a torznab search",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Torznab query",
+                        "name": "query",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Torznab torrent search result(s)",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.TorrentDetails"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/viewed": {
             "post": {
                 "description": "Allow to set, list or remove viewed torrents from server.",
@@ -827,6 +859,10 @@ const docTemplate = `{
                     "description": "Rutor",
                     "type": "boolean"
                 },
+                "enableTorznabSearch": {
+                    "description": "Torznab",
+                    "type": "boolean"
+                },
                 "forceEncrypt": {
                     "description": "Torrent",
                     "type": "boolean"
@@ -877,6 +913,12 @@ const docTemplate = `{
                 "torrentsSavePath": {
                     "type": "string"
                 },
+                "torznabUrls": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/settings.TorznabConfig"
+                    }
+                },
                 "uploadRateLimit": {
                     "description": "in kb, 0 - inf",
                     "type": "integer"
@@ -884,6 +926,20 @@ const docTemplate = `{
                 "useDisk": {
                     "description": "Disk",
                     "type": "boolean"
+                }
+            }
+        },
+        "settings.TorznabConfig": {
+            "type": "object",
+            "properties": {
+                "host": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
                 }
             }
         },

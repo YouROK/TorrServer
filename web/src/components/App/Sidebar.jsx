@@ -10,6 +10,7 @@ import SettingsDialog from 'components/Settings'
 import RemoveAll from 'components/RemoveAll'
 import AboutDialog from 'components/About'
 import CloseServer from 'components/CloseServer'
+import SearchDialogButton from 'components/Search'
 import { memo } from 'react'
 import CheckIcon from '@material-ui/icons/Check'
 import ClearIcon from '@material-ui/icons/Clear'
@@ -25,6 +26,7 @@ const Sidebar = ({ isDrawerOpen, setIsDonationDialogOpen, isOffline, isLoading, 
     <AppSidebarStyle isDrawerOpen={isDrawerOpen}>
       <List>
         <AddDialogButton isOffline={isOffline} isLoading={isLoading} />
+        <SearchDialogButton isOffline={isOffline} isLoading={isLoading} />
 
         <RemoveAll isOffline={isOffline} isLoading={isLoading} />
       </List>
