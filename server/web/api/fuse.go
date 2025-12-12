@@ -5,6 +5,7 @@ package api
 
 import (
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"server/fusefs"
@@ -75,11 +76,7 @@ func fuseMount(c *gin.Context) {
 	}
 
 	// Update settings to remember the mount path
-	if config.BTsets != nil {
-		config.BTsets.EnableFUSE = true
-		config.BTsets.FUSEPath = mountPath
-		config.SetBTSets(config.BTsets)
-	}
+	config.Args.FusePath = mountPath
 
 	status := fusefs.GetStatus()
 	c.JSON(http.StatusOK, status)
@@ -110,25 +107,20 @@ func fuseUnmount(c *gin.Context) {
 		return
 	}
 
-	// Update settings
-	if config.BTsets != nil {
-		config.BTsets.EnableFUSE = false
-		config.SetBTSets(config.BTsets)
-	}
-
 	status := fusefs.GetStatus()
 	c.JSON(http.StatusOK, status)
 }
 
 // FuseAutoMount attempts to auto-mount FUSE if enabled in settings
 func FuseAutoMount() {
-	if config.BTsets != nil && config.BTsets.EnableFUSE && config.BTsets.FUSEPath != "" {
+	if config.Args.FusePath != "" {
 		ffs := fusefs.GetFuseFS()
 		if !ffs.IsEnabled() {
-			err := ffs.Mount(config.BTsets.FUSEPath)
+			err := ffs.Mount(config.Args.FusePath)
 			if err != nil {
 				// Log error but don't fail startup
 				log.TLogln("Failed to auto-mount FUSE filesystem:", err)
+				os.Exit(1)
 			}
 		}
 	}
