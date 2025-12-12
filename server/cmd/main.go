@@ -7,10 +7,11 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"server/torr/utils"
 	"strconv"
 	"strings"
 	"time"
+
+	"server/torr/utils"
 
 	"github.com/alexflint/go-arg"
 	"github.com/pkg/browser"
