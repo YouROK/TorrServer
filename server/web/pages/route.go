@@ -64,7 +64,14 @@ func getTorrents(c *gin.Context) {
 		}
 		// mag := mi.Magnet(ts.DisplayName, ts.InfoHash)
 		mag := mi.Magnet(&ts.InfoHash, &metainfo.Info{Name: ts.DisplayName})
+		// TODO: use MagnetV2
+		// if err == nil {
 		http += "<p><a href='" + mag.String() + "'>magnet:?xt=urn:btih:" + mag.InfoHash.HexString() + "</a></p>"
+		// http += "<p><a href='" + mag.String() + "'magnet:?xt=urn:btih:>" + mag.InfoHash.Value.HexString() + "</a></p>"
+		// }
+	}
+	if len(list) == 0 {
+		http += "<p>No torrents saved in DB</p>"
 	}
 	http += "</div>"
 	c.Data(200, "text/html; charset=utf-8", []byte(http))

@@ -21,6 +21,7 @@ func ParseFile(file multipart.File) (*torrent.TorrentSpec, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	// info, err := minfo.UnmarshalInfo()
 	// if err != nil {
 	// 	return nil, err
@@ -36,9 +37,13 @@ func ParseFile(file multipart.File) (*torrent.TorrentSpec, error) {
 	// TODO: check Trackers and DisplayName in TorrentSpec
 	spec, err := torrent.TorrentSpecFromMetaInfoErr(minfo)
 	if err != nil {
-		log.TLogln("Error parse torrent info in ParseFile:", err)
+		log.TLogln("Error parse torrent file info:", err)
 		return nil, err
 	}
+
+	mag, err := minfo.MagnetV2()
+	log.TLogln("ParseFile TorrentSpec:", spec, "MagnetV2", mag, "Err:", err)
+
 	return spec, nil
 }
 
@@ -58,7 +63,7 @@ func ParseLink(link string) (*torrent.TorrentSpec, error) {
 	case "file":
 		return fromFile(urlLink.Path)
 	default:
-		err = fmt.Errorf("unknown scheme:", urlLink, urlLink.Scheme)
+		err = fmt.Errorf("%s unknown scheme: %s", urlLink, urlLink.Scheme)
 	}
 	return nil, err
 }
@@ -84,9 +89,10 @@ func fromMagnet(link string) (*torrent.TorrentSpec, error) {
 	// TODO: check Trackers and DisplayName in TorrentSpec
 	spec, err := torrent.TorrentSpecFromMagnetUri(link)
 	if err != nil {
-		log.TLogln("Error parse torrent info fromMagnet:", err)
+		log.TLogln("Error parse torrent info:", err)
 		return nil, err
 	}
+	log.TLogln("ParseLink fromMagnet TorrentSpec:", spec)
 	return spec, nil
 }
 
@@ -135,9 +141,13 @@ func fromHttp(link string) (*torrent.TorrentSpec, error) {
 	// TODO: check Trackers and DisplayName in TorrentSpec
 	spec, err := torrent.TorrentSpecFromMetaInfoErr(minfo)
 	if err != nil {
-		log.TLogln("Error parse torrent info fromHttp:", err)
+		log.TLogln("Error parse torrent info:", err)
 		return nil, err
 	}
+
+	mag, err := minfo.MagnetV2()
+	log.TLogln("ParseLink fromHttp TorrentSpec:", spec, "MagnetV2:", mag, "Err:", err)
+
 	return spec, nil
 }
 
@@ -165,8 +175,12 @@ func fromFile(path string) (*torrent.TorrentSpec, error) {
 	// TODO: check Trackers and DisplayName in TorrentSpec
 	spec, err := torrent.TorrentSpecFromMetaInfoErr(minfo)
 	if err != nil {
-		log.TLogln("Error parse torrent info fromFile:", err)
+		log.TLogln("Error parse torrent info:", err)
 		return nil, err
 	}
+
+	mag, err := minfo.MagnetV2()
+	log.TLogln("ParseLink fromFile TorrentSpec:", spec, "MagnetV2", mag, "Err", err)
+
 	return spec, nil
 }

@@ -51,12 +51,6 @@ func (h *UploadHandle) Release(ctx context.Context) syscall.Errno {
 		log.TLogln("Error read torrent file:", err)
 		return 0
 	}
-	// TODO: check Trackers and DisplayName in TorrentSpec
-	tspec, err := torrent.TorrentSpecFromMetaInfoErr(minfo)
-	if err != nil {
-		log.TLogln("Error parse torrent file:", err)
-		return 0
-	}
 
 	// info, err := minfo.UnmarshalInfo()
 	// if err != nil {
@@ -73,11 +67,22 @@ func (h *UploadHandle) Release(ctx context.Context) syscall.Errno {
 	// 	InfoHash:    minfo.HashInfoBytes(),
 	// }
 
+	// TODO: check Trackers and DisplayName in TorrentSpec
+	tspec, err := torrent.TorrentSpecFromMetaInfoErr(minfo)
+	if err != nil {
+		log.TLogln("Error parse torrent info:", err)
+		return 0
+	}
+
+	mag, err := minfo.MagnetV2()
+	log.TLogln("fusefs Release TorrentSpec:", tspec, "MagnetV2", mag, "Err:", err)
+
 	tor, err := torr.AddTorrent(tspec, "", "", "", h.category)
 	if err != nil {
 		log.TLogln("Error add torrent from fuse fs:", err)
 		return 0
 	}
+
 	torr.SaveTorrentToDB(tor)
 
 	// удаление через секунду чтоб проводники файлов не ругались, так как они после записи проверяют сам файл
