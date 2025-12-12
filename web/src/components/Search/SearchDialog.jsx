@@ -19,7 +19,7 @@ import {
 } from '@material-ui/core'
 import { useTranslation } from 'react-i18next'
 import axios from 'axios'
-import { torznabSearchHost, torrentsHost, settingsHost } from 'utils/Hosts'
+import { torznabSearchHost, torrentsHost, settingsHost, searchHost } from 'utils/Hosts'
 import { AddCircleOutline as AddIcon, CloudDownload as DownloadIcon } from '@material-ui/icons'
 import { StyledDialog, StyledHeader } from 'style/CustomMaterialUiStyles'
 import { Content } from './style'
@@ -35,6 +35,7 @@ export default function SearchDialog({ handleClose }) {
     const [successMsg, setSuccessMsg] = useState('')
     const [errorMsg, setErrorMsg] = useState('')
     const [trackers, setTrackers] = useState([])
+    const [enableRutor, setEnableRutor] = useState(false)
     const [selectedTracker, setSelectedTracker] = useState(-1)
 
     const fullScreen = useMediaQuery('@media (max-width:930px)')
@@ -42,8 +43,11 @@ export default function SearchDialog({ handleClose }) {
 
     useEffect(() => {
         axios.post(settingsHost(), { action: 'get' }).then(({ data }) => {
-            if (data && data.TorznabUrls) {
-                setTrackers(data.TorznabUrls)
+            if (data) {
+                if (data.TorznabUrls) {
+                    setTrackers(data.TorznabUrls)
+                }
+                setEnableRutor(!!data.EnableRutorSearch)
             }
         }).catch(console.error)
     }, [])
@@ -54,11 +58,16 @@ export default function SearchDialog({ handleClose }) {
         setSearched(true)
         setResults([])
         try {
+            let url = torznabSearchHost()
             const params = { query }
-            if (selectedTracker !== -1) {
+
+            if (selectedTracker === 'rutor') {
+                url = searchHost()
+            } else if (selectedTracker !== -1) {
                 params.index = selectedTracker
             }
-            const { data } = await axios.get(torznabSearchHost(), { params })
+
+            const { data } = await axios.get(url, { params })
             setResults(data || [])
         } catch (error) {
             console.error(error)
@@ -122,6 +131,7 @@ export default function SearchDialog({ handleClose }) {
                                 label="Tracker"
                             >
                                 <MenuItem value={-1}>All Trackers</MenuItem>
+                                {enableRutor && <MenuItem value="rutor">Rutor</MenuItem>}
                                 {trackers.map((tracker, index) => (
                                     <MenuItem key={`${tracker.Host}-${tracker.Key}`} value={index}>
                                         {tracker.Name || tracker.Host}
