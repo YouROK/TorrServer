@@ -6,8 +6,6 @@ package fusefs
 import (
 	"context"
 	"io"
-	"server/log"
-	"server/settings"
 	"server/torr"
 	"server/torr/storage/torrstor"
 	"strings"
@@ -41,13 +39,18 @@ func (td *TorrentDir) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno)
 	}
 
 	if !td.torrent.GotInfo() {
-		for i := 0; i < 10; i++ {
-			tor := torr.GetTorrent(td.torrent.Hash().String())
+		hash := td.torrent.Hash().String()
+		td.torrent = nil
+		for i := 0; i < 20; i++ {
+			tor := torr.GetTorrent(hash)
 			if tor.GotInfo() {
 				td.torrent = tor
 				break
 			}
-			time.Sleep(time.Second)
+			time.Sleep(time.Millisecond * 500)
+		}
+		if td.torrent == nil {
+			return nil, syscall.ENOENT
 		}
 	}
 
@@ -109,8 +112,25 @@ func (td *TorrentDir) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno)
 
 // Lookup finds a file within the torrent directory
 func (td *TorrentDir) Lookup(ctx context.Context, name string, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
-	if td.torrent == nil || !td.torrent.GotInfo() {
+	if td.torrent == nil {
 		return nil, syscall.ENOENT
+	}
+
+	// торрент закрылся, пробуем искать и открыть
+	if !td.torrent.GotInfo() {
+		hash := td.torrent.Hash().String()
+		td.torrent = nil
+		for i := 0; i < 20; i++ {
+			tor := torr.GetTorrent(hash)
+			if tor.GotInfo() {
+				td.torrent = tor
+				break
+			}
+			time.Sleep(time.Millisecond * 500)
+		}
+		if td.torrent == nil {
+			return nil, syscall.ENOENT
+		}
 	}
 
 	files := td.torrent.Files()
@@ -204,11 +224,34 @@ func (tf *TorrentFile) Open(ctx context.Context, flags uint32) (fs.FileHandle, u
 	tf.mu.Lock()
 	defer tf.mu.Unlock()
 
-	if settings.BTsets.EnableDebug {
-		log.TLogln("TorrentFile.Open called")
-		log.TLogln("File path:", tf.file.DisplayPath())
-		log.TLogln("File size:", tf.file.Length())
-		log.TLogln("Torrent title:", tf.torrent.Title)
+	if tf.torrent == nil {
+		return nil, 0, syscall.ENOENT
+	}
+
+	// торрент закрылся, пробуем искать и открыть
+	if !tf.torrent.GotInfo() {
+		fn := tf.file.DisplayPath()
+		hash := tf.torrent.Hash().String()
+		tf.reader = nil
+		tf.torrent = nil
+		for i := 0; i < 20; i++ {
+			tor := torr.GetTorrent(hash)
+			if tor.GotInfo() {
+				tf.torrent = tor
+				break
+			}
+			time.Sleep(time.Millisecond * 500)
+		}
+		if tf.torrent == nil {
+			return nil, 0, syscall.ENOENT
+		}
+		files := tf.torrent.Files()
+		for _, file := range files {
+			if file.DisplayPath() == fn {
+				tf.file = file
+				break
+			}
+		}
 	}
 
 	if tf.reader == nil {
