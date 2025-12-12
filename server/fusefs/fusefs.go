@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"server/settings"
 	"sync"
 	"syscall"
 
@@ -70,6 +71,7 @@ func (ffs *FuseFS) Mount(mountPath string) error {
 			AllowOther: true,
 			Name:       "torrserver",
 			FsName:     "torrserver-fuse",
+			Debug:      settings.BTsets.EnableDebug,
 		},
 		UID: uint32(os.Getuid()),
 		GID: uint32(os.Getgid()),
