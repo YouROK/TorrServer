@@ -79,7 +79,8 @@ func (ffs *FuseFS) Mount(mountPath string) error {
 
 	server, err := fs.Mount(mountPath, ffs, opts)
 	if err != nil {
-		return err
+		log.TLogln("Error mount FUSE filesystem:", err)
+		os.Exit(1)
 	}
 
 	ffs.server = server

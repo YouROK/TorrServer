@@ -45,6 +45,7 @@ type args struct {
 	SearchWA    bool   `arg:"-s" help:"search without auth"`
 	MaxSize     string `arg:"-m" help:"max allowed stream size (in Bytes)"`
 	TGToken     string `arg:"-T" help:"telegram bot token"`
+	FusePath    string `arg:"-f" help:"fuse mount path"`
 }
 
 func (args) Version() string {
@@ -69,6 +70,7 @@ func main() {
 	settings.Path = params.Path
 	settings.HttpAuth = params.HttpAuth
 	log.Init(params.LogPath, params.WebLogPath)
+
 	fmt.Println("=========== START ===========")
 	fmt.Println("TorrServer", version.Version+",", runtime.Version()+",", "CPU Num:", runtime.NumCPU())
 	if params.HttpAuth {
@@ -116,7 +118,31 @@ func main() {
 		}
 	}
 
-	server.Start(params.Port, params.IP, params.SslPort, params.SslCert, params.SslKey, params.Ssl, params.RDB, params.SearchWA, params.TGToken)
+	settings.Args = &settings.ExecArgs{
+		Port:        params.Port,
+		IP:          params.IP,
+		Ssl:         params.Ssl,
+		SslPort:     params.SslPort,
+		SslCert:     params.SslCert,
+		SslKey:      params.SslKey,
+		Path:        params.Path,
+		LogPath:     params.LogPath,
+		WebLogPath:  params.WebLogPath,
+		RDB:         params.RDB,
+		HttpAuth:    params.HttpAuth,
+		DontKill:    params.DontKill,
+		UI:          params.UI,
+		TorrentsDir: params.TorrentsDir,
+		TorrentAddr: params.TorrentAddr,
+		PubIPv4:     params.PubIPv4,
+		PubIPv6:     params.PubIPv6,
+		SearchWA:    params.SearchWA,
+		MaxSize:     params.MaxSize,
+		TGToken:     params.TGToken,
+		FusePath:    params.FusePath,
+	}
+
+	server.Start()
 	log.TLogln(server.WaitServer())
 	log.Close()
 	time.Sleep(time.Second * 3)
