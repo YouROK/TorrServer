@@ -1,5 +1,5 @@
-//go:build !windows
-// +build !windows
+//go:build !windows && !android
+// +build !windows,!android
 
 package main
 
@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"server"
 
@@ -29,8 +30,24 @@ func Preconfig(dkill bool) {
 					log.TLogln("Signal catched:", s)
 					log.TLogln("To stop server, close it from web / api")
 				}
-			} else {
+				continue
+			}
+
+			log.TLogln("Signal catched:", s, "stopping server...")
+
+			done := make(chan struct{})
+
+			go func() {
 				server.Stop()
+				close(done)
+			}()
+
+			select {
+			case <-done:
+				log.TLogln("Server stopped gracefully")
+			case <-time.After(5 * time.Second):
+				log.TLogln("Server stop timeout, exiting forcefully")
+				os.Exit(1)
 			}
 		}
 	}()
