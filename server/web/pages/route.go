@@ -46,8 +46,8 @@ func statPage(c *gin.Context) {
 
 // getTorrents godoc
 //
-//	@Summary		Get HTML of magnet links
-//	@Description	Get HTML of magnet links.
+//	@Summary		Get HTML of magnets
+//	@Description	Get HTML of magnet links for all stored torrents.
 //
 //	@Tags			Pages
 //
@@ -59,16 +59,12 @@ func getTorrents(c *gin.Context) {
 	http := "<div>"
 	for _, db := range list {
 		ts := db.TorrentSpec
+		// TODO: Check TorrentSpec in DB
 		mi := metainfo.MetaInfo{
 			AnnounceList: ts.Trackers,
 		}
-		// mag := mi.Magnet(ts.DisplayName, ts.InfoHash)
 		mag := mi.Magnet(&ts.InfoHash, &metainfo.Info{Name: ts.DisplayName})
-		// TODO: use MagnetV2
-		// if err == nil {
 		http += "<p><a href='" + mag.String() + "'>magnet:?xt=urn:btih:" + mag.InfoHash.HexString() + "</a></p>"
-		// http += "<p><a href='" + mag.String() + "'magnet:?xt=urn:btih:>" + mag.InfoHash.Value.HexString() + "</a></p>"
-		// }
 	}
 	if len(list) == 0 {
 		http += "<p>No torrents saved in DB</p>"

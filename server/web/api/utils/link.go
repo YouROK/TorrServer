@@ -22,27 +22,11 @@ func ParseFile(file multipart.File) (*torrent.TorrentSpec, error) {
 		return nil, err
 	}
 
-	// info, err := minfo.UnmarshalInfo()
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// mag := minfo.Magnet(nil, &info)
-	// return &torrent.TorrentSpec{
-	// 	InfoBytes:   minfo.InfoBytes,
-	// 	Trackers:    [][]string{mag.Trackers},
-	// 	DisplayName: info.Name,
-	// 	InfoHash:    minfo.HashInfoBytes(),
-	// }, nil
-
-	// TODO: check Trackers and DisplayName in TorrentSpec
 	spec, err := torrent.TorrentSpecFromMetaInfoErr(minfo)
 	if err != nil {
 		log.TLogln("Error parse torrent file info:", err)
 		return nil, err
 	}
-
-	mag, err := minfo.MagnetV2()
-	log.TLogln("ParseFile TorrentSpec:", spec, "MagnetV2", mag, "Err:", err)
 
 	return spec, nil
 }
@@ -52,16 +36,16 @@ func ParseLink(link string) (*torrent.TorrentSpec, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	// log.TLogln("ParseLink:", urlLink)
 	switch strings.ToLower(urlLink.Scheme) {
 	case "magnet":
 		return fromMagnet(urlLink.String())
 	case "http", "https":
 		return fromHttp(urlLink.String())
-	case "":
-		return fromMagnet("magnet:?xt=urn:btih:" + urlLink.Path)
 	case "file":
 		return fromFile(urlLink.Path)
+	case "": // infohash
+		return fromMagnet("magnet:?xt=urn:btih:" + urlLink.Path)
 	default:
 		err = fmt.Errorf("%s unknown scheme: %s", urlLink, urlLink.Scheme)
 	}
@@ -69,30 +53,12 @@ func ParseLink(link string) (*torrent.TorrentSpec, error) {
 }
 
 func fromMagnet(link string) (*torrent.TorrentSpec, error) {
-	// mag, err := metainfo.ParseMagnetURI(link)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// var trackers [][]string
-	// if len(mag.Trackers) > 0 {
-	// 	trackers = [][]string{mag.Trackers}
-	// }
-
-	// return &torrent.TorrentSpec{
-	// 	InfoBytes:   nil,
-	// 	Trackers:    trackers,
-	// 	DisplayName: mag.DisplayName,
-	// 	InfoHash:    mag.InfoHash,
-	// }, nil
-
-	// TODO: check Trackers and DisplayName in TorrentSpec
 	spec, err := torrent.TorrentSpecFromMagnetUri(link)
 	if err != nil {
 		log.TLogln("Error parse torrent info:", err)
 		return nil, err
 	}
-	log.TLogln("ParseLink fromMagnet TorrentSpec:", spec)
+
 	return spec, nil
 }
 
@@ -125,28 +91,11 @@ func fromHttp(link string) (*torrent.TorrentSpec, error) {
 		return nil, err
 	}
 
-	// info, err := minfo.UnmarshalInfo()
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// mag := minfo.Magnet(nil, &info)
-
-	// return &torrent.TorrentSpec{
-	// 	InfoBytes:   minfo.InfoBytes,
-	// 	Trackers:    [][]string{mag.Trackers},
-	// 	DisplayName: info.Name,
-	// 	InfoHash:    minfo.HashInfoBytes(),
-	// }, nil
-
-	// TODO: check Trackers and DisplayName in TorrentSpec
 	spec, err := torrent.TorrentSpecFromMetaInfoErr(minfo)
 	if err != nil {
 		log.TLogln("Error parse torrent info:", err)
 		return nil, err
 	}
-
-	mag, err := minfo.MagnetV2()
-	log.TLogln("ParseLink fromHttp TorrentSpec:", spec, "MagnetV2:", mag, "Err:", err)
 
 	return spec, nil
 }
@@ -155,32 +104,17 @@ func fromFile(path string) (*torrent.TorrentSpec, error) {
 	if runtime.GOOS == "windows" && strings.HasPrefix(path, "/") {
 		path = strings.TrimPrefix(path, "/")
 	}
+
 	minfo, err := metainfo.LoadFromFile(path)
 	if err != nil {
 		return nil, err
 	}
-	// info, err := minfo.UnmarshalInfo()
-	// if err != nil {
-	// 	return nil, err
-	// }
 
-	// mag := minfo.Magnet(nil, &info)
-	// return &torrent.TorrentSpec{
-	// 	InfoBytes:   minfo.InfoBytes,
-	// 	Trackers:    [][]string{mag.Trackers},
-	// 	DisplayName: info.Name,
-	// 	InfoHash:    minfo.HashInfoBytes(),
-	// }, nil
-
-	// TODO: check Trackers and DisplayName in TorrentSpec
 	spec, err := torrent.TorrentSpecFromMetaInfoErr(minfo)
 	if err != nil {
 		log.TLogln("Error parse torrent info:", err)
 		return nil, err
 	}
-
-	mag, err := minfo.MagnetV2()
-	log.TLogln("ParseLink fromFile TorrentSpec:", spec, "MagnetV2", mag, "Err", err)
 
 	return spec, nil
 }

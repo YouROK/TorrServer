@@ -132,7 +132,6 @@ func NewTorrentLogHandler(level slog.Level) *TorrentLogHandler {
 	return &TorrentLogHandler{
 		level: level,
 		bannedPrefixes: []string{
-			// "github.com/anacrolix/torrent",
 			"reader",
 			"readAt",
 		},
@@ -161,19 +160,20 @@ func (h *TorrentLogHandler) Handle(ctx context.Context, record slog.Record) erro
 		}
 	}
 
-	var buf bytes.Buffer
-	fmt.Fprintf(&buf, "TORRENT [%s] %s", record.Level.String(), msg)
+	// Build the message
+	var builder strings.Builder
+	builder.WriteString("[")
+	builder.WriteString(record.Level.String())
+	builder.WriteString("] ")
+	builder.WriteString(record.Message)
 
+	// Add attributes
 	record.Attrs(func(attr slog.Attr) bool {
-		fmt.Fprintf(&buf, " %s=%v", attr.Key, attr.Value.Any())
+		builder.WriteString(fmt.Sprintf(" %s=%v", attr.Key, attr.Value.Any()))
 		return true
 	})
 
-	buf.WriteByte('\n')
-
-	if logFile != nil {
-		logFile.Write(buf.Bytes())
-	}
+	TLogln("TORRENT", builder.String())
 
 	return nil
 }

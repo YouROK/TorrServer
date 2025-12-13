@@ -210,14 +210,14 @@ const docTemplate = `{
         },
         "/magnets": {
             "get": {
-                "description": "Get HTML of magnet links.",
+                "description": "Get HTML of magnet links for all stored torrents.",
                 "produces": [
                     "text/html"
                 ],
                 "tags": [
                     "Pages"
                 ],
-                "summary": "Get HTML of magnet links",
+                "summary": "Get HTML of magnets",
                 "responses": {
                     "200": {
                         "description": "HTML with Magnet links"
@@ -227,18 +227,18 @@ const docTemplate = `{
         },
         "/play/{hash}/{id}": {
             "get": {
-                "description": "Play given torrent referenced by hash.",
+                "description": "Play given torrent referenced by infohash and file index.",
                 "produces": [
                     "application/octet-stream"
                 ],
                 "tags": [
                     "API"
                 ],
-                "summary": "Play given torrent referenced by hash",
+                "summary": "Play given torrent by infohash and id",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Torrent hash",
+                        "description": "Torrent infohash",
                         "name": "hash",
                         "in": "path",
                         "required": true

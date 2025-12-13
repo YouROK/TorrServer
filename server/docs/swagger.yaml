@@ -469,20 +469,20 @@ paths:
       - FUSE
   /magnets:
     get:
-      description: Get HTML of magnet links.
+      description: Get HTML of magnet links for all stored torrents.
       produces:
       - text/html
       responses:
         "200":
           description: HTML with Magnet links
-      summary: Get HTML of magnet links
+      summary: Get HTML of magnets
       tags:
       - Pages
   /play/{hash}/{id}:
     get:
-      description: Play given torrent referenced by hash.
+      description: Play given torrent referenced by infohash and file index.
       parameters:
-      - description: Torrent hash
+      - description: Torrent infohash
         in: path
         name: hash
         required: true
@@ -497,7 +497,7 @@ paths:
       responses:
         "200":
           description: Torrent data
-      summary: Play given torrent referenced by hash
+      summary: Play given torrent by infohash and id
       tags:
       - API
   /playlist:

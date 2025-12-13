@@ -110,7 +110,7 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 
 	go func() {
 		if !tor.GotInfo() {
-			log.TLogln("error add torrent:", "timeout connection get torrent info")
+			log.TLogln("error add torrent:", "torrent connection timeout")
 			return
 		}
 

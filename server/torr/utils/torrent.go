@@ -109,30 +109,11 @@ func OpenTorrentFile(path string) (*torrent.TorrentSpec, error) {
 		return nil, err
 	}
 
-	// info, err := minfo.UnmarshalInfo()
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// mag := minfo.Magnet(info.Name, minfo.HashInfoBytes())
-	// mag := minfo.Magnet(nil, &info)
-	// return &torrent.TorrentSpec{
-	// 	InfoBytes:   minfo.InfoBytes,
-	// 	Trackers:    [][]string{mag.Trackers},
-	// 	DisplayName: info.Name,
-	// 	InfoHash:    minfo.HashInfoBytes(),
-	// }, nil
-
-	// TODO: check Trackers and DisplayName in TorrentSpec
 	spec, err := torrent.TorrentSpecFromMetaInfoErr(minfo)
 	if err != nil {
 		log.TLogln("Error parse torrent file:", err)
 		return nil, err
 	}
 
-	mag, err := minfo.MagnetV2()
-	log.TLogln("OpenTorrentFile TorrentSpec:", spec, "MagnetV2", mag, "Err:", err)
-
 	return spec, nil
-
 }
