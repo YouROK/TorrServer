@@ -20,7 +20,7 @@ import (
 )
 
 func getRoot() (ret []interface{}) {
-	// Torrents Object
+	// Torrents Object (ROOT)
 	tObj := upnpav.Object{
 		ID:         "%2FTR",
 		ParentID:   "0",
@@ -56,7 +56,7 @@ func getTorrents() (ret []interface{}) {
 			Class:       "object.container.storageFolder",
 			Icon:        t.Poster,
 			AlbumArtURI: t.Poster,
-			Date:        upnpav.Timestamp{Time: time.Now()},
+			Date:        upnpav.Timestamp{Time: time.Unix(t.Timestamp, 0)}, // time.Now()
 		}
 		cnt := upnpav.Container{Object: obj, ChildCount: 1}
 		ret = append(ret, cnt)
@@ -160,7 +160,7 @@ func getTorrentMeta(path, host string) (ret interface{}) {
 			ParentID:   "%2FTR",
 			Restricted: 1,
 			Title:      torr.Title,
-			Date:       upnpav.Timestamp{Time: time.Now()},
+			Date:       upnpav.Timestamp{Time: time.Unix(torr.Timestamp, 0)}, // time.Now()
 		}
 		meta := upnpav.Container{Object: obj, ChildCount: 1}
 		return meta
@@ -236,21 +236,13 @@ func loadTorrent(path, host string) (ret []interface{}) {
 
 func getLink(host, path string) string {
 	if !strings.HasPrefix(host, "http") {
-		// if settings.Ssl {
-		// 	host = "https://" + host
-		// } else {
 		host = "http://" + host
-		// }
 	}
 	pos := strings.LastIndex(host, ":")
 	if pos > 7 {
 		host = host[:pos]
 	}
-	// if settings.Ssl {
-	// 	return host + ":" + settings.SslPort + "/" + path
-	// } else {
 	return host + ":" + settings.Port + "/" + path
-	// }
 }
 
 func getObjFromTorrent(path, parent, host string, torr *torr.Torrent, file *state.TorrentFileStat) (ret interface{}) {
@@ -282,7 +274,8 @@ func getObjFromTorrent(path, parent, host string, torr *torr.Torrent, file *stat
 		Object: obj,
 		Res:    make([]upnpav.Resource, 0, 1),
 	}
-	pathPlay := "stream/" + url.PathEscape(file.Path) + "?link=" + torr.TorrentSpec.InfoHash.HexString() + "&play&index=" + strconv.Itoa(file.Id)
+	// pathPlay := "stream/" + url.PathEscape(file.Path) + "?link=" + torr.TorrentSpec.InfoHash.HexString() + "&play&index=" + strconv.Itoa(file.Id)
+	pathPlay := "play/" + torr.TorrentSpec.InfoHash.HexString() + "/" + strconv.Itoa(file.Id)
 	item.Res = append(item.Res, upnpav.Resource{
 		URL: getLink(host, pathPlay),
 		ProtocolInfo: fmt.Sprintf("http-get:*:%s:%s", mime, dlna.ContentFeatures{
