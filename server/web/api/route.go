@@ -18,6 +18,7 @@ func SetupRoute(route gin.IRouter) {
 	authorized.GET("/shutdown/*reason", shutdown)
 
 	authorized.POST("/settings", settings)
+	authorized.POST("/torznab/test", torznabTest)
 
 	authorized.POST("/torrents", torrents)
 
@@ -47,6 +48,12 @@ func SetupRoute(route gin.IRouter) {
 		route.GET("/search/*query", rutorSearch)
 	} else {
 		authorized.GET("/search/*query", rutorSearch)
+	}
+
+	if config.SearchWA {
+		route.GET("/torznab/search/*query", torznabSearch)
+	} else {
+		authorized.GET("/torznab/search/*query", torznabSearch)
 	}
 
 	authorized.GET("/ffp/:hash/:id", ffp)
