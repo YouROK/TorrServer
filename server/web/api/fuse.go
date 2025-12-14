@@ -8,9 +8,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"server/fusefs"
 	"server/log"
 	config "server/settings"
+	"server/torrfs/fusefs"
 
 	"github.com/gin-gonic/gin"
 )
