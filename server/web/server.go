@@ -2,7 +2,9 @@ package web
 
 import (
 	"net"
+	"net/http"
 	"os"
+	"server/torrfs"
 	"sort"
 
 	"server/rutor"
@@ -116,6 +118,8 @@ func Start() {
 		log.TLogln("Start http server at", settings.IP+":"+settings.Port)
 		waitChan <- route.Run(settings.IP + ":" + settings.Port)
 	}()
+
+	go testTFS()
 }
 
 func Wait() error {
@@ -170,4 +174,14 @@ func GetLocalIps() []string {
 	}
 	sort.Strings(list)
 	return list
+}
+
+// TODO убрать из релиза
+func testTFS() {
+	tfs := torrfs.New()
+
+	mux := http.NewServeMux()
+	mux.Handle("/", http.FileServer(http.FS(tfs)))
+
+	http.ListenAndServe(":8080", mux)
 }

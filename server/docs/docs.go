@@ -815,10 +815,6 @@ const docTemplate = `{
                     "description": "debug logs",
                     "type": "boolean"
                 },
-                "enableFUSE": {
-                    "description": "FUSE",
-                    "type": "boolean"
-                },
                 "enableIPv6": {
                     "description": "BT Config",
                     "type": "boolean"
@@ -832,10 +828,6 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "friendlyName": {
-                    "type": "string"
-                },
-                "fusepath": {
-                    "description": "path where to mount FUSE filesystem",
                     "type": "string"
                 },
                 "peersListenPort": {
