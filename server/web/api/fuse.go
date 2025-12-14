@@ -10,7 +10,7 @@ import (
 
 	"server/log"
 	config "server/settings"
-	"server/torrfs/fusefs"
+	"server/torrfs/fuse"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,7 +32,7 @@ type FuseUnmountRequest struct{}
 //	@Success		200	{object}	fusefs.FuseStatus
 //	@Router			/fuse/status [get]
 func fuseStatus(c *gin.Context) {
-	status := fusefs.GetStatus()
+	status := fuse.GetStatus()
 	c.JSON(http.StatusOK, status)
 }
 
@@ -60,7 +60,7 @@ func fuseMount(c *gin.Context) {
 		return
 	}
 
-	ffs := fusefs.GetFuseFS()
+	ffs := fuse.GetFuseFS()
 
 	// Check if already mounted
 	if ffs.IsEnabled() {
@@ -78,7 +78,7 @@ func fuseMount(c *gin.Context) {
 	// Update settings to remember the mount path
 	config.Args.FusePath = mountPath
 
-	status := fusefs.GetStatus()
+	status := fuse.GetStatus()
 	c.JSON(http.StatusOK, status)
 }
 
@@ -92,7 +92,7 @@ func fuseMount(c *gin.Context) {
 //	@Success		200	{object}	fusefs.FuseStatus
 //	@Router			/fuse/unmount [post]
 func fuseUnmount(c *gin.Context) {
-	ffs := fusefs.GetFuseFS()
+	ffs := fuse.GetFuseFS()
 
 	// Check if mounted
 	if !ffs.IsEnabled() {
@@ -107,14 +107,14 @@ func fuseUnmount(c *gin.Context) {
 		return
 	}
 
-	status := fusefs.GetStatus()
+	status := fuse.GetStatus()
 	c.JSON(http.StatusOK, status)
 }
 
 // FuseAutoMount attempts to auto-mount FUSE if enabled in settings
 func FuseAutoMount() {
 	if config.Args.FusePath != "" {
-		ffs := fusefs.GetFuseFS()
+		ffs := fuse.GetFuseFS()
 		if !ffs.IsEnabled() {
 			err := ffs.Mount(config.Args.FusePath)
 			if err != nil {
@@ -128,7 +128,7 @@ func FuseAutoMount() {
 
 // FuseCleanup unmounts FUSE filesystem during shutdown
 func FuseCleanup() {
-	ffs := fusefs.GetFuseFS()
+	ffs := fuse.GetFuseFS()
 	if ffs.IsEnabled() {
 		_ = ffs.Unmount()
 	}
