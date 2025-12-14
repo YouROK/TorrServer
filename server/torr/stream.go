@@ -56,13 +56,13 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 	}
 
 	reader := t.NewReader(file)
-	if sets.BTsets.ResponsiveMode {
+	if sets.BTsets.ResponsiveMode && reader != nil {
 		reader.SetResponsive()
 	}
 
-	host, port, err := net.SplitHostPort(req.RemoteAddr)
+	host, port, clerr := net.SplitHostPort(req.RemoteAddr)
 	if sets.BTsets.EnableDebug {
-		if err != nil {
+		if clerr != nil {
 			log.Println("Connect client")
 		} else {
 			log.Println("Connect client", host, port)
@@ -91,7 +91,7 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 
 	t.CloseReader(reader)
 	if sets.BTsets.EnableDebug {
-		if err != nil {
+		if clerr != nil {
 			log.Println("Disconnect client")
 		} else {
 			log.Println("Disconnect client", host, port)
