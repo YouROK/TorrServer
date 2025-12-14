@@ -19,7 +19,7 @@ func NewCategoryDir(parent INode, category string) *CategoryDir {
 			info: info{
 				name:  category,
 				size:  4096,
-				mode:  0777,
+				mode:  0555,
 				mtime: time.Unix(477033666, 0),
 				isDir: true,
 			},

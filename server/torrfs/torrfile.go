@@ -28,7 +28,7 @@ func NewTorrFile(parent INode, name string, file *torrent.File) *TorrFile {
 			info: info{
 				name:  name,
 				size:  file.Length(),
-				mode:  0644,
+				mode:  0444,
 				mtime: time.Unix(parent.Torrent().Timestamp, 0),
 				isDir: false,
 			},

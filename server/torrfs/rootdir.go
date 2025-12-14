@@ -18,7 +18,7 @@ func NewRootDir() *RootDir {
 			info: info{
 				name:  "/",
 				size:  4096,
-				mode:  0777,
+				mode:  0555,
 				mtime: time.Unix(477033600, 0),
 				isDir: true,
 			},
