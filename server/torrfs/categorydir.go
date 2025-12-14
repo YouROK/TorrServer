@@ -37,7 +37,9 @@ func (d *CategoryDir) BuildChildren() {
 			t.Category = "other"
 		}
 		if t.Category == d.Name() {
-			nodes[t.Title] = NewTorrDir(d, t.Title, t)
+			td := NewTorrDir(d, t.Title, t)
+			td.isRoot = true
+			nodes[t.Title] = td
 		}
 	}
 	d.SetChildren(nodes)

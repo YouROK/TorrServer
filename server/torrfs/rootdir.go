@@ -3,6 +3,7 @@ package torrfs
 import (
 	"io/fs"
 	"path"
+	"server/log"
 	"server/torr"
 	"strings"
 	"time"
@@ -34,7 +35,10 @@ func (d *RootDir) Open(name string) (fs.File, error) {
 		return nil, &fs.PathError{Path: name, Err: fs.ErrInvalid}
 	}
 
+	log.TLogln("Open TFS:", name)
+
 	if name == "." || name == "/" {
+		d.BuildChildren()
 		return d, nil
 	}
 

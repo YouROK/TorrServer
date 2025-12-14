@@ -2,6 +2,7 @@ package torrfs
 
 import (
 	"io/fs"
+	"server/torr/storage/torrstor"
 	"time"
 
 	"github.com/anacrolix/torrent"
@@ -9,10 +10,15 @@ import (
 
 type TorrFile struct {
 	INode
-	file *torrent.File
+	file   *torrent.File
+	reader *torrstor.Reader
 }
 
-// TODO не показывает файлы
+type TorrFileHandle struct {
+	*TorrFile
+	r *torrstor.Reader
+}
+
 func NewTorrFile(parent INode, name string, file *torrent.File) *TorrFile {
 	f := &TorrFile{
 		file: file,
@@ -31,10 +37,23 @@ func NewTorrFile(parent INode, name string, file *torrent.File) *TorrFile {
 	return f
 }
 
-func (f *TorrFile) Read(p []byte) (int, error) {
-	return 0, fs.ErrInvalid
+func (f *TorrFile) Open(name string) (fs.File, error) {
+	r := f.Torrent().NewReader(f.file)
+	if r == nil {
+		return nil, fs.ErrInvalid
+	}
+	return &TorrFileHandle{TorrFile: f, r: r}, nil
 }
 
-func (f *TorrFile) Close() error {
+func (h *TorrFileHandle) Read(p []byte) (int, error) {
+	return h.r.Read(p)
+}
+
+func (h *TorrFileHandle) Seek(off int64, whence int) (int64, error) {
+	return h.r.Seek(off, whence)
+}
+
+func (h *TorrFileHandle) Close() error {
+	h.r.Close()
 	return nil
 }
