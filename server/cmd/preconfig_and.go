@@ -20,7 +20,6 @@ func Preconfig(dkill bool) {
 	signal.Notify(sigc,
 		syscall.SIGHUP,
 		syscall.SIGINT,
-		syscall.SIGPIPE,
 		syscall.SIGTERM,
 		syscall.SIGQUIT)
 	go func() {
