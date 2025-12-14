@@ -24,7 +24,7 @@ func NewTorrDir(parent INode, name string, torrent *torr.Torrent) *TorrDir {
 			info: info{
 				name:  name,
 				size:  4096,
-				mode:  0555,
+				mode:  0777,
 				mtime: time.Unix(torrent.Timestamp, 0),
 				isDir: true,
 			},
