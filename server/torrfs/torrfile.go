@@ -2,6 +2,7 @@ package torrfs
 
 import (
 	"io/fs"
+	sets "server/settings"
 	"server/torr"
 	"server/torr/storage/torrstor"
 	"time"
@@ -45,6 +46,9 @@ func (f *TorrFile) Open(name string) (fs.File, error) {
 	if r == nil {
 		return nil, fs.ErrInvalid
 	}
+	if sets.BTsets.ResponsiveMode {
+		r.SetResponsive()
+	}
 	return &TorrFileHandle{TorrFile: f, r: r}, nil
 }
 
@@ -75,6 +79,6 @@ func (h *TorrFileHandle) Seek(off int64, whence int) (int64, error) {
 }
 
 func (h *TorrFileHandle) Close() error {
-	h.r.Close()
+	h.torr.CloseReader(h.r)
 	return nil
 }
