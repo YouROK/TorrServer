@@ -47,6 +47,26 @@ var (
 
 func NewFuseFS() *FuseFS { return &FuseFS{enabled: false} }
 
+func FuseAutoMount() {
+	if settings.Args.FusePath != "" {
+		ffs := GetFuseFS()
+		if !ffs.enabled {
+			err := ffs.Mount(settings.Args.FusePath)
+			if err != nil {
+				log.TLogln("Failed to auto-mount FUSE filesystem:", err)
+				os.Exit(1)
+			}
+		}
+	}
+}
+
+func FuseCleanup() {
+	ffs := GetFuseFS()
+	if ffs.enabled {
+		_ = ffs.Unmount()
+	}
+}
+
 func GetFuseFS() *FuseFS {
 	fuseMutex.Lock()
 	defer fuseMutex.Unlock()
@@ -54,17 +74,6 @@ func GetFuseFS() *FuseFS {
 		globalFuseFS = NewFuseFS()
 	}
 	return globalFuseFS
-}
-
-func GetStatus() FuseStatus {
-	ffs := GetFuseFS()
-	return FuseStatus{Enabled: ffs.IsEnabled(), MountPath: ffs.GetMountPath()}
-}
-
-func (ffs *FuseFS) IsEnabled() bool {
-	ffs.mu.RLock()
-	defer ffs.mu.RUnlock()
-	return ffs.enabled
 }
 
 func (ffs *FuseFS) GetMountPath() string {
