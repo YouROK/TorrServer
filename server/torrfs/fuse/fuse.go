@@ -22,8 +22,6 @@ import (
 	"github.com/hanwen/go-fuse/v2/fuse"
 )
 
-// ----- Public API (чтобы не менять handler) -----
-
 type FuseStatus struct {
 	Enabled   bool   `json:"enabled"`
 	MountPath string `json:"mount_path"`
@@ -88,7 +86,7 @@ func (ffs *FuseFS) Mount(mountPath string) error {
 	}
 
 	ffs.mountPath = mountPath
-	ffs.tfs = AsFS(torrfs.New())
+	ffs.tfs = torrfs.AsFS(torrfs.New())
 	ffs.p = "."
 
 	entryTimeout := time.Second
