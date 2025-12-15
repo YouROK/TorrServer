@@ -81,7 +81,9 @@ func Start() {
 	api.SetupRoute(route)
 	msx.SetupRoute(route)
 	pages.SetupRoute(route)
-	webdav.MountWebDAV(route)
+	if settings.Args.WebDAV {
+		webdav.MountWebDAV(route)
+	}
 
 	if settings.BTsets.EnableDLNA {
 		dlna.Start()
