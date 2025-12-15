@@ -131,83 +131,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/fuse/mount": {
-            "post": {
-                "description": "Mounts the FUSE filesystem at the specified path",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "FUSE"
-                ],
-                "summary": "Mount FUSE filesystem",
-                "parameters": [
-                    {
-                        "description": "Mount request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.FuseMountRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/fusefs.FuseStatus"
-                        }
-                    }
-                }
-            }
-        },
-        "/fuse/status": {
-            "get": {
-                "description": "Returns the current status of the FUSE filesystem mount",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "FUSE"
-                ],
-                "summary": "Get FUSE filesystem status",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/fusefs.FuseStatus"
-                        }
-                    }
-                }
-            }
-        },
-        "/fuse/unmount": {
-            "post": {
-                "description": "Unmounts the FUSE filesystem",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "FUSE"
-                ],
-                "summary": "Unmount FUSE filesystem",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/fusefs.FuseStatus"
-                        }
-                    }
-                }
-            }
-        },
         "/magnets": {
             "get": {
                 "description": "Get HTML of magnet links.",
@@ -628,17 +551,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "api.FuseMountRequest": {
-            "type": "object",
-            "required": [
-                "mount_path"
-            ],
-            "properties": {
-                "mount_path": {
-                    "type": "string"
-                }
-            }
-        },
         "api.cacheReqJS": {
             "type": "object",
             "properties": {
@@ -700,20 +612,6 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "hash": {
-                    "type": "string"
-                }
-            }
-        },
-        "fusefs.FuseStatus": {
-            "type": "object",
-            "properties": {
-                "enabled": {
-                    "type": "boolean"
-                },
-                "error": {
-                    "type": "string"
-                },
-                "mount_path": {
                     "type": "string"
                 }
             }
