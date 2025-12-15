@@ -3,6 +3,7 @@ package web
 import (
 	"net"
 	"os"
+	"server/torrfs/fuse"
 	"server/torrfs/webdav"
 	"sort"
 
@@ -87,7 +88,7 @@ func Start() {
 	}
 
 	// Auto-mount FUSE filesystem if enabled
-	api.FuseAutoMount()
+	fuse.FuseAutoMount()
 
 	route.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -127,7 +128,7 @@ func Wait() error {
 func Stop() {
 	dlna.Stop()
 	// Unmount FUSE filesystem if mounted
-	api.FuseCleanup()
+	fuse.FuseCleanup()
 	BTS.Disconnect()
 	waitChan <- nil
 }
