@@ -3,6 +3,7 @@ package web
 import (
 	"net"
 	"os"
+	"server/torrfs/webdav"
 	"sort"
 
 	"server/rutor"
@@ -79,6 +80,7 @@ func Start() {
 	api.SetupRoute(route)
 	msx.SetupRoute(route)
 	pages.SetupRoute(route)
+	webdav.MountWebDAV(route)
 
 	if settings.BTsets.EnableDLNA {
 		dlna.Start()
