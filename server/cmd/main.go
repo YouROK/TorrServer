@@ -46,6 +46,7 @@ type args struct {
 	MaxSize     string `arg:"-m" help:"max allowed stream size (in Bytes)"`
 	TGToken     string `arg:"-T" help:"telegram bot token"`
 	FusePath    string `arg:"-f" help:"fuse mount path"`
+	WebDAV      bool   `help:"web dav enable"`
 }
 
 func (args) Version() string {
@@ -140,6 +141,7 @@ func main() {
 		MaxSize:     params.MaxSize,
 		TGToken:     params.TGToken,
 		FusePath:    params.FusePath,
+		WebDAV:      params.WebDAV,
 	}
 
 	server.Start()

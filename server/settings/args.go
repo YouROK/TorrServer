@@ -22,6 +22,7 @@ type ExecArgs struct {
 	MaxSize     string
 	TGToken     string
 	FusePath    string
+	WebDAV      bool
 }
 
 var Args *ExecArgs

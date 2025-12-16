@@ -2,9 +2,9 @@ package web
 
 import (
 	"net"
-	"net/http"
 	"os"
-	"server/torrfs"
+	"server/torrfs/fuse"
+	"server/torrfs/webdav"
 	"sort"
 
 	"server/rutor"
@@ -81,13 +81,16 @@ func Start() {
 	api.SetupRoute(route)
 	msx.SetupRoute(route)
 	pages.SetupRoute(route)
+	if settings.Args.WebDAV {
+		webdav.MountWebDAV(route)
+	}
 
 	if settings.BTsets.EnableDLNA {
 		dlna.Start()
 	}
 
 	// Auto-mount FUSE filesystem if enabled
-	api.FuseAutoMount()
+	fuse.FuseAutoMount()
 
 	route.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -118,8 +121,6 @@ func Start() {
 		log.TLogln("Start http server at", settings.IP+":"+settings.Port)
 		waitChan <- route.Run(settings.IP + ":" + settings.Port)
 	}()
-
-	go testTFS()
 }
 
 func Wait() error {
@@ -129,7 +130,7 @@ func Wait() error {
 func Stop() {
 	dlna.Stop()
 	// Unmount FUSE filesystem if mounted
-	api.FuseCleanup()
+	fuse.FuseCleanup()
 	BTS.Disconnect()
 	waitChan <- nil
 }
@@ -174,14 +175,4 @@ func GetLocalIps() []string {
 	}
 	sort.Strings(list)
 	return list
-}
-
-// TODO убрать из релиза
-func testTFS() {
-	tfs := torrfs.New()
-
-	mux := http.NewServeMux()
-	mux.Handle("/", http.FileServer(http.FS(tfs)))
-
-	http.ListenAndServe(":8080", mux)
 }
