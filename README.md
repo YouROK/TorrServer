@@ -348,11 +348,12 @@ local:127.0.0.1
 ## Thanks to everyone who tested and helped
 
 - [anacrolix](https://github.com/anacrolix) Matt Joiner
-- [tsynik](https://github.com/tsynik)
+- [tsynik](https://github.com/tsynik) Nikk Gitanes
 - [dancheskus](https://github.com/dancheskus) for react web GUI and PWA code
 - [kolsys](https://github.com/kolsys) for initial Media Station X support
 - [damiva](https://github.com/damiva) for Media Station X code updates
 - [vladlenas](https://github.com/vladlenas) for NAS builds
+- [pavelpikta](https://github.com/pavelpikta) Pavel Pikta for linux install script and more
 - [Nemiroff](https://github.com/Nemiroff) Tw1cker
 - [spawnlmg](https://github.com/spawnlmg) SpAwN_LMG for testing
 - [TopperBG](https://github.com/TopperBG) Dimitar Maznekov for Bulgarian web translation
