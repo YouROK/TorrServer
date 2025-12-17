@@ -142,8 +142,8 @@ export default function SearchDialog({ handleClose }) {
             >
               <InputLabel>{t('Tracker')}</InputLabel>
               <Select value={selectedTracker} onChange={e => setSelectedTracker(e.target.value)} label={t('Tracker')}>
-                <MenuItem value={-1}>{t('AllTrackers')}</MenuItem>
                 {enableRutor && <MenuItem value='rutor'>{t('Rutor')}</MenuItem>}
+                <MenuItem value={-1}>{t('AllTrackers')}</MenuItem>
                 {trackers.map((tracker, index) => (
                   <MenuItem key={`${tracker.Host}-${tracker.Key}`} value={index}>
                     {tracker.Name || tracker.Host}
@@ -172,7 +172,7 @@ export default function SearchDialog({ handleClose }) {
                 height: '40px',
               }}
             >
-              {loading ? <CircularProgress size={24} color='inherit' /> : t('Torznab.Search')}
+              {loading ? <CircularProgress size={24} color='inherit' /> : t('Search')}
             </Button>
           </div>
 
