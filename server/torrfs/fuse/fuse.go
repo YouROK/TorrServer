@@ -51,6 +51,7 @@ func FuseAutoMount() {
 	if settings.Args.FusePath != "" {
 		ffs := GetFuseFS()
 		if !ffs.enabled {
+			log.TLogln("FUSE mount")
 			err := ffs.Mount(settings.Args.FusePath)
 			if err != nil {
 				log.TLogln("Failed to auto-mount FUSE filesystem:", err)
