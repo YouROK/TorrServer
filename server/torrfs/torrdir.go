@@ -3,10 +3,11 @@ package torrfs
 import (
 	"io/fs"
 	"path"
-	"server/settings"
-	"server/torr"
 	"strings"
 	"time"
+
+	"server/settings"
+	"server/torr"
 )
 
 type TorrDir struct {
@@ -25,7 +26,7 @@ func NewTorrDir(parent INode, name string, torrent *torr.Torrent) *TorrDir {
 		info: info{
 			name:  name,
 			size:  4096,
-			mode:  0555,
+			mode:  0o555,
 			mtime: time.Unix(torrent.Timestamp, 0),
 			isDir: true,
 		},
@@ -37,7 +38,7 @@ func (d *TorrDir) ReadDir(n int) ([]fs.DirEntry, error) {
 	if d.Torrent() == nil {
 		return nil, fs.ErrInvalid
 	}
-	//соединяемся с торрентом при чтении директории торрента
+	// соединяемся с торрентом при чтении директории торрента
 	if !d.Torrent().GotInfo() {
 		hash := d.Torrent().Hash().String()
 		for i := 0; i < settings.BTsets.TorrentDisconnectTimeout*2; i++ {

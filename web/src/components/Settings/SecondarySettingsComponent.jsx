@@ -38,8 +38,8 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
     SslPort,
     SslCert,
     SslKey,
-    EnableFUSE,
-    FUSEPath,
+    // EnableFUSE,
+    // FUSEPath,
   } = settings || {}
 
   return (
@@ -261,7 +261,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         fullWidth
       />
       <br />
-      <FormGroup>
+      {/* <FormGroup>
         <FormControlLabel
           control={<Switch checked={EnableFUSE} onChange={inputForm} id='EnableFUSE' color='secondary' />}
           label={t('SettingsDialog.EnableFUSE')}
@@ -281,7 +281,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         fullWidth
         disabled={!EnableFUSE}
       />
-      <br />
+      <br /> */}
     </SecondarySettingsContent>
   )
 }

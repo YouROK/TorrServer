@@ -31,7 +31,7 @@ func play(c *gin.Context) {
 	notAuth := c.GetBool("auth_required") && c.GetString(gin.AuthUserKey) == ""
 
 	if hash == "" || indexStr == "" {
-		c.AbortWithError(http.StatusNotFound, errors.New("link should not be empty"))
+		c.AbortWithError(http.StatusNotFound, errors.New("no infohash or file index in link"))
 		return
 	}
 

@@ -62,7 +62,10 @@ func NewTorrFile(wrk *Worker, stFile *state.TorrentFileStat) (*TorrFile, error) 
 	}
 
 	reader := t.NewReader(file)
-	if sets.BTsets.ResponsiveMode && reader != nil {
+	if reader == nil {
+		return nil, errors.New("cannot create torrent reader")
+	}
+	if sets.BTsets.ResponsiveMode {
 		reader.SetResponsive()
 	}
 	tf.reader = reader

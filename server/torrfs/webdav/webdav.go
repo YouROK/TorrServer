@@ -7,9 +7,10 @@ import (
 	"io/fs"
 	"os"
 	"path"
-	"server/torrfs"
 	"sync"
 	"time"
+
+	"server/torrfs"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/net/webdav"
@@ -43,7 +44,6 @@ func MountWebDAV(r *gin.Engine) {
 	for _, m := range missingMethods {
 		grp.Handle(m, "", handler)
 	}
-
 }
 
 type ReadOnlyFS struct {

@@ -2,8 +2,9 @@ package torrfs
 
 import (
 	"io/fs"
-	"server/torr"
 	"strings"
+
+	"server/torr"
 )
 
 type INode interface {

@@ -5,14 +5,16 @@ package main
 
 // #cgo LDFLAGS: -static-libstdc++
 import "C"
+
 import (
 	"os"
 	"os/signal"
+	"syscall"
+	"time"
+
 	"server"
 	"server/log"
 	"server/settings"
-	"syscall"
-	"time"
 )
 
 func Preconfig(dkill bool) {

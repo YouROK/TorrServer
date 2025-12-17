@@ -2,10 +2,11 @@ package torrfs
 
 import (
 	"io/fs"
+	"time"
+
 	sets "server/settings"
 	"server/torr"
 	"server/torr/storage/torrstor"
-	"time"
 
 	"github.com/anacrolix/torrent"
 )
@@ -33,7 +34,7 @@ func NewTorrFile(parent INode, name string, file *torrent.File) *TorrFile {
 		info: info{
 			name:  name,
 			size:  file.Length(),
-			mode:  0444,
+			mode:  0o444,
 			mtime: time.Unix(parent.Torrent().Timestamp, 0),
 			isDir: false,
 		},

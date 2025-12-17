@@ -20,6 +20,7 @@ import { a11yProps, TabPanel } from './tabComponents'
 import PrimarySettingsComponent from './PrimarySettingsComponent'
 import SecondarySettingsComponent from './SecondarySettingsComponent'
 import MobileAppSettings from './MobileAppSettings'
+import TorznabSettings from './TorznabSettings'
 
 export default function SettingsDialog({ handleClose }) {
   const { t } = useTranslation()
@@ -121,6 +122,8 @@ export default function SettingsDialog({ handleClose }) {
         >
           <Tab label={t('SettingsDialog.Tabs.Main')} {...a11yProps(0)} />
 
+          <Tab label='Torznab' {...a11yProps(1)} />
+
           <Tab
             disabled={!isProMode}
             label={
@@ -129,10 +132,10 @@ export default function SettingsDialog({ handleClose }) {
                 {!isProMode && <div style={{ fontSize: '9px' }}>{t('SettingsDialog.Tabs.AdditionalDisabled')}</div>}
               </>
             }
-            {...a11yProps(1)}
+            {...a11yProps(2)}
           />
 
-          {isStandaloneApp && <Tab label={t('SettingsDialog.Tabs.App')} {...a11yProps(2)} />}
+          {isStandaloneApp && <Tab label={t('SettingsDialog.Tabs.App')} {...a11yProps(3)} />}
         </Tabs>
       </AppBar>
 
@@ -160,11 +163,15 @@ export default function SettingsDialog({ handleClose }) {
               </TabPanel>
 
               <TabPanel value={selectedTab} index={1} dir={direction}>
-                <SecondarySettingsComponent settings={settings} inputForm={inputForm} />
+                <TorznabSettings settings={settings} inputForm={inputForm} updateSettings={updateSettings} />
+              </TabPanel>
+
+              <TabPanel value={selectedTab} index={2} dir={direction}>
+                <SecondarySettingsComponent settings={settings} inputForm={inputForm} updateSettings={updateSettings} />
               </TabPanel>
 
               {isStandaloneApp && (
-                <TabPanel value={selectedTab} index={2} dir={direction}>
+                <TabPanel value={selectedTab} index={3} dir={direction}>
                   <MobileAppSettings
                     isVlcUsed={isVlcUsed}
                     setIsVlcUsed={setIsVlcUsed}

@@ -2,8 +2,9 @@ package torrfs
 
 import (
 	"io/fs"
-	"server/torr"
 	"time"
+
+	"server/torr"
 )
 
 type CategoryDir struct {
@@ -18,7 +19,7 @@ func NewCategoryDir(category string) *CategoryDir {
 		info: info{
 			name:  category,
 			size:  4096,
-			mode:  0555,
+			mode:  0o555,
 			mtime: time.Unix(477033666, 0),
 			isDir: true,
 		},
