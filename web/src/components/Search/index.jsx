@@ -19,7 +19,7 @@ export default function SearchDialogButton({ isOffline, isLoading }) {
         <ListItemIcon>
           <SearchIcon />
         </ListItemIcon>
-        <ListItemText primary={t('Search')} />
+        <ListItemText primary={t('Torznab.Search')} />
       </ListItem>
 
       {isDialogOpen && <SearchDialog handleClose={handleClose} />}
