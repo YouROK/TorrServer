@@ -19,7 +19,7 @@ import DeleteIcon from '@material-ui/icons/Delete'
 import axios from 'axios'
 import { torznabTestHost } from 'utils/Hosts'
 
-import { SettingSectionLabel } from './style'
+import { SecondarySettingsContent, SettingSectionLabel } from './style'
 
 export default function TorznabSettings({ settings, inputForm, updateSettings }) {
   const { t } = useTranslation()
@@ -56,7 +56,7 @@ export default function TorznabSettings({ settings, inputForm, updateSettings })
         key: newKey,
       })
       if (data.success) {
-        setTestResult({ success: true, msg: t('Connection successful') })
+        setTestResult({ success: true, msg: t('Torznab.ConnectionSuccessful') })
       } else {
         setTestResult({ success: false, msg: data.error })
       }
@@ -67,7 +67,7 @@ export default function TorznabSettings({ settings, inputForm, updateSettings })
   }
 
   return (
-    <>
+    <SecondarySettingsContent>
       <SettingSectionLabel>Torznab</SettingSectionLabel>
       <FormGroup>
         <FormControlLabel
@@ -79,18 +79,15 @@ export default function TorznabSettings({ settings, inputForm, updateSettings })
               color='secondary'
             />
           }
-          label={t('Enable Torznab Search')}
+          label={t('Torznab.EnableTorznabSearch')}
           labelPlacement='start'
         />
-        <FormHelperText margin='none'>
-          {t('Enable search via Torznab indexers (e.g. Jackett, Prowlarr)')}
-        </FormHelperText>
+        <FormHelperText margin='none'>{t('Torznab.EnableSearchViaTorznab')}</FormHelperText>
       </FormGroup>
 
       <div
         style={{
-          marginTop: 10,
-          paddingLeft: 10,
+          padding: 20,
           opacity: EnableTorznabSearch ? 1 : 0.5,
           pointerEvents: EnableTorznabSearch ? 'auto' : 'none',
         }}
@@ -129,7 +126,7 @@ export default function TorznabSettings({ settings, inputForm, updateSettings })
           }}
         >
           <TextField
-            label={t('Name (Optional)')}
+            label={t('Torznab.NameOptional')}
             value={newName}
             onChange={e => setNewName(e.target.value)}
             placeholder='My Tracker'
@@ -137,7 +134,7 @@ export default function TorznabSettings({ settings, inputForm, updateSettings })
             size='small'
           />
           <TextField
-            label={t('Torznab Host URL')}
+            label={t('Torznab.TorznabHostURL')}
             value={newHost}
             onChange={e => setNewHost(e.target.value)}
             placeholder='http://localhost:9117'
@@ -145,7 +142,7 @@ export default function TorznabSettings({ settings, inputForm, updateSettings })
             size='small'
           />
           <TextField
-            label={t('API Key')}
+            label={t('Torznab.APIKey')}
             value={newKey}
             onChange={e => setNewKey(e.target.value)}
             variant='outlined'
@@ -159,10 +156,10 @@ export default function TorznabSettings({ settings, inputForm, updateSettings })
               disabled={!newHost || !newKey || testing}
               style={{ marginRight: 10 }}
             >
-              {testing ? <CircularProgress size={24} color='inherit' /> : t('Test')}
+              {testing ? <CircularProgress size={24} color='inherit' /> : t('Torznab.Test')}
             </Button>
             <Button variant='contained' color='secondary' onClick={handleAdd} disabled={!newHost || !newKey}>
-              {t('Add Server')}
+              {t('Torznab.AddServer')}
             </Button>
           </div>
           {testResult && (
@@ -173,6 +170,6 @@ export default function TorznabSettings({ settings, inputForm, updateSettings })
         </div>
       </div>
       <br />
-    </>
+    </SecondarySettingsContent>
   )
 }

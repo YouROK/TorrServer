@@ -74,7 +74,7 @@ export default function SearchDialog({ handleClose }) {
       setResults(data || [])
     } catch (error) {
       console.error(error)
-      setErrorMsg(t('Search failed'))
+      setErrorMsg(t('Torznab.SearchFailed'))
     } finally {
       setLoading(false)
     }
@@ -91,7 +91,7 @@ export default function SearchDialog({ handleClose }) {
     try {
       const link = item.Magnet || item.Link
       if (!link) {
-        setErrorMsg(t('No link found'))
+        setErrorMsg(t('Torznab.NoLinkFound'))
         return
       }
       await axios.post(torrentsHost(), {
@@ -101,10 +101,10 @@ export default function SearchDialog({ handleClose }) {
         save_to_db: true,
         poster: item.Poster,
       })
-      setSuccessMsg(t('Torrent added successfully'))
+      setSuccessMsg(t('Torznab.TorrentAddedSuccessfully'))
     } catch (error) {
       console.error(error)
-      setErrorMsg(t('Failed to add torrent'))
+      setErrorMsg(t('Torznab.FailedToAddTorrent'))
     } finally {
       setAdding(false)
     }
@@ -120,7 +120,7 @@ export default function SearchDialog({ handleClose }) {
 
   return (
     <StyledDialog open onClose={handleClose} fullScreen={fullScreen} fullWidth maxWidth='md' ref={ref}>
-      <StyledHeader>{t('Search Torrents')}</StyledHeader>
+      <StyledHeader>{t('Torznab.SearchTorrents')}</StyledHeader>
       <Content>
         <div style={{ padding: '20px' }}>
           <div
@@ -140,10 +140,10 @@ export default function SearchDialog({ handleClose }) {
                 flex: fullScreen ? '1 1 100%' : '0 0 auto',
               }}
             >
-              <InputLabel>Tracker</InputLabel>
-              <Select value={selectedTracker} onChange={e => setSelectedTracker(e.target.value)} label='Tracker'>
-                <MenuItem value={-1}>All Trackers</MenuItem>
-                {enableRutor && <MenuItem value='rutor'>Rutor</MenuItem>}
+              <InputLabel>{t('Tracker')}</InputLabel>
+              <Select value={selectedTracker} onChange={e => setSelectedTracker(e.target.value)} label={t('Tracker')}>
+                <MenuItem value={-1}>{t('AllTrackers')}</MenuItem>
+                {enableRutor && <MenuItem value='rutor'>{t('Rutor')}</MenuItem>}
                 {trackers.map((tracker, index) => (
                   <MenuItem key={`${tracker.Host}-${tracker.Key}`} value={index}>
                     {tracker.Name || tracker.Host}
@@ -152,14 +152,14 @@ export default function SearchDialog({ handleClose }) {
               </Select>
             </FormControl>
             <TextField
-              label={t('Search Torznab')}
+              label={t('Torznab.SearchTorznab')}
               value={query}
               onChange={e => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               variant='outlined'
               size='small'
               fullWidth
-              placeholder={t('Search movies, shows...')}
+              placeholder={t('Torznab.SearchMoviesShows')}
               autoFocus
             />
             <Button
@@ -172,14 +172,14 @@ export default function SearchDialog({ handleClose }) {
                 height: '40px',
               }}
             >
-              {loading ? <CircularProgress size={24} color='inherit' /> : t('Search')}
+              {loading ? <CircularProgress size={24} color='inherit' /> : t('Torznab.Search')}
             </Button>
           </div>
 
           <div style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 200px)' }}>
             {searched && results.length === 0 && !loading && (
               <Typography align='center' variant='body1' color='textSecondary'>
-                {t('No results found')}
+                {t('Torznab.NoResultsFound')}
               </Typography>
             )}
 
