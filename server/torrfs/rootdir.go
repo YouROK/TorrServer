@@ -3,9 +3,10 @@ package torrfs
 import (
 	"io/fs"
 	"path"
-	"server/torr"
 	"strings"
 	"time"
+
+	"server/torr"
 )
 
 type RootDir struct {
@@ -17,7 +18,7 @@ func NewRootDir() *RootDir {
 		info: info{
 			name:  "/",
 			size:  4096,
-			mode:  0555,
+			mode:  0o555,
 			mtime: time.Unix(477033600, 0),
 			isDir: true,
 		},

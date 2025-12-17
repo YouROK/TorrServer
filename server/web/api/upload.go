@@ -88,7 +88,7 @@ func torrentUpload(c *gin.Context) {
 
 		go func() {
 			if !tor.GotInfo() {
-				log.TLogln("error add torrent:", "timeout connection torrent")
+				log.TLogln("error add torrent:", "torrent connection timeout")
 				return
 			}
 

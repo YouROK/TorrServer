@@ -143,18 +143,18 @@
         },
         "/play/{hash}/{id}": {
             "get": {
-                "description": "Play given torrent referenced by hash.",
+                "description": "Play given torrent referenced by infohash and file id.",
                 "produces": [
                     "application/octet-stream"
                 ],
                 "tags": [
                     "API"
                 ],
-                "summary": "Play given torrent referenced by hash",
+                "summary": "Play given torrent by infohash",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Torrent hash",
+                        "description": "Torrent infohash",
                         "name": "hash",
                         "in": "path",
                         "required": true

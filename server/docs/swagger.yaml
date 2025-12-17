@@ -424,9 +424,9 @@ paths:
       - Pages
   /play/{hash}/{id}:
     get:
-      description: Play given torrent referenced by hash.
+      description: Play given torrent referenced by infohash and file id.
       parameters:
-      - description: Torrent hash
+      - description: Torrent infohash
         in: path
         name: hash
         required: true
@@ -441,7 +441,7 @@ paths:
       responses:
         "200":
           description: Torrent data
-      summary: Play given torrent referenced by hash
+      summary: Play given torrent by infohash
       tags:
       - API
   /playlist:

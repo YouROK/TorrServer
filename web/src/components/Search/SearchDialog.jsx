@@ -1,221 +1,232 @@
-import React, { useState, useEffect } from 'react'
-import {
-    TextField,
-    Button,
-    List,
-    ListItem,
-    ListItemText,
-    CircularProgress,
-    Typography,
-    Divider,
-    ListItemSecondaryAction,
-    IconButton,
-    Snackbar,
-    useMediaQuery,
-    Select,
-    MenuItem,
-    FormControl,
-    InputLabel
-} from '@material-ui/core'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import axios from 'axios'
+import {
+  TextField,
+  Button,
+  List,
+  ListItem,
+  ListItemText,
+  CircularProgress,
+  Typography,
+  Divider,
+  ListItemSecondaryAction,
+  IconButton,
+  Snackbar,
+  useMediaQuery,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+} from '@material-ui/core'
+import { CloudDownload as DownloadIcon } from '@material-ui/icons'
 import { torznabSearchHost, torrentsHost, settingsHost, searchHost } from 'utils/Hosts'
-import { AddCircleOutline as AddIcon, CloudDownload as DownloadIcon } from '@material-ui/icons'
-import { StyledDialog, StyledHeader } from 'style/CustomMaterialUiStyles'
-import { Content } from './style'
 import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
+import { StyledDialog, StyledHeader } from 'style/CustomMaterialUiStyles'
+
+import { Content } from './style'
 
 export default function SearchDialog({ handleClose }) {
-    const { t } = useTranslation()
-    const [query, setQuery] = useState('')
-    const [results, setResults] = useState([])
-    const [loading, setLoading] = useState(false)
-    const [searched, setSearched] = useState(false)
-    const [adding, setAdding] = useState(false)
-    const [successMsg, setSuccessMsg] = useState('')
-    const [errorMsg, setErrorMsg] = useState('')
-    const [trackers, setTrackers] = useState([])
-    const [enableRutor, setEnableRutor] = useState(false)
-    const [selectedTracker, setSelectedTracker] = useState(-1)
+  const { t } = useTranslation()
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [searched, setSearched] = useState(false)
+  const [adding, setAdding] = useState(false)
+  const [successMsg, setSuccessMsg] = useState('')
+  const [errorMsg, setErrorMsg] = useState('')
+  const [trackers, setTrackers] = useState([])
+  const [enableRutor, setEnableRutor] = useState(false)
+  const [selectedTracker, setSelectedTracker] = useState(-1)
+  const fullScreen = useMediaQuery('@media (max-width:930px)')
+  const ref = useOnStandaloneAppOutsideClick(handleClose)
 
-    const fullScreen = useMediaQuery('@media (max-width:930px)')
-    const ref = useOnStandaloneAppOutsideClick(handleClose)
-
-    useEffect(() => {
-        axios.post(settingsHost(), { action: 'get' }).then(({ data }) => {
-            if (data) {
-                if (data.TorznabUrls) {
-                    setTrackers(data.TorznabUrls)
-                }
-                setEnableRutor(!!data.EnableRutorSearch)
-            }
-        }).catch(console.error)
-    }, [])
-
-    const handleSearch = async () => {
-        if (!query) return
-        setLoading(true)
-        setSearched(true)
-        setResults([])
-        try {
-            let url = torznabSearchHost()
-            const params = { query }
-
-            if (selectedTracker === 'rutor') {
-                url = searchHost()
-            } else if (selectedTracker !== -1) {
-                params.index = selectedTracker
-            }
-
-            const { data } = await axios.get(url, { params })
-            setResults(data || [])
-        } catch (error) {
-            console.error(error)
-            setErrorMsg(t('Search failed'))
-        } finally {
-            setLoading(false)
+  useEffect(() => {
+    axios
+      .post(settingsHost(), { action: 'get' })
+      .then(({ data }) => {
+        if (data) {
+          if (data.TorznabUrls) {
+            setTrackers(data.TorznabUrls)
+          }
+          setEnableRutor(!!data.EnableRutorSearch)
         }
+      })
+      .catch(console.error)
+  }, [])
+
+  const handleSearch = async () => {
+    if (!query) return
+    setLoading(true)
+    setSearched(true)
+    setResults([])
+    try {
+      let url = torznabSearchHost()
+      const params = { query }
+
+      if (selectedTracker === 'rutor') {
+        url = searchHost()
+      } else if (selectedTracker !== -1) {
+        params.index = selectedTracker
+      }
+
+      const { data } = await axios.get(url, { params })
+      setResults(data || [])
+    } catch (error) {
+      console.error(error)
+      setErrorMsg(t('Search failed'))
+    } finally {
+      setLoading(false)
     }
+  }
 
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter') {
-            handleSearch()
-        }
+  const handleKeyDown = e => {
+    if (e.key === 'Enter') {
+      handleSearch()
     }
+  }
 
-    const handleAdd = async (item) => {
-        setAdding(true)
-        try {
-            const link = item.Magnet || item.Link
-            if (!link) {
-                setErrorMsg(t('No link found'))
-                return
-            }
-            await axios.post(torrentsHost(), {
-                action: 'add',
-                link,
-                title: item.Title,
-                save_to_db: true,
-                poster: item.Poster
-            })
-            setSuccessMsg(t('Torrent added successfully'))
-        } catch (error) {
-            console.error(error)
-            setErrorMsg(t('Failed to add torrent'))
-        } finally {
-            setAdding(false)
-        }
+  const handleAdd = async item => {
+    setAdding(true)
+    try {
+      const link = item.Magnet || item.Link
+      if (!link) {
+        setErrorMsg(t('No link found'))
+        return
+      }
+      await axios.post(torrentsHost(), {
+        action: 'add',
+        link,
+        title: item.Title,
+        save_to_db: true,
+        poster: item.Poster,
+      })
+      setSuccessMsg(t('Torrent added successfully'))
+    } catch (error) {
+      console.error(error)
+      setErrorMsg(t('Failed to add torrent'))
+    } finally {
+      setAdding(false)
     }
+  }
 
-    const handleAlertClose = (event, reason) => {
-        if (reason === 'clickaway') {
-            return
-        }
-        setSuccessMsg('')
-        setErrorMsg('')
+  const handleAlertClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return
     }
+    setSuccessMsg('')
+    setErrorMsg('')
+  }
 
-    return (
-        <StyledDialog open onClose={handleClose} fullScreen={fullScreen} fullWidth maxWidth="md" ref={ref}>
-            <StyledHeader>
-                {t('Search Torrents')}
-            </StyledHeader>
-            <Content>
-                <div style={{ padding: '20px' }}>
-                    <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', alignItems: 'flex-start', flexWrap: fullScreen ? 'wrap' : 'nowrap' }}>
-                        <FormControl variant="outlined" size="small" style={{ minWidth: 150, flex: fullScreen ? '1 1 100%' : '0 0 auto' }}>
-                            <InputLabel>Tracker</InputLabel>
-                            <Select
-                                value={selectedTracker}
-                                onChange={(e) => setSelectedTracker(e.target.value)}
-                                label="Tracker"
-                            >
-                                <MenuItem value={-1}>All Trackers</MenuItem>
-                                {enableRutor && <MenuItem value="rutor">Rutor</MenuItem>}
-                                {trackers.map((tracker, index) => (
-                                    <MenuItem key={`${tracker.Host}-${tracker.Key}`} value={index}>
-                                        {tracker.Name || tracker.Host}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                        <TextField
-                            label={t('Search Torznab')}
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            variant="outlined"
-                            size="small"
-                            fullWidth
-                            placeholder={t('Search movies, shows...')}
-                            autoFocus
-                        />
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            onClick={handleSearch}
-                            disabled={loading}
-                            style={{ minWidth: fullScreen ? '80px' : '100px', height: '40px' }}
-                        >
-                            {loading ? <CircularProgress size={24} color="inherit" /> : t('Search')}
-                        </Button>
-                    </div>
+  return (
+    <StyledDialog open onClose={handleClose} fullScreen={fullScreen} fullWidth maxWidth='md' ref={ref}>
+      <StyledHeader>{t('Search Torrents')}</StyledHeader>
+      <Content>
+        <div style={{ padding: '20px' }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: '8px',
+              marginBottom: '20px',
+              alignItems: 'flex-start',
+              flexWrap: fullScreen ? 'wrap' : 'nowrap',
+            }}
+          >
+            <FormControl
+              variant='outlined'
+              size='small'
+              style={{
+                minWidth: 150,
+                flex: fullScreen ? '1 1 100%' : '0 0 auto',
+              }}
+            >
+              <InputLabel>Tracker</InputLabel>
+              <Select value={selectedTracker} onChange={e => setSelectedTracker(e.target.value)} label='Tracker'>
+                <MenuItem value={-1}>All Trackers</MenuItem>
+                {enableRutor && <MenuItem value='rutor'>Rutor</MenuItem>}
+                {trackers.map((tracker, index) => (
+                  <MenuItem key={`${tracker.Host}-${tracker.Key}`} value={index}>
+                    {tracker.Name || tracker.Host}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <TextField
+              label={t('Search Torznab')}
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+              variant='outlined'
+              size='small'
+              fullWidth
+              placeholder={t('Search movies, shows...')}
+              autoFocus
+            />
+            <Button
+              variant='contained'
+              color='primary'
+              onClick={handleSearch}
+              disabled={loading}
+              style={{
+                minWidth: fullScreen ? '80px' : '100px',
+                height: '40px',
+              }}
+            >
+              {loading ? <CircularProgress size={24} color='inherit' /> : t('Search')}
+            </Button>
+          </div>
 
-                    <div style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 200px)' }}>
-                        {searched && results.length === 0 && !loading && (
-                            <Typography align="center" variant="body1" color="textSecondary">
-                                {t('No results found')}
-                            </Typography>
-                        )}
+          <div style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 200px)' }}>
+            {searched && results.length === 0 && !loading && (
+              <Typography align='center' variant='body1' color='textSecondary'>
+                {t('No results found')}
+              </Typography>
+            )}
 
-                        <List>
-                            {results.map((item, index) => (
-                                <div key={item.Hash || item.Link || index}>
-                                    <ListItem button onClick={() => handleAdd(item)}>
-                                        <ListItemText
-                                            primary={item.Title}
-                                            secondary={
-                                                <>
-                                                    <Typography component="span" variant="body2" color="textPrimary">
-                                                        {item.Size}
-                                                    </Typography>
-                                                    {` • S: ${item.Seed} P: ${item.Peer}`}
-                                                </>
-                                            }
-                                        />
-                                        <ListItemSecondaryAction>
-                                            <IconButton edge="end" aria-label="add" onClick={() => handleAdd(item)} disabled={adding}>
-                                                <DownloadIcon color="secondary" />
-                                            </IconButton>
-                                        </ListItemSecondaryAction>
-                                    </ListItem>
-                                    <Divider component="li" />
-                                </div>
-                            ))}
-                        </List>
-                    </div>
+            <List>
+              {results.map((item, index) => (
+                <div key={item.Hash || item.Link || index}>
+                  <ListItem button onClick={() => handleAdd(item)}>
+                    <ListItemText
+                      primary={item.Title}
+                      secondary={
+                        <>
+                          <Typography component='span' variant='body2' color='textPrimary'>
+                            {item.Size}
+                          </Typography>
+                          {` • S: ${item.Seed} P: ${item.Peer}`}
+                        </>
+                      }
+                    />
+                    <ListItemSecondaryAction>
+                      <IconButton edge='end' aria-label='add' onClick={() => handleAdd(item)} disabled={adding}>
+                        <DownloadIcon color='secondary' />
+                      </IconButton>
+                    </ListItemSecondaryAction>
+                  </ListItem>
+                  <Divider component='li' />
                 </div>
-            </Content>
+              ))}
+            </List>
+          </div>
+        </div>
+      </Content>
 
-            <Snackbar
-                open={!!successMsg}
-                autoHideDuration={3000}
-                onClose={handleAlertClose}
-                message={successMsg}
-            />
-            <Snackbar
-                open={!!errorMsg}
-                autoHideDuration={3000}
-                onClose={handleAlertClose}
-                message={errorMsg}
-            />
+      <Snackbar open={!!successMsg} autoHideDuration={3000} onClose={handleAlertClose} message={successMsg} />
+      <Snackbar open={!!errorMsg} autoHideDuration={3000} onClose={handleAlertClose} message={errorMsg} />
 
-            <div style={{ padding: '16px', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid rgba(0,0,0,0.12)' }}>
-                <Button onClick={handleClose} color="secondary" variant="outlined">
-                    {t('Close')}
-                </Button>
-            </div>
-
-        </StyledDialog>
-    )
+      <div
+        style={{
+          padding: '16px',
+          display: 'flex',
+          justifyContent: 'flex-end',
+          borderTop: '1px solid rgba(0,0,0,0.12)',
+        }}
+      >
+        <Button onClick={handleClose} color='secondary' variant='outlined'>
+          {t('Close')}
+        </Button>
+      </div>
+    </StyledDialog>
+  )
 }

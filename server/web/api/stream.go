@@ -109,7 +109,7 @@ func stream(c *gin.Context) {
 	}
 
 	if !tor.GotInfo() {
-		c.AbortWithError(http.StatusInternalServerError, errors.New("timeout connection torrent"))
+		c.AbortWithError(http.StatusInternalServerError, errors.New("torrent connection timeout"))
 		return
 	}
 
@@ -219,7 +219,7 @@ func streamNoAuth(c *gin.Context) {
 	}
 
 	if !tor.GotInfo() {
-		c.AbortWithError(http.StatusInternalServerError, errors.New("timeout connection torrent"))
+		c.AbortWithError(http.StatusInternalServerError, errors.New("torrent connection timeout"))
 		return
 	}
 

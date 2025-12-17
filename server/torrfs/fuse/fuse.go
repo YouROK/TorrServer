@@ -150,11 +150,13 @@ func (ffs *FuseFS) Unmount() error {
 
 // ----- go-fuse integration -----
 
-var _ = (gofusefs.InodeEmbedder)((*FuseFS)(nil))
-var _ = (gofusefs.NodeOnAdder)((*FuseFS)(nil))
-var _ = (gofusefs.NodeGetattrer)((*FuseFS)(nil))
-var _ = (gofusefs.NodeReaddirer)((*FuseFS)(nil))
-var _ = (gofusefs.NodeLookuper)((*FuseFS)(nil))
+var (
+	_ = (gofusefs.InodeEmbedder)((*FuseFS)(nil))
+	_ = (gofusefs.NodeOnAdder)((*FuseFS)(nil))
+	_ = (gofusefs.NodeGetattrer)((*FuseFS)(nil))
+	_ = (gofusefs.NodeReaddirer)((*FuseFS)(nil))
+	_ = (gofusefs.NodeLookuper)((*FuseFS)(nil))
+)
 
 func (ffs *FuseFS) EmbeddedInode() *gofusefs.Inode { return &ffs.Inode }
 
@@ -223,10 +225,12 @@ type tfsNode struct {
 	p   string
 }
 
-var _ = (gofusefs.NodeGetattrer)((*tfsNode)(nil))
-var _ = (gofusefs.NodeReaddirer)((*tfsNode)(nil))
-var _ = (gofusefs.NodeLookuper)((*tfsNode)(nil))
-var _ = (gofusefs.NodeOpener)((*tfsNode)(nil))
+var (
+	_ = (gofusefs.NodeGetattrer)((*tfsNode)(nil))
+	_ = (gofusefs.NodeReaddirer)((*tfsNode)(nil))
+	_ = (gofusefs.NodeLookuper)((*tfsNode)(nil))
+	_ = (gofusefs.NodeOpener)((*tfsNode)(nil))
+)
 
 func (n *tfsNode) full(name string) string { return path.Join(n.p, name) }
 
@@ -301,8 +305,10 @@ type tfsHandle struct {
 	f fs.File // must implement io.ReadSeeker
 }
 
-var _ = (gofusefs.FileReader)((*tfsHandle)(nil))
-var _ = (gofusefs.FileReleaser)((*tfsHandle)(nil))
+var (
+	_ = (gofusefs.FileReader)((*tfsHandle)(nil))
+	_ = (gofusefs.FileReleaser)((*tfsHandle)(nil))
+)
 
 func (h *tfsHandle) Read(ctx context.Context, dest []byte, off int64) (fuse.ReadResult, syscall.Errno) {
 	rs := h.f.(io.ReadSeeker)

@@ -146,8 +146,6 @@ func searchOne(host, key, query string) []*models.TorrentDetails {
 	return results
 }
 
-
-
 func Test(host, key string) error {
 	if !strings.HasPrefix(host, "http://") && !strings.HasPrefix(host, "https://") {
 		host = "http://" + host

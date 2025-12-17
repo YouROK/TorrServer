@@ -4,9 +4,9 @@ export const Content = styled.div`
   ${({
     isLoading,
     theme: {
-        settingsDialog: { contentBG },
+      settingsDialog: { contentBG },
     },
-}) => css`
+  }) => css`
     background: ${contentBG};
     overflow: auto;
     flex: 1;

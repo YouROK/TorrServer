@@ -122,7 +122,7 @@ export default function SettingsDialog({ handleClose }) {
         >
           <Tab label={t('SettingsDialog.Tabs.Main')} {...a11yProps(0)} />
 
-          <Tab label="Torznab" {...a11yProps(1)} />
+          <Tab label='Torznab' {...a11yProps(1)} />
 
           <Tab
             disabled={!isProMode}
