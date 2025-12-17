@@ -147,6 +147,8 @@
     "FriendlyNameHint": "留空使用默认值",
     "EnableRutorSearch": "打开RuTor种子搜索",
     "EnableRutorSearchHint": "您可以通过RuTor搜索种子，即使RuTor不可用。注意：数据库占用大约500 MB的存储。",
+    "ShowFSActiveTorr": "仅在文件系统中显示活动种子",
+    "ShowFSActiveTorrHint": "启用后，文件系统（FUSE、WebDAV 等）中只显示活动种子。若禁用，将显示所有种子，打开分类时可能会导致同时连接所有种子",
     "EnableFUSE": "启用 FUSE 文件系统",
     "EnableFUSEHint": "将种子文件挂载为文件系统，供外部应用程序访问",
     "FUSEPath": "FUSE 挂载路径",

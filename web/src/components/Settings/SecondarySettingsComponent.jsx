@@ -1,16 +1,16 @@
-import { useTranslation } from 'react-i18next'
+import {useTranslation} from 'react-i18next'
 import TextField from '@material-ui/core/TextField'
 import {
-  FormControlLabel,
-  FormGroup,
-  FormHelperText,
-  InputAdornment,
-  InputLabel,
-  Select,
-  Switch,
+    FormControlLabel,
+    FormGroup,
+    FormHelperText,
+    InputAdornment,
+    InputLabel,
+    Select,
+    Switch,
 } from '@material-ui/core'
 
-import { SecondarySettingsContent, SettingSectionLabel } from './style'
+import {SecondarySettingsContent, SettingSectionLabel} from './style'
 
 export default function SecondarySettingsComponent({ settings, inputForm }) {
   const { t } = useTranslation()
@@ -38,7 +38,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
     SslPort,
     SslCert,
     SslKey,
-    // EnableFUSE,
+    ShowFSActiveTorr,
     // FUSEPath,
   } = settings || {}
 
@@ -261,15 +261,15 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         fullWidth
       />
       <br />
-      {/* <FormGroup>
+      <FormGroup>
         <FormControlLabel
-          control={<Switch checked={EnableFUSE} onChange={inputForm} id='EnableFUSE' color='secondary' />}
-          label={t('SettingsDialog.EnableFUSE')}
+          control={<Switch checked={ShowFSActiveTorr} onChange={inputForm} id='ShowFSActiveTorr' color='secondary' />}
+          label={t('SettingsDialog.ShowFSActiveTorr')}
           labelPlacement='start'
         />
-        <FormHelperText margin='none'>{t('SettingsDialog.EnableFUSEHint')}</FormHelperText>
+        <FormHelperText margin='none'>{t('SettingsDialog.ShowFSActiveTorrHint')}</FormHelperText>
       </FormGroup>
-      <TextField
+        {/* <TextField
         onChange={inputForm}
         margin='normal'
         id='FUSEPath'

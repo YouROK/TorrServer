@@ -2,6 +2,7 @@ package torrfs
 
 import (
 	"io/fs"
+	"server/settings"
 	"time"
 
 	"server/torr"
@@ -39,6 +40,9 @@ func (d *CategoryDir) ReadDir(n int) ([]fs.DirEntry, error) {
 			t.Category = "other"
 		}
 		if t.Category == d.Name() {
+			if settings.BTsets.ShowFSActiveTorr && !t.GotInfo() {
+				continue
+			}
 			td := NewTorrDir(nil, t.Title, t)
 			nodes = append(nodes, td)
 		}

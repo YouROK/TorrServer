@@ -148,6 +148,8 @@
     "FriendlyNameHint": "Leave blank to use default",
     "EnableRutorSearch": "Turn on torrents search by RuTor",
     "EnableRutorSearchHint": "You can search torrents by RuTor, even if the RuTor is not available. NOTE: The database takes about 500 MB of RAM.",
+    "ShowFSActiveTorr": "Show only active torrents in the file system",
+    "ShowFSActiveTorrHint": "When enabled, only active torrents are shown in the FS (FUSE, WebDAV, etc.). If disabled, all torrents will be displayed, which may cause simultaneous connections to all torrents when opening a category",
     "EnableFUSE": "Enable FUSE Filesystem",
     "EnableFUSEHint": "Mount torrent files as a filesystem for access by external applications",
     "FUSEPath": "FUSE Mount Path",

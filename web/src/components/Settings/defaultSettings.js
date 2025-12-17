@@ -27,6 +27,7 @@ export default {
   SslPort: 0,
   SslCert: '',
   SslKey: '',
+  ShowFSActiveTorr: true,
   EnableFUSE: false,
   FUSEPath: '/mnt/torrserver',
 }
