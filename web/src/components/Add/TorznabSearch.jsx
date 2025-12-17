@@ -47,14 +47,14 @@ export default function TorznabSearch({ onSelect }) {
           placeholder={t('Torznab.SearchMoviesShows')}
         />
         <Button variant="contained" color="primary" onClick={handleSearch} disabled={loading} style={{ minWidth: '80px' }}>
-          {loading ? <CircularProgress size={24} color="inherit" /> : t('Torznab.Search')}
+          {loading ? <CircularProgress size={24} color="inherit" /> : t('Torznab.SearchTorrents')}
         </Button>
       </div>
       {searched && (
         <div style={{ maxHeight: '200px', overflowY: 'auto', marginTop: '8px', border: '1px solid rgba(0,0,0,0.12)', borderRadius: '4px' }}>
           {results.length === 0 ? (
             <div style={{ padding: '8px', textAlign: 'center' }}>
-              <Typography variant="body2">{loading ? t('Torznab.Search') : t('Torznab.NoResultsFound')}</Typography>
+              <Typography variant="body2">{loading ? t('Torznab.SearchTorrents') : t('Torznab.NoResultsFound')}</Typography>
             </div>
           ) : (
             <List dense>
