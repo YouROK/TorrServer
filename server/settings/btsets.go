@@ -10,6 +10,12 @@ import (
 	"server/log"
 )
 
+type TorznabConfig struct {
+	Host string
+	Key  string
+	Name string
+}
+
 type BTSets struct {
 	// Cache
 	CacheSize       int64 // in byte, def 64 MB
@@ -33,6 +39,10 @@ type BTSets struct {
 
 	// Rutor
 	EnableRutorSearch bool
+
+	// Torznab
+	EnableTorznabSearch bool
+	TorznabUrls         []TorznabConfig
 
 	// BT Config
 	EnableIPv6        bool
