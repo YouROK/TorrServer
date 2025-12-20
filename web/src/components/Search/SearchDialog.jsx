@@ -172,7 +172,7 @@ export default function SearchDialog({ handleClose }) {
                 height: '40px',
               }}
             >
-              {loading ? <CircularProgress size={24} color='inherit' /> : t('Torznab.Search')}
+              {loading ? <CircularProgress size={24} color='inherit' /> : t('Search')}
             </Button>
           </div>
 

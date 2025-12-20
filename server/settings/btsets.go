@@ -64,6 +64,9 @@ type BTSets struct {
 
 	// Reader
 	ResponsiveMode bool // enable Responsive reader (don't wait pieceComplete)
+
+	// FS
+	ShowFSActiveTorr bool
 }
 
 func (v *BTSets) String() string {
@@ -141,6 +144,7 @@ func SetDefaultConfig() {
 	sets.TorrentDisconnectTimeout = 30
 	sets.ReaderReadAHead = 95 // 95%
 	sets.ResponsiveMode = true
+	sets.ShowFSActiveTorr = true
 	BTsets = sets
 	if !ReadOnly {
 		buf, err := json.Marshal(BTsets)

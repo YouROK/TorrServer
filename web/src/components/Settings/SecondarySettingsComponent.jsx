@@ -38,7 +38,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
     SslPort,
     SslCert,
     SslKey,
-    // EnableFUSE,
+    ShowFSActiveTorr,
     // FUSEPath,
   } = settings || {}
 
@@ -261,27 +261,14 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         fullWidth
       />
       <br />
-      {/* <FormGroup>
+      <FormGroup>
         <FormControlLabel
-          control={<Switch checked={EnableFUSE} onChange={inputForm} id='EnableFUSE' color='secondary' />}
-          label={t('SettingsDialog.EnableFUSE')}
+          control={<Switch checked={ShowFSActiveTorr} onChange={inputForm} id='ShowFSActiveTorr' color='secondary' />}
+          label={t('SettingsDialog.ShowFSActiveTorr')}
           labelPlacement='start'
         />
-        <FormHelperText margin='none'>{t('SettingsDialog.EnableFUSEHint')}</FormHelperText>
+        <FormHelperText margin='none'>{t('SettingsDialog.ShowFSActiveTorrHint')}</FormHelperText>
       </FormGroup>
-      <TextField
-        onChange={inputForm}
-        margin='normal'
-        id='FUSEPath'
-        label={t('SettingsDialog.FUSEPath')}
-        helperText={t('SettingsDialog.FUSEPathHint')}
-        value={FUSEPath}
-        type='text'
-        variant='outlined'
-        fullWidth
-        disabled={!EnableFUSE}
-      />
-      <br /> */}
     </SecondarySettingsContent>
   )
 }

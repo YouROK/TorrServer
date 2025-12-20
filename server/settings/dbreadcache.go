@@ -65,7 +65,7 @@ func (v *DBReadCache) Set(xPath, name string, value []byte) {
 	}
 	// Проверяем, не закрыта ли база
 	if v.dataCache == nil || v.db == nil {
-		log.TLogln("DB.Set: DB is closed, cannot set", name)
+		log.TLogln("DB.Set: no dataCache or DB is closed, cannot set", name)
 		return
 	}
 
@@ -119,7 +119,7 @@ func (v *DBReadCache) Rem(xPath, name string) {
 	}
 	// Проверяем, не закрыта ли база
 	if v.dataCache == nil || v.db == nil {
-		log.TLogln("DB.Rem: DB is closed, cannot remove", name)
+		log.TLogln("DB.Rem: no dataCache or DB is closed, cannot remove", name)
 		return
 	}
 

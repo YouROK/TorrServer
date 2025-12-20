@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"server/log"
 	"sync"
 	"time"
 
@@ -21,6 +22,7 @@ var missingMethods = []string{
 }
 
 func MountWebDAV(r *gin.Engine) {
+	log.TLogln("Starting WebDAV")
 	tfs := torrfs.AsFS(torrfs.New())
 
 	h := &webdav.Handler{

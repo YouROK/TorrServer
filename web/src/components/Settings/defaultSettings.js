@@ -23,10 +23,9 @@ export default {
   UploadRateLimit: 0,
   ConnectionsLimit: 25,
   PeersListenPort: 0,
-  ResponsiveMode: false,
+  ResponsiveMode: true,
   SslPort: 0,
   SslCert: '',
   SslKey: '',
-  EnableFUSE: false,
-  FUSEPath: '/mnt/torrserver',
+  ShowFSActiveTorr: true,
 }

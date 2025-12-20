@@ -18,11 +18,14 @@
   <a href="https://github.com/YouROK/TorrServer/issues">
     <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" alt="CodeFactor" />
   </a>
-  <a href="https://github.com/YouROK/TorrServer/actions/workflows/github-actions-docker.yml" rel="nofollow">
-    <img src="https://img.shields.io/github/actions/workflow/status/YouROK/TorrServer/github-actions-docker.yml?logo=Github" alt="Build" />
+  <a href="https://github.com/YouROK/TorrServer/actions/workflows/docker_image.yml" rel="nofollow">
+    <img src="https://img.shields.io/github/actions/workflow/status/YouROK/TorrServer/docker_image.yml?logo=Github" alt="Build" />
+  </a>
+  <a href="https://github.com/YouROK/TorrServer/releases" rel="nofollow">
+    <img alt="GitHub release (latest SemVer)" src="https://img.shields.io/github/v/release/YouROK/TorrServer?label=version"/>
   </a>
   <a href="https://github.com/YouROK/TorrServer/tags" rel="nofollow">
-    <img alt="GitHub tag (latest SemVer pre-release)" src="https://img.shields.io/github/v/tag/YouROK/TorrServer?include_prereleases&label=version"/>
+    <img alt="GitHub tag (latest SemVer pre-release)" src="https://img.shields.io/github/v/tag/YouROK/TorrServer?include_prereleases&label=pre-release"/>
   </a>
 </p>
 
@@ -79,30 +82,43 @@ curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrSe
 **Command-line examples:**
 
 - Install a specific version:
+
   ```bash
   sudo bash ./installTorrServerLinux.sh --install 135 --silent
   ```
+
 - Update to latest version:
+
   ```bash
   sudo bash ./installTorrServerLinux.sh --update --silent
   ```
+
 - Reconfigure settings interactively:
+
   ```bash
   sudo bash ./installTorrServerLinux.sh --reconfigure
   ```
+
 - Check for updates:
+
   ```bash
   sudo bash ./installTorrServerLinux.sh --check
   ```
+
 - Downgrade to a specific version:
+
   ```bash
   sudo bash ./installTorrServerLinux.sh --down 135
   ```
+
 - Remove/uninstall:
+
   ```bash
   sudo bash ./installTorrServerLinux.sh --remove --silent
   ```
+
 - Change the systemd service user:
+
   ```bash
   sudo bash ./installTorrServerLinux.sh --change-user root --silent
   ```
@@ -234,7 +250,7 @@ services:
 
 ## Development
 
-#### Go server
+### Go server
 
 To run the Go server locally, just run
 
@@ -243,7 +259,7 @@ cd server
 go run ./cmd
 ```
 
-#### Web development
+### Web development
 
 To run the web server locally, just run
 
@@ -332,11 +348,12 @@ local:127.0.0.1
 ## Thanks to everyone who tested and helped
 
 - [anacrolix](https://github.com/anacrolix) Matt Joiner
-- [tsynik](https://github.com/tsynik)
+- [tsynik](https://github.com/tsynik) Nikk Gitanes
 - [dancheskus](https://github.com/dancheskus) for react web GUI and PWA code
 - [kolsys](https://github.com/kolsys) for initial Media Station X support
 - [damiva](https://github.com/damiva) for Media Station X code updates
 - [vladlenas](https://github.com/vladlenas) for NAS builds
+- [pavelpikta](https://github.com/pavelpikta) Pavel Pikta for linux install script and more
 - [Nemiroff](https://github.com/Nemiroff) Tw1cker
 - [spawnlmg](https://github.com/spawnlmg) SpAwN_LMG for testing
 - [TopperBG](https://github.com/TopperBG) Dimitar Maznekov for Bulgarian web translation
