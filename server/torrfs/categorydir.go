@@ -2,8 +2,9 @@ package torrfs
 
 import (
 	"io/fs"
-	"server/settings"
 	"time"
+
+	"server/settings"
 
 	"server/torr"
 )

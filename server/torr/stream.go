@@ -23,6 +23,21 @@ import (
 // Add atomic counter for concurrent streams
 var activeStreams int32
 
+type contextResponseWriter struct {
+	http.ResponseWriter
+	ctx context.Context
+}
+
+func (w *contextResponseWriter) Write(p []byte) (n int, err error) {
+	// Check context before each write
+	select {
+	case <-w.ctx.Done():
+		return 0, w.ctx.Err()
+	default:
+		return w.ResponseWriter.Write(p)
+	}
+}
+
 func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter) error {
 	// Increment active streams counter
 	streamID := atomic.AddInt32(&activeStreams, 1)
@@ -70,7 +85,6 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 	if reader == nil {
 		return errors.New("cannot create torrent reader")
 	}
-
 	// Ensure reader is always closed
 	defer t.CloseReader(reader)
 
@@ -131,8 +145,12 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 	}
 	// Update request with new context
 	req = req.WithContext(ctx)
-
-	http.ServeContent(resp, req, file.Path(), time.Unix(t.Timestamp, 0), reader)
+	// Handle client disconnections better
+	wrappedResp := &contextResponseWriter{
+		ResponseWriter: resp,
+		ctx:            ctx,
+	}
+	http.ServeContent(wrappedResp, req, file.Path(), time.Unix(t.Timestamp, 0), reader)
 
 	if sets.BTsets.EnableDebug {
 		if clerr != nil {
