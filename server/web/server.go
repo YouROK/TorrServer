@@ -5,6 +5,9 @@ import (
 	"os"
 	"sort"
 
+	"server/torrfs/fuse"
+	"server/torrfs/webdav"
+
 	"server/rutor"
 
 	"github.com/gin-contrib/cors"
@@ -79,10 +82,16 @@ func Start() {
 	api.SetupRoute(route)
 	msx.SetupRoute(route)
 	pages.SetupRoute(route)
+	if settings.Args.WebDAV {
+		webdav.MountWebDAV(route)
+	}
 
 	if settings.BTsets.EnableDLNA {
 		dlna.Start()
 	}
+
+	// Auto-mount FUSE filesystem if enabled
+	fuse.FuseAutoMount()
 
 	route.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -121,6 +130,8 @@ func Wait() error {
 
 func Stop() {
 	dlna.Stop()
+	// Unmount FUSE filesystem if mounted
+	fuse.FuseCleanup()
 	BTS.Disconnect()
 	waitChan <- nil
 }

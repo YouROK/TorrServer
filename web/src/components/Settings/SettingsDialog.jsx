@@ -20,6 +20,7 @@ import { a11yProps, TabPanel } from './tabComponents'
 import PrimarySettingsComponent from './PrimarySettingsComponent'
 import SecondarySettingsComponent from './SecondarySettingsComponent'
 import MobileAppSettings from './MobileAppSettings'
+import TorznabSettings from './TorznabSettings'
 
 export default function SettingsDialog({ handleClose }) {
   const { t } = useTranslation()
@@ -33,6 +34,7 @@ export default function SettingsDialog({ handleClose }) {
   const [preloadCachePercentage, setPreloadCachePercentage] = useState(0)
   const [isProMode, setIsProMode] = useState(JSON.parse(localStorage.getItem('isProMode')) || false)
   const [isVlcUsed, setIsVlcUsed] = useState(JSON.parse(localStorage.getItem('isVlcUsed')) ?? false)
+  const [isInfuseUsed, setIsInfuseUsed] = useState(JSON.parse(localStorage.getItem('isInfuseUsed')) ?? false)
 
   useEffect(() => {
     axios.post(settingsHost(), { action: 'get' }).then(({ data }) => {
@@ -50,6 +52,7 @@ export default function SettingsDialog({ handleClose }) {
     sets.PreloadCache = preloadCachePercentage
     axios.post(settingsHost(), { action: 'set', sets })
     localStorage.setItem('isVlcUsed', isVlcUsed)
+    localStorage.setItem('isInfuseUsed', isInfuseUsed)
   }
 
   const inputForm = ({ target: { type, value, checked, id } }) => {
@@ -119,6 +122,8 @@ export default function SettingsDialog({ handleClose }) {
         >
           <Tab label={t('SettingsDialog.Tabs.Main')} {...a11yProps(0)} />
 
+          <Tab label='Torznab' {...a11yProps(1)} />
+
           <Tab
             disabled={!isProMode}
             label={
@@ -127,10 +132,10 @@ export default function SettingsDialog({ handleClose }) {
                 {!isProMode && <div style={{ fontSize: '9px' }}>{t('SettingsDialog.Tabs.AdditionalDisabled')}</div>}
               </>
             }
-            {...a11yProps(1)}
+            {...a11yProps(2)}
           />
 
-          {isStandaloneApp && <Tab label={t('SettingsDialog.Tabs.App')} {...a11yProps(2)} />}
+          {isStandaloneApp && <Tab label={t('SettingsDialog.Tabs.App')} {...a11yProps(3)} />}
         </Tabs>
       </AppBar>
 
@@ -158,12 +163,21 @@ export default function SettingsDialog({ handleClose }) {
               </TabPanel>
 
               <TabPanel value={selectedTab} index={1} dir={direction}>
-                <SecondarySettingsComponent settings={settings} inputForm={inputForm} />
+                <TorznabSettings settings={settings} inputForm={inputForm} updateSettings={updateSettings} />
+              </TabPanel>
+
+              <TabPanel value={selectedTab} index={2} dir={direction}>
+                <SecondarySettingsComponent settings={settings} inputForm={inputForm} updateSettings={updateSettings} />
               </TabPanel>
 
               {isStandaloneApp && (
-                <TabPanel value={selectedTab} index={2} dir={direction}>
-                  <MobileAppSettings isVlcUsed={isVlcUsed} setIsVlcUsed={setIsVlcUsed} />
+                <TabPanel value={selectedTab} index={3} dir={direction}>
+                  <MobileAppSettings
+                    isVlcUsed={isVlcUsed}
+                    setIsVlcUsed={setIsVlcUsed}
+                    isInfuseUsed={isInfuseUsed}
+                    setIsInfuseUsed={setIsInfuseUsed}
+                  />
                 </TabPanel>
               )}
             </SwipeableViews>

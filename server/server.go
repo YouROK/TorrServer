@@ -13,64 +13,64 @@ import (
 	"server/web"
 )
 
-func Start(port, ip, sslport, sslCert, sslKey string, sslEnabled, roSets, searchWA bool, tgtoken string) {
-	settings.InitSets(roSets, searchWA)
+func Start() {
+	settings.InitSets(settings.Args.RDB, settings.Args.SearchWA)
 	// https checks
-	if sslEnabled {
+	if settings.Args.Ssl {
 		// set settings ssl enabled
-		settings.Ssl = sslEnabled
-		if sslport == "" {
+		settings.Ssl = settings.Args.Ssl
+		if settings.Args.SslPort == "" {
 			dbSSlPort := strconv.Itoa(settings.BTsets.SslPort)
 			if dbSSlPort != "0" {
-				sslport = dbSSlPort
+				settings.Args.SslPort = dbSSlPort
 			} else {
-				sslport = "8091"
+				settings.Args.SslPort = "8091"
 			}
 		} else { // store ssl port from params to DB
-			dbSSlPort, err := strconv.Atoi(sslport)
+			dbSSlPort, err := strconv.Atoi(settings.Args.SslPort)
 			if err == nil {
 				settings.BTsets.SslPort = dbSSlPort
 			}
 		}
 		// check if ssl cert and key files exist
-		if sslCert != "" && sslKey != "" {
+		if settings.Args.SslCert != "" && settings.Args.SslKey != "" {
 			// set settings ssl cert and key files
-			settings.BTsets.SslCert = sslCert
-			settings.BTsets.SslKey = sslKey
+			settings.BTsets.SslCert = settings.Args.SslCert
+			settings.BTsets.SslKey = settings.Args.SslKey
 		}
-		log.TLogln("Check web ssl port", sslport)
-		l, err := net.Listen("tcp", ip+":"+sslport)
+		log.TLogln("Check web ssl port", settings.Args.SslPort)
+		l, err := net.Listen("tcp", settings.Args.IP+":"+settings.Args.SslPort)
 		if l != nil {
 			l.Close()
 		}
 		if err != nil {
-			log.TLogln("Port", sslport, "already in use! Please set different ssl port for HTTPS. Abort")
+			log.TLogln("Port", settings.Args.SslPort, "already in use! Please set different ssl port for HTTPS. Abort")
 			os.Exit(1)
 		}
 	}
 	// http checks
-	if port == "" {
-		port = "8090"
+	if settings.Args.Port == "" {
+		settings.Args.Port = "8090"
 	}
 
-	log.TLogln("Check web port", port)
-	l, err := net.Listen("tcp", ip+":"+port)
+	log.TLogln("Check web port", settings.Args.Port)
+	l, err := net.Listen("tcp", settings.Args.IP+":"+settings.Args.Port)
 	if l != nil {
 		l.Close()
 	}
 	if err != nil {
-		log.TLogln("Port", port, "already in use! Please set different port for HTTP. Abort")
+		log.TLogln("Port", settings.Args.Port, "already in use! Please set different port for HTTP. Abort")
 		os.Exit(1)
 	}
 	// remove old disk caches
 	go cleanCache()
 	// set settings http and https ports. Start web server.
-	settings.Port = port
-	settings.SslPort = sslport
-	settings.IP = ip
+	settings.Port = settings.Args.Port
+	settings.SslPort = settings.Args.SslPort
+	settings.IP = settings.Args.IP
 
-	if tgtoken != "" {
-		tgbot.Start(tgtoken)
+	if settings.Args.TGToken != "" {
+		tgbot.Start(settings.Args.TGToken)
 	}
 	web.Start()
 }

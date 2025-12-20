@@ -49,7 +49,7 @@ export const useCreateCacheMap = cache => {
 
       Readers.forEach(r => {
         if (i === r.Reader) newPiece.isReader = true
-        if (i >= r.Start && i <= r.End) newPiece.isReaderRange = true
+        if (i >= r.Start && i < r.End) newPiece.isReaderRange = true
       })
 
       map.push(newPiece)

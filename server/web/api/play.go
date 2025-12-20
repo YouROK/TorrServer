@@ -14,12 +14,12 @@ import (
 
 // play godoc
 //
-//	@Summary		Play given torrent referenced by hash
-//	@Description	Play given torrent referenced by hash.
+//	@Summary		Play given torrent by infohash
+//	@Description	Play given torrent referenced by infohash and file id.
 //
 //	@Tags			API
 //
-//	@Param			hash		path	string	true	"Torrent hash"
+//	@Param			hash		path	string	true	"Torrent infohash"
 //	@Param			id			path	string	true	"File index in torrent"
 //
 //	@Produce		application/octet-stream
@@ -31,7 +31,7 @@ func play(c *gin.Context) {
 	notAuth := c.GetBool("auth_required") && c.GetString(gin.AuthUserKey) == ""
 
 	if hash == "" || indexStr == "" {
-		c.AbortWithError(http.StatusNotFound, errors.New("link should not be empty"))
+		c.AbortWithError(http.StatusNotFound, errors.New("no infohash or file index in link"))
 		return
 	}
 
@@ -62,7 +62,7 @@ func play(c *gin.Context) {
 	}
 
 	if !tor.GotInfo() {
-		c.AbortWithError(http.StatusInternalServerError, errors.New("timeout connection torrent"))
+		c.AbortWithError(http.StatusInternalServerError, errors.New("torrent connection timeout"))
 		return
 	}
 
@@ -77,7 +77,7 @@ func play(c *gin.Context) {
 		}
 	}
 	if index == -1 { // if file index not set and play file exec
-		c.AbortWithError(http.StatusBadRequest, errors.New("\"index\" is wrong"))
+		c.AbortWithError(http.StatusBadRequest, errors.New("file \"index\" is wrong"))
 		return
 	}
 

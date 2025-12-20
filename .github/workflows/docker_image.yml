@@ -4,13 +4,25 @@ on:
   push:
     branches:
       - master
+    tags:
+      - "**"
+
+concurrency:
+  group: docker-build-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   docker:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -25,22 +37,24 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: set lower case owner name
+      - name: Set lower case repository name
         run: |
           echo "REG_REPO=${REPO,,}" >>${GITHUB_ENV}
         env:
-          REPO: '${{ github.repository }}'
+          REPO: "${{ github.repository }}"
 
-      - name: Docker meta
+      - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: |
             ghcr.io/${{ env.REG_REPO }}
           tags: |
-            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'master') }}
+            type=raw,value=master,enable=${{ github.ref == format('refs/heads/{0}', 'master') }}
+            type=ref,event=tag
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/') }}
 
-      - name: Build and push
+      - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .

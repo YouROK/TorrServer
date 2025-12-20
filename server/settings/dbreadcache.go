@@ -31,17 +31,30 @@ func (v *DBReadCache) CloseDB() {
 }
 
 func (v *DBReadCache) Get(xPath, name string) []byte {
+	if v.dataCache == nil {
+		return nil // или panic, или возвращаем ошибку
+	}
 	cacheKey := v.makeDataCacheKey(xPath, name)
+
 	v.dataCacheMutex.RLock()
 	if data, ok := v.dataCache[cacheKey]; ok {
 		defer v.dataCacheMutex.RUnlock()
 		return data
 	}
 	v.dataCacheMutex.RUnlock()
+
+	// Если база данных закрыта, не пытаемся к ней обращаться
+	if v.db == nil {
+		return nil
+	}
 	data := v.db.Get(xPath, name)
+
 	v.dataCacheMutex.Lock()
-	v.dataCache[cacheKey] = data
+	if v.dataCache != nil { // Двойная проверка
+		v.dataCache[cacheKey] = data
+	}
 	v.dataCacheMutex.Unlock()
+
 	return data
 }
 
@@ -50,25 +63,52 @@ func (v *DBReadCache) Set(xPath, name string, value []byte) {
 		log.TLogln("DB.Set: Read-only DB mode!", name)
 		return
 	}
+	// Проверяем, не закрыта ли база
+	if v.dataCache == nil || v.db == nil {
+		log.TLogln("DB.Set: no dataCache or DB is closed, cannot set", name)
+		return
+	}
+
 	cacheKey := v.makeDataCacheKey(xPath, name)
+
 	v.dataCacheMutex.Lock()
-	v.dataCache[cacheKey] = value
+	if v.dataCache != nil { // Двойная проверка
+		v.dataCache[cacheKey] = value
+	}
 	v.dataCacheMutex.Unlock()
-	delete(v.listCache, xPath)
+
+	if v.listCache != nil {
+		delete(v.listCache, xPath)
+	}
+
 	v.db.Set(xPath, name, value)
 }
 
 func (v *DBReadCache) List(xPath string) []string {
+	if v.listCache == nil {
+		return nil
+	}
+
 	v.listCacheMutex.RLock()
 	if names, ok := v.listCache[xPath]; ok {
 		defer v.listCacheMutex.RUnlock()
 		return names
 	}
 	v.listCacheMutex.RUnlock()
+
+	// Проверяем, не закрыта ли база
+	if v.db == nil {
+		return nil
+	}
+
 	names := v.db.List(xPath)
+
 	v.listCacheMutex.Lock()
-	v.listCache[xPath] = names
+	if v.listCache != nil { // Двойная проверка
+		v.listCache[xPath] = names
+	}
 	v.listCacheMutex.Unlock()
+
 	return names
 }
 
@@ -77,9 +117,24 @@ func (v *DBReadCache) Rem(xPath, name string) {
 		log.TLogln("DB.Rem: Read-only DB mode!", name)
 		return
 	}
+	// Проверяем, не закрыта ли база
+	if v.dataCache == nil || v.db == nil {
+		log.TLogln("DB.Rem: no dataCache or DB is closed, cannot remove", name)
+		return
+	}
+
 	cacheKey := v.makeDataCacheKey(xPath, name)
-	delete(v.dataCache, cacheKey)
-	delete(v.listCache, xPath)
+
+	v.dataCacheMutex.Lock()
+	if v.dataCache != nil {
+		delete(v.dataCache, cacheKey)
+	}
+	v.dataCacheMutex.Unlock()
+
+	if v.listCache != nil {
+		delete(v.listCache, xPath)
+	}
+
 	v.db.Rem(xPath, name)
 }
 

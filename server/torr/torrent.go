@@ -107,7 +107,7 @@ func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 }
 
 func (t *Torrent) WaitInfo() bool {
-	if t.Torrent == nil {
+	if t == nil || t.Torrent == nil {
 		return false
 	}
 
@@ -116,8 +116,10 @@ func (t *Torrent) WaitInfo() bool {
 
 	select {
 	case <-t.Torrent.GotInfo():
-		t.cache = t.bt.storage.GetCache(t.Hash())
-		t.cache.SetTorrent(t.Torrent)
+		if t.bt != nil && t.bt.storage != nil {
+			t.cache = t.bt.storage.GetCache(t.Hash())
+			t.cache.SetTorrent(t.Torrent)
+		}
 		return true
 	case <-t.closed:
 		return false
@@ -128,7 +130,7 @@ func (t *Torrent) WaitInfo() bool {
 
 func (t *Torrent) GotInfo() bool {
 	// log.TLogln("GotInfo state:", t.Stat)
-	if t.Stat == state.TorrentClosed {
+	if t == nil || t.Stat == state.TorrentClosed {
 		return false
 	}
 	// assume we have info in preload state
@@ -235,7 +237,7 @@ func (t *Torrent) Files() []*torrent.File {
 
 func (t *Torrent) Hash() metainfo.Hash {
 	if t.Torrent != nil {
-		t.Torrent.InfoHash()
+		return t.Torrent.InfoHash()
 	}
 	if t.TorrentSpec != nil {
 		return t.TorrentSpec.InfoHash
@@ -277,14 +279,19 @@ func (t *Torrent) drop() {
 }
 
 func (t *Torrent) Close() bool {
+	if t == nil {
+		return false
+	}
 	if settings.ReadOnly && t.cache != nil && t.cache.GetUseReaders() > 0 {
 		return false
 	}
 	t.Stat = state.TorrentClosed
 
-	t.bt.mu.Lock()
-	delete(t.bt.torrents, t.Hash())
-	t.bt.mu.Unlock()
+	if t.bt != nil {
+		t.bt.mu.Lock()
+		delete(t.bt.torrents, t.Hash())
+		t.bt.mu.Unlock()
+	}
 
 	t.drop()
 	return true

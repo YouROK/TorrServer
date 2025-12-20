@@ -18,11 +18,14 @@
   <a href="https://github.com/YouROK/TorrServer/issues">
     <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" alt="CodeFactor" />
   </a>
-  <a href="https://github.com/YouROK/TorrServer/actions/workflows/github-actions-docker.yml" rel="nofollow">
-    <img src="https://img.shields.io/github/actions/workflow/status/YouROK/TorrServer/github-actions-docker.yml?logo=Github" alt="Build" />
+  <a href="https://github.com/YouROK/TorrServer/actions/workflows/docker_image.yml" rel="nofollow">
+    <img src="https://img.shields.io/github/actions/workflow/status/YouROK/TorrServer/docker_image.yml?logo=Github" alt="Build" />
+  </a>
+  <a href="https://github.com/YouROK/TorrServer/releases" rel="nofollow">
+    <img alt="GitHub release (latest SemVer)" src="https://img.shields.io/github/v/release/YouROK/TorrServer?label=version"/>
   </a>
   <a href="https://github.com/YouROK/TorrServer/tags" rel="nofollow">
-    <img alt="GitHub tag (latest SemVer pre-release)" src="https://img.shields.io/github/v/tag/YouROK/TorrServer?include_prereleases&label=version"/>
+    <img alt="GitHub tag (latest SemVer pre-release)" src="https://img.shields.io/github/v/tag/YouROK/TorrServer?include_prereleases&label=pre-release"/>
   </a>
 </p>
 
@@ -31,6 +34,10 @@
 TorrServer is a program that allows users to view torrents online without the need for preliminary file downloading.
 The core functionality of TorrServer includes caching torrents and subsequent data transfer via the HTTP protocol,
 allowing the cache size to be adjusted according to the system parameters and the user's internet connection speed.
+
+## AI Documentation
+
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/YouROK/TorrServer)
 
 ## Features
 
@@ -59,6 +66,75 @@ Run in console
 ```bash
 curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh | sudo bash
 ```
+
+The script supports interactive and non-interactive installation, configuration, updates, and removal. When running the script interactively, you can:
+
+- **Install/Update**: Choose to install or update TorrServer
+- **Reconfigure**: If TorrServer is already installed, you'll be prompted to reconfigure settings (port, auth, read-only mode, logging, BBR)
+- **Uninstall**: Type `Delete` (or `Удалить` in Russian) to uninstall TorrServer
+
+**Download first and set execute permissions:**
+
+```bash
+curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh -o installTorrServerLinux.sh && chmod 755 installTorrServerLinux.sh
+```
+
+**Command-line examples:**
+
+- Install a specific version:
+
+  ```bash
+  sudo bash ./installTorrServerLinux.sh --install 135 --silent
+  ```
+
+- Update to latest version:
+
+  ```bash
+  sudo bash ./installTorrServerLinux.sh --update --silent
+  ```
+
+- Reconfigure settings interactively:
+
+  ```bash
+  sudo bash ./installTorrServerLinux.sh --reconfigure
+  ```
+
+- Check for updates:
+
+  ```bash
+  sudo bash ./installTorrServerLinux.sh --check
+  ```
+
+- Downgrade to a specific version:
+
+  ```bash
+  sudo bash ./installTorrServerLinux.sh --down 135
+  ```
+
+- Remove/uninstall:
+
+  ```bash
+  sudo bash ./installTorrServerLinux.sh --remove --silent
+  ```
+
+- Change the systemd service user:
+
+  ```bash
+  sudo bash ./installTorrServerLinux.sh --change-user root --silent
+  ```
+
+**All available commands:**
+
+- `--install [VERSION]` - Install latest or specific version
+- `--update` - Update to latest version
+- `--reconfigure` - Reconfigure TorrServer settings (port, auth, read-only mode, logging, BBR)
+- `--check` - Check for updates (version info only)
+- `--down VERSION` - Downgrade to specific version
+- `--remove` - Uninstall TorrServer
+- `--change-user USER` - Change service user (root|torrserver)
+- `--root` - Run service as root user
+- `--silent` - Non-interactive mode with defaults
+- `--help` - Show help message
 
 #### macOS
 
@@ -174,7 +250,7 @@ services:
 
 ## Development
 
-#### Go server
+### Go server
 
 To run the Go server locally, just run
 
@@ -183,7 +259,7 @@ cd server
 go run ./cmd
 ```
 
-#### Web development
+### Web development
 
 To run the web server locally, just run
 
@@ -191,7 +267,7 @@ To run the web server locally, just run
 yarn start
 ```
 
-More info at https://github.com/YouROK/TorrServer/tree/master/web#readme
+More info at <https://github.com/YouROK/TorrServer/tree/master/web#readme>
 
 ### Build
 
@@ -222,6 +298,7 @@ cd server; swag init -g web/server.go
 # Documentation can be linted using
 swag fmt
 ```
+
 ## API
 
 ### API Docs
@@ -240,6 +317,7 @@ The users data file should be located near to the settings. Basic auth, read mor
     "User2": "Pass2"
 }
 ```
+
 Note: You should enable authentication with -a (--httpauth) TorrServer startup option.
 
 ## Whitelist/Blacklist IP
@@ -267,15 +345,15 @@ local:127.0.0.1
 - [Boosty](https://boosty.to/yourok)
 - [TBank](https://www.tbank.ru/cf/742qEMhKhKn)
 
-
 ## Thanks to everyone who tested and helped
 
 - [anacrolix](https://github.com/anacrolix) Matt Joiner
-- [tsynik](https://github.com/tsynik)
+- [tsynik](https://github.com/tsynik) Nikk Gitanes
 - [dancheskus](https://github.com/dancheskus) for react web GUI and PWA code
 - [kolsys](https://github.com/kolsys) for initial Media Station X support
 - [damiva](https://github.com/damiva) for Media Station X code updates
 - [vladlenas](https://github.com/vladlenas) for NAS builds
+- [pavelpikta](https://github.com/pavelpikta) Pavel Pikta for linux install script and more
 - [Nemiroff](https://github.com/Nemiroff) Tw1cker
 - [spawnlmg](https://github.com/spawnlmg) SpAwN_LMG for testing
 - [TopperBG](https://github.com/TopperBG) Dimitar Maznekov for Bulgarian web translation

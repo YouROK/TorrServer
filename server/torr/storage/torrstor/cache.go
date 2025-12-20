@@ -87,7 +87,11 @@ func (c *Cache) Piece(m metainfo.Piece) storage.PieceImpl {
 }
 
 func (c *Cache) Close() error {
-	log.TLogln("Close cache for:", c.hash)
+	if c.torrent != nil {
+		log.TLogln("Close cache for:", c.torrent.Name(), c.hash)
+	} else {
+		log.TLogln("Close cache for:", c.hash)
+	}
 	c.isClosed = true
 
 	delete(c.storage.caches, c.hash)

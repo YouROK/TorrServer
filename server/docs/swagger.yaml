@@ -114,6 +114,9 @@ definitions:
       enableRutorSearch:
         description: Rutor
         type: boolean
+      enableTorznabSearch:
+        description: Torznab
+        type: boolean
       forceEncrypt:
         description: Torrent
         type: boolean
@@ -136,6 +139,9 @@ definitions:
         description: 0 - don`t add, 1 - add retrackers (def), 2 - remove retrackers
           3 - replace retrackers
         type: integer
+      showFSActiveTorr:
+        description: FS
+        type: boolean
       sslCert:
         type: string
       sslKey:
@@ -148,12 +154,25 @@ definitions:
         type: integer
       torrentsSavePath:
         type: string
+      torznabUrls:
+        items:
+          $ref: '#/definitions/settings.TorznabConfig'
+        type: array
       uploadRateLimit:
         description: in kb, 0 - inf
         type: integer
       useDisk:
         description: Disk
         type: boolean
+    type: object
+  settings.TorznabConfig:
+    properties:
+      host:
+        type: string
+      key:
+        type: string
+      name:
+        type: string
     type: object
   settings.Viewed:
     properties:
@@ -408,9 +427,9 @@ paths:
       - Pages
   /play/{hash}/{id}:
     get:
-      description: Play given torrent referenced by hash.
+      description: Play given torrent referenced by infohash and file id.
       parameters:
-      - description: Torrent hash
+      - description: Torrent infohash
         in: path
         name: hash
         required: true
@@ -425,7 +444,7 @@ paths:
       responses:
         "200":
           description: Torrent data
-      summary: Play given torrent referenced by hash
+      summary: Play given torrent by infohash
       tags:
       - API
   /playlist:
@@ -646,6 +665,27 @@ paths:
         "200":
           description: OK
       summary: Handle torrents informations
+      tags:
+      - API
+  /torznab/search:
+    get:
+      description: Makes a torznab search.
+      parameters:
+      - description: Torznab query
+        in: query
+        name: query
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Torznab torrent search result(s)
+          schema:
+            items:
+              $ref: '#/definitions/models.TorrentDetails'
+            type: array
+      summary: Makes a torznab search
       tags:
       - API
   /viewed:

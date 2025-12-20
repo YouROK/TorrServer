@@ -97,7 +97,6 @@ export const MainSettingsContent = styled.div`
 export const SecondarySettingsContent = styled.div`
   padding: 20px;
 `
-
 export const StorageButton = styled.div`
   ${({ small, selected }) => css`
     transition: 0.2s;

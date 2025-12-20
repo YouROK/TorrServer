@@ -150,18 +150,18 @@ const docTemplate = `{
         },
         "/play/{hash}/{id}": {
             "get": {
-                "description": "Play given torrent referenced by hash.",
+                "description": "Play given torrent referenced by infohash and file id.",
                 "produces": [
                     "application/octet-stream"
                 ],
                 "tags": [
                     "API"
                 ],
-                "summary": "Play given torrent referenced by hash",
+                "summary": "Play given torrent by infohash",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Torrent hash",
+                        "description": "Torrent infohash",
                         "name": "hash",
                         "in": "path",
                         "required": true
@@ -512,6 +512,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/torznab/search": {
+            "get": {
+                "description": "Makes a torznab search.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Makes a torznab search",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Torznab query",
+                        "name": "query",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Torznab torrent search result(s)",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.TorrentDetails"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/viewed": {
             "post": {
                 "description": "Allow to set, list or remove viewed torrents from server.",
@@ -721,6 +753,10 @@ const docTemplate = `{
                     "description": "Rutor",
                     "type": "boolean"
                 },
+                "enableTorznabSearch": {
+                    "description": "Torznab",
+                    "type": "boolean"
+                },
                 "forceEncrypt": {
                     "description": "Torrent",
                     "type": "boolean"
@@ -750,6 +786,10 @@ const docTemplate = `{
                     "description": "0 - don` + "`" + `t add, 1 - add retrackers (def), 2 - remove retrackers 3 - replace retrackers",
                     "type": "integer"
                 },
+                "showFSActiveTorr": {
+                    "description": "FS",
+                    "type": "boolean"
+                },
                 "sslCert": {
                     "type": "string"
                 },
@@ -767,6 +807,12 @@ const docTemplate = `{
                 "torrentsSavePath": {
                     "type": "string"
                 },
+                "torznabUrls": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/settings.TorznabConfig"
+                    }
+                },
                 "uploadRateLimit": {
                     "description": "in kb, 0 - inf",
                     "type": "integer"
@@ -774,6 +820,20 @@ const docTemplate = `{
                 "useDisk": {
                     "description": "Disk",
                     "type": "boolean"
+                }
+            }
+        },
+        "settings.TorznabConfig": {
+            "type": "object",
+            "properties": {
+                "host": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
                 }
             }
         },
