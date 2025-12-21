@@ -3,6 +3,7 @@ package torr
 import (
 	"fmt"
 	"io"
+	"runtime/debug"
 	"strconv"
 	"sync"
 	"time"
@@ -18,10 +19,28 @@ import (
 )
 
 func (t *Torrent) Preload(index int, size int64) {
+	// recovery from panic
+	defer func() {
+		if r := recover(); r != nil {
+			log.TLogln("Recovered from panic in Preload:", r)
+			// Stack trace for debugging
+			debug.PrintStack()
+		}
+	}()
+
 	if size <= 0 {
 		return
 	}
 	t.PreloadSize = size
+
+	// First, check if torrent is already closed
+	t.muTorrent.Lock()
+	if t.Stat == state.TorrentClosed {
+		t.muTorrent.Unlock()
+		log.TLogln("Preload skipped: torrent already closed")
+		return
+	}
+	t.muTorrent.Unlock()
 
 	if t.Stat == state.TorrentGettingInfo {
 		if !t.WaitInfo() {
@@ -64,6 +83,13 @@ func (t *Torrent) Preload(index int, size int64) {
 		return
 	}
 
+	// Helper function to check if torrent is closed
+	isTorrentClosed := func() bool {
+		t.muTorrent.Lock()
+		defer t.muTorrent.Unlock()
+		return t.Stat == state.TorrentClosed || t.Torrent == nil
+	}
+
 	timeout := time.Second * time.Duration(settings.BTsets.TorrentDisconnectTimeout)
 	if timeout > time.Minute {
 		timeout = time.Minute
@@ -86,6 +112,10 @@ func (t *Torrent) Preload(index int, size int64) {
 				t.muTorrent.Unlock()
 
 				if stat != state.TorrentPreload {
+					return
+				}
+
+				if isTorrentClosed() {
 					return
 				}
 
@@ -116,11 +146,7 @@ func (t *Torrent) Preload(index int, size int64) {
 	}
 
 	// Check if torrent was closed
-	t.muTorrent.Lock()
-	isClosed := t.Stat == state.TorrentClosed
-	t.muTorrent.Unlock()
-
-	if isClosed {
+	if isTorrentClosed() {
 		log.TLogln("End preload: torrent closed")
 		return
 	}
@@ -168,7 +194,7 @@ func (t *Torrent) Preload(index int, size int64) {
 			shouldPreload := t.Stat == state.TorrentPreload
 			t.muTorrent.Unlock()
 
-			if !shouldPreload {
+			if !shouldPreload || isTorrentClosed() {
 				return
 			}
 
@@ -193,6 +219,12 @@ func (t *Torrent) Preload(index int, size int64) {
 			offset := readerEndStart
 			tmp := make([]byte, 32768)
 			for offset+int64(len(tmp)) < readerEndEnd {
+				// Check if torrent is closed before each read
+				if isTorrentClosed() {
+					log.TLogln("Preload stopped: torrent closed")
+					return
+				}
+
 				n, err := readerEnd.Read(tmp)
 				if err != nil {
 					if err != io.EOF {
@@ -226,6 +258,12 @@ func (t *Torrent) Preload(index int, size int64) {
 	offset := int64(0)
 	tmp := make([]byte, 32768)
 	for offset+int64(len(tmp)) < readerStartEnd {
+		// Check if torrent is closed before each read
+		if isTorrentClosed() {
+			log.TLogln("Preload stopped: torrent closed")
+			break
+		}
+
 		// Check if we should continue
 		t.muTorrent.Lock()
 		shouldContinue := t.Stat == state.TorrentPreload
@@ -259,16 +297,18 @@ func (t *Torrent) Preload(index int, size int64) {
 		log.TLogln("End range preload failed:", preloadErr)
 	}
 
-	// Final log
-	t.muTorrent.Lock()
-	finalStat := t.Stat
-	t.muTorrent.Unlock()
+	// Final log - check if torrent still exists
+	if !isTorrentClosed() {
+		t.muTorrent.Lock()
+		finalStat := t.Stat
+		t.muTorrent.Unlock()
 
-	if finalStat == state.TorrentPreload {
-		log.TLogln("End preload:", file.Torrent().InfoHash().HexString(),
-			"Peers:", t.Torrent.Stats().ActivePeers, "/",
-			t.Torrent.Stats().TotalPeers, "[ Seeds:",
-			t.Torrent.Stats().ConnectedSeeders, "]")
+		if finalStat == state.TorrentPreload {
+			log.TLogln("End preload:", file.Torrent().InfoHash().HexString(),
+				"Peers:", t.Torrent.Stats().ActivePeers, "/",
+				t.Torrent.Stats().TotalPeers, "[ Seeds:",
+				t.Torrent.Stats().ConnectedSeeders, "]")
+		}
 	}
 }
 
