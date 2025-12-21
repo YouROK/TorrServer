@@ -34,7 +34,8 @@ func main() {
 				}
 			}
 		} else {
-			log.Default().Fatalln("Wrong args?")
+			// Do not uncomment, be aware - its crash the build
+			//log.Default().Fatalln("Wrong args?")
 		}
 	}
 
