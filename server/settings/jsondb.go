@@ -22,6 +22,7 @@ type JsonDB struct {
 }
 
 var jsonDbLocks = make(map[string]*sync.Mutex)
+var jsonDbLocksMutex sync.Mutex
 
 func NewJsonDB() TorrServerDB {
 	settingsDB := &JsonDB{
@@ -109,18 +110,22 @@ func (v *JsonDB) Rem(xPath, name string) {
 }
 
 func (v *JsonDB) lock(filename string) {
-	var mtx sync.Mutex
-	if mtx, ok := jsonDbLocks[filename]; !ok {
-		mtx = new(sync.Mutex)
-		jsonDbLocks[v.Path] = mtx
+	jsonDbLocksMutex.Lock()
+	mtx, ok := jsonDbLocks[filename]
+	if !ok {
+		mtx = &sync.Mutex{}
+		jsonDbLocks[filename] = mtx
 	}
+	jsonDbLocksMutex.Unlock()
 	mtx.Lock()
 }
 
 func (v *JsonDB) unlock(filename string) {
+	jsonDbLocksMutex.Lock()
 	if mtx, ok := jsonDbLocks[filename]; ok {
 		mtx.Unlock()
 	}
+	jsonDbLocksMutex.Unlock()
 }
 
 func (v *JsonDB) xPathToFilename(xPath string) (string, error) {
