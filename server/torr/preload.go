@@ -18,6 +18,99 @@ import (
 	"github.com/anacrolix/torrent"
 )
 
+// Safe reader implementation
+type safeReader struct {
+	io.ReadSeeker
+	original interface{} // Store the original reader to access its methods
+	checkFn  func() bool // returns true if torrent is closed
+	streamID string      // for logging
+}
+
+// Create a constructor that properly wraps the reader
+func newSafeReader(original interface{}, checkFn func() bool, streamID string) *safeReader {
+	// Extract ReadSeeker from the original
+	var readSeeker io.ReadSeeker
+	if rs, ok := original.(io.ReadSeeker); ok {
+		readSeeker = rs
+	}
+
+	return &safeReader{
+		ReadSeeker: readSeeker,
+		original:   original,
+		checkFn:    checkFn,
+		streamID:   streamID,
+	}
+}
+
+// Override Read with safety checks
+func (sr *safeReader) Read(p []byte) (n int, err error) {
+	// Check if torrent is closed before attempting to read
+	if sr.checkFn() {
+		return 0, io.EOF
+	}
+	// Add panic recovery
+	defer func() {
+		if r := recover(); r != nil {
+			log.TLogln("Recovered from panic in safeReader.Read:", r)
+			err = io.EOF
+			n = 0
+		}
+	}()
+	// Try to read with a timeout to prevent hanging
+	done := make(chan struct{})
+	go func() {
+		n, err = sr.ReadSeeker.Read(p)
+		close(done)
+	}()
+	select {
+	case <-done:
+		return n, err
+	case <-time.After(15 * time.Second): // 15 second read timeout
+		// Check if torrent is still alive
+		if sr.checkFn() {
+			return 0, io.EOF
+		}
+		return 0, fmt.Errorf("15s read timeout")
+	}
+}
+
+// Override Seek with safety checks
+func (sr *safeReader) Seek(offset int64, whence int) (int64, error) {
+	// Check if torrent is closed before attempting to seek
+	if sr.checkFn() {
+		return 0, fmt.Errorf("Preload seek error: torrent closed")
+	}
+	// Add panic recovery
+	defer func() {
+		if r := recover(); r != nil {
+			log.TLogln("Recovered from panic in safeReader.Seek:", r)
+		}
+	}()
+	return sr.ReadSeeker.Seek(offset, whence)
+}
+
+// Forward SetResponsive method if it exists
+func (sr *safeReader) SetResponsive() {
+	if rs, ok := sr.original.(interface{ SetResponsive() }); ok {
+		rs.SetResponsive()
+	}
+}
+
+// Forward SetReadahead method if it exists
+func (sr *safeReader) SetReadahead(bytes int64) {
+	if rs, ok := sr.original.(interface{ SetReadahead(int64) }); ok {
+		rs.SetReadahead(bytes)
+	}
+}
+
+// Forward Close method if it exists
+func (sr *safeReader) Close() error {
+	if closer, ok := sr.original.(io.Closer); ok {
+		return closer.Close()
+	}
+	return nil
+}
+
 func (t *Torrent) Preload(index int, size int64) {
 	// recovery from panic
 	defer func() {
@@ -55,7 +148,6 @@ func (t *Torrent) Preload(index int, size int64) {
 		t.muTorrent.Unlock()
 		return
 	}
-
 	t.Stat = state.TorrentPreload
 	t.muTorrent.Unlock()
 
@@ -157,11 +249,15 @@ func (t *Torrent) Preload(index int, size int64) {
 		startend = 8 << 20
 	}
 
-	readerStart := file.NewReader()
-	if readerStart == nil {
+	// Create the reader and wrap it immediately
+	rawReader := file.NewReader()
+	if rawReader == nil {
 		log.TLogln("End preload: null reader")
 		return
 	}
+
+	// Wrap the reader with our safe reader
+	readerStart := newSafeReader(rawReader, isTorrentClosed, "preload-start")
 	defer readerStart.Close()
 
 	readerStart.SetResponsive()
@@ -181,7 +277,7 @@ func (t *Torrent) Preload(index int, size int64) {
 	readerEndEnd := file.Length()
 
 	var wg sync.WaitGroup
-	var preloadErr error
+	var preloadEndErr error
 
 	// Start end range preload if needed
 	if readerEndStart > readerStartEnd {
@@ -198,38 +294,33 @@ func (t *Torrent) Preload(index int, size int64) {
 				return
 			}
 
-			readerEnd := file.NewReader()
-			if readerEnd == nil {
-				log.TLogln("Err preload: null reader")
-				preloadErr = fmt.Errorf("null reader for end range")
+			rawReaderEnd := file.NewReader()
+			if rawReaderEnd == nil {
+				preloadEndErr = fmt.Errorf("null reader for end range")
 				return
 			}
-			defer readerEnd.Close() // Ensure reader is always closed
+
+			// Wrap the end reader too
+			readerEnd := newSafeReader(rawReaderEnd, isTorrentClosed, "preload-end")
+			defer readerEnd.Close()
 
 			readerEnd.SetResponsive()
 			readerEnd.SetReadahead(0)
 
 			_, err := readerEnd.Seek(readerEndStart, io.SeekStart)
 			if err != nil {
-				log.TLogln("Err preload seek:", err)
-				preloadErr = err
+				preloadEndErr = err
 				return
 			}
 
 			offset := readerEndStart
 			tmp := make([]byte, 32768)
 			for offset+int64(len(tmp)) < readerEndEnd {
-				// Check if torrent is closed before each read
-				if isTorrentClosed() {
-					log.TLogln("Preload stopped: torrent closed")
-					return
-				}
-
+				// The safeReader will check isTorrentClosed internally
 				n, err := readerEnd.Read(tmp)
 				if err != nil {
 					if err != io.EOF {
-						log.TLogln("Err preload read:", err)
-						preloadErr = err
+						preloadEndErr = err
 					}
 					break
 				}
@@ -258,12 +349,6 @@ func (t *Torrent) Preload(index int, size int64) {
 	offset := int64(0)
 	tmp := make([]byte, 32768)
 	for offset+int64(len(tmp)) < readerStartEnd {
-		// Check if torrent is closed before each read
-		if isTorrentClosed() {
-			log.TLogln("Preload stopped: torrent closed")
-			break
-		}
-
 		// Check if we should continue
 		t.muTorrent.Lock()
 		shouldContinue := t.Stat == state.TorrentPreload
@@ -274,6 +359,7 @@ func (t *Torrent) Preload(index int, size int64) {
 			break
 		}
 
+		// The safeReader will handle torrent closed checks internally
 		n, err := readerStart.Read(tmp)
 		if err != nil {
 			if err != io.EOF {
@@ -293,8 +379,8 @@ func (t *Torrent) Preload(index int, size int64) {
 	wg.Wait()
 
 	// Check if end range preload failed
-	if preloadErr != nil {
-		log.TLogln("End range preload failed:", preloadErr)
+	if preloadEndErr != nil {
+		log.TLogln("End range preload failed:", preloadEndErr)
 	}
 
 	// Final log - check if torrent still exists
