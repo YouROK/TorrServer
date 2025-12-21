@@ -16,6 +16,7 @@ import { TORRENT_CATEGORIES } from 'components/categories'
 
 import {
   ClearPosterButton,
+  UpdatePosterButton,
   PosterLanguageSwitch,
   RightSide,
   Poster,
@@ -233,6 +234,23 @@ export default function RightSideComponent({
           >
             {t('Clear')}
           </ClearPosterButton>
+
+          <UpdatePosterButton
+            onClick={() => {
+              let fixedTitle = isCustomTitleEnabled ? title : originalTorrentTitle ? parsedTitle : title
+              const titleFixedMatch = fixedTitle.replaceAll(/\./g, ' ').match(/^([\w -]+)/)
+              if (titleFixedMatch?.length && titleFixedMatch[0].length > 0) {
+                ;[fixedTitle] = titleFixedMatch
+              }
+
+              posterSearch(fixedTitle, posterSearchLanguage)
+            }}
+            color='primary'
+            variant='contained'
+            size='small'
+          >
+            {t('Update')}
+          </UpdatePosterButton>
         </PosterWrapper>
       </RightSideContainer>
 
