@@ -45,10 +45,20 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 	// Stream disconnect timeout (same as torrent)
 	streamTimeout := sets.BTsets.TorrentDisconnectTimeout
 
+	// Check if torrent is closed at the very beginning
+	t.muTorrent.Lock()
+	if t.Stat == state.TorrentClosed {
+		t.muTorrent.Unlock()
+		http.NotFound(resp, req)
+		return fmt.Errorf("torrent is closed (stream ID: %d)", streamID)
+	}
+	t.muTorrent.Unlock()
+
 	if !t.GotInfo() {
 		http.NotFound(resp, req)
 		return errors.New("torrent doesn't have info yet")
 	}
+
 	// Get file information
 	st := t.Status()
 	var stFile *state.TorrentFileStat
@@ -61,6 +71,7 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 	if stFile == nil {
 		return fmt.Errorf("file with id %v not found", fileID)
 	}
+
 	// Find the actual torrent file
 	files := t.Files()
 	var file *torrent.File
@@ -73,6 +84,7 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 	if file == nil {
 		return fmt.Errorf("file with id %v not found", fileID)
 	}
+
 	// Check file size limit
 	if int64(sets.MaxSize) > 0 && file.Length() > int64(sets.MaxSize) {
 		err := fmt.Errorf("file size exceeded max allowed %d bytes", sets.MaxSize)
@@ -80,17 +92,32 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 		http.Error(resp, err.Error(), http.StatusForbidden)
 		return err
 	}
+
 	// Create reader with context for timeout
 	reader := t.NewReader(file)
 	if reader == nil {
 		return errors.New("cannot create torrent reader")
 	}
+
+	// Helper function to check if torrent is closed
+	isTorrentClosed := func() bool {
+		t.muTorrent.Lock()
+		defer t.muTorrent.Unlock()
+		return t.Stat == state.TorrentClosed || t.Torrent == nil
+	}
+
 	// Ensure reader is always closed
-	defer t.CloseReader(reader)
+	defer func() {
+		// Check if torrent is still valid before closing
+		if !isTorrentClosed() {
+			t.CloseReader(reader)
+		}
+	}()
 
 	if sets.BTsets.ResponsiveMode {
 		reader.SetResponsive()
 	}
+
 	// Log connection
 	host, port, clerr := net.SplitHostPort(req.RemoteAddr)
 
@@ -136,6 +163,7 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 	if req.Header.Get("Range") != "" {
 		resp.Header().Set("Accept-Ranges", "bytes")
 	}
+
 	// Create a context with timeout if configured
 	ctx := req.Context()
 	if streamTimeout > 0 {
@@ -143,13 +171,56 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 		ctx, cancel = context.WithTimeout(ctx, time.Duration(streamTimeout)*time.Second)
 		defer cancel()
 	}
+
 	// Update request with new context
 	req = req.WithContext(ctx)
+
 	// Handle client disconnections better
 	wrappedResp := &contextResponseWriter{
 		ResponseWriter: resp,
 		ctx:            ctx,
 	}
+
+	// Add recovery for ServeContent panic
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("[Stream:%d] Recovered from panic in ServeContent: %v", streamID, r)
+			http.Error(resp, "Internal server error", http.StatusInternalServerError)
+		}
+	}()
+
+	// Check if torrent is still valid before starting to serve
+	if isTorrentClosed() {
+		log.Printf("[Stream:%d] Torrent closed before serving content", streamID)
+		http.NotFound(resp, req)
+		return fmt.Errorf("torrent closed before serving (stream ID: %d)", streamID)
+	}
+
+	// Create a wrapper context that cancels when torrent is closed
+	streamCtx, streamCancel := context.WithCancel(ctx)
+	defer streamCancel()
+
+	// Monitor torrent status in background
+	go func() {
+		ticker := time.NewTicker(100 * time.Millisecond)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				if isTorrentClosed() {
+					streamCancel()
+					return
+				}
+			case <-streamCtx.Done():
+				return
+			}
+		}
+	}()
+
+	// Update request with torrent context
+	req = req.WithContext(streamCtx)
+
 	http.ServeContent(wrappedResp, req, file.Path(), time.Unix(t.Timestamp, 0), reader)
 
 	if sets.BTsets.EnableDebug {
