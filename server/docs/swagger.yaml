@@ -149,6 +149,11 @@ definitions:
       sslPort:
         description: HTTPS
         type: integer
+      storeSettingsInJson:
+        description: Storage preferences
+        type: boolean
+      storeViewedInJson:
+        type: boolean
       torrentDisconnectTimeout:
         description: in seconds
         type: integer
@@ -546,6 +551,103 @@ paths:
       summary: TorrServer Statistics
       tags:
       - Pages
+  /storage/settings:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the current storage preferences for settings and viewed
+        history
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Storage preferences
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get storage configuration settings
+      tags:
+      - Storage
+    post:
+      consumes:
+      - application/json
+      - application/x-www-form-urlencoded
+      description: Updates the storage preferences for settings and viewed history.
+        Requires application restart for changes to take effect.
+      parameters:
+      - description: Storage preferences to update
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      - description: Settings storage type
+        enum:
+        - json
+        - bbolt
+        in: formData
+        name: settings
+        type: string
+      - description: Viewed history storage type
+        enum:
+        - json
+        - bbolt
+        in: formData
+        name: viewed
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Update successful
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input data
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Read-only mode
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Update storage configuration settings
+      tags:
+      - Storage
   /stream:
     get:
       description: Multi usage endpoint.
