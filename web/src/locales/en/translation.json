@@ -165,6 +165,7 @@
     "ResetToDefault": "Reset to default",
     "ResponsiveMode": "Enable responsive reader mode",
     "RetrackersMode": "Retrackers Mode",
+    "RetrackersModeHint": "Trackers modification mode when adding a new torrent",
     "SaveError": "Error: ",
     "SaveStorageSettings": "Save Storage Settings",
     "Saving": "Saving...",

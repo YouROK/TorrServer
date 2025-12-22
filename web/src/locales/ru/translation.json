@@ -165,6 +165,7 @@
     "ResetToDefault": "Настройки по умолчанию",
     "ResponsiveMode": "Включить быстрый режим чтения",
     "RetrackersMode": "Ретрекеры",
+    "RetrackersModeHint": "Режим модификации трекеров при добавлении нового торрента",
     "SaveError": "Ошибка: ",
     "SaveStorageSettings": "Сохранить настройки хранилища",
     "Saving": "Сохранение...",

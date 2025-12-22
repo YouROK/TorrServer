@@ -164,6 +164,7 @@
     "ResetToDefault": "Връщане по подразбиране",
     "ResponsiveMode": "Enable responsive reader mode",
     "RetrackersMode": "Режим за ретракери",
+    "RetrackersModeHint": "Режим на модификация на тракерите при добавяне на нов торент",
     "SaveError": "Error: ",
     "SaveStorageSettings": "Save Storage Settings",
     "Settings": "Настройки",

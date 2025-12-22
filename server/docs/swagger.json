@@ -326,6 +326,151 @@
                 }
             }
         },
+        "/storage/settings": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieves the current storage preferences for settings and viewed history",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Storage"
+                ],
+                "summary": "Get storage configuration settings",
+                "responses": {
+                    "200": {
+                        "description": "Storage preferences",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Updates the storage preferences for settings and viewed history. Requires application restart for changes to take effect.",
+                "consumes": [
+                    "application/json",
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Storage"
+                ],
+                "summary": "Update storage configuration settings",
+                "parameters": [
+                    {
+                        "description": "Storage preferences to update",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    {
+                        "enum": [
+                            "json",
+                            "bbolt"
+                        ],
+                        "type": "string",
+                        "description": "Settings storage type",
+                        "name": "settings",
+                        "in": "formData"
+                    },
+                    {
+                        "enum": [
+                            "json",
+                            "bbolt"
+                        ],
+                        "type": "string",
+                        "description": "Viewed history storage type",
+                        "name": "viewed",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Update successful",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input data",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Read-only mode",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/stream": {
             "get": {
                 "description": "Multi usage endpoint.",
@@ -792,6 +937,13 @@
                 "sslPort": {
                     "description": "HTTPS",
                     "type": "integer"
+                },
+                "storeSettingsInJson": {
+                    "description": "Storage preferences",
+                    "type": "boolean"
+                },
+                "storeViewedInJson": {
+                    "type": "boolean"
                 },
                 "torrentDisconnectTimeout": {
                     "description": "in seconds",

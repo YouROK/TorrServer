@@ -164,6 +164,7 @@
     "ResetToDefault": "重置为默认值",
     "ResponsiveMode": "启用响应式阅读器模式",
     "RetrackersMode": "Retrackers模式",
+    "RetrackersModeHint": "添加新种子时的Tracker修改模式",
     "Settings": "设置",
     "ShowFSActiveTorr": "仅在文件系统中显示活动种子",
     "ShowFSActiveTorrHint": "启用后，文件系统（FUSE、WebDAV 等）中只显示活动种子。若禁用，将显示所有种子，打开分类时可能会导致同时连接所有种子",
