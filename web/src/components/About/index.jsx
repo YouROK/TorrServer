@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import Button from '@material-ui/core/Button'
 import InfoIcon from '@material-ui/icons/Info'
 import ListItemIcon from '@material-ui/core/ListItemIcon'
@@ -25,13 +25,12 @@ export default function AboutDialog() {
 
   const onClose = () => setOpen(false)
   const ref = useOnStandaloneAppOutsideClick(onClose)
-  const getBasePath = () => {
+  const basePath = useMemo(() => {
     if (typeof window !== 'undefined') {
       return window.location.pathname.split('/')[1] || ''
     }
     return ''
-  }
-  const basePath = getBasePath()
+  }, [])
 
   return (
     <>
@@ -64,7 +63,7 @@ export default function AboutDialog() {
           <HeaderSection>
             <div>{t('About')}</div>
             {torrServerVersion}
-            <img src={`${basePath}/icon.png`} alt='ts-icon' />
+            <img src={`${basePath ? `/${basePath}` : ''}/icon.png`} alt='ts-icon' />
           </HeaderSection>
 
           <div style={{ overflow: 'auto' }}>

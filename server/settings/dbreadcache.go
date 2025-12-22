@@ -138,6 +138,32 @@ func (v *DBReadCache) Rem(xPath, name string) {
 	v.db.Rem(xPath, name)
 }
 
+func (v *DBReadCache) Clear(xPath string) {
+	if ReadOnly {
+		log.TLogln("DB.Clear: Read-only DB mode!", xPath)
+		return
+	}
+
+	// Clear from underlying DB first
+	if v.db != nil {
+		v.db.Clear(xPath)
+	}
+
+	// Clear cache
+	v.listCacheMutex.Lock()
+	delete(v.listCache, xPath)
+	v.listCacheMutex.Unlock()
+
+	// Clear data cache entries for this xPath
+	v.dataCacheMutex.Lock()
+	for key := range v.dataCache {
+		if key[0] == xPath {
+			delete(v.dataCache, key)
+		}
+	}
+	v.dataCacheMutex.Unlock()
+}
+
 func (v *DBReadCache) makeDataCacheKey(xPath, name string) [2]string {
 	return [2]string{xPath, name}
 }

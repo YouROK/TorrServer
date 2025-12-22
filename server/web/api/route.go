@@ -56,5 +56,9 @@ func SetupRoute(route gin.IRouter) {
 		authorized.GET("/torznab/search/*query", torznabSearch)
 	}
 
+	// Add storage settings endpoints
+	authorized.GET("/storage/settings", GetStorageSettings)
+	authorized.POST("/storage/settings", UpdateStorageSettings)
+
 	authorized.GET("/ffp/:hash/:id", ffp)
 }

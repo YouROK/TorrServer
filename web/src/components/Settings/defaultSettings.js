@@ -28,4 +28,5 @@ export default {
   SslCert: '',
   SslKey: '',
   ShowFSActiveTorr: true,
+  StoreSettingsInJson: true,
 }

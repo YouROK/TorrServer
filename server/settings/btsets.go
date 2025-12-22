@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"io/fs"
+
 	"path/filepath"
 	"strings"
 
@@ -67,6 +68,10 @@ type BTSets struct {
 
 	// FS
 	ShowFSActiveTorr bool
+
+	// Storage preferences
+	StoreSettingsInJson bool
+	StoreViewedInJson   bool
 }
 
 func (v *BTSets) String() string {
@@ -145,6 +150,7 @@ func SetDefaultConfig() {
 	sets.ReaderReadAHead = 95 // 95%
 	sets.ResponsiveMode = true
 	sets.ShowFSActiveTorr = true
+	sets.StoreSettingsInJson = true
 	BTsets = sets
 	if !ReadOnly {
 		buf, err := json.Marshal(BTsets)

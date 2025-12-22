@@ -21,17 +21,22 @@ type JsonDB struct {
 	xPathDelimeter    string
 }
 
+var globalJsonDB TorrServerDB
 var jsonDbLocks = make(map[string]*sync.Mutex)
+var jsonDbLocksMutex sync.Mutex
 
 func NewJsonDB() TorrServerDB {
-	settingsDB := &JsonDB{
+	if globalJsonDB != nil {
+		return globalJsonDB
+	}
+	globalJsonDB := &JsonDB{
 		Path:              Path,
 		filenameDelimiter: ".",
 		filenameExtension: ".json",
 		fileMode:          fs.FileMode(0o666),
 		xPathDelimeter:    "/",
 	}
-	return settingsDB
+	return globalJsonDB
 }
 
 func (v *JsonDB) CloseDB() {
@@ -64,7 +69,10 @@ func (v *JsonDB) Get(xPath, name string) []byte {
 		if root, err := v.readJsonFileAsMap(filename); err == nil {
 			if jsonData, ok := root[name]; ok {
 				if byteData, err := json.Marshal(jsonData); err == nil {
-					return byteData
+					// Return a copy to be safe
+					data := make([]byte, len(byteData))
+					copy(data, byteData)
+					return data
 				}
 			} else {
 				// We assume this is not 'error' but 'no entry' which is normal
@@ -108,19 +116,41 @@ func (v *JsonDB) Rem(xPath, name string) {
 	v.log(fmt.Sprintf("Rem: error removing entry %s->%s", xPath, name), err)
 }
 
-func (v *JsonDB) lock(filename string) {
-	var mtx sync.Mutex
-	if mtx, ok := jsonDbLocks[filename]; !ok {
-		mtx = new(sync.Mutex)
-		jsonDbLocks[v.Path] = mtx
+func (v *JsonDB) Clear(xPath string) {
+	filename, err := v.xPathToFilename(xPath)
+	if err != nil {
+		v.log(fmt.Sprintf("Clear: error converting xPath %s to filename: %v", xPath, err))
+		return
 	}
+
+	v.lock(filename)
+	defer v.unlock(filename)
+
+	path := filepath.Join(v.Path, filename)
+	emptyData := []byte("{}")
+
+	if err := os.WriteFile(path, emptyData, v.fileMode); err != nil {
+		v.log(fmt.Sprintf("Clear: error writing empty file for xPath %s: %v", xPath, err))
+	}
+}
+
+func (v *JsonDB) lock(filename string) {
+	jsonDbLocksMutex.Lock()
+	mtx, ok := jsonDbLocks[filename]
+	if !ok {
+		mtx = &sync.Mutex{}
+		jsonDbLocks[filename] = mtx
+	}
+	jsonDbLocksMutex.Unlock()
 	mtx.Lock()
 }
 
 func (v *JsonDB) unlock(filename string) {
+	jsonDbLocksMutex.Lock()
 	if mtx, ok := jsonDbLocks[filename]; ok {
 		mtx.Unlock()
 	}
+	jsonDbLocksMutex.Unlock()
 }
 
 func (v *JsonDB) xPathToFilename(xPath string) (string, error) {

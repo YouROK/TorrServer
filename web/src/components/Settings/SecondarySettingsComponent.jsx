@@ -8,13 +8,43 @@ import {
   InputLabel,
   Select,
   Switch,
+  MenuItem,
+  Button,
+  Box,
+  CircularProgress,
 } from '@material-ui/core'
+import { styled } from '@material-ui/core/styles'
+import { useState, useEffect, useMemo } from 'react'
 
 import { SecondarySettingsContent, SettingSectionLabel } from './style'
 
+// Create a styled status message component
+const StatusMessage = styled('div')(({ theme, severity }) => ({
+  padding: theme.spacing(1.5, 2),
+  marginTop: theme.spacing(1),
+  borderRadius: theme.shape.borderRadius,
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  backgroundColor:
+    severity === 'error' ? '#f44336' : severity === 'success' ? '#4caf50' : severity === 'info' ? '#2196f3' : '#ff9800',
+  color: 'white',
+  '& button': {
+    color: 'white',
+    minWidth: 'auto',
+    padding: '4px 8px',
+    marginLeft: theme.spacing(1),
+  },
+}))
+
 export default function SecondarySettingsComponent({ settings, inputForm }) {
   const { t } = useTranslation()
-
+  const [storageSettings, setStorageSettings] = useState({
+    settings: 'json',
+    viewed: 'bbolt',
+  })
+  const [storageStatus, setStorageStatus] = useState({ message: '', type: '' })
+  const [loading, setLoading] = useState(false)
   const {
     RetrackersMode,
     TorrentDisconnectTimeout,
@@ -22,7 +52,6 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
     EnableDLNA,
     EnableIPv6,
     FriendlyName,
-    EnableRutorSearch,
     ForceEncrypt,
     DisableTCP,
     DisableUTP,
@@ -39,8 +68,87 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
     SslCert,
     SslKey,
     ShowFSActiveTorr,
-    // FUSEPath,
   } = settings || {}
+
+  // Use useMemo to compute basePath once
+  const basePath = useMemo(() => {
+    if (typeof window !== 'undefined') {
+      return window.location.pathname.split('/')[1] || ''
+    }
+    return ''
+  }, [])
+
+  // Helper function to build API URL
+  const getApiUrl = useMemo(
+    () => endpoint => {
+      const prefix = basePath ? `/${basePath}` : ''
+      return `${prefix}${endpoint}`
+    },
+    [basePath],
+  )
+
+  useEffect(() => {
+    const loadStorageSettings = async () => {
+      try {
+        const response = await fetch(getApiUrl('/storage/settings')) // /api/storage/settings
+        if (response.ok) {
+          const prefs = await response.json()
+          setStorageSettings(prefs)
+        }
+      } catch (error) {
+        console.error('Failed to load storage settings:', error)
+      }
+    }
+    loadStorageSettings()
+  }, [getApiUrl])
+
+  // Handle storage settings change
+  const handleStorageChange = event => {
+    const { name, value } = event.target
+    setStorageSettings(prev => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
+  // Save storage settings - add better error handling
+  const saveStorageSettings = async () => {
+    setLoading(true)
+    setStorageStatus({ message: t('SettingsDialog.Saving'), type: 'info' })
+
+    try {
+      const response = await fetch(getApiUrl('/storage/settings'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(storageSettings),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to save settings')
+      }
+
+      if (result.status === 'ok') {
+        setStorageStatus({
+          message: t('SettingsDialog.StorageSettingsSaved'),
+          type: 'success',
+        })
+      } else {
+        setStorageStatus({
+          message: t('SettingsDialog.SaveError') + (result.error || 'Unknown error'),
+          type: 'error',
+        })
+      }
+    } catch (error) {
+      setStorageStatus({
+        message: t('SettingsDialog.SaveError') + error.message,
+        type: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <SecondarySettingsContent>
@@ -190,14 +298,6 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         variant='outlined'
         fullWidth
       />
-      <FormGroup>
-        <FormControlLabel
-          control={<Switch checked={EnableRutorSearch} onChange={inputForm} id='EnableRutorSearch' color='secondary' />}
-          label={t('SettingsDialog.EnableRutorSearch')}
-          labelPlacement='start'
-        />
-        <FormHelperText margin='none'>{t('SettingsDialog.EnableRutorSearchHint')}</FormHelperText>
-      </FormGroup>
       <FormControlLabel
         control={<Switch checked={EnableDebug} onChange={inputForm} id='EnableDebug' color='secondary' />}
         label={t('SettingsDialog.EnableDebug')}
@@ -269,6 +369,65 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         />
         <FormHelperText margin='none'>{t('SettingsDialog.ShowFSActiveTorrHint')}</FormHelperText>
       </FormGroup>
+      {/* Storage Settings Section */}
+      <Box mt={4} mb={2}>
+        <SettingSectionLabel>{t('SettingsDialog.StorageConfiguration')}</SettingSectionLabel>
+
+        <FormGroup>
+          <InputLabel htmlFor='settings'>{t('SettingsDialog.SettingsStorage')}</InputLabel>
+          <Select
+            id='settings'
+            name='settings'
+            value={storageSettings.settings || 'json'}
+            onChange={handleStorageChange}
+            variant='outlined'
+            fullWidth
+            margin='dense'
+          >
+            <MenuItem value='json'>{t('SettingsDialog.JsonFile')} (settings.json)</MenuItem>
+            <MenuItem value='bbolt'>{t('SettingsDialog.BBoltDatabase')} (config.db)</MenuItem>
+          </Select>
+          <FormHelperText style={{ marginTop: '8px' }}>{t('SettingsDialog.SettingsStorageHint')}</FormHelperText>
+        </FormGroup>
+
+        <FormGroup style={{ marginTop: '16px' }}>
+          <InputLabel htmlFor='viewed'>{t('SettingsDialog.ViewedHistoryStorage')}</InputLabel>
+          <Select
+            id='viewed'
+            name='viewed'
+            value={storageSettings.viewed || 'bbolt'}
+            onChange={handleStorageChange}
+            variant='outlined'
+            fullWidth
+            margin='dense'
+          >
+            <MenuItem value='bbolt'>{t('SettingsDialog.BBoltDatabase')} (config.db)</MenuItem>
+            <MenuItem value='json'>{t('SettingsDialog.JsonFile')} (viewed.json)</MenuItem>
+          </Select>
+          <FormHelperText style={{ marginTop: '8px' }}>{t('SettingsDialog.ViewedStorageHint')}</FormHelperText>
+        </FormGroup>
+
+        <Box mt={2} mb={2}>
+          <Button
+            variant='contained'
+            color='primary'
+            onClick={saveStorageSettings}
+            disabled={loading}
+            startIcon={loading ? <CircularProgress size={20} /> : null}
+          >
+            {t('SettingsDialog.SaveStorageSettings')}
+          </Button>
+        </Box>
+
+        {storageStatus.message && (
+          <StatusMessage severity={storageStatus.type}>
+            <span>{storageStatus.message}</span>
+            <Button onClick={() => setStorageStatus({ message: '', type: '' })} size='small'>
+              ×
+            </Button>
+          </StatusMessage>
+        )}
+      </Box>
     </SecondarySettingsContent>
   )
 }

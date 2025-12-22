@@ -76,7 +76,7 @@ export const TableStyle = styled.table`
 
     .button-cell {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
       gap: 10px;
     }
 

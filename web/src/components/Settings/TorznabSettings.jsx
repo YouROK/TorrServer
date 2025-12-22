@@ -23,7 +23,7 @@ import { SecondarySettingsContent, SettingSectionLabel } from './style'
 
 export default function TorznabSettings({ settings, inputForm, updateSettings }) {
   const { t } = useTranslation()
-  const { EnableTorznabSearch, TorznabUrls } = settings || {}
+  const { EnableRutorSearch, EnableTorznabSearch, TorznabUrls } = settings || {}
   const [newHost, setNewHost] = useState('')
   const [newKey, setNewKey] = useState('')
   const [newName, setNewName] = useState('')
@@ -68,7 +68,15 @@ export default function TorznabSettings({ settings, inputForm, updateSettings })
 
   return (
     <SecondarySettingsContent>
-      <SettingSectionLabel>Torznab</SettingSectionLabel>
+      <SettingSectionLabel>{t('Search')}</SettingSectionLabel>
+      <FormGroup>
+        <FormControlLabel
+          control={<Switch checked={EnableRutorSearch} onChange={inputForm} id='EnableRutorSearch' color='secondary' />}
+          label={t('SettingsDialog.EnableRutorSearch')}
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('SettingsDialog.EnableRutorSearchHint')}</FormHelperText>
+      </FormGroup>
       <FormGroup>
         <FormControlLabel
           control={
