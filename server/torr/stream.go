@@ -1,7 +1,7 @@
 package torr
 
 import (
-	"context"
+	// "context"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -23,20 +23,20 @@ import (
 // Add atomic counter for concurrent streams
 var activeStreams int32
 
-type contextResponseWriter struct {
-	http.ResponseWriter
-	ctx context.Context
-}
+// type contextResponseWriter struct {
+// 	http.ResponseWriter
+// 	ctx context.Context
+// }
 
-func (w *contextResponseWriter) Write(p []byte) (n int, err error) {
-	// Check context before each write
-	select {
-	case <-w.ctx.Done():
-		return 0, w.ctx.Err()
-	default:
-		return w.ResponseWriter.Write(p)
-	}
-}
+// func (w *contextResponseWriter) Write(p []byte) (n int, err error) {
+// 	// Check context before each write
+// 	select {
+// 	case <-w.ctx.Done():
+// 		return 0, w.ctx.Err()
+// 	default:
+// 		return w.ResponseWriter.Write(p)
+// 	}
+// }
 
 func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter) error {
 	// Increment active streams counter
@@ -136,21 +136,23 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 	if req.Header.Get("Range") != "" {
 		resp.Header().Set("Accept-Ranges", "bytes")
 	}
-	// Create a context with timeout if configured
-	ctx := req.Context()
-	if streamTimeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, time.Duration(streamTimeout)*time.Second)
-		defer cancel()
-	}
-	// Update request with new context
-	req = req.WithContext(ctx)
-	// Handle client disconnections better
-	wrappedResp := &contextResponseWriter{
-		ResponseWriter: resp,
-		ctx:            ctx,
-	}
-	http.ServeContent(wrappedResp, req, file.Path(), time.Unix(t.Timestamp, 0), reader)
+	// // Create a context with timeout if configured
+	// ctx := req.Context()
+	// if streamTimeout > 0 {
+	// 	var cancel context.CancelFunc
+	// 	ctx, cancel = context.WithTimeout(ctx, time.Duration(streamTimeout)*time.Second)
+	// 	defer cancel()
+	// }
+	// // Update request with new context
+	// req = req.WithContext(ctx)
+	// // Handle client disconnections better
+	// wrappedResp := &contextResponseWriter{
+	// 	ResponseWriter: resp,
+	// 	ctx:            ctx,
+	// }
+	// http.ServeContent(wrappedResp, req, file.Path(), time.Unix(t.Timestamp, 0), reader)
+
+	http.ServeContent(resp, req, file.Path(), time.Unix(t.Timestamp, 0), reader)
 
 	if sets.BTsets.EnableDebug {
 		if clerr != nil {
