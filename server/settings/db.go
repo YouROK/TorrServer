@@ -15,7 +15,12 @@ type TDB struct {
 	db   *bolt.DB
 }
 
+var globalBboltDB TorrServerDB
+
 func NewTDB() TorrServerDB {
+	if globalBboltDB != nil {
+		return globalBboltDB // Return existing instance
+	}
 	db, err := bolt.Open(filepath.Join(Path, "config.db"), 0o666, &bolt.Options{Timeout: 5 * time.Second})
 	if err != nil {
 		log.TLogln(err)
@@ -25,7 +30,8 @@ func NewTDB() TorrServerDB {
 	tdb := new(TDB)
 	tdb.db = db
 	tdb.Path = Path
-	return tdb
+	globalBboltDB = tdb
+	return globalBboltDB
 }
 
 func (v *TDB) CloseDB() {
@@ -57,7 +63,12 @@ func (v *TDB) Get(xpath, name string) []byte {
 			}
 		}
 
-		ret = buckt.Get([]byte(name))
+		data := buckt.Get([]byte(name))
+		if data != nil {
+			// CRITICAL: Copy the data before returning
+			ret = make([]byte, len(data))
+			copy(ret, data)
+		}
 		return nil
 	})
 	if err != nil {
@@ -159,5 +170,38 @@ func (v *TDB) Rem(xpath, name string) {
 	})
 	if err != nil {
 		log.TLogln("Error rem sets", xpath+"/"+name, ", error:", err)
+	}
+}
+
+func (v *TDB) Clear(xPath string) {
+	spath := strings.Split(xPath, "/")
+	if len(spath) == 0 {
+		return
+	}
+
+	err := v.db.Update(func(tx *bolt.Tx) error {
+		buckt := tx.Bucket([]byte(spath[0]))
+		if buckt == nil {
+			return nil
+		}
+
+		for i, p := range spath {
+			if i == 0 {
+				continue
+			}
+			buckt = buckt.Bucket([]byte(p))
+			if buckt == nil {
+				return nil
+			}
+		}
+
+		// Delete all entries in this bucket
+		return buckt.ForEach(func(k, _ []byte) error {
+			return buckt.Delete(k)
+		})
+	})
+
+	if err != nil {
+		log.TLogln("Error clear xPath", xPath, ", error:", err)
 	}
 }

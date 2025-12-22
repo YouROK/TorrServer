@@ -25,7 +25,6 @@ export default function AboutDialog() {
 
   const onClose = () => setOpen(false)
   const ref = useOnStandaloneAppOutsideClick(onClose)
-   // Use useMemo to compute basePath once
   const basePath = useMemo(() => {
     if (typeof window !== 'undefined') {
       return window.location.pathname.split('/')[1] || ''

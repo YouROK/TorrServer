@@ -95,6 +95,10 @@ func (v *XPathDBRouter) Rem(xPath, name string) {
 	v.getDBForXPath(xPath).Rem(xPath, name)
 }
 
+func (v *XPathDBRouter) Clear(xPath string) {
+	v.getDBForXPath(xPath).Clear(xPath)
+}
+
 func (v *XPathDBRouter) CloseDB() {
 	for _, db := range v.dbs {
 		db.CloseDB()
