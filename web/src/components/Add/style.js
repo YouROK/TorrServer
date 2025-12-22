@@ -296,10 +296,21 @@ export const Poster = styled.div`
 
 export const ClearPosterButton = styled(Button)`
   grid-area: clear;
-  justify-self: center;
+  justify-self: flex-start;
   transform: translateY(-50%);
   position: absolute;
   ${({ showbutton }) => !showbutton && 'display: none'};
+
+  @media (max-width: 540px) {
+    transform: translateY(-140%);
+  }
+`
+
+export const UpdatePosterButton = styled(Button)`
+  grid-area: clear;
+  justify-self: flex-end;
+  transform: translateY(-50%);
+  position: absolute;
 
   @media (max-width: 540px) {
     transform: translateY(-140%);
