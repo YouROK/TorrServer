@@ -147,7 +147,7 @@ func MigrateViewedFromJson(jsonDB, bboltDB TorrServerDB) error {
 func MigrateSingle(source, target TorrServerDB, xpath, name string) (bool, error) {
 	sourceData := source.Get(xpath, name)
 	if sourceData == nil {
-		if getDebug() {
+		if IsDebug() {
 			log.TLogln(fmt.Sprintf("No data to migrate for %s/%s", xpath, name))
 		}
 		return false, nil
@@ -157,7 +157,7 @@ func MigrateSingle(source, target TorrServerDB, xpath, name string) (bool, error
 	if targetData != nil {
 		// Check if already identical
 		if equal, err := isByteArraysEqualJson(sourceData, targetData); err == nil && equal {
-			if getDebug() {
+			if IsDebug() {
 				log.TLogln(fmt.Sprintf("Skipping %s/%s (already identical)", xpath, name))
 			}
 			return false, nil
@@ -166,7 +166,7 @@ func MigrateSingle(source, target TorrServerDB, xpath, name string) (bool, error
 
 	// Perform migration
 	target.Set(xpath, name, sourceData)
-	if getDebug() {
+	if IsDebug() {
 		log.TLogln(fmt.Sprintf("Migrating %s/%s", xpath, name))
 	}
 
@@ -174,7 +174,7 @@ func MigrateSingle(source, target TorrServerDB, xpath, name string) (bool, error
 	if err := verifyMigration(source, target, xpath, name, sourceData); err != nil {
 		return false, fmt.Errorf("migration verification failed for %s/%s: %w", xpath, name, err)
 	}
-	if getDebug() {
+	if IsDebug() {
 		log.TLogln(fmt.Sprintf("Successfully migrated %s/%s", xpath, name))
 	}
 	return true, nil
@@ -185,7 +185,7 @@ func MigrateSingle(source, target TorrServerDB, xpath, name string) (bool, error
 func MigrateAll(source, target TorrServerDB, xpath string) (int, int, error) {
 	names := source.List(xpath)
 	if len(names) == 0 {
-		if getDebug() {
+		if IsDebug() {
 			log.TLogln(fmt.Sprintf("No entries to migrate for %s", xpath))
 		}
 		return 0, 0, nil
@@ -194,14 +194,14 @@ func MigrateAll(source, target TorrServerDB, xpath string) (int, int, error) {
 	migratedCount := 0
 	skippedCount := 0
 	var firstError error
-	if getDebug() {
+	if IsDebug() {
 		log.TLogln(fmt.Sprintf("Starting migration of %d %s entries", len(names), xpath))
 	}
 	for i, name := range names {
 		sourceData := source.Get(xpath, name)
 		if sourceData == nil {
 			skippedCount++
-			if getDebug() {
+			if IsDebug() {
 				log.TLogln(fmt.Sprintf("[%d/%d] Skipping %s/%s (no data in source)",
 					i+1, len(names), xpath, name))
 			}
@@ -213,7 +213,7 @@ func MigrateAll(source, target TorrServerDB, xpath string) (int, int, error) {
 			// Check if already identical
 			if equal, err := isByteArraysEqualJson(sourceData, targetData); err == nil && equal {
 				skippedCount++
-				if getDebug() {
+				if IsDebug() {
 					log.TLogln(fmt.Sprintf("[%d/%d] Skipping %s/%s (already identical)",
 						i+1, len(names), xpath, name))
 				}
@@ -233,7 +233,7 @@ func MigrateAll(source, target TorrServerDB, xpath string) (int, int, error) {
 			}
 		} else {
 			migratedCount++
-			if getDebug() {
+			if IsDebug() {
 				log.TLogln(fmt.Sprintf("[%d/%d] Successfully migrated %s/%s",
 					i+1, len(names), xpath, name))
 			}
@@ -245,7 +245,7 @@ func MigrateAll(source, target TorrServerDB, xpath string) (int, int, error) {
 	if firstError != nil {
 		summary += fmt.Sprintf(", 1+ errors (first: %v)", firstError)
 	}
-	if getDebug() {
+	if IsDebug() {
 		log.TLogln(summary)
 	}
 
@@ -348,7 +348,7 @@ func verifyMigration(source, target TorrServerDB, xpath, name string, originalDa
 	} else if !equal {
 		return fmt.Errorf("data mismatch after migration for %s/%s", xpath, name)
 	}
-	if getDebug() {
+	if IsDebug() {
 		log.TLogln(fmt.Sprintf("Verified migration of %s/%s", xpath, name))
 	}
 	return nil

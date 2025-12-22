@@ -14,7 +14,7 @@ import (
 // Add a global lock for database operations during migration
 var dbMigrationLock sync.RWMutex
 
-func getDebug() bool {
+func IsDebug() bool {
 	if BTsets != nil {
 		return BTsets.EnableDebug
 	}
@@ -89,7 +89,7 @@ func InitSets(readOnly, searchWA bool) {
 func determineStoragePreferences(bboltDB, jsonDB TorrServerDB) (settingsInJson, viewedInJson bool) {
 	// Try to load existing settings first
 	if existing := loadExistingSettings(bboltDB, jsonDB); existing != nil {
-		if getDebug() {
+		if IsDebug() {
 			log.TLogln(fmt.Sprintf("Found settings: StoreSettingsInJson=%v, StoreViewedInJson=%v",
 				existing.StoreSettingsInJson, existing.StoreViewedInJson))
 		}
@@ -110,7 +110,7 @@ func determineStoragePreferences(bboltDB, jsonDB TorrServerDB) (settingsInJson, 
 		viewedInJson = (env == "json")
 	}
 
-	if getDebug() {
+	if IsDebug() {
 		log.TLogln(fmt.Sprintf("Using flags: settingsInJson=%v, viewedInJson=%v",
 			settingsInJson, viewedInJson))
 	}
@@ -187,7 +187,7 @@ func applyCleanMigrations(bboltDB, jsonDB TorrServerDB, settingsInJson, viewedIn
 }
 
 func safeMigrate(source, target TorrServerDB, xpath, name, targetName string, clearSource bool) {
-	if getDebug() {
+	if IsDebug() {
 		log.TLogln(fmt.Sprintf("Checking migration of %s/%s to %s", xpath, name, targetName))
 	}
 
@@ -202,7 +202,7 @@ func safeMigrate(source, target TorrServerDB, xpath, name, targetName string, cl
 		// Clear source if requested
 		if clearSource {
 			source.Rem(xpath, name)
-			if getDebug() {
+			if IsDebug() {
 				log.TLogln(fmt.Sprintf("Cleared %s/%s from source", xpath, name))
 			}
 		}
@@ -213,7 +213,7 @@ func safeMigrate(source, target TorrServerDB, xpath, name, targetName string, cl
 }
 
 func safeMigrateAll(source, target TorrServerDB, xpath, targetName string, clearSource bool) {
-	if getDebug() {
+	if IsDebug() {
 		log.TLogln(fmt.Sprintf("Starting migration of all %s entries to %s", xpath, targetName))
 	}
 
@@ -229,7 +229,7 @@ func safeMigrateAll(source, target TorrServerDB, xpath, targetName string, clear
 		// (accounting for possible duplicates)
 		if migrated >= sourceCount {
 			source.Clear(xpath)
-			if getDebug() {
+			if IsDebug() {
 				log.TLogln(fmt.Sprintf("Cleared all %s entries from source", xpath))
 			}
 		} else {
@@ -394,7 +394,7 @@ func GetStoragePreferences() map[string]interface{} {
 		}
 	}
 
-	if getDebug() {
+	if IsDebug() {
 		log.TLogln(fmt.Sprintf("GetStoragePreferences: settings=%s, viewed=%s",
 			prefs["settings"], prefs["viewed"]))
 	}
@@ -411,14 +411,14 @@ func SetStoragePreferences(prefs map[string]interface{}) error {
 		return errors.New("cannot change storage preferences. Read-only mode")
 	}
 
-	if getDebug() {
+	if IsDebug() {
 		log.TLogln(fmt.Sprintf("SetStoragePreferences received: %v", prefs))
 	}
 
 	// Apply changes
 	if settingsPref, ok := prefs["settings"].(string); ok && settingsPref != "" {
 		useJson := (settingsPref == "json")
-		if getDebug() {
+		if IsDebug() {
 			log.TLogln(fmt.Sprintf("Changing settings storage to useJson=%v (was %v)",
 				useJson, BTsets.StoreSettingsInJson))
 		}
@@ -431,7 +431,7 @@ func SetStoragePreferences(prefs map[string]interface{}) error {
 
 	if viewedPref, ok := prefs["viewed"].(string); ok && viewedPref != "" {
 		useJson := (viewedPref == "json")
-		if getDebug() {
+		if IsDebug() {
 			log.TLogln(fmt.Sprintf("Changing viewed storage to useJson=%v (was %v)",
 				useJson, BTsets.StoreViewedInJson))
 		}
