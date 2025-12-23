@@ -348,7 +348,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Storage"
+                    "API"
                 ],
                 "summary": "Get storage configuration settings",
                 "responses": {
@@ -394,7 +394,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Storage"
+                    "API"
                 ],
                 "summary": "Update storage configuration settings",
                 "parameters": [

@@ -581,7 +581,7 @@ paths:
       - ApiKeyAuth: []
       summary: Get storage configuration settings
       tags:
-      - Storage
+      - API
     post:
       consumes:
       - application/json
@@ -647,7 +647,7 @@ paths:
       - ApiKeyAuth: []
       summary: Update storage configuration settings
       tags:
-      - Storage
+      - API
   /stream:
     get:
       description: Multi usage endpoint.
