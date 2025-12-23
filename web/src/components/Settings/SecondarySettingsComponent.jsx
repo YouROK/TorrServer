@@ -282,16 +282,22 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         />
         <FormHelperText margin='none'>{t('SettingsDialog.DisableUPNPHint')}</FormHelperText>
       </FormGroup>
-      <FormControlLabel
-        control={<Switch checked={EnableDebug} onChange={inputForm} id='EnableDebug' color='secondary' />}
-        label={t('SettingsDialog.EnableDebug')}
-        labelPlacement='start'
-      />
-      <FormControlLabel
-        control={<Switch checked={ResponsiveMode} onChange={inputForm} id='ResponsiveMode' color='secondary' />}
-        label={t('SettingsDialog.ResponsiveMode')}
-        labelPlacement='start'
-      />
+      <FormGroup>
+        <FormControlLabel
+          control={<Switch checked={EnableDebug} onChange={inputForm} id='EnableDebug' color='secondary' />}
+          label={t('SettingsDialog.EnableDebug')}
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('SettingsDialog.EnableDebugHint')}</FormHelperText>
+      </FormGroup>
+      <FormGroup>
+        <FormControlLabel
+          control={<Switch checked={ResponsiveMode} onChange={inputForm} id='ResponsiveMode' color='secondary' />}
+          label={t('SettingsDialog.ResponsiveMode')}
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('SettingsDialog.ResponsiveModeHint')}</FormHelperText>
+      </FormGroup>
       <br />
       <FormGroup style={{ marginBottom: '20px' }}>
         <InputLabel htmlFor='RetrackersMode'>{t('SettingsDialog.RetrackersMode')}</InputLabel>

@@ -143,6 +143,7 @@
     "DontAddRetrackers": "Don`t add retrackers",
     "DownloadRateLimit": "Download Rate Limit",
     "EnableDebug": "Enable Debug Server Log",
+    "EnableDebugHint": "For developers. Don`t enable without need.",
     "EnableIPv6Hint": "Enable only if supported by ISP",
     "EnableRutorSearch": "Turn on torrents search by RuTor",
     "EnableRutorSearchHint": "You can search torrents by RuTor, even if the RuTor is not available. NOTE: The database takes about 500 MB of RAM.",
@@ -164,6 +165,7 @@
     "ReplaceRetrackers": "Replace retrackers",
     "ResetToDefault": "Reset to default",
     "ResponsiveMode": "Enable responsive reader mode",
+    "ResponsiveModeHint": "Read torrent data as soon as possible for better streaming experience",
     "RetrackersMode": "Retrackers Mode",
     "RetrackersModeHint": "Trackers modification mode when adding a new torrent",
     "SaveError": "Error: ",
@@ -199,7 +201,7 @@
     "UseVLC": "Prompt to open video in VLC",
     "UseVLCHint": "Add VLC player button to torrent content list",
     "ViewedHistoryStorage": "Viewed History Storage:",
-    "ViewedStorageHint": "Choose where to store viewed history."
+    "ViewedStorageHint": "Choose where to store viewed history"
   },
   "Size": "Size",
   "SpecialThanks": "Special Thanks",
@@ -207,7 +209,7 @@
   "Support": "Support",
   "TB": "TB",
   "Tbps": "Tbps",
-  "ThanksToEveryone": "Thanks to everyone who tested and helped.",
+  "ThanksToEveryone": "Thanks to everyone who tested and helped!",
   "TorrentAdded": "Added",
   "TorrentClosed": "Сlosed",
   "TorrentContent": "Torrent Content",
