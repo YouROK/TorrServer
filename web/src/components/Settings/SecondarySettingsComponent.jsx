@@ -282,6 +282,44 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         />
         <FormHelperText margin='none'>{t('SettingsDialog.DisableUPNPHint')}</FormHelperText>
       </FormGroup>
+      <FormGroup>
+        <FormControlLabel
+          control={<Switch checked={EnableDebug} onChange={inputForm} id='EnableDebug' color='secondary' />}
+          label={t('SettingsDialog.EnableDebug')}
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('SettingsDialog.EnableDebugHint')}</FormHelperText>
+      </FormGroup>
+      <FormGroup>
+        <FormControlLabel
+          control={<Switch checked={ResponsiveMode} onChange={inputForm} id='ResponsiveMode' color='secondary' />}
+          label={t('SettingsDialog.ResponsiveMode')}
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('SettingsDialog.ResponsiveModeHint')}</FormHelperText>
+      </FormGroup>
+      <br />
+      <FormGroup style={{ marginBottom: '20px' }}>
+        <InputLabel htmlFor='RetrackersMode'>{t('SettingsDialog.RetrackersMode')}</InputLabel>
+        <Select
+          native
+          type='number'
+          id='RetrackersMode'
+          name='RetrackersMode'
+          value={RetrackersMode}
+          onChange={inputForm}
+          variant='outlined'
+          margin='dense'
+        >
+          <option value={0}>{t('SettingsDialog.DontAddRetrackers')}</option>
+          <option value={1}>{t('SettingsDialog.AddRetrackers')}</option>
+          <option value={2}>{t('SettingsDialog.RemoveRetrackers')}</option>
+          <option value={3}>{t('SettingsDialog.ReplaceRetrackers')}</option>
+        </Select>
+        <FormHelperText style={{ marginTop: '8px' }}>{t('SettingsDialog.RetrackersModeHint')}</FormHelperText>
+      </FormGroup>
+      {/* DLNA Section */}
+      <SettingSectionLabel style={{ marginTop: '20px' }}>{t('DLNA')}</SettingSectionLabel>
       <FormControlLabel
         control={<Switch checked={EnableDLNA} onChange={inputForm} id='EnableDLNA' color='secondary' />}
         label={t('SettingsDialog.DLNA')}
@@ -298,33 +336,8 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         variant='outlined'
         fullWidth
       />
-      <FormControlLabel
-        control={<Switch checked={EnableDebug} onChange={inputForm} id='EnableDebug' color='secondary' />}
-        label={t('SettingsDialog.EnableDebug')}
-        labelPlacement='start'
-      />
-      <FormControlLabel
-        control={<Switch checked={ResponsiveMode} onChange={inputForm} id='ResponsiveMode' color='secondary' />}
-        label={t('SettingsDialog.ResponsiveMode')}
-        labelPlacement='start'
-      />
-      <br />
-      <InputLabel htmlFor='RetrackersMode'>{t('SettingsDialog.RetrackersMode')}</InputLabel>
-      <Select
-        onChange={inputForm}
-        margin='dense'
-        type='number'
-        native
-        id='RetrackersMode'
-        value={RetrackersMode}
-        variant='outlined'
-      >
-        <option value={0}>{t('SettingsDialog.DontAddRetrackers')}</option>
-        <option value={1}>{t('SettingsDialog.AddRetrackers')}</option>
-        <option value={2}>{t('SettingsDialog.RemoveRetrackers')}</option>
-        <option value={3}>{t('SettingsDialog.ReplaceRetrackers')}</option>
-      </Select>
-      <br />
+      {/* HTTPS Section */}
+      <SettingSectionLabel style={{ marginTop: '20px' }}>{t('HTTPS')}</SettingSectionLabel>
       <TextField
         onChange={inputForm}
         margin='normal'
@@ -361,6 +374,8 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         fullWidth
       />
       <br />
+      {/* TorrFS */}
+      <SettingSectionLabel style={{ marginTop: '20px' }}>{t('TorrFS')}</SettingSectionLabel>
       <FormGroup>
         <FormControlLabel
           control={<Switch checked={ShowFSActiveTorr} onChange={inputForm} id='ShowFSActiveTorr' color='secondary' />}
@@ -381,7 +396,6 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
             value={storageSettings.settings || 'json'}
             onChange={handleStorageChange}
             variant='outlined'
-            fullWidth
             margin='dense'
           >
             <MenuItem value='json'>{t('SettingsDialog.JsonFile')} (settings.json)</MenuItem>
@@ -398,7 +412,6 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
             value={storageSettings.viewed || 'bbolt'}
             onChange={handleStorageChange}
             variant='outlined'
-            fullWidth
             margin='dense'
           >
             <MenuItem value='bbolt'>{t('SettingsDialog.BBoltDatabase')} (config.db)</MenuItem>

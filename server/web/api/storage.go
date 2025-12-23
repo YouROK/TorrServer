@@ -11,7 +11,7 @@ import (
 // GetStorageSettings godoc
 // @Summary Get storage configuration settings
 // @Description Retrieves the current storage preferences for settings and viewed history
-// @Tags Storage
+// @Tags API
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
@@ -27,7 +27,7 @@ func GetStorageSettings(c *gin.Context) {
 // UpdateStorageSettings godoc
 // @Summary Update storage configuration settings
 // @Description Updates the storage preferences for settings and viewed history. Requires application restart for changes to take effect.
-// @Tags Storage
+// @Tags API
 // @Accept json,x-www-form-urlencoded
 // @Produce json
 // @Security ApiKeyAuth

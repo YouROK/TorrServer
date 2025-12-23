@@ -133,14 +133,14 @@ const docTemplate = `{
         },
         "/magnets": {
             "get": {
-                "description": "Get HTML of magnet links for all stored torrents.",
+                "description": "Get HTML of magnet links.",
                 "produces": [
                     "text/html"
                 ],
                 "tags": [
                     "Pages"
                 ],
-                "summary": "Get HTML of magnets",
+                "summary": "Get HTML of magnet links",
                 "responses": {
                     "200": {
                         "description": "HTML with Magnet links"
@@ -150,14 +150,14 @@ const docTemplate = `{
         },
         "/play/{hash}/{id}": {
             "get": {
-                "description": "Play given torrent referenced by infohash and file index.",
+                "description": "Play given torrent referenced by infohash and file id.",
                 "produces": [
                     "application/octet-stream"
                 ],
                 "tags": [
                     "API"
                 ],
-                "summary": "Play given torrent by infohash and id",
+                "summary": "Play given torrent by infohash",
                 "parameters": [
                     {
                         "type": "string",
@@ -348,7 +348,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Storage"
+                    "API"
                 ],
                 "summary": "Get storage configuration settings",
                 "responses": {
@@ -394,7 +394,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Storage"
+                    "API"
                 ],
                 "summary": "Update storage configuration settings",
                 "parameters": [
