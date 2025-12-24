@@ -22,19 +22,21 @@ func IsDebug() bool {
 }
 
 var (
-	tdb      TorrServerDB
-	Path     string
-	IP       string
-	Port     string
-	Ssl      bool
-	SslPort  string
-	ReadOnly bool
-	HttpAuth bool
-	SearchWA bool
-	PubIPv4  string
-	PubIPv6  string
-	TorAddr  string
-	MaxSize  int64
+	tdb       TorrServerDB
+	Path      string
+	IP        string
+	Port      string
+	Ssl       bool
+	SslPort   string
+	ReadOnly  bool
+	HttpAuth  bool
+	SearchWA  bool
+	PubIPv4   string
+	PubIPv6   string
+	TorAddr   string
+	MaxSize   int64
+	ProxyURL  string
+	ProxyMode string
 )
 
 func InitSets(readOnly, searchWA bool) {
