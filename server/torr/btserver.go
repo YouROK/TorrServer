@@ -143,12 +143,6 @@ func (bt *BTServer) configure(ctx context.Context) {
 		log.Println("Proxy configuration error:", err)
 	}
 
-	// Update BTsets with current proxy settings for display in Client config
-	if settings.ProxyURL != "" && settings.BTsets != nil {
-		settings.BTsets.ProxyURL = settings.ProxyURL
-		settings.BTsets.ProxyMode = settings.ProxyMode
-	}
-
 	log.Println("Client config:", settings.BTsets)
 
 	var err error
@@ -193,19 +187,13 @@ func (bt *BTServer) configure(ctx context.Context) {
 }
 
 func (bt *BTServer) configureProxy() error {
-	proxyURL := settings.ProxyURL
-	if proxyURL == "" && settings.BTsets != nil && settings.BTsets.ProxyURL != "" {
-		proxyURL = settings.BTsets.ProxyURL
-	}
+	proxyURL := settings.Args.ProxyURL
 
 	if proxyURL == "" {
 		return nil // No proxy configured
 	}
 
-	proxyMode := settings.ProxyMode
-	if proxyMode == "" && settings.BTsets != nil && settings.BTsets.ProxyMode != "" {
-		proxyMode = settings.BTsets.ProxyMode
-	}
+	proxyMode := settings.Args.ProxyMode
 	if proxyMode == "" {
 		proxyMode = "tracker" // default
 	}

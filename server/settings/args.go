@@ -23,7 +23,7 @@ type ExecArgs struct {
 	TGToken     string
 	FusePath    string
 	WebDAV      bool
-	Proxy       string
+	ProxyURL    string
 	ProxyMode   string
 }
 
