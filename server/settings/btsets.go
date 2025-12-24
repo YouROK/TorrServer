@@ -72,6 +72,10 @@ type BTSets struct {
 	// Storage preferences
 	StoreSettingsInJson bool
 	StoreViewedInJson   bool
+
+	// Proxy
+	ProxyURL  string // Proxy URL for BitTorrent traffic (http, socks4, socks5, socks5h)
+	ProxyMode string // tracker (HTTP trackers only, default), peers (peer connections only), or full (all traffic)
 }
 
 func (v *BTSets) String() string {
@@ -108,6 +112,14 @@ func SetBTSets(sets *BTSets) {
 	}
 	if sets.PreloadCache > 100 {
 		sets.PreloadCache = 100
+	}
+
+	if sets.ProxyURL != "" && sets.ProxyMode == "" {
+		sets.ProxyMode = "tracker" // default
+	}
+	if sets.ProxyMode != "" && sets.ProxyMode != "tracker" && sets.ProxyMode != "peers" && sets.ProxyMode != "full" {
+		log.TLogln("Invalid proxy mode, using default 'tracker'")
+		sets.ProxyMode = "tracker"
 	}
 
 	if sets.TorrentsSavePath == "" {
