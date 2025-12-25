@@ -12,3 +12,11 @@ func GetScheme(c *gin.Context) string {
 	}
 	return url.Scheme
 }
+
+func GetHost(c *gin.Context) string {
+	url := location.Get(c)
+	if url == nil {
+		return c.Request.Host
+	}
+	return url.Host
+}
