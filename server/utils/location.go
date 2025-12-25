@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/gin-contrib/location"
+	"github.com/gin-contrib/location/v2"
 	"github.com/gin-gonic/gin"
 )
 
