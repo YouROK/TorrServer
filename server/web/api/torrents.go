@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"server/torrshash"
 	"strings"
 
 	"server/dlna"
@@ -11,6 +12,7 @@ import (
 	"server/torr/state"
 	"server/web/api/utils"
 
+	"github.com/anacrolix/torrent"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 )
@@ -88,20 +90,37 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 
 	log.TLogln("add torrent", req.Link)
 	req.Link = strings.ReplaceAll(req.Link, "&amp;", "&")
-	torrSpec, err := utils.ParseLink(req.Link)
-	if err != nil {
-		log.TLogln("error parse link:", err)
-		c.AbortWithError(http.StatusBadRequest, err)
-		return
+
+	var torrSpec *torrent.TorrentSpec
+	var torrsHash *torrshash.TorrsHash
+	var err error
+
+	if strings.HasPrefix(req.Link, "torrs://") {
+		torrSpec, torrsHash, err = utils.ParseTorrsHash(req.Link)
+		if err != nil {
+			log.TLogln("error parse torrshash:", err)
+			c.AbortWithError(http.StatusBadRequest, err)
+			return
+		}
+		if req.Title == "" {
+			req.Title = torrsHash.Title()
+		}
+		if req.Poster == "" {
+			req.Poster = torrsHash.Poster()
+		}
+		if req.Category == "" {
+			req.Category = torrsHash.Category()
+		}
+	} else {
+		torrSpec, err = utils.ParseLink(req.Link)
+		if err != nil {
+			log.TLogln("error parse link:", err)
+			c.AbortWithError(http.StatusBadRequest, err)
+			return
+		}
 	}
 
 	tor, err := torr.AddTorrent(torrSpec, req.Title, req.Poster, req.Data, req.Category)
-	// if tor.Data != "" && set.BTsets.EnableDebug {
-	// 	log.TLogln("torrent data:", tor.Data)
-	// }
-	// if tor.Category != "" && set.BTsets.EnableDebug {
-	// 	log.TLogln("torrent category:", tor.Category)
-	// }
 	if err != nil {
 		log.TLogln("error add torrent:", err)
 		c.AbortWithError(http.StatusInternalServerError, err)
@@ -128,7 +147,7 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 			torr.SaveTorrentToDB(tor)
 		}
 	}()
-	// TODO: remove
+
 	if set.BTsets.EnableDLNA {
 		dlna.Stop()
 		dlna.Start()

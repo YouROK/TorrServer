@@ -2,7 +2,9 @@ package torr
 
 import (
 	"errors"
+	"server/torrshash"
 	"sort"
+	"strconv"
 	"sync"
 	"time"
 
@@ -358,6 +360,24 @@ func (t *Torrent) Status() *state.TorrentStatus {
 					Path:   f.Path(),
 					Length: f.Length(),
 				})
+			}
+
+			th := torrshash.New(st.Hash)
+			th.AddField(torrshash.TagTitle, st.Title)
+			th.AddField(torrshash.TagPoster, st.Poster)
+			th.AddField(torrshash.TagCategory, st.Category)
+			th.AddField(torrshash.TagSize, strconv.FormatInt(st.TorrentSize, 10))
+
+			if t.TorrentSpec != nil {
+				if len(t.TorrentSpec.Trackers) > 0 && len(t.TorrentSpec.Trackers[0]) > 0 {
+					for _, tr := range t.TorrentSpec.Trackers[0] {
+						th.AddField(torrshash.TagTracker, tr)
+					}
+				}
+			}
+			token, err := torrshash.Pack(th)
+			if err == nil {
+				st.TorrsHash = token
 			}
 		}
 	}

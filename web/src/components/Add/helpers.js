@@ -30,12 +30,14 @@ const magnetRegex = /^magnet:\?xt=urn:[a-z0-9].*/i
 export const hashRegex = /^\b[0-9a-f]{32}\b$|^\b[0-9a-f]{40}\b$|^\b[0-9a-f]{64}\b$/i
 const torrentRegex = /^.*\.(torrent)$/i
 const linkRegex = /^(http(s?)):\/\/.*/i
+const torrsRegex = /^(torrs):\/\/.*/i
 
 export const checkTorrentSource = source =>
   source.match(hashRegex) !== null ||
   source.match(magnetRegex) !== null ||
   source.match(torrentRegex) !== null ||
-  source.match(linkRegex) !== null
+  source.match(linkRegex) !== null||
+  source.match(torrsRegex) !== null
 
 export const parseTorrentTitle = (parsingSource, callback) => {
   parseTorrent.remote(parsingSource, (err, { name, files } = {}) => {
