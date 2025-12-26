@@ -7,6 +7,7 @@ import translationUA from 'locales/ua/translation.json'
 import translationZH from 'locales/zh/translation.json'
 import translationBG from 'locales/bg/translation.json'
 import translationFR from 'locales/fr/translation.json'
+import translationRO from 'locales/ro/translation.json'
 
 i18n
   .use(LanguageDetector)
@@ -21,6 +22,7 @@ i18n
       zh: { translation: translationZH },
       bg: { translation: translationBG },
       fr: { translation: translationFR },
+      ro: { translation: translationRO },
     },
   })
 
