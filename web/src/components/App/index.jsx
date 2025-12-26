@@ -116,6 +116,8 @@ export default function App() {
                           ? changeLang('bg')
                           : currentLang === 'bg'
                           ? changeLang('fr')
+                          : currentLang === 'fr'
+                          ? changeLang('ro')
                           : changeLang('en')
                       }
                     >
