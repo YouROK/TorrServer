@@ -11,7 +11,7 @@ import (
 	"server/rutor"
 
 	"github.com/gin-contrib/cors"
-	"github.com/gin-contrib/location"
+	"github.com/gin-contrib/location/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/wlynxg/anet"
 
