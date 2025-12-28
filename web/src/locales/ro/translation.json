@@ -38,7 +38,7 @@
   "CloseServer?": "Doriți să opriți serverul?",
   "CloseServer": "Oprire",
   "CopyHash": "Copiați Magnetul",
-  "CopyLink": "Copiați linkul",
+  "CopyLink": "Copiați Linkul",
   "Data": "Date",
   "DebugMode": "Descărcați prioritățile",
   "Delete": "Șterge",
@@ -95,7 +95,7 @@
   "Play": "Redare",
   "Playlist": "Playlist",
   "Preload": "Preîncărcare",
-  "ProjectSource": "Proiect GitHub",
+  "ProjectSource": "Sursă GitHub",
   "Rewind-10-Sec": "Derulare înapoi 10 secunde",
   "Unmute": "Unmute",
   "PWAGuide": {
