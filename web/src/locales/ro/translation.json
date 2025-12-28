@@ -53,8 +53,8 @@
   "Donate": "Donează",
   "Download": "Descarcă",
   "DownloadPlaylist": "Descarcă Playlist",
-  "DownloadSpeed": "Viteză de descărcare",
-  "Drop": "Renunțare",
+  "DownloadSpeed": "Viteza de Download",
+  "Drop": "Abandonează",
   "DropTorrent": "Resetează Torrent",
   "Edit": "Editare",
   "EditTorrent": "Editare torrent",
@@ -188,7 +188,7 @@
       "Additional": "Suplimentar",
       "AdditionalDisabled": "(activează modul PRO)",
       "App": "Aplicație",
-      "Main": "Principal"
+      "Main": "Meniu Principal"
     },
     "TorrentDisconnectTimeout": "Timp de expirare pentru deconectarea torrentului",
     "TorrentsSavePath": "Calea de salvare a torrentelor",
@@ -243,6 +243,6 @@
   "TurnOff": "Oprire",
   "Uncategorized": "Necategorizat",
   "UploadFile": "Upload fișier",
-  "UploadSpeed": "Viteza de upload",
+  "UploadSpeed": "Viteza de Upload",
   "Viewed": "Vizualizat"
 }
