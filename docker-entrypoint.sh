@@ -7,7 +7,7 @@ if [[ "$TS_RDB" -eq 1 ]]; then FLAGS="${FLAGS} --rdb"; fi
 if [[ "$TS_DONTKILL" -eq 1 ]]; then FLAGS="${FLAGS} --dontkill"; fi
 if [[ "$TS_EN_SSL" -eq 1 ]]; then FLAGS="${FLAGS} --ssl"; fi
 if [[ -v "$TS_SSL_PORT" ]]; then FLAGS="${FLAGS} --sslport ${TS_SSL_PORT}"; fi
-if [[ ! -z "$TS_PROXY" ]]; then FLAGS="${FLAGS} --proxy ${TS_PROXY}"; fi
+if [[ ! -z "$TS_PROXYURL" ]]; then FLAGS="${FLAGS} --proxyurl ${TS_PROXYURL}"; fi
 if [[ ! -z "$TS_PROXYMODE" ]]; then FLAGS="${FLAGS} --proxymode ${TS_PROXYMODE}"; fi
 
 if [ ! -d $TS_CONF_PATH ]; then
