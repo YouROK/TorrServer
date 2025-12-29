@@ -38,7 +38,7 @@
   "CloseServer?": "Doriți să opriți serverul?",
   "CloseServer": "Oprire",
   "CopyHash": "Copiați Magnetul",
-  "CopyLink": "Copiați linkul",
+  "CopyLink": "Copiați Linkul",
   "Data": "Date",
   "DebugMode": "Descărcați prioritățile",
   "Delete": "Șterge",
@@ -53,8 +53,8 @@
   "Donate": "Donează",
   "Download": "Descarcă",
   "DownloadPlaylist": "Descarcă Playlist",
-  "DownloadSpeed": "Viteză de descărcare",
-  "Drop": "Renunțare",
+  "DownloadSpeed": "Viteza de Download",
+  "Drop": "Renunță",
   "DropTorrent": "Resetează Torrent",
   "Edit": "Editare",
   "EditTorrent": "Editare torrent",
@@ -95,7 +95,7 @@
   "Play": "Redare",
   "Playlist": "Playlist",
   "Preload": "Preîncărcare",
-  "ProjectSource": "Proiect GitHub",
+  "ProjectSource": "Sursă GitHub",
   "Rewind-10-Sec": "Derulare înapoi 10 secunde",
   "Unmute": "Unmute",
   "PWAGuide": {
@@ -158,8 +158,8 @@
     "PreloadCache": "Preîncărcare cache înainte de redare",
     "ProMode": "Modul PRO",
     "RAM": "RAM",
-    "ReaderReadAHead": "Cache de anticipare (5-100%, rec. 95%)",
-    "RemoveCacheOnDrop": "Elimină memoria cache de pe disc la Drop/Renunțare Torrent",
+    "ReaderReadAHead": "Cache de citire anticipată (5-100%, rec. 95%)",
+    "RemoveCacheOnDrop": "Elimină memoria cache de pe disc la renunțare Torrent",
     "RemoveCacheOnDropDesc": "Dacă este dezactivat, cache-ul este șters la ștergerea torrentului.",
     "RemoveRetrackers": "Eliminați retrackerele",
     "ReplaceRetrackers": "Înlocuiți retrackerele",
@@ -188,7 +188,7 @@
       "Additional": "Suplimentar",
       "AdditionalDisabled": "(activează modul PRO)",
       "App": "Aplicație",
-      "Main": "Principal"
+      "Main": "Meniu Principal"
     },
     "TorrentDisconnectTimeout": "Timp de expirare pentru deconectarea torrentului",
     "TorrentsSavePath": "Calea de salvare a torrentelor",
@@ -243,6 +243,6 @@
   "TurnOff": "Oprire",
   "Uncategorized": "Necategorizat",
   "UploadFile": "Upload fișier",
-  "UploadSpeed": "Viteza de upload",
+  "UploadSpeed": "Viteza de Upload",
   "Viewed": "Vizualizat"
 }
