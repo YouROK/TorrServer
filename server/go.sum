@@ -230,8 +230,8 @@ github.com/gin-contrib/cors v1.7.6 h1:3gQ8GMzs1Ylpf70y8bMw4fVpycXIeX1ZemuSQIsnQQ
 github.com/gin-contrib/cors v1.7.6/go.mod h1:Ulcl+xN4jel9t1Ry8vqph23a60FwH9xVLd+3ykmTjOk=
 github.com/gin-contrib/gzip v0.0.6 h1:NjcunTcGAj5CO1gn4N8jHOSIeRFHIbn51z6K+xaN4d4=
 github.com/gin-contrib/gzip v0.0.6/go.mod h1:QOJlmV2xmayAjkNS2Y8NQsMneuRShOU/kjovCXNuzzk=
-github.com/gin-contrib/location v1.0.3 h1:iy5FY2JsunZ73Lnq8YZsx7wkGFY1xcyRdKiRh/8Uptg=
-github.com/gin-contrib/location v1.0.3/go.mod h1:fMoqRQxX0d5ycvxzP7e5VtqfID00RPb4jMGDh3oT0pk=
+github.com/gin-contrib/location/v2 v2.0.0 h1:iLx5RatHQHSxgC0tm2AG0sIuQKecI7FhREessVd6RWY=
+github.com/gin-contrib/location/v2 v2.0.0/go.mod h1:276TDNr25NENBA/NQZUuEIlwxy/I5CYVFIr/d2TgOdU=
 github.com/gin-contrib/sse v1.1.0 h1:n0w2GMuUpWDVp7qSpvze6fAu9iRxJY4Hmj6AmBOU05w=
 github.com/gin-contrib/sse v1.1.0/go.mod h1:hxRZ5gVpWMT7Z0B0gSNYqqsSCNIJMjzvm6fqCz9vjwM=
 github.com/gin-gonic/gin v1.11.0 h1:OW/6PLjyusp2PPXtyxKHU0RbX6I/l28FTdDlae5ueWk=
