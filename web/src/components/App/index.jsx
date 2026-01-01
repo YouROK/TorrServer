@@ -9,6 +9,7 @@ import {
   BrightnessAuto as BrightnessAutoIcon,
   Sort as SortIcon,
   SortByAlpha as SortByAlphaIcon,
+  Search as SearchIcon,
 } from '@material-ui/icons'
 import { echoHost } from 'utils/Hosts'
 import Div100vh from 'react-div-100vh'
@@ -25,6 +26,7 @@ import GlobalStyle from 'style/GlobalStyle'
 import { /* lightTheme, */ THEME_MODES, useMaterialUITheme } from 'style/materialUISetup'
 import getStyledComponentsTheme from 'style/getStyledComponentsTheme'
 import checkIsIOS from 'utils/checkIsIOS'
+import SearchDialog from 'components/Search/SearchDialog'
 
 import { AppWrapper, AppHeader, HeaderToggle, StyledIconButton } from './style'
 import Sidebar from './Sidebar'
@@ -38,6 +40,7 @@ export const DarkModeContext = createContext()
 export default function App() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [isDonationDialogOpen, setIsDonationDialogOpen] = useState(false)
+  const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false)
   const [torrServerVersion, setTorrServerVersion] = useState('')
 
   const [isDarkMode, currentThemeMode, updateThemeMode, muiTheme] = useMaterialUITheme()
@@ -82,8 +85,19 @@ export default function App() {
                   </Typography>
 
                   <div
-                    style={{ justifySelf: 'end', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}
+                    style={{
+                      justifySelf: 'end',
+                      display: 'grid',
+                      gridTemplateColumns: isStandaloneApp ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)',
+                      gap: '10px',
+                    }}
                   >
+                    {isStandaloneApp && (
+                      <HeaderToggle onClick={() => setIsSearchDialogOpen(true)}>
+                        <SearchIcon />
+                      </HeaderToggle>
+                    )}
+
                     <HeaderToggle onClick={() => (sortABC === true ? handleClickSortDate() : handleClickSortABC())}>
                       {sortABC === true ? <SortByAlphaIcon /> : <SortIcon />}
                     </HeaderToggle>
@@ -151,6 +165,8 @@ export default function App() {
                 {/* <MuiThemeProvider theme={lightTheme}> */}
                 {isDonationDialogOpen && <DonateDialog onClose={() => setIsDonationDialogOpen(false)} />}
                 {/* </MuiThemeProvider> */}
+
+                {isSearchDialogOpen && <SearchDialog handleClose={() => setIsSearchDialogOpen(false)} />}
 
                 {snackbarIsClosed ? checkIsIOS() && !isStandaloneApp && <PWAInstallationGuide /> : <DonateSnackbar />}
               </AppWrapper>

@@ -212,8 +212,8 @@ export default function SearchDialog({ handleClose }) {
         </div>
       </Content>
 
-      <Snackbar open={!!successMsg} autoHideDuration={3000} onClose={handleAlertClose} message={successMsg} />
-      <Snackbar open={!!errorMsg} autoHideDuration={3000} onClose={handleAlertClose} message={errorMsg} />
+      <Snackbar open={!!successMsg} autoHideDuration={1500} onClose={handleAlertClose} message={successMsg} />
+      <Snackbar open={!!errorMsg} autoHideDuration={1500} onClose={handleAlertClose} message={errorMsg} />
 
       <div
         style={{
