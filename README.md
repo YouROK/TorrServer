@@ -49,6 +49,13 @@ allowing the cache size to be adjusted according to the system parameters and th
 - Cross-browser modern web interface
 - Optional DLNA server
 
+## Translation
+Please help with translations here [Weblate](https://toolate.othing.xyz/projects/torrserver).
+
+<a href="https://toolate.othing.xyz/projects/torrserver">
+<img src="https://toolate.othing.xyz/widget/torrserver/multi-auto.svg" alt="Translation status" />
+</a>
+
 ## Getting Started
 
 ### Installation
