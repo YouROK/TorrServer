@@ -50,8 +50,10 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
     TorrentDisconnectTimeout,
     EnableDebug,
     EnableDLNA,
+    EnableDLNALocal,
     EnableIPv6,
     FriendlyName,
+    DLNALocalRoot,
     ForceEncrypt,
     DisableTCP,
     DisableUTP,
@@ -335,6 +337,24 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         type='text'
         variant='outlined'
         fullWidth
+      />
+      <FormControlLabel
+        control={<Switch checked={EnableDLNALocal} onChange={inputForm} id='EnableDLNALocal' color='secondary' />}
+        label={t('SettingsDialog.DLNALocal')}
+        labelPlacement='start'
+      />
+      <FormHelperText margin='none'>{t('SettingsDialog.DLNALocalHint')}</FormHelperText>
+      <TextField
+        onChange={inputForm}
+        margin='normal'
+        id='DLNALocalRoot'
+        label={t('SettingsDialog.DLNALocalRoot')}
+        helperText={t('SettingsDialog.DLNALocalRootHint')}
+        value={DLNALocalRoot}
+        type='text'
+        variant='outlined'
+        fullWidth
+        disabled={!EnableDLNALocal}
       />
       {/* HTTPS Section */}
       <SettingSectionLabel style={{ marginTop: '20px' }}>{t('HTTPS')}</SettingSectionLabel>
