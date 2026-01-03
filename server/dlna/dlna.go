@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/anacrolix/dms/dlna/dms"
@@ -123,6 +124,9 @@ func onBrowse(path, rootObjectPath, host, userAgent string) (ret []interface{}, 
 	} else if path == "/TR" {
 		ret = getTorrents()
 		return
+	} else if path == "/FS" || strings.HasPrefix(path, "/FS/") {
+		ret, err = browseFS(path, host)
+		return
 	} else if isHashPath(path) {
 		ret = getTorrent(path, host)
 		return
@@ -133,6 +137,12 @@ func onBrowse(path, rootObjectPath, host, userAgent string) (ret []interface{}, 
 }
 
 func onBrowseMeta(path string, rootObjectPath string, host, userAgent string) (ret interface{}, err error) {
+	// FS meta
+	if path == "/FS" || strings.HasPrefix(path, "/FS/") {
+		ret, err = getFSMetadata(path, host)
+		return
+	}
+	// Torrents meta (existing)
 	ret = getTorrentMeta(path, host)
 	if ret == nil {
 		err = fmt.Errorf("meta not found")

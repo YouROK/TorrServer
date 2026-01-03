@@ -35,6 +35,21 @@ func getRoot() (ret []interface{}) {
 	cnt := upnpav.Container{Object: tObj, ChildCount: vol}
 	ret = append(ret, cnt)
 
+	// Local files Object (ROOT)
+	if settings.BTsets != nil && settings.BTsets.EnableDLNALocal {
+		fsObj := upnpav.Object{
+			ID:         "%2FFS",
+			ParentID:   "0",
+			Restricted: 1,
+			Title:      "Local files",
+			Class:      "object.container.storageFolder",
+			Date:       upnpav.Timestamp{Time: time.Now()},
+		}
+		// ChildCount not required; avoid scanning filesystem here.
+		fsCnt := upnpav.Container{Object: fsObj, ChildCount: 0}
+		ret = append(ret, fsCnt)
+	}
+
 	return
 }
 
