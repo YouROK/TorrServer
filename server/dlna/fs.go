@@ -73,6 +73,22 @@ func secureJoin(root, rel string) (string, error) {
 	return fullAbs, nil
 }
 
+func countDirEntries(full string) int {
+	entries, err := os.ReadDir(full)
+	if err != nil {
+		return 0
+	}
+	n := 0
+	for _, e := range entries {
+		name := e.Name()
+		if strings.HasPrefix(name, ".") {
+			continue
+		}
+		n++
+	}
+	return n
+}
+
 func browseFS(dlnaPath, host string) (ret []interface{}, err error) {
 	if settings.BTsets == nil || !settings.BTsets.EnableDLNALocal {
 		return nil, nil
@@ -147,6 +163,11 @@ func browseFS(dlnaPath, host string) (ret []interface{}, err error) {
 		}
 
 		if w.isDir {
+			relChild := filepath.Join(rel, filepath.FromSlash(name))
+			fullChild, err := secureJoin(root, relChild)
+			if err != nil {
+				continue
+			}
 			obj := upnpav.Object{
 				ID:         url.PathEscape(childDlnaPath),
 				ParentID:   currentID,
@@ -155,7 +176,7 @@ func browseFS(dlnaPath, host string) (ret []interface{}, err error) {
 				Class:      "object.container.storageFolder",
 				Date:       upnpav.Timestamp{Time: time.Now()},
 			}
-			cnt := upnpav.Container{Object: obj, ChildCount: 0}
+			cnt := upnpav.Container{Object: obj, ChildCount: countDirEntries(fullChild)}
 			ret = append(ret, cnt)
 			continue
 		}
@@ -165,7 +186,8 @@ func browseFS(dlnaPath, host string) (ret []interface{}, err error) {
 			continue
 		}
 
-		fullChild, err := secureJoin(root, filepath.Join(rel, filepath.FromSlash(name)))
+		relChild := filepath.Join(rel, filepath.FromSlash(name))
+		fullChild, err := secureJoin(root, relChild)
 		if err != nil {
 			continue
 		}
