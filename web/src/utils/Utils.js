@@ -87,3 +87,8 @@ export const detectStandaloneApp = () => {
 }
 
 export const isStandaloneApp = detectStandaloneApp()
+
+export const isMacOS = () => {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false
+  return navigator.platform?.toUpperCase().indexOf('MAC') >= 0 || navigator.userAgent?.includes('Macintosh')
+}

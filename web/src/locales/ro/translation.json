@@ -200,6 +200,8 @@
     "UseInfuseHint": "Adăugați butonul Infuse player la lista de conținut torrent",
     "UseVLC": "Solicitare pentru deschiderea videoclipului în VLC",
     "UseVLCHint": "Adăugați butonul VLC player la lista de conținut torrent",
+    "UseIINA": "Solicitare pentru deschiderea videoclipului în IINA",
+    "UseIINAHint": "Adăugați butonul IINA player la lista de conținut torrent (doar macOS)",
     "ViewedHistoryStorage": "Istoricul vizualizărilor stocate:",
     "ViewedStorageHint": "Alegeți unde să stocați istoricul vizualizat"
   },
