@@ -1,5 +1,5 @@
 import { FormControlLabel, FormGroup, FormHelperText, Switch } from '@material-ui/core'
-import { isMacOS } from 'utils/Utils'
+import { isMacOS, isAppleDevice } from 'utils/Utils'
 import { useTranslation } from 'react-i18next'
 
 import { SecondarySettingsContent, SettingSectionLabel } from './style'
@@ -14,6 +14,7 @@ export default function MobileAppSettings({
 }) {
   const { t } = useTranslation()
   const isMac = isMacOS()
+  const isApple = isAppleDevice()
 
   return (
     <SecondarySettingsContent>
@@ -25,12 +26,18 @@ export default function MobileAppSettings({
           labelPlacement='start'
         />
         <FormHelperText margin='none'>{t('SettingsDialog.UseVLCHint')}</FormHelperText>
-        <FormControlLabel
-          control={<Switch checked={isInfuseUsed} onChange={() => setIsInfuseUsed(prev => !prev)} color='secondary' />}
-          label={t('SettingsDialog.UseInfuse')}
-          labelPlacement='start'
-        />
-        <FormHelperText margin='none'>{t('SettingsDialog.UseInfuseHint')}</FormHelperText>
+        {isApple && (
+          <>
+            <FormControlLabel
+              control={
+                <Switch checked={isInfuseUsed} onChange={() => setIsInfuseUsed(prev => !prev)} color='secondary' />
+              }
+              label={t('SettingsDialog.UseInfuse')}
+              labelPlacement='start'
+            />
+            <FormHelperText margin='none'>{t('SettingsDialog.UseInfuseHint')}</FormHelperText>
+          </>
+        )}
         {isMac && (
           <>
             <FormControlLabel

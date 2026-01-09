@@ -1,6 +1,6 @@
 import { streamHost } from 'utils/Hosts'
 import isEqual from 'lodash/isEqual'
-import { humanizeSize, detectStandaloneApp, isMacOS } from 'utils/Utils'
+import { humanizeSize, detectStandaloneApp, isMacOS, isAppleDevice } from 'utils/Utils'
 import ptt from 'parse-torrent-title'
 import { Button } from '@material-ui/core'
 import CopyToClipboard from 'react-copy-to-clipboard'
@@ -35,7 +35,8 @@ const Table = memo(
     const isIinaUsed = JSON.parse(localStorage.getItem('isIinaUsed')) ?? false
     const isStandalone = detectStandaloneApp()
     const isMac = isMacOS()
-    const shouldShowOpenLink = !isStandalone || (!isInfuseUsed && !isVlcUsed && !(isMac && isIinaUsed))
+    const isApple = isAppleDevice()
+    const shouldShowOpenLink = !isStandalone || (!(isApple && isInfuseUsed) && !isVlcUsed && !(isMac && isIinaUsed))
 
     return !playableFileList?.length ? (
       'No playable files in this torrent'
@@ -77,7 +78,7 @@ const Table = memo(
                         <Button onClick={() => preloadBuffer(id)} variant='outlined' color='primary' size='small'>
                           {t('Preload')}
                         </Button>
-                        {isStandalone && isInfuseUsed && (
+                        {isStandalone && isApple && isInfuseUsed && (
                           <a style={{ textDecoration: 'none' }} href={infuseLink}>
                             <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
                               {t('Infuse')}
@@ -180,7 +181,7 @@ const Table = memo(
                       {t('Preload')}
                     </Button>
 
-                    {isStandalone && isInfuseUsed && (
+                    {isStandalone && isApple && isInfuseUsed && (
                       <a style={{ textDecoration: 'none' }} href={infuseLink}>
                         <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
                           {t('Infuse')}
