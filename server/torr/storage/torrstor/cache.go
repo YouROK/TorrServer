@@ -197,8 +197,8 @@ func (c *Cache) cleanPieces() {
 	defer func() { c.isRemove = false }()
 	c.muRemove.Unlock()
 
-	remPieces := c.getRemPieces()
 	if c.filled > c.capacity {
+		remPieces := c.getRemPieces()
 		rems := (c.filled-c.capacity)/c.pieceLength + 1
 		for _, p := range remPieces {
 			c.removePiece(p)
