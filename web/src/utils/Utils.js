@@ -87,3 +87,28 @@ export const detectStandaloneApp = () => {
 }
 
 export const isStandaloneApp = detectStandaloneApp()
+
+const detectApplePlatform = () => {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return { isMac: false, isIOS: false }
+  }
+
+  const userAgent = navigator.userAgent || ''
+  const platform = navigator.userAgentData?.platform || ''
+
+  const isMac = userAgent.includes('Macintosh') || (platform && platform.toLowerCase().includes('mac'))
+
+  const isIOS = /iPad|iPhone|iPod/.test(userAgent) || (userAgent.includes('Macintosh') && navigator.maxTouchPoints > 1)
+
+  return { isMac, isIOS }
+}
+
+export const isAppleDevice = () => {
+  const { isMac, isIOS } = detectApplePlatform()
+  return isMac || isIOS
+}
+
+export const isMacOS = () => {
+  const { isMac, isIOS } = detectApplePlatform()
+  return isMac && !isIOS
+}
