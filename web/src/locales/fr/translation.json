@@ -112,6 +112,7 @@
   "RemoveAll": "Tout supprimer",
   "RemoveViews": "Supprimer les états de visualisation",
   "Resolution": "Résolution",
+  "Rutor": "RuTor",
   "Save": "Enregistrer",
   "ScrollDown": "défiler vers le bas",
   "Search": "Rechercher",
@@ -245,6 +246,5 @@
   "Uncategorized": "Non catégorisé",
   "UploadFile": "Téléverser un fichier",
   "UploadSpeed": "Vitesse de téléversement",
-  "Viewed": "Vu",
-  "Rutor": "RuTor"
+  "Viewed": "Vu"
 }
