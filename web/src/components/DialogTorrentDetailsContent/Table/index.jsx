@@ -78,21 +78,21 @@ const Table = memo(
                         <Button onClick={() => preloadBuffer(id)} variant='outlined' color='primary' size='small'>
                           {t('Preload')}
                         </Button>
-                        {isStandalone && isApple && isInfuseUsed && (
+                        {isApple && isInfuseUsed && (
                           <a style={{ textDecoration: 'none' }} href={infuseLink}>
                             <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
                               {t('Infuse')}
                             </Button>
                           </a>
                         )}
-                        {isStandalone && isVlcUsed && (
+                        {isVlcUsed && (
                           <a style={{ textDecoration: 'none' }} href={`vlc://${fullLink}`}>
                             <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
                               VLC
                             </Button>
                           </a>
                         )}
-                        {isStandalone && isMac && isIinaUsed && (
+                        {isMac && isIinaUsed && (
                           <a style={{ textDecoration: 'none' }} href={iinaLink}>
                             <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
                               IINA
@@ -181,7 +181,7 @@ const Table = memo(
                       {t('Preload')}
                     </Button>
 
-                    {isStandalone && isApple && isInfuseUsed && (
+                    {isApple && isInfuseUsed && (
                       <a style={{ textDecoration: 'none' }} href={infuseLink}>
                         <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
                           {t('Infuse')}
@@ -189,7 +189,7 @@ const Table = memo(
                       </a>
                     )}
 
-                    {isStandalone && isVlcUsed && (
+                    {isVlcUsed && (
                       <a style={{ textDecoration: 'none' }} href={`vlc://${fullLink}`}>
                         <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
                           VLC
@@ -197,7 +197,7 @@ const Table = memo(
                       </a>
                     )}
 
-                    {isStandalone && isMac && isIinaUsed && (
+                    {isMac && isIinaUsed && (
                       <a style={{ textDecoration: 'none' }} href={iinaLink}>
                         <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
                           IINA

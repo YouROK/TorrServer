@@ -112,7 +112,7 @@
   "RemoveAll": "全部删除",
   "RemoveViews": "移除视图状态",
   "Resolution": "分辨率",
-  "Rutor":"RuTor",
+  "Rutor": "RuTor",
   "Save": "保存",
   "ScrollDown": "向下滚动",
   "Search": "搜索",
@@ -187,7 +187,7 @@
     "Tabs": {
       "Additional": "附加",
       "AdditionalDisabled": "（启用专业模式）",
-      "App": "App",
+      "App": "播放器",
       "Main": "主要"
     },
     "TorrentDisconnectTimeout": "种子断开超时",
