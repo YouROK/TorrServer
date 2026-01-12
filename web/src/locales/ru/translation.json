@@ -112,7 +112,7 @@
   "RemoveAll": "Удалить все",
   "RemoveViews": "Очистить просмотры",
   "Resolution": "Разреш.",
-  "Rutor":"RuTor",
+  "Rutor": "RuTor",
   "Save": "Сохранить",
   "ScrollDown": "прокрутите вниз",
   "Search": "Поиск",
@@ -187,7 +187,7 @@
     "Tabs": {
       "Additional": "Расширенные",
       "AdditionalDisabled": "(включите ПРО-режим)",
-      "App": "Приложение",
+      "App": "Плееры",
       "Main": "Основные"
     },
     "TorrentDisconnectTimeout": "Тайм-аут отключения торрента",
