@@ -237,6 +237,13 @@
     "SearchMoviesShows": "Căutați filme, seriale...",
     "SearchTorrents": "Căutare Torrente",
     "SearchTorznab": "Căutare Torznab",
+    "SortAscending": "Sortare crescătoare",
+    "SortBy": "Sortare după",
+    "SortByNone": "Fără sortare",
+    "SortByPeers": "Peeri",
+    "SortBySeeds": "Seeds",
+    "SortBySize": "Dimensiune",
+    "SortDescending": "Sortare descrescătoare",
     "Test": "Test",
     "TorrentAddedSuccessfully": "Torrent adăugat cu succes",
     "TorznabHostURL": "URL-ul gazdei Torznab"

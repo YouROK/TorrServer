@@ -237,6 +237,13 @@
     "SearchMoviesShows": "Search movies, shows...",
     "SearchTorrents": "Search Torrents",
     "SearchTorznab": "Search Torznab",
+    "SortAscending": "Sort Ascending",
+    "SortBy": "Sort By",
+    "SortByNone": "None",
+    "SortByPeers": "Peers",
+    "SortBySeeds": "Seeds",
+    "SortBySize": "Size",
+    "SortDescending": "Sort Descending",
     "Test": "Test",
     "TorrentAddedSuccessfully": "Torrent added successfully",
     "TorznabHostURL": "Torznab Host URL"
