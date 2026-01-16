@@ -241,6 +241,17 @@
     "TorrentAddedSuccessfully": "Torrent adăugat cu succes",
     "TorznabHostURL": "URL-ul gazdei Torznab"
   },
+  "TMDB": {
+    "Settings": "Setări TMDB",
+    "APIKey": "Cheie API TMDB",
+    "APIKeyHint": "Introduceți cheia API TMDB pentru a activa căutarea de postere de filme. Obțineți una de la https://www.themoviedb.org/settings/api",
+    "APIURL": "URL API TMDB",
+    "APIURLHint": "URL de bază pentru API-ul TMDB. Căile API sunt adăugate automat (implicit: https://api.themoviedb.org)",
+    "ImageURL": "URL imagine TMDB",
+    "ImageURLHint": "URL de bază pentru imaginile TMDB. Căile imaginilor sunt adăugate automat (implicit: https://image.tmdb.org)",
+    "ImageURLRu": "URL imagine TMDB (Rusia)",
+    "ImageURLRuHint": "URL alternativ de imagine pentru utilizatorii ruși. Căile imaginilor sunt adăugate automat (implicit: https://imagetmdb.com)"
+  },
   "Tracker": "Tracker",
   "TurnOff": "Oprire",
   "Uncategorized": "Necategorizat",

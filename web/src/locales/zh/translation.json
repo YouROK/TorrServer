@@ -241,6 +241,17 @@
     "TorrentAddedSuccessfully": "种子添加成功",
     "TorznabHostURL": "Torznab主机URL"
   },
+  "TMDB": {
+    "Settings": "TMDB设置",
+    "APIKey": "TMDB API密钥",
+    "APIKeyHint": "输入您的TMDB API密钥以启用电影海报搜索。在 https://www.themoviedb.org/settings/api 获取",
+    "APIURL": "TMDB API URL",
+    "APIURLHint": "TMDB API的基础URL。API路径自动添加（默认：https://api.themoviedb.org）",
+    "ImageURL": "TMDB图片URL",
+    "ImageURLHint": "TMDB图片的基础URL。图片路径自动添加（默认：https://image.tmdb.org）",
+    "ImageURLRu": "TMDB图片URL（俄罗斯）",
+    "ImageURLRuHint": "俄罗斯用户的替代图片URL。图片路径自动添加（默认：https://imagetmdb.com）"
+  },
   "Tracker": "Tracker",
   "TurnOff": "关闭",
   "Uncategorized": "未分类",

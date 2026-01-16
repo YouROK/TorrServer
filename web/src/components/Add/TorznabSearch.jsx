@@ -1,5 +1,16 @@
 import React, { useState } from 'react'
-import { TextField, Button, List, ListItem, ListItemText, CircularProgress, Typography, Divider, ListItemSecondaryAction, IconButton } from '@material-ui/core'
+import {
+  TextField,
+  Button,
+  List,
+  ListItem,
+  ListItemText,
+  CircularProgress,
+  Typography,
+  Divider,
+  ListItemSecondaryAction,
+  IconButton,
+} from '@material-ui/core'
 import { useTranslation } from 'react-i18next'
 import axios from 'axios'
 import { torznabSearchHost } from 'utils/Hosts'
@@ -27,7 +38,7 @@ export default function TorznabSearch({ onSelect }) {
     }
   }
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = e => {
     if (e.key === 'Enter') {
       handleSearch()
     }
@@ -39,22 +50,38 @@ export default function TorznabSearch({ onSelect }) {
         <TextField
           label={t('Torznab.SearchTorznab')}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={e => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          variant="outlined"
-          size="small"
+          variant='outlined'
+          size='small'
           fullWidth
           placeholder={t('Torznab.SearchMoviesShows')}
         />
-        <Button variant="contained" color="primary" onClick={handleSearch} disabled={loading} style={{ minWidth: '80px' }}>
-          {loading ? <CircularProgress size={24} color="inherit" /> : t('Torznab.SearchTorrents')}
+        <Button
+          variant='contained'
+          color='primary'
+          onClick={handleSearch}
+          disabled={loading}
+          style={{ minWidth: '80px' }}
+        >
+          {loading ? <CircularProgress size={24} color='inherit' /> : t('Torznab.SearchTorrents')}
         </Button>
       </div>
       {searched && (
-        <div style={{ maxHeight: '200px', overflowY: 'auto', marginTop: '8px', border: '1px solid rgba(0,0,0,0.12)', borderRadius: '4px' }}>
+        <div
+          style={{
+            maxHeight: '200px',
+            overflowY: 'auto',
+            marginTop: '8px',
+            border: '1px solid rgba(0,0,0,0.12)',
+            borderRadius: '4px',
+          }}
+        >
           {results.length === 0 ? (
             <div style={{ padding: '8px', textAlign: 'center' }}>
-              <Typography variant="body2">{loading ? t('Torznab.SearchTorrents') : t('Torznab.NoResultsFound')}</Typography>
+              <Typography variant='body2'>
+                {loading ? t('Torznab.SearchTorrents') : t('Torznab.NoResultsFound')}
+              </Typography>
             </div>
           ) : (
             <List dense>
@@ -67,7 +94,7 @@ export default function TorznabSearch({ onSelect }) {
                       primaryTypographyProps={{ noWrap: true, style: { fontSize: '0.9rem' } }}
                     />
                     <ListItemSecondaryAction>
-                      <IconButton edge="end" aria-label="add" onClick={() => onSelect(item.Magnet || item.Link)}>
+                      <IconButton edge='end' aria-label='add' onClick={() => onSelect(item.Magnet || item.Link)}>
                         <AddIcon />
                       </IconButton>
                     </ListItemSecondaryAction>

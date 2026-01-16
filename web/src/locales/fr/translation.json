@@ -241,6 +241,17 @@
     "TorrentAddedSuccessfully": "Torrent ajouté avec succès",
     "TorznabHostURL": "URL de l'hôte Torznab"
   },
+  "TMDB": {
+    "Settings": "Paramètres TMDB",
+    "APIKey": "Clé API TMDB",
+    "APIKeyHint": "Entrez votre clé API TMDB pour activer la recherche d'affiches de films. Obtenez-en une sur https://www.themoviedb.org/settings/api",
+    "APIURL": "URL de l'API TMDB",
+    "APIURLHint": "URL de base pour l'API TMDB. Les chemins d'API sont ajoutés automatiquement (par défaut : https://api.themoviedb.org)",
+    "ImageURL": "URL d'image TMDB",
+    "ImageURLHint": "URL de base pour les images TMDB. Les chemins d'image sont ajoutés automatiquement (par défaut : https://image.tmdb.org)",
+    "ImageURLRu": "URL d'image TMDB (Russie)",
+    "ImageURLRuHint": "URL d'image alternative pour les utilisateurs russes. Les chemins d'image sont ajoutés automatiquement (par défaut : https://imagetmdb.com)"
+  },
   "Tracker": "Tracker",
   "TurnOff": "Éteindre",
   "Uncategorized": "Non catégorisé",
