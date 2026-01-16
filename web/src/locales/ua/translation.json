@@ -241,6 +241,17 @@
     "TorrentAddedSuccessfully": "Торрент успішно додано",
     "TorznabHostURL": "URL хосту Torznab"
   },
+  "TMDB": {
+    "Settings": "Налаштування TMDB",
+    "APIKey": "TMDB API ключ",
+    "APIKeyHint": "Введіть ваш TMDB API ключ для пошуку постерів фільмів. Отримайте його на https://www.themoviedb.org/settings/api",
+    "APIURL": "TMDB API URL",
+    "APIURLHint": "Базовий URL для TMDB API. Шляхи API додаються автоматично (за замовчуванням: https://api.themoviedb.org)",
+    "ImageURL": "TMDB URL зображень",
+    "ImageURLHint": "Базовий URL для зображень TMDB. Шляхи зображень додаються автоматично (за замовчуванням: https://image.tmdb.org)",
+    "ImageURLRu": "TMDB URL зображень (Росія)",
+    "ImageURLRuHint": "Альтернативний URL зображень для російських користувачів. Шляхи зображень додаються автоматично (за замовчуванням: https://imagetmdb.com)"
+  },
   "Tracker": "Трекер",
   "TurnOff": "Виключити",
   "Uncategorized": "Без категорії",

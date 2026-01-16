@@ -241,6 +241,17 @@
     "TorrentAddedSuccessfully": "Torrent added successfully",
     "TorznabHostURL": "Torznab Host URL"
   },
+  "TMDB": {
+    "Settings": "TMDB Settings",
+    "APIKey": "TMDB API Key",
+    "APIKeyHint": "Enter your TMDB API key to enable movie poster search. Get one at https://www.themoviedb.org/settings/api",
+    "APIURL": "TMDB API URL",
+    "APIURLHint": "Base URL for TMDB API. API paths are added automatically (default: https://api.themoviedb.org)",
+    "ImageURL": "TMDB Image URL",
+    "ImageURLHint": "Base URL for TMDB images. Image paths are added automatically (default: https://image.tmdb.org)",
+    "ImageURLRu": "TMDB Image URL (Russia)",
+    "ImageURLRuHint": "Alternative image URL for Russian users. Image paths are added automatically (default: https://imagetmdb.com)"
+  },
   "Tracker": "Tracker",
   "TurnOff": "Turn Off",
   "Uncategorized": "Uncategorized",
