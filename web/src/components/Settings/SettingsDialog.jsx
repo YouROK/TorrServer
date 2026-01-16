@@ -35,6 +35,7 @@ export default function SettingsDialog({ handleClose }) {
   const [isProMode, setIsProMode] = useState(JSON.parse(localStorage.getItem('isProMode')) || false)
   const [isVlcUsed, setIsVlcUsed] = useState(JSON.parse(localStorage.getItem('isVlcUsed')) ?? false)
   const [isInfuseUsed, setIsInfuseUsed] = useState(JSON.parse(localStorage.getItem('isInfuseUsed')) ?? false)
+  const [isIinaUsed, setIsIinaUsed] = useState(JSON.parse(localStorage.getItem('isIinaUsed')) ?? false)
 
   useEffect(() => {
     axios.post(settingsHost(), { action: 'get' }).then(({ data }) => {
@@ -53,6 +54,7 @@ export default function SettingsDialog({ handleClose }) {
     axios.post(settingsHost(), { action: 'set', sets })
     localStorage.setItem('isVlcUsed', isVlcUsed)
     localStorage.setItem('isInfuseUsed', isInfuseUsed)
+    localStorage.setItem('isIinaUsed', isIinaUsed)
   }
 
   const inputForm = ({ target: { type, value, checked, id } }) => {
@@ -177,6 +179,8 @@ export default function SettingsDialog({ handleClose }) {
                     setIsVlcUsed={setIsVlcUsed}
                     isInfuseUsed={isInfuseUsed}
                     setIsInfuseUsed={setIsInfuseUsed}
+                    isIinaUsed={isIinaUsed}
+                    setIsIinaUsed={setIsIinaUsed}
                   />
                 </TabPanel>
               )}
