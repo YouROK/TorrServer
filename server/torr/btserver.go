@@ -111,6 +111,7 @@ func (bt *BTServer) configure(ctx context.Context) {
 	bt.config.ExtendedHandshakeClientVersion = cliVers
 	bt.config.EstablishedConnsPerTorrent = settings.BTsets.ConnectionsLimit
 	bt.config.TotalHalfOpenConns = 500
+	bt.config.Seed = true
 	// Encryption/Obfuscation
 	bt.config.EncryptionPolicy = torrent.EncryptionPolicy{ //	OE
 		ForceEncryption: settings.BTsets.ForceEncrypt, //	OE
