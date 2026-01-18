@@ -11,6 +11,8 @@ export default {
   EnableDebug: false,
   EnableDLNA: false,
   FriendlyName: '',
+  EnableDLNALocal: false,
+  DLNALocalRoot: '',
   EnableRutorSearch: false,
   EnableIPv6: false,
   DisableTCP: false,
