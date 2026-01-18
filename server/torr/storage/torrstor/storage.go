@@ -2,8 +2,12 @@ package torrstor
 
 import (
 	"sync"
-
+	"slices"
+	"os"
+	"path/filepath"
+	"server/log"
 	"server/torr/storage"
+	"server/settings"
 
 	"github.com/anacrolix/torrent/metainfo"
 	ts "github.com/anacrolix/torrent/storage"
@@ -69,4 +73,53 @@ func (s *Storage) GetCache(hash metainfo.Hash) *Cache {
 		return cache
 	}
 	return nil
+}
+
+func (s *Storage) cleanPieces() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var filled int64 = 0
+	for _, ch := range s.caches {
+		filled += ch.filled
+	}
+	overfill := filled - s.capacity
+	if overfill < 0 {
+		return
+	}
+	sortCachesByModifiedDate := func(a, b *Cache) int {
+		aname := filepath.Join(settings.BTsets.TorrentsSavePath, a.hash.HexString())
+		bname := filepath.Join(settings.BTsets.TorrentsSavePath, b.hash.HexString())
+		ainfo, err := os.Stat(aname)
+		if err != nil {
+			return -1
+		}
+		binfo, err := os.Stat(bname)
+		if err != nil {
+			return 1
+		}
+		return ainfo.ModTime().Compare(binfo.ModTime())
+	}
+	nonempty := slices.Values(slices.Collect(func(yield func(*Cache) bool) {
+		for _, c := range s.caches {
+			if c.filled > 0 {
+				if !yield(c) {
+					return
+				}
+			}
+		}
+	}))
+	// fill sortedcaches with refs to non-empty caches sorted by respective
+	//  folder modified date in descending order (older first)
+	sortedcaches := slices.SortedFunc(nonempty, sortCachesByModifiedDate)
+	for _, c := range sortedcaches {
+		_cap := c.capacity
+		c.capacity = max(c.filled - overfill, 0)
+		overfill -= c.filled
+		c.doCleanPieces()
+		overfill += c.filled
+		c.capacity = _cap
+		if overfill <= 0 {
+			return
+		}
+	}
 }
