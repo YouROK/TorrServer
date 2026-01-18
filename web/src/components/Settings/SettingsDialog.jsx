@@ -137,7 +137,7 @@ export default function SettingsDialog({ handleClose }) {
 
           <Tab label={t('Search')} {...a11yProps(2)} />
 
-          {isStandaloneApp && <Tab label={t('SettingsDialog.Tabs.App')} {...a11yProps(3)} />}
+          <Tab label={t('SettingsDialog.Tabs.App')} {...a11yProps(3)} />
         </Tabs>
       </AppBar>
 
@@ -172,18 +172,16 @@ export default function SettingsDialog({ handleClose }) {
                 <TorznabSettings settings={settings} inputForm={inputForm} updateSettings={updateSettings} />
               </TabPanel>
 
-              {isStandaloneApp && (
-                <TabPanel value={selectedTab} index={3} dir={direction}>
-                  <MobileAppSettings
-                    isVlcUsed={isVlcUsed}
-                    setIsVlcUsed={setIsVlcUsed}
-                    isInfuseUsed={isInfuseUsed}
-                    setIsInfuseUsed={setIsInfuseUsed}
-                    isIinaUsed={isIinaUsed}
-                    setIsIinaUsed={setIsIinaUsed}
-                  />
-                </TabPanel>
-              )}
+              <TabPanel value={selectedTab} index={3} dir={direction}>
+                <MobileAppSettings
+                  isVlcUsed={isVlcUsed}
+                  setIsVlcUsed={setIsVlcUsed}
+                  isInfuseUsed={isInfuseUsed}
+                  setIsInfuseUsed={setIsInfuseUsed}
+                  isIinaUsed={isIinaUsed}
+                  setIsIinaUsed={setIsIinaUsed}
+                />
+              </TabPanel>
             </SwipeableViews>
           </>
         ) : (
