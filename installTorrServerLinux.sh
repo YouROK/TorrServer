@@ -110,20 +110,20 @@ declare -A MSG_EN=(
   [use_auth]="Use user \"%s\" with password \"%s\" for authentication"
 
   # Prompts
-  [want_update]="Want to update TorrServer? (Yes/No) "
-  [want_install]="Want to install or configure TorrServer? (Yes|No) Type Delete to uninstall. "
-  [want_reconfigure]="Do you want to reconfigure TorrServer settings? (Yes/No) "
-  [change_port]="Change TorrServer web-port? (Yes/No) "
+  [want_update]="Want to update TorrServer?"
+  [want_install]="Want to install or configure TorrServer? Type Delete to uninstall."
+  [want_reconfigure]="Do you want to reconfigure TorrServer settings?"
+  [change_port]="Change TorrServer web-port?"
   [enter_port]="Enter port number: "
-  [enable_auth]="Enable server authorization? (Yes/No) "
+  [enable_auth]="Enable server authorization?"
   [prompt_user]="User: "
   [prompt_password]="Password: "
-  [change_auth_credentials]="Change authentication username and password? (Yes/No) "
-  [enable_rdb]="Start TorrServer in public read-only mode? (Yes/No) "
-  [enable_log]="Enable TorrServer log output to file? (Yes/No) "
-  [enable_bbr]="Enable BBR (recommended for better download speed)? (Yes/No) "
-  [confirm_delete]="Are you sure you want to delete TorrServer? (Yes/No) "
-  [prompt_run_as_root]="Run service as root user? (Yes/No) "
+  [change_auth_credentials]="Change authentication username and password?"
+  [enable_rdb]="Start TorrServer in public read-only mode?"
+  [enable_log]="Enable TorrServer log output to file?"
+  [enable_bbr]="Enable BBR (recommended for better download speed)?"
+  [confirm_delete]="Are you sure you want to delete TorrServer?"
+  [prompt_run_as_root]="Run service as root user?"
 
   # Uninstall
   [install_dir_label]="TorrServer install dir -"
@@ -237,20 +237,20 @@ declare -A MSG_RU=(
   [use_auth]="Для авторизации используйте пользователя «%s» с паролем «%s»"
 
   # Prompts
-  [want_update]="Хотите обновить TorrServer? (Yes/No) "
-  [want_install]="Хотите установить, обновить или настроить TorrServer? (Yes|No) Для удаления введите «Delete» "
-  [want_reconfigure]="Хотите перенастроить параметры TorrServer? (Yes/No) "
-  [change_port]="Хотите изменить порт для TorrServer? (Yes/No) "
+  [want_update]="Хотите обновить TorrServer?"
+  [want_install]="Хотите установить, обновить или настроить TorrServer? Для удаления введите «Delete»"
+  [want_reconfigure]="Хотите перенастроить параметры TorrServer?"
+  [change_port]="Хотите изменить порт для TorrServer?"
   [enter_port]="Введите номер порта: "
-  [enable_auth]="Включить авторизацию на сервере? (Yes/No) "
+  [enable_auth]="Включить авторизацию на сервере?"
   [prompt_user]="Пользователь: "
   [prompt_password]="Пароль: "
-  [change_auth_credentials]="Изменить имя пользователя и пароль для авторизации? (Yes/No) "
-  [enable_rdb]="Запускать TorrServer в публичном режиме без возможности изменения настроек через веб сервера? (Yes/No) "
-  [enable_log]="Включить запись журнала работы TorrServer в файл? (Yes/No) "
-  [enable_bbr]="Включить BBR (рекомендуется для лучшей скорости загрузки)? (Yes/No) "
-  [confirm_delete]="Вы уверены что хотите удалить программу? (Yes/No) "
-  [prompt_run_as_root]="Запускать службу от пользователя root? (Yes/No) "
+  [change_auth_credentials]="Изменить имя пользователя и пароль для авторизации?"
+  [enable_rdb]="Запускать TorrServer в публичном режиме без возможности изменения настроек через веб сервера?"
+  [enable_log]="Включить запись журнала работы TorrServer в файл?"
+  [enable_bbr]="Включить BBR (рекомендуется для лучшей скорости загрузки)?"
+  [confirm_delete]="Вы уверены что хотите удалить программу?"
+  [prompt_run_as_root]="Запускать службу от пользователя root?"
 
   # Uninstall
   [install_dir_label]="Директория c TorrServer -"
@@ -352,6 +352,15 @@ colorize() {
   fi
 }
 
+# Highlight first letter of a word with specified color
+highlightFirstLetter() {
+  local color="$1"
+  local word="$2"
+  local first_char="${word:0:1}"
+  local rest="${word:1}"
+  printf "%s%s" "$(colorize "$color" "$first_char")" "$rest"
+}
+
 isRoot() {
   [[ $EUID -eq 0 ]]
 }
@@ -406,6 +415,7 @@ getIP() {
 promptYesNo() {
   local prompt="$1"
   local default="${2:-n}"
+  local recommended="${3:-$default}"
 
   if [[ $SILENT_MODE -eq 1 ]]; then
     if [[ "$default" == "y" ]]; then
@@ -415,9 +425,36 @@ promptYesNo() {
     fi
   fi
 
-  local answer
-  IFS= read -r -p " $prompt " answer </dev/tty
+  # Determine colors based on recommendation
+  local yes_color no_color
+  if [[ "$recommended" == "y" ]]; then
+    yes_color="green"
+    no_color="red"
+  else
+    yes_color="red"
+    no_color="green"
+  fi
 
+  # Define localized Yes/No words
+  local yes_word no_word
+  if [[ $lang == "ru" ]]; then
+    yes_word="Да"
+    no_word="Нет"
+  else
+    yes_word="Yes"
+    no_word="No"
+  fi
+
+  # Highlight first letter of each word
+  local yes_text
+  local no_text
+  yes_text="$(highlightFirstLetter "$yes_color" "$yes_word")"
+  no_text="$(highlightFirstLetter "$no_color" "$no_word")"
+
+  local answer
+  IFS= read -r -p " $prompt ($yes_text/$no_text) " answer </dev/tty
+
+  # Support both English (Yy) and Russian (Дд) for Yes
   if [[ "$answer" =~ ^[YyДд] ]]; then
     return 0
   else
@@ -428,6 +465,7 @@ promptYesNo() {
 promptYesNoDelete() {
   local prompt="$1"
   local default="${2:-n}"
+  local recommended="${3:-$default}"
 
   if [[ $SILENT_MODE -eq 1 ]]; then
     if [[ "$default" == "y" ]]; then
@@ -438,8 +476,34 @@ promptYesNoDelete() {
     return
   fi
 
+  # Determine colors based on recommended answer
+  local yes_color no_color
+  if [[ "$recommended" == "y" ]]; then
+    yes_color="green"
+    no_color="red"
+  else
+    yes_color="red"
+    no_color="green"
+  fi
+
+  # Define localized Yes/No words
+  local yes_word no_word
+  if [[ $lang == "ru" ]]; then
+    yes_word="Да"
+    no_word="Нет"
+  else
+    yes_word="Yes"
+    no_word="No"
+  fi
+
+  # Highlight first letter of each word
+  local yes_text
+  local no_text
+  yes_text="$(highlightFirstLetter "$yes_color" "$yes_word")"
+  no_text="$(highlightFirstLetter "$no_color" "$no_word")"
+
   local answer
-  IFS= read -r -p " $prompt " answer </dev/tty
+  IFS= read -r -p " $prompt ($yes_text/$no_text) " answer </dev/tty
   answer=$(echo "$answer" | tr '[:upper:]' '[:lower:]' | xargs)
 
   # Check for Delete (case-insensitive, supports both English and Russian)
@@ -1202,7 +1266,7 @@ configureService() {
   # Port configuration
   if [[ -z "$servicePort" ]]; then
     local inferred_default="$DEFAULT_PORT"
-    if promptYesNo "$(msg change_port)" "n"; then
+    if promptYesNo "$(msg change_port)" "n" "y"; then
       servicePort=$(promptInput "$(msg enter_port)" "$inferred_default")
     else
       servicePort="$inferred_default"
@@ -1210,7 +1274,7 @@ configureService() {
   else
     # Port exists, ask if user wants to change it
     if [[ $SILENT_MODE -eq 0 ]]; then
-      if promptYesNo "$(msg change_port)" "n"; then
+      if promptYesNo "$(msg change_port)" "n" "y"; then
         servicePort=$(promptInput "$(msg enter_port)" "$servicePort")
       fi
     fi
@@ -1218,7 +1282,7 @@ configureService() {
 
   # Auth configuration
   if [[ -z "$isAuth" ]]; then
-    if promptYesNo "$(msg enable_auth)" "n"; then
+    if promptYesNo "$(msg enable_auth)" "n" "y"; then
       isAuth=1
     else
       isAuth=0
@@ -1226,7 +1290,9 @@ configureService() {
   else
     # Auth setting exists, ask if user wants to change it
     if [[ $SILENT_MODE -eq 0 ]]; then
-      if promptYesNo "$(msg enable_auth)" "$([[ $isAuth -eq 1 ]] && echo 'y' || echo 'n')"; then
+      local current_auth_default
+      current_auth_default="$([[ $isAuth -eq 1 ]] && echo 'y' || echo 'n')"
+      if promptYesNo "$(msg enable_auth)" "$current_auth_default" "y"; then
         isAuth=1
       else
         isAuth=0
@@ -1249,7 +1315,7 @@ configureService() {
       if [[ $SILENT_MODE -eq 0 ]]; then
         printf ' - %s\n' "$(msg use_existing_auth "${dirInstall}/accs.db" "$auth")"
         # Ask if user wants to change credentials
-        if promptYesNo "$(msg change_auth_credentials)" "n"; then
+        if promptYesNo "$(msg change_auth_credentials)" "n" "n"; then
           isAuthUser=$(promptInput "$(msg prompt_user)" "admin")
           isAuthPass=$(promptInput "$(msg prompt_password)" "admin")
           if [[ $SILENT_MODE -eq 0 ]]; then
@@ -1263,7 +1329,7 @@ configureService() {
 
   # Read-only database configuration
   if [[ -z "$isRdb" ]]; then
-    if promptYesNo "$(msg enable_rdb)" "n"; then
+    if promptYesNo "$(msg enable_rdb)" "n" "n"; then
       isRdb=1
     else
       isRdb=0
@@ -1271,7 +1337,9 @@ configureService() {
   else
     # RDB setting exists, ask if user wants to change it
     if [[ $SILENT_MODE -eq 0 ]]; then
-      if promptYesNo "$(msg enable_rdb)" "$([[ $isRdb -eq 1 ]] && echo 'y' || echo 'n')"; then
+      local current_rdb_default
+      current_rdb_default="$([[ $isRdb -eq 1 ]] && echo 'y' || echo 'n')"
+      if promptYesNo "$(msg enable_rdb)" "$current_rdb_default" "n"; then
         isRdb=1
       else
         isRdb=0
@@ -1286,7 +1354,7 @@ configureService() {
 
   # Logging configuration
   if [[ -z "$isLog" ]]; then
-    if promptYesNo "$(msg enable_log)" "n"; then
+    if promptYesNo "$(msg enable_log)" "n" "y"; then
       isLog=1
     else
       isLog=0
@@ -1294,7 +1362,9 @@ configureService() {
   else
     # Log setting exists, ask if user wants to change it
     if [[ $SILENT_MODE -eq 0 ]]; then
-      if promptYesNo "$(msg enable_log)" "$([[ $isLog -eq 1 ]] && echo 'y' || echo 'n')"; then
+      local current_log_default
+      current_log_default="$([[ $isLog -eq 1 ]] && echo 'y' || echo 'n')"
+      if promptYesNo "$(msg enable_log)" "$current_log_default" "y"; then
         isLog=1
       else
         isLog=0
@@ -1308,7 +1378,7 @@ configureService() {
 
   # BBR configuration
   if [[ -z "$isBbr" ]] && ! isBBRConfiguredInFile; then
-    if promptYesNo "$(msg enable_bbr)" "n"; then
+    if promptYesNo "$(msg enable_bbr)" "n" "y"; then
       isBbr=1
     else
       isBbr=0
@@ -1423,7 +1493,7 @@ changeServiceUser() {
 installTorrServer() {
   if [[ $SILENT_MODE -eq 0 && $ROOT_PROMPTED -eq 0 ]]; then
     if [[ $USE_ROOT_USER -ne 1 ]]; then
-      if promptYesNo "$(msg prompt_run_as_root)" "n"; then
+      if promptYesNo "$(msg prompt_run_as_root)" "n" "n"; then
         USE_ROOT_USER=1
         username="root"
       fi
@@ -1448,18 +1518,18 @@ installTorrServer() {
 
   # Check if already installed and up to date
   if checkInstalled; then
-    if ! checkInstalledVersion; then
-      if promptYesNo "$(msg want_update)" "y"; then
-        UpdateVersion
-        return
-      fi
-    else
-      # Already installed and up to date, allow reconfiguration
-      if [[ $SILENT_MODE -eq 0 ]]; then
-        echo " - $(msg running_as_user "$username")"
-        echo ""
-        # Allow user to reconfigure settings
-        if promptYesNo "$(msg want_reconfigure)" "n"; then
+      if ! checkInstalledVersion; then
+        if promptYesNo "$(msg want_update)" "y" "y"; then
+          UpdateVersion
+          return
+        fi
+      else
+        # Already installed and up to date, allow reconfiguration
+        if [[ $SILENT_MODE -eq 0 ]]; then
+          echo " - $(msg running_as_user "$username")"
+          echo ""
+          # Allow user to reconfigure settings
+          if promptYesNo "$(msg want_reconfigure)" "n" "n"; then
           # Read existing config first
           if [[ -f "$dirInstall/$serviceName.config" ]]; then
             readExistingConfig
@@ -1685,7 +1755,7 @@ uninstall() {
   echo " $(msg uninstall_warning)"
   echo ""
 
-  if promptYesNo "$(msg confirm_delete)" "n"; then
+  if promptYesNo "$(msg confirm_delete)" "n" "n"; then
     cleanup
     cleanAll
     echo " - $(msg uninstalled)"
@@ -2029,7 +2099,7 @@ main() {
     echo ""
 
     local user_choice
-    user_choice=$(promptYesNoDelete "$(msg want_install)" "n")
+    user_choice=$(promptYesNoDelete "$(msg want_install)" "n" "y")
 
     if [[ "$user_choice" == "delete" ]]; then
       initialCheck
@@ -2037,7 +2107,7 @@ main() {
     elif [[ "$user_choice" == "yes" ]]; then
       initialCheck
 
-      if promptYesNo "$(msg prompt_run_as_root)" "n"; then
+      if promptYesNo "$(msg prompt_run_as_root)" "n" "n"; then
         USE_ROOT_USER=1
         username="root"
       fi
