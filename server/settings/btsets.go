@@ -27,6 +27,7 @@ type BTSets struct {
 	UseDisk           bool
 	TorrentsSavePath  string
 	RemoveCacheOnDrop bool
+	OneCacheForAll    bool
 
 	// Torrent
 	ForceEncrypt             bool
