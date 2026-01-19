@@ -123,10 +123,6 @@ function installTorrServer() {
   <string>${serviceName}</string>
   <key>ServiceDescription</key>
   <string>TorrServer service for MacOS</string>
-  <key>LaunchOnlyOnce</key>
-  <true/>
-  <key>RunAtLoad</key>
-  <true/>
   <key>ProgramArguments</key>
   <array>
     <string>${dirInstall}/TorrServer-darwin-${architecture}</string>
@@ -138,10 +134,25 @@ function installTorrServer() {
     <string>${dirInstall}/torrserver.log</string>
     <string>--httpauth</string>
   </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+  <key>AbandonProcessGroup</key>
+  <true/>
   <key>StandardOutPath</key>
   <string>${dirInstall}/torrserver.log</string>
   <key>StandardErrorPath</key>
   <string>${dirInstall}/torrserver.log</string>
+  <key>WorkingDirectory</key>
+  <string>${dirInstall}</string>
 </dict>
 </plist>
 EOF
@@ -156,7 +167,7 @@ EOF
     [[ $lang == "en" ]] && echo " HTTP Auth Install choosen" || echo " Вы выбрали установку с авторизацией"
     [[ ! -f "$dirInstall/accs.db" ]] && {
       echo ""
-      [[ $lang == "en" ]] && read -p ' User: ' answer_user </dev/tty || read -p ' Пользователь: ' answer_user </dev/tty 
+      [[ $lang == "en" ]] && read -p ' User: ' answer_user </dev/tty || read -p ' Пользователь: ' answer_user </dev/tty
       isAuthUser=$answer_user
       echo ""
       [[ $lang == "en" ]] && read -p ' Password: ' answer_pass </dev/tty || read -p ' Пароль: ' answer_pass </dev/tty
@@ -211,7 +222,7 @@ EOF
     [[ $lang == "en" ]] && echo " Use user \"$isAuthUser\" with password \"$isAuthPass\" for web auth" || echo " Для авторизации введите пользователя $isAuthUser с паролем $isAuthPass"
     echo ""
   fi
-  sleep 30
+  sleep 10
 }
 
 while true; do

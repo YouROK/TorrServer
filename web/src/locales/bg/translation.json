@@ -237,6 +237,13 @@
     "SearchMoviesShows": "Търси филми, сериали...",
     "SearchTorrents": "Търси торенти",
     "SearchTorznab": "Търсене чрез Torznab",
+    "SortAscending": "Сортиране по възходящ ред",
+    "SortBy": "Сортиране по",
+    "SortByNone": "Без сортиране",
+    "SortByPeers": "Пиъри",
+    "SortBySeeds": "Сийдъри",
+    "SortBySize": "Размер",
+    "SortDescending": "Сортиране по низходящ ред",
     "Test": "Тест",
     "TorrentAddedSuccessfully": "Торентът е добавен успешно",
     "TorznabHostURL": "URL адрес на Torznab сървъра"

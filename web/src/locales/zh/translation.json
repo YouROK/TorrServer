@@ -237,6 +237,13 @@
     "SearchMoviesShows": "搜索电影、剧集...",
     "SearchTorrents": "搜索种子",
     "SearchTorznab": "Torznab搜索",
+    "SortAscending": "升序排序",
+    "SortBy": "排序方式",
+    "SortByNone": "无",
+    "SortByPeers": "对等节点",
+    "SortBySeeds": "种子",
+    "SortBySize": "大小",
+    "SortDescending": "降序排序",
     "Test": "测试",
     "TorrentAddedSuccessfully": "种子添加成功",
     "TorznabHostURL": "Torznab主机URL"

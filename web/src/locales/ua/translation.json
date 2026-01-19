@@ -237,6 +237,13 @@
     "SearchMoviesShows": "Пошук фільмів, серіалів...",
     "SearchTorrents": "Пошук торрентів",
     "SearchTorznab": "Пошук через Torznab",
+    "SortAscending": "За зростанням",
+    "SortBy": "Сортувати за",
+    "SortByNone": "Без сортування",
+    "SortByPeers": "Піри",
+    "SortBySeeds": "Сіди",
+    "SortBySize": "Розмір",
+    "SortDescending": "За спаданням",
     "Test": "Тест",
     "TorrentAddedSuccessfully": "Торрент успішно додано",
     "TorznabHostURL": "URL хосту Torznab"

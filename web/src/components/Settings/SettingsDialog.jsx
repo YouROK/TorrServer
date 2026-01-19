@@ -143,7 +143,7 @@ export default function SettingsDialog({ handleClose }) {
 
           <Tab label={t('TMDB.Settings')} {...a11yProps(3)} />
 
-          {isStandaloneApp && <Tab label={t('SettingsDialog.Tabs.App')} {...a11yProps(4)} />}
+          <Tab label={t('SettingsDialog.Tabs.App')} {...a11yProps(4)} />
         </Tabs>
       </AppBar>
 
@@ -182,18 +182,16 @@ export default function SettingsDialog({ handleClose }) {
                 <TMDBSettings settings={settings} updateSettings={updateSettings} />
               </TabPanel>
 
-              {isStandaloneApp && (
-                <TabPanel value={selectedTab} index={4} dir={direction}>
-                  <MobileAppSettings
-                    isVlcUsed={isVlcUsed}
-                    setIsVlcUsed={setIsVlcUsed}
-                    isInfuseUsed={isInfuseUsed}
-                    setIsInfuseUsed={setIsInfuseUsed}
-                    isIinaUsed={isIinaUsed}
-                    setIsIinaUsed={setIsIinaUsed}
-                  />
-                </TabPanel>
-              )}
+              <TabPanel value={selectedTab} index={4} dir={direction}>
+                <MobileAppSettings
+                  isVlcUsed={isVlcUsed}
+                  setIsVlcUsed={setIsVlcUsed}
+                  isInfuseUsed={isInfuseUsed}
+                  setIsInfuseUsed={setIsInfuseUsed}
+                  isIinaUsed={isIinaUsed}
+                  setIsIinaUsed={setIsIinaUsed}
+                />
+              </TabPanel>
             </SwipeableViews>
           </>
         ) : (
