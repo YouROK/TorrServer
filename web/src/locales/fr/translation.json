@@ -249,7 +249,7 @@
     "TorznabHostURL": "URL de l'hôte Torznab"
   },
   "TMDB": {
-    "Settings": "Paramètres TMDB",
+    "Settings": "TMDB",
     "APIKey": "Clé API TMDB",
     "APIKeyHint": "Entrez votre clé API TMDB pour activer la recherche d'affiches de films. Obtenez-en une sur https://www.themoviedb.org/settings/api",
     "APIURL": "URL de l'API TMDB",

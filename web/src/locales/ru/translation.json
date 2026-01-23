@@ -249,7 +249,7 @@
     "TorznabHostURL": "URL хоста Torznab"
   },
   "TMDB": {
-    "Settings": "Настройки TMDB",
+    "Settings": "TMDB",
     "APIKey": "TMDB API-ключ",
     "APIKeyHint": "Введите ваш TMDB API-ключ для поиска постеров фильмов. Получите его на https://www.themoviedb.org/settings/api",
     "APIURL": "TMDB API URL",

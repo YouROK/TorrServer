@@ -249,7 +249,7 @@
     "TorznabHostURL": "Torznab主机URL"
   },
   "TMDB": {
-    "Settings": "TMDB设置",
+    "Settings": "TMDB",
     "APIKey": "TMDB API密钥",
     "APIKeyHint": "输入您的TMDB API密钥以启用电影海报搜索。在 https://www.themoviedb.org/settings/api 获取",
     "APIURL": "TMDB API URL",

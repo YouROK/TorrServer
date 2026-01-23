@@ -249,7 +249,7 @@
     "TorznabHostURL": "URL-ul gazdei Torznab"
   },
   "TMDB": {
-    "Settings": "Setări TMDB",
+    "Settings": "TMDB",
     "APIKey": "Cheie API TMDB",
     "APIKeyHint": "Introduceți cheia API TMDB pentru a activa căutarea de postere de filme. Obțineți una de la https://www.themoviedb.org/settings/api",
     "APIURL": "URL API TMDB",

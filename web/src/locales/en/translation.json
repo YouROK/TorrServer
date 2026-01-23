@@ -249,7 +249,7 @@
     "TorznabHostURL": "Torznab Host URL"
   },
   "TMDB": {
-    "Settings": "TMDB Settings",
+    "Settings": "TMDB",
     "APIKey": "TMDB API Key",
     "APIKeyHint": "Enter your TMDB API key to enable movie poster search. Get one at https://www.themoviedb.org/settings/api",
     "APIURL": "TMDB API URL",
