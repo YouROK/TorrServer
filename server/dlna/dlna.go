@@ -122,7 +122,10 @@ func onBrowse(path, rootObjectPath, host, userAgent string) (ret []interface{}, 
 		ret = getRoot()
 		return
 	} else if path == "/TR" {
-		ret = getTorrents()
+		ret = getTorrentCategories()
+		return
+	} else if strings.HasPrefix(path, "/TR/") {
+		ret = getTorrentsByCategory(path)
 		return
 	} else if path == "/FS" || strings.HasPrefix(path, "/FS/") {
 		ret, err = browseFS(path, host)
