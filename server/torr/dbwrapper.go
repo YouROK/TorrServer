@@ -32,7 +32,8 @@ func AddTorrentDB(torr *Torrent) {
 	} else {
 		t.Data = torr.Data
 	}
-	if utils.CheckImgUrl(torr.Poster) {
+
+	if torr.Poster != "" && utils.CheckImgUrl(torr.Poster) {
 		t.Poster = torr.Poster
 	}
 	t.Size = torr.Size
