@@ -40,7 +40,6 @@ export default function TorznabSearch({ onSelect }) {
       const { data } = await axios.get(torznabSearchHost(), { params: { query } })
       setResults(data || [])
     } catch (error) {
-      console.error(error)
       setResults([])
     } finally {
       setLoading(false)
