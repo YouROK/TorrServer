@@ -5,6 +5,7 @@ import { FormControlLabel, useMediaQuery, useTheme } from '@material-ui/core'
 import { settingsHost } from 'utils/Hosts'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { clearTMDBCache } from 'components/Add/helpers'
 import AppBar from '@material-ui/core/AppBar'
 import Tabs from '@material-ui/core/Tabs'
 import Tab from '@material-ui/core/Tab'
@@ -21,6 +22,7 @@ import PrimarySettingsComponent from './PrimarySettingsComponent'
 import SecondarySettingsComponent from './SecondarySettingsComponent'
 import MobileAppSettings from './MobileAppSettings'
 import TorznabSettings from './TorznabSettings'
+import TMDBSettings from './TMDBSettings'
 
 export default function SettingsDialog({ handleClose }) {
   const { t } = useTranslation()
@@ -52,6 +54,8 @@ export default function SettingsDialog({ handleClose }) {
     sets.ReaderReadAHead = cachePercentage
     sets.PreloadCache = preloadCachePercentage
     axios.post(settingsHost(), { action: 'set', sets })
+    // Clear TMDB cache so fresh settings are fetched on next poster search
+    clearTMDBCache()
     localStorage.setItem('isVlcUsed', isVlcUsed)
     localStorage.setItem('isInfuseUsed', isInfuseUsed)
     localStorage.setItem('isIinaUsed', isIinaUsed)
@@ -137,7 +141,9 @@ export default function SettingsDialog({ handleClose }) {
 
           <Tab label={t('Search')} {...a11yProps(2)} />
 
-          <Tab label={t('SettingsDialog.Tabs.App')} {...a11yProps(3)} />
+          <Tab label={t('TMDB.Settings')} {...a11yProps(3)} />
+
+          <Tab label={t('SettingsDialog.Tabs.App')} {...a11yProps(4)} />
         </Tabs>
       </AppBar>
 
@@ -173,6 +179,10 @@ export default function SettingsDialog({ handleClose }) {
               </TabPanel>
 
               <TabPanel value={selectedTab} index={3} dir={direction}>
+                <TMDBSettings settings={settings} updateSettings={updateSettings} />
+              </TabPanel>
+
+              <TabPanel value={selectedTab} index={4} dir={direction}>
                 <MobileAppSettings
                   isVlcUsed={isVlcUsed}
                   setIsVlcUsed={setIsVlcUsed}
@@ -200,6 +210,8 @@ export default function SettingsDialog({ handleClose }) {
             setCachePercentage(defaultSettings.ReaderReadAHead)
             setPreloadCachePercentage(defaultSettings.PreloadCache)
             updateSettings(defaultSettings)
+            // Clear TMDB cache when resetting to defaults
+            clearTMDBCache()
           }}
           color='secondary'
           variant='outlined'

@@ -17,6 +17,13 @@ type TorznabConfig struct {
 	Name string
 }
 
+type TMDBConfig struct {
+	APIKey     string // TMDB API Key
+	APIURL     string // Base API URL (default: https://api.themoviedb.org)
+	ImageURL   string // Image URL (default: https://image.tmdb.org)
+	ImageURLRu string // Image URL for Russian users (default: https://imagetmdb.com)
+}
+
 type BTSets struct {
 	// Cache
 	CacheSize       int64 // in byte, def 64 MB
@@ -47,6 +54,9 @@ type BTSets struct {
 	// Torznab
 	EnableTorznabSearch bool
 	TorznabUrls         []TorznabConfig
+
+	// TMDB
+	TMDBSettings TMDBConfig
 
 	// BT Config
 	EnableIPv6        bool
@@ -156,6 +166,13 @@ func SetDefaultConfig() {
 	sets.StoreSettingsInJson = true
 	sets.EnableDLNALocal = false
 	sets.DLNALocalRoot = ""
+	// Set default TMDB settings
+	sets.TMDBSettings = TMDBConfig{
+		APIKey:     "",
+		APIURL:     "https://api.themoviedb.org",
+		ImageURL:   "https://image.tmdb.org",
+		ImageURLRu: "https://imagetmdb.com",
+	}
 	BTsets = sets
 	if !ReadOnly {
 		buf, err := json.Marshal(BTsets)
@@ -174,6 +191,15 @@ func loadBTSets() {
 		if err == nil {
 			if BTsets.ReaderReadAHead < 5 {
 				BTsets.ReaderReadAHead = 5
+			}
+			// Set default TMDB settings if missing (for existing configs)
+			if BTsets.TMDBSettings.APIURL == "" {
+				BTsets.TMDBSettings = TMDBConfig{
+					APIKey:     "",
+					APIURL:     "https://api.themoviedb.org",
+					ImageURL:   "https://image.tmdb.org",
+					ImageURLRu: "https://imagetmdb.com",
+				}
 			}
 			return
 		}

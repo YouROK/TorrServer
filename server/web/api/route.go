@@ -63,5 +63,8 @@ func SetupRoute(route gin.IRouter) {
 	authorized.GET("/storage/settings", GetStorageSettings)
 	authorized.POST("/storage/settings", UpdateStorageSettings)
 
+	// Add TMDB settings endpoint
+	authorized.GET("/tmdb/settings", tmdbSettings)
+
 	authorized.GET("/ffp/:hash/:id", ffp)
 }
