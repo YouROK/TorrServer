@@ -96,7 +96,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
           setStorageSettings(prefs)
         }
       } catch (error) {
-        console.error('Failed to load storage settings:', error)
+        // eslint-disable-line no-console
       }
     }
     loadStorageSettings()

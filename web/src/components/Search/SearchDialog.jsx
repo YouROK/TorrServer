@@ -56,7 +56,7 @@ export default function SearchDialog({ handleClose }) {
           setEnableRutor(!!data.EnableRutorSearch)
         }
       })
-      .catch(console.error)
+      .catch(() => {})
   }, [])
 
   const handleSearch = async () => {
@@ -77,7 +77,6 @@ export default function SearchDialog({ handleClose }) {
       const { data } = await axios.get(url, { params })
       setResults(data || [])
     } catch (error) {
-      console.error(error)
       setErrorMsg(t('Torznab.SearchFailed'))
     } finally {
       setLoading(false)
@@ -107,7 +106,6 @@ export default function SearchDialog({ handleClose }) {
       })
       setSuccessMsg(t('Torznab.TorrentAddedSuccessfully'))
     } catch (error) {
-      console.error(error)
       setErrorMsg(t('Torznab.FailedToAddTorrent'))
     } finally {
       setAdding(false)

@@ -13,7 +13,6 @@ import SwipeableViews from 'react-swipeable-views'
 import CircularProgress from '@material-ui/core/CircularProgress'
 import { StyledDialog } from 'style/CustomMaterialUiStyles'
 import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
-import { isStandaloneApp } from 'utils/Utils'
 
 import { SettingsHeader, FooterSection, Content } from './style'
 import defaultSettings from './defaultSettings'
