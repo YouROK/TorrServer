@@ -112,7 +112,7 @@
   "RemoveAll": "Удалить все",
   "RemoveViews": "Очистить просмотры",
   "Resolution": "Разреш.",
-  "Rutor":"RuTor",
+  "Rutor": "RuTor",
   "Save": "Сохранить",
   "ScrollDown": "прокрутите вниз",
   "Search": "Поиск",
@@ -191,7 +191,7 @@
     "Tabs": {
       "Additional": "Расширенные",
       "AdditionalDisabled": "(включите ПРО-режим)",
-      "App": "Приложение",
+      "App": "Плееры",
       "Main": "Основные"
     },
     "TorrentDisconnectTimeout": "Тайм-аут отключения торрента",
@@ -204,6 +204,8 @@
     "UseInfuseHint": "Добавить кнопку проигрывателя Infuse в список торрент-контента",
     "UseVLC": "Предлагать открыть видео в VLC",
     "UseVLCHint": "Добавить кнопку проигрывателя VLC в список торрент-контента",
+    "UseIINA": "Предлагать открыть видео в IINA",
+    "UseIINAHint": "Добавить кнопку проигрывателя IINA в список торрент-контента (только macOS)",
     "ViewedHistoryStorage": "Хранилище истории просмотров:",
     "ViewedStorageHint": "Выберите, где хранить историю просмотренного."
   },
@@ -239,6 +241,13 @@
     "SearchMoviesShows": "Поиск торрентов фильмов и сериалов…",
     "SearchTorrents": "Поиск торрентов",
     "SearchTorznab": "Поиск через Torznab",
+    "SortAscending": "По возрастанию",
+    "SortBy": "Сортировать по",
+    "SortByNone": "Без сортировки",
+    "SortByPeers": "Пиры",
+    "SortBySeeds": "Сиды",
+    "SortBySize": "Размер",
+    "SortDescending": "По убыванию",
     "Test": "Тест",
     "TorrentAddedSuccessfully": "Торрент успешно добавлен",
     "TorznabHostURL": "URL хоста Torznab"

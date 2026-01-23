@@ -1,6 +1,6 @@
 import { streamHost } from 'utils/Hosts'
 import isEqual from 'lodash/isEqual'
-import { humanizeSize, detectStandaloneApp } from 'utils/Utils'
+import { humanizeSize, detectStandaloneApp, isMacOS, isAppleDevice } from 'utils/Utils'
 import ptt from 'parse-torrent-title'
 import { Button } from '@material-ui/core'
 import CopyToClipboard from 'react-copy-to-clipboard'
@@ -32,8 +32,11 @@ const Table = memo(
 
     const isVlcUsed = JSON.parse(localStorage.getItem('isVlcUsed')) ?? false
     const isInfuseUsed = JSON.parse(localStorage.getItem('isInfuseUsed')) ?? false
+    const isIinaUsed = JSON.parse(localStorage.getItem('isIinaUsed')) ?? false
     const isStandalone = detectStandaloneApp()
-    const shouldShowOpenLink = !isStandalone || (!isInfuseUsed && !isVlcUsed)
+    const isMac = isMacOS()
+    const isApple = isAppleDevice()
+    const shouldShowOpenLink = !isStandalone || (!(isApple && isInfuseUsed) && !isVlcUsed && !(isMac && isIinaUsed))
 
     return !playableFileList?.length ? (
       'No playable files in this torrent'
@@ -59,6 +62,7 @@ const Table = memo(
               const link = getFileLink(path, id)
               const fullLink = new URL(link, window.location.href)
               const infuseLink = `infuse://x-callback-url/play?url=${encodeURIComponent(fullLink)}`
+              const iinaLink = `iina://weblink?url=${encodeURIComponent(fullLink)}`
 
               return (
                 (season === selectedSeason || !seasonAmount?.length) && (
@@ -74,17 +78,24 @@ const Table = memo(
                         <Button onClick={() => preloadBuffer(id)} variant='outlined' color='primary' size='small'>
                           {t('Preload')}
                         </Button>
-                        {isStandalone && isInfuseUsed && (
+                        {isApple && isInfuseUsed && (
                           <a style={{ textDecoration: 'none' }} href={infuseLink}>
                             <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
                               {t('Infuse')}
                             </Button>
                           </a>
                         )}
-                        {isStandalone && isVlcUsed && (
+                        {isVlcUsed && (
                           <a style={{ textDecoration: 'none' }} href={`vlc://${fullLink}`}>
                             <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
                               VLC
+                            </Button>
+                          </a>
+                        )}
+                        {isMac && isIinaUsed && (
+                          <a style={{ textDecoration: 'none' }} href={iinaLink}>
+                            <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
+                              IINA
                             </Button>
                           </a>
                         )}
@@ -127,6 +138,7 @@ const Table = memo(
             const link = getFileLink(path, id)
             const fullLink = new URL(link, window.location.href)
             const infuseLink = `infuse://x-callback-url/play?url=${encodeURIComponent(fullLink)}`
+            const iinaLink = `iina://weblink?url=${encodeURIComponent(fullLink)}`
 
             return (
               (season === selectedSeason || !seasonAmount?.length) && (
@@ -169,7 +181,7 @@ const Table = memo(
                       {t('Preload')}
                     </Button>
 
-                    {isStandalone && isInfuseUsed && (
+                    {isApple && isInfuseUsed && (
                       <a style={{ textDecoration: 'none' }} href={infuseLink}>
                         <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
                           {t('Infuse')}
@@ -177,10 +189,18 @@ const Table = memo(
                       </a>
                     )}
 
-                    {isStandalone && isVlcUsed && (
+                    {isVlcUsed && (
                       <a style={{ textDecoration: 'none' }} href={`vlc://${fullLink}`}>
                         <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
                           VLC
+                        </Button>
+                      </a>
+                    )}
+
+                    {isMac && isIinaUsed && (
+                      <a style={{ textDecoration: 'none' }} href={iinaLink}>
+                        <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
+                          IINA
                         </Button>
                       </a>
                     )}

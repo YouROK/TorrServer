@@ -112,7 +112,7 @@
   "RemoveAll": "全部删除",
   "RemoveViews": "移除视图状态",
   "Resolution": "分辨率",
-  "Rutor":"RuTor",
+  "Rutor": "RuTor",
   "Save": "保存",
   "ScrollDown": "向下滚动",
   "Search": "搜索",
@@ -191,7 +191,7 @@
     "Tabs": {
       "Additional": "附加",
       "AdditionalDisabled": "（启用专业模式）",
-      "App": "App",
+      "App": "播放器",
       "Main": "主要"
     },
     "TorrentDisconnectTimeout": "种子断开超时",
@@ -204,6 +204,8 @@
     "UseInfuseHint": "将 Infuse 播放器按钮添加到种子内容列表",
     "UseVLC": "提示在VLC中打开视频",
     "UseVLCHint": "将VLC播放器按钮添加到种子内容列表",
+    "UseIINA": "提示在 IINA 中打开视频",
+    "UseIINAHint": "将 IINA 播放器按钮添加到种子内容列表（仅 macOS）",
     "ViewedHistoryStorage": "查看历史存储：",
     "ViewedStorageHint": "存储查看历史记录的位置"
   },
@@ -239,6 +241,13 @@
     "SearchMoviesShows": "搜索电影、剧集...",
     "SearchTorrents": "搜索种子",
     "SearchTorznab": "Torznab搜索",
+    "SortAscending": "升序排序",
+    "SortBy": "排序方式",
+    "SortByNone": "无",
+    "SortByPeers": "对等节点",
+    "SortBySeeds": "种子",
+    "SortBySize": "大小",
+    "SortDescending": "降序排序",
     "Test": "测试",
     "TorrentAddedSuccessfully": "种子添加成功",
     "TorznabHostURL": "Torznab主机URL"

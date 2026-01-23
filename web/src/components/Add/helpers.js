@@ -36,7 +36,7 @@ export const checkTorrentSource = source =>
   source.match(hashRegex) !== null ||
   source.match(magnetRegex) !== null ||
   source.match(torrentRegex) !== null ||
-  source.match(linkRegex) !== null||
+  source.match(linkRegex) !== null ||
   source.match(torrsRegex) !== null
 
 export const parseTorrentTitle = (parsingSource, callback) => {

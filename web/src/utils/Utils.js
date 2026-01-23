@@ -87,3 +87,73 @@ export const detectStandaloneApp = () => {
 }
 
 export const isStandaloneApp = detectStandaloneApp()
+
+const detectApplePlatform = () => {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return { isMac: false, isIOS: false }
+  }
+
+  const userAgent = navigator.userAgent || ''
+  const platform = navigator.userAgentData?.platform || ''
+
+  const isMac = userAgent.includes('Macintosh') || (platform && platform.toLowerCase().includes('mac'))
+
+  const isIOS = /iPad|iPhone|iPod/.test(userAgent) || (userAgent.includes('Macintosh') && navigator.maxTouchPoints > 1)
+
+  return { isMac, isIOS }
+}
+
+export const isAppleDevice = () => {
+  const { isMac, isIOS } = detectApplePlatform()
+  return isMac || isIOS
+}
+
+export const isMacOS = () => {
+  const { isMac, isIOS } = detectApplePlatform()
+  return isMac && !isIOS
+}
+
+/**
+ * Formats bytes to classic size units (B, KB, MB, GB, TB)
+ * Uses binary (1024) base for conversion
+ */
+export function formatSizeToClassicUnits(bytes) {
+  if (!bytes || bytes === 0) return '0 B'
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  const i = Math.floor(Math.log(bytes) / Math.log(1024))
+  const value = bytes / Math.pow(1024, i)
+  return `${value.toFixed(i === 0 ? 0 : 2)} ${sizes[i]}`
+}
+
+/**
+ * Parses a human-readable size string (e.g., "1.5 GiB", "500 MiB", "1.5 GCiB") to bytes
+ * Supports both binary (KiB, MiB, GiB, TiB) and decimal (KB, MB, GB, TB) units
+ * Also handles the server format which may include "CiB" suffix (e.g., "GCiB")
+ */
+export function parseSizeToBytes(sizeStr) {
+  if (!sizeStr || typeof sizeStr !== 'string') return 0
+
+  // Handle plain bytes format (e.g., "1024 B")
+  if (sizeStr.trim().match(/^\d+\s*B$/i)) {
+    return parseInt(sizeStr.trim().match(/^\d+/)[0], 10)
+  }
+
+  // Match number and unit - handle both "GiB" and "GCiB" formats
+  // Pattern matches: "1.5 GiB", "1.5 GCiB", "500 MiB", "500 MCiB", etc.
+  const match = sizeStr.trim().match(/^([\d.]+)\s*([KMGT]?)(i?B|CiB)$/i)
+  if (!match) return 0
+
+  const value = parseFloat(match[1])
+  const unit = match[2].toUpperCase()
+  const suffix = match[3].toUpperCase()
+
+  if (isNaN(value)) return 0
+
+  // Check if it's binary (iB or CiB suffix) or decimal (just B)
+  const isBinary = suffix.includes('I') || suffix.includes('C')
+  const base = isBinary ? 1024 : 1000
+  const multipliers = { '': 1, K: 1, M: 2, G: 3, T: 4 }
+  const multiplier = multipliers[unit] || 1
+
+  return Math.round(value * Math.pow(base, multiplier))
+}

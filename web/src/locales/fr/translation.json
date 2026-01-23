@@ -112,6 +112,7 @@
   "RemoveAll": "Tout supprimer",
   "RemoveViews": "Supprimer les états de visualisation",
   "Resolution": "Résolution",
+  "Rutor": "RuTor",
   "Save": "Enregistrer",
   "ScrollDown": "défiler vers le bas",
   "Search": "Rechercher",
@@ -190,7 +191,7 @@
     "Tabs": {
       "Additional": "Supplémentaire",
       "AdditionalDisabled": "(activer le mode PRO)",
-      "App": "Application",
+      "App": "Lecteurs",
       "Main": "Principal"
     },
     "TorrentDisconnectTimeout": "Délai de déconnexion du torrent",
@@ -203,6 +204,8 @@
     "UseInfuseHint": "Ajouter un bouton de lecteur Infuse à la liste de contenu du torrent",
     "UseVLC": "Demander d'ouvrir la vidéo dans VLC",
     "UseVLCHint": "Ajouter un bouton de lecteur VLC à la liste de contenu du torrent",
+    "UseIINA": "Demander d'ouvrir la vidéo dans IINA",
+    "UseIINAHint": "Ajouter un bouton de lecteur IINA à la liste de contenu du torrent (macOS uniquement)",
     "ViewedHistoryStorage": "Stockage de l'historique des vues :",
     "ViewedStorageHint": "Choisissez où stocker l'historique des vues"
   },
@@ -238,6 +241,13 @@
     "SearchMoviesShows": "Rechercher des films, séries...",
     "SearchTorrents": "Rechercher des torrents",
     "SearchTorznab": "Recherche Torznab",
+    "SortAscending": "Trier par ordre croissant",
+    "SortBy": "Trier par",
+    "SortByNone": "Aucun",
+    "SortByPeers": "Pairs",
+    "SortBySeeds": "Semences",
+    "SortBySize": "Taille",
+    "SortDescending": "Trier par ordre décroissant",
     "Test": "Tester",
     "TorrentAddedSuccessfully": "Torrent ajouté avec succès",
     "TorznabHostURL": "URL de l'hôte Torznab"
@@ -247,6 +257,5 @@
   "Uncategorized": "Non catégorisé",
   "UploadFile": "Téléverser un fichier",
   "UploadSpeed": "Vitesse de téléversement",
-  "Viewed": "Vu",
-  "Rutor": "RuTor"
+  "Viewed": "Vu"
 }
