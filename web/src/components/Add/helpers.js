@@ -22,8 +22,6 @@ const getTMDBSettings = async () => {
     tmdbSettingsCache = data
     return data
   } catch (error) {
-    console.error('Error fetching TMDB settings:', error)
-    // Return default values if API fails
     return {
       APIKey: process.env.REACT_APP_TMDB_API_KEY || '',
       APIURL: 'https://api.themoviedb.org/3',
