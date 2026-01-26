@@ -70,6 +70,15 @@ func stream(c *gin.Context) {
 
 	notAuth := c.GetBool("auth_required") && c.GetString(gin.AuthUserKey) == ""
 
+	if notAuth {
+		err := utils.TestLink(link, !notAuth)
+		if err != nil {
+			log.TLogln("Wrong link:", err)
+			c.AbortWithError(http.StatusBadRequest, errors.New("wrong link"))
+			return
+		}
+	}
+
 	if notAuth && (play || m3u) {
 		streamNoAuth(c)
 		return
