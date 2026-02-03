@@ -111,7 +111,6 @@ func (bt *BTServer) configure(ctx context.Context) {
 	bt.config.ExtendedHandshakeClientVersion = cliVers
 	bt.config.EstablishedConnsPerTorrent = settings.BTsets.ConnectionsLimit
 	bt.config.TotalHalfOpenConns = 500
-	bt.config.Seed = true
 	// Encryption/Obfuscation
 	bt.config.EncryptionPolicy = torrent.EncryptionPolicy{ //	OE
 		ForceEncryption: settings.BTsets.ForceEncrypt, //	OE
@@ -124,6 +123,7 @@ func (bt *BTServer) configure(ctx context.Context) {
 		bt.config.DownloadRateLimiter = utils.Limit(settings.BTsets.DownloadRateLimit * 1024)
 	}
 	if settings.BTsets.UploadRateLimit > 0 {
+		bt.config.Seed = true
 		bt.config.UploadRateLimiter = utils.Limit(settings.BTsets.UploadRateLimit * 1024)
 	}
 	if settings.TorAddr != "" {
