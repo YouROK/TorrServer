@@ -55,7 +55,7 @@
     "@babel/plugin-transform-react-jsx": "^7.22.15",
     "babel-minify": "^0.5.1",
     "babel-preset-minify": "^0.5.1",
-    "eslint": "^7.27.0",
+    "eslint": "^9.26.0",
     "eslint-config-airbnb": "^18.2.1",
     "eslint-config-prettier": "^8.10.0",
     "eslint-plugin-prettier": "^3.4.0",
