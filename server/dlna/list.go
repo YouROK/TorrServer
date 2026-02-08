@@ -35,6 +35,159 @@ func getRoot() (ret []interface{}) {
 	cnt := upnpav.Container{Object: tObj, ChildCount: vol}
 	ret = append(ret, cnt)
 
+	// Local files Object (ROOT)
+	if settings.BTsets != nil && settings.BTsets.EnableDLNALocal {
+		fsObj := upnpav.Object{
+			ID:         "%2FFS",
+			ParentID:   "0",
+			Restricted: 1,
+			Title:      "Local files",
+			Class:      "object.container.storageFolder",
+			Date:       upnpav.Timestamp{Time: time.Now()},
+		}
+		// ChildCount not required; avoid scanning filesystem here.
+		fsCnt := upnpav.Container{Object: fsObj, ChildCount: 0}
+		ret = append(ret, fsCnt)
+	}
+
+	return
+}
+
+func normalizeCategory(c string) string {
+	c = strings.TrimSpace(strings.ToLower(c))
+	if c == "" {
+		return "uncategorized"
+	}
+	return c
+}
+
+func categoryTitle(c string) string {
+	switch c {
+	case "movie":
+		return "Movies"
+	case "tv":
+		return "TV Shows"
+	case "music":
+		return "Music"
+	case "other":
+		return "Other"
+	case "uncategorized":
+		return "Uncategorized"
+	default:
+		return c
+	}
+}
+
+func getTorrentCategories() (ret []interface{}) {
+	torrs := torr.ListTorrent()
+
+	catCounts := make(map[string]int)
+	for _, t := range torrs {
+		cat := normalizeCategory(t.Category)
+		catCounts[cat]++
+	}
+
+	known := []string{"movie", "tv", "music", "other", "uncategorized"}
+	seen := make(map[string]struct{})
+	order := make([]string, 0, len(catCounts))
+
+	for _, k := range known {
+		if _, ok := catCounts[k]; ok {
+			order = append(order, k)
+			seen[k] = struct{}{}
+		}
+	}
+
+	var rest []string
+	for c := range catCounts {
+		if _, ok := seen[c]; ok {
+			continue
+		}
+		rest = append(rest, c)
+	}
+	sort.Strings(rest)
+	order = append(order, rest...)
+
+	if len(order) == 0 {
+		obj := upnpav.Object{
+			ID:         "%2FNT",
+			ParentID:   "%2FTR",
+			Restricted: 1,
+			Title:      "No Torrents",
+			Class:      "object.container.storageFolder",
+			Date:       upnpav.Timestamp{Time: time.Now()},
+		}
+		cnt := upnpav.Container{Object: obj, ChildCount: 0}
+		ret = append(ret, cnt)
+		return
+	}
+
+	for _, cat := range order {
+		title := categoryTitle(cat)
+		id := url.PathEscape("/TR/" + cat)
+
+		obj := upnpav.Object{
+			ID:         id,
+			ParentID:   "%2FTR",
+			Restricted: 1,
+			Title:      title,
+			Class:      "object.container.storageFolder",
+			Date:       upnpav.Timestamp{Time: time.Now()},
+		}
+		cnt := upnpav.Container{Object: obj, ChildCount: catCounts[cat]}
+		ret = append(ret, cnt)
+	}
+
+	return
+}
+
+func getTorrentsByCategory(path string) (ret []interface{}) {
+	cat := strings.TrimPrefix(path, "/TR/")
+	cat, _ = url.PathUnescape(cat)
+	cat = normalizeCategory(cat)
+
+	parentID := url.PathEscape("/TR/" + cat)
+
+	torrs := torr.ListTorrent()
+	filtered := make([]*torr.Torrent, 0, len(torrs))
+	for _, t := range torrs {
+		if normalizeCategory(t.Category) == cat {
+			filtered = append(filtered, t)
+		}
+	}
+
+	sort.Slice(filtered, func(i, j int) bool {
+		return filtered[i].Title < filtered[j].Title
+	})
+
+	if len(filtered) == 0 {
+		obj := upnpav.Object{
+			ID:         "%2FNT",
+			ParentID:   parentID,
+			Restricted: 1,
+			Title:      "Empty",
+			Class:      "object.container.storageFolder",
+			Date:       upnpav.Timestamp{Time: time.Now()},
+		}
+		cnt := upnpav.Container{Object: obj, ChildCount: 0}
+		ret = append(ret, cnt)
+		return
+	}
+
+	for _, t := range filtered {
+		obj := upnpav.Object{
+			ID:          "%2F" + t.TorrentSpec.InfoHash.HexString(),
+			ParentID:    parentID,
+			Restricted:  1,
+			Title:       strings.ReplaceAll(t.Title, "/", "|"),
+			Class:       "object.container.storageFolder",
+			Icon:        t.Poster,
+			AlbumArtURI: t.Poster,
+			Date:        upnpav.Timestamp{Time: time.Unix(t.Timestamp, 0)},
+		}
+		cnt := upnpav.Container{Object: obj, ChildCount: 1}
+		ret = append(ret, cnt)
+	}
 	return
 }
 
@@ -140,6 +293,29 @@ func getTorrentMeta(path, host string) (ret interface{}) {
 		torrs := torr.ListTorrent()
 		vol := len(torrs)
 		meta := upnpav.Container{Object: trObj, ChildCount: vol}
+		return meta
+	} else if strings.HasPrefix(path, "/TR/") {
+		cat := strings.TrimPrefix(path, "/TR/")
+		cat, _ = url.PathUnescape(cat)
+		cat = normalizeCategory(cat)
+
+		vol := 0
+		for _, t := range torr.ListTorrent() {
+			if normalizeCategory(t.Category) == cat {
+				vol++
+			}
+		}
+
+		obj := upnpav.Object{
+			ID:         url.PathEscape(path),
+			ParentID:   "%2FTR",
+			Restricted: 1,
+			Searchable: 1,
+			Title:      categoryTitle(cat),
+			Date:       upnpav.Timestamp{Time: time.Now()},
+			Class:      "object.container.storageFolder",
+		}
+		meta := upnpav.Container{Object: obj, ChildCount: vol}
 		return meta
 	} else if isHashPath(path) {
 		// find torrent without load
