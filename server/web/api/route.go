@@ -35,6 +35,9 @@ func SetupRoute(route gin.IRouter) {
 	route.HEAD("/play/:hash/:id", play)
 	route.GET("/play/:hash/:id", play)
 
+	route.HEAD("/dlna/fs/*path", dlnaFS)
+	route.GET("/dlna/fs/*path", dlnaFS)
+
 	authorized.POST("/viewed", viewed)
 
 	authorized.GET("/playlistall/all.m3u", allPlayList)
