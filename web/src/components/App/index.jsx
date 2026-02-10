@@ -70,7 +70,7 @@ export default function App() {
           <StyledComponentsThemeProvider
             theme={getStyledComponentsTheme(isDarkMode ? THEME_MODES.DARK : THEME_MODES.LIGHT)}
           >
-            <CssBaseline />
+            <CssBaseline /> 
 
             {/* Div100vh - iOS WebKit fix  */}
             <Div100vh>

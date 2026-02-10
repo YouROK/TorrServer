@@ -14,6 +14,6 @@ export const applicationMount = (id = 'root') => {
         <App />
       </QueryClientProvider>
     </StrictMode>,
-    document.getElementById(id),
+    typeof id === 'string' ? document.getElementById(id): id,
   )
 }
