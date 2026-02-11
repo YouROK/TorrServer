@@ -1,4 +1,4 @@
-import { FormControlLabel, FormGroup, FormHelperText, Switch } from '@material-ui/core'
+import { FormControlLabel, FormGroup, FormHelperText, Switch, FormControl, InputLabel, Select, MenuItem } from '@material-ui/core'
 import { isMacOS, isAppleDevice } from 'utils/Utils'
 import { useTranslation } from 'react-i18next'
 
@@ -11,6 +11,10 @@ export default function MobileAppSettings({
   setIsInfuseUsed,
   isIinaUsed,
   setIsIinaUsed,
+  isPlayerUsed,
+  setIsPlayerUsed,
+  preferredPlayer,
+  setPreferredPlayer,
 }) {
   const { t } = useTranslation()
   const isMac = isMacOS()
@@ -21,11 +25,28 @@ export default function MobileAppSettings({
       <SettingSectionLabel>{t('SettingsDialog.MobileAppSettings')}</SettingSectionLabel>
       <FormGroup>
         <FormControlLabel
-          control={<Switch checked={isVlcUsed} onChange={() => setIsVlcUsed(prev => !prev)} color='secondary' />}
+          control={<Switch checked={isPlayerUsed} onChange={() => setIsPlayerUsed(prev => !prev)} color='secondary' />}
           label={t('SettingsDialog.UseVLC')}
           labelPlacement='start'
         />
         <FormHelperText margin='none'>{t('SettingsDialog.UseVLCHint')}</FormHelperText>
+
+        <FormGroup style={{ marginBottom: '20px', marginTop: 8 }}>
+          <InputLabel htmlFor='PreferredPlayer'>{t('SettingsDialog.PreferredPlayer')}</InputLabel>
+          <Select
+            native
+            id='PreferredPlayer'
+            value={preferredPlayer}
+            onChange={e => setPreferredPlayer(e.target.value)}
+            variant='outlined'
+            margin='dense'
+            disabled={!isPlayerUsed}
+          >
+            <option value='vlc'>VLC</option>
+            <option value='potplayer'>PotPlayer</option>
+          </Select>
+          <FormHelperText style={{ marginTop: '8px' }}>{t('SettingsDialog.PreferredPlayerHint')}</FormHelperText>
+        </FormGroup>
         {isApple && (
           <>
             <FormControlLabel
