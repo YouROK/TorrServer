@@ -21,6 +21,14 @@ const Table = memo(
     const { t } = useTranslation()
     const [isSupported, setIsSupported] = useState(true)
     const playerPref = localStorage.getItem('preferredPlayer') ?? 'vlc'
+    const getPlayerProtocol = pref => {
+      const map = {
+        vlc: 'vlc://',
+        potplayer: 'potplayer://',
+      }
+      if (!pref) return 'vlc://'
+      return map[pref] || `${pref}://`
+    }
     const isPlayerUsed = JSON.parse(localStorage.getItem('isPlayerUsed')) ?? JSON.parse(localStorage.getItem('isVlcUsed')) ?? false
     const preloadBuffer = fileId => fetch(`${streamHost()}?link=${hash}&index=${fileId}&preload`)
     const getFileLink = (path, id) =>
@@ -94,7 +102,7 @@ const Table = memo(
                             color='primary'
                             size='small'
                             onClick={() => {
-                              const protocol = playerPref === 'potplayer' ? 'potplayer://' : 'vlc://'
+                              const protocol = getPlayerProtocol(playerPref)
                               window.location.href = `${protocol}${fullLink}`
                             }}
                           >
@@ -205,7 +213,7 @@ const Table = memo(
                         color='primary'
                         size='small'
                         onClick={() => {
-                          const protocol = playerPref === 'potplayer' ? 'potplayer://' : 'vlc://'
+                          const protocol = getPlayerProtocol(playerPref)
                           window.location.href = `${protocol}${fullLink}`
                         }}
                       >
