@@ -206,15 +206,57 @@ docker run --rm -d --name torrserver -v ~/ts:/opt/ts -p 8090:8090 ghcr.io/yourok
 
 #### Environments
 
-- `TS_HTTPAUTH` - 1, and place auth file into `~/ts/config` folder for enabling basic auth
-- `TS_RDB` - if 1, then the enabling `--rdb` flag
-- `TS_DONTKILL` - if 1, then the enabling `--dontkill` flag
-- `TS_PORT` - for changind default port to **5555** (example), also u need to change `-p 8090:8090` to `-p 5555:5555` (example)
-- `TS_CONF_PATH` - for overriding torrserver config path inside container. Example `/opt/tsss`
-- `TS_TORR_DIR` - for overriding torrents directory. Example `/opt/torr_files`
-- `TS_LOG_PATH` - for overriding log path. Example `/opt/torrserver.log`
-- `TS_PROXYURL` - set proxy URL for BitTorrent traffic (http, socks4, socks5, socks5h), example: socks5h://user:password@example.com:2080
-- `TS_PROXYMODE` - set proxy mode: "tracker" (only HTTP trackers, default), "peers" (only peer connections), or "full" (all traffic)
+| Variable | Type | Default | Description |
+|---|---:|---|---|
+| `TS_HTTPAUTH` | bool/int | `0` | Enable basic HTTP auth (set `1` to enable) |
+| `TS_RDB` | bool/int | `0` | Read-only DB mode (set `1` to enable) |
+| `TS_DONTKILL` | bool/int | `0` | Do not kill server on signals (set `1` to enable) |
+| `TS_PORT` | int | `8090` | Web server port |
+| `TS_CONF_PATH` | string | `/opt/ts` | Path to config directory inside container |
+| `TS_TORR_DIR` | string | `/opt/ts/torrents` | Path to torrents directory inside container |
+| `TS_LOG_PATH` | string | `/opt/ts/torrserver.log` | Path to server log file inside container |
+| `TS_PROXYURL` | string | `` | Proxy URL for BitTorrent traffic (http, socks4, socks5, socks5h) |
+| `TS_PROXYMODE` | string | `tracker` | Proxy mode: `tracker`, `peers`, or `full` |
+| `TS_TG` | string | `` | Telegram bot token (same as `--tg`) |
+| `TS_BTSETS_CACHESIZE` | int (bytes) | `67108864` | Cache size in bytes (default 64MB) |
+| `TS_BTSETS_READER_READ_AHEAD` | int (%) | `95` | Reader read-ahead percent (5-100) |
+| `TS_BTSETS_PRELOAD_CACHE` | int (%) | `50` | Preload cache percent (0-100) |
+| `TS_BTSETS_USE_DISK` | bool | `false` | Enable disk-backed cache |
+| `TS_BTSETS_TORRENTS_SAVE_PATH` | string | `` | Path to torrents/cache directory inside container |
+| `TS_BTSETS_REMOVE_CACHE_ON_DROP` | bool | `false` | Remove cached files when torrent dropped |
+| `TS_BTSETS_FORCE_ENCRYPT` | bool | `false` | Force encryption for BitTorrent connections |
+| `TS_BTSETS_RETRACKERS_MODE` | int | `1` | Retrackers handling: `0`-don't add, `1`-add, `2`-remove, `3`-replace |
+| `TS_BTSETS_TORRENT_DISCONNECT_TIMEOUT` | int (s) | `30` | Torrent disconnect timeout in seconds |
+| `TS_BTSETS_ENABLE_DEBUG` | bool | `false` | Enable debug logging |
+| `TS_BTSETS_ENABLE_DLNA` | bool | `false` | Enable built-in DLNA server |
+| `TS_BTSETS_FRIENDLY_NAME` | string | `` | DLNA friendly name |
+| `TS_BTSETS_ENABLE_RUTOR_SEARCH` | bool | `false` | Enable Rutor search integration |
+| `TS_BTSETS_ENABLE_TORZNAB_SEARCH` | bool | `false` | Enable Torznab search integration |
+| `TS_BTSETS_TORZNAB_URLS` | json or string | `[]` | Torznab endpoints (JSON array or `host|key|name;...`) |
+| `TS_BTSETS_TMDB_APIKEY` | string | `` | TMDB API key |
+| `TS_BTSETS_TMDB_APIURL` | string | `https://api.themoviedb.org` | TMDB API base URL |
+| `TS_BTSETS_TMDB_IMAGEURL` | string | `https://image.tmdb.org` | TMDB image base URL |
+| `TS_BTSETS_TMDB_IMAGEURL_RU` | string | `https://imagetmdb.com` | TMDB image URL for RU users |
+| `TS_BTSETS_ENABLE_IPV6` | bool | `false` | Enable IPv6 support for BT connections |
+| `TS_BTSETS_DISABLE_TCP` | bool | `false` | Disable TCP transports |
+| `TS_BTSETS_DISABLE_UTP` | bool | `false` | Disable uTP transports |
+| `TS_BTSETS_DISABLE_UPNP` | bool | `false` | Disable UPnP |
+| `TS_BTSETS_DISABLE_DHT` | bool | `false` | Disable DHT |
+| `TS_BTSETS_DISABLE_PEX` | bool | `false` | Disable PEX |
+| `TS_BTSETS_DISABLE_UPLOAD` | bool | `false` | Disable uploading to peers |
+| `TS_BTSETS_DOWNLOAD_RATE_LIMIT` | int (kb) | `0` | Download rate limit in KB/s (0 = unlimited) |
+| `TS_BTSETS_UPLOAD_RATE_LIMIT` | int (kb) | `0` | Upload rate limit in KB/s (0 = unlimited) |
+| `TS_BTSETS_CONNECTIONS_LIMIT` | int | `25` | Max simultaneous connections |
+| `TS_BTSETS_PEERS_LISTEN_PORT` | int | `` | Listening port for peers (if set) |
+| `TS_BTSETS_SSL_PORT` | int | `0` | HTTPS port (if 0, not set) |
+| `TS_BTSETS_SSL_CERT` | string | `` | Path to SSL certificate inside container |
+| `TS_BTSETS_SSL_KEY` | string | `` | Path to SSL key inside container |
+| `TS_BTSETS_RESPONSIVE_MODE` | bool | `true` | Enable responsive reader mode |
+| `TS_BTSETS_SHOW_FS_ACTIVE_TORR` | bool | `true` | Show FS active torrents in UI |
+| `TS_BTSETS_STORE_SETTINGS_IN_JSON` | bool | `true` | Store settings in JSON format |
+| `TS_BTSETS_STORE_VIEWED_IN_JSON` | bool | `true` | Store viewed list in JSON format |
+
+Use these variables in your `docker run` or `docker-compose.yml` under `environment:` (they take precedence over stored DB settings).
 
 Example with full overrided command (on default values):
 
@@ -248,6 +290,50 @@ services:
         
 
 ```
+
+      #### Docker Compose: environment variables reference
+
+      | Variable | Type | Default | Description |
+      |---|---:|---|---|
+      | `TS_BTSETS_CACHESIZE` | int (bytes) | `67108864` | Cache size in bytes (default 64MB) |
+      | `TS_BTSETS_READER_READ_AHEAD` | int (%) | `95` | Reader read-ahead percent (5-100) |
+      | `TS_BTSETS_PRELOAD_CACHE` | int (%) | `50` | Preload cache percent (0-100) |
+      | `TS_BTSETS_USE_DISK` | bool | `false` | Enable disk-backed cache |
+      | `TS_BTSETS_TORRENTS_SAVE_PATH` | string | `` | Path to torrents/cache directory inside container |
+      | `TS_BTSETS_REMOVE_CACHE_ON_DROP` | bool | `false` | Remove cached files when torrent dropped |
+      | `TS_BTSETS_FORCE_ENCRYPT` | bool | `false` | Force encryption for BitTorrent connections |
+      | `TS_BTSETS_RETRACKERS_MODE` | int | `1` | Retrackers handling: `0`-don't add, `1`-add, `2`-remove, `3`-replace |
+      | `TS_BTSETS_TORRENT_DISCONNECT_TIMEOUT` | int (s) | `30` | Torrent disconnect timeout in seconds |
+      | `TS_BTSETS_ENABLE_DEBUG` | bool | `false` | Enable debug logging |
+      | `TS_BTSETS_ENABLE_DLNA` | bool | `false` | Enable built-in DLNA server |
+      | `TS_BTSETS_FRIENDLY_NAME` | string | `` | DLNA friendly name |
+      | `TS_BTSETS_ENABLE_RUTOR_SEARCH` | bool | `false` | Enable Rutor search integration |
+      | `TS_BTSETS_ENABLE_TORZNAB_SEARCH` | bool | `false` | Enable Torznab search integration |
+      | `TS_BTSETS_TORZNAB_URLS` | json or string | `[]` | Torznab endpoints (JSON array or `host|key|name;...`) |
+      | `TS_BTSETS_TMDB_APIKEY` | string | `` | TMDB API key |
+      | `TS_BTSETS_TMDB_APIURL` | string | `https://api.themoviedb.org` | TMDB API base URL |
+      | `TS_BTSETS_TMDB_IMAGEURL` | string | `https://image.tmdb.org` | TMDB image base URL |
+      | `TS_BTSETS_TMDB_IMAGEURL_RU` | string | `https://imagetmdb.com` | TMDB image URL for RU users |
+      | `TS_BTSETS_ENABLE_IPV6` | bool | `false` | Enable IPv6 support for BT connections |
+      | `TS_BTSETS_DISABLE_TCP` | bool | `false` | Disable TCP transports |
+      | `TS_BTSETS_DISABLE_UTP` | bool | `false` | Disable uTP transports |
+      | `TS_BTSETS_DISABLE_UPNP` | bool | `false` | Disable UPnP |
+      | `TS_BTSETS_DISABLE_DHT` | bool | `false` | Disable DHT |
+      | `TS_BTSETS_DISABLE_PEX` | bool | `false` | Disable PEX |
+      | `TS_BTSETS_DISABLE_UPLOAD` | bool | `false` | Disable uploading to peers |
+      | `TS_BTSETS_DOWNLOAD_RATE_LIMIT` | int (kb) | `0` | Download rate limit in KB/s (0 = unlimited) |
+      | `TS_BTSETS_UPLOAD_RATE_LIMIT` | int (kb) | `0` | Upload rate limit in KB/s (0 = unlimited) |
+      | `TS_BTSETS_CONNECTIONS_LIMIT` | int | `25` | Max simultaneous connections |
+      | `TS_BTSETS_PEERS_LISTEN_PORT` | int | `` | Listening port for peers (if set) |
+      | `TS_BTSETS_SSL_PORT` | int | `0` | HTTPS port (if 0, not set) |
+      | `TS_BTSETS_SSL_CERT` | string | `` | Path to SSL certificate inside container |
+      | `TS_BTSETS_SSL_KEY` | string | `` | Path to SSL key inside container |
+      | `TS_BTSETS_RESPONSIVE_MODE` | bool | `true` | Enable responsive reader mode |
+      | `TS_BTSETS_SHOW_FS_ACTIVE_TORR` | bool | `true` | Show FS active torrents in UI |
+      | `TS_BTSETS_STORE_SETTINGS_IN_JSON` | bool | `true` | Store settings in JSON format |
+      | `TS_BTSETS_STORE_VIEWED_IN_JSON` | bool | `true` | Store viewed list in JSON format |
+
+      Use these variables in your `docker-compose.yml` under `environment:` (they take precedence over stored DB settings).
 
 ### Smart TV (using Media Station X)
 

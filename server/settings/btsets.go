@@ -232,64 +232,60 @@ func applyEnvOverrides(sets *BTSets) {
 		return
 	}
 
-	if v := os.Getenv("TORRSERVER_CACHESIZE"); v != "" {
+	if v := os.Getenv("TS_BTSETS_CACHESIZE"); v != "" {
 		if i, err := strconv.ParseInt(v, 10, 64); err == nil {
 			sets.CacheSize = i
 		}
 	}
-	if v := os.Getenv("TORRSERVER_READER_READ_AHEAD"); v != "" {
+	if v := os.Getenv("TS_BTSETS_READER_READ_AHEAD"); v != "" {
 		if i, err := strconv.Atoi(v); err == nil {
 			sets.ReaderReadAHead = i
 		}
 	}
-	if v := os.Getenv("TORRSERVER_PRELOAD_CACHE"); v != "" {
+	if v := os.Getenv("TS_BTSETS_PRELOAD_CACHE"); v != "" {
 		if i, err := strconv.Atoi(v); err == nil {
 			sets.PreloadCache = i
 		}
 	}
 
-	if v, ok := parseBoolEnv(os.Getenv("TORRSERVER_USE_DISK")); ok {
+	if v, ok := parseBoolEnv(os.Getenv("TS_BTSETS_USE_DISK")); ok {
 		sets.UseDisk = v
 	}
-	if v := os.Getenv("TORRSERVER_TORRENTS_SAVE_PATH"); v != "" {
+	if v := os.Getenv("TS_BTSETS_TORRENTS_SAVE_PATH"); v != "" {
 		sets.TorrentsSavePath = v
 	}
-	if v, ok := parseBoolEnv(os.Getenv("TORRSERVER_REMOVE_CACHE_ON_DROP")); ok {
+	if v, ok := parseBoolEnv(os.Getenv("TS_BTSETS_REMOVE_CACHE_ON_DROP")); ok {
 		sets.RemoveCacheOnDrop = v
 	}
-
-	if v, ok := parseBoolEnv(os.Getenv("TORRSERVER_FORCE_ENCRYPT")); ok {
+	if v, ok := parseBoolEnv(os.Getenv("TS_BTSETS_FORCE_ENCRYPT")); ok {
 		sets.ForceEncrypt = v
 	}
-	if v := os.Getenv("TORRSERVER_RETRACKERS_MODE"); v != "" {
+	if v := os.Getenv("TS_BTSETS_RETRACKERS_MODE"); v != "" {
 		if i, err := strconv.Atoi(v); err == nil {
 			sets.RetrackersMode = i
 		}
 	}
-	if v := os.Getenv("TORRSERVER_TORRENT_DISCONNECT_TIMEOUT"); v != "" {
+	if v := os.Getenv("TS_BTSETS_TORRENT_DISCONNECT_TIMEOUT"); v != "" {
 		if i, err := strconv.Atoi(v); err == nil {
 			sets.TorrentDisconnectTimeout = i
 		}
 	}
-	if v, ok := parseBoolEnv(os.Getenv("TORRSERVER_ENABLE_DEBUG")); ok {
+	if v, ok := parseBoolEnv(os.Getenv("TS_BTSETS_ENABLE_DEBUG")); ok {
 		sets.EnableDebug = v
 	}
-
-	if v, ok := parseBoolEnv(os.Getenv("TORRSERVER_ENABLE_DLNA")); ok {
+	if v, ok := parseBoolEnv(os.Getenv("TS_BTSETS_ENABLE_DLNA")); ok {
 		sets.EnableDLNA = v
 	}
-	if v := os.Getenv("TORRSERVER_FRIENDLY_NAME"); v != "" {
+	if v := os.Getenv("TS_BTSETS_FRIENDLY_NAME"); v != "" {
 		sets.FriendlyName = v
 	}
-
-	if v, ok := parseBoolEnv(os.Getenv("TORRSERVER_ENABLE_RUTOR_SEARCH")); ok {
+	if v, ok := parseBoolEnv(os.Getenv("TS_BTSETS_ENABLE_RUTOR_SEARCH")); ok {
 		sets.EnableRutorSearch = v
 	}
-
-	if v, ok := parseBoolEnv(os.Getenv("TORRSERVER_ENABLE_TORZNAB_SEARCH")); ok {
+	if v, ok := parseBoolEnv(os.Getenv("TS_BTSETS_ENABLE_TORZNAB_SEARCH")); ok {
 		sets.EnableTorznabSearch = v
 	}
-	if v := os.Getenv("TORRSERVER_TORZNAB_URLS"); v != "" {
+	if v := os.Getenv("TS_BTSETS_TORZNAB_URLS"); v != "" {
 		// try JSON first
 		var urls []TorznabConfig
 		if err := json.Unmarshal([]byte(v), &urls); err == nil {
@@ -319,90 +315,85 @@ func applyEnvOverrides(sets *BTSets) {
 	}
 
 	// TMDB
-	if v := os.Getenv("TORRSERVER_TMDB_APIKEY"); v != "" {
+	if v := os.Getenv("TS_BTSETS_TMDB_APIKEY"); v != "" {
 		sets.TMDBSettings.APIKey = v
 	}
-	if v := os.Getenv("TORRSERVER_TMDB_APIURL"); v != "" {
+	if v := os.Getenv("TS_BTSETS_TMDB_APIURL"); v != "" {
 		sets.TMDBSettings.APIURL = v
 	}
-	if v := os.Getenv("TORRSERVER_TMDB_IMAGEURL"); v != "" {
+	if v := os.Getenv("TS_BTSETS_TMDB_IMAGEURL"); v != "" {
 		sets.TMDBSettings.ImageURL = v
 	}
-	if v := os.Getenv("TORRSERVER_TMDB_IMAGEURL_RU"); v != "" {
+	if v := os.Getenv("TS_BTSETS_TMDB_IMAGEURL_RU"); v != "" {
 		sets.TMDBSettings.ImageURLRu = v
 	}
-
 	// BT config
-	if v, ok := parseBoolEnv(os.Getenv("TORRSERVER_ENABLE_IPV6")); ok {
+	if v, ok := parseBoolEnv(os.Getenv("TS_BTSETS_ENABLE_IPV6")); ok {
 		sets.EnableIPv6 = v
 	}
-	if v, ok := parseBoolEnv(os.Getenv("TORRSERVER_DISABLE_TCP")); ok {
+	if v, ok := parseBoolEnv(os.Getenv("TS_BTSETS_DISABLE_TCP")); ok {
 		sets.DisableTCP = v
 	}
-	if v, ok := parseBoolEnv(os.Getenv("TORRSERVER_DISABLE_UTP")); ok {
+	if v, ok := parseBoolEnv(os.Getenv("TS_BTSETS_DISABLE_UTP")); ok {
 		sets.DisableUTP = v
 	}
-	if v, ok := parseBoolEnv(os.Getenv("TORRSERVER_DISABLE_UPNP")); ok {
+	if v, ok := parseBoolEnv(os.Getenv("TS_BTSETS_DISABLE_UPNP")); ok {
 		sets.DisableUPNP = v
 	}
-	if v, ok := parseBoolEnv(os.Getenv("TORRSERVER_DISABLE_DHT")); ok {
+	if v, ok := parseBoolEnv(os.Getenv("TS_BTSETS_DISABLE_DHT")); ok {
 		sets.DisableDHT = v
 	}
-	if v, ok := parseBoolEnv(os.Getenv("TORRSERVER_DISABLE_PEX")); ok {
+	if v, ok := parseBoolEnv(os.Getenv("TS_BTSETS_DISABLE_PEX")); ok {
 		sets.DisablePEX = v
 	}
-	if v, ok := parseBoolEnv(os.Getenv("TORRSERVER_DISABLE_UPLOAD")); ok {
+	if v, ok := parseBoolEnv(os.Getenv("TS_BTSETS_DISABLE_UPLOAD")); ok {
 		sets.DisableUpload = v
 	}
-	if v := os.Getenv("TORRSERVER_DOWNLOAD_RATE_LIMIT"); v != "" {
+	if v := os.Getenv("TS_BTSETS_DOWNLOAD_RATE_LIMIT"); v != "" {
 		if i, err := strconv.Atoi(v); err == nil {
 			sets.DownloadRateLimit = i
 		}
 	}
-	if v := os.Getenv("TORRSERVER_UPLOAD_RATE_LIMIT"); v != "" {
+	if v := os.Getenv("TS_BTSETS_UPLOAD_RATE_LIMIT"); v != "" {
 		if i, err := strconv.Atoi(v); err == nil {
 			sets.UploadRateLimit = i
 		}
 	}
-	if v := os.Getenv("TORRSERVER_CONNECTIONS_LIMIT"); v != "" {
+	if v := os.Getenv("TS_BTSETS_CONNECTIONS_LIMIT"); v != "" {
 		if i, err := strconv.Atoi(v); err == nil {
 			sets.ConnectionsLimit = i
 		}
 	}
-	if v := os.Getenv("TORRSERVER_PEERS_LISTEN_PORT"); v != "" {
+	if v := os.Getenv("TS_BTSETS_PEERS_LISTEN_PORT"); v != "" {
 		if i, err := strconv.Atoi(v); err == nil {
 			sets.PeersListenPort = i
 		}
 	}
-
 	// HTTPS
-	if v := os.Getenv("TORRSERVER_SSL_PORT"); v != "" {
+	if v := os.Getenv("TS_BTSETS_SSL_PORT"); v != "" {
 		if i, err := strconv.Atoi(v); err == nil {
 			sets.SslPort = i
 		}
 	}
-	if v := os.Getenv("TORRSERVER_SSL_CERT"); v != "" {
+	if v := os.Getenv("TS_BTSETS_SSL_CERT"); v != "" {
 		sets.SslCert = v
 	}
-	if v := os.Getenv("TORRSERVER_SSL_KEY"); v != "" {
+	if v := os.Getenv("TS_BTSETS_SSL_KEY"); v != "" {
 		sets.SslKey = v
 	}
-
 	// Reader
-	if v, ok := parseBoolEnv(os.Getenv("TORRSERVER_RESPONSIVE_MODE")); ok {
+	if v, ok := parseBoolEnv(os.Getenv("TS_BTSETS_RESPONSIVE_MODE")); ok {
 		sets.ResponsiveMode = v
 	}
-
 	// FS
-	if v, ok := parseBoolEnv(os.Getenv("TORRSERVER_SHOW_FS_ACTIVE_TORR")); ok {
+	if v, ok := parseBoolEnv(os.Getenv("TS_BTSETS_SHOW_FS_ACTIVE_TORR")); ok {
 		sets.ShowFSActiveTorr = v
 	}
-
 	// Storage preferences
-	if v, ok := parseBoolEnv(os.Getenv("TORRSERVER_STORE_SETTINGS_IN_JSON")); ok {
+	if v, ok := parseBoolEnv(os.Getenv("TS_BTSETS_STORE_SETTINGS_IN_JSON")); ok {
 		sets.StoreSettingsInJson = v
 	}
-	if v, ok := parseBoolEnv(os.Getenv("TORRSERVER_STORE_VIEWED_IN_JSON")); ok {
+	if v, ok := parseBoolEnv(os.Getenv("TS_BTSETS_STORE_VIEWED_IN_JSON")); ok {
 		sets.StoreViewedInJson = v
 	}
 }
