@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/agnivade/levenshtein"
@@ -23,6 +24,7 @@ import (
 )
 
 var (
+	mu     sync.RWMutex
 	torrs  []*models.TorrentDetails
 	isStop bool
 )
@@ -48,9 +50,11 @@ func Start() {
 }
 
 func Stop() {
+	mu.Lock()
 	isStop = true
 	torrs = nil
 	torrsearch.NewIndex(nil)
+	mu.Unlock()
 	utils2.FreeOSMemGC()
 	time.Sleep(time.Millisecond * 1500)
 }
@@ -133,6 +137,8 @@ func loadDB() {
 				ftorrs = append(ftorrs, torr)
 			}
 		}
+		mu.Lock()
+		defer mu.Unlock()
 		torrs = ftorrs
 		log.TLogln("Index rutor db")
 		torrsearch.NewIndex(torrs)
@@ -149,14 +155,17 @@ func Search(query string) []*models.TorrentDetails {
 	if !settings.BTsets.EnableRutorSearch {
 		return nil
 	}
+	mu.RLock()
 	matchedIDs := torrsearch.Search(query)
 	if len(matchedIDs) == 0 {
+		mu.RUnlock()
 		return nil
 	}
 	var list []*models.TorrentDetails
 	for _, id := range matchedIDs {
 		list = append(list, torrs[id])
 	}
+	mu.RUnlock()
 
 	hash := utils.ClearStr(query)
 
