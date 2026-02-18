@@ -45,6 +45,9 @@ type BTSets struct {
 	EnableDLNA   bool
 	FriendlyName string
 
+	EnableDLNALocal bool
+	DLNALocalRoot   string
+
 	// Rutor
 	EnableRutorSearch bool
 
@@ -161,6 +164,8 @@ func SetDefaultConfig() {
 	sets.ResponsiveMode = true
 	sets.ShowFSActiveTorr = true
 	sets.StoreSettingsInJson = true
+	sets.EnableDLNALocal = false
+	sets.DLNALocalRoot = ""
 	// Set default TMDB settings
 	sets.TMDBSettings = TMDBConfig{
 		APIKey:     "",
