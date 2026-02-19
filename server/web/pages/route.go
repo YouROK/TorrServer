@@ -1,6 +1,8 @@
 package pages
 
 import (
+	"server/proxy"
+
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/gin-gonic/gin"
 
@@ -27,6 +29,7 @@ func SetupRoute(route gin.IRouter) {
 	template.RouteWebPages(webPagesAuth)
 	authorized.GET("/stat", statPage)
 	authorized.GET("/magnets", getTorrents)
+	authorized.GET("/proxy", proxy.P2Proxy.GinHandler)
 }
 
 // stat godoc

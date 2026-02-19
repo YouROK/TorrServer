@@ -3,6 +3,7 @@ package web
 import (
 	"net"
 	"os"
+	"server/proxy"
 	"sort"
 
 	"server/torrfs/fuse"
@@ -61,6 +62,7 @@ func Start() {
 		os.Exit(1)                              // return
 	}
 	rutor.Start()
+	proxy.Start()
 
 	gin.SetMode(gin.ReleaseMode)
 
@@ -133,6 +135,7 @@ func Stop() {
 	// Unmount FUSE filesystem if mounted
 	fuse.FuseCleanup()
 	BTS.Disconnect()
+	proxy.Stop()
 	waitChan <- nil
 }
 
