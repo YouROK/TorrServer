@@ -82,6 +82,9 @@ type BTSets struct {
 	// Storage preferences
 	StoreSettingsInJson bool
 	StoreViewedInJson   bool
+
+	// P2P Proxy
+	EnableProxy bool
 }
 
 func (v *BTSets) String() string {
