@@ -41,7 +41,7 @@ func CheckImgUrl(link string) bool {
 	}
 	defer resp.Body.Close()
 
-	limitedReader := io.LimitReader(resp.Body, 512*1024)
+	limitedReader := io.LimitReader(resp.Body, 2*1024*1024)
 
 	if strings.HasSuffix(link, ".webp") {
 		_, err = webp.Decode(limitedReader)
