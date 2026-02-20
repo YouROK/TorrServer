@@ -20,6 +20,16 @@ const Table = memo(
   ({ playableFileList, viewedFileList, selectedSeason, seasonAmount, hash }) => {
     const { t } = useTranslation()
     const [isSupported, setIsSupported] = useState(true)
+    const playerPref = localStorage.getItem('preferredPlayer') ?? 'vlc'
+    const getPlayerProtocol = pref => {
+      const map = {
+        vlc: 'vlc://',
+        potplayer: 'potplayer://',
+      }
+      if (!pref) return 'vlc://'
+      return map[pref] || `${pref}://`
+    }
+    const isPlayerUsed = JSON.parse(localStorage.getItem('isPlayerUsed')) ?? JSON.parse(localStorage.getItem('isVlcUsed')) ?? false
     const preloadBuffer = fileId => fetch(`${streamHost()}?link=${hash}&index=${fileId}&preload`)
     const getFileLink = (path, id) =>
       `${streamHost()}/${encodeURIComponent(path.split('\\').pop().split('/').pop())}?link=${hash}&index=${id}&play`
@@ -85,12 +95,19 @@ const Table = memo(
                             </Button>
                           </a>
                         )}
-                        {isVlcUsed && (
-                          <a style={{ textDecoration: 'none' }} href={`vlc://${fullLink}`}>
-                            <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
-                              VLC
-                            </Button>
-                          </a>
+                        {isPlayerUsed && (
+                          <Button
+                            style={{ width: '100%' }}
+                            variant='outlined'
+                            color='primary'
+                            size='small'
+                            onClick={() => {
+                              const protocol = getPlayerProtocol(playerPref)
+                              window.location.href = `${protocol}${fullLink}`
+                            }}
+                          >
+                            {playerPref === 'potplayer' ? 'PotPlayer' : 'VLC'}
+                          </Button>
                         )}
                         {isMac && isIinaUsed && (
                           <a style={{ textDecoration: 'none' }} href={iinaLink}>
@@ -189,12 +206,19 @@ const Table = memo(
                       </a>
                     )}
 
-                    {isVlcUsed && (
-                      <a style={{ textDecoration: 'none' }} href={`vlc://${fullLink}`}>
-                        <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
-                          VLC
-                        </Button>
-                      </a>
+                    {isPlayerUsed && (
+                      <Button
+                        style={{ width: '100%' }}
+                        variant='outlined'
+                        color='primary'
+                        size='small'
+                        onClick={() => {
+                          const protocol = getPlayerProtocol(playerPref)
+                          window.location.href = `${protocol}${fullLink}`
+                        }}
+                      >
+                        {playerPref === 'potplayer' ? 'PotPlayer' : 'VLC'}
+                      </Button>
                     )}
 
                     {isMac && isIinaUsed && (
@@ -224,6 +248,8 @@ const Table = memo(
             )
           })}
         </ShortTableWrapper>
+
+        
       </>
     )
   },
