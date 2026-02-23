@@ -35,6 +35,10 @@ export default function SettingsDialog({ handleClose }) {
   const [isVlcUsed, setIsVlcUsed] = useState(JSON.parse(localStorage.getItem('isVlcUsed')) ?? false)
   const [isInfuseUsed, setIsInfuseUsed] = useState(JSON.parse(localStorage.getItem('isInfuseUsed')) ?? false)
   const [isIinaUsed, setIsIinaUsed] = useState(JSON.parse(localStorage.getItem('isIinaUsed')) ?? false)
+  const [isPlayerUsed, setIsPlayerUsed] = useState(
+    JSON.parse(localStorage.getItem('isPlayerUsed')) ?? JSON.parse(localStorage.getItem('isVlcUsed')) ?? false,
+  )
+  const [preferredPlayer, setPreferredPlayer] = useState(localStorage.getItem('preferredPlayer') ?? 'vlc')
 
   useEffect(() => {
     axios.post(settingsHost(), { action: 'get' }).then(({ data }) => {
@@ -56,6 +60,8 @@ export default function SettingsDialog({ handleClose }) {
     localStorage.setItem('isVlcUsed', isVlcUsed)
     localStorage.setItem('isInfuseUsed', isInfuseUsed)
     localStorage.setItem('isIinaUsed', isIinaUsed)
+    localStorage.setItem('isPlayerUsed', isPlayerUsed)
+    localStorage.setItem('preferredPlayer', preferredPlayer)
   }
 
   const inputForm = ({ target: { type, value, checked, id } }) => {
@@ -191,6 +197,10 @@ export default function SettingsDialog({ handleClose }) {
                   setIsInfuseUsed={setIsInfuseUsed}
                   isIinaUsed={isIinaUsed}
                   setIsIinaUsed={setIsIinaUsed}
+                  isPlayerUsed={isPlayerUsed}
+                  setIsPlayerUsed={setIsPlayerUsed}
+                  preferredPlayer={preferredPlayer}
+                  setPreferredPlayer={setPreferredPlayer}
                 />
               </TabPanel>
             </SwipeableViews>
