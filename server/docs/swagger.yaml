@@ -111,6 +111,9 @@ definitions:
       enableIPv6:
         description: BT Config
         type: boolean
+      enableProxy:
+        description: P2P Proxy
+        type: boolean
       enableRutorSearch:
         description: Rutor
         type: boolean
@@ -127,6 +130,10 @@ definitions:
       preloadCache:
         description: in percent
         type: integer
+      proxyHosts:
+        items:
+          type: string
+        type: array
       readerReadAHead:
         description: in percent, 5%-100%, [...S__X__E...] [S-E] not clean
         type: integer
@@ -154,6 +161,10 @@ definitions:
         type: boolean
       storeViewedInJson:
         type: boolean
+      tmdbsettings:
+        allOf:
+        - $ref: '#/definitions/settings.TMDBConfig'
+        description: TMDB
       torrentDisconnectTimeout:
         description: in seconds
         type: integer
@@ -169,6 +180,21 @@ definitions:
       useDisk:
         description: Disk
         type: boolean
+    type: object
+  settings.TMDBConfig:
+    properties:
+      apikey:
+        description: TMDB API Key
+        type: string
+      apiurl:
+        description: 'Base API URL (default: https://api.themoviedb.org)'
+        type: string
+      imageURL:
+        description: 'Image URL (default: https://image.tmdb.org)'
+        type: string
+      imageURLRu:
+        description: 'Image URL for Russian users (default: https://imagetmdb.com)'
+        type: string
     type: object
   settings.TorznabConfig:
     properties:
@@ -329,6 +355,8 @@ definitions:
         type: string
       torrent_size:
         type: integer
+      torrs_hash:
+        type: string
       total_peers:
         type: integer
       upload_speed:
@@ -703,6 +731,19 @@ paths:
         "200":
           description: Data returned according to query
       summary: Multi usage endpoint
+      tags:
+      - API
+  /tmdb/settings:
+    get:
+      description: Get TMDB API configuration
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: TMDB settings
+          schema:
+            $ref: '#/definitions/settings.TMDBConfig'
+      summary: Get TMDB settings
       tags:
       - API
   /torrent/upload:

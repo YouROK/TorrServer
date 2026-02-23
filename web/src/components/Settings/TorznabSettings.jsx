@@ -95,14 +95,14 @@ export default function TorznabSettings({ settings, inputForm, updateSettings })
 
       <div
         style={{
-          padding: 20,
+          padding: '20px 0',
           opacity: EnableTorznabSearch ? 1 : 0.5,
           pointerEvents: EnableTorznabSearch ? 'auto' : 'none',
         }}
       >
         <List dense>
           {(TorznabUrls || []).map((url, index) => (
-            <ListItem key={`${url.Host}-${url.Key}`}>
+            <ListItem key={`${url.Host}-${url.Key}`} style={{ paddingLeft: 0, paddingRight: 48 }}>
               <ListItemText
                 primary={url.Name || url.Host}
                 secondary={
@@ -115,6 +115,8 @@ export default function TorznabSettings({ settings, inputForm, updateSettings })
                     {`Key: ${url.Key.substring(0, 5)}...`}
                   </>
                 }
+                primaryTypographyProps={{ style: { wordBreak: 'break-all' } }}
+                secondaryTypographyProps={{ style: { wordBreak: 'break-all' } }}
               />
               <ListItemSecondaryAction>
                 <IconButton edge='end' aria-label='delete' onClick={() => handleDelete(index)}>
@@ -140,6 +142,7 @@ export default function TorznabSettings({ settings, inputForm, updateSettings })
             placeholder='My Tracker'
             variant='outlined'
             size='small'
+            fullWidth
           />
           <TextField
             label={t('Torznab.TorznabHostURL')}
@@ -148,6 +151,7 @@ export default function TorznabSettings({ settings, inputForm, updateSettings })
             placeholder='http://localhost:9117'
             variant='outlined'
             size='small'
+            fullWidth
           />
           <TextField
             label={t('Torznab.APIKey')}
@@ -155,18 +159,25 @@ export default function TorznabSettings({ settings, inputForm, updateSettings })
             onChange={e => setNewKey(e.target.value)}
             variant='outlined'
             size='small'
+            fullWidth
           />
-          <div style={{ display: 'flex', marginTop: 10 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
             <Button
               variant='outlined'
               color='secondary'
               onClick={handleTest}
               disabled={!newHost || !newKey || testing}
-              style={{ marginRight: 10 }}
+              style={{ flex: '1 1 auto', minWidth: 100 }}
             >
               {testing ? <CircularProgress size={24} color='inherit' /> : t('Torznab.Test')}
             </Button>
-            <Button variant='contained' color='secondary' onClick={handleAdd} disabled={!newHost || !newKey}>
+            <Button
+              variant='contained'
+              color='secondary'
+              onClick={handleAdd}
+              disabled={!newHost || !newKey}
+              style={{ flex: '1 1 auto', minWidth: 100 }}
+            >
               {t('Torznab.AddServer')}
             </Button>
           </div>

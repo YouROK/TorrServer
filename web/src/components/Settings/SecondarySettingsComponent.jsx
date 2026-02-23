@@ -1,20 +1,20 @@
 import { useTranslation } from 'react-i18next'
 import TextField from '@material-ui/core/TextField'
 import {
+  Box,
+  Button,
+  CircularProgress,
   FormControlLabel,
   FormGroup,
   FormHelperText,
   InputAdornment,
   InputLabel,
+  MenuItem,
   Select,
   Switch,
-  MenuItem,
-  Button,
-  Box,
-  CircularProgress,
 } from '@material-ui/core'
 import { styled } from '@material-ui/core/styles'
-import { useState, useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { SecondarySettingsContent, SettingSectionLabel } from './style'
 
@@ -68,7 +68,18 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
     SslCert,
     SslKey,
     ShowFSActiveTorr,
+    EnableProxy,
+    ProxyHosts,
   } = settings || {}
+
+  // Local state for ProxyHosts text input
+  const [proxyHostsText, setProxyHostsText] = useState('')
+
+  // Sync proxyHostsText with ProxyHosts when settings change
+  useEffect(() => {
+    const textValue = Array.isArray(ProxyHosts) ? ProxyHosts.join(', ') : ProxyHosts || ''
+    setProxyHostsText(textValue)
+  }, [ProxyHosts])
 
   // Use useMemo to compute basePath once
   const basePath = useMemo(() => {
@@ -96,7 +107,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
           setStorageSettings(prefs)
         }
       } catch (error) {
-        console.error('Failed to load storage settings:', error)
+        // eslint-disable-line no-console
       }
     }
     loadStorageSettings()
@@ -441,6 +452,47 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
           </StatusMessage>
         )}
       </Box>
+      {/* ProxyP2P */}
+      <SettingSectionLabel style={{ marginTop: '20px' }}>{t('Proxy')}</SettingSectionLabel>
+      <FormGroup>
+        <FormControlLabel
+          control={<Switch checked={EnableProxy} onChange={inputForm} id='EnableProxy' color='secondary' />}
+          label={t('SettingsDialog.EnableProxy')}
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('SettingsDialog.EnableProxyHint')}</FormHelperText>
+      </FormGroup>
+      {/* Proxy hosts */}
+      <TextField
+        onChange={e => {
+          setProxyHostsText(e.target.value)
+        }}
+        onBlur={e => {
+          const inputValue = e.target.value.trim()
+          const hostsArray =
+            inputValue === ''
+              ? []
+              : inputValue
+                  .split(',')
+                  .map(s => s.trim())
+                  .filter(s => s !== '')
+
+          inputForm({
+            target: {
+              id: 'ProxyHosts',
+              value: hostsArray,
+            },
+          })
+        }}
+        margin='normal'
+        id='ProxyHosts'
+        label={t('SettingsDialog.ProxyHosts')}
+        helperText={t('SettingsDialog.ProxyHostsHint')}
+        value={proxyHostsText}
+        type='text'
+        variant='outlined'
+        fullWidth
+      />
     </SecondarySettingsContent>
   )
 }

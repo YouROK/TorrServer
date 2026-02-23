@@ -3,6 +3,8 @@ package api
 import (
 	"net/http"
 	"net/url"
+	"server/log"
+	"server/torrshash"
 	"strconv"
 	"strings"
 
@@ -11,6 +13,7 @@ import (
 	utils2 "server/utils"
 	"server/web/api/utils"
 
+	"github.com/anacrolix/torrent"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 )
@@ -67,6 +70,15 @@ func stream(c *gin.Context) {
 
 	notAuth := c.GetBool("auth_required") && c.GetString(gin.AuthUserKey) == ""
 
+	if notAuth {
+		err := utils.TestLink(link, !notAuth)
+		if err != nil {
+			log.TLogln("Wrong link:", err)
+			c.AbortWithError(http.StatusBadRequest, errors.New("wrong link"))
+			return
+		}
+	}
+
 	if notAuth && (play || m3u) {
 		streamNoAuth(c)
 		return
@@ -87,10 +99,32 @@ func stream(c *gin.Context) {
 	poster, _ = url.QueryUnescape(poster)
 	category, _ = url.QueryUnescape(category)
 
-	spec, err := utils.ParseLink(link)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
+	var spec *torrent.TorrentSpec
+	var torrsHash *torrshash.TorrsHash
+	var err error
+
+	if strings.HasPrefix(link, "torrs://") || (len(link) > 45 && torrshash.IsBase62(link)) {
+		spec, torrsHash, err = utils.ParseTorrsHash(link)
+		if err != nil {
+			log.TLogln("error parse torrshash:", err)
+			c.AbortWithError(http.StatusBadRequest, err)
+			return
+		}
+		if title == "" {
+			title = torrsHash.Title()
+		}
+		if poster == "" {
+			poster = torrsHash.Poster()
+		}
+		if category == "" {
+			category = torrsHash.Category()
+		}
+	} else {
+		spec, err = utils.ParseLink(link)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
 	}
 
 	tor := torr.GetTorrent(spec.InfoHash.HexString())
@@ -154,7 +188,7 @@ func stream(c *gin.Context) {
 		} else if !strings.HasSuffix(strings.ToLower(name), ".m3u") && !strings.HasSuffix(strings.ToLower(name), ".m3u8") {
 			name += ".m3u"
 		}
-		m3ulist := "#EXTM3U\n" + getM3uList(tor.Status(), utils2.GetScheme(c)+"://"+c.Request.Host, fromlast)
+		m3ulist := "#EXTM3U\n" + getM3uList(tor.Status(), utils2.GetScheme(c)+"://"+utils2.GetHost(c), fromlast)
 		sendM3U(c, name, tor.Hash().HexString(), m3ulist)
 		return
 	} else
@@ -172,6 +206,9 @@ func streamNoAuth(c *gin.Context) {
 	_, m3u := c.GetQuery("m3u")
 	_, fromlast := c.GetQuery("fromlast")
 	_, play := c.GetQuery("play")
+	title := c.Query("title")
+	poster := c.Query("poster")
+	category := c.Query("category")
 
 	if link == "" {
 		c.AbortWithError(http.StatusBadRequest, errors.New("link should not be empty"))
@@ -179,11 +216,36 @@ func streamNoAuth(c *gin.Context) {
 	}
 
 	link, _ = url.QueryUnescape(link)
+	title, _ = url.QueryUnescape(title)
+	poster, _ = url.QueryUnescape(poster)
+	category, _ = url.QueryUnescape(category)
 
-	spec, err := utils.ParseLink(link)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
+	var spec *torrent.TorrentSpec
+	var torrsHash *torrshash.TorrsHash
+	var err error
+
+	if strings.HasPrefix(link, "torrs://") || (len(link) > 45 && torrshash.IsBase62(link)) {
+		spec, torrsHash, err = utils.ParseTorrsHash(link)
+		if err != nil {
+			log.TLogln("error parse torrshash:", err)
+			c.AbortWithError(http.StatusBadRequest, err)
+			return
+		}
+		if title == "" {
+			title = torrsHash.Title()
+		}
+		if poster == "" {
+			poster = torrsHash.Poster()
+		}
+		if category == "" {
+			category = torrsHash.Category()
+		}
+	} else {
+		spec, err = utils.ParseLink(link)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
 	}
 
 	tor := torr.GetTorrent(spec.InfoHash.HexString())
@@ -193,17 +255,14 @@ func streamNoAuth(c *gin.Context) {
 		return
 	}
 
-	title := c.Query("title")
 	if title == "" {
 		title = tor.Title
 	}
 
-	poster := c.Query("poster")
 	if poster == "" {
 		poster = tor.Poster
 	}
 
-	category := c.Query("category")
 	if category == "" {
 		category = tor.Category
 	}
@@ -249,7 +308,7 @@ func streamNoAuth(c *gin.Context) {
 		} else if !strings.HasSuffix(strings.ToLower(name), ".m3u") && !strings.HasSuffix(strings.ToLower(name), ".m3u8") {
 			name += ".m3u"
 		}
-		m3ulist := "#EXTM3U\n" + getM3uList(tor.Status(), utils2.GetScheme(c)+"://"+c.Request.Host, fromlast)
+		m3ulist := "#EXTM3U\n" + getM3uList(tor.Status(), utils2.GetScheme(c)+"://"+utils2.GetHost(c), fromlast)
 		sendM3U(c, name, tor.Hash().HexString(), m3ulist)
 		return
 	} else

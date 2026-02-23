@@ -6,6 +6,9 @@ import (
 	"log"
 	"maps"
 	"net"
+	"net/http"
+	"net/url"
+	"server/proxy"
 	"sync"
 	"time"
 
@@ -67,6 +70,8 @@ func (bt *BTServer) Connect() error {
 	bt.client, err = torrent.NewClient(bt.config)
 	bt.torrents = make(map[metainfo.Hash]*Torrent)
 	InitApiHelper(bt)
+
+	proxy.Start()
 	return err
 }
 
@@ -78,6 +83,7 @@ func (bt *BTServer) Disconnect() {
 		bt.client = nil
 		utils.FreeOSMemGC()
 	}
+	proxy.Stop()
 }
 
 func (bt *BTServer) configure(ctx context.Context) {
@@ -132,6 +138,7 @@ func (bt *BTServer) configure(ctx context.Context) {
 		bt.config.DownloadRateLimiter = utils.Limit(settings.BTsets.DownloadRateLimit * 1024)
 	}
 	if settings.BTsets.UploadRateLimit > 0 {
+		bt.config.Seed = true
 		bt.config.UploadRateLimiter = utils.Limit(settings.BTsets.UploadRateLimit * 1024)
 	}
 	if settings.TorAddr != "" {
@@ -145,6 +152,11 @@ func (bt *BTServer) configure(ctx context.Context) {
 			log.Println("Set listen port to random autoselect (0)")
 			bt.config.ListenPort = 0
 		}
+	}
+
+	// Configure proxy if enabled
+	if err := bt.configureProxy(); err != nil {
+		log.Println("Proxy configuration error:", err)
 	}
 
 	log.Println("Client config:", settings.BTsets)
@@ -188,6 +200,67 @@ func (bt *BTServer) configure(ctx context.Context) {
 	if bt.config.PublicIp6 != nil {
 		log.Println("PublicIp6:", bt.config.PublicIp6)
 	}
+}
+
+func (bt *BTServer) configureProxy() error {
+	proxyURL := settings.Args.ProxyURL
+
+	if proxyURL == "" {
+		return nil // No proxy configured
+	}
+
+	proxyMode := settings.Args.ProxyMode
+	if proxyMode == "" {
+		proxyMode = "tracker" // default
+	}
+
+	// Parse and validate proxy URL
+	parsedURL, err := url.Parse(proxyURL)
+	if err != nil {
+		return fmt.Errorf("invalid proxy URL: %w", err)
+	}
+
+	scheme := parsedURL.Scheme
+	// Validate proxy protocol
+	switch scheme {
+	case "socks5", "socks5h", "socks4", "socks4a", "http", "https":
+		// Supported protocols
+	default:
+		return fmt.Errorf("unsupported proxy protocol: %s (supported: http, https, socks4, socks4a, socks5, socks5h)", scheme)
+	}
+
+	if proxyMode == "full" {
+		log.Printf("Configuring proxy for all BitTorrent traffic: %s://%s", scheme, parsedURL.Host)
+
+		// Set ProxyURL - this will be used by anacrolix/torrent for all BitTorrent traffic
+		bt.config.ProxyURL = proxyURL
+
+		// Also set HTTPProxy explicitly for HTTP tracker requests
+		bt.config.HTTPProxy = func(req *http.Request) (*url.URL, error) {
+			return parsedURL, nil
+		}
+
+		log.Println("Proxy configured successfully for all BitTorrent connections (tracker, DHT, peers)")
+	} else if proxyMode == "peers" {
+		log.Printf("Configuring proxy for peer connections only: %s://%s", scheme, parsedURL.Host)
+
+		// Set ProxyURL for peer connections, but don't set HTTPProxy
+		// This routes DHT and peer connections through proxy, but not HTTP tracker requests
+		bt.config.ProxyURL = proxyURL
+
+		log.Println("Proxy configured successfully for peer and DHT connections only")
+	} else {
+		log.Printf("Configuring proxy for HTTP tracker requests only: %s://%s", scheme, parsedURL.Host)
+
+		// Only set HTTPProxy for tracker requests, don't set ProxyURL
+		bt.config.HTTPProxy = func(req *http.Request) (*url.URL, error) {
+			return parsedURL, nil
+		}
+
+		log.Println("Proxy configured successfully for HTTP tracker connections only")
+	}
+
+	return nil
 }
 
 func (bt *BTServer) GetTorrent(hash torrent.InfoHash) *Torrent {

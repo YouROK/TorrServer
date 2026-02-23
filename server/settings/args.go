@@ -23,6 +23,8 @@ type ExecArgs struct {
 	TGToken     string
 	FusePath    string
 	WebDAV      bool
+	ProxyURL    string
+	ProxyMode   string
 }
 
 var Args *ExecArgs

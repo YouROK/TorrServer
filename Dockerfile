@@ -21,7 +21,7 @@ RUN yarn run build
 
 
 ### BUILD TORRSERVER MULTIARCH START ###
-FROM --platform=$BUILDPLATFORM golang:1.24.0-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.26.0-alpine AS builder
 
 COPY . /opt/src
 COPY --from=front /app/build /opt/src/web/build
@@ -35,11 +35,11 @@ ENV GOARCH=$TARGETARCH
 
 # Build torrserver
 RUN apk add --update g++ \
-&& go run gen_web.go \
-&& cd server \
-&& go mod tidy \
-&& go clean -i -r -cache \
-&& go build -ldflags '-w -s' --o "torrserver" ./cmd
+    && go run gen_web.go \
+    && cd server \
+    && go mod tidy \
+    && go clean -i -r -cache \
+    && go build -ldflags '-w -s' --o "torrserver" ./cmd
 ### BUILD TORRSERVER MULTIARCH END ###
 
 

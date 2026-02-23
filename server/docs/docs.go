@@ -564,6 +564,26 @@ const docTemplate = `{
                 }
             }
         },
+        "/tmdb/settings": {
+            "get": {
+                "description": "Get TMDB API configuration",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Get TMDB settings",
+                "responses": {
+                    "200": {
+                        "description": "TMDB settings",
+                        "schema": {
+                            "$ref": "#/definitions/settings.TMDBConfig"
+                        }
+                    }
+                }
+            }
+        },
         "/torrent/upload": {
             "post": {
                 "description": "Only one file support.",
@@ -894,6 +914,10 @@ const docTemplate = `{
                     "description": "BT Config",
                     "type": "boolean"
                 },
+                "enableProxy": {
+                    "description": "P2P Proxy",
+                    "type": "boolean"
+                },
                 "enableRutorSearch": {
                     "description": "Rutor",
                     "type": "boolean"
@@ -915,6 +939,12 @@ const docTemplate = `{
                 "preloadCache": {
                     "description": "in percent",
                     "type": "integer"
+                },
+                "proxyHosts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "readerReadAHead": {
                     "description": "in percent, 5%-100%, [...S__X__E...] [S-E] not clean",
@@ -952,6 +982,14 @@ const docTemplate = `{
                 "storeViewedInJson": {
                     "type": "boolean"
                 },
+                "tmdbsettings": {
+                    "description": "TMDB",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/settings.TMDBConfig"
+                        }
+                    ]
+                },
                 "torrentDisconnectTimeout": {
                     "description": "in seconds",
                     "type": "integer"
@@ -972,6 +1010,27 @@ const docTemplate = `{
                 "useDisk": {
                     "description": "Disk",
                     "type": "boolean"
+                }
+            }
+        },
+        "settings.TMDBConfig": {
+            "type": "object",
+            "properties": {
+                "apikey": {
+                    "description": "TMDB API Key",
+                    "type": "string"
+                },
+                "apiurl": {
+                    "description": "Base API URL (default: https://api.themoviedb.org)",
+                    "type": "string"
+                },
+                "imageURL": {
+                    "description": "Image URL (default: https://image.tmdb.org)",
+                    "type": "string"
+                },
+                "imageURLRu": {
+                    "description": "Image URL for Russian users (default: https://imagetmdb.com)",
+                    "type": "string"
                 }
             }
         },
@@ -1208,6 +1267,9 @@ const docTemplate = `{
                 },
                 "torrent_size": {
                     "type": "integer"
+                },
+                "torrs_hash": {
+                    "type": "string"
                 },
                 "total_peers": {
                     "type": "integer"

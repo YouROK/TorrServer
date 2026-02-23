@@ -48,6 +48,8 @@ type args struct {
 	TGToken     string `arg:"-T" help:"telegram bot token"`
 	FusePath    string `arg:"-f" help:"fuse mount path"`
 	WebDAV      bool   `help:"web dav enable"`
+	ProxyURL    string `help:"proxy URL for BitTorrent traffic (http, socks4, socks5, socks5h), e.g. socks5://user:password@127.0.0.1:8080"`
+	ProxyMode   string `help:"proxy mode: tracker (only HTTP trackers, default), peers (only peer connections), or full (all traffic)"`
 }
 
 func (args) Version() string {
@@ -136,6 +138,14 @@ func main() {
 		}
 	}
 
+	if params.ProxyURL != "" && params.ProxyMode == "" {
+		params.ProxyMode = "tracker" // default
+	}
+	if params.ProxyMode != "" && params.ProxyMode != "tracker" && params.ProxyMode != "peers" && params.ProxyMode != "full" {
+		log.TLogln("Invalid proxy mode, using default 'tracker'")
+		params.ProxyMode = "tracker"
+	}
+
 	settings.Args = &settings.ExecArgs{
 		Port:        params.Port,
 		IP:          params.IP,
@@ -159,6 +169,12 @@ func main() {
 		TGToken:     params.TGToken,
 		FusePath:    params.FusePath,
 		WebDAV:      params.WebDAV,
+		ProxyURL:    params.ProxyURL,
+		ProxyMode:   params.ProxyMode,
+	}
+
+	if params.ProxyURL != "" {
+		log.TLogln("Proxy configured from CLI:", params.ProxyURL, "mode:", settings.Args.ProxyMode)
 	}
 
 	server.Start()

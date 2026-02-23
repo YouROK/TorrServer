@@ -3,6 +3,7 @@ package web
 import (
 	"net"
 	"os"
+	"server/proxy"
 	"sort"
 
 	"server/torrfs/fuse"
@@ -11,7 +12,7 @@ import (
 	"server/rutor"
 
 	"github.com/gin-contrib/cors"
-	"github.com/gin-contrib/location"
+	"github.com/gin-contrib/location/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/wlynxg/anet"
 
@@ -133,6 +134,7 @@ func Stop() {
 	// Unmount FUSE filesystem if mounted
 	fuse.FuseCleanup()
 	BTS.Disconnect()
+	proxy.Stop()
 	waitChan <- nil
 }
 

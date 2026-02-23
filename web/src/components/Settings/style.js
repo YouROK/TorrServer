@@ -1,8 +1,60 @@
 import styled, { css } from 'styled-components'
+import Tabs from '@material-ui/core/Tabs'
+import Tab from '@material-ui/core/Tab'
 import { mainColors } from 'style/colors'
 import { StyledHeader } from 'style/CustomMaterialUiStyles'
 
 export const cacheBeforeReaderColor = '#b3dfc9'
+
+export const StyledTabs = styled(Tabs)`
+  .MuiTabs-flexContainer {
+    @media (max-width: 600px) {
+      gap: 0;
+    }
+  }
+
+  .MuiTabs-scrollButtons {
+    @media (max-width: 600px) {
+      width: 24px;
+    }
+  }
+`
+
+export const StyledTab = styled(Tab)`
+  min-width: auto;
+  padding: 6px 16px;
+  font-size: 14px;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  @media (max-width: 600px) {
+    padding: 6px 12px;
+    font-size: 12px;
+    min-height: 48px;
+  }
+
+  @media (max-width: 400px) {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  .MuiTab-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .disabled-hint {
+    font-size: 9px;
+    opacity: 0.7;
+    display: block;
+
+    @media (max-width: 600px) {
+      font-size: 8px;
+    }
+  }
+`
 export const cacheAfterReaderColor = mainColors.light.primary
 
 export const SettingsHeader = styled(StyledHeader)`
@@ -81,6 +133,22 @@ export const PreloadCacheValue = styled.div`
       border-radius: 50%;
       margin-top: 2px;
     }
+
+    @media (max-width: 600px) {
+      grid-template-columns: max-content 80px 1fr;
+      gap: 8px;
+      font-size: 13px;
+
+      :before {
+        width: 12px;
+        height: 12px;
+      }
+    }
+
+    @media (max-width: 400px) {
+      grid-template-columns: max-content 1fr;
+      font-size: 12px;
+    }
   `}
 `
 
@@ -93,9 +161,86 @@ export const MainSettingsContent = styled.div`
   @media (max-width: 930px) {
     grid-template-columns: 1fr;
   }
+
+  @media (max-width: 600px) {
+    padding: 16px 12px;
+    gap: 24px;
+  }
+
+  .MuiFormControlLabel-root {
+    margin-left: 0;
+    margin-right: 0;
+    justify-content: space-between;
+    width: 100%;
+
+    @media (max-width: 600px) {
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+  }
+
+  .MuiFormControlLabel-label {
+    @media (max-width: 600px) {
+      font-size: 14px;
+      flex: 1;
+      min-width: 0;
+      word-break: break-word;
+    }
+  }
+
+  .MuiFormHelperText-root {
+    @media (max-width: 600px) {
+      font-size: 11px;
+      margin-top: 2px;
+    }
+  }
 `
 export const SecondarySettingsContent = styled.div`
   padding: 20px;
+
+  @media (max-width: 600px) {
+    padding: 16px 12px;
+  }
+
+  .MuiFormControlLabel-root {
+    margin-left: 0;
+    margin-right: 0;
+    justify-content: space-between;
+    width: 100%;
+
+    @media (max-width: 600px) {
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+  }
+
+  .MuiFormControlLabel-label {
+    @media (max-width: 600px) {
+      font-size: 14px;
+      flex: 1;
+      min-width: 0;
+      word-break: break-word;
+    }
+  }
+
+  .MuiFormHelperText-root {
+    @media (max-width: 600px) {
+      font-size: 11px;
+      margin-top: 2px;
+    }
+  }
+
+  .MuiInputLabel-root {
+    @media (max-width: 600px) {
+      font-size: 14px;
+    }
+  }
+
+  .MuiOutlinedInput-root {
+    @media (max-width: 600px) {
+      font-size: 14px;
+    }
+  }
 `
 export const StorageButton = styled.div`
   ${({ small, selected }) => css`
@@ -163,9 +308,23 @@ export const SettingSectionLabel = styled.div`
   font-size: 25px;
   padding-bottom: 20px;
 
+  @media (max-width: 600px) {
+    font-size: 20px;
+    padding-bottom: 16px;
+  }
+
+  @media (max-width: 400px) {
+    font-size: 18px;
+    padding-bottom: 12px;
+  }
+
   small {
     display: block;
     font-size: 11px;
+
+    @media (max-width: 600px) {
+      font-size: 10px;
+    }
   }
 `
 

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"runtime"
+	"server/torrshash"
 	"strings"
 	"time"
 
@@ -60,6 +61,37 @@ func fromMagnet(link string) (*torrent.TorrentSpec, error) {
 	}
 
 	return spec, nil
+}
+
+func ParseTorrsHash(token string) (*torrent.TorrentSpec, *torrshash.TorrsHash, error) {
+	if strings.HasPrefix(token, "torrs://") {
+		token = strings.TrimPrefix(token, "torrs://")
+	}
+	th, err := torrshash.Unpack(token)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var trackers [][]string
+	if len(th.Trackers()) > 0 {
+		trackers = [][]string{th.Trackers()}
+	}
+	// TODO: add support to InfoHashV2
+	var torrentOpts = torrent.AddTorrentOpts{
+		InfoHash: metainfo.NewHashFromHex(th.Hash),
+		// DisableInitialPieceCheck: true,
+	}
+	return &torrent.TorrentSpec{
+		Trackers:       trackers,
+		DisplayName:    th.Title(),
+		AddTorrentOpts: torrentOpts,
+	}, th, nil
+	// return &torrent.TorrentSpec{
+	// 	InfoBytes:   nil,
+	// 	Trackers:    trackers,
+	// 	DisplayName: th.Title(),
+	// 	InfoHash:    metainfo.NewHashFromHex(th.Hash),
+	// }, th, nil
 }
 
 func fromHttp(link string) (*torrent.TorrentSpec, error) {
