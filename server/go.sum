@@ -95,6 +95,8 @@ github.com/alexflint/go-scalar v1.2.0 h1:WR7JPKkeNpnYIOfHRa7ivM21aWAdHD0gEWHCx+W
 github.com/alexflint/go-scalar v1.2.0/go.mod h1:LoFvNMqS1CPrMVltza4LvnGKhaSpc3oyLEBUZVhhS2o=
 github.com/anacrolix/btree v0.0.0-20251201064447-d86c3fa41bd8 h1:c02PsmoaChabVqAFm7pqPI1UIkDdDAjUaWa6ZmfxybQ=
 github.com/anacrolix/btree v0.0.0-20251201064447-d86c3fa41bd8/go.mod h1:7stWJ39LeusmMI8mjJuhFNRqep//vx0AsaySRoK9or0=
+github.com/anacrolix/btree v0.1.1 h1:igdFPLrt82L6qovzbEGSMkTeiwcU3EFIGl2K8XWocAc=
+github.com/anacrolix/btree v0.1.1/go.mod h1:KHWYRZuUULATjUGJC4dQDXx/BPOnWrJozGR6TndjOmc=
 github.com/anacrolix/chansync v0.7.0 h1:wgwxbsJRmOqNjil4INpxHrDp4rlqQhECxR8/WBP4Et0=
 github.com/anacrolix/chansync v0.7.0/go.mod h1:DZsatdsdXxD0WiwcGl0nJVwyjCKMDv+knl1q2iBjA2k=
 github.com/anacrolix/dht/v2 v2.23.0 h1:EuD17ykTTEkAMPLjBsS5QjGOwuBgLTdQhds6zPAjeVY=
@@ -152,6 +154,8 @@ github.com/anacrolix/tagflag v1.0.0/go.mod h1:1m2U/K6ZT+JZG0+bdMK6qauP49QT4wE5pm
 github.com/anacrolix/tagflag v1.1.0/go.mod h1:Scxs9CV10NQatSmbyjqmqmeQNwGzlNe0CMUMIxqHIG8=
 github.com/anacrolix/torrent v1.60.1-0.20251217073903-486bcbe758e0 h1:lzjUG5O/Vzn4vodFZnrmVny08kMnujjmMLQw0X7cetI=
 github.com/anacrolix/torrent v1.60.1-0.20251217073903-486bcbe758e0/go.mod h1:yKUKuZSSDdyOsCbuH+rDOpswl/g546gICapdrU7aUmQ=
+github.com/anacrolix/torrent v1.61.1-0.20260223045140-1566309c12af h1:b6TdIylt/Nqdvf0RP2fHVk8iuzSzRpWvCjwB+oSDNcc=
+github.com/anacrolix/torrent v1.61.1-0.20260223045140-1566309c12af/go.mod h1:99HuZswKVFJaolion++ekIiF52WDiEtQJqqib4IPdZc=
 github.com/anacrolix/utp v0.1.0 h1:FOpQOmIwYsnENnz7tAGohA+r6iXpRjrq8ssKSre2Cp4=
 github.com/anacrolix/utp v0.1.0/go.mod h1:MDwc+vsGEq7RMw6lr2GKOEqjWny5hO5OZXRVNaBJ2Dk=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
