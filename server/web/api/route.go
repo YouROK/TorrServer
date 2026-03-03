@@ -17,6 +17,9 @@ func SetupRoute(route gin.IRouter) {
 	authorized.GET("/shutdown", shutdown)
 	authorized.GET("/shutdown/*reason", shutdown)
 
+	authorized.GET("/restart", restart)
+	authorized.GET("/restart/*reason", restart)
+
 	authorized.POST("/settings", settings)
 	authorized.POST("/torznab/test", torznabTest)
 

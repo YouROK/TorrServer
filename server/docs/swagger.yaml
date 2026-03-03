@@ -516,6 +516,16 @@ paths:
       summary: Get a M3U playlist with all torrents
       tags:
       - API
+  /restart:
+    get:
+      description: Gracefully restarts server after 1 second. Exits with non-zero
+        code to trigger service manager restart (systemd, launchd, etc.).
+      responses:
+        "200":
+          description: OK
+      summary: Restarts server
+      tags:
+      - API
   /search:
     get:
       description: Makes a rutor search.

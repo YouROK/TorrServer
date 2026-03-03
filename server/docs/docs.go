@@ -236,6 +236,20 @@ const docTemplate = `{
                 }
             }
         },
+        "/restart": {
+            "get": {
+                "description": "Gracefully restarts server after 1 second. Exits with non-zero code to trigger service manager restart (systemd, launchd, etc.).",
+                "tags": [
+                    "API"
+                ],
+                "summary": "Restarts server",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/search": {
             "get": {
                 "description": "Makes a rutor search.",

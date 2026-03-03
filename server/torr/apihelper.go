@@ -259,6 +259,17 @@ func Shutdown() {
 	os.Exit(0)
 }
 
+func Restart() {
+	bts.Disconnect()
+	sets.CloseDB()
+	log.TLogln("Received restart request. Exiting to trigger service manager restart...")
+	// Exit with code 1 to trigger service manager restart:
+	// - Linux systemd: Restart=on-failure will restart on non-zero exit
+	// - macOS launchd: KeepAlive with SuccessfulExit=false will restart on non-zero exit
+	// - Other platforms: Any service manager or wrapper script can handle non-zero exit
+	os.Exit(1)
+}
+
 func WriteStatus(w io.Writer) {
 	bts.client.WriteStatus(w)
 }
