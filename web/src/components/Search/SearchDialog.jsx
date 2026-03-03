@@ -24,6 +24,7 @@ import { torznabSearchHost, torrentsHost, settingsHost, searchHost } from 'utils
 import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
 import { StyledDialog, StyledHeader } from 'style/CustomMaterialUiStyles'
 import { parseSizeToBytes, formatSizeToClassicUnits } from 'utils/Utils'
+import { getMoviePosters, shortenTitleForPosterSearch } from 'components/Add/helpers'
 
 import { Content } from './style'
 
@@ -97,12 +98,21 @@ export default function SearchDialog({ handleClose }) {
         setErrorMsg(t('Torznab.NoLinkFound'))
         return
       }
+      let poster = item.Poster
+      if (!poster && item.Title) {
+        const query = shortenTitleForPosterSearch(item.Title)
+        if (query) {
+          const urlList = await getMoviePosters(query, 'en')
+          const [firstPosterUrl] = urlList || []
+          if (firstPosterUrl) poster = firstPosterUrl
+        }
+      }
       await axios.post(torrentsHost(), {
         action: 'add',
         link,
         title: item.Title,
         save_to_db: true,
-        poster: item.Poster,
+        poster: poster || '',
       })
       setSuccessMsg(t('Torznab.TorrentAddedSuccessfully'))
     } catch (error) {
