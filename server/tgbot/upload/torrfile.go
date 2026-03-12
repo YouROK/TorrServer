@@ -3,12 +3,12 @@ package upload
 import (
 	"errors"
 	"fmt"
-	"log"
 	"path/filepath"
 
 	"github.com/anacrolix/torrent"
 
 	sets "server/settings"
+	"server/log"
 	"server/tgbot/config"
 	"server/torr"
 	"server/torr/state"
@@ -57,7 +57,7 @@ func NewTorrFile(wrk *Worker, stFile *state.TorrentFileStat) (*TorrFile, error) 
 		return nil, fmt.Errorf("file with id %v not found", stFile.Id)
 	}
 	if int64(sets.MaxSize) > 0 && file.Length() > int64(sets.MaxSize) {
-		log.Println("file", file.DisplayPath(), "size exceeded max allowed", sets.MaxSize, "bytes")
+		log.TLogln("tg upload err size", file.DisplayPath(), "max", sets.MaxSize)
 		return nil, fmt.Errorf("file size exceeded max allowed %d bytes", sets.MaxSize)
 	}
 
