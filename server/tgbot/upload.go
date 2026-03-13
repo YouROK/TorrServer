@@ -2,6 +2,7 @@ package tgbot
 
 import (
 	"strconv"
+	"strings"
 
 	tele "gopkg.in/telebot.v4"
 	up "server/tgbot/upload"
@@ -9,16 +10,30 @@ import (
 
 func upload(c tele.Context) error {
 	args := c.Args()
-	idstr := args[2]
-	id, err := strconv.Atoi(idstr)
-	if err != nil {
-		return err
+	if len(args) < 3 {
+		return c.Respond(&tele.CallbackResponse{Text: tr(c.Sender().ID, "callback_unknown")})
 	}
-	up.AddRange(c, args[1], id, id)
+	hash := args[1]
+	if !isHash(hash) {
+		return c.Respond(&tele.CallbackResponse{Text: tr(c.Sender().ID, "callback_unknown")})
+	}
+	id, err := strconv.Atoi(args[2])
+	if err != nil {
+		return c.Respond(&tele.CallbackResponse{Text: tr(c.Sender().ID, "callback_unknown")})
+	}
+	up.AddRange(c, hash, id, id)
 	return nil
 }
 
-func uploadall(c tele.Context) {
+func uploadall(c tele.Context) error {
 	args := c.Args()
-	up.AddRange(c, args[1], 1, -1)
+	if len(args) < 2 {
+		return c.Respond(&tele.CallbackResponse{Text: tr(c.Sender().ID, "callback_unknown")})
+	}
+	hash := strings.TrimPrefix(args[1], "all|")
+	if !isHash(hash) {
+		return c.Respond(&tele.CallbackResponse{Text: tr(c.Sender().ID, "callback_unknown")})
+	}
+	up.AddRange(c, hash, 1, -1)
+	return nil
 }
