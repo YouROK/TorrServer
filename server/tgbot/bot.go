@@ -15,7 +15,7 @@ import (
 	up "server/tgbot/upload"
 )
 
-func Start(token string) {
+func Start(token string) error {
 	config.LoadConfig()
 	loadUserLangs()
 
@@ -32,24 +32,26 @@ func Start(token string) {
 	b, err := tele.NewBot(pref)
 	if err != nil {
 		log.TLogln("tg bot start err", err)
-		return
+		return err
 	}
 
 	up.TrFunc = tr
+	up.EscapeFunc = escapeHtml
 
 	if err := b.SetCommands([]tele.Command{
 		{Text: "help", Description: "Help and user ID"},
 		{Text: "start", Description: "Start bot"},
 		{Text: "list", Description: "List torrents"},
 		{Text: "add", Description: "Add torrent"},
-		{Text: "search", Description: "Search RuTor"},
-		{Text: "searchall", Description: "Search RuTor+Torznab"},
+		{Text: "search", Description: "Search all (RuTor+Torznab)"},
+		{Text: "rutor", Description: "Search RuTor"},
 		{Text: "torznab", Description: "Search Torznab"},
 		{Text: "remove", Description: "Remove torrent"},
 		{Text: "status", Description: "Torrent status"},
 		{Text: "link", Description: "Stream link"},
 		{Text: "m3u", Description: "M3U playlist"},
 		{Text: "preload", Description: "Preload file"},
+		{Text: "queue", Description: "Upload queue status"},
 		{Text: "server", Description: "Server info"},
 		{Text: "stats", Description: "Summary statistics"},
 		{Text: "stat", Description: "Detailed status"},
@@ -73,6 +75,9 @@ func Start(token string) {
 
 	b.Use(func(next tele.HandlerFunc) tele.HandlerFunc {
 		return func(c tele.Context) error {
+			if c.Sender() == nil {
+				return nil
+			}
 			if c.Message() != nil && c.Message().Text != "" {
 				cmd := logSafeStr(c.Message().Text, 60)
 				log.TLogln("tg cmd", logUser(c.Sender()), cmd)
@@ -105,9 +110,10 @@ func Start(token string) {
 	b.Handle("/m3u", cmdM3u)
 	b.Handle("/m3uall", cmdM3uAll)
 	b.Handle("/search", cmdSearch)
-	b.Handle("/searchall", cmdSearchAll)
+	b.Handle("/rutor", cmdSearchRutor)
 	b.Handle("/torznab", cmdTorznab)
 	b.Handle("/preload", cmdPreload)
+	b.Handle("/queue", up.ShowQueue)
 	b.Handle("/set", cmdSet)
 	b.Handle("/hash", cmdHash)
 	b.Handle("/export", cmdExport)
@@ -120,10 +126,32 @@ func Start(token string) {
 	b.Handle("/speedtest", cmdSpeedtest)
 	b.Handle("/shutdown", adminOnly(cmdShutdown))
 	b.Handle("/settings", adminOnly(cmdSettings))
+	b.Handle("/preset", adminOnly(cmdPreset))
 	b.Handle("/lang", cmdLang)
 	b.Handle("/stats", cmdStats)
 	b.Handle("/stat", cmdStat)
 	b.Handle("/snake", cmdSnake)
+
+	b.Handle(tele.OnDocument, func(c tele.Context) error {
+		if c.Message() == nil {
+			return nil
+		}
+		doc := c.Message().Document
+		if doc == nil {
+			return nil
+		}
+		lowerName := strings.ToLower(doc.FileName)
+		isTorrent := strings.HasSuffix(lowerName, ".torrent") ||
+			strings.Contains(strings.ToLower(doc.MIME), "bittorrent")
+		if isTorrent {
+			err := addTorrentFromDocument(c, doc)
+			if err != nil {
+				return err
+			}
+			return list(c)
+		}
+		return nil
+	})
 
 	b.Handle(tele.OnText, func(c tele.Context) error {
 		txt := c.Text()
@@ -131,7 +159,9 @@ func Start(token string) {
 			return nil
 		}
 		lower := strings.ToLower(txt)
-		if strings.HasPrefix(lower, "magnet:") || strings.HasPrefix(lower, "torrs://") || isHash(txt) {
+		if strings.HasPrefix(lower, "magnet:") || strings.HasPrefix(lower, "torrs://") ||
+			strings.HasPrefix(lower, "http://") || strings.HasPrefix(lower, "https://") ||
+			isHash(txt) {
 			err := addTorrent(c, txt)
 			if err != nil {
 				return err
@@ -141,12 +171,20 @@ func Start(token string) {
 			var hash string
 			for _, row := range c.Message().ReplyTo.ReplyMarkup.InlineKeyboard {
 				for _, btn := range row {
-					if strings.HasPrefix(btn.Data, "\fall|") {
-						hash = strings.TrimPrefix(btn.Data, "\fall|")
-						break
+					if btn.Data == "" {
+						continue
 					}
-					if isHash(btn.Data) {
+					if idx := strings.Index(btn.Data, "all|"); idx >= 0 {
+						h := btn.Data[idx+4:]
+						if len(h) >= 40 && isHash(h[:40]) {
+							hash = h[:40]
+						} else if isHash(h) {
+							hash = h
+						}
+					} else if isHash(btn.Data) {
 						hash = btn.Data
+					}
+					if hash != "" {
 						break
 					}
 				}
@@ -190,6 +228,7 @@ func Start(token string) {
 	up.Start()
 
 	go b.Start()
+	return nil
 }
 
 func help(c tele.Context) error {

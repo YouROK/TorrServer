@@ -87,7 +87,7 @@ func formatSnake(uid int64, st *cacheSt.CacheState, hash string, cols, rows int)
 		}
 		txt := "📊 <b>" + title + "</b>\n"
 		txt += fmt.Sprintf("%s: %s / %s\n", tr(uid, "snake_cache"),
-			humanize.Bytes(uint64(st.Filled)), humanize.Bytes(uint64(st.Capacity)))
+			humanize.IBytes(uint64(st.Filled)), humanize.IBytes(uint64(st.Capacity)))
 		dispHash := st.Hash
 		if len(dispHash) > snakeHashDisplayLen {
 			dispHash = dispHash[:snakeHashDisplayLen]
@@ -238,8 +238,8 @@ func formatSnake(uid int64, st *cacheSt.CacheState, hash string, cols, rows int)
 	sb.WriteString("</b>\n")
 	fmt.Fprintf(&sb, "%s: %s / %s",
 		tr(uid, "snake_cache"),
-		humanize.Bytes(uint64(st.Filled)),
-		humanize.Bytes(uint64(st.Capacity)))
+		humanize.IBytes(uint64(st.Filled)),
+		humanize.IBytes(uint64(st.Capacity)))
 	if len(st.Readers) > 1 {
 		fmt.Fprintf(&sb, " · %d %s", len(st.Readers), tr(uid, "status_streams"))
 	}

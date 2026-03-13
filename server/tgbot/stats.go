@@ -36,13 +36,13 @@ func cmdStats(c tele.Context) error {
 	var sb strings.Builder
 	sb.WriteString("📊 <b>" + tr(uid, "stats_title") + "</b>\n\n")
 	fmt.Fprintf(&sb, "%s: %d\n", tr(uid, "stats_torrents"), len(torrents))
-	fmt.Fprintf(&sb, "%s: %s\n", tr(uid, "stats_total_size"), humanize.Bytes(uint64(totalSize)))
+	fmt.Fprintf(&sb, "%s: %s\n", tr(uid, "stats_total_size"), humanize.IBytes(uint64(totalSize)))
 	progress := 0.0
 	if totalSize > 0 {
 		progress = float64(loadedSize) / float64(totalSize) * 100
 	}
 	fmt.Fprintf(&sb, "%s: %s (%.1f%%)\n",
-		tr(uid, "stats_loaded"), humanize.Bytes(uint64(loadedSize)), progress)
+		tr(uid, "stats_loaded"), humanize.IBytes(uint64(loadedSize)), progress)
 	fmt.Fprintf(&sb, "%s: %d %s, %d %s\n",
 		tr(uid, "stats_peers"), activePeers, tr(uid, "stats_active"), seeders, tr(uid, "stats_seeds"))
 	fmt.Fprintf(&sb, "%s: %d\n", tr(uid, "stats_streams"), streams)

@@ -18,7 +18,7 @@ Telegram bot for managing [TorrServer](https://github.com/YouROK/TorrServer) —
 - File operations — browse files, download to Telegram
 - FFprobe — media metadata via `/ffp`
 - Localization — Russian and English
-- Admin — shutdown, settings (whitelist users only)
+- Admin — shutdown, settings, presets (whitelist users only)
 
 ## Getting Started
 
@@ -94,8 +94,8 @@ Example:
 
 | Command | Description |
 |---------|-------------|
-| `/search <query>` | RuTor |
-| `/searchall <query>` | RuTor + Torznab |
+| `/search <query>` | RuTor + Torznab (all sources) |
+| `/rutor <query>` | RuTor only |
 | `/torznab <query> [index]` | Torznab indexers |
 
 ### Other
@@ -116,7 +116,16 @@ Example:
 | Command | Description |
 |---------|-------------|
 | `/shutdown` | Shut down server |
-| `/settings` | Interactive settings menu |
+| `/settings` | Interactive settings menu (sub-pages: Search, Network, Other, Cache, Paths, Storage) |
+| `/preset <name>` | Apply named preset: `performance`, `storage`, `streaming`, `low`, `default` |
+| `/preset <key> <value> ...` | Apply key-value pairs: `cache 256`, `preload 50`, `conn 100`, etc. |
+
+**Preset examples:**
+- `/preset performance` — max cache, high preload, no limits
+- `/preset cache 256 preload 50` — set cache 256 MB and preload 50%
+- `/preset cache 512 conn 100 down 0 up 0` — multiple values
+
+**Preset keys:** `cache`, `preload`, `readahead`, `conn`, `timeout`, `port`, `down`, `up`, `retr`, `responsive`, `cachedrop`
 
 ## Inline Mode
 

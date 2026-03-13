@@ -67,11 +67,12 @@ func sendListPage(c tele.Context, page int, compact bool) error {
 		torrKbd := &tele.ReplyMarkup{InlineKeyboard: rows}
 		msg := "<b>" + escapeHtml(t.Title) + "</b>"
 		if t.Size > 0 {
-			msg += " <i>" + humanize.Bytes(uint64(t.Size)) + "</i>"
+			msg += " <i>" + humanize.IBytes(uint64(t.Size)) + "</i>"
 		}
 		msg += "\n<code>" + hash + "</code>"
 		if err := c.Send(msg, torrKbd); err != nil {
 			log.TLogln("tg list send err", err)
+			return err
 		}
 	}
 
@@ -93,6 +94,7 @@ func sendListPage(c tele.Context, page int, compact bool) error {
 	if len(navRow) > 1 || totalPages == 1 {
 		if err := c.Send(tr(uid, "page")+" "+strconv.Itoa(page+1)+"/"+strconv.Itoa(totalPages), &tele.ReplyMarkup{InlineKeyboard: [][]tele.InlineButton{navRow}}); err != nil {
 			log.TLogln("tg list nav err", err)
+			return err
 		}
 	}
 	return nil

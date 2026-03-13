@@ -1,6 +1,7 @@
 package tgbot
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"unicode"
@@ -11,6 +12,10 @@ import (
 	"server/tgbot/config"
 	"server/web"
 )
+
+func chatMsgKey(chatID int64, msgID int) string {
+	return fmt.Sprintf("%d_%d", chatID, msgID)
+}
 
 // escapeHtml escapes <, >, &, " for Telegram HTML parse mode to prevent "Unsupported start tag" errors
 func escapeHtml(s string) string {

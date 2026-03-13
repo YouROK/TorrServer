@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"server/log"
 	"server/settings"
@@ -28,7 +29,7 @@ func LoadConfig() {
 		Cfg.HostTG = "https://api.telegram.org"
 		buf, _ = json.MarshalIndent(Cfg, "", " ")
 		if buf != nil {
-			os.WriteFile(fn, buf, 0o666)
+			os.WriteFile(fn, buf, 0o600)
 		}
 		return
 	}
@@ -38,7 +39,7 @@ func LoadConfig() {
 		Cfg.WhiteIds = []int64{}
 		Cfg.BlackIds = []int64{}
 	}
-	if Cfg.HostTG == "" {
+	if Cfg.HostTG == "" || (!strings.HasPrefix(Cfg.HostTG, "http://") && !strings.HasPrefix(Cfg.HostTG, "https://")) {
 		Cfg.HostTG = "https://api.telegram.org"
 	}
 	if Cfg.WhiteIds == nil {

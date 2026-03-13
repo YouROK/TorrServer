@@ -13,13 +13,42 @@ import (
 )
 
 func cmdSearch(c tele.Context) error {
-	if !sets.BTsets.EnableRutorSearch {
+	if sets.BTsets == nil || (!sets.BTsets.EnableRutorSearch && !sets.BTsets.EnableTorznabSearch) {
 		return c.Send(tr(c.Sender().ID, "search_disabled_rutor"))
 	}
 
 	args := c.Args()
 	if len(args) == 0 {
 		return c.Send(tr(c.Sender().ID, "search_usage"))
+	}
+	query := strings.Join(args, " ")
+	uid := c.Sender().ID
+	statusMsg, err := c.Bot().Send(c.Sender(), tr(uid, "searching"))
+	if err != nil {
+		return err
+	}
+	go func() {
+		var list []*models.TorrentDetails
+		if sets.BTsets != nil && sets.BTsets.EnableRutorSearch {
+			list = append(list, rutor.Search(query)...)
+		}
+		if sets.BTsets != nil && sets.BTsets.EnableTorznabSearch {
+			list = append(list, torznab.Search(query, -1)...)
+		}
+		source := "RuTor+Torznab"
+		sendSearchResultsAsync(c.Bot(), c.Sender(), statusMsg, uid, query, list, source)
+	}()
+	return nil
+}
+
+func cmdSearchRutor(c tele.Context) error {
+	if sets.BTsets == nil || !sets.BTsets.EnableRutorSearch {
+		return c.Send(tr(c.Sender().ID, "search_disabled_rutor"))
+	}
+
+	args := c.Args()
+	if len(args) == 0 {
+		return c.Send(tr(c.Sender().ID, "rutor_usage"))
 	}
 	query := strings.Join(args, " ")
 	uid := c.Sender().ID
@@ -35,7 +64,7 @@ func cmdSearch(c tele.Context) error {
 }
 
 func cmdTorznab(c tele.Context) error {
-	if !sets.BTsets.EnableTorznabSearch {
+	if sets.BTsets == nil || !sets.BTsets.EnableTorznabSearch {
 		return c.Send(tr(c.Sender().ID, "search_disabled_torznab"))
 	}
 
@@ -59,35 +88,6 @@ func cmdTorznab(c tele.Context) error {
 	go func() {
 		list := torznab.Search(query, index)
 		sendSearchResultsAsync(c.Bot(), c.Sender(), statusMsg, uid, query, list, "Torznab")
-	}()
-	return nil
-}
-
-func cmdSearchAll(c tele.Context) error {
-	if !sets.BTsets.EnableRutorSearch && !sets.BTsets.EnableTorznabSearch {
-		return c.Send(tr(c.Sender().ID, "search_disabled_rutor"))
-	}
-
-	args := c.Args()
-	if len(args) == 0 {
-		return c.Send(tr(c.Sender().ID, "search_usage"))
-	}
-	query := strings.Join(args, " ")
-	uid := c.Sender().ID
-	statusMsg, err := c.Bot().Send(c.Sender(), tr(uid, "searching"))
-	if err != nil {
-		return err
-	}
-	go func() {
-		var list []*models.TorrentDetails
-		if sets.BTsets.EnableRutorSearch {
-			list = append(list, rutor.Search(query)...)
-		}
-		if sets.BTsets.EnableTorznabSearch {
-			list = append(list, torznab.Search(query, -1)...)
-		}
-		source := "RuTor+Torznab"
-		sendSearchResultsAsync(c.Bot(), c.Sender(), statusMsg, uid, query, list, source)
 	}()
 	return nil
 }

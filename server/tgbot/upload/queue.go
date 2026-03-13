@@ -3,20 +3,12 @@ package upload
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/dustin/go-humanize"
 	tele "gopkg.in/telebot.v4"
 	"server/torr"
 )
-
-func escapeHtml(s string) string {
-	s = strings.ReplaceAll(s, "&", "&amp;")
-	s = strings.ReplaceAll(s, "<", "&lt;")
-	s = strings.ReplaceAll(s, ">", "&gt;")
-	return s
-}
 
 type DLQueue struct {
 	id        int
@@ -88,6 +80,9 @@ func updateLoadStatus(wrk *Worker, file *TorrFile, fi, fc int) {
 		return
 	}
 	t := torr.GetTorrent(wrk.torrentHash)
+	if t == nil {
+		return
+	}
 	ti := t.Status()
 	if wrk.isCancelled {
 		wrk.c.Bot().Edit(wrk.msg, tr(wrk.c.Sender().ID, "upload_stopping"))
@@ -96,10 +91,10 @@ func updateLoadStatus(wrk *Worker, file *TorrFile, fi, fc int) {
 		if ti.DownloadSpeed == 0 {
 			ti.DownloadSpeed = 1.0
 		}
-		wait := time.Duration(float64(file.Loaded())/ti.DownloadSpeed) * time.Second
-		speed := humanize.Bytes(uint64(ti.DownloadSpeed)) + "/sec"
+		wait := time.Duration(float64(file.Remaining())/ti.DownloadSpeed) * time.Second
+		speed := humanize.IBytes(uint64(ti.DownloadSpeed)) + "/sec"
 		peers := fmt.Sprintf("%v · %v/%v", ti.ConnectedSeeders, ti.ActivePeers, ti.TotalPeers)
-		prc := fmt.Sprintf("%.2f%% %v / %v", float64(file.offset)*100.0/float64(file.size), humanize.Bytes(uint64(file.offset)), humanize.Bytes(uint64(file.size)))
+		prc := fmt.Sprintf("%.2f%% %v / %v", float64(file.offset)*100.0/float64(file.size), humanize.IBytes(uint64(file.offset)), humanize.IBytes(uint64(file.size)))
 
 		name := file.name
 		if name == ti.Title {

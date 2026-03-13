@@ -20,6 +20,9 @@ func files(c tele.Context) error {
 		return c.Respond(&tele.CallbackResponse{Text: tr(c.Sender().ID, "callback_unknown")})
 	}
 	hash := args[1]
+	if !isHash(hash) {
+		return c.Respond(&tele.CallbackResponse{Text: tr(c.Sender().ID, "callback_unknown")})
+	}
 	msg, err := c.Bot().Send(c.Sender(), tr(c.Sender().ID, "connecting"))
 	t := torr.GetTorrent(hash)
 	if t == nil {
@@ -60,7 +63,7 @@ func sendFilesList(api tele.API, recipient tele.Recipient, statusMsg *tele.Messa
 	}
 
 	txt := "📁 <b>" + escapeHtml(ti.Title) + "</b> " +
-		"<i>" + humanize.Bytes(uint64(ti.TorrentSize)) + "</i>\n\n" +
+		"<i>" + humanize.IBytes(uint64(ti.TorrentSize)) + "</i>\n\n" +
 		"<code>" + ti.Hash + "</code>"
 
 	filesKbd := &tele.ReplyMarkup{}
@@ -71,7 +74,7 @@ func sendFilesList(api tele.API, recipient tele.Recipient, statusMsg *tele.Messa
 		if _, ok := viewedSet[f.Id]; ok {
 			viewedMark = "✓ "
 		}
-		fileLabel := viewedMark + "#" + strconv.Itoa(f.Id) + ": " + humanize.Bytes(uint64(f.Length)) + "\n" + filepath.Base(f.Path)
+		fileLabel := viewedMark + "#" + strconv.Itoa(f.Id) + ": " + humanize.IBytes(uint64(f.Length)) + "\n" + filepath.Base(f.Path)
 		btn := filesKbd.Data(fileLabel, "upload", ti.Hash, strconv.Itoa(f.Id))
 		linkBtn := filesKbd.URL(tr(uid, "files_link"), host+"/stream/"+filepath.Base(f.Path)+"?link="+t.Hash().HexString()+"&index="+strconv.Itoa(f.Id)+"&play")
 		btnPreload := filesKbd.Data("⏳", "fpreload", ti.Hash, strconv.Itoa(f.Id))
@@ -97,7 +100,7 @@ func sendFilesList(api tele.API, recipient tele.Recipient, statusMsg *tele.Messa
 
 	if len(ti.FileStats) > 1 {
 		txt = "📁 <b>" + escapeHtml(ti.Title) + "</b> " +
-			"<i>" + humanize.Bytes(uint64(ti.TorrentSize)) + "</i>\n\n" +
+			"<i>" + humanize.IBytes(uint64(ti.TorrentSize)) + "</i>\n\n" +
 			"<code>" + ti.Hash + "</code>\n\n" +
 			fmt.Sprintf(tr(uid, "files_range_hint"), len(ti.FileStats))
 		files = files[:0]

@@ -49,7 +49,7 @@ func handleInlineQuery(c tele.Context) error {
 		}
 	}
 
-	if len(query) >= 2 && (sets.BTsets.EnableRutorSearch || sets.BTsets.EnableTorznabSearch) {
+	if len(query) >= 2 && sets.BTsets != nil && (sets.BTsets.EnableRutorSearch || sets.BTsets.EnableTorznabSearch) {
 		var list []*models.TorrentDetails
 		if sets.BTsets.EnableRutorSearch {
 			list = append(list, rutor.Search(query)...)

@@ -13,6 +13,9 @@ func deleteTorrent(c tele.Context) {
 		return
 	}
 	hash := args[1]
+	if !isHash(hash) {
+		return
+	}
 	torr.RemTorrent(hash)
 }
 

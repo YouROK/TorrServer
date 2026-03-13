@@ -29,11 +29,15 @@ type TorrFile struct {
 }
 
 func NewTorrFile(wrk *Worker, stFile *state.TorrentFileStat) (*TorrFile, error) {
-	if config.Cfg.HostTG != "" && stFile.Length > 2*1024*1024*1024 {
-		return nil, errors.New("Размер файла должен быть больше 2GB")
+	uid := int64(0)
+	if wrk.c != nil && wrk.c.Sender() != nil {
+		uid = wrk.c.Sender().ID
 	}
-	if config.Cfg.HostTG == "" && stFile.Length > 50*1024*1024 {
-		return nil, errors.New("Размер файла должен быть больше 50MB\nЧтобы закачивать файлы до 2GB нужно в tg.cfg указать host к <a href='https://github.com/tdlib/telegram-bot-api'>telegram bot api</a>")
+	if config.Cfg != nil && config.Cfg.HostTG != "" && stFile.Length > 2*1024*1024*1024 {
+		return nil, errors.New(tr(uid, "upload_file_too_large_2gb"))
+	}
+	if (config.Cfg == nil || config.Cfg.HostTG == "") && stFile.Length > 50*1024*1024 {
+		return nil, errors.New(tr(uid, "upload_file_too_large_50mb"))
 	}
 
 	tf := new(TorrFile)
@@ -65,7 +69,7 @@ func NewTorrFile(wrk *Worker, stFile *state.TorrentFileStat) (*TorrFile, error) 
 	if reader == nil {
 		return nil, errors.New("cannot create torrent reader")
 	}
-	if sets.BTsets.ResponsiveMode {
+	if sets.BTsets != nil && sets.BTsets.ResponsiveMode {
 		reader.SetResponsive()
 	}
 	tf.reader = reader
@@ -82,7 +86,7 @@ func (t *TorrFile) Read(p []byte) (n int, err error) {
 	return
 }
 
-func (t *TorrFile) Loaded() int64 {
+func (t *TorrFile) Remaining() int64 {
 	return t.size - t.offset
 }
 

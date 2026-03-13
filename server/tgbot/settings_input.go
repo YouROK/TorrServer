@@ -13,6 +13,7 @@ import (
 	"server/rutor"
 	"server/settings"
 	"server/torr"
+	"server/torznab"
 )
 
 const pendingInputTTL = 30 * time.Minute
@@ -46,10 +47,6 @@ func pendingInputCleanup() {
 	}
 }
 
-func pendingKey(chatID int64, msgID int) string {
-	return fmt.Sprintf("%d_%d", chatID, msgID)
-}
-
 func sendSettingsInputPrompt(c tele.Context, uid int64, setting, hint string) error {
 	msg := fmt.Sprintf("✏️ %s\n\n%s", tr(uid, "settings_input_reply"), hint)
 	btnCancel := tele.InlineButton{Text: "❌ " + tr(uid, "canceled"), Unique: "fset", Data: "input_cancel"}
@@ -59,7 +56,7 @@ func sendSettingsInputPrompt(c tele.Context, uid int64, setting, hint string) er
 		return err
 	}
 	pendingInputMu.Lock()
-	pendingInputs[pendingKey(sent.Chat.ID, sent.ID)] = pendingInput{Setting: setting, UserID: uid, CreatedAt: time.Now()}
+	pendingInputs[chatMsgKey(sent.Chat.ID, sent.ID)] = pendingInput{Setting: setting, UserID: uid, CreatedAt: time.Now()}
 	pendingInputMu.Unlock()
 	return c.Respond(&tele.CallbackResponse{})
 }
@@ -69,7 +66,7 @@ func handleSettingsInputReply(c tele.Context) (handled bool) {
 	if msg.ReplyTo == nil {
 		return false
 	}
-	key := pendingKey(msg.ReplyTo.Chat.ID, msg.ReplyTo.ID)
+	key := chatMsgKey(msg.ReplyTo.Chat.ID, msg.ReplyTo.ID)
 	pendingInputMu.Lock()
 	pending, ok := pendingInputs[key]
 	delete(pendingInputs, key)
@@ -86,7 +83,7 @@ func handleSettingsInputReply(c tele.Context) (handled bool) {
 }
 
 func cancelSettingsInput(c tele.Context) error {
-	key := pendingKey(c.Callback().Message.Chat.ID, c.Callback().Message.ID)
+	key := chatMsgKey(c.Callback().Message.Chat.ID, c.Callback().Message.ID)
 	pendingInputMu.Lock()
 	delete(pendingInputs, key)
 	pendingInputMu.Unlock()
@@ -176,6 +173,26 @@ func applySettingsInput(c tele.Context, setting, value string) {
 		}
 		sets.TorznabUrls = append(sets.TorznabUrls, cfg)
 		_ = c.Send(fmt.Sprintf(tr(uid, "settings_input_torznab_added"), cfg.Host))
+	case "torznab_test":
+		if value == "" {
+			_ = c.Send(tr(uid, "settings_input_torznab_usage"))
+			return
+		}
+		parts := strings.SplitN(value, "|", 3)
+		host := strings.TrimSpace(parts[0])
+		key := ""
+		if len(parts) > 1 {
+			key = strings.TrimSpace(parts[1])
+		}
+		if !strings.HasPrefix(host, "http") {
+			host = "https://" + host
+		}
+		if err := torznab.Test(host, key); err != nil {
+			_ = c.Send(fmt.Sprintf(tr(uid, "settings_torznab_test_fail"), err.Error()))
+			return
+		}
+		_ = c.Send(tr(uid, "settings_torznab_test_ok"))
+		return
 	default:
 		_ = c.Send(tr(uid, "callback_unknown"))
 		return

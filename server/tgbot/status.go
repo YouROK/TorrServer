@@ -3,6 +3,7 @@ package tgbot
 import (
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -65,18 +66,91 @@ func cmdStatus(c tele.Context) error {
 		return sendStatus(c, t)
 	}
 
+	return sendStatusAllPage(c, 0)
+}
+
+const statusAllPageSize = 5
+
+func sendStatusAllPage(c tele.Context, page int) error {
+	torrents := torr.ListTorrent()
+	if len(torrents) == 0 {
+		return c.Send(tr(c.Sender().ID, "no_torrents"))
+	}
+
+	totalPages := (len(torrents) + statusAllPageSize - 1) / statusAllPageSize
+	if page < 0 {
+		page = 0
+	}
+	if page >= totalPages {
+		page = totalPages - 1
+	}
+	start := page * statusAllPageSize
+	end := start + statusAllPageSize
+	if end > len(torrents) {
+		end = len(torrents)
+	}
+	pageTorrents := torrents[start:end]
+
+	uid := c.Sender().ID
 	var sb strings.Builder
-	for _, t := range torrents {
-		txt := formatTorrentStatus(c.Sender().ID, t)
+	for _, t := range pageTorrents {
+		txt := formatTorrentStatus(uid, t)
 		if txt != "" {
 			sb.WriteString(txt)
 			sb.WriteString("\n\n")
 		}
 	}
 	if sb.Len() == 0 {
-		return c.Send(tr(c.Sender().ID, "status_no_active"))
+		return c.Send(tr(uid, "status_no_active"))
 	}
-	return c.Send(strings.TrimSuffix(sb.String(), "\n\n"))
+	msg := strings.TrimSuffix(sb.String(), "\n\n")
+
+	navRow := []tele.InlineButton{}
+	if totalPages > 1 {
+		if page > 0 {
+			navRow = append(navRow, tele.InlineButton{Text: "◀️", Unique: "fstatusall", Data: strconv.Itoa(page - 1)})
+		}
+		navRow = append(navRow, tele.InlineButton{Text: strconv.Itoa(page+1) + "/" + strconv.Itoa(totalPages), Unique: "fnop", Data: ""})
+		if page < totalPages-1 {
+			navRow = append(navRow, tele.InlineButton{Text: "▶️", Unique: "fstatusall", Data: strconv.Itoa(page + 1)})
+		}
+	}
+	navRow = append(navRow, tele.InlineButton{Text: "🔄", Unique: "fstatusallrefresh", Data: strconv.Itoa(page)})
+
+	kbd := &tele.ReplyMarkup{InlineKeyboard: [][]tele.InlineButton{navRow}}
+	if err := c.Send(msg, kbd); err != nil {
+		log.TLogln("tg status all send err", err)
+		return err
+	}
+	return nil
+}
+
+func callbackStatusAllPage(c tele.Context, data string) error {
+	page := 0
+	if data != "" {
+		if p, err := strconv.Atoi(data); err == nil {
+			page = p
+		}
+	}
+	_ = c.Respond(&tele.CallbackResponse{})
+	if c.Callback().Message != nil {
+		_ = c.Bot().Delete(c.Callback().Message)
+	}
+	return sendStatusAllPage(c, page)
+}
+
+func callbackStatusAllRefresh(c tele.Context, data string) error {
+	page := 0
+	if data != "" {
+		if p, err := strconv.Atoi(data); err == nil {
+			page = p
+		}
+	}
+	_ = c.Respond(&tele.CallbackResponse{Text: "🔄"})
+	if c.Callback().Message != nil {
+		_ = c.Bot().Delete(c.Callback().Message)
+	}
+	return sendStatusAllPage(c, page)
 }
 
 func sendStatus(c tele.Context, t *torr.Torrent) error {
@@ -297,12 +371,12 @@ func formatTorrentStatus(uid int64, t *torr.Torrent) string {
 	}
 
 	// For streaming: size + cache info (progress is misleading — we stream, not download sequentially)
-	sizeLine := fmt.Sprintf("%s: %s", tr(uid, "status_size"), humanize.Bytes(uint64(st.TorrentSize)))
+	sizeLine := fmt.Sprintf("%s: %s", tr(uid, "status_size"), humanize.IBytes(uint64(st.TorrentSize)))
 	if cache := t.CacheState(); cache != nil {
 		sizeLine += fmt.Sprintf(" | %s: %s / %s · %d %s",
 			tr(uid, "status_cache"),
-			humanize.Bytes(uint64(cache.Filled)),
-			humanize.Bytes(uint64(cache.Capacity)),
+			humanize.IBytes(uint64(cache.Filled)),
+			humanize.IBytes(uint64(cache.Capacity)),
 			len(cache.Readers),
 			tr(uid, "status_streams"))
 	}

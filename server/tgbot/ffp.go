@@ -88,14 +88,14 @@ func formatFfpHuman(data *ffp.ProbeData, uid int64) string {
 		}
 		if f.Size != "" {
 			if size, err := strconv.ParseInt(f.Size, 10, 64); err == nil {
-				fmt.Fprintf(&sb, "  %s: %s\n", tr(uid, "ffp_size"), humanize.Bytes(uint64(size)))
+				fmt.Fprintf(&sb, "  %s: %s\n", tr(uid, "ffp_size"), humanize.IBytes(uint64(size)))
 			} else {
 				fmt.Fprintf(&sb, "  %s: %s\n", tr(uid, "ffp_size"), f.Size)
 			}
 		}
 		if f.BitRate != "" {
 			if br, err := strconv.ParseInt(f.BitRate, 10, 64); err == nil {
-				fmt.Fprintf(&sb, "  %s: %s/s\n", tr(uid, "ffp_bitrate"), humanize.Bytes(uint64(br)))
+				fmt.Fprintf(&sb, "  %s: %s/s\n", tr(uid, "ffp_bitrate"), humanize.IBytes(uint64(br)))
 			} else {
 				fmt.Fprintf(&sb, "  %s: %s\n", tr(uid, "ffp_bitrate"), f.BitRate)
 			}
@@ -134,7 +134,7 @@ func formatFfpHuman(data *ffp.ProbeData, uid int64) string {
 			}
 			if s.BitRate != "" {
 				if br, err := strconv.ParseInt(s.BitRate, 10, 64); err == nil {
-					fmt.Fprintf(&sb, "  %s: %s/s\n", tr(uid, "ffp_bitrate"), humanize.Bytes(uint64(br)))
+					fmt.Fprintf(&sb, "  %s: %s/s\n", tr(uid, "ffp_bitrate"), humanize.IBytes(uint64(br)))
 				}
 			}
 			if s.ColorSpace != "" || s.ColorTransfer != "" {
@@ -163,7 +163,7 @@ func formatFfpHuman(data *ffp.ProbeData, uid int64) string {
 			}
 			if s.BitRate != "" {
 				if br, err := strconv.ParseInt(s.BitRate, 10, 64); err == nil {
-					fmt.Fprintf(&sb, "  %s: %s/s\n", tr(uid, "ffp_bitrate"), humanize.Bytes(uint64(br)))
+					fmt.Fprintf(&sb, "  %s: %s/s\n", tr(uid, "ffp_bitrate"), humanize.IBytes(uint64(br)))
 				}
 			}
 			if title != "" {

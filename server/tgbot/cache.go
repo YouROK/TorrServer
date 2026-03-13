@@ -30,8 +30,8 @@ func cmdCache(c tele.Context) error {
 
 	uid := c.Sender().ID
 	txt := "💾 <b>" + escapeHtml(st.Torrent.Title) + "</b>\n\n"
-	txt += fmt.Sprintf("%s: %s\n", tr(uid, "cache_capacity"), humanize.Bytes(uint64(st.Capacity)))
-	txt += fmt.Sprintf("%s: %s\n", tr(uid, "cache_filled"), humanize.Bytes(uint64(st.Filled)))
+	txt += fmt.Sprintf("%s: %s\n", tr(uid, "cache_capacity"), humanize.IBytes(uint64(st.Capacity)))
+	txt += fmt.Sprintf("%s: %s\n", tr(uid, "cache_filled"), humanize.IBytes(uint64(st.Filled)))
 	txt += fmt.Sprintf("%s: %d\n", tr(uid, "cache_pieces"), st.PiecesCount)
 	txt += fmt.Sprintf("%s: %d\n", tr(uid, "cache_readers"), len(st.Readers))
 	txt += fmt.Sprintf("<code>%s</code>", hash)

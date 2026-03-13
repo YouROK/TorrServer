@@ -19,11 +19,21 @@ import (
 // TrFunc is set by tgbot for localization (avoids circular import)
 var TrFunc func(int64, string) string
 
+// EscapeFunc is set by tgbot for HTML escaping (avoids circular import)
+var EscapeFunc func(string) string
+
 func tr(uid int64, key string) string {
 	if TrFunc != nil {
 		return TrFunc(uid, key)
 	}
 	return key
+}
+
+func escapeHtml(s string) string {
+	if EscapeFunc != nil {
+		return EscapeFunc(s)
+	}
+	return s
 }
 
 type Worker struct {
@@ -71,8 +81,14 @@ func (m *Manager) AddRange(c tele.Context, hash string, from, to int) {
 		msg, err = c.Bot().Send(c.Recipient(), fmt.Sprintf(tr(c.Sender().ID, "upload_connecting"), hash))
 		if err == nil {
 			break
-		} else {
-			log.TLogln("tg upload retry", i+1, "/", 20)
+		}
+		log.TLogln("tg upload retry", i+1, "/", 20)
+		if i < 19 {
+			backoff := time.Duration(1<<uint(i)) * 100 * time.Millisecond
+			if backoff > 5*time.Second {
+				backoff = 5 * time.Second
+			}
+			time.Sleep(backoff)
 		}
 	}
 
@@ -99,13 +115,13 @@ func (m *Manager) AddRange(c tele.Context, hash string, from, to int) {
 	if from == 1 && to == -1 {
 		to = len(ti.FileStats)
 	}
-	if to > len(ti.FileStats) {
-		to = len(ti.FileStats)
-	}
 	if from < 1 {
 		from = 1
 	}
-	if to >= 0 && to < from {
+	if to > len(ti.FileStats) {
+		to = len(ti.FileStats)
+	}
+	if from > to {
 		from, to = to, from
 	}
 	if to > len(ti.FileStats) {
@@ -175,7 +191,7 @@ func (m *Manager) sendQueueStatus() {
 	m.queueLock.Lock()
 	defer m.queueLock.Unlock()
 	for i, wrk := range m.queue {
-		if wrk.msg == nil {
+		if wrk.msg == nil || wrk.c.Sender() == nil {
 			continue
 		}
 		torrKbd := &tele.ReplyMarkup{}
@@ -251,8 +267,14 @@ func uploadFile(wrk *Worker, file *state.TorrentFileStat, fi, fc int) error {
 		err = wrk.c.Send(d)
 		if err == nil || errors.Is(err, ERR_STOPPED) {
 			break
-		} else {
-			log.TLogln("tg upload retry", i+1, "/", 20)
+		}
+		log.TLogln("tg upload retry", i+1, "/", 20)
+		if i < 19 {
+			backoff := time.Duration(1<<uint(i)) * 100 * time.Millisecond
+			if backoff > 5*time.Second {
+				backoff = 5 * time.Second
+			}
+			time.Sleep(backoff)
 		}
 	}
 
