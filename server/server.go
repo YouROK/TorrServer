@@ -70,7 +70,9 @@ func Start() {
 	settings.IP = settings.Args.IP
 
 	if settings.Args.TGToken != "" {
-		tgbot.Start(settings.Args.TGToken)
+		if err := tgbot.Start(settings.Args.TGToken); err != nil {
+			log.TLogln("tg bot start failed", err)
+		}
 	}
 	web.Start()
 }

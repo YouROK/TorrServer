@@ -3,7 +3,6 @@ package upload
 import (
 	"errors"
 	"fmt"
-	"log"
 	"math"
 	"path/filepath"
 	"strconv"
@@ -12,9 +11,30 @@ import (
 
 	tele "gopkg.in/telebot.v4"
 
+	"server/log"
 	"server/torr"
 	"server/torr/state"
 )
+
+// TrFunc is set by tgbot for localization (avoids circular import)
+var TrFunc func(int64, string) string
+
+// EscapeFunc is set by tgbot for HTML escaping (avoids circular import)
+var EscapeFunc func(string) string
+
+func tr(uid int64, key string) string {
+	if TrFunc != nil {
+		return TrFunc(uid, key)
+	}
+	return key
+}
+
+func escapeHtml(s string) string {
+	if EscapeFunc != nil {
+		return EscapeFunc(s)
+	}
+	return s
+}
 
 type Worker struct {
 	id          int
@@ -45,7 +65,7 @@ func (m *Manager) AddRange(c tele.Context, hash string, from, to int) {
 	defer m.queueLock.Unlock()
 
 	if len(m.queue) > 50 {
-		c.Bot().Send(c.Recipient(), "Очередь переполнена, попробуйте попозже\n\nЭлементов в очереди:"+strconv.Itoa(len(m.queue)))
+		c.Bot().Send(c.Recipient(), fmt.Sprintf(tr(c.Sender().ID, "upload_queue_full"), len(m.queue)))
 		return
 	}
 
@@ -58,37 +78,50 @@ func (m *Manager) AddRange(c tele.Context, hash string, from, to int) {
 	var err error
 
 	for i := 0; i < 20; i++ {
-		msg, err = c.Bot().Send(c.Recipient(), "<b>Подключение к торренту</b>\n<code>"+hash+"</code>")
+		msg, err = c.Bot().Send(c.Recipient(), fmt.Sprintf(tr(c.Sender().ID, "upload_connecting"), hash))
 		if err == nil {
 			break
-		} else {
-			log.Println("Error send msg, try again:", i+1, "/", 20)
+		}
+		log.TLogln("tg upload retry", i+1, "/", 20)
+		if i < 19 {
+			backoff := time.Duration(1<<uint(i)) * 100 * time.Millisecond
+			if backoff > 5*time.Second {
+				backoff = 5 * time.Second
+			}
+			time.Sleep(backoff)
 		}
 	}
 
 	if err != nil {
-		log.Println("Error send msg:", err)
+		log.TLogln("tg upload send err", err)
 		return
 	}
 
 	t := torr.GetTorrent(hash)
+	if t == nil {
+		c.Bot().Edit(msg, tr(c.Sender().ID, "torrent_not_found")+":\n<code>"+hash+"</code>")
+		return
+	}
 	t.WaitInfo()
 	for t.Status().Stat != state.TorrentWorking {
 		time.Sleep(time.Second)
 		t = torr.GetTorrent(hash)
+		if t == nil {
+			return
+		}
 	}
 	ti := t.Status()
 
 	if from == 1 && to == -1 {
 		to = len(ti.FileStats)
 	}
-	if to > len(ti.FileStats) {
-		to = len(ti.FileStats)
-	}
 	if from < 1 {
 		from = 1
 	}
-	if to >= 0 && to < from {
+	if to > len(ti.FileStats) {
+		to = len(ti.FileStats)
+	}
+	if from > to {
 		from, to = to, from
 	}
 	if to > len(ti.FileStats) {
@@ -111,17 +144,13 @@ func (m *Manager) AddRange(c tele.Context, hash string, from, to int) {
 func (m *Manager) Cancel(id int) {
 	m.queueLock.Lock()
 	defer m.queueLock.Unlock()
-	var rem []int
 	for i, w := range m.queue {
 		if w.id == id {
 			w.isCancelled = true
 			w.c.Bot().Delete(w.msg)
-			rem = append(rem, i)
+			m.queue = append(m.queue[:i], m.queue[i+1:]...)
 			return
 		}
-	}
-	for _, i := range rem {
-		m.queue = append(m.queue[:i], m.queue[i+1:]...)
 	}
 	if wrk, ok := m.working[id]; ok {
 		wrk.isCancelled = true
@@ -162,13 +191,13 @@ func (m *Manager) sendQueueStatus() {
 	m.queueLock.Lock()
 	defer m.queueLock.Unlock()
 	for i, wrk := range m.queue {
-		if wrk.msg == nil {
+		if wrk.msg == nil || wrk.c.Sender() == nil {
 			continue
 		}
 		torrKbd := &tele.ReplyMarkup{}
-		torrKbd.Inline([]tele.Row{torrKbd.Row(torrKbd.Data("Отмена", "cancel", strconv.Itoa(wrk.id)))}...)
+		torrKbd.Inline([]tele.Row{torrKbd.Row(torrKbd.Data(tr(wrk.c.Sender().ID, "upload_cancel"), "cancel", strconv.Itoa(wrk.id)))}...)
 
-		msg := "Номер в очереди " + strconv.Itoa(i+1)
+		msg := fmt.Sprintf(tr(wrk.c.Sender().ID, "upload_queue_pos"), i+1)
 
 		wrk.c.Bot().Edit(wrk.msg, msg, torrKbd)
 	}
@@ -178,10 +207,17 @@ func loading(wrk *Worker) {
 	iserr := false
 
 	t := torr.GetTorrent(wrk.torrentHash)
+	if t == nil {
+		wrk.c.Bot().Edit(wrk.msg, tr(wrk.c.Sender().ID, "torrent_not_found")+":\n<code>"+wrk.torrentHash+"</code>")
+		return
+	}
 	t.WaitInfo()
 	for t.Status().Stat != state.TorrentWorking {
 		time.Sleep(time.Second)
 		t = torr.GetTorrent(wrk.torrentHash)
+		if t == nil {
+			return
+		}
 	}
 	wrk.ti = t.Status()
 
@@ -193,7 +229,7 @@ func loading(wrk *Worker) {
 
 		err := uploadFile(wrk, file, i+1, len(wrk.ti.FileStats))
 		if err != nil {
-			errstr := fmt.Sprintf("Ошибка загрузки в телеграм: %v", err.Error())
+			errstr := fmt.Sprintf(tr(wrk.c.Sender().ID, "upload_error"), err)
 			wrk.c.Bot().Edit(wrk.msg, errstr)
 			iserr = true
 			break
@@ -231,8 +267,14 @@ func uploadFile(wrk *Worker, file *state.TorrentFileStat, fi, fc int) error {
 		err = wrk.c.Send(d)
 		if err == nil || errors.Is(err, ERR_STOPPED) {
 			break
-		} else {
-			log.Println("Error send msg, try again:", i+1, "/", 20)
+		}
+		log.TLogln("tg upload retry", i+1, "/", 20)
+		if i < 19 {
+			backoff := time.Duration(1<<uint(i)) * 100 * time.Millisecond
+			if backoff > 5*time.Second {
+				backoff = 5 * time.Second
+			}
+			time.Sleep(backoff)
 		}
 	}
 
