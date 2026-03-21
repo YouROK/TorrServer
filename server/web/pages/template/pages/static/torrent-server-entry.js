@@ -3,7 +3,7 @@ const exportSet = /* @__PURE__ */ new Set(["Module", "__esModule", "default", "_
 let moduleMap = {
   "./TorrServerEntry": () => {
     dynamicLoadingCss([], false, "./TorrServerEntry");
-    return __federation_import("./__federation_expose_TorrServerEntry-D0nitxST.js").then((module) => Object.keys(module).every((item) => exportSet.has(item)) ? () => module.default : () => module);
+    return __federation_import("./__federation_expose_TorrServerEntry-BhdfzXEV.js").then((module) => Object.keys(module).every((item) => exportSet.has(item)) ? () => module.default : () => module);
   },
   "./Hosts": () => {
     dynamicLoadingCss([], false, "./Hosts");

@@ -117,9 +117,9 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
     } else if (torrentParsedName?.title) newNameStringArr.push(removeRedundantCharacters(torrentParsedName?.title))
 
     // These 2 checks are needed to get year and resolution from torrent name if title does not have this info
-    if (torrentParsedName?.year && !newNameStringArr[0].includes(torrentParsedName?.year))
+    if (torrentParsedName?.year && !String(newNameStringArr[0])?.includes(torrentParsedName?.year))
       newNameStringArr.push(torrentParsedName?.year)
-    if (torrentParsedName?.resolution && !newNameStringArr[0].includes(torrentParsedName?.resolution))
+    if (torrentParsedName?.resolution && !String(newNameStringArr[0])?.includes(torrentParsedName?.resolution))
       newNameStringArr.push(torrentParsedName?.resolution)
 
     const newNameString = newNameStringArr.join('. ')

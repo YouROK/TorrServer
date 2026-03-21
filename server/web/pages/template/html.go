@@ -115,14 +115,17 @@ var Mstile150x150png []byte
 //go:embed pages/site.webmanifest
 var Sitewebmanifest []byte
 
+//go:embed pages/static/VLC_logo-Drd2yZSZ.svg
+var StaticVLClogoDrd2yZSZsvg []byte
+
 //go:embed pages/static/__federation_expose_Hosts-Bnbga9PS.js
 var StaticfederationexposeHostsBnbga9PSjs []byte
 
-//go:embed pages/static/__federation_expose_TorrServerEntry-D0nitxST.js
-var StaticfederationexposeTorrServerEntryD0nitxSTjs []byte
+//go:embed pages/static/__federation_expose_TorrServerEntry-BhdfzXEV.js
+var StaticfederationexposeTorrServerEntryBhdfzXEVjs []byte
 
-//go:embed pages/static/index-BmOAsYSJ.js
-var StaticindexBmOAsYSJjs []byte
+//go:embed pages/static/index-DIa_tgU7.js
+var StaticindexDIatgU7js []byte
 
 //go:embed pages/static/torrent-server-entry.js
 var Statictorrentserverentryjs []byte

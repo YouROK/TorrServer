@@ -5,12 +5,19 @@ import ptt from 'parse-torrent-title'
 import { Button } from '@material-ui/core'
 import CopyToClipboard from 'react-copy-to-clipboard'
 import { useTranslation } from 'react-i18next'
+import { memo, useState } from 'react'
+import QRCodeStyling from 'qr-code-styling'
+import { StyledDialog, StyledHeader } from 'style/CustomMaterialUiStyles'
 
 import VideoPlayer from '../../VideoPlayer'
 import { TableStyle, ShortTableWrapper, ShortTable } from './style'
 import { isFilePlayable } from '../helpers'
+import VlcLogoSvg from '../../../images/VLC_logo.svg'
+import { useMaterialUITheme } from 'style/materialUISetup'
+import { mainColors, themeColors } from 'style/colors'
+import { Content } from 'components/Search/style'
 
-import { memo, useState } from 'react';
+window.QrCode = QRCodeStyling;
 
 // russian episode detection support
 ptt.addHandler('episode', /(\d{1,4})[- |. ]серия|серия[- |. ](\d{1,4})/i, { type: 'integer' })
@@ -20,14 +27,16 @@ ptt.addHandler('season', /сезон[- |. ](\d{1,3})|(\d{1,3})[- |. ]сезон/
 const Table = memo(
   ({ playableFileList, allFileList, viewedFileList, selectedSeason, seasonAmount, hash }) => {
     const { t } = useTranslation()
+    const [isDarkMode, currentThemeMode, updateThemeMode, muiTheme] = useMaterialUITheme()
     const [isSupported, setIsSupported] = useState(true)
+    const [isQrEnabled, setIsQrEnabled] = useState(false)
     const preloadBuffer = fileId => fetch(`${streamHost()}?link=${hash}&index=${fileId}&preload`)
     const getFileLink = (path, id) =>
       `${streamHost()}/${encodeURIComponent(path.split('\\').pop().split('/').pop())}?link=${hash}&index=${id}&play`
-    
+
     // Use allFileList if available, otherwise fallback to playableFileList
     const fileListToDisplay = allFileList || playableFileList
-    
+
     const fileHasEpisodeText = !!fileListToDisplay?.find(({ path }) => ptt.parse(path).episode)
     const fileHasSeasonText = !!fileListToDisplay?.find(({ path }) => ptt.parse(path).season)
     const fileHasResolutionText = !!fileListToDisplay?.find(({ path }) => ptt.parse(path).resolution)
@@ -39,7 +48,7 @@ const Table = memo(
     const triggerDownload = (path, id) => {
       const link = getFileLink(path, id)
       const fileName = path.split('\\').pop().split('/').pop()
-      
+
       // Create a temporary anchor element and trigger download
       const downloadLink = document.createElement('a')
       downloadLink.href = link
@@ -58,10 +67,42 @@ const Table = memo(
     const isApple = isAppleDevice()
     const shouldShowOpenLink = !isStandalone || (!(isApple && isInfuseUsed) && !isVlcUsed && !(isMac && isIinaUsed))
 
+    const createVlcQrCode = link => {
+      const qrCode = new QRCodeStyling({
+        width: 450,
+        height: 450,
+        type: 'svg',
+        data: link,
+        image: VlcLogoSvg,
+        dotsOptions: {
+          color: '#eb6d00',
+          type: 'rounded',
+        },
+        backgroundOptions: {
+          color:  themeColors[isDarkMode ? 'dark' : 'light'].app.appSecondaryColor,
+        },
+        imageOptions: {
+          crossOrigin: 'anonymous',
+          margin: 20,
+        },
+      })
+      setIsQrEnabled(true)
+      setTimeout(() => qrCode.append(document.querySelector('#canvas')))
+    }
+
     return !fileListToDisplay?.length ? (
       'No files in this torrent'
     ) : (
       <>
+        <StyledDialog
+          open={isQrEnabled}
+          onClose={() => setIsQrEnabled(false)}
+          fullScreen={false}
+          maxWidth='md'
+        >
+          <StyledHeader>VLC QR Code</StyledHeader>
+          <div id='canvas' />
+        </StyledDialog>
         <TableStyle>
           <thead>
             <tr>
@@ -114,6 +155,17 @@ const Table = memo(
                                   VLC
                                 </Button>
                               </a>
+                            )}
+                            {isVlcUsed && (
+                              <Button
+                                style={{ width: '100%' }}
+                                variant='outlined'
+                                color='primary'
+                                size='small'
+                                onClick={() => createVlcQrCode(`vlc://${fullLink}`)}
+                              >
+                                VLC Qr Code
+                              </Button>
                             )}
                             {isMac && isIinaUsed && (
                               <a style={{ textDecoration: 'none' }} href={iinaLink}>
@@ -233,6 +285,18 @@ const Table = memo(
                               VLC
                             </Button>
                           </a>
+                        )}
+
+                        {isVlcUsed && (
+                          <Button
+                            style={{ width: '100%' }}
+                            variant='outlined'
+                            color='primary'
+                            size='small'
+                            onClick={() => createVlcQrCode(`vlc://${fullLink}`)}
+                          >
+                            VLC Qr Code
+                          </Button>
                         )}
 
                         {isMac && isIinaUsed && (
