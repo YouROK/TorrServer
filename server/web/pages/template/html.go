@@ -115,14 +115,14 @@ var Mstile150x150png []byte
 //go:embed pages/site.webmanifest
 var Sitewebmanifest []byte
 
-//go:embed pages/static/__federation_expose_Hosts-DyPCxrOI.js
-var StaticfederationexposeHostsDyPCxrOIjs []byte
+//go:embed pages/static/__federation_expose_Hosts-Bnbga9PS.js
+var StaticfederationexposeHostsBnbga9PSjs []byte
 
-//go:embed pages/static/__federation_expose_TorrServerEntry-OGloVvoY.js
-var StaticfederationexposeTorrServerEntryOGloVvoYjs []byte
+//go:embed pages/static/__federation_expose_TorrServerEntry-D0nitxST.js
+var StaticfederationexposeTorrServerEntryD0nitxSTjs []byte
 
-//go:embed pages/static/index-D51NYAoL.js
-var StaticindexD51NYAoLjs []byte
+//go:embed pages/static/index-BmOAsYSJ.js
+var StaticindexBmOAsYSJjs []byte
 
 //go:embed pages/static/torrent-server-entry.js
 var Statictorrentserverentryjs []byte

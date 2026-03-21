@@ -1,0 +1,1 @@
+cd web && bun i && npm run build-vite && cd .. && go run gen_web.go && cd server && go build -ldflags='-s -w -checklinkname=0' -tags=nosqlite -trimpath -o ../torr_server-tt ./cmd/ && cd ..

@@ -21,6 +21,7 @@ export default defineConfig(({ command, mode }) => {
       }),
     ],
     build: {
+      minify: false,
       outDir: 'build',
       assetsDir: 'static',
       emptyOutDir: true,

@@ -273,25 +273,25 @@ func RouteWebPages(route gin.IRouter) {
 		c.Data(200, "application/manifest+json", Sitewebmanifest)
 	})
 
-	route.GET("/static/__federation_expose_Hosts-DyPCxrOI.js", func(c *gin.Context) {
-		etag := fmt.Sprintf("%x", md5.Sum(StaticfederationexposeHostsDyPCxrOIjs))
+	route.GET("/static/__federation_expose_Hosts-Bnbga9PS.js", func(c *gin.Context) {
+		etag := fmt.Sprintf("%x", md5.Sum(StaticfederationexposeHostsBnbga9PSjs))
 		c.Header("Cache-Control", "public, max-age=31536000")
 		c.Header("ETag", etag)
-		c.Data(200, "text/javascript; charset=utf-8", StaticfederationexposeHostsDyPCxrOIjs)
+		c.Data(200, "text/javascript; charset=utf-8", StaticfederationexposeHostsBnbga9PSjs)
 	})
 
-	route.GET("/static/__federation_expose_TorrServerEntry-OGloVvoY.js", func(c *gin.Context) {
-		etag := fmt.Sprintf("%x", md5.Sum(StaticfederationexposeTorrServerEntryOGloVvoYjs))
+	route.GET("/static/__federation_expose_TorrServerEntry-D0nitxST.js", func(c *gin.Context) {
+		etag := fmt.Sprintf("%x", md5.Sum(StaticfederationexposeTorrServerEntryD0nitxSTjs))
 		c.Header("Cache-Control", "public, max-age=31536000")
 		c.Header("ETag", etag)
-		c.Data(200, "text/javascript; charset=utf-8", StaticfederationexposeTorrServerEntryOGloVvoYjs)
+		c.Data(200, "text/javascript; charset=utf-8", StaticfederationexposeTorrServerEntryD0nitxSTjs)
 	})
 
-	route.GET("/static/index-D51NYAoL.js", func(c *gin.Context) {
-		etag := fmt.Sprintf("%x", md5.Sum(StaticindexD51NYAoLjs))
+	route.GET("/static/index-BmOAsYSJ.js", func(c *gin.Context) {
+		etag := fmt.Sprintf("%x", md5.Sum(StaticindexBmOAsYSJjs))
 		c.Header("Cache-Control", "public, max-age=31536000")
 		c.Header("ETag", etag)
-		c.Data(200, "text/javascript; charset=utf-8", StaticindexD51NYAoLjs)
+		c.Data(200, "text/javascript; charset=utf-8", StaticindexBmOAsYSJjs)
 	})
 
 	route.GET("/static/torrent-server-entry.js", func(c *gin.Context) {
