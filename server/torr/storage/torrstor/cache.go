@@ -146,12 +146,16 @@ func (c *Cache) GetState() *state.CacheState {
 		for _, p := range c.pieces {
 			if p.Size > 0 {
 				fill += p.Size
+				var priority int
+				if c.torrent != nil {
+					priority = int(c.torrent.PieceState(p.Id).Priority)
+				}
 				piecesState[p.Id] = state.ItemState{
 					Id:        p.Id,
 					Size:      p.Size,
 					Length:    c.pieceLength,
 					Completed: p.Complete,
-					Priority:  int(c.torrent.PieceState(p.Id).Priority),
+					Priority:  priority,
 				}
 			}
 		}
@@ -256,6 +260,9 @@ func (c *Cache) getRemPieces() []*Piece {
 }
 
 func (c *Cache) setLoadPriority(ranges []Range) {
+	if c.torrent == nil || c.isClosed {
+		return
+	}
 	c.muReaders.Lock()
 	for r := range c.readers {
 		if !r.isUse {
@@ -355,6 +362,9 @@ func (c *Cache) CloseReader(r *Reader) {
 
 func (c *Cache) clearPriority() {
 	time.Sleep(time.Second)
+	if c.isClosed || c.torrent == nil {
+		return
+	}
 	ranges := make([]Range, 0)
 	c.muReaders.Lock()
 	for r := range c.readers {
@@ -367,6 +377,9 @@ func (c *Cache) clearPriority() {
 	ranges = mergeRange(ranges)
 
 	for id := range c.pieces {
+		if c.isClosed || c.torrent == nil {
+			return
+		}
 		if len(ranges) > 0 {
 			if !inRanges(ranges, id) {
 				if c.torrent.PieceState(id).Priority != torrent.PiecePriorityNone {

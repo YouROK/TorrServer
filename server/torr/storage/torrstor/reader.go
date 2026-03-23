@@ -3,6 +3,7 @@ package torrstor
 import (
 	"io"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/anacrolix/torrent"
@@ -56,7 +57,7 @@ func (r *Reader) Seek(offset int64, whence int) (n int64, err error) {
 	r.readerOn()
 	n, err = r.Reader.Seek(offset, whence)
 	r.offset = n
-	r.lastAccess = time.Now().Unix()
+	atomic.StoreInt64(&r.lastAccess, time.Now().Unix())
 	return
 }
 
@@ -88,7 +89,7 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 		//}
 
 		r.offset += int64(n)
-		r.lastAccess = time.Now().Unix()
+		atomic.StoreInt64(&r.lastAccess, time.Now().Unix())
 	} else {
 		log.TLogln("Torrent closed and readed")
 	}
@@ -117,7 +118,8 @@ func (r *Reader) Close() {
 	// file reader close in gotorrent
 	// this struct close in cache
 	r.isClosed = true
-	if len(r.file.Torrent().Files()) > 0 {
+	torr := r.file.Torrent()
+	if torr != nil && len(torr.Files()) > 0 {
 		r.Reader.Close()
 	}
 	go r.cache.getRemPieces()
@@ -161,7 +163,8 @@ func (r *Reader) getOffsetRange() (int64, int64) {
 }
 
 func (r *Reader) checkReader() {
-	if time.Now().Unix() > r.lastAccess+60 && len(r.cache.readers) > 1 {
+	lastAccess := atomic.LoadInt64(&r.lastAccess)
+	if time.Now().Unix() > lastAccess+300 && len(r.cache.readers) > 1 {
 		r.readerOff()
 	} else {
 		r.readerOn()
