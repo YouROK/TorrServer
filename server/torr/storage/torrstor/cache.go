@@ -260,7 +260,7 @@ func (c *Cache) getRemPieces() []*Piece {
 }
 
 func (c *Cache) setLoadPriority(ranges []Range) {
-	if c.torrent == nil || c.isClosed {
+	if c.isClosed || c.torrent == nil {
 		return
 	}
 	c.muReaders.Lock()

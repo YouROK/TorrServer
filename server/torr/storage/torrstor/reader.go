@@ -12,6 +12,10 @@ import (
 	"server/settings"
 )
 
+// readerIdleTimeout is how long a reader can be inactive before being deactivated
+// when multiple readers are active. 5 minutes allows for pauses without stream drops.
+const readerIdleTimeout = 300
+
 type Reader struct {
 	torrent.Reader
 	offset    int64
@@ -164,7 +168,7 @@ func (r *Reader) getOffsetRange() (int64, int64) {
 
 func (r *Reader) checkReader() {
 	lastAccess := atomic.LoadInt64(&r.lastAccess)
-	if time.Now().Unix() > lastAccess+300 && len(r.cache.readers) > 1 {
+	if time.Now().Unix() > lastAccess+readerIdleTimeout && len(r.cache.readers) > 1 {
 		r.readerOff()
 	} else {
 		r.readerOn()
