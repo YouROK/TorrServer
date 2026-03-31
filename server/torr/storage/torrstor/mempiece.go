@@ -19,11 +19,16 @@ func NewMemPiece(p *Piece) *MemPiece {
 
 func (p *MemPiece) WriteAt(b []byte, off int64) (n int, err error) {
 	p.mu.Lock()
-	defer p.mu.Unlock()
 
 	if p.buffer == nil {
-		go p.piece.cache.cleanPieces()
-		p.buffer = make([]byte, p.piece.cache.pieceLength, p.piece.cache.pieceLength)
+		// Release lock before calling cleanPieces to avoid potential deadlock,
+		// since cleanPieces may call Release() which also acquires this lock.
+		p.mu.Unlock()
+		p.piece.cache.cleanPieces()
+		p.mu.Lock()
+		if p.buffer == nil {
+			p.buffer = make([]byte, p.piece.cache.pieceLength, p.piece.cache.pieceLength)
+		}
 	}
 	n = copy(p.buffer[off:], b[:])
 	p.piece.Size += int64(n)
@@ -31,6 +36,7 @@ func (p *MemPiece) WriteAt(b []byte, off int64) (n int, err error) {
 		p.piece.Size = p.piece.cache.pieceLength
 	}
 	p.piece.Accessed = time.Now().Unix()
+	p.mu.Unlock()
 	return
 }
 
@@ -57,6 +63,12 @@ func (p *MemPiece) ReadAt(b []byte, off int64) (n int, err error) {
 		return 0, io.EOF
 	}
 	return n, nil
+}
+
+func (p *MemPiece) isAllocated() bool {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.buffer != nil
 }
 
 func (p *MemPiece) Release() {

@@ -231,7 +231,15 @@ func (c *Cache) getRemPieces() []*Piece {
 	ranges = mergeRange(ranges)
 
 	for id, p := range c.pieces {
-		if p.Size > 0 {
+		// Count full allocated buffer size, not just written bytes.
+		// p.Size reflects written bytes which underestimates actual RAM usage:
+		// a 256 KB buffer allocated on first write but only 32 KB written would
+		// contribute only 32 KB to fill, causing cleanPieces to miss evictions.
+		if !settings.BTsets.UseDisk {
+			if p.mPiece != nil && p.mPiece.isAllocated() {
+				fill += c.pieceLength
+			}
+		} else if p.Size > 0 {
 			fill += p.Size
 		}
 		if len(ranges) > 0 {
