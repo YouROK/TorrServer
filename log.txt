@@ -1,10 +1,55 @@
-2026-02-25 d266990f MatriX.141
-2026-02-25 e038bbd3 Merge pull request #665 from pavelpikta/fix/build-and-release-version
-2026-02-25 962b7977 fix: set version dynamically from git tag in build process
-2026-02-25 ea889fed update build go
-2026-02-25 e1e2cd29 update build go
-2026-02-25 e3db4803 update build go
-2026-02-25 70482e51 update build go
-2026-02-25 55159810 update build go
-2026-02-25 46b801f4 update build go
-2026-02-25 ee65ff9c update web build
+2026-04-02 10:22:32 (10.0 MB/s) - 'TorrServer-linux-arm64' saved [70647992/70647992]
+
+TS_PORT: 6555
+
+TS_HTTPAUTH: 0
+
+TS_DONTKILL: 1
+
+TS_TORRENTADDR: 192.168.7.206:1080
+
+Running with:  --port 6555 --httpauth --dontkill --torrentaddr 192.168.7.206:1080
+
+2026/04/02 10:22:32 ffprobe and avprobe not found in $PATH
+
+2026/04/02 10:22:32 Use HTTP Auth file /opt/torrserver/accs.db
+
+=========== START ===========
+
+TorrServer MatriX.141, go1.25.5, CPU Num: 4
+
+2026/04/02 10:22:32 System DNS check passed
+
+2026/04/02 10:22:32 DNS resolution successful, addresses: [13.33.183.73 13.33.183.88 13.33.183.103 13.33.183.43 2600:9000:2816:400:e:5373:440:93a1 2600:9000:2816:3200:e:5373:440:93a1 2600:9000:2816:3600:e:5373:440:93a1 2600:9000:2816:3800:e:5373:440:93a1 2600:9000:2816:6600:e:5373:440:93a1 2600:9000:2816:7000:e:5373:440:93a1 2600:9000:2816:8e00:e:5373:440:93a1 2600:9000:2816:9800:e:5373:440:93a1]
+
+2026/04/02 10:22:32 No migration needed for Settings/BitTorr (already exists or no data)
+
+2026/04/02 10:22:32 Viewed migration result: 0 migrated, 0 skipped
+
+2026/04/02 10:22:32 XPathDBRouter: Registered new DB "JsonDB", total 1 DBs registered
+
+2026/04/02 10:22:32 XPathDBRouter: Registered new route "default" for DB "JsonDB", total 1 routes
+
+2026/04/02 10:22:32 XPathDBRouter: Registered new route "settings" for DB "JsonDB", total 2 routes
+
+2026/04/02 10:22:32 XPathDBRouter: Registered new DB "TDB", total 2 DBs registered
+
+2026/04/02 10:22:32 XPathDBRouter: Registered new route "viewed" for DB "TDB", total 3 routes
+
+2026/04/02 10:22:32 XPathDBRouter: Registered new route "torrents" for DB "TDB", total 4 routes
+
+2026/04/02 10:22:32 Storage: Settings->JSON, Viewed->BBolt, Torrents->BBolt
+
+2026/04/02 10:22:32 Check web port 6555
+
+2026/04/02 10:22:32 Start TorrServer MatriX.141 torrent v1.2.22
+
+2026/04/02 10:22:32 Local IPs: [172.24.0.2]
+
+2026/04/02 10:22:32 Set listen addr 192.168.7.206:1080
+
+2026/04/02 10:22:32 Client config: {"CacheSize":67108864,"ReaderReadAHead":95,"PreloadCache":50,"UseDisk":false,"TorrentsSavePath":"","RemoveCacheOnDrop":false,"ForceEncrypt":false,"RetrackersMode":1,"TorrentDisconnectTimeout":30,"EnableDebug":false,"EnableDLNA":false,"FriendlyName":"","EnableRutorSearch":false,"EnableTorznabSearch":false,"TorznabUrls":null,"TMDBSettings":{"APIKey":"","APIURL":"https://api.themoviedb.org","ImageURL":"https://image.tmdb.org","ImageURLRu":"https://imagetmdb.com"},"EnableIPv6":false,"DisableTCP":false,"DisableUTP":false,"DisableUPNP":false,"DisableDHT":false,"DisablePEX":false,"DisableUpload":false,"DownloadRateLimit":0,"UploadRateLimit":0,"ConnectionsLimit":25,"PeersListenPort":0,"SslPort":0,"SslCert":"","SslKey":"","ResponsiveMode":true,"ShowFSActiveTorr":true,"StoreSettingsInJson":true,"StoreViewedInJson":false,"EnableProxy":false,"ProxyHosts":null}
+
+2026/04/02 10:22:32 PublicIp4: 171.237.18.11
+
+2026/04/02 10:22:32 BTS.Connect() error! first listen: listen tcp4 192.168.7.206:1080: bind: cannot assign requested address
