@@ -1,8 +1,0 @@
-commit b73dd9c5af0972c66689ec57cd495ca3c1c690df
-Author: YouROK <8yourok8@mail.ru>
-Date:   Thu Feb 19 23:47:55 2026 +0300
-
-    update web
-
-M	server/web/pages/route.go
-M	server/web/server.go
