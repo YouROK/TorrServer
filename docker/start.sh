@@ -37,6 +37,8 @@ FLAGS=""
 [ ! -z "$TS_PUBIPV4" ] && echo "TS_PUBIPV4: $TS_PUBIPV4" && FLAGS="${FLAGS} --pubipv4 ${TS_PUBIPV4}"
 [ ! -z "$TS_PUBIPV6" ] && echo "TS_PUBIPV6: $TS_PUBIPV6" && FLAGS="${FLAGS} --pubipv6 ${TS_PUBIPV6}"
 [ ! -z "$TS_SEARCHWA" ]&& echo "TS_SEARCHWA: $TS_SEARCHWA" && FLAGS="${FLAGS} --searchwa"
+[ ! -z "$TS_PROXYURL" ] && echo "TS_PROXYURL: $TS_PROXYURL" && FLAGS="${FLAGS} --ProxyURL ${TS_PROXYURL}"
+[ ! -z "$TS_PROXYMODE" ] && echo "TS_PROXYMODE: $TS_PROXYMODE" && FLAGS="${FLAGS} --ProxyMode ${TS_PROXYMODE}"
 
 #make directories
 [ ! -z "$TS_PATH" ] && [ ! -d "$TS_PATH" ] && mkdir -p $TS_PATH
