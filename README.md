@@ -84,7 +84,7 @@ curl -s https://raw.githubusercontent.com/9000000/TorrServer/master/installTorrS
 - Install a specific version:
 
   ```bash
-  sudo bash ./installTorrServerLinux.sh --install 135 --silent
+  sudo bash ./installTorrServerLinux.sh --install --silent
   ```
 
 - Update to latest version:
