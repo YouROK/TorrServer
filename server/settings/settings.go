@@ -22,19 +22,20 @@ func IsDebug() bool {
 }
 
 var (
-	tdb      TorrServerDB
-	Path     string
-	IP       string
-	Port     string
-	Ssl      bool
-	SslPort  string
-	ReadOnly bool
-	HttpAuth bool
-	SearchWA bool
-	PubIPv4  string
-	PubIPv6  string
-	TorAddr  string
-	MaxSize  int64
+	tdb         TorrServerDB
+	Path        string
+	IP          string
+	Port        string
+	Ssl         bool
+	SslPort     string
+	ReadOnly    bool
+	HttpAuth    bool
+	SearchWA    bool
+	PerUserData bool
+	PubIPv4     string
+	PubIPv6     string
+	TorAddr     string
+	MaxSize     int64
 )
 
 func InitSets(readOnly, searchWA bool) {
@@ -443,6 +444,24 @@ func SetStoragePreferences(prefs map[string]interface{}) error {
 	}
 
 	return nil
+}
+
+func MigrateTorrentUsers() {
+	users := ListUsers()
+	if !PerUserData || len(users) == 0 {
+		return
+	}
+
+	for _, db := range ListTorrent() {
+		if len(db.Users) != 0 {
+			continue
+		}
+		db.Users = append([]string(nil), users...)
+		AddTorrent(db)
+		if db.TorrentSpec != nil {
+			CopyViewedToUsers(db.TorrentSpec.InfoHash.HexString(), db.Users)
+		}
+	}
 }
 
 func CloseDB() {

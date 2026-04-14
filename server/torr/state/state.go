@@ -35,6 +35,7 @@ type TorrentStatus struct {
 	Category            string      `json:"category"`
 	Poster              string      `json:"poster"`
 	Data                string      `json:"data,omitempty"`
+	Users               []string    `json:"users,omitempty"`
 	Timestamp           int64       `json:"timestamp"`
 	Name                string      `json:"name,omitempty"`
 	Hash                string      `json:"hash,omitempty"`

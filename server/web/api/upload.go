@@ -72,7 +72,7 @@ func torrentUpload(c *gin.Context) {
 			continue
 		}
 
-		tor, err = torr.AddTorrent(spec, title, poster, data, category)
+		tor, err = torr.AddTorrentForUser(spec, title, poster, data, category, currentUser(c))
 
 		if tor.Data != "" && set.BTsets.EnableDebug {
 			log.TLogln("torrent data:", tor.Data)

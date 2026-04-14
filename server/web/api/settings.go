@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"server/rutor"
@@ -42,7 +43,14 @@ func settings(c *gin.Context) {
 	}
 
 	if req.Action == "get" {
-		c.JSON(200, sets.BTsets)
+		resp := make(map[string]interface{})
+		if buf, err := json.Marshal(sets.BTsets); err == nil {
+			_ = json.Unmarshal(buf, &resp)
+		}
+		resp["PerUserData"] = sets.PerUserData
+		resp["PerUserDataForced"] = sets.Args != nil && sets.Args.PerUserData
+		resp["CurrentUser"] = currentUser(c)
+		c.JSON(200, resp)
 		return
 	} else if req.Action == "set" {
 		torr.SetSettings(req.Sets)

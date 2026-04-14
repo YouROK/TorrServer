@@ -56,16 +56,22 @@ func viewed(c *gin.Context) {
 }
 
 func setViewed(req viewedReqJS, c *gin.Context) {
+	if req.Viewed != nil {
+		req.Viewed.User = currentUser(c)
+	}
 	sets.SetViewed(req.Viewed)
 	c.Status(200)
 }
 
 func remViewed(req viewedReqJS, c *gin.Context) {
+	if req.Viewed != nil {
+		req.Viewed.User = currentUser(c)
+	}
 	sets.RemViewed(req.Viewed)
 	c.Status(200)
 }
 
 func listViewed(req viewedReqJS, c *gin.Context) {
-	list := sets.ListViewed(req.Hash)
+	list := sets.ListViewedForUser(req.Hash, currentUser(c))
 	c.JSON(200, list)
 }

@@ -17,6 +17,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+func currentUser(c *gin.Context) string {
+	user, _ := c.Get(gin.AuthUserKey)
+	login, _ := user.(string)
+	return login
+}
+
 // Action: add, get, set, rem, list, drop
 type torrReqJS struct {
 	requestI
@@ -120,7 +126,8 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 		}
 	}
 
-	tor, err := torr.AddTorrent(torrSpec, req.Title, req.Poster, req.Data, req.Category)
+	user := currentUser(c)
+	tor, err := torr.AddTorrentForUser(torrSpec, req.Title, req.Poster, req.Data, req.Category, user)
 	if err != nil {
 		log.TLogln("error add torrent:", err)
 		c.AbortWithError(http.StatusInternalServerError, err)
@@ -184,7 +191,14 @@ func remTorrent(req torrReqJS, c *gin.Context) {
 		c.AbortWithError(http.StatusBadRequest, errors.New("hash is empty"))
 		return
 	}
-	torr.RemTorrent(req.Hash)
+	user := currentUser(c)
+	if req.Hash == "/" || req.Hash == "*" {
+		for _, t := range torr.ListTorrentForUser(user) {
+			torr.RemTorrentForUser(t.TorrentSpec.InfoHash.HexString(), user)
+		}
+	} else {
+		torr.RemTorrentForUser(req.Hash, user)
+	}
 	// TODO: remove
 	if set.BTsets.EnableDLNA {
 		dlna.Stop()
@@ -194,7 +208,7 @@ func remTorrent(req torrReqJS, c *gin.Context) {
 }
 
 func listTorrents(c *gin.Context) {
-	list := torr.ListTorrent()
+	list := torr.ListTorrentForUser(currentUser(c))
 	if len(list) == 0 {
 		c.JSON(200, []*state.TorrentStatus{})
 		return
@@ -216,9 +230,10 @@ func dropTorrent(req torrReqJS, c *gin.Context) {
 }
 
 func wipeTorrents(c *gin.Context) {
-	torrents := torr.ListTorrent()
+	user := currentUser(c)
+	torrents := torr.ListTorrentForUser(user)
 	for _, t := range torrents {
-		torr.RemTorrent(t.TorrentSpec.InfoHash.HexString())
+		torr.RemTorrentForUser(t.TorrentSpec.InfoHash.HexString(), user)
 	}
 	// TODO: remove (copied todo from remTorrent())
 	if set.BTsets.EnableDLNA {

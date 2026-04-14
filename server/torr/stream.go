@@ -23,6 +23,17 @@ import (
 // Add atomic counter for concurrent streams
 var activeStreams int32
 
+func streamUser(req *http.Request) string {
+	if !sets.PerUserData || !sets.HttpAuth {
+		return ""
+	}
+	user, _, ok := req.BasicAuth()
+	if !ok {
+		return ""
+	}
+	return user
+}
+
 // type contextResponseWriter struct {
 // 	http.ResponseWriter
 // 	ctx context.Context
@@ -107,6 +118,7 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 	sets.SetViewed(&sets.Viewed{
 		Hash:      t.Hash().HexString(),
 		FileIndex: fileID,
+		User:      streamUser(req),
 	})
 
 	// Set response headers

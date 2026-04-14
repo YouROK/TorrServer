@@ -68,6 +68,9 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
     SslCert,
     SslKey,
     ShowFSActiveTorr,
+    PerUserData,
+    PerUserDataForced,
+    CurrentUser,
     EnableProxy,
     ProxyHosts,
   } = settings || {}
@@ -493,6 +496,28 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         variant='outlined'
         fullWidth
       />
+      <SettingSectionLabel style={{ marginTop: '20px' }}>{t('SettingsDialog.Users')}</SettingSectionLabel>
+      <FormGroup>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={Boolean(PerUserData)}
+              onChange={inputForm}
+              id='PerUserData'
+              color='secondary'
+              disabled={Boolean(PerUserDataForced)}
+            />
+          }
+          label={t('SettingsDialog.PerUserData')}
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>
+          {PerUserDataForced ? `${t('SettingsDialog.PerUserDataForcedHint')} <br />` : ''}
+          {t('SettingsDialog.PerUserDataHint')}
+          <br />
+          {t('SettingsDialog.CurrentUser')}: {CurrentUser}
+        </FormHelperText>
+      </FormGroup>
     </SecondarySettingsContent>
   )
 }

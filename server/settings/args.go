@@ -25,6 +25,7 @@ type ExecArgs struct {
 	WebDAV      bool
 	ProxyURL    string
 	ProxyMode   string
+	PerUserData bool
 }
 
 var Args *ExecArgs

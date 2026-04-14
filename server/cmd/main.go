@@ -50,6 +50,7 @@ type args struct {
 	WebDAV      bool   `help:"web dav enable"`
 	ProxyURL    string `help:"proxy URL for BitTorrent traffic (http, socks4, socks5, socks5h), e.g. socks5://user:password@127.0.0.1:8080"`
 	ProxyMode   string `help:"proxy mode: tracker (only HTTP trackers, default), peers (only peer connections), or full (all traffic)"`
+	PerUserData bool   `help:"enable per-user data isolation for torrents and viewed status"`
 }
 
 func (args) Version() string {
@@ -73,6 +74,7 @@ func main() {
 
 	settings.Path = params.Path
 	settings.HttpAuth = params.HttpAuth
+	settings.PerUserData = params.PerUserData
 	log.Init(params.LogPath, params.WebLogPath)
 
 	fmt.Println("=========== START ===========")
@@ -171,6 +173,7 @@ func main() {
 		WebDAV:      params.WebDAV,
 		ProxyURL:    params.ProxyURL,
 		ProxyMode:   params.ProxyMode,
+		PerUserData: params.PerUserData,
 	}
 
 	if params.ProxyURL != "" {

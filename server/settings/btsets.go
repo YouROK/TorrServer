@@ -78,6 +78,7 @@ type BTSets struct {
 
 	// FS
 	ShowFSActiveTorr bool
+	PerUserData      bool
 
 	// Storage preferences
 	StoreSettingsInJson bool
@@ -146,6 +147,8 @@ func SetBTSets(sets *BTSets) {
 	}
 
 	BTsets = sets
+	PerUserData = sets.PerUserData || (Args != nil && Args.PerUserData)
+	MigrateTorrentUsers()
 	buf, err := json.Marshal(BTsets)
 	if err != nil {
 		log.TLogln("Error marshal btsets", err)
@@ -164,6 +167,7 @@ func SetDefaultConfig() {
 	sets.ReaderReadAHead = 95 // 95%
 	sets.ResponsiveMode = true
 	sets.ShowFSActiveTorr = true
+	sets.PerUserData = false
 	sets.StoreSettingsInJson = true
 	// Set default TMDB settings
 	sets.TMDBSettings = TMDBConfig{
@@ -173,6 +177,7 @@ func SetDefaultConfig() {
 		ImageURLRu: "https://imagetmdb.com",
 	}
 	BTsets = sets
+	PerUserData = sets.PerUserData || (Args != nil && Args.PerUserData)
 	if !ReadOnly {
 		buf, err := json.Marshal(BTsets)
 		if err != nil {
@@ -203,6 +208,7 @@ func loadBTSets() {
 					ImageURLRu: "https://imagetmdb.com",
 				}
 			}
+			PerUserData = BTsets.PerUserData || (Args != nil && Args.PerUserData)
 			return
 		}
 		log.TLogln("Error unmarshal btsets", err)

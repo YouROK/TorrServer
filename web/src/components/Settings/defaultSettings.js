@@ -28,6 +28,7 @@ export default {
   SslCert: '',
   SslKey: '',
   ShowFSActiveTorr: true,
+  PerUserData: false,
   StoreSettingsInJson: true,
   EnableProxy: false,
   ProxyHosts: ['*themoviedb.org', '*tmdb.org', 'rutor.info'],
