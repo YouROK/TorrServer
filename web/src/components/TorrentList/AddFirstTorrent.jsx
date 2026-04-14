@@ -16,7 +16,7 @@ export default function AddFirstTorrent() {
     <>
       <IconWrapper onClick={() => handleClickOpen(true)} isButton>
         <lord-icon
-          src='https://cdn.lordicon.com/jkzgajyr.json'
+          src={`${process.env.PUBLIC_URL}/lordicon/jkzgajyr.json`}
           trigger='loop'
           delay='2000'
           colors={`primary:#575757,secondary:${primary}`}
