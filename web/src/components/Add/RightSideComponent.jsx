@@ -237,12 +237,7 @@ export default function RightSideComponent({
 
           <UpdatePosterButton
             onClick={() => {
-              let fixedTitle = isCustomTitleEnabled ? title : originalTorrentTitle ? parsedTitle : title
-              const titleFixedMatch = fixedTitle.replaceAll(/\./g, ' ').match(/^([\w -]+)/)
-              if (titleFixedMatch?.length && titleFixedMatch[0].length > 0) {
-                ;[fixedTitle] = titleFixedMatch
-              }
-
+              const fixedTitle = isCustomTitleEnabled ? title : originalTorrentTitle ? parsedTitle : title
               posterSearch(fixedTitle, posterSearchLanguage)
             }}
             color='primary'

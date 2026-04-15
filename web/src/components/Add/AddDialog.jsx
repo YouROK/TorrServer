@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Button from '@material-ui/core/Button'
 import { torrentsHost, torrentUploadHost } from 'utils/Hosts'
 import axios from 'axios'
@@ -11,11 +11,18 @@ import usePreviousState from 'utils/usePreviousState'
 import { useQuery } from 'react-query'
 import { getTorrents } from 'utils/Utils'
 import parseTorrent from 'parse-torrent'
+import ptt from 'parse-torrent-title'
 import { ButtonWrapper } from 'style/DialogStyles'
 import { StyledDialog, StyledHeader } from 'style/CustomMaterialUiStyles'
 import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
 
-import { checkImageURL, getMoviePosters, checkTorrentSource, parseTorrentTitle } from './helpers'
+import {
+  checkImageURL,
+  getMoviePosters,
+  checkTorrentSource,
+  parseTorrentTitle,
+  shortenTitleForPosterSearch,
+} from './helpers'
 import { Content } from './style'
 import RightSideComponent from './RightSideComponent'
 import LeftSideComponent from './LeftSideComponent'
@@ -48,6 +55,7 @@ export default function AddDialog({
   const [skipDebounce, setSkipDebounce] = useState(false)
   const [isCustomTitleEnabled, setIsCustomTitleEnabled] = useState(false)
   const [currentSourceHash, setCurrentSourceHash] = useState()
+  const editModePosterSearchedRef = useRef(false)
 
   const ref = useOnStandaloneAppOutsideClick(handleClose)
 
@@ -108,6 +116,20 @@ export default function AddDialog({
     setPosterUrl('')
   }
 
+  // Edit mode: init original/parsed title from name so poster can be searched
+  useEffect(() => {
+    if (!originalHash || (!originalName && !originalTitle)) return
+    const source = originalName || originalTitle
+    setOriginalTorrentTitle(source)
+    try {
+      const parsed = ptt.parse(source)
+      setParsedTitle(parsed?.title || '')
+    } catch (_) {
+      setParsedTitle('')
+    }
+    editModePosterSearchedRef.current = false
+  }, [originalHash, originalName, originalTitle])
+
   useEffect(() => {
     if (originalHash) {
       checkImageURL(posterUrl).then(correctImage => {
@@ -126,8 +148,9 @@ export default function AddDialog({
           removePoster()
           return
         }
+        const query = shortenTitleForPosterSearch(String(movieName).trim())
 
-        getMoviePosters(movieName, language).then(urlList => {
+        getMoviePosters(query || movieName, language).then(urlList => {
           if (urlList) {
             setPosterList(urlList)
             if (!shouldRefreshMainPoster && isUserInteractedWithPoster) return
@@ -166,6 +189,22 @@ export default function AddDialog({
 
     updateTitleFromSource()
   }, [prevTorrentSourceState, selectedFile, torrentSource, updateTitleFromSource])
+
+  // Edit mode: auto-search poster once when we have title and no poster
+  useEffect(() => {
+    if (
+      !originalHash ||
+      editModePosterSearchedRef.current ||
+      originalPoster ||
+      !(parsedTitle || originalTitle || title)
+    ) {
+      return
+    }
+    const searchTitle = parsedTitle || title || originalTitle
+    if (!shortenTitleForPosterSearch(searchTitle)) return
+    editModePosterSearchedRef.current = true
+    posterSearch(searchTitle, posterSearchLanguage, { shouldRefreshMainPoster: true })
+  }, [originalHash, originalPoster, parsedTitle, originalTitle, title, posterSearchLanguage, posterSearch])
 
   const prevTitleState = usePreviousState(title)
 
