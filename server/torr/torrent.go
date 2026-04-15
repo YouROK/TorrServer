@@ -385,6 +385,45 @@ func (t *Torrent) Status() *state.TorrentStatus {
 	return st
 }
 
+func (t *Torrent) StatusLight() *state.TorrentStatus {
+	t.muTorrent.Lock()
+	defer t.muTorrent.Unlock()
+
+	st := new(state.TorrentStatus)
+
+	st.Stat = t.Stat
+	st.StatString = t.Stat.String()
+	st.Title = t.Title
+	st.Category = t.Category
+	st.Poster = t.Poster
+	st.Data = t.Data
+	st.Timestamp = t.Timestamp
+	st.TorrentSize = t.Size
+	st.BitRate = t.BitRate
+	st.DurationSeconds = t.DurationSeconds
+
+	if t.TorrentSpec != nil {
+		st.Hash = t.TorrentSpec.InfoHash.HexString()
+	}
+	if t.Torrent != nil {
+		st.Name = t.Torrent.Name()
+		st.Hash = t.Torrent.InfoHash().HexString()
+		st.DownloadSpeed = t.DownloadSpeed
+		st.UploadSpeed = t.UploadSpeed
+
+		tst := t.Torrent.Stats()
+		st.TotalPeers = tst.TotalPeers
+		st.ActivePeers = tst.ActivePeers
+		st.ConnectedSeeders = tst.ConnectedSeeders
+
+		if t.Torrent.Info() != nil {
+			st.TorrentSize = t.Torrent.Length()
+		}
+	}
+
+	return st
+}
+
 func (t *Torrent) CacheState() *cacheSt.CacheState {
 	if t.Torrent != nil && t.cache != nil {
 		st := t.cache.GetState()
