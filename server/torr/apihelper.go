@@ -206,6 +206,32 @@ func ListTorrent() []*Torrent {
 	return ret
 }
 
+func ListTorrentFiltered(filter string) []*Torrent {
+	switch filter {
+	case "last":
+		all := ListTorrent()
+		if len(all) > 0 {
+			return all[:1]
+		}
+		return nil
+	case "active":
+		btlist := bts.ListTorrents()
+		var ret []*Torrent
+		for _, t := range btlist {
+			ret = append(ret, t)
+		}
+		sort.Slice(ret, func(i, j int) bool {
+			if ret[i].Timestamp != ret[j].Timestamp {
+				return ret[i].Timestamp > ret[j].Timestamp
+			}
+			return ret[i].Title > ret[j].Title
+		})
+		return ret
+	default:
+		return ListTorrent()
+	}
+}
+
 func DropTorrent(hashHex string) {
 	hash := metainfo.NewHashFromHex(hashHex)
 	bts.RemoveTorrent(hash)
