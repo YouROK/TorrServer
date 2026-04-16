@@ -114,14 +114,12 @@ jobs:
         with:
           node-version: "20"
           
-      - name: Build Web UI
-        working-directory: web
+      - name: Build Web UI & Generate Go Files
         env:
           CI: false
           SKIP_PREFLIGHT_CHECK: true
-        run: |
-          yarn install
-          NODE_OPTIONS=--openssl-legacy-provider yarn build
+          NODE_OPTIONS: --openssl-legacy-provider
+        run: go run gen_web.go --clean
 
       - name: Prepare upx
         run: chmod +x upx
