@@ -6,7 +6,7 @@
     "AddPosterLinkInput": "Посилання на плакат",
     "AddTorrentSourceNotification": "Спочатку додайте torrent-джерело",
     "AppendFile": {
-      "ClickOrDrag": "НАТИСНІТЬ / ПЕРЕТЯГНІТЬ ФАЙЛ (.torrent)",
+      "ClickOrDrag": "НАТИСНІТЬ / ПЕРЕТЯГНІТЬ ФАЙЛИ (.torrent)",
       "Or": "ЧИ"
     },
     "CategoryHelperText": "Торрент-категорія",

@@ -103,7 +103,7 @@ export const TorrentListWrapper = styled.div`
 
   display: grid;
   place-content: start;
-  grid-template-columns: repeat(auto-fit, minmax(max-content, 570px));
+  grid-template-columns: repeat(auto-fit, minmax(450px, 570px));
   gap: 20px;
 
   @media (max-width: 1260px), (max-height: 500px) {

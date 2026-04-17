@@ -6,7 +6,7 @@
     "AddPosterLinkInput": "Линк към плаката",
     "AddTorrentSourceNotification": "Първо добавете вашия торент източник",
     "AppendFile": {
-      "ClickOrDrag": "Щракнете / Влачи§Пусни (.torrent)",
+      "ClickOrDrag": "Щракнете / Влачи§Пусни ФАЙЛОВЕ (.torrent)",
       "Or": "или"
     },
     "CategoryHelperText": "Торент категория",
