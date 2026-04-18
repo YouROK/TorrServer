@@ -15,6 +15,7 @@ import (
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 	"golang.org/x/time/rate"
+	"sync"
 )
 
 var defTrackers = []string{
@@ -36,6 +37,56 @@ var defTrackers = []string{
 
 var loadedTrackers []string
 var lastTrackerUpdate time.Time
+var trackersLock sync.Mutex
+
+func SaveUniqueTrackers(trackers [][]string) {
+	if len(trackers) == 0 {
+		return
+	}
+
+	trackersLock.Lock()
+	defer trackersLock.Unlock()
+
+	name := filepath.Join(settings.Path, "trackers.txt")
+	existing := make(map[string]bool)
+
+	// Read existing trackers to avoid duplicates
+	buf, err := os.ReadFile(name)
+	if err == nil {
+		lines := strings.Split(string(buf), "\n")
+		for _, l := range lines {
+			l = strings.TrimSpace(l)
+			if l != "" {
+				existing[l] = true
+			}
+		}
+	}
+
+	var newTrackers []string
+	for _, tier := range trackers {
+		for _, tr := range tier {
+			tr = strings.TrimSpace(tr)
+			if tr != "" && (strings.HasPrefix(tr, "udp") || strings.HasPrefix(tr, "http") || strings.HasPrefix(tr, "wss")) {
+				if !existing[tr] {
+					newTrackers = append(newTrackers, tr)
+					existing[tr] = true // Mark as added to avoid duplicates in the same batch
+				}
+			}
+		}
+	}
+
+	if len(newTrackers) > 0 {
+		f, err := os.OpenFile(name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return
+		}
+		defer f.Close()
+
+		for _, tr := range newTrackers {
+			f.WriteString(tr + "\n")
+		}
+	}
+}
 
 func GetTrackerFromFile() []string {
 	name := filepath.Join(settings.Path, "trackers.txt")
