@@ -1,0 +1,73 @@
+2026-04-20 02:04:50 (7.39 MB/s) - 'TorrServer-linux-arm64' saved [70647992/70647992]
+
+TS_PORT: 6555
+
+TS_DONTKILL: 1
+
+TS_TORRENTADDR: localhost:1080
+
+Running with:  --port 6555 --dontkill --torrentaddr localhost:1080
+
+2026/04/20 02:04:50 ffprobe and avprobe not found in $PATH
+
+=========== START ===========
+
+TorrServer MatriX.141.4, go1.25.5, CPU Num: 4
+
+2026/04/20 02:04:50 System DNS check passed
+
+2026/04/20 02:04:50 DNS resolution successful, addresses: [13.33.183.43 13.33.183.73 13.33.183.88 13.33.183.103 2600:9000:2816:1a00:e:5373:440:93a1 2600:9000:2816:1c00:e:5373:440:93a1 2600:9000:2816:2400:e:5373:440:93a1 2600:9000:2816:3800:e:5373:440:93a1 2600:9000:2816:b000:e:5373:440:93a1 2600:9000:2816:c000:e:5373:440:93a1 2600:9000:2816:fa00:e:5373:440:93a1 2600:9000:2816:a00:e:5373:440:93a1]
+
+2026/04/20 02:04:50 No migration needed for Settings/BitTorr (already exists or no data)
+
+2026/04/20 02:04:50 Viewed migration result: 0 migrated, 0 skipped
+
+2026/04/20 02:04:50 XPathDBRouter: Registered new DB "JsonDB", total 1 DBs registered
+
+2026/04/20 02:04:50 XPathDBRouter: Registered new route "default" for DB "JsonDB", total 1 routes
+
+2026/04/20 02:04:50 XPathDBRouter: Registered new route "settings" for DB "JsonDB", total 2 routes
+
+2026/04/20 02:04:50 XPathDBRouter: Registered new DB "TDB", total 2 DBs registered
+
+2026/04/20 02:04:50 XPathDBRouter: Registered new route "viewed" for DB "TDB", total 3 routes
+
+2026/04/20 02:04:50 XPathDBRouter: Registered new route "torrents" for DB "TDB", total 4 routes
+
+2026/04/20 02:04:50 Storage: Settings->JSON, Viewed->BBolt, Torrents->BBolt
+
+2026/04/20 02:04:50 Check web port 6555
+
+2026/04/20 02:04:50 Start TorrServer MatriX.141.4 torrent v1.2.22
+
+2026/04/20 02:04:50 Local IPs: [172.24.0.2]
+
+2026/04/20 02:04:50 Set listen addr localhost:1080
+
+2026/04/20 02:04:50 Client config: {"CacheSize":67108864,"ReaderReadAHead":95,"PreloadCache":50,"UseDisk":false,"TorrentsSavePath":"","RemoveCacheOnDrop":false,"ForceEncrypt":false,"RetrackersMode":1,"TorrentDisconnectTimeout":30,"EnableDebug":false,"EnableDLNA":false,"FriendlyName":"","EnableRutorSearch":false,"EnableTorznabSearch":false,"TorznabUrls":null,"TMDBSettings":{"APIKey":"","APIURL":"https://api.themoviedb.org","ImageURL":"https://image.tmdb.org","ImageURLRu":"https://imagetmdb.com"},"EnableIPv6":false,"DisableTCP":false,"DisableUTP":false,"DisableUPNP":false,"DisableDHT":false,"DisablePEX":false,"DisableUpload":false,"DownloadRateLimit":0,"UploadRateLimit":0,"ConnectionsLimit":25,"PeersListenPort":0,"SslPort":0,"SslCert":"","SslKey":"","ResponsiveMode":true,"ShowFSActiveTorr":true,"StoreSettingsInJson":true,"StoreViewedInJson":false,"EnableProxy":false,"ProxyHosts":null}
+
+2026/04/20 02:04:51 PublicIp4: 171.237.4.87
+
+2026/04/20 02:04:51 Start http server at :6555
+
+[2026-04-20 02:04:57 +0000 NIL github.com/anacrolix/torrent client.go:321]
+
+  msg="dht server on 127.0.0.1:1080 (node id 1be8833e1ee6350c8d574d15656d4993f44ffe06) completed bootstrap ({9 0})"
+
+2026/04/20 02:05:32 add torrent magnet:?xt=urn:btih:33933a8f3597fc58c5da383e54b5be3e44934614&dn=rutor.info&tr=udp://opentor.net:6969&tr=http://retracker.local/announce
+
+2026/04/20 02:05:32 [Trackers] SaveUniqueTrackers called with 1 tiers, 2 trackers total
+
+2026/04/20 02:05:32 [Trackers] File path: /opt/torrserver/trackers.txt
+
+2026/04/20 02:05:32 [Trackers] Existing trackers in file: 2
+
+2026/04/20 02:05:32 [Trackers] No new trackers to add (all 2 already exist)
+
+2026/04/20 02:05:35 Create cache for: The.Wrecking.Crew.2026.1.46GB.MegaPeer 33933a8f3597fc58c5da383e54b5be3e44934614
+
+2026/04/20 02:05:35 save to db: 33933a8f3597fc58c5da383e54b5be3e44934614
+
+2026/04/20 02:06:05 Torrent close by timeout 33933a8f3597fc58c5da383e54b5be3e44934614
+
+2026/04/20 02:06:05 Close cache for: The.Wrecking.Crew.2026.1.46GB.MegaPeer 33933a8f3597fc58c5da383e54b5be3e44934614
