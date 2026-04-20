@@ -8,14 +8,15 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
+	"server/log"
 	"server/settings"
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 	"golang.org/x/time/rate"
-	"sync"
 )
 
 var defTrackers = []string{
@@ -40,14 +41,25 @@ var lastTrackerUpdate time.Time
 var trackersLock sync.Mutex
 
 func SaveUniqueTrackers(trackers [][]string) {
-	if len(trackers) == 0 {
+	// Count total trackers for logging
+	totalInput := 0
+	for _, tier := range trackers {
+		totalInput += len(tier)
+	}
+
+	if len(trackers) == 0 || totalInput == 0 {
+		log.TLogln("[Trackers] SaveUniqueTrackers called with empty trackers")
 		return
 	}
+
+	log.TLogln("[Trackers] SaveUniqueTrackers called with", len(trackers), "tiers,", totalInput, "trackers total")
 
 	trackersLock.Lock()
 	defer trackersLock.Unlock()
 
 	name := filepath.Join(settings.Path, "trackers.txt")
+	log.TLogln("[Trackers] File path:", name)
+
 	existing := make(map[string]bool)
 
 	// Read existing trackers to avoid duplicates
@@ -60,6 +72,9 @@ func SaveUniqueTrackers(trackers [][]string) {
 				existing[l] = true
 			}
 		}
+		log.TLogln("[Trackers] Existing trackers in file:", len(existing))
+	} else {
+		log.TLogln("[Trackers] File not found or read error:", err, "- will create new file")
 	}
 
 	var newTrackers []string
@@ -76,8 +91,10 @@ func SaveUniqueTrackers(trackers [][]string) {
 	}
 
 	if len(newTrackers) > 0 {
+		log.TLogln("[Trackers] Writing", len(newTrackers), "new trackers to file")
 		f, err := os.OpenFile(name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
+			log.TLogln("[Trackers] ERROR: Cannot open file for writing:", err)
 			return
 		}
 		defer f.Close()
@@ -85,6 +102,9 @@ func SaveUniqueTrackers(trackers [][]string) {
 		for _, tr := range newTrackers {
 			f.WriteString(tr + "\n")
 		}
+		log.TLogln("[Trackers] Successfully wrote", len(newTrackers), "trackers")
+	} else {
+		log.TLogln("[Trackers] No new trackers to add (all", totalInput, "already exist)")
 	}
 }
 
