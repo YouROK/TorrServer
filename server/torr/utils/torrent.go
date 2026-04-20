@@ -115,11 +115,17 @@ func GetTrackerFromFile() []string {
 		list := strings.Split(string(buf), "\n")
 		var ret []string
 		for _, l := range list {
-			if strings.HasPrefix(l, "udp") || strings.HasPrefix(l, "http") {
+			l = strings.TrimSpace(l)
+			if strings.HasPrefix(l, "udp") || strings.HasPrefix(l, "http") || strings.HasPrefix(l, "wss") {
 				ret = append(ret, l)
 			}
 		}
+		if len(ret) > 0 {
+			log.TLogln("[Trackers] Loaded", len(ret), "trackers from", name)
+		}
 		return ret
+	} else if !os.IsNotExist(err) {
+		log.TLogln("[Trackers] Warning: could not read trackers file:", err)
 	}
 	return nil
 }
