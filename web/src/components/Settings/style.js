@@ -114,42 +114,45 @@ export const Content = styled.div`
   `}
 `
 
-export const PreloadCacheValue = styled.div`
-  ${({ color }) => css`
-    display: grid;
-    grid-template-columns: max-content 100px 1fr;
-    gap: 10px;
-    align-items: flex-start;
+export const CacheLegendGrid = styled.div`
+  display: grid;
+  grid-template-columns: auto max-content minmax(0, 1fr);
+  column-gap: 14px;
+  row-gap: 12px;
+  align-items: start;
+  margin-bottom: 4px;
 
-    :not(:last-child) {
-      margin-bottom: 5px;
-    }
+  .cache-legend-value {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.35;
+  }
 
-    :before {
-      content: '';
-      background: ${color};
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      margin-top: 2px;
-    }
+  .cache-legend-desc {
+    min-width: 0;
+    line-height: 1.45;
+  }
 
-    @media (max-width: 600px) {
-      grid-template-columns: max-content 80px 1fr;
-      gap: 8px;
-      font-size: 13px;
+  @media (max-width: 600px) {
+    column-gap: 10px;
+    row-gap: 10px;
+    font-size: 13px;
+  }
+`
 
-      :before {
-        width: 12px;
-        height: 12px;
-      }
-    }
+export const CacheLegendDot = styled.span`
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: ${({ color }) => color};
+  margin-top: 2px;
 
-    @media (max-width: 400px) {
-      grid-template-columns: max-content 1fr;
-      font-size: 12px;
-    }
-  `}
+  @media (max-width: 600px) {
+    width: 12px;
+    height: 12px;
+    margin-top: 3px;
+  }
 `
 
 export const MainSettingsContent = styled.div`
