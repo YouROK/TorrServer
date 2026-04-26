@@ -15,8 +15,9 @@ import (
 	up "server/tgbot/upload"
 )
 
-func Start(token string) {
+func Start(token string) error {
 	config.LoadConfig()
+	loadUserLangs()
 
 	pref := tele.Settings{
 		URL:       config.Cfg.HostTG,
@@ -26,12 +27,43 @@ func Start(token string) {
 		Client:    &http.Client{Timeout: 5 * time.Minute},
 	}
 
-	log.TLogln("Starting Telegram Bot")
+	log.TLogln("tg bot starting")
 
 	b, err := tele.NewBot(pref)
 	if err != nil {
-		log.TLogln("Error start tg bot:", err)
-		return
+		log.TLogln("tg bot start err", err)
+		return err
+	}
+
+	up.TrFunc = tr
+	up.EscapeFunc = escapeHtml
+
+	if err := b.SetCommands([]tele.Command{
+		{Text: "help", Description: "Help and user ID"},
+		{Text: "start", Description: "Start bot"},
+		{Text: "list", Description: "List torrents"},
+		{Text: "add", Description: "Add torrent"},
+		{Text: "search", Description: "Search all (RuTor+Torznab)"},
+		{Text: "rutor", Description: "Search RuTor"},
+		{Text: "torznab", Description: "Search Torznab"},
+		{Text: "remove", Description: "Remove torrent"},
+		{Text: "status", Description: "Torrent status"},
+		{Text: "link", Description: "Stream link"},
+		{Text: "m3u", Description: "M3U playlist"},
+		{Text: "preload", Description: "Preload file"},
+		{Text: "queue", Description: "Upload queue status"},
+		{Text: "server", Description: "Server info"},
+		{Text: "stats", Description: "Summary statistics"},
+		{Text: "stat", Description: "Detailed status"},
+		{Text: "snake", Description: "Cache visualization"},
+		{Text: "clear", Description: "Remove all torrents"},
+		{Text: "hash", Description: "Show hashes"},
+		{Text: "export", Description: "Export torrents"},
+		{Text: "import", Description: "Import torrents"},
+		{Text: "categories", Description: "List categories"},
+		{Text: "lang", Description: "Set language RU|EN"},
+	}); err != nil {
+		log.TLogln("tg setcmd err", err)
 	}
 
 	if len(config.Cfg.WhiteIds) > 0 {
@@ -41,7 +73,23 @@ func Start(token string) {
 		b.Use(middleware.Blacklist(config.Cfg.BlackIds...))
 	}
 
-	// Commands
+	b.Use(func(next tele.HandlerFunc) tele.HandlerFunc {
+		return func(c tele.Context) error {
+			if c.Sender() == nil {
+				return nil
+			}
+			if c.Message() != nil && c.Message().Text != "" {
+				cmd := logSafeStr(c.Message().Text, 60)
+				log.TLogln("tg cmd", logUser(c.Sender()), cmd)
+			}
+			err := next(c)
+			if err != nil {
+				log.TLogln("tg cmd err", logUser(c.Sender()), err)
+			}
+			return err
+		}
+	})
+
 	b.Handle("help", help)
 	b.Handle("Help", help)
 	b.Handle("/help", help)
@@ -51,68 +99,141 @@ func Start(token string) {
 
 	b.Handle("/list", list)
 	b.Handle("/clear", clear)
+	b.Handle("/add", cmdAdd)
+	b.Handle("/remove", cmdRemove)
+	b.Handle("/drop", cmdDrop)
+	b.Handle("/status", cmdStatus)
+	b.Handle("/server", cmdServer)
+	b.Handle("/link", cmdLink)
+	b.Handle("/play", cmdLink)
+	b.Handle("/cache", cmdCache)
+	b.Handle("/m3u", cmdM3u)
+	b.Handle("/m3uall", cmdM3uAll)
+	b.Handle("/search", cmdSearch)
+	b.Handle("/rutor", cmdSearchRutor)
+	b.Handle("/torznab", cmdTorznab)
+	b.Handle("/preload", cmdPreload)
+	b.Handle("/queue", up.ShowQueue)
+	b.Handle("/set", cmdSet)
+	b.Handle("/hash", cmdHash)
+	b.Handle("/export", cmdExport)
+	b.Handle("/import", cmdImport)
+	b.Handle("/categories", cmdCategories)
+	b.Handle("/echo", cmdEcho)
+	b.Handle("/db", cmdDb)
+	b.Handle("/viewed", cmdViewed)
+	b.Handle("/ffp", cmdFfp)
+	b.Handle("/speedtest", cmdSpeedtest)
+	b.Handle("/shutdown", adminOnly(cmdShutdown))
+	b.Handle("/settings", adminOnly(cmdSettings))
+	b.Handle("/preset", adminOnly(cmdPreset))
+	b.Handle("/lang", cmdLang)
+	b.Handle("/stats", cmdStats)
+	b.Handle("/stat", cmdStat)
+	b.Handle("/snake", cmdSnake)
 
-	// Text
+	b.Handle(tele.OnDocument, func(c tele.Context) error {
+		if c.Message() == nil {
+			return nil
+		}
+		doc := c.Message().Document
+		if doc == nil {
+			return nil
+		}
+		lowerName := strings.ToLower(doc.FileName)
+		isTorrent := strings.HasSuffix(lowerName, ".torrent") ||
+			strings.Contains(strings.ToLower(doc.MIME), "bittorrent")
+		if isTorrent {
+			err := addTorrentFromDocument(c, doc)
+			if err != nil {
+				return err
+			}
+			return list(c)
+		}
+		return nil
+	})
+
 	b.Handle(tele.OnText, func(c tele.Context) error {
 		txt := c.Text()
-		if strings.HasPrefix(strings.ToLower(txt), "magnet:") || isHash(txt) {
+		if handleSettingsInputReply(c) {
+			return nil
+		}
+		lower := strings.ToLower(txt)
+		if strings.HasPrefix(lower, "magnet:") || strings.HasPrefix(lower, "torrs://") ||
+			strings.HasPrefix(lower, "http://") || strings.HasPrefix(lower, "https://") ||
+			isHash(txt) {
 			err := addTorrent(c, txt)
 			if err != nil {
 				return err
 			}
 			return list(c)
 		} else if c.Message().ReplyTo != nil && c.Message().ReplyTo.ReplyMarkup != nil && len(c.Message().ReplyTo.ReplyMarkup.InlineKeyboard) > 0 {
-			data := c.Message().ReplyTo.ReplyMarkup.InlineKeyboard[0][0].Data
-			if strings.HasPrefix(strings.ToLower(data), "\fall|") {
-				hash := strings.TrimPrefix(data, "\fall|")
-				from, to, err := ParseRange(c.Message().Text)
+			var hash string
+			for _, row := range c.Message().ReplyTo.ReplyMarkup.InlineKeyboard {
+				for _, btn := range row {
+					if btn.Data == "" {
+						continue
+					}
+					if idx := strings.Index(btn.Data, "all|"); idx >= 0 {
+						h := btn.Data[idx+4:]
+						if len(h) >= 40 && isHash(h[:40]) {
+							hash = h[:40]
+						} else if isHash(h) {
+							hash = h
+						}
+					} else if isHash(btn.Data) {
+						hash = btn.Data
+					}
+					if hash != "" {
+						break
+					}
+				}
+				if hash != "" {
+					break
+				}
+			}
+			if hash != "" {
+				from, to, err := ParseRange(c.Sender().ID, c.Message().Text)
 				if err != nil {
-					c.Send("Ошибка, нужно указывать числа, пример: 2-12")
+					_ = c.Send(tr(c.Sender().ID, "range_error"))
 					return err
 				}
 				up.AddRange(c, hash, from, to)
 			}
 			return nil
 		} else {
-			return c.Send("Вставьте магнет/хэш торрента чтоб добавить его на сервер")
+			return c.Send(tr(c.Sender().ID, "add_magnet"))
 		}
 	})
+
+	b.Handle(tele.OnQuery, handleInlineQuery)
 
 	b.Handle(tele.OnCallback, func(c tele.Context) error {
 		args := c.Args()
 		if len(args) > 0 {
-			if args[0] == "\ffiles" {
-				return files(c)
+			cbInfo := strings.TrimPrefix(args[0], "\f")
+			if len(args) >= 2 {
+				cbInfo += " " + args[1]
 			}
-			if args[0] == "\fdelete" {
-				deleteTorrent(c)
-				return list(c)
-			}
-			if args[0] == "\fupload" {
-				return upload(c)
-			}
-			if args[0] == "\fuploadall" {
-				uploadall(c)
-				return nil
-			}
-			if args[0] == "\fcancel" {
-				if num, err := strconv.Atoi(args[1]); err == nil {
-					up.Cancel(num)
-					c.Bot().Delete(c.Callback().Message)
-					return nil
-				}
-			}
+			cbInfo = logSafeStr(cbInfo, 80)
+			log.TLogln("tg cb", logUser(c.Sender()), cbInfo)
 		}
-		return errors.New("Ошибка кнопка не распознана")
+		err := handleCallback(c)
+		if err != nil && len(args) > 0 {
+			log.TLogln("tg cb err", logUser(c.Sender()), logSafeStr(args[0], 40), err)
+		}
+		return err
 	})
 
 	up.Start()
 
 	go b.Start()
+	return nil
 }
 
 func help(c tele.Context) error {
-	id := strconv.FormatInt(c.Sender().ID, 10)
+	uid := c.Sender().ID
+	id := strconv.FormatInt(uid, 10)
 	var arr []string
 	if c.Sender().Username != "" {
 		arr = append(arr, c.Sender().Username)
@@ -123,12 +244,37 @@ func help(c tele.Context) error {
 	if c.Sender().LastName != "" {
 		arr = append(arr, c.Sender().LastName)
 	}
-	return c.Send("Бот для управления TorrServer\n\n" +
-		"Список комманд:\n" +
-		"  /help - Эта справка\n" +
-		"  /list - Показать список торрентов на сервере\n" +
-		"  /clear - Удалить все торренты\n\n" +
-		"Ваш id: <code>" + id + "</code>, " + strings.Join(arr, ", "))
+	msg := "🤖 <b>" + tr(uid, "help") + "</b>\n\n"
+	msg += "📋 <b>" + tr(uid, "help_main") + "</b>\n"
+	msg += "  • /help — " + tr(uid, "help_help") + "\n"
+	msg += "  • " + tr(uid, "help_list") + "\n"
+	msg += "  • " + tr(uid, "help_clear") + "\n"
+	msg += "  • " + tr(uid, "help_add") + "\n"
+	msg += "  • " + tr(uid, "help_hash") + "\n"
+	msg += "  • /stats, /stat — " + tr(uid, "help_stats") + ", " + tr(uid, "help_stat") + "\n\n"
+	msg += "🎛 <b>" + tr(uid, "help_manage") + "</b> " + tr(uid, "help_manage_desc") + "\n"
+	msg += "  • " + tr(uid, "help_remove") + "\n"
+	msg += "  • " + tr(uid, "help_links") + "\n\n"
+	msg += "🔍 <b>" + tr(uid, "help_search") + "</b> " + tr(uid, "help_search_desc") + "\n"
+	msg += "  • " + tr(uid, "help_search_cmd") + "\n\n"
+	msg += "📦 <b>" + tr(uid, "help_export_import") + "</b>\n"
+	msg += "  • " + tr(uid, "help_export") + "\n"
+	msg += "  • " + tr(uid, "help_import") + "\n\n"
+	msg += "📁 <b>" + tr(uid, "help_categories_section") + "</b>\n"
+	msg += "  • " + tr(uid, "help_categories") + "\n\n"
+	msg += "🖥 <b>" + tr(uid, "help_server") + "</b>\n"
+	msg += "  • " + tr(uid, "help_server_cmd") + "\n"
+	msg += "  • " + tr(uid, "help_echo") + "\n"
+	msg += "  • " + tr(uid, "help_db") + "\n\n"
+	msg += "⚙️ <b>" + tr(uid, "help_other") + "</b>\n"
+	msg += "  • " + tr(uid, "help_other_cmd") + "\n"
+	msg += "  • " + tr(uid, "help_lang") + "\n"
+	msg += "  • " + tr(uid, "help_admin") + "\n\n"
+	msg += "👤 " + tr(uid, "help_id") + ": <code>" + id + "</code>"
+	if len(arr) > 0 {
+		msg += " • " + strings.Join(arr, ", ")
+	}
+	return c.Send(msg)
 }
 
 func isHash(txt string) bool {
@@ -145,11 +291,11 @@ func isHash(txt string) bool {
 	return false
 }
 
-func ParseRange(rng string) (int, int, error) {
+func ParseRange(userID int64, rng string) (int, int, error) {
 	parts := strings.Split(rng, "-")
 
 	if len(parts) != 2 {
-		return -1, -1, errors.New("Неверный формат строки")
+		return -1, -1, errors.New(tr(userID, "parse_range_err"))
 	}
 
 	num1, err1 := strconv.Atoi(strings.TrimSpace(parts[0]))
@@ -160,6 +306,9 @@ func ParseRange(rng string) (int, int, error) {
 	num2, err2 := strconv.Atoi(strings.TrimSpace(parts[1]))
 	if err2 != nil {
 		return -1, -1, err2
+	}
+	if num1 < 1 || num2 < 1 || num1 > num2 {
+		return -1, -1, errors.New(tr(userID, "parse_range_err"))
 	}
 	return num1, num2, nil
 }

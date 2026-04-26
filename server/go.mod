@@ -10,7 +10,7 @@ replace (
 )
 
 require (
-	github.com/YouROK/tunsgo v0.0.6
+	github.com/YouROK/tunsgo v0.0.8
 	github.com/agnivade/levenshtein v1.2.1
 	github.com/alexflint/go-arg v1.6.0
 	github.com/anacrolix/dms v1.7.2
@@ -124,7 +124,6 @@ require (
 	github.com/libp2p/go-libp2p-asn-util v0.4.1 // indirect
 	github.com/libp2p/go-libp2p-kad-dht v0.38.0 // indirect
 	github.com/libp2p/go-libp2p-kbucket v0.8.0 // indirect
-	github.com/libp2p/go-libp2p-pubsub v0.15.0 // indirect
 	github.com/libp2p/go-libp2p-record v0.3.1 // indirect
 	github.com/libp2p/go-libp2p-routing-helpers v0.7.5 // indirect
 	github.com/libp2p/go-msgio v0.3.0 // indirect

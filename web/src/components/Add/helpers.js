@@ -91,6 +91,44 @@ export const checkTorrentSource = source =>
   source.match(linkRegex) !== null ||
   source.match(torrsRegex) !== null
 
+/** Max length for TMDB/search API query; long torrent names exceed this. */
+const POSTER_SEARCH_MAX_LEN = 50
+/** Max words to use from title for poster search. */
+const POSTER_SEARCH_MAX_WORDS = 4
+
+/**
+ * Shortens a long torrent title for poster search (TMDB).
+ * Uses part before " [", " (", " / " and limits by words/length so the API gets a valid query.
+ * @param {string} fullTitle - Raw torrent title
+ * @param {{ maxWords?: number, maxLen?: number }} opts - Optional limits
+ * @returns {string} Short title suitable for getMoviePosters()
+ */
+export const shortenTitleForPosterSearch = (fullTitle, opts = {}) => {
+  const maxWords = opts.maxWords ?? POSTER_SEARCH_MAX_WORDS
+  const maxLen = opts.maxLen ?? POSTER_SEARCH_MAX_LEN
+  if (!fullTitle || typeof fullTitle !== 'string') return ''
+  const trimmed = fullTitle.trim()
+  if (!trimmed) return ''
+  let base = trimmed
+  for (const sep of [' [', ' (', ' / ']) {
+    const i = base.indexOf(sep)
+    if (i > 0) base = base.slice(0, i).trim()
+  }
+  try {
+    const parsed = ptt.parse(base)
+    if (parsed?.title && parsed.title.length <= maxLen + 15) base = parsed.title
+  } catch (_) {
+    // ignore
+  }
+  const words = base.split(/\s+/).filter(Boolean)
+  const byWords = words.slice(0, maxWords).join(' ')
+  if (byWords.length <= maxLen) return byWords.trim()
+  const cut = byWords.slice(0, maxLen)
+  const lastSpace = cut.lastIndexOf(' ')
+  const result = lastSpace > 0 ? cut.slice(0, lastSpace) : cut
+  return result.trim() || trimmed.slice(0, maxLen).trim()
+}
+
 export const parseTorrentTitle = (parsingSource, callback) => {
   parseTorrent.remote(parsingSource, (err, { name, files } = {}) => {
     if (!name || err) return callback({ parsedTitle: null, originalName: null })

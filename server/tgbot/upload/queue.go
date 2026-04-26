@@ -30,10 +30,10 @@ func ShowQueue(c tele.Context) error {
 	manager.queueLock.Lock()
 	defer manager.queueLock.Unlock()
 	if len(manager.queue) == 0 && len(manager.working) == 0 {
-		return c.Send("Очередь пуста")
+		return c.Send(tr(c.Sender().ID, "queue_empty"))
 	}
 	if len(manager.working) > 0 {
-		msg += "Закачиваются:\n"
+		msg += tr(c.Sender().ID, "upload_working") + ":\n"
 		i := 0
 		for _, dlQueue := range manager.working {
 			s := "#" + strconv.Itoa(i+1) + ": <code>" + dlQueue.torrentHash + "</code>\n"
@@ -50,7 +50,7 @@ func ShowQueue(c tele.Context) error {
 		}
 	}
 	if len(manager.queue) > 0 {
-		msg = "В очереди:\n"
+		msg = tr(c.Sender().ID, "upload_in_queue") + ":\n"
 		for i, dlQueue := range manager.queue {
 			s := "#" + strconv.Itoa(i+1) + ": <code>" + dlQueue.torrentHash + "</code>\n"
 			if len(msg+s) > 1024 {
@@ -80,47 +80,51 @@ func updateLoadStatus(wrk *Worker, file *TorrFile, fi, fc int) {
 		return
 	}
 	t := torr.GetTorrent(wrk.torrentHash)
+	if t == nil {
+		return
+	}
 	ti := t.Status()
 	if wrk.isCancelled {
-		wrk.c.Bot().Edit(wrk.msg, "Остановка...")
+		wrk.c.Bot().Edit(wrk.msg, tr(wrk.c.Sender().ID, "upload_stopping"))
 	} else {
 		wrk.c.Send(tele.UploadingVideo)
 		if ti.DownloadSpeed == 0 {
 			ti.DownloadSpeed = 1.0
 		}
-		wait := time.Duration(float64(file.Loaded())/ti.DownloadSpeed) * time.Second
-		speed := humanize.Bytes(uint64(ti.DownloadSpeed)) + "/sec"
+		wait := time.Duration(float64(file.Remaining())/ti.DownloadSpeed) * time.Second
+		speed := humanize.IBytes(uint64(ti.DownloadSpeed)) + "/sec"
 		peers := fmt.Sprintf("%v · %v/%v", ti.ConnectedSeeders, ti.ActivePeers, ti.TotalPeers)
-		prc := fmt.Sprintf("%.2f%% %v / %v", float64(file.offset)*100.0/float64(file.size), humanize.Bytes(uint64(file.offset)), humanize.Bytes(uint64(file.size)))
+		prc := fmt.Sprintf("%.2f%% %v / %v", float64(file.offset)*100.0/float64(file.size), humanize.IBytes(uint64(file.offset)), humanize.IBytes(uint64(file.size)))
 
 		name := file.name
 		if name == ti.Title {
 			name = ""
 		}
 
-		msg := "Загрузка торрента:\n" +
-			"<b>" + ti.Title + "</b>\n"
+		uid := wrk.c.Sender().ID
+		msg := tr(uid, "upload_title") + ":\n" +
+			"<b>" + escapeHtml(ti.Title) + "</b>\n"
 		if name != "" {
-			msg += "<i>" + name + "</i>\n"
+			msg += "<i>" + escapeHtml(name) + "</i>\n"
 		}
-		msg += "<b>Хэш:</b> <code>" + file.hash + "</code>\n"
+		msg += "<b>" + tr(uid, "upload_hash") + ":</b> <code>" + file.hash + "</code>\n"
 		if file.offset < file.size {
-			msg += "<b>Скорость: </b>" + speed + "\n" +
-				"<b>Осталось: </b>" + wait.String() + "\n" +
-				"<b>Пиры: </b>" + peers + "\n" +
-				"<b>Загружено: </b>" + prc
+			msg += "<b>" + tr(uid, "upload_speed") + ": </b>" + speed + "\n" +
+				"<b>" + tr(uid, "upload_remaining") + ": </b>" + wait.String() + "\n" +
+				"<b>" + tr(uid, "upload_peers") + ": </b>" + peers + "\n" +
+				"<b>" + tr(uid, "upload_progress") + ": </b>" + prc
 		}
 		if fc > 1 {
-			msg += "\n<b>Файлов: </b>" + strconv.Itoa(fi) + "/" + strconv.Itoa(fc)
+			msg += "\n<b>" + tr(uid, "upload_files") + ": </b>" + strconv.Itoa(fi) + "/" + strconv.Itoa(fc)
 		}
 		if file.offset >= file.size {
-			msg += "\n<b>Завершение загрузки, это займет некоторое время</b>"
+			msg += "\n<b>" + tr(uid, "upload_finishing") + "</b>"
 			wrk.c.Bot().Edit(wrk.msg, msg)
 			return
 		}
 
 		torrKbd := &tele.ReplyMarkup{}
-		torrKbd.Inline([]tele.Row{torrKbd.Row(torrKbd.Data("Отмена", "cancel", strconv.Itoa(wrk.id)))}...)
+		torrKbd.Inline([]tele.Row{torrKbd.Row(torrKbd.Data(tr(wrk.c.Sender().ID, "upload_cancel"), "cancel", strconv.Itoa(wrk.id)))}...)
 		wrk.c.Bot().Edit(wrk.msg, msg, torrKbd)
 	}
 }
