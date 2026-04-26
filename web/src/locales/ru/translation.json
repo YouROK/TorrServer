@@ -6,7 +6,7 @@
     "AddPosterLinkInput": "Ссылка на постер",
     "AddTorrentSourceNotification": "Сначала добавьте торрент",
     "AppendFile": {
-      "ClickOrDrag": "НАЖМИТЕ / ПЕРЕТАЩИТЕ ФАЙЛ (.torrent)",
+      "ClickOrDrag": "НАЖМИТЕ / ПЕРЕТАЩИТЕ ФАЙЛЫ (.torrent)",
       "Or": "ИЛИ"
     },
     "CategoryHelperText": "Категория для торрента",

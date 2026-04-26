@@ -70,9 +70,7 @@ export default function RightSideComponent({
     checkImageURL(url).then(setIsPosterUrlCorrect)
     setIsUserInteractedWithPoster(true)
   }
-  // main categories
   const catIndex = TORRENT_CATEGORIES.findIndex(e => e.key === category)
-  // const catArray = TORRENT_CATEGORIES.find(e => e.key === category)
 
   return (
     <RightSide>

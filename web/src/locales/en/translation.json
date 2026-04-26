@@ -6,7 +6,7 @@
     "AddPosterLinkInput": "Poster link",
     "AddTorrentSourceNotification": "First add your torrent source",
     "AppendFile": {
-      "ClickOrDrag": "CLICK / DRAG & DROP (.torrent)",
+      "ClickOrDrag": "CLICK / DRAG & DROP FILES (.torrent)",
       "Or": "OR"
     },
     "CategoryHelperText": "Torrent category",

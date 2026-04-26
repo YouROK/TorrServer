@@ -1,11 +1,13 @@
 package api
 
 import (
+	"mime/multipart"
 	"net/http"
 
 	"server/log"
 	set "server/settings"
 	"server/torr"
+	"server/torr/state"
 	"server/web/api/utils"
 
 	"github.com/gin-gonic/gin"
@@ -13,22 +15,22 @@ import (
 
 // torrentUpload godoc
 //
-//	@Summary		Add .torrent file
-//	@Description	Only one file support.
+//	@Summary		Add .torrent files
+//	@Description	Supports multiple files. Returns array of statuses.
 //
 //	@Tags			API
 //
-//	@Param			file	formData	file	true	"Torrent file to insert"
+//	@Param			file	formData	file	true	"Torrent file(s) to insert"
 //	@Param			save	formData	string	false	"Save to DB"
-//	@Param			title	formData	string	false	"Torrent title"
+//	@Param			title	formData	string	false	"Torrent title (single file only)"
 //	@Param			category	formData	string	false	"Torrent category"
-//	@Param			poster	formData	string	false	"Torrent poster"
+//	@Param			poster	formData	string	false	"Torrent poster (single file only)"
 //	@Param			data	formData	string	false	"Torrent data"
 //
 //	@Accept			multipart/form-data
 //
 //	@Produce		json
-//	@Success		200	{object}	state.TorrentStatus	"Torrent status"
+//	@Success		200	{array}		state.TorrentStatus	"Torrent statuses"
 //	@Router			/torrent/upload [post]
 func torrentUpload(c *gin.Context) {
 	form, err := c.MultipartForm()
@@ -55,24 +57,34 @@ func torrentUpload(c *gin.Context) {
 	if len(form.Value["data"]) > 0 {
 		data = form.Value["data"][0]
 	}
-	var tor *torr.Torrent
-	for name, file := range form.File {
-		log.TLogln("add .torrent", name)
 
-		torrFile, err := file[0].Open()
+	var files []*multipart.FileHeader
+	for _, fh := range form.File {
+		files = append(files, fh...)
+	}
+
+	var stats []*state.TorrentStatus
+	for _, fh := range files {
+		log.TLogln("add .torrent", fh.Filename)
+
+		torrFile, err := fh.Open()
 		if err != nil {
 			log.TLogln("error upload torrent:", err)
 			continue
 		}
-		defer torrFile.Close()
 
 		spec, err := utils.ParseFile(torrFile)
+		torrFile.Close()
 		if err != nil {
 			log.TLogln("error upload torrent:", err)
 			continue
 		}
 
-		tor, err = torr.AddTorrent(spec, title, poster, data, category)
+		tor, err := torr.AddTorrent(spec, title, poster, data, category)
+		if err != nil {
+			log.TLogln("error upload torrent:", err)
+			continue
+		}
 
 		if tor.Data != "" && set.BTsets.EnableDebug {
 			log.TLogln("torrent data:", tor.Data)
@@ -81,27 +93,22 @@ func torrentUpload(c *gin.Context) {
 			log.TLogln("torrent category:", tor.Category)
 		}
 
-		if err != nil {
-			log.TLogln("error upload torrent:", err)
-			continue
-		}
-
-		go func() {
-			if !tor.GotInfo() {
+		go func(t *torr.Torrent) {
+			if !t.GotInfo() {
 				log.TLogln("error add torrent:", "torrent connection timeout")
 				return
 			}
 
-			if tor.Title == "" {
-				tor.Title = tor.Name()
+			if t.Title == "" {
+				t.Title = t.Name()
 			}
 
 			if save {
-				torr.SaveTorrentToDB(tor)
+				torr.SaveTorrentToDB(t)
 			}
-		}()
+		}(tor)
 
-		break
+		stats = append(stats, tor.Status())
 	}
-	c.JSON(200, tor.Status())
+	c.JSON(200, stats)
 }

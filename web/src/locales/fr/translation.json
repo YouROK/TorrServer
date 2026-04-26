@@ -6,7 +6,7 @@
     "AddPosterLinkInput": "Lien de l'affiche",
     "AddTorrentSourceNotification": "Ajoutez d'abord votre source de torrent",
     "AppendFile": {
-      "ClickOrDrag": "CLIQUER / GLISSER-DÉPOSER (.torrent)",
+      "ClickOrDrag": "CLIQUER / GLISSER-DÉPOSER DES FICHIERS (.torrent)",
       "Or": "OU"
     },
     "CategoryHelperText": "Catégorie du torrent",

@@ -6,7 +6,7 @@
     "AddPosterLinkInput": "海报链接",
     "AddTorrentSourceNotification": "先添加你的种子",
     "AppendFile": {
-      "ClickOrDrag": "点击/拖放上传 (.torrent)",
+      "ClickOrDrag": "点击/拖放上传文件 (.torrent)",
       "Or": "或"
     },
     "CategoryHelperText": "Torrent 类别",
