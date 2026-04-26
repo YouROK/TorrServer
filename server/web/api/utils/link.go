@@ -23,17 +23,24 @@ func ParseFromBytes(data []byte) (*torrent.TorrentSpec, error) {
 	if err != nil {
 		return nil, err
 	}
-	info, err := minfo.UnmarshalInfo()
+	// info, err := minfo.UnmarshalInfo()
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// mag := minfo.Magnet(nil, &info)
+	// return &torrent.TorrentSpec{
+	// 	InfoBytes:   minfo.InfoBytes,
+	// 	Trackers:    [][]string{mag.Trackers},
+	// 	DisplayName: info.Name,
+	// 	InfoHash:    minfo.HashInfoBytes(),
+	// }, nil
+	spec, err := torrent.TorrentSpecFromMetaInfoErr(minfo)
 	if err != nil {
+		log.TLogln("Error parse torrent file info:", err)
 		return nil, err
 	}
-	mag := minfo.Magnet(nil, &info)
-	return &torrent.TorrentSpec{
-		InfoBytes:   minfo.InfoBytes,
-		Trackers:    [][]string{mag.Trackers},
-		DisplayName: info.Name,
-		InfoHash:    minfo.HashInfoBytes(),
-	}, nil
+
+	return spec, nil
 }
 
 func ParseFile(file multipart.File) (*torrent.TorrentSpec, error) {

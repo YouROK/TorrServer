@@ -22,6 +22,8 @@ definitions:
         type: string
       data:
         type: string
+      filter:
+        type: string
       hash:
         type: string
       link:
