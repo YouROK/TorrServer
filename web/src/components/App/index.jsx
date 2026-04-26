@@ -28,7 +28,7 @@ import getStyledComponentsTheme from 'style/getStyledComponentsTheme'
 import checkIsIOS from 'utils/checkIsIOS'
 import SearchDialog from 'components/Search/SearchDialog'
 
-import { AppWrapper, AppHeader, HeaderToggle, StyledIconButton } from './style'
+import { AppWrapper, AppHeader, HeaderToggle, StyledIconButton, SidebarOverlay } from './style'
 import Sidebar from './Sidebar'
 import PWAFooter from './PWAFooter'
 import { PWAInstallationGuide } from './PWAInstallationGuide'
@@ -74,7 +74,7 @@ export default function App() {
 
             {/* Div100vh - iOS WebKit fix  */}
             <Div100vh>
-              <AppWrapper>
+              <AppWrapper isDrawerOpen={isDrawerOpen}>
                 <AppHeader>
                   <StyledIconButton edge='start' color='inherit' onClick={() => setIsDrawerOpen(!isDrawerOpen)}>
                     {isDrawerOpen ? <CloseIcon /> : <MenuIcon />}
@@ -139,6 +139,8 @@ export default function App() {
                     </HeaderToggle>
                   </div>
                 </AppHeader>
+
+                <SidebarOverlay isDrawerOpen={isDrawerOpen} onClick={() => setIsDrawerOpen(false)} />
 
                 <Sidebar
                   isOffline={isOffline}
