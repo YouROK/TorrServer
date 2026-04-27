@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/dustin/go-humanize"
@@ -217,6 +218,9 @@ func editFilesListMessage(c tele.Context, hash string, uid int64, page int) erro
 	}
 	_, err := c.Bot().Edit(c.Callback().Message, txt, kbd, tele.ModeHTML)
 	if err != nil {
+		if strings.Contains(err.Error(), "message is not modified") {
+			return nil
+		}
 		log.TLogln("tg files edit err", err)
 		_, _ = c.Bot().Send(c.Sender(), tr(uid, "error")+":\n"+escapeHtml(err.Error()), tele.ModeHTML)
 		return err
