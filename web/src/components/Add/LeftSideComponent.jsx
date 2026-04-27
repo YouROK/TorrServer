@@ -4,12 +4,7 @@ import { AddItemIcon } from 'icons'
 import TextField from '@material-ui/core/TextField'
 import { useState } from 'react'
 
-import {
-  IconWrapper,
-  LeftSide,
-  LeftSideBottomSectionNoFile,
-  LeftSideTopSection,
-} from './style'
+import { IconWrapper, LeftSide, LeftSideBottomSectionNoFile, LeftSideTopSection } from './style'
 
 export default function LeftSideComponent({
   setIsUserInteractedWithPoster,

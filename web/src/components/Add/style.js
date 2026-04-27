@@ -127,7 +127,6 @@ export const LeftSideBottomSectionNoFile = styled.div`
   }
 `
 
-
 export const IconWrapper = styled.div`
   display: grid;
   justify-items: center;
@@ -377,7 +376,6 @@ export const MultiFileInfo = styled.div`
     opacity: 0.6;
     margin-bottom: 4px;
   }
-
 `
 
 export const MultiFileList = styled.div`

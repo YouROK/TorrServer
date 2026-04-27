@@ -234,7 +234,7 @@ export default function AddDialog({
     isUserInteractedWithPoster,
   ])
 
-  const handleSetSelectedFile = useCallback((fileOrFiles) => {
+  const handleSetSelectedFile = useCallback(fileOrFiles => {
     const files = Array.isArray(fileOrFiles) ? fileOrFiles : [fileOrFiles]
     setMultiFiles(files)
   }, [])

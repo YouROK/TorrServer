@@ -15,6 +15,7 @@ import { useQuery } from 'react-query'
 import { getTorrents } from 'utils/Utils'
 import useChangeLanguage from 'utils/useChangeLanguage'
 import parseTorrent from 'parse-torrent'
+
 import { parseTorrentTitle, checkImageURL, getMoviePosters } from './helpers'
 import { MultiFileRow, MultiFilePoster, MultiFileInfo, MultiFileList } from './style'
 
@@ -103,9 +104,7 @@ function FileRow({ file, fileState, index, onUpdate, onRemove, existingTorrents 
         />
 
         <FormControl fullWidth size='small' style={{ marginTop: 4 }}>
-          <FormHelperText style={{ padding: '0 0.5em' }}>
-            {t('AddDialog.CategoryHelperText')}
-          </FormHelperText>
+          <FormHelperText style={{ padding: '0 0.5em' }}>{t('AddDialog.CategoryHelperText')}</FormHelperText>
           <Select
             value={fileState.category}
             margin='dense'
@@ -114,7 +113,9 @@ function FileRow({ file, fileState, index, onUpdate, onRemove, existingTorrents 
             fullWidth
             defaultValue=''
           >
-            <MenuItem value=''><em>—</em></MenuItem>
+            <MenuItem value=''>
+              <em>—</em>
+            </MenuItem>
             {TORRENT_CATEGORIES.map(cat => (
               <MenuItem key={cat.key} value={cat.key}>
                 {t(cat.name)}
@@ -151,23 +152,26 @@ export default function MultiAddDialog({ files, handleClose }) {
       parsedTitle: '',
       infoHash: '',
       alreadyExists: false,
-    }))
+    })),
   )
 
   const newFiles = useMemo(() => fileList.filter(item => !item.alreadyExists), [fileList])
   const newCount = newFiles.length
 
   const handleUpdate = useCallback((index, updates) => {
-    setFileList(prev => prev.map((item, i) => i === index ? { ...item, ...updates } : item))
+    setFileList(prev => prev.map((item, i) => (i === index ? { ...item, ...updates } : item)))
   }, [])
 
-  const handleRemove = useCallback((index) => {
-    setFileList(prev => {
-      const next = prev.filter((_, i) => i !== index)
-      if (next.length === 0) handleClose()
-      return next
-    })
-  }, [handleClose])
+  const handleRemove = useCallback(
+    index => {
+      setFileList(prev => {
+        const next = prev.filter((_, i) => i !== index)
+        if (next.length === 0) handleClose()
+        return next
+      })
+    },
+    [handleClose],
+  )
 
   const handleSaveAll = () => {
     setIsSaving(true)
