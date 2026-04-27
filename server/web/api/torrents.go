@@ -4,8 +4,6 @@ import (
 	"net/http"
 	"server/torrshash"
 	"strings"
-	"sync"
-	"time"
 
 	"server/dlna"
 	"server/log"
@@ -29,15 +27,7 @@ type torrReqJS struct {
 	Poster   string `json:"poster,omitempty"`
 	Data     string `json:"data,omitempty"`
 	SaveToDB bool   `json:"save_to_db,omitempty"`
-	Filter   string `json:"filter,omitempty"`
 }
-
-var (
-	listCache     []*state.TorrentStatus
-	listCacheTime time.Time
-	listCacheMu   sync.Mutex
-	listCacheTTL  = 2 * time.Second
-)
 
 // torrents godoc
 //
@@ -79,7 +69,7 @@ func torrents(c *gin.Context) {
 		}
 	case "list":
 		{
-			listTorrents(c, req.Filter)
+			listTorrents(c)
 		}
 	case "drop":
 		{
@@ -203,41 +193,16 @@ func remTorrent(req torrReqJS, c *gin.Context) {
 	c.Status(200)
 }
 
-func listTorrents(c *gin.Context, filter string) {
-	if filter == "" {
-		filter = "all"
-	}
-
-	// Return cached response for "all" filter if fresh enough
-	if filter == "all" {
-		listCacheMu.Lock()
-		if listCache != nil && time.Since(listCacheTime) < listCacheTTL {
-			cached := listCache
-			listCacheMu.Unlock()
-			c.JSON(200, cached)
-			return
-		}
-		listCacheMu.Unlock()
-	}
-
-	list := torr.ListTorrentFiltered(filter)
+func listTorrents(c *gin.Context) {
+	list := torr.ListTorrent()
 	if len(list) == 0 {
 		c.JSON(200, []*state.TorrentStatus{})
 		return
 	}
 	var stats []*state.TorrentStatus
 	for _, tr := range list {
-		stats = append(stats, tr.StatusLight())
+		stats = append(stats, tr.Status())
 	}
-
-	// Cache "all" results
-	if filter == "all" {
-		listCacheMu.Lock()
-		listCache = stats
-		listCacheTime = time.Now()
-		listCacheMu.Unlock()
-	}
-
 	c.JSON(200, stats)
 }
 
