@@ -163,6 +163,7 @@ On FreeBSD (TrueNAS/FreeNAS) you can use this plugin: <https://github.com/filka9
 - `--sslport PORT` -  web server https port (default 8091). If not set, will be taken from db (if stored previously) or the default will be used.
 - `--sslcert PATH` -  path to ssl cert file. If not set, will be taken from db (if stored previously) or default self-signed certificate/key will be generated.
 - `--sslkey PATH` - path to ssl key file. If not set, will be taken from db (if stored previously) or default self-signed certificate/key will be generated.
+- `--force-https` - with `--ssl`, the HTTP listener (`--port`) answers only with **307 Temporary Redirect** to the same path on HTTPS (`--sslport`). The web UI and API are served on HTTPS only; nothing is served on HTTP except redirects. Requires `--ssl` (startup fails if `--force-https` is set without `--ssl`). Default is off so plain HTTP still works when SSL is disabled.
 - `--path PATH`, `-d PATH` - database and config dir path
 - `--logpath LOGPATH`, `-l LOGPATH` - server log file path
 - `--weblogpath WEBLOGPATH`, `-w WEBLOGPATH` - web access log file path
@@ -187,7 +188,7 @@ On FreeBSD (TrueNAS/FreeNAS) you can use this plugin: <https://github.com/filka9
 Example:
 
 ```bash
-TorrServer-darwin-arm64 [--port PORT] [--ip IP] [--path PATH] [--logpath LOGPATH] [--weblogpath WEBLOGPATH] [--rdb] [--httpauth] [--dontkill] [--ui] [--torrentsdir TORRENTSDIR] [--torrentaddr TORRENTADDR] [--pubipv4 PUBIPV4] [--pubipv6 PUBIPV6] [--searchwa] [--maxsize MAXSIZE] [--tg TGTOKEN] [--fuse FUSEPATH] [--webdav]
+TorrServer-darwin-arm64 [--port PORT] [--ip IP] [--path PATH] [--logpath LOGPATH] [--weblogpath WEBLOGPATH] [--rdb] [--httpauth] [--dontkill] [--ui] [--torrentsdir TORRENTSDIR] [--torrentaddr TORRENTADDR] [--pubipv4 PUBIPV4] [--pubipv6 PUBIPV6] [--searchwa] [--maxsize MAXSIZE] [--tg TGTOKEN] [--fuse FUSEPATH] [--webdav] [--ssl] [--sslport PORT] [--sslcert PATH] [--sslkey PATH] [--force-https]
 ```
 
 ### Running in Docker & Docker Compose
