@@ -30,7 +30,12 @@ func uploadall(c tele.Context) error {
 	if len(args) < 2 {
 		return c.Respond(&tele.CallbackResponse{Text: tr(c.Sender().ID, "callback_unknown")})
 	}
-	hash := strings.TrimPrefix(args[1], "all|")
+	hash := ""
+	if len(args) >= 3 && isHash(args[2]) {
+		hash = args[2]
+	} else {
+		hash = strings.TrimPrefix(args[1], "all|")
+	}
 	if !isHash(hash) {
 		return c.Respond(&tele.CallbackResponse{Text: tr(c.Sender().ID, "callback_unknown")})
 	}
