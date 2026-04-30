@@ -46,6 +46,7 @@ allowing the cache size to be adjusted according to the system parameters and th
 - Local and Remote Server
 - Viewing torrents on various devices
 - Integration with other apps through API
+- Torznab search (Jackett, Prowlarr, and similar indexer managers)
 - Cross-browser modern web interface
 - Optional DLNA server
 
@@ -347,6 +348,43 @@ local:127.0.0.1
 127.0.0.1
 # at the beginning of the line, comment
 ```
+
+## Torznab
+
+TorrServer can talk to **Torznab** indexers so you can search for torrents from tools like **Jackett** and **Prowlarr**, including searching several configured indexers at once.
+
+Configure it in the web UI: **Settings → Torznab**.
+
+### Indexer parameters
+
+Each Torznab indexer needs:
+
+- **Host URL**: full URL to the Torznab API endpoint.
+  - Jackett example:
+
+  ```shell
+  http://192.168.1.10:9117/api/v2.0/indexers/all/results/torznab/
+  ```
+
+  - Prowlarr example:
+  
+  ```shell
+  http://localhost:9696/1
+  ```
+  
+  - Make sure to include the correct trailing slash (`/`) in your indexer's URL,
+  as required by your Torznab provider. TorrServer will try to properly format the path,
+  but matching your indexer's expected format is best to avoid connection issues.
+  
+- **API Key**: the key from your Torznab indexer manager.
+
+### Enabling Torznab search
+
+1. Open **Settings**.
+2. Open the **Torznab** tab.
+3. Turn on **Enable Torznab Search**.
+4. Enter **Host URL** and **API Key**, then **Add Server** for each indexer.
+5. **Save** settings.
 
 ## Donate
 
