@@ -41,7 +41,7 @@ export default function PrimarySettingsComponent({
   updateSettings,
 }) {
   const { t } = useTranslation()
-  const { UseDisk, TorrentsSavePath, RemoveCacheOnDrop } = settings || {}
+  const { UseDisk, TorrentsSavePath, RemoveCacheOnDrop, OneCacheForAll } = settings || {}
   const preloadCacheSize = Math.round((cacheSize / 100) * preloadCachePercentage)
 
   return (
@@ -138,6 +138,17 @@ export default function PrimarySettingsComponent({
           />
           <div>
             <small>{t('SettingsDialog.RemoveCacheOnDropDesc')}</small>
+          </div>
+          <br />
+          <FormControlLabel
+            control={
+              <Switch checked={OneCacheForAll} onChange={inputForm} id='OneCacheForAll' color='secondary' />
+            }
+            label={t('SettingsDialog.OneCacheForAll')}
+            labelPlacement='start'
+          />
+          <div>
+            <small>{t('SettingsDialog.OneCacheForAllDesc')}</small>
           </div>
           <br />
           <TextField
