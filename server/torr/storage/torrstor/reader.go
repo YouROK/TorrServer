@@ -161,7 +161,15 @@ func (r *Reader) getOffsetRange() (int64, int64) {
 }
 
 func (r *Reader) checkReader() {
-	if time.Now().Unix() > r.lastAccess+60 && len(r.cache.readers) > 1 {
+	if len(r.cache.readers) > 1 {
+		for o := range r.cache.readers {
+			if o != r && o.lastAccess > r.lastAccess {
+				r.readerOff()
+				return
+			}
+		}
+	}
+	if time.Now().Unix() > r.lastAccess+60 {
 		r.readerOff()
 	} else {
 		r.readerOn()
