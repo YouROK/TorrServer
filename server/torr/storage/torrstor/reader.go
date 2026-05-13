@@ -36,6 +36,13 @@ func newReader(file *torrent.File, cache *Cache) *Reader {
 	r.isUse = true
 
 	cache.muReaders.Lock()
+	for old := range cache.readers {
+		if old.file == file {
+			old.Close()
+			delete(cache.readers, old)
+		}
+	}
+
 	cache.readers[r] = struct{}{}
 	cache.muReaders.Unlock()
 	return r
