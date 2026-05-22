@@ -785,9 +785,6 @@ const docTemplate = `{
                 "data": {
                     "type": "string"
                 },
-                "filter": {
-                    "type": "string"
-                },
                 "hash": {
                     "type": "string"
                 },
