@@ -67,6 +67,10 @@ type BTSets struct {
 	UploadRateLimit   int // in kb, 0 - inf
 	ConnectionsLimit  int
 	PeersListenPort   int
+	
+	// LPD
+	EnableLPD bool
+    LPDIPv6   bool
 
 	// HTTPS
 	SslPort int
@@ -165,6 +169,8 @@ func SetDefaultConfig() {
 	sets.ResponsiveMode = true
 	sets.ShowFSActiveTorr = true
 	sets.StoreSettingsInJson = true
+    sets.EnableLPD = true
+  	sets.LPDIPv6 = false
 	// Set default TMDB settings
 	sets.TMDBSettings = TMDBConfig{
 		APIKey:     "",
