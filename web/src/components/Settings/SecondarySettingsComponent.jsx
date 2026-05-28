@@ -216,7 +216,9 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       </FormGroup>
       <FormGroup>
         <FormControlLabel
-          control={<Switch checked={LPDIPv6} onChange={inputForm} id='LPDIPv6' color='secondary' disabled={!EnableLPD} />}
+          control={
+            <Switch checked={LPDIPv6} onChange={inputForm} id='LPDIPv6' color='secondary' disabled={!EnableLPD} />
+          }
           label='LPD IPv6'
           labelPlacement='start'
         />
