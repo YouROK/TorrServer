@@ -88,6 +88,14 @@ func (bt *BTServer) configure(ctx context.Context) {
 	blocklist, _ := utils.ReadBlockedIP()
 	bt.config = torrent.NewDefaultClientConfig()
 
+    if settings.BTsets.EnableLPD {
+        bt.config.LocalServiceDiscovery = &torrent.LocalServiceDiscoveryConfig{
+            Ip6: settings.BTsets.LPDIPv6 && settings.BTsets.EnableIPv6,
+		}	
+	} else {
+		bt.config.LocalServiceDiscovery = nil	 
+    }
+
 	bt.storage = torrstor.NewStorage(settings.BTsets.CacheSize)
 	bt.config.DefaultStorage = bt.storage
 

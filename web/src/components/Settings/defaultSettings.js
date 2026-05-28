@@ -19,6 +19,8 @@ export default {
   DisableDHT: false,
   DisablePEX: false,
   DisableUpload: false,
+  EnableLPD: true,
+  LPDIPv6: false,
   DownloadRateLimit: 0,
   UploadRateLimit: 0,
   ConnectionsLimit: 25,
