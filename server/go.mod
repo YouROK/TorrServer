@@ -3,7 +3,7 @@ module server
 go 1.25
 
 replace (
-	github.com/anacrolix/torrent v1.59.1 => github.com/tsynik/torrent v1.2.23
+	github.com/anacrolix/torrent v1.59.1 => github.com/tsynik/torrent v1.2.24
 	github.com/anacrolix/upnp v0.1.4 => github.com/tsynik/upnp v0.1.5
 )
 

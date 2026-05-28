@@ -111,6 +111,9 @@ definitions:
       enableIPv6:
         description: BT Config
         type: boolean
+      enableLPD:
+        description: LPD
+        type: boolean
       enableProxy:
         description: P2P Proxy
         type: boolean
@@ -125,6 +128,8 @@ definitions:
         type: boolean
       friendlyName:
         type: string
+      lpdipv6:
+        type: boolean
       peersListenPort:
         type: integer
       preloadCache:
@@ -783,9 +788,7 @@ paths:
         "200":
           description: Torrent statuses
           schema:
-            items:
-              $ref: '#/definitions/state.TorrentStatus'
-            type: array
+            type: if
       summary: Add .torrent files
       tags:
       - API
