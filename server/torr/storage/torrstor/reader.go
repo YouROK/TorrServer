@@ -1,6 +1,7 @@
 package torrstor
 
 import (
+	"context"
 	"io"
 	"sync"
 	"sync/atomic"
@@ -28,6 +29,13 @@ type Reader struct {
 	cache *Cache
 	// isClosed is read by Read / Seek and written by Close concurrently.
 	isClosed atomic.Bool
+	// ctx is cancelled by Close to unblock any in-flight Read.
+	// anacrolix's bare reader.Close() only deletes the reader from the
+	// torrent's reader-set; it does NOT signal waitReadable. Without
+	// ReadContext + a cancellable context, a Read blocked in
+	// waitAvailable would leak until the torrent itself is dropped.
+	ctx       context.Context
+	ctxCancel context.CancelFunc
 
 	///Preload
 	// lastAccess is read by checkReader (cache loop) and written by
@@ -41,6 +49,7 @@ func newReader(file *torrent.File, cache *Cache) *Reader {
 	r := new(Reader)
 	r.file = file
 	r.Reader = file.NewReader()
+	r.ctx, r.ctxCancel = context.WithCancel(context.Background())
 
 	r.SetReadahead(0)
 	r.cache = cache
@@ -54,7 +63,7 @@ func newReader(file *torrent.File, cache *Cache) *Reader {
 
 func (r *Reader) Seek(offset int64, whence int) (n int64, err error) {
 	if r.isClosed.Load() {
-		return 0, io.EOF
+		return 0, io.ErrClosedPipe
 	}
 	switch whence {
 	case io.SeekStart:
@@ -72,37 +81,20 @@ func (r *Reader) Seek(offset int64, whence int) (n int64, err error) {
 }
 
 func (r *Reader) Read(p []byte) (n int, err error) {
-	err = io.EOF
+	// Distinguish "reader was closed" from a real EOF. Returning io.EOF
+	// here would cause http.ServeContent to silently truncate the
+	// response if Close races an in-flight Read.
 	if r.isClosed.Load() {
-		return
+		return 0, io.ErrClosedPipe
 	}
-	if r.file.Torrent() != nil && r.file.Torrent().Info() != nil {
-		r.readerOn()
-		n, err = r.Reader.Read(p)
-
-		// samsung tv fix xvid/divx
-		//if r.offset == 0 && len(p) >= 192 {
-		//	str := strings.ToLower(string(p[112:116]))
-		//	if str == "xvid" || str == "divx" {
-		//		p[112] = 0x4D // M
-		//		p[113] = 0x50 // P
-		//		p[114] = 0x34 // 4
-		//		p[115] = 0x56 // V
-		//	}
-		//	str = strings.ToLower(string(p[188:192]))
-		//	if str == "xvid" || str == "divx" {
-		//		p[188] = 0x4D // M
-		//		p[189] = 0x50 // P
-		//		p[190] = 0x34 // 4
-		//		p[191] = 0x56 // V
-		//	}
-		//}
-
-		r.offset.Add(int64(n))
-		r.lastAccess.Store(time.Now().Unix())
-	} else {
+	if r.file.Torrent() == nil || r.file.Torrent().Info() == nil {
 		log.TLogln("Torrent closed and readed")
+		return 0, io.ErrClosedPipe
 	}
+	r.readerOn()
+	n, err = r.Reader.ReadContext(r.ctx, p)
+	r.offset.Add(int64(n))
+	r.lastAccess.Store(time.Now().Unix())
 	return
 }
 
@@ -127,7 +119,17 @@ func (r *Reader) Readahead() int64 {
 func (r *Reader) Close() {
 	// file reader close in gotorrent
 	// this struct close in cache
-	r.isClosed.Store(true)
+	if !r.isClosed.CompareAndSwap(false, true) {
+		// Already closed: idempotent.
+		return
+	}
+	// Cancel the context FIRST so any in-flight ReadContext unblocks
+	// promptly via anacrolix's tickleReaders path. Without this, the
+	// goroutine running Read() would leak until the torrent is
+	// dropped, since reader.Close() in the fork doesn't broadcast.
+	if r.ctxCancel != nil {
+		r.ctxCancel()
+	}
 	torr := r.file.Torrent()
 	if torr != nil && len(torr.Files()) > 0 {
 		r.Reader.Close()
