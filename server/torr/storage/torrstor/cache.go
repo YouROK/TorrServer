@@ -6,7 +6,6 @@ import (
 	"sort"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"github.com/anacrolix/torrent"
 
@@ -43,7 +42,11 @@ type Cache struct {
 	// actually want for "only one cleanPieces sweep at a time".
 	isRemove atomic.Bool
 	isClosed atomic.Bool
-	torrent  *torrent.Torrent
+	// muPrio serializes clearPriority and setLoadPriority so a Seek
+	// landing during a clearPriority sweep can't have its freshly-set
+	// piece priorities clobbered.
+	muPrio  sync.Mutex
+	torrent *torrent.Torrent
 }
 
 func NewCache(capacity int64, storage *Storage) *Cache {
@@ -278,6 +281,8 @@ func (c *Cache) setLoadPriority(ranges []Range) {
 	if c.isClosed.Load() || c.torrent == nil {
 		return
 	}
+	c.muPrio.Lock()
+	defer c.muPrio.Unlock()
 	c.muReaders.Lock()
 	for r := range c.readers {
 		if !r.isUse {
@@ -376,10 +381,16 @@ func (c *Cache) CloseReader(r *Reader) {
 }
 
 func (c *Cache) clearPriority() {
-	time.Sleep(time.Second)
+	// Previously this slept time.Second before doing the work, opening
+	// a ~1s window during which a fresh Seek's setLoadPriority could be
+	// raced and overwritten by a stale clearPriority sweep. The sleep
+	// had no documented purpose. We now serialize against
+	// setLoadPriority via c.muPrio instead.
 	if c.isClosed.Load() || c.torrent == nil {
 		return
 	}
+	c.muPrio.Lock()
+	defer c.muPrio.Unlock()
 	ranges := make([]Range, 0)
 	c.muReaders.Lock()
 	for r := range c.readers {
