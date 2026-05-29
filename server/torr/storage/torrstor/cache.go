@@ -119,7 +119,13 @@ func (c *Cache) Close() error {
 
 	c.muReaders.Lock()
 	c.readers = nil
-	c.pieces = nil
+	// NOTE: do NOT set c.pieces=nil here. A racy
+	// `go r.cache.getRemPieces()` (spawned by Reader.Close) or any
+	// `go cleanPieces` from a recent WriteAt may still be iterating
+	// c.pieces; nil-ing it under muReaders does not help because the
+	// iterators read c.pieces without holding that lock. The Cache
+	// struct is dropped from c.storage.caches above, so the map and
+	// its entries become unreachable and will be GC'd anyway.
 	c.muReaders.Unlock()
 
 	utils.FreeOSMemGC()
