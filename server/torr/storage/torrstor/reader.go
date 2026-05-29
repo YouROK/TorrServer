@@ -187,9 +187,9 @@ func (r *Reader) readerOn() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if !r.isUse {
-		if pos, err := r.Reader.Seek(0, io.SeekCurrent); err == nil && pos == 0 {
-			r.Reader.Seek(r.offset.Load(), io.SeekStart)
-		}
+		// readerOff no longer Seek(0)s the underlying reader, so we
+		// no longer need to seek it back here either. Restoring
+		// readahead is enough to re-arm the piece-priority calc.
 		r.SetReadahead(r.readahead.Load())
 		r.isUse = true
 	}
@@ -199,11 +199,22 @@ func (r *Reader) readerOff() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.isUse {
+		// Previously this also did `r.Reader.Seek(0, SeekStart)` to
+		// "park" the underlying anacrolix reader at the start of the
+		// file. That caused two harms:
+		//   1. A wasteful round-trip in piece priorities — the pieces
+		//      around the real offset were dropped, then re-requested
+		//      a few seconds later when the player resumed and
+		//      readerOn re-Seek'd back to r.offset.
+		//   2. A transient window where the underlying reader's
+		//      position disagreed with r.offset; any code reading the
+		//      embedded reader directly (via method promotion) would
+		//      have read from byte 0.
+		// Setting readahead to 0 alone is enough to relinquish the
+		// readahead bandwidth claim; the reader's current-piece weight
+		// is harmless and avoids the churn.
 		r.SetReadahead(0)
 		r.isUse = false
-		if r.offset.Load() > 0 {
-			r.Reader.Seek(0, io.SeekStart)
-		}
 	}
 }
 
