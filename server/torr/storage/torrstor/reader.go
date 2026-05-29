@@ -18,15 +18,21 @@ const readerIdleTimeout = 300
 
 type Reader struct {
 	torrent.Reader
-	offset    int64
-	readahead int64
+	// offset / readahead are read by getOffsetRange / checkReader on the
+	// cache loop goroutine while Read / Seek mutate them on the HTTP
+	// goroutine — must be atomic.
+	offset    atomic.Int64
+	readahead atomic.Int64
 	file      *torrent.File
 
-	cache    *Cache
-	isClosed bool
+	cache *Cache
+	// isClosed is read by Read / Seek and written by Close concurrently.
+	isClosed atomic.Bool
 
 	///Preload
-	lastAccess int64
+	// lastAccess is read by checkReader (cache loop) and written by
+	// Read / Seek (HTTP goroutine).
+	lastAccess atomic.Int64
 	isUse      bool
 	mu         sync.Mutex
 }
@@ -47,27 +53,27 @@ func newReader(file *torrent.File, cache *Cache) *Reader {
 }
 
 func (r *Reader) Seek(offset int64, whence int) (n int64, err error) {
-	if r.isClosed {
+	if r.isClosed.Load() {
 		return 0, io.EOF
 	}
 	switch whence {
 	case io.SeekStart:
-		r.offset = offset
+		r.offset.Store(offset)
 	case io.SeekCurrent:
-		r.offset += offset
+		r.offset.Add(offset)
 	case io.SeekEnd:
-		r.offset = r.file.Length() + offset
+		r.offset.Store(r.file.Length() + offset)
 	}
 	r.readerOn()
 	n, err = r.Reader.Seek(offset, whence)
-	r.offset = n
-	atomic.StoreInt64(&r.lastAccess, time.Now().Unix())
+	r.offset.Store(n)
+	r.lastAccess.Store(time.Now().Unix())
 	return
 }
 
 func (r *Reader) Read(p []byte) (n int, err error) {
 	err = io.EOF
-	if r.isClosed {
+	if r.isClosed.Load() {
 		return
 	}
 	if r.file.Torrent() != nil && r.file.Torrent().Info() != nil {
@@ -92,8 +98,8 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 		//	}
 		//}
 
-		r.offset += int64(n)
-		atomic.StoreInt64(&r.lastAccess, time.Now().Unix())
+		r.offset.Add(int64(n))
+		r.lastAccess.Store(time.Now().Unix())
 	} else {
 		log.TLogln("Torrent closed and readed")
 	}
@@ -107,21 +113,21 @@ func (r *Reader) SetReadahead(length int64) {
 	if r.isUse {
 		r.Reader.SetReadahead(length)
 	}
-	r.readahead = length
+	r.readahead.Store(length)
 }
 
 func (r *Reader) Offset() int64 {
-	return r.offset
+	return r.offset.Load()
 }
 
 func (r *Reader) Readahead() int64 {
-	return r.readahead
+	return r.readahead.Load()
 }
 
 func (r *Reader) Close() {
 	// file reader close in gotorrent
 	// this struct close in cache
-	r.isClosed = true
+	r.isClosed.Store(true)
 	torr := r.file.Torrent()
 	if torr != nil && len(torr.Files()) > 0 {
 		r.Reader.Close()
@@ -135,11 +141,11 @@ func (r *Reader) getPiecesRange() Range {
 }
 
 func (r *Reader) getReaderPiece() int {
-	return r.getPieceNum(r.offset)
+	return r.getPieceNum(r.offset.Load())
 }
 
 func (r *Reader) getReaderRAHPiece() int {
-	return r.getPieceNum(r.offset + r.readahead)
+	return r.getPieceNum(r.offset.Load() + r.readahead.Load())
 }
 
 func (r *Reader) getPieceNum(offset int64) int {
@@ -153,8 +159,9 @@ func (r *Reader) getOffsetRange() (int64, int64) {
 		readers = 1
 	}
 
-	beginOffset := r.offset - (r.cache.capacity/readers)*(100-prc)/100
-	endOffset := r.offset + (r.cache.capacity/readers)*prc/100
+	off := r.offset.Load()
+	beginOffset := off - (r.cache.capacity/readers)*(100-prc)/100
+	endOffset := off + (r.cache.capacity/readers)*prc/100
 
 	if beginOffset < 0 {
 		beginOffset = 0
@@ -167,8 +174,7 @@ func (r *Reader) getOffsetRange() (int64, int64) {
 }
 
 func (r *Reader) checkReader() {
-	lastAccess := atomic.LoadInt64(&r.lastAccess)
-	if time.Now().Unix() > lastAccess+readerIdleTimeout && len(r.cache.readers) > 1 {
+	if time.Now().Unix() > r.lastAccess.Load()+readerIdleTimeout && len(r.cache.readers) > 1 {
 		r.readerOff()
 	} else {
 		r.readerOn()
@@ -180,9 +186,9 @@ func (r *Reader) readerOn() {
 	defer r.mu.Unlock()
 	if !r.isUse {
 		if pos, err := r.Reader.Seek(0, io.SeekCurrent); err == nil && pos == 0 {
-			r.Reader.Seek(r.offset, io.SeekStart)
+			r.Reader.Seek(r.offset.Load(), io.SeekStart)
 		}
-		r.SetReadahead(r.readahead)
+		r.SetReadahead(r.readahead.Load())
 		r.isUse = true
 	}
 }
@@ -193,7 +199,7 @@ func (r *Reader) readerOff() {
 	if r.isUse {
 		r.SetReadahead(0)
 		r.isUse = false
-		if r.offset > 0 {
+		if r.offset.Load() > 0 {
 			r.Reader.Seek(0, io.SeekStart)
 		}
 	}

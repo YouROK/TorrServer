@@ -24,9 +24,9 @@ func NewDiskPiece(p *Piece) *DiskPiece {
 	name := filepath.Join(settings.BTsets.TorrentsSavePath, p.cache.hash.HexString(), strconv.Itoa(p.Id))
 	ff, err := os.Stat(name)
 	if err == nil {
-		p.Size = ff.Size()
-		p.Complete = ff.Size() == p.cache.pieceLength
-		p.Accessed = ff.ModTime().Unix()
+		p.Size.Store(ff.Size())
+		p.Complete.Store(ff.Size() == p.cache.pieceLength)
+		p.Accessed.Store(ff.ModTime().Unix())
 	}
 	return &DiskPiece{piece: p, name: name}
 }
@@ -43,11 +43,8 @@ func (p *DiskPiece) WriteAt(b []byte, off int64) (n int, err error) {
 	defer ff.Close()
 	n, err = ff.WriteAt(b, off)
 
-	p.piece.Size += int64(n)
-	if p.piece.Size > p.piece.cache.pieceLength {
-		p.piece.Size = p.piece.cache.pieceLength
-	}
-	p.piece.Accessed = time.Now().Unix()
+	p.piece.addSize(int64(n))
+	p.piece.Accessed.Store(time.Now().Unix())
 	return
 }
 
@@ -67,8 +64,8 @@ func (p *DiskPiece) ReadAt(b []byte, off int64) (n int, err error) {
 
 	n, err = ff.ReadAt(b, off)
 
-	p.piece.Accessed = time.Now().Unix()
-	if int64(len(b))+off >= p.piece.Size {
+	p.piece.Accessed.Store(time.Now().Unix())
+	if int64(len(b))+off >= p.piece.Size.Load() {
 		go p.piece.cache.cleanPieces()
 	}
 	return n, nil
@@ -78,8 +75,8 @@ func (p *DiskPiece) Release() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.piece.Size = 0
-	p.piece.Complete = false
+	p.piece.Size.Store(0)
+	p.piece.Complete.Store(false)
 
 	os.Remove(p.name)
 }
