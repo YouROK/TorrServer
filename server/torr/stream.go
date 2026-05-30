@@ -111,6 +111,8 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 
 	// Set response headers
 	resp.Header().Set("Connection", "close")
+	// Set response header for Kodi				  
+	resp.Header().Set("Server", "TorrServer (Portable SDK for UPnP devices)")
 	// Add timeout header if configured
 	if streamTimeout > 0 {
 		resp.Header().Set("X-Stream-Timeout", fmt.Sprintf("%d", streamTimeout))
