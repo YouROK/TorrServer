@@ -62,10 +62,11 @@ export const getMoviePosters = async (movieName, language = 'en') => {
   const url = `${window.location.protocol}//${apiURL}`
 
   // Build image URL - strip protocol and trailing slash
-  const imgHost = `${window.location.protocol}//${language === 'ru'
+  const imgHost = `${window.location.protocol}//${
+    language === 'ru'
       ? settings.ImageURLRu.replace(/^https?:\/\//, '').replace(/\/$/, '')
       : settings.ImageURL.replace(/^https?:\/\//, '').replace(/\/$/, '')
-    }`
+  }`
 
   return axios
     .get(url, {
