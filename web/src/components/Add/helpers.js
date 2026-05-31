@@ -25,6 +25,23 @@ const mergeTMDBSettings = data => ({
   APIKey: data?.APIKey || process.env.REACT_APP_TMDB_API_KEY || '',
 })
 
+const normalizeUrl = (url, fallback) => {
+  const trimmed = (url || fallback).trim().replace(/\/$/, '')
+  if (/^https?:\/\//i.test(trimmed)) return trimmed
+  return `https://${trimmed.replace(/^\/\//, '')}`
+}
+
+const buildTmdbSearchUrl = apiURL => {
+  let base = normalizeUrl(apiURL, 'https://api.themoviedb.org')
+
+  if (!base.includes('/3/search/multi')) {
+    base = base.replace(/\/3.*$/, '').replace(/\/search.*$/, '')
+    base = `${base}/3/search/multi`
+  }
+
+  return base
+}
+
 // Fetch TMDB settings from backend
 const getTMDBSettings = async () => {
   if (tmdbSettingsCache) {
@@ -49,23 +66,12 @@ export const getMoviePosters = async (movieName, language = 'en') => {
     return null
   }
 
-  // Build API URL - automatically append /3/search/multi
-  let apiURL = settings.APIURL.replace(/^https?:\/\//, '').replace(/\/$/, '')
+  const url = buildTmdbSearchUrl(settings.APIURL)
 
-  // If URL doesn't already contain the full path, add /3/search/multi
-  if (!apiURL.includes('/3/search/multi')) {
-    // Remove any partial paths that might exist
-    apiURL = apiURL.replace(/\/3.*$/, '').replace(/\/search.*$/, '')
-    apiURL = `${apiURL}/3/search/multi`
-  }
-
-  const url = `${window.location.protocol}//${apiURL}`
-
-  // Build image URL - strip protocol and trailing slash
-  const imgHost = `${window.location.protocol}//${language === 'ru'
-      ? settings.ImageURLRu.replace(/^https?:\/\//, '').replace(/\/$/, '')
-      : settings.ImageURL.replace(/^https?:\/\//, '').replace(/\/$/, '')
-    }`
+  const imgHost = normalizeUrl(
+    language === 'ru' ? settings.ImageURLRu : settings.ImageURL,
+    language === 'ru' ? 'https://imagetmdb.com' : 'https://image.tmdb.org',
+  )
 
   return axios
     .get(url, {
