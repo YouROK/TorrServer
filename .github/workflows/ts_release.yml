@@ -3,7 +3,7 @@ name: Build and Release
 on:
   push:
     tags:
-      - '*'
+      - "*"
 
 jobs:
   build:
@@ -13,10 +13,10 @@ jobs:
     strategy:
       matrix:
         include:
-          - go_version: 'stable'
-            group: 'standard'
-          - go_version: '1.25'
-            group: 'android'
+          - go_version: "stable"
+            group: "standard"
+          - go_version: "1.25"
+            group: "android"
 
     steps:
       - name: Checkout code
@@ -36,6 +36,8 @@ jobs:
 
       - name: Build Web and Docs
         if: matrix.group == 'standard'
+        env:
+          REACT_APP_TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
         run: |
           go run gen_web.go
           cd server && ~/go/bin/swag init -g web/server.go
@@ -46,26 +48,26 @@ jobs:
           LDFLAGS="-s -w -checklinkname=0 -X server/version.Version=${{ env.VERSION }}"
           mkdir -p "${{ github.workspace }}/dist"
           cd server
-          
+
           # Linux
           GOOS=linux GOARCH=amd64 go build -ldflags="$LDFLAGS" -tags=nosqlite -trimpath -o "${{ github.workspace }}/dist/TorrServer-linux-amd64" ./cmd
           GOOS=linux GOARCH=arm64 go build -ldflags="$LDFLAGS" -tags=nosqlite -trimpath -o "${{ github.workspace }}/dist/TorrServer-linux-arm64" ./cmd
           GOOS=linux GOARCH=arm GOARM=7 go build -ldflags="$LDFLAGS" -tags=nosqlite -trimpath -o "${{ github.workspace }}/dist/TorrServer-linux-arm7" ./cmd
           GOOS=linux GOARCH=arm GOARM=5 go build -ldflags="$LDFLAGS" -tags=nosqlite -trimpath -o "${{ github.workspace }}/dist/TorrServer-linux-arm5" ./cmd
           GOOS=linux GOARCH=386 go build -ldflags="$LDFLAGS" -tags=nosqlite -trimpath -o "${{ github.workspace }}/dist/TorrServer-linux-386" ./cmd
-          
+
           # Windows
           GOOS=windows GOARCH=amd64 go build -ldflags="$LDFLAGS" -tags=nosqlite -trimpath -o "${{ github.workspace }}/dist/TorrServer-windows-amd64.exe" ./cmd
           GOOS=windows GOARCH=386 go build -ldflags="$LDFLAGS" -tags=nosqlite -trimpath -o "${{ github.workspace }}/dist/TorrServer-windows-386.exe" ./cmd
-          
+
           # Darwin
           GOOS=darwin GOARCH=amd64 go build -ldflags="$LDFLAGS" -tags=nosqlite -trimpath -o "${{ github.workspace }}/dist/TorrServer-darwin-amd64" ./cmd
           GOOS=darwin GOARCH=arm64 go build -ldflags="$LDFLAGS" -tags=nosqlite -trimpath -o "${{ github.workspace }}/dist/TorrServer-darwin-arm64" ./cmd
-          
+
           # FreeBSD
           GOOS=freebsd GOARCH=amd64 go build -ldflags="$LDFLAGS" -tags=nosqlite -trimpath -o "${{ github.workspace }}/dist/TorrServer-freebsd-amd64" ./cmd
           GOOS=freebsd GOARCH=arm GOARM=7 go build -ldflags="$LDFLAGS" -tags=nosqlite -trimpath -o "${{ github.workspace }}/dist/TorrServer-freebsd-arm7" ./cmd
-          
+
           # MIPS
           GOOS=linux GOARCH=mips GOMIPS=softfloat go build -ldflags="$LDFLAGS" -tags=nosqlite -trimpath -o "${{ github.workspace }}/dist/TorrServer-linux-mips" ./cmd
           GOOS=linux GOARCH=mipsle GOMIPS=softfloat go build -ldflags="$LDFLAGS" -tags=nosqlite -trimpath -o "${{ github.workspace }}/dist/TorrServer-linux-mipsle" ./cmd
@@ -77,12 +79,12 @@ jobs:
         if: matrix.group == 'android'
         run: |
           go run gen_web.go
-          
+
           LDFLAGS="-s -w -checklinkname=0 -X server/version.Version=${{ env.VERSION }}"
           mkdir -p "${{ github.workspace }}/dist"
           export NDK_TOOLCHAIN="$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64"
           cd server
-          
+
           CC=$NDK_TOOLCHAIN/bin/armv7a-linux-androideabi21-clang CGO_ENABLED=1 GOOS=android GOARCH=arm GOARM=7 go build -ldflags="$LDFLAGS" -tags=nosqlite -trimpath -o "${{ github.workspace }}/dist/TorrServer-android-arm7" ./cmd
           CC=$NDK_TOOLCHAIN/bin/aarch64-linux-android21-clang CGO_ENABLED=1 GOOS=android GOARCH=arm64 go build -ldflags="$LDFLAGS" -tags=nosqlite -trimpath -o "${{ github.workspace }}/dist/TorrServer-android-arm64" ./cmd
           CC=$NDK_TOOLCHAIN/bin/i686-linux-android21-clang CGO_ENABLED=1 GOOS=android GOARCH=386 go build -ldflags="$LDFLAGS" -tags=nosqlite -trimpath -o "${{ github.workspace }}/dist/TorrServer-android-386" ./cmd

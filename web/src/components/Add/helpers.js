@@ -11,6 +11,20 @@ export const clearTMDBCache = () => {
   tmdbSettingsCache = null
 }
 
+const defaultTMDBSettings = () => ({
+  APIKey: process.env.REACT_APP_TMDB_API_KEY || '',
+  APIURL: 'https://api.themoviedb.org/3',
+  ImageURL: 'https://image.tmdb.org',
+  ImageURLRu: 'https://imagetmdb.com',
+})
+
+const mergeTMDBSettings = data => ({
+  ...defaultTMDBSettings(),
+  ...data,
+  // Build-time key is a fallback when server settings have no APIKey configured
+  APIKey: data?.APIKey || process.env.REACT_APP_TMDB_API_KEY || '',
+})
+
 // Fetch TMDB settings from backend
 const getTMDBSettings = async () => {
   if (tmdbSettingsCache) {
@@ -19,15 +33,11 @@ const getTMDBSettings = async () => {
 
   try {
     const { data } = await axios.get(tmdbSettingsHost())
-    tmdbSettingsCache = data
-    return data
+    tmdbSettingsCache = mergeTMDBSettings(data)
+    return tmdbSettingsCache
   } catch (error) {
-    return {
-      APIKey: process.env.REACT_APP_TMDB_API_KEY || '',
-      APIURL: 'https://api.themoviedb.org/3',
-      ImageURL: 'https://image.tmdb.org',
-      ImageURLRu: 'https://imagetmdb.com',
-    }
+    tmdbSettingsCache = defaultTMDBSettings()
+    return tmdbSettingsCache
   }
 }
 
@@ -52,11 +62,10 @@ export const getMoviePosters = async (movieName, language = 'en') => {
   const url = `${window.location.protocol}//${apiURL}`
 
   // Build image URL - strip protocol and trailing slash
-  const imgHost = `${window.location.protocol}//${
-    language === 'ru'
+  const imgHost = `${window.location.protocol}//${language === 'ru'
       ? settings.ImageURLRu.replace(/^https?:\/\//, '').replace(/\/$/, '')
       : settings.ImageURL.replace(/^https?:\/\//, '').replace(/\/$/, '')
-  }`
+    }`
 
   return axios
     .get(url, {
