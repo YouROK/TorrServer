@@ -25,7 +25,7 @@
     "react-scripts": "4.0.3",
     "react-swipeable-views": "^0.14.0",
     "styled-components": "^5.3.11",
-    "uuid": "^8.3.2"
+    "uuid": "^14.0.0"
   },
   "scripts": {
     "start": "react-scripts start",
