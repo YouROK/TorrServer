@@ -248,4 +248,18 @@ export const StatusIndicator = ({ stat }) => {
   )
 }
 
-export default memo(Torrent)
+export default memo(Torrent, (prev, next) => {
+  const p = prev.torrent
+  const n = next.torrent
+  return (
+    p.hash === n.hash &&
+    p.title === n.title &&
+    p.name === n.name &&
+    p.poster === n.poster &&
+    p.category === n.category &&
+    p.stat === n.stat &&
+    p.torrent_size === n.torrent_size &&
+    p.download_speed === n.download_speed &&
+    p.data === n.data
+  )
+})

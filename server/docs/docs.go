@@ -586,7 +586,7 @@ const docTemplate = `{
         },
         "/torrent/upload": {
             "post": {
-                "description": "Only one file support.",
+                "description": "Supports multiple files. Returns array of statuses.",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -596,11 +596,11 @@ const docTemplate = `{
                 "tags": [
                     "API"
                 ],
-                "summary": "Add .torrent file",
+                "summary": "Add .torrent files",
                 "parameters": [
                     {
                         "type": "file",
-                        "description": "Torrent file to insert",
+                        "description": "Torrent file(s) to insert",
                         "name": "file",
                         "in": "formData",
                         "required": true
@@ -613,7 +613,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Torrent title",
+                        "description": "Torrent title (single file only)",
                         "name": "title",
                         "in": "formData"
                     },
@@ -625,7 +625,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Torrent poster",
+                        "description": "Torrent poster (single file only)",
                         "name": "poster",
                         "in": "formData"
                     },
@@ -638,9 +638,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Torrent status",
+                        "description": "Torrent statuses",
                         "schema": {
-                            "$ref": "#/definitions/state.TorrentStatus"
+                            "type": "if"
                         }
                     }
                 }
@@ -914,6 +914,10 @@ const docTemplate = `{
                     "description": "BT Config",
                     "type": "boolean"
                 },
+                "enableLPD": {
+                    "description": "LPD",
+                    "type": "boolean"
+                },
                 "enableProxy": {
                     "description": "P2P Proxy",
                     "type": "boolean"
@@ -932,6 +936,9 @@ const docTemplate = `{
                 },
                 "friendlyName": {
                     "type": "string"
+                },
+                "lpdipv6": {
+                    "type": "boolean"
                 },
                 "peersListenPort": {
                     "type": "integer"

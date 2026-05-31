@@ -120,8 +120,13 @@ func Start() {
 	}
 
 	go func() {
-		log.TLogln("Start http server at", settings.IP+":"+settings.Port)
-		waitChan <- route.Run(settings.IP + ":" + settings.Port)
+		addr := settings.IP + ":" + settings.Port
+		if settings.Args != nil && settings.Args.ForceHTTPS && settings.Ssl {
+			waitChan <- runHTTPRedirectToHTTPS(addr)
+			return
+		}
+		log.TLogln("Start http server at", addr)
+		waitChan <- route.Run(addr)
 	}()
 }
 

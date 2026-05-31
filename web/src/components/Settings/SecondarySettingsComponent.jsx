@@ -59,6 +59,8 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
     DisableDHT,
     DisablePEX,
     DisableUpload,
+    EnableLPD,
+    LPDIPv6,
     DownloadRateLimit,
     UploadRateLimit,
     ConnectionsLimit,
@@ -203,6 +205,24 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
           labelPlacement='start'
         />
         <FormHelperText margin='none'>{t('SettingsDialog.ForceEncryptHint')}</FormHelperText>
+      </FormGroup>
+      <FormGroup>
+        <FormControlLabel
+          control={<Switch checked={EnableLPD} onChange={inputForm} id='EnableLPD' color='secondary' />}
+          label='LPD (Local Peer Discovery)'
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('SettingsDialog.EnableLPDHint')}</FormHelperText>
+      </FormGroup>
+      <FormGroup>
+        <FormControlLabel
+          control={
+            <Switch checked={LPDIPv6} onChange={inputForm} id='LPDIPv6' color='secondary' disabled={!EnableLPD} />
+          }
+          label='LPD IPv6'
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('SettingsDialog.EnableLPDIPv6Hint')}</FormHelperText>
       </FormGroup>
       <TextField
         onChange={inputForm}

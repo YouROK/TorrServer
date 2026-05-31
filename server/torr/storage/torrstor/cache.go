@@ -188,14 +188,15 @@ func (c *Cache) cleanPieces() {
 	if c.isRemove || c.isClosed {
 		return
 	}
-	c.muRemove.Lock()
-	if c.isRemove {
-		c.muRemove.Unlock()
-		return
+	
+	// Protection against concurrent deletion
+	if !c.muRemove.TryLock() {
+		return // Cleanup is already in progress in another goroutine
 	}
+	defer c.muRemove.Unlock()
+	
 	c.isRemove = true
 	defer func() { c.isRemove = false }()
-	c.muRemove.Unlock()
 
 	remPieces := c.getRemPieces()
 	if c.filled > c.capacity {
@@ -212,20 +213,28 @@ func (c *Cache) cleanPieces() {
 }
 
 func (c *Cache) getRemPieces() []*Piece {
-	piecesRemove := make([]*Piece, 0)
-	fill := int64(0)
-
-	ranges := make([]Range, 0)
+	// Copy readers without a long lock
 	c.muReaders.Lock()
+	readers := make([]*Reader, 0, len(c.readers))
 	for r := range c.readers {
+		readers = append(readers, r)
+	}
+	c.muReaders.Unlock()
+
+	// Collect read ranges from active readers
+	ranges := make([]Range, 0)
+	for _, r := range readers {
 		r.checkReader()
 		if r.isUse {
 			ranges = append(ranges, r.getPiecesRange())
 		}
 	}
-	c.muReaders.Unlock()
 	ranges = mergeRange(ranges)
 
+	piecesRemove := make([]*Piece, 0)
+	fill := int64(0)
+
+	// Determine which chunks can be deleted
 	for id, p := range c.pieces {
 		if p.Size > 0 {
 			fill += p.Size
@@ -237,7 +246,7 @@ func (c *Cache) getRemPieces() []*Piece {
 				}
 			}
 		} else {
-			// on preload clean
+			// When preloading, clear everything except the beginning and end of the file
 			if p.Size > 0 && !c.isIdInFileBE(ranges, id) {
 				piecesRemove = append(piecesRemove, p)
 			}
@@ -247,6 +256,7 @@ func (c *Cache) getRemPieces() []*Piece {
 	c.clearPriority()
 	c.setLoadPriority(ranges)
 
+	// Sort by last access time (oldest first)
 	sort.Slice(piecesRemove, func(i, j int) bool {
 		return piecesRemove[i].Accessed < piecesRemove[j].Accessed
 	})
@@ -354,6 +364,9 @@ func (c *Cache) CloseReader(r *Reader) {
 }
 
 func (c *Cache) clearPriority() {
+	if c.torrent == nil { 
+        return 
+    }
 	time.Sleep(time.Second)
 	ranges := make([]Range, 0)
 	c.muReaders.Lock()

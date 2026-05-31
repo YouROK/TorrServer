@@ -30,6 +30,9 @@ func (s *Storage) OpenTorrent(info *metainfo.Info, infoHash metainfo.Hash) (ts.T
 	// } //	NE
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if ch, ok := s.caches[infoHash]; ok {
+		return ch, nil
+	}
 	ch := NewCache(s.capacity, s)
 	ch.Init(info, infoHash)
 	s.caches[infoHash] = ch

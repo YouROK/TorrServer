@@ -111,6 +111,9 @@ definitions:
       enableIPv6:
         description: BT Config
         type: boolean
+      enableLPD:
+        description: LPD
+        type: boolean
       enableProxy:
         description: P2P Proxy
         type: boolean
@@ -125,6 +128,8 @@ definitions:
         type: boolean
       friendlyName:
         type: string
+      lpdipv6:
+        type: boolean
       peersListenPort:
         type: integer
       preloadCache:
@@ -750,9 +755,9 @@ paths:
     post:
       consumes:
       - multipart/form-data
-      description: Only one file support.
+      description: Supports multiple files. Returns array of statuses.
       parameters:
-      - description: Torrent file to insert
+      - description: Torrent file(s) to insert
         in: formData
         name: file
         required: true
@@ -761,7 +766,7 @@ paths:
         in: formData
         name: save
         type: string
-      - description: Torrent title
+      - description: Torrent title (single file only)
         in: formData
         name: title
         type: string
@@ -769,7 +774,7 @@ paths:
         in: formData
         name: category
         type: string
-      - description: Torrent poster
+      - description: Torrent poster (single file only)
         in: formData
         name: poster
         type: string
@@ -781,10 +786,10 @@ paths:
       - application/json
       responses:
         "200":
-          description: Torrent status
+          description: Torrent statuses
           schema:
-            $ref: '#/definitions/state.TorrentStatus'
-      summary: Add .torrent file
+            type: if
+      summary: Add .torrent files
       tags:
       - API
   /torrents:

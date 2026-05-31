@@ -6,7 +6,7 @@
     "AddPosterLinkInput": "Link către poster",
     "AddTorrentSourceNotification": "Mai întâi adăugați sursa torrentului",
     "AppendFile": {
-      "ClickOrDrag": "CLICK / TRAGE ȘI PLASEAZĂ (.torrent)",
+      "ClickOrDrag": "CLICK / TRAGE ȘI PLASEAZĂ FIȘIERE (.torrent)",
       "Or": "SAU"
     },
     "CategoryHelperText": "Categorie torrent",
@@ -138,6 +138,8 @@
     "DisableTCPHint": "Nu dezactivați fără μTP activat",
     "DisableUPNPHint": "Deschidere automată port pe router",
     "DisableUTPHint": "Se recomandă dezactivarea în sistemul de operare Windows",
+    "EnableLPDHint": "LPD permite dispozitivelor conectate la aceeași rețea de acasă să se identifice reciproc și să partajeze fișiere torrent direct",
+    "EnableLPDIPv6Hint": "Activați numai dacă este acceptat de ISP",
     "Disk": "Disc",
     "DLNA": "Server media DLNA",
     "DontAddRetrackers": "Nu adăugați retrackere",

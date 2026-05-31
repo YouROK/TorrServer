@@ -10,7 +10,7 @@ export default function NoServerConnection() {
   return (
     <IconWrapper>
       <lord-icon
-        src='https://cdn.lordicon.com/wrprwmwt.json'
+        src={`${process.env.PUBLIC_URL}/lordicon/wrprwmwt.json`}
         trigger='loop'
         colors={`primary:#121331,secondary:${primary}`}
         stroke='26'

@@ -15,7 +15,9 @@ var extVideo = map[string]interface{}{
 	".avchd": nil,
 	".avi":   nil,
 	".drc":   nil,
+	".dv":    nil,
 	".flv":   nil,
+	".iso":   nil,
 	".m2ts":  nil,
 	".m2v":   nil,
 	".m4p":   nil,
@@ -32,7 +34,6 @@ var extVideo = map[string]interface{}{
 	".mts":   nil,
 	".mxf":   nil,
 	".nsv":   nil,
-	".ogg":   nil,
 	".ogv":   nil,
 	".qt":    nil,
 	".rm":    nil,
@@ -48,11 +49,11 @@ var extVideo = map[string]interface{}{
 
 var extAudio = map[string]interface{}{
 	".aac":  nil,
+	".ac3":  nil,
 	".aiff": nil,
 	".ape":  nil,
 	".au":   nil,
 	".dff":  nil,
-	".dsd":  nil,
 	".dsf":  nil,
 	".flac": nil,
 	".gsm":  nil,
@@ -73,7 +74,10 @@ var extAudio = map[string]interface{}{
 	".sid":  nil,
 	".spx":  nil,
 	".wav":  nil,
+	".weba": nil,
 	".wma":  nil,
+	".wv":   nil,
+	".wvc":  nil,
 	".xm":   nil,
 }
 

@@ -6,7 +6,7 @@
     "AddPosterLinkInput": "Lien de l'affiche",
     "AddTorrentSourceNotification": "Ajoutez d'abord votre source de torrent",
     "AppendFile": {
-      "ClickOrDrag": "CLIQUER / GLISSER-DÉPOSER (.torrent)",
+      "ClickOrDrag": "CLIQUER / GLISSER-DÉPOSER DES FICHIERS (.torrent)",
       "Or": "OU"
     },
     "CategoryHelperText": "Catégorie du torrent",
@@ -138,6 +138,8 @@
     "DisableTCPHint": "Ne pas désactiver sans μTP activé",
     "DisableUPNPHint": "Ouvrir automatiquement le port sur le routeur",
     "DisableUTPHint": "Recommandé de désactiver sous Windows",
+    "EnableLPDHint": "Le LPD permet aux appareils connectés au même réseau domestique de s'identifier mutuellement et de partager directement des fichiers torrent",
+    "EnableLPDIPv6Hint": "Activer uniquement si pris en charge par le FAI",
     "Disk": "Disque",
     "DLNA": "Serveur multimédia DLNA",
     "DontAddRetrackers": "Ne pas ajouter de retrackers",

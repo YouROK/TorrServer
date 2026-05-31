@@ -226,6 +226,9 @@ func (t *Torrent) updateRA() {
 }
 
 func (t *Torrent) expired() bool {
+	if t.cache == nil {
+		return false
+	}
 	return t.cache.Readers() == 0 && t.expiredTime.Before(time.Now()) && (t.Stat == state.TorrentWorking || t.Stat == state.TorrentClosed)
 }
 
@@ -284,6 +287,9 @@ func (t *Torrent) Close() bool {
 	if t == nil {
 		return false
 	}
+	if t.Stat == state.TorrentClosed {
+		return true
+	}
 	if settings.ReadOnly && t.cache != nil && t.cache.GetUseReaders() > 0 {
 		return false
 	}
@@ -291,7 +297,9 @@ func (t *Torrent) Close() bool {
 
 	if t.bt != nil {
 		t.bt.mu.Lock()
-		delete(t.bt.torrents, t.Hash())
+		if _, ok := t.bt.torrents[t.Hash()]; ok {
+			delete(t.bt.torrents, t.Hash())
+		}
 		t.bt.mu.Unlock()
 	}
 

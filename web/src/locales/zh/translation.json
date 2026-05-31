@@ -6,7 +6,7 @@
     "AddPosterLinkInput": "海报链接",
     "AddTorrentSourceNotification": "先添加你的种子",
     "AppendFile": {
-      "ClickOrDrag": "点击/拖放上传 (.torrent)",
+      "ClickOrDrag": "点击/拖放上传文件 (.torrent)",
       "Or": "或"
     },
     "CategoryHelperText": "Torrent 类别",
@@ -138,6 +138,8 @@
     "DisableTCPHint": "在未启用μTP的情况下不要禁用",
     "DisableUPNPHint": "在路由器上自动打开端口",
     "DisableUTPHint": "建议在 Windows 操作系统上禁用",
+    "EnableLPDHint": "LPD 允许连接到同一家庭网络的设备相互识别，并直接共享种子文件",
+    "EnableLPDIPv6Hint": "仅在ISP支持时启用",
     "Disk": "磁盘",
     "DLNA": "DLNA媒体服务器",
     "DontAddRetrackers": "不加retrackers",

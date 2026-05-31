@@ -6,7 +6,7 @@
     "AddPosterLinkInput": "Ссылка на постер",
     "AddTorrentSourceNotification": "Сначала добавьте торрент",
     "AppendFile": {
-      "ClickOrDrag": "НАЖМИТЕ / ПЕРЕТАЩИТЕ ФАЙЛ (.torrent)",
+      "ClickOrDrag": "НАЖМИТЕ / ПЕРЕТАЩИТЕ ФАЙЛЫ (.torrent)",
       "Or": "ИЛИ"
     },
     "CategoryHelperText": "Категория для торрента",
@@ -138,6 +138,8 @@
     "DisableTCPHint": "Не отключайте без включенного μTP",
     "DisableUPNPHint": "Автоматическая настройка порта на роутере",
     "DisableUTPHint": "Рекомендуется отключить в ОС Windows",
+    "EnableLPDHint": "LPD позволяет устройствам, подключенным к одной домашней сети, распознавать друг друга и напрямую обмениваться торрент-файлами",
+    "EnableLPDIPv6Hint": "Включите только если поддерживается",
     "Disk": "ПЗУ / Накопитель",
     "DLNA": "DLNA-медиасервер",
     "DontAddRetrackers": "Ничего не делать",
