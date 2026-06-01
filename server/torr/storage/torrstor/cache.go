@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"sort"
 	"sync"
-	"time"
+	"sync/atomic"
 
 	"github.com/anacrolix/torrent"
 
@@ -34,10 +34,19 @@ type Cache struct {
 	readers   map[*Reader]struct{}
 	muReaders sync.Mutex
 
-	isRemove bool
-	isClosed bool
-	muRemove sync.Mutex
-	torrent  *torrent.Torrent
+	// isRemove / isClosed used to be plain bools read concurrently with
+	// their writes (cleanPieces vs Cache.Close vs the goroutine spawned
+	// in MemPiece.ReadAt). The old muRemove only guarded the write path
+	// and the deferred reset still ran outside the lock, so both flags
+	// were data-racy. atomic.Bool gives us the lock-free CAS we
+	// actually want for "only one cleanPieces sweep at a time".
+	isRemove atomic.Bool
+	isClosed atomic.Bool
+	// muPrio serializes clearPriority and setLoadPriority so a Seek
+	// landing during a clearPriority sweep can't have its freshly-set
+	// piece priorities clobbered.
+	muPrio  sync.Mutex
+	torrent *torrent.Torrent
 }
 
 func NewCache(capacity int64, storage *Storage) *Cache {
@@ -92,7 +101,7 @@ func (c *Cache) Close() error {
 	} else {
 		log.TLogln("Close cache for:", c.hash)
 	}
-	c.isClosed = true
+	c.isClosed.Store(true)
 
 	delete(c.storage.caches, c.hash)
 
@@ -110,7 +119,13 @@ func (c *Cache) Close() error {
 
 	c.muReaders.Lock()
 	c.readers = nil
-	c.pieces = nil
+	// NOTE: do NOT set c.pieces=nil here. A racy
+	// `go r.cache.getRemPieces()` (spawned by Reader.Close) or any
+	// `go cleanPieces` from a recent WriteAt may still be iterating
+	// c.pieces; nil-ing it under muReaders does not help because the
+	// iterators read c.pieces without holding that lock. The Cache
+	// struct is dropped from c.storage.caches above, so the map and
+	// its entries become unreachable and will be GC'd anyway.
 	c.muReaders.Unlock()
 
 	utils.FreeOSMemGC()
@@ -118,7 +133,7 @@ func (c *Cache) Close() error {
 }
 
 func (c *Cache) removePiece(piece *Piece) {
-	if !c.isClosed {
+	if !c.isClosed.Load() {
 		piece.Release()
 	}
 }
@@ -144,17 +159,18 @@ func (c *Cache) GetState() *state.CacheState {
 
 	if len(c.pieces) > 0 {
 		for _, p := range c.pieces {
-			if p.Size > 0 {
-				fill += p.Size
+			sz := p.Size.Load()
+			if sz > 0 {
+				fill += sz
 				var priority int
 				if c.torrent != nil {
 					priority = int(c.torrent.PieceState(p.Id).Priority)
 				}
 				piecesState[p.Id] = state.ItemState{
 					Id:        p.Id,
-					Size:      p.Size,
+					Size:      sz,
 					Length:    c.pieceLength,
-					Completed: p.Complete,
+					Completed: p.Complete.Load(),
 					Priority:  priority,
 				}
 			}
@@ -189,17 +205,15 @@ func (c *Cache) GetState() *state.CacheState {
 }
 
 func (c *Cache) cleanPieces() {
-	if c.isRemove || c.isClosed {
+	if c.isClosed.Load() {
 		return
 	}
-	c.muRemove.Lock()
-	if c.isRemove {
-		c.muRemove.Unlock()
+	// CAS guarantees only one sweep runs at a time and that the reset
+	// on exit happens with release-semantics.
+	if !c.isRemove.CompareAndSwap(false, true) {
 		return
 	}
-	c.isRemove = true
-	defer func() { c.isRemove = false }()
-	c.muRemove.Unlock()
+	defer c.isRemove.Store(false)
 
 	remPieces := c.getRemPieces()
 	if c.filled > c.capacity {
@@ -232,25 +246,27 @@ func (c *Cache) getRemPieces() []*Piece {
 
 	for id, p := range c.pieces {
 		// Count full allocated buffer size, not just written bytes.
-		// p.Size reflects written bytes which underestimates actual RAM usage:
-		// a 256 KB buffer allocated on first write but only 32 KB written would
-		// contribute only 32 KB to fill, causing cleanPieces to miss evictions.
+		// p.Size reflects written bytes which underestimates actual RAM
+		// usage: a 256 KB buffer allocated on first write but only 32 KB
+		// written would contribute only 32 KB to fill, causing
+		// cleanPieces to miss evictions.
+		sz := p.Size.Load()
 		if !settings.BTsets.UseDisk {
 			if p.mPiece != nil && p.mPiece.isAllocated() {
 				fill += c.pieceLength
 			}
-		} else if p.Size > 0 {
-			fill += p.Size
+		} else if sz > 0 {
+			fill += sz
 		}
 		if len(ranges) > 0 {
 			if !inRanges(ranges, id) {
-				if p.Size > 0 && !c.isIdInFileBE(ranges, id) {
+				if sz > 0 && !c.isIdInFileBE(ranges, id) {
 					piecesRemove = append(piecesRemove, p)
 				}
 			}
 		} else {
 			// on preload clean
-			if p.Size > 0 && !c.isIdInFileBE(ranges, id) {
+			if sz > 0 && !c.isIdInFileBE(ranges, id) {
 				piecesRemove = append(piecesRemove, p)
 			}
 		}
@@ -260,7 +276,7 @@ func (c *Cache) getRemPieces() []*Piece {
 	c.setLoadPriority(ranges)
 
 	sort.Slice(piecesRemove, func(i, j int) bool {
-		return piecesRemove[i].Accessed < piecesRemove[j].Accessed
+		return piecesRemove[i].Accessed.Load() < piecesRemove[j].Accessed.Load()
 	})
 
 	c.filled = fill
@@ -268,9 +284,11 @@ func (c *Cache) getRemPieces() []*Piece {
 }
 
 func (c *Cache) setLoadPriority(ranges []Range) {
-	if c.isClosed || c.torrent == nil {
+	if c.isClosed.Load() || c.torrent == nil {
 		return
 	}
+	c.muPrio.Lock()
+	defer c.muPrio.Unlock()
 	c.muReaders.Lock()
 	for r := range c.readers {
 		if !r.isUse {
@@ -285,7 +303,7 @@ func (c *Cache) setLoadPriority(ranges []Range) {
 		count := settings.BTsets.ConnectionsLimit / len(c.readers) // max concurrent loading blocks
 		limit := 0
 		for i := readerPos; i < end && limit < count; i++ {
-			if !c.pieces[i].Complete {
+			if !c.pieces[i].Complete.Load() {
 				if i == readerPos {
 					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNow)
 				} else if i == readerPos+1 {
@@ -369,10 +387,16 @@ func (c *Cache) CloseReader(r *Reader) {
 }
 
 func (c *Cache) clearPriority() {
-	time.Sleep(time.Second)
-	if c.isClosed || c.torrent == nil {
+	// Previously this slept time.Second before doing the work, opening
+	// a ~1s window during which a fresh Seek's setLoadPriority could be
+	// raced and overwritten by a stale clearPriority sweep. The sleep
+	// had no documented purpose. We now serialize against
+	// setLoadPriority via c.muPrio instead.
+	if c.isClosed.Load() || c.torrent == nil {
 		return
 	}
+	c.muPrio.Lock()
+	defer c.muPrio.Unlock()
 	ranges := make([]Range, 0)
 	c.muReaders.Lock()
 	for r := range c.readers {
@@ -385,7 +409,7 @@ func (c *Cache) clearPriority() {
 	ranges = mergeRange(ranges)
 
 	for id := range c.pieces {
-		if c.isClosed || c.torrent == nil {
+		if c.isClosed.Load() || c.torrent == nil {
 			return
 		}
 		if len(ranges) > 0 {

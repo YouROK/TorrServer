@@ -110,7 +110,11 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 	})
 
 	// Set response headers
-	resp.Header().Set("Connection", "close")
+	// NOTE: do NOT force "Connection: close" here. HLS / adaptive
+	// players issue many small Range requests per second; closing TCP
+	// after each response forces a TCP+TLS handshake per chunk, which
+	// is a major contributor to mid-playback stalls. Let net/http
+	// negotiate keep-alive based on the request's Connection header.
 	// Add timeout header if configured
 	if streamTimeout > 0 {
 		resp.Header().Set("X-Stream-Timeout", fmt.Sprintf("%d", streamTimeout))
