@@ -18,8 +18,8 @@
   <a href="https://github.com/YouROK/TorrServer/issues">
     <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" alt="CodeFactor" />
   </a>
-  <a href="https://github.com/YouROK/TorrServer/actions/workflows/docker_image.yml" rel="nofollow">
-    <img src="https://img.shields.io/github/actions/workflow/status/YouROK/TorrServer/docker_image.yml?logo=Github" alt="Build" />
+  <a href="https://github.com/YouROK/TorrServer/actions/workflows/ci.yml" rel="nofollow">
+    <img src="https://img.shields.io/github/actions/workflow/status/YouROK/TorrServer/ci.yml?logo=Github" alt="CI" />
   </a>
   <a href="https://github.com/YouROK/TorrServer/releases" rel="nofollow">
     <img alt="GitHub release (latest SemVer)" src="https://img.shields.io/github/v/release/YouROK/TorrServer?label=version"/>
@@ -200,15 +200,21 @@ Run in console
 docker run --rm -d --name torrserver -p 8090:8090 ghcr.io/yourok/torrserver:latest
 ```
 
-For running in persistence mode, just mount volume to container by adding `-v ~/ts:/opt/ts`, where `~/ts` folder path is just example, but you could use it anyway... Result example command:
+For persistent data, mount a local directory and set paths explicitly:
 
 ```bash
-docker run --rm -d --name torrserver -v ~/ts:/opt/ts -p 8090:8090 ghcr.io/yourok/torrserver:latest
+docker run --rm -d --name torrserver \
+  -v ./ts:/opt/ts \
+  -e TS_CONF_PATH=/opt/ts \
+  -e TS_LOG_PATH=/opt/ts/torrserver.log \
+  -e TS_TORR_DIR=/opt/ts/torrents \
+  -p 8090:8090 \
+  ghcr.io/yourok/torrserver:latest
 ```
 
 #### Environments
 
-- `TS_HTTPAUTH` - 1, and place auth file into `~/ts/config` folder for enabling basic auth
+- `TS_HTTPAUTH` - 1, and place auth file into `./ts` (config dir) for enabling basic auth
 - `TS_RDB` - if 1, then the enabling `--rdb` flag
 - `TS_DONTKILL` - if 1, then the enabling `--dontkill` flag
 - `TS_PORT` - for changind default port to **5555** (example), also u need to change `-p 8090:8090` to `-p 5555:5555` (example)
@@ -218,10 +224,22 @@ docker run --rm -d --name torrserver -v ~/ts:/opt/ts -p 8090:8090 ghcr.io/yourok
 - `TS_PROXYURL` - set proxy URL for BitTorrent traffic (http, socks4, socks5, socks5h), example: socks5h://user:password@example.com:2080
 - `TS_PROXYMODE` - set proxy mode: "tracker" (only HTTP trackers, default), "peers" (only peer connections), or "full" (all traffic)
 
-Example with full overrided command (on default values):
+Example with full overridden command:
 
 ```bash
-docker run --rm -d -e TS_PORT=5665 -e TS_DONTKILL=1 -e TS_HTTPAUTH=1 -e TS_RDB=1 -e TS_CONF_PATH=/opt/ts/config -e TS_LOG_PATH=/opt/ts/log -e TS_TORR_DIR=/opt/ts/torrents -e TS_PROXYURL=socks5h://user:password@example.com:2080 -e TS_PROXYMODE=tracker --name torrserver -v ~/ts:/opt/ts -p 5665:5665 ghcr.io/yourok/torrserver:latest
+docker run --rm -d --name torrserver \
+  -v ./ts:/opt/ts \
+  -e TS_PORT=5665 \
+  -e TS_DONTKILL=1 \
+  -e TS_HTTPAUTH=1 \
+  -e TS_RDB=1 \
+  -e TS_CONF_PATH=/opt/ts \
+  -e TS_LOG_PATH=/opt/ts/torrserver.log \
+  -e TS_TORR_DIR=/opt/ts/torrents \
+  -e TS_PROXYURL=socks5h://user:password@example.com:2080 \
+  -e TS_PROXYMODE=tracker \
+  -p 5665:5665 \
+  ghcr.io/yourok/torrserver:latest
 ```
 
 #### Docker Compose
@@ -261,52 +279,84 @@ services:
 
 ## Development
 
+See **[docs/BUILD.md](docs/BUILD.md)** for Makefile commands, CI, tagged releases, GHCR images, and fork setup.
+
 ### Go server
 
-To run the Go server locally, just run
+Run from source:
 
 ```bash
-cd server
-go run ./cmd
+make run
+# or
+cd server && go run ./cmd
 ```
 
 ### Web development
 
-To run the web server locally, just run
-
 ```bash
-yarn start
+cd web && yarn start
 ```
 
 More info at <https://github.com/YouROK/TorrServer/tree/master/web#readme>
 
 ### Build
 
+Use the **Makefile** (wraps [GoReleaser](https://goreleaser.com/) and `.goreleaser.local.yaml`):
+
+```bash
+make help              # command overview
+make install-tools     # goreleaser v2 + swag
+make start-build       # build host binary, sync to data/, run
+make build             # all local platforms + flatten → dist/
+make update            # web embed + swagger
+make release-snapshot  # local snapshot (binaries + docker, no publish)
+```
+
+Install Go toolchain wrappers used by GoReleaser:
+
+```bash
+go install golang.org/dl/go1.26.4@latest && go1.26.4 download
+go install golang.org/dl/go1.25.7@latest && go1.25.7 download   # Android (release only)
+```
+
+**Tagged releases** (`.goreleaser.yaml`, workflow `.github/workflows/release.yml`) use the `MatriX.*` tag scheme and publish to `ghcr.io/<owner>/<repo>` where `<owner>/<repo>` is the GitHub repository lowercased. Override locally with `REGISTRY_IMAGE=owner/repo make …`.
+
+Direct GoReleaser (without Make):
+
+```bash
+goreleaser build --snapshot --clean --config .goreleaser.local.yaml
+make flatten
+TARGET=linux_amd64 goreleaser build --snapshot --clean --single-target --id torrserver \
+  --config .goreleaser.local.yaml
+```
+
+Web UI build inside `gen_web.go` needs Node 16–18, or Node 17+ with OpenSSL legacy (`NODE_OPTIONS=--openssl-legacy-provider`, set in Makefile / GoReleaser).
+
+`torrserver` builds use **Go 1.26.4**; `torrserver-android` uses **Go 1.25.7**.
+
 #### Server
 
-- Install [Golang](https://golang.org/doc/install) 1.20+
+- Install [Golang](https://golang.org/doc/install) 1.26+ (1.25.7 additionally for Android via GoReleaser)
 - Go to the TorrServer source directory
-- Run build script under linux or macOS `build-all.sh`
+- Run `make build-host` or GoReleaser as above
 
 #### Web
 
 - Install **npm** and **yarn**
 - Go to the web directory
-- Run `NODE_OPTIONS=--openssl-legacy-provider yarn build`
+- Run `make web-build` or `NODE_OPTIONS=--openssl-legacy-provider yarn build`
 
 #### Android
 
-To build an Android server you will need the Android Toolchain.
+To build an Android server you will need the Android Toolchain (release workflow / full `.goreleaser.yaml`).
 
 #### Swagger
 
-`swag` must be installed on the system to [re]build Swagger documentation.
-
 ```bash
-go install github.com/swaggo/swag/cmd/swag@latest
-cd server; swag init -g web/server.go
-
-# Documentation can be linted using
+make install-swag
+make update-swag
+# or manually:
+cd server && swag init -g web/server.go
 swag fmt
 ```
 

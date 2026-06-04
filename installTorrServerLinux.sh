@@ -39,8 +39,10 @@ isAuthUser=""
 isAuthPass=""
 
 # Constants
-readonly REPO_URL="https://github.com/YouROK/TorrServer"
-readonly REPO_API_URL="https://api.github.com/repos/YouROK/TorrServer"
+# GitHub release source (default: upstream; forks: TORRSERVER_GITHUB_REPO=owner/TorrServer)
+GITHUB_REPO="${TORRSERVER_GITHUB_REPO:-YouROK/TorrServer}"
+readonly REPO_URL="https://github.com/${GITHUB_REPO}"
+readonly REPO_API_URL="https://api.github.com/repos/${GITHUB_REPO}"
 readonly VERSION_PREFIX="MatriX"
 readonly BINARY_NAME_PREFIX="TorrServer-linux"
 readonly MIN_GLIBC_VERSION="2.32"

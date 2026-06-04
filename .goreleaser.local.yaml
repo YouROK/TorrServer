@@ -1,0 +1,115 @@
+---
+version: 2
+
+project_name: TorrServer
+
+report_sizes: false
+
+env:
+  - NODE_OPTIONS=--openssl-legacy-provider
+
+# MatriX.* tags: sort versions correctly for changelog "previous tag".
+git:
+  tag_sort: -version:refname
+
+snapshot:
+  version_template: "{{ .Tag }}-{{ .ShortCommit }}"
+
+before:
+  hooks:
+    - go run gen_web.go
+    - go install github.com/swaggo/swag/cmd/swag@latest
+    - bash -c 'cd server && swag init -g web/server.go'
+
+builds:
+  - id: torrserver
+    dir: server
+    main: ./cmd
+    # Internal build name only; public names come from archives.name_template below.
+    binary: torrserver
+    builder: go
+    flags:
+      - -trimpath
+    tags:
+      - nosqlite
+    ldflags:
+      # .Version equals .Tag on release; snapshots get -<commit> (see snapshot.version_template)
+      - -s -w -checklinkname=0 -X server/version.Version={{.Version}}
+    env:
+      - CGO_ENABLED=0
+    targets:
+      - linux_amd64
+      - linux_arm64
+      # - linux_arm_5
+      # - linux_arm_7
+      # - linux_386
+      # - windows_amd64
+      # - windows_386
+      - darwin_amd64
+      - darwin_arm64
+      # - freebsd_amd64
+      # - freebsd_arm_7
+      # - linux_mips_softfloat
+      # - linux_mipsle_softfloat
+      # - linux_mips64_softfloat
+      # - linux_mips64le_softfloat
+      # - linux_riscv64
+
+archives:
+  - ids:
+      - torrserver
+    formats:
+      - binary
+    name_template: "TorrServer-{{ .Os }}-{{ .Arch }}{{ if .Arm }}{{ .Arm }}{{ end }}"
+
+source:
+  enabled: false
+
+checksum:
+  name_template: checksums.txt
+
+release:
+  mode: append
+  replace_existing_artifacts: true
+  make_latest: true
+
+changelog:
+  use: git
+  sort: asc
+
+dockers_v2:
+  - id: torrserver
+    ids:
+      - torrserver
+    dockerfile: Dockerfile
+    images:
+      - 'ghcr.io/{{ envOrDefault "REGISTRY_IMAGE" "yourok/torrserver" }}'
+    tags:
+      - "{{ .Tag }}"
+      - latest
+    # Must match linux_* targets in builds above (no binary → docker COPY fails)
+    platforms:
+      - linux/amd64
+      - linux/arm64
+      # - linux/arm/v7  # needs linux_arm_7 in builds
+    extra_files:
+      - docker-entrypoint.sh
+    labels:
+      "org.opencontainers.image.title": "{{.ProjectName}}"
+      "org.opencontainers.image.description": "Torrent stream server"
+      "org.opencontainers.image.url": "{{.GitURL}}"
+      "org.opencontainers.image.source": "{{.GitURL}}"
+      "org.opencontainers.image.version": "{{.Tag}}"
+      "org.opencontainers.image.revision": "{{.FullCommit}}"
+      "org.opencontainers.image.created": "{{.Date}}"
+      "org.opencontainers.image.licenses": "GPL-3.0"
+    annotations:
+      "org.opencontainers.image.title": "{{.ProjectName}}"
+      "org.opencontainers.image.description": "Torrent stream server"
+      "org.opencontainers.image.url": "{{.GitURL}}"
+      "org.opencontainers.image.source": "{{.GitURL}}"
+      "org.opencontainers.image.version": "{{.Tag}}"
+      "org.opencontainers.image.revision": "{{.FullCommit}}"
+      "org.opencontainers.image.created": "{{.Date}}"
+      "org.opencontainers.image.licenses": "GPL-3.0"
+    sbom: "{{ not .IsSnapshot }}"

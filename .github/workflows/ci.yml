@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  goreleaser-check:
+    name: GoReleaser config
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Validate .goreleaser.yaml
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: check
+
+  build:
+    name: Build (linux amd64)
+    runs-on: ubuntu-22.04
+    env:
+      NODE_OPTIONS: --openssl-legacy-provider
+      REACT_APP_TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Load toolchain versions
+        run: grep -v '^#' .github/versions.env >> "$GITHUB_ENV"
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: server/go.sum
+
+      - name: Install Go toolchain wrapper (GoReleaser tool)
+        run: |
+          go install golang.org/dl/go${{ env.GO_VERSION }}@latest
+          go${{ env.GO_VERSION }} download
+
+      - name: Snapshot build (single target, no docker)
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: build --snapshot --clean --single-target --id torrserver
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify binary artifact
+        run: test -x dist/torrserver_linux_amd64_v1/torrserver

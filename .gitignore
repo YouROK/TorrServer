@@ -29,6 +29,7 @@ src/go.opencensus.io/
 pkg/
 bin/
 dist/
+data/
 toolchains/
 /src/crawshaw.io/
 /src/go.etcd.io/
