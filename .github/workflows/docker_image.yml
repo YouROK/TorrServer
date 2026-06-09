@@ -43,6 +43,25 @@ jobs:
         env:
           REPO: "${{ github.repository }}"
 
+      - name: Set version
+        run: |
+          SERVER_VERSION=$(sed -n 's/.*Version = "\([^"]*\)".*/\1/p' server/version/version.go)
+          SERVER_VER="${SERVER_VERSION#MatriX.}"
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+            if [[ "$TAG" == MatriX.* ]]; then
+              VERSION="$TAG"
+            else
+              VERSION="MatriX.${TAG}"
+            fi
+          elif [[ "${{ github.ref }}" == refs/heads/* ]]; then
+            VERSION="MatriX.${SERVER_VER}.${GITHUB_SHA:0:7}"
+          else
+            VERSION="${SERVER_VERSION}"
+          fi
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "Version: ${VERSION}"
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -64,5 +83,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             REACT_APP_TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
+            VERSION=${{ env.VERSION }}
           cache-from: type=gha,scope=${{ github.workflow }}
           cache-to: type=gha,mode=max,scope=${{ github.workflow }}
