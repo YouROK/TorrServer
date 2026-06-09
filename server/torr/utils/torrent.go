@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"server/settings"
 
@@ -16,24 +17,33 @@ import (
 	"golang.org/x/time/rate"
 )
 
-var defTrackers = []string{
-	"http://retracker.local/announce",
-	"http://bt4.t-ru.org/ann?magnet",
-	"http://retracker.mgts.by:80/announce",
-	"http://tracker.city9x.com:2710/announce",
-	"http://tracker.electro-torrent.pl:80/announce",
-	"http://tracker.internetwarriors.net:1337/announce",
-	"http://tracker2.itzmx.com:6961/announce",
-	"udp://opentor.org:2710",
-	"udp://public.popcorn-tracker.org:6969/announce",
-	"udp://tracker.opentrackr.org:1337/announce",
-	"http://bt.svao-ix.ru/announce",
-	"udp://explodie.org:6969/announce",
-	"wss://tracker.btorrent.xyz",
-	"wss://tracker.openwebtorrent.com",
-}
+var (
+	defTrackers   = []string{
+		"http://retracker.local/announce",
+		"http://bt4.t-ru.org/ann?magnet",
+		"http://retracker.mgts.by:80/announce",
+		"http://tracker.city9x.com:2710/announce",
+		"http://tracker.electro-torrent.pl:80/announce",
+		"http://tracker.internetwarriors.net:1337/announce",
+		"http://tracker2.itzmx.com:6961/announce",
+		"udp://opentor.org:2710",
+		"udp://public.popcorn-tracker.org:6969/announce",
+		"udp://tracker.opentrackr.org:1337/announce",
+		"http://bt.svao-ix.ru/announce",
+		"udp://explodie.org:6969/announce",
+		"wss://tracker.btorrent.xyz",
+		"wss://tracker.openwebtorrent.com",
+	}
+	defTrackersMu sync.RWMutex
+)
 
 var loadedTrackers []string
+
+func SetDefTrackers(trackers []string) {
+	defTrackersMu.Lock()
+	defer defTrackersMu.Unlock()
+	defTrackers = trackers
+}
 
 func GetTrackerFromFile() []string {
 	name := filepath.Join(settings.Path, "trackers.txt")
@@ -54,6 +64,8 @@ func GetTrackerFromFile() []string {
 func GetDefTrackers() []string {
 	loadNewTracker()
 	if len(loadedTrackers) == 0 {
+		defTrackersMu.RLock()
+		defer defTrackersMu.RUnlock()
 		return defTrackers
 	}
 	return loadedTrackers
