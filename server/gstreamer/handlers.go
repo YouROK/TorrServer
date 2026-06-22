@@ -1,0 +1,302 @@
+package gstreamer
+
+import (
+	"errors"
+	"io"
+	"net/http"
+	"strconv"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+)
+
+func (s *Service) SetupRoute(route gin.IRouter) {
+	route.GET("/gst/remove", s.remove)
+	route.GET("/gst/:hash/heartbeat", s.heartbeat)
+	route.GET("/gst/:hash/master.m3u8", s.master)
+	route.GET("/gst/:hash/init.mp4", s.initMP4)
+	route.GET("/gst/:hash/seg/*segment", s.segment)
+}
+
+func (s *Service) remove(c *gin.Context) {
+	id := firstNonEmpty(c.Query("hash"), c.Query("id"))
+	if id == "" {
+		c.AbortWithError(http.StatusBadRequest, ErrInvalidIdentifier)
+		return
+	}
+
+	if !s.TryRemove(id) {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
+func (s *Service) heartbeat(c *gin.Context) {
+	if s.Get(c.Param("hash")) == nil {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
+
+func (s *Service) master(c *gin.Context) {
+	noCache(c)
+
+	hash := c.Param("hash")
+	fileID := firstNonEmpty(c.Query("index"), c.Query("id"), c.Query("fileID"))
+	audio := parseQueryInt(c, "audio", 0)
+
+	task, err := s.GetOrAdd(hash, fileID, audio)
+	if err != nil {
+		c.String(http.StatusBadGateway, err.Error())
+		return
+	}
+
+	duration := task.Probe.DurationSeconds()
+	if duration <= 0 {
+		duration = 200 * 60
+	}
+
+	segmentSeconds := task.Config.SegmentSeconds
+	count := duration / segmentSeconds
+
+	var playlist strings.Builder
+	playlist.WriteString("#EXTM3U\n")
+	playlist.WriteString("#EXT-X-PLAYLIST-TYPE:VOD\n")
+	playlist.WriteString("#EXT-X-VERSION:7\n")
+	playlist.WriteString("#EXT-X-TARGETDURATION:")
+	playlist.WriteString(strconv.Itoa(segmentSeconds))
+	playlist.WriteByte('\n')
+	playlist.WriteString("#EXT-X-MEDIA-SEQUENCE:0\n")
+	playlist.WriteString("#EXT-X-MAP:URI=\"init.mp4?audio=")
+	playlist.WriteString(strconv.Itoa(audio))
+	playlist.WriteString("\"\n")
+
+	for i := 0; i < count; i++ {
+		playlist.WriteString("#EXTINF:")
+		playlist.WriteString(strconv.Itoa(segmentSeconds))
+		playlist.WriteString(".00,\n")
+		playlist.WriteString("seg/")
+		playlist.WriteString(strconv.Itoa(i))
+		playlist.WriteString(".m4s\n")
+	}
+
+	playlist.WriteString("#EXT-X-ENDLIST\n")
+
+	c.Data(http.StatusOK, "application/vnd.apple.mpegurl; charset=utf-8", []byte(playlist.String()))
+}
+
+func (s *Service) initMP4(c *gin.Context) {
+	noCache(c)
+
+	task := s.Get(c.Param("hash"))
+	if task == nil {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	audio := parseQueryInt(c, "audio", task.Audio)
+	if err := task.EnsureInit(c.Request.Context(), audio); err != nil {
+		c.AbortWithError(http.StatusBadGateway, err)
+		return
+	}
+
+	init := task.InitMP4()
+	if len(init) == 0 {
+		c.Status(http.StatusBadGateway)
+		return
+	}
+
+	c.Header("Content-Length", strconv.Itoa(len(init)))
+	c.Data(http.StatusOK, "video/mp4", init)
+}
+
+func (s *Service) segment(c *gin.Context) {
+	noCache(c)
+
+	task := s.Get(c.Param("hash"))
+	if task == nil {
+		c.Status(http.StatusNotFound)
+		return
+	}
+	if len(task.InitMP4()) == 0 {
+		c.Status(http.StatusBadGateway)
+		return
+	}
+
+	index, err := parseSegmentIndex(c.Param("segment"))
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	audio := parseQueryInt(c, "audio", task.Audio)
+	seg, err := task.Segment(c.Request.Context(), index, audio)
+	if err != nil {
+		c.AbortWithError(http.StatusBadGateway, err)
+		return
+	}
+	if len(seg.Audio) == 0 || len(seg.Video) == 0 {
+		c.Status(http.StatusBadGateway)
+		return
+	}
+
+	writeSegment(c, seg)
+}
+
+func writeSegment(c *gin.Context, seg Segment) {
+	totalLength := int64(seg.Len())
+
+	c.Header("Content-Type", "video/mp4")
+	c.Header("Accept-Ranges", "bytes")
+
+	rangeHeader := c.GetHeader("Range")
+	if rangeHeader == "" {
+		c.Header("Content-Length", strconv.FormatInt(totalLength, 10))
+		_, _ = c.Writer.Write(seg.Video)
+		_, _ = c.Writer.Write(seg.Audio)
+		return
+	}
+
+	start, end, ok := parseSingleRange(rangeHeader, totalLength)
+	if !ok {
+		c.Header("Content-Range", "bytes */"+strconv.FormatInt(totalLength, 10))
+		c.Status(http.StatusRequestedRangeNotSatisfiable)
+		return
+	}
+
+	length := end - start + 1
+	c.Status(http.StatusPartialContent)
+	c.Header("Content-Range", "bytes "+strconv.FormatInt(start, 10)+"-"+strconv.FormatInt(end, 10)+"/"+strconv.FormatInt(totalLength, 10))
+	c.Header("Content-Length", strconv.FormatInt(length, 10))
+
+	_ = copyRange(c.Writer, seg.Video, seg.Audio, start, length)
+}
+
+func copyRange(dst io.Writer, video []byte, audio []byte, offset int64, count int64) error {
+	videoLength := int64(len(video))
+
+	if offset < videoLength {
+		videoCount := minInt64(count, videoLength-offset)
+		if videoCount > 0 {
+			if _, err := dst.Write(video[offset : offset+videoCount]); err != nil {
+				return err
+			}
+			count -= videoCount
+		}
+		offset = 0
+	} else {
+		offset -= videoLength
+	}
+
+	if count <= 0 {
+		return nil
+	}
+
+	audioLength := int64(len(audio))
+	if offset >= audioLength {
+		return nil
+	}
+
+	audioCount := minInt64(count, audioLength-offset)
+	if audioCount > 0 {
+		_, err := dst.Write(audio[offset : offset+audioCount])
+		return err
+	}
+
+	return nil
+}
+
+func parseSingleRange(header string, totalLength int64) (int64, int64, bool) {
+	const prefix = "bytes="
+	if totalLength <= 0 || !strings.HasPrefix(header, prefix) {
+		return 0, 0, false
+	}
+
+	spec := strings.TrimSpace(strings.TrimPrefix(header, prefix))
+	if spec == "" || strings.Contains(spec, ",") {
+		return 0, 0, false
+	}
+
+	left, right, ok := strings.Cut(spec, "-")
+	if !ok {
+		return 0, 0, false
+	}
+
+	var start int64
+	var end int64
+
+	if left != "" {
+		parsedStart, err := strconv.ParseInt(left, 10, 64)
+		if err != nil {
+			return 0, 0, false
+		}
+		start = parsedStart
+
+		if right == "" {
+			end = totalLength - 1
+		} else {
+			parsedEnd, err := strconv.ParseInt(right, 10, 64)
+			if err != nil {
+				return 0, 0, false
+			}
+			end = parsedEnd
+		}
+	} else {
+		suffixLength, err := strconv.ParseInt(right, 10, 64)
+		if err != nil || suffixLength <= 0 {
+			return 0, 0, false
+		}
+		if suffixLength > totalLength {
+			suffixLength = totalLength
+		}
+		start = totalLength - suffixLength
+		end = totalLength - 1
+	}
+
+	if start < 0 || end < start || start >= totalLength {
+		return 0, 0, false
+	}
+	if end >= totalLength {
+		end = totalLength - 1
+	}
+
+	return start, end, true
+}
+
+func parseSegmentIndex(value string) (int, error) {
+	value = strings.TrimPrefix(value, "/")
+	value = strings.TrimSuffix(value, ".m4s")
+	if value == "" || strings.Contains(value, "/") {
+		return 0, errors.New("invalid segment index")
+	}
+	return strconv.Atoi(value)
+}
+
+func parseQueryInt(c *gin.Context, key string, fallback int) int {
+	value := c.Query(key)
+	if value == "" {
+		return fallback
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil {
+		return fallback
+	}
+	return parsed
+}
+
+func noCache(c *gin.Context) {
+	c.Header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+	c.Header("Pragma", "no-cache")
+	c.Header("Expires", "0")
+}
+
+func minInt64(a int64, b int64) int64 {
+	if a < b {
+		return a
+	}
+	return b
+}

@@ -1,0 +1,38 @@
+package gstreamer
+
+import (
+	"sync"
+
+	"github.com/gin-gonic/gin"
+)
+
+var (
+	defaultServiceMu sync.Mutex
+	defaultService   *Service
+)
+
+func SetupRoute(route gin.IRouter) {
+	getDefaultService().SetupRoute(route)
+}
+
+func Stop() {
+	defaultServiceMu.Lock()
+	service := defaultService
+	defaultService = nil
+	defaultServiceMu.Unlock()
+
+	if service != nil {
+		service.Dispose()
+	}
+}
+
+func getDefaultService() *Service {
+	defaultServiceMu.Lock()
+	defer defaultServiceMu.Unlock()
+
+	if defaultService == nil {
+		defaultService = NewService(DefaultConfig())
+	}
+
+	return defaultService
+}
