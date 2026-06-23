@@ -1,4 +1,4 @@
-//go:build (windows && (amd64 || arm64)) || (linux && (amd64 || arm64))
+//go:build (windows && (amd64 || arm64)) || (linux && (amd64 || arm64)) || (darwin && (amd64 || arm64))
 
 package gstreamer
 
@@ -102,12 +102,13 @@ func initGStreamerRuntime(conf Config) {
 func setupGStreamer(conf Config) {
 	_ = os.Setenv("GST_REGISTRY", filepath.Join(os.TempDir(), "torrserver-gstreamer-registry.bin"))
 
-	if conf.GSTPath == "" {
+	roots := gstRuntimeRoots(conf)
+	if len(roots) == 0 {
 		return
 	}
 
-	gstBin := filepath.Join(conf.GSTPath, "bin")
-	if runtime.GOOS == "windows" {
+	for _, root := range roots {
+		gstBin := filepath.Join(root, "bin")
 		if _, err := os.Stat(gstBin); err == nil {
 			prependEnvPath("PATH", gstBin)
 		}
@@ -116,19 +117,9 @@ func setupGStreamer(conf Config) {
 	var gstPlugins string
 	switch runtime.GOOS {
 	case "windows":
-		gstPlugins = filepath.Join(conf.GSTPath, "lib", "gstreamer-1.0")
-	case "linux":
-		for _, candidate := range []string{
-			filepath.Join(conf.GSTPath, "lib", "gstreamer-1.0"),
-			filepath.Join(conf.GSTPath, "lib64", "gstreamer-1.0"),
-			filepath.Join(conf.GSTPath, "lib", runtime.GOARCH+"-linux-gnu", "gstreamer-1.0"),
-			filepath.Join(conf.GSTPath, "lib", "x86_64-linux-gnu", "gstreamer-1.0"),
-		} {
-			if _, err := os.Stat(candidate); err == nil {
-				gstPlugins = candidate
-				break
-			}
-		}
+		gstPlugins = filepath.Join(roots[0], "lib", "gstreamer-1.0")
+	case "linux", "darwin":
+		gstPlugins = firstExistingPath(gstPluginCandidates(roots))
 	}
 	if gstPlugins != "" {
 		_ = os.Setenv("GST_PLUGIN_PATH", gstPlugins)
@@ -138,22 +129,62 @@ func setupGStreamer(conf Config) {
 	var gstPluginScanner string
 	switch runtime.GOOS {
 	case "windows":
-		gstPluginScanner = filepath.Join(conf.GSTPath, "libexec", "gstreamer-1.0", "gst-plugin-scanner.exe")
-	case "linux":
-		for _, candidate := range []string{
-			filepath.Join(conf.GSTPath, "libexec", "gstreamer-1.0", "gst-plugin-scanner"),
-			filepath.Join(conf.GSTPath, "lib", "gstreamer-1.0", "gst-plugin-scanner"),
-			filepath.Join(conf.GSTPath, "lib64", "gstreamer-1.0", "gst-plugin-scanner"),
-		} {
-			if _, err := os.Stat(candidate); err == nil {
-				gstPluginScanner = candidate
-				break
-			}
-		}
+		gstPluginScanner = filepath.Join(roots[0], "libexec", "gstreamer-1.0", "gst-plugin-scanner.exe")
+	case "linux", "darwin":
+		gstPluginScanner = firstExistingPath(gstPluginScannerCandidates(roots))
 	}
 	if gstPluginScanner != "" {
 		_ = os.Setenv("GST_PLUGIN_SCANNER", gstPluginScanner)
 	}
+}
+
+func gstRuntimeRoots(conf Config) []string {
+	if conf.GSTPath != "" {
+		return []string{conf.GSTPath}
+	}
+	if runtime.GOOS != "darwin" {
+		return nil
+	}
+	return []string{
+		"/Library/Frameworks/GStreamer.framework/Versions/1.0",
+		"/opt/homebrew",
+		"/usr/local",
+	}
+}
+
+func gstPluginCandidates(roots []string) []string {
+	var candidates []string
+	for _, root := range roots {
+		candidates = append(candidates,
+			filepath.Join(root, "lib", "gstreamer-1.0"),
+			filepath.Join(root, "lib64", "gstreamer-1.0"),
+			filepath.Join(root, "lib", runtime.GOARCH+"-linux-gnu", "gstreamer-1.0"),
+			filepath.Join(root, "lib", "x86_64-linux-gnu", "gstreamer-1.0"),
+			filepath.Join(root, "lib", "aarch64-linux-gnu", "gstreamer-1.0"),
+		)
+	}
+	return candidates
+}
+
+func gstPluginScannerCandidates(roots []string) []string {
+	var candidates []string
+	for _, root := range roots {
+		candidates = append(candidates,
+			filepath.Join(root, "libexec", "gstreamer-1.0", "gst-plugin-scanner"),
+			filepath.Join(root, "lib", "gstreamer-1.0", "gst-plugin-scanner"),
+			filepath.Join(root, "lib64", "gstreamer-1.0", "gst-plugin-scanner"),
+		)
+	}
+	return candidates
+}
+
+func firstExistingPath(candidates []string) string {
+	for _, candidate := range candidates {
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate
+		}
+	}
+	return ""
 }
 
 func prependEnvPath(key string, value string) {
