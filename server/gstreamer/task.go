@@ -12,7 +12,6 @@ type pipelineRunner interface {
 	Seek(seconds float64) bool
 	Frozen()
 	Dispose()
-	IsDead() bool
 	IsFrozen() bool
 }
 
@@ -36,7 +35,7 @@ type Task struct {
 	mu     sync.Mutex
 	runner pipelineRunner
 
-	dead atomic.Bool
+	disposed atomic.Bool
 }
 
 func NewTask(id string, hash string, fileID string, audio int, sourceURL string, probe ProbeInfo, conf Config) (*Task, error) {
@@ -95,6 +94,9 @@ func (t *Task) EnsureInit(ctx context.Context, audio int) error {
 	if len(t.InitMP4()) > 0 {
 		return nil
 	}
+	if t.runner == nil {
+		return ErrTaskNotFound
+	}
 
 	_, err := t.runner.GetSegment(ctx, -1, audio)
 	return err
@@ -104,9 +106,11 @@ func (t *Task) Segment(ctx context.Context, index int, audio int) (Segment, erro
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if t.LastSentSegment == -1 {
-		t.LastSentSegment = index
-	} else if t.LastSentSegment != index {
+	if t.runner == nil {
+		return Segment{}, ErrTaskNotFound
+	}
+
+	if t.LastSentSegment != -1 && t.LastSentSegment != index {
 		if index != t.LastSentSegment+1 {
 			diff := index - t.LastSentSegment
 			cutoff := t.Config.PipelineVideoQueue
@@ -119,21 +123,25 @@ func (t *Task) Segment(ctx context.Context, index int, audio int) (Segment, erro
 
 					t.LastSentSegment++
 					if _, err := t.runner.GetSegment(ctx, t.LastSentSegment, audio); err != nil {
+						t.LastSentSegment--
 						return Segment{}, err
 					}
 				}
 			} else {
-				t.LastSentSegment = index
 				if !t.runner.Seek(float64(index * t.Config.SegmentSeconds)) {
 					return Segment{}, ErrSegmentNotReady
 				}
 			}
 		}
-
-		t.LastSentSegment = index
 	}
 
-	return t.runner.GetSegment(ctx, index, audio)
+	seg, err := t.runner.GetSegment(ctx, index, audio)
+	if err != nil {
+		return Segment{}, err
+	}
+
+	t.LastSentSegment = index
+	return seg, nil
 }
 
 func (t *Task) Frozen() {
@@ -145,7 +153,7 @@ func (t *Task) Frozen() {
 }
 
 func (t *Task) Dispose() {
-	if !t.dead.CompareAndSwap(false, true) {
+	if !t.disposed.CompareAndSwap(false, true) {
 		return
 	}
 
@@ -156,16 +164,6 @@ func (t *Task) Dispose() {
 		t.runner = nil
 	}
 	t.setInitMP4(nil)
-}
-
-func (t *Task) IsDead() bool {
-	if t.dead.Load() {
-		return true
-	}
-	if t.runner != nil && t.runner.IsDead() {
-		return true
-	}
-	return false
 }
 
 func (t *Task) IsFrozen() bool {

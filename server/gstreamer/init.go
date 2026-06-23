@@ -26,6 +26,17 @@ func Stop() {
 	}
 }
 
+func Remove(id string) bool {
+	defaultServiceMu.Lock()
+	service := defaultService
+	defaultServiceMu.Unlock()
+
+	if service == nil {
+		return false
+	}
+	return service.TryRemove(id)
+}
+
 func getDefaultService() *Service {
 	defaultServiceMu.Lock()
 	defer defaultServiceMu.Unlock()

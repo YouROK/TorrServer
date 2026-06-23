@@ -5,11 +5,14 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"time"
 
 	"server/ffprobe"
 
 	probedata "gopkg.in/vansante/go-ffprobe.v2"
 )
+
+const gstProbeTimeout = 30 * time.Second
 
 type ProbeInfo struct {
 	DurationNS int64
@@ -71,7 +74,7 @@ func (p ProbeInfo) IsVP9() bool  { return p.VideoCapsName() == "video/x-vp9" }
 func (p ProbeInfo) IsVP8() bool  { return p.VideoCapsName() == "video/x-vp8" }
 
 func probeSource(sourceURL string) (ProbeInfo, error) {
-	data, err := ffprobe.ProbeUrl(sourceURL)
+	data, err := ffprobe.ProbeUrlWithTimeout(sourceURL, gstProbeTimeout)
 	if err != nil {
 		return ProbeInfo{}, err
 	}

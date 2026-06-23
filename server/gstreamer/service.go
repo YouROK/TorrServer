@@ -52,7 +52,7 @@ func (s *Service) GetOrAdd(hash string, fileID string, audio int) (*Task, error)
 	task := s.tasks[id]
 	s.mu.RUnlock()
 
-	if task != nil && !task.IsDead() && task.FileID == fileID && task.Audio == audio {
+	if task != nil && task.FileID == fileID && task.Audio == audio {
 		task.UpdateLastActive()
 		return task, nil
 	}
@@ -77,7 +77,7 @@ func (s *Service) GetOrAdd(hash string, fileID string, audio int) (*Task, error)
 	defer s.mu.Unlock()
 
 	if existing := s.tasks[id]; existing != nil {
-		if !existing.IsDead() && existing.FileID == fileID && existing.Audio == audio {
+		if existing.FileID == fileID && existing.Audio == audio {
 			task.Dispose()
 			existing.UpdateLastActive()
 			return existing, nil
@@ -98,7 +98,7 @@ func (s *Service) Get(id string) *Task {
 	task := s.tasks[id]
 	s.mu.RUnlock()
 
-	if task == nil || task.IsDead() {
+	if task == nil {
 		return nil
 	}
 
@@ -123,6 +123,9 @@ func (s *Service) TryRemove(id string) bool {
 	}
 
 	task.Dispose()
+	if s.isEmpty() {
+		cleanupGSTTempFiles()
+	}
 	return true
 }
 
@@ -173,7 +176,7 @@ func (s *Service) cleanupInactive() {
 
 	for id, task := range snapshot {
 		lastActive := task.LastActive()
-		if now.After(lastActive.Add(removeAfter)) || task.IsDead() {
+		if now.After(lastActive.Add(removeAfter)) {
 			s.TryRemove(id)
 			continue
 		}
@@ -181,6 +184,16 @@ func (s *Service) cleanupInactive() {
 			task.Frozen()
 		}
 	}
+
+	if s.isEmpty() {
+		cleanupGSTTempFiles()
+	}
+}
+
+func (s *Service) isEmpty() bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return len(s.tasks) == 0
 }
 
 func playURL(hash string, fileID string) string {

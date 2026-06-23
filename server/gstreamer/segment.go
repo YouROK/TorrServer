@@ -3,13 +3,12 @@ package gstreamer
 import "bytes"
 
 type Segment struct {
-	Audio        []byte
-	Video        []byte
+	Data         []byte
 	StartSeconds float64
 }
 
 func (s Segment) Len() int {
-	return len(s.Video) + len(s.Audio)
+	return len(s.Data)
 }
 
 func cloneBytes(src []byte) []byte {

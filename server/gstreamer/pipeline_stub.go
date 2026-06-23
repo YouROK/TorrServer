@@ -17,5 +17,4 @@ func (disabledRunner) GetSegment(context.Context, int, int) (Segment, error) {
 func (disabledRunner) Seek(float64) bool { return false }
 func (disabledRunner) Frozen()           {}
 func (disabledRunner) Dispose()          {}
-func (disabledRunner) IsDead() bool      { return false }
 func (disabledRunner) IsFrozen() bool    { return false }

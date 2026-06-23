@@ -20,6 +20,8 @@ var (
 	gstInitOnce sync.Once
 	gstRuntime  *gstAPI
 	gstInitErr  error
+
+	gstInitStatus componentStatus
 )
 
 type gstRunner struct {
@@ -37,25 +39,18 @@ type gstRunner struct {
 	positionSeconds     atomic.Uint64
 	positionSeekSeconds float64
 
-	reader *Mp4BoxReader
+	reader *mp4BoxReader
 
 	pipeline uintptr
 	bus      uintptr
 	sink     uintptr
 
-	dead   atomic.Bool
 	frozen atomic.Bool
-	eos    atomic.Bool
 }
 
 func newPipelineRunner(task *Task, audio int) (pipelineRunner, error) {
 	gstInitOnce.Do(func() {
-		setupGStreamer(task.Config)
-		gstRuntime, gstInitErr = loadGST(task.Config)
-		if gstInitErr != nil {
-			return
-		}
-		gstInitErr = gstRuntime.init()
+		initGStreamerRuntime(task.Config)
 	})
 	if gstInitErr != nil {
 		return nil, errors.Join(ErrPipelineDisabled, gstInitErr)
@@ -64,7 +59,7 @@ func newPipelineRunner(task *Task, audio int) (pipelineRunner, error) {
 	runner := &gstRunner{
 		task:       task,
 		audioIndex: validAudioIndex(task.Probe, audio),
-		reader: NewMp4BoxReader(
+		reader: Mp4BoxReader(
 			func(data []byte) {
 				task.setInitMP4(data)
 			},
@@ -78,10 +73,30 @@ func newPipelineRunner(task *Task, audio int) (pipelineRunner, error) {
 					}
 				}
 			},
+			float64(task.Config.SegmentSeconds),
 		),
 	}
 	runner.readySegment.index = -1
 	return runner, nil
+}
+
+func initGStreamerRuntime(conf Config) {
+	setupGStreamer(conf)
+
+	var err error
+	gstRuntime, err = loadGST(conf)
+	if err != nil {
+		gstInitErr = err
+		return
+	}
+	gstInitStatus.Found = true
+
+	if err = gstRuntime.init(); err != nil {
+		gstInitErr = err
+		return
+	}
+	gstInitStatus.Available = true
+	gstInitErr = nil
 }
 
 func setupGStreamer(conf Config) {
@@ -179,10 +194,7 @@ func (r *gstRunner) createPipelineArgs() string {
 	if conf.GSTVersion >= 1.26 {
 		sb.WriteString("retry-backoff-factor=0.5 retry-backoff-max=10 ")
 	}
-	sb.WriteString("! queue2 use-buffering=false max-size-buffers=0 max-size-bytes=")
-	sb.WriteString(strconv.Itoa(16 * 1024 * 1024))
-	sb.WriteString(" max-size-time=")
-	sb.WriteString(strconv.FormatInt(queueNS, 10))
+	r.writeSourceQueue(&sb, videoQueueBytes, queueNS)
 	sb.WriteString(" ! matroskademux name=d ")
 
 	switch {
@@ -237,13 +249,13 @@ func (r *gstRunner) createPipelineArgs() string {
 	sb.WriteString(strconv.Itoa(audioQueueBytes))
 	sb.WriteString(" max-size-time=")
 	sb.WriteString(strconv.FormatInt(queueNS, 10))
-	sb.WriteString(" leaky=0 ! decodebin ! audioconvert ! audioresample ! audio/x-raw,rate=48000,channels=2 ! avenc_aac bitrate=")
+	sb.WriteString(" leaky=0 ! decodebin ! audioconvert ! audioresample ! audio/x-raw,rate=48000,channels=2 ! audiorate skip-to-first=true tolerance=40000000 ! avenc_aac bitrate=")
 	sb.WriteString(strconv.Itoa(conf.AACBitrateKbps * 1000))
 	sb.WriteString(" ! aacparse ! audio/mpeg,mpegversion=4,stream-format=raw,rate=48000,channels=2 ! mux.audio_0 ")
 
 	sb.WriteString("mp4mux name=mux fragment-duration=")
 	sb.WriteString(strconv.Itoa(conf.SegmentSeconds * 1000))
-	sb.WriteString(" streamable=true ! appsink name=out emit-signals=false sync=false max-buffers=1 max-bytes=0 max-time=0")
+	sb.WriteString(" streamable=true ! appsink name=out emit-signals=false sync=false max-buffers=1")
 	if conf.GSTVersion >= 1.28 {
 		sb.WriteString(" leaky-type=none")
 	} else {
@@ -252,6 +264,28 @@ func (r *gstRunner) createPipelineArgs() string {
 	sb.WriteString(" wait-on-eos=false")
 
 	return sb.String()
+}
+
+func (r *gstRunner) writeSourceQueue(sb *strings.Builder, videoQueueBytes int, queueNS int64) {
+	conf := r.task.Config
+
+	sb.WriteString("! queue2 use-buffering=false max-size-buffers=0 max-size-bytes=")
+	sb.WriteString(strconv.Itoa(videoQueueBytes))
+	sb.WriteString(" max-size-time=")
+	sb.WriteString(strconv.FormatInt(queueNS, 10))
+
+	if !conf.TempFS {
+		return
+	}
+
+	ringBlocks := 3 + conf.TempFSRing
+	ringBytes := ringBlocks * videoQueueBytes
+	template := gstPath(queue2TempTemplate())
+
+	sb.WriteString(" temp-template=\"")
+	sb.WriteString(template)
+	sb.WriteString("\" ring-buffer-max-size=")
+	sb.WriteString(strconv.Itoa(ringBytes))
 }
 
 func (r *gstRunner) transcodeToH264(sb *strings.Builder, maxQueueBytes int, queueNS int64) {
@@ -282,49 +316,43 @@ func (r *gstRunner) transcodeToH264(sb *strings.Builder, maxQueueBytes int, queu
 }
 
 func (r *gstRunner) Seek(seconds float64) bool {
-	if r.IsDead() || !r.statePlaying {
-		return false
-	}
-
 	r.stopPipeline()
 
-	if err := r.startPipeline(seconds); err != nil {
-		r.dead.Store(true)
-		r.Dispose()
-		return false
-	}
-
-	r.reader.ResetSegment()
 	r.reader.SeekReset(seconds)
 	r.readySegment.index = -1
 	r.readySegment.complete = false
 	r.readySegment.segment = Segment{}
 
+	if err := r.startPipeline(seconds); err != nil {
+		r.freezeAtPosition(seconds)
+		return false
+	}
+
 	r.frozen.Store(false)
-	r.eos.Store(false)
 	r.setPosition(seconds)
 	r.positionSeekSeconds = seconds
+	r.statePlaying = true
 	return true
 }
 
 func (r *gstRunner) GetSegment(ctx context.Context, index int, audio int) (Segment, error) {
-	if r.IsDead() {
-		return Segment{}, ErrSegmentNotReady
-	}
-
-	if !r.statePlaying {
+	if r.IsFrozen() {
+		if !r.Seek(r.position()) {
+			return Segment{}, ErrSegmentNotReady
+		}
+	} else if !r.statePlaying {
 		r.statePlaying = true
 		r.audioIndex = validAudioIndex(r.task.Probe, audio)
-		if err := r.startPipeline(0); err != nil {
-			r.dead.Store(true)
-			r.Dispose()
-			return Segment{}, err
+		startSeconds := 0.0
+		if index > 0 {
+			startSeconds = float64(index * r.task.Config.SegmentSeconds)
+			r.reader.SeekReset(startSeconds)
+			r.positionSeekSeconds = startSeconds
+			r.setPosition(startSeconds)
 		}
-	} else if r.IsFrozen() {
-		if !r.Seek(r.position()) {
-			r.dead.Store(true)
-			r.Dispose()
-			return Segment{}, ErrSegmentNotReady
+		if err := r.startPipeline(startSeconds); err != nil {
+			r.freezeAtPosition(startSeconds)
+			return Segment{}, err
 		}
 	}
 
@@ -332,39 +360,44 @@ func (r *gstRunner) GetSegment(ctx context.Context, index int, audio int) (Segme
 		return r.readySegment.segment, nil
 	}
 
-	r.reader.ResetSegment()
 	r.readySegment.index = -1
 	r.readySegment.complete = false
 	r.readySegment.segment = Segment{}
 
-	completed, err := r.reader.TryProcessDeferred()
-	if err != nil {
-		r.dead.Store(true)
-		r.Dispose()
-		return Segment{}, err
-	}
-	if completed && r.readySegment.complete {
-		if index > 0 {
-			r.readySegment.index = index
-		} else {
-			r.readySegment.index = 0
-		}
-		return r.readySegment.segment, nil
-	}
-
-	deadline := time.Now().Add(10 * time.Second)
+	deadline := time.Now().Add(20 * time.Second)
 	for time.Now().Before(deadline) {
 		if ctx.Err() != nil {
 			return Segment{}, ctx.Err()
-		}
-		if r.IsDead() {
-			return Segment{}, ErrSegmentNotReady
 		}
 
 		sample := gstRuntime.appSinkTryPullSample(r.sink, uint64(100*time.Millisecond))
 		if sample == 0 {
 			if gstRuntime.appSinkIsEOS(r.sink) {
-				r.eos.Store(true)
+				completed, err := r.reader.TryProcessDeferred()
+				if err != nil {
+					r.freezeAtSegment(index)
+					return Segment{}, err
+				}
+				if completed && r.readySegment.complete {
+					return r.completeReadySegment(index), nil
+				}
+
+				completed, err = r.reader.TryFlushFinalSegment()
+				if err != nil {
+					r.freezeAtSegment(index)
+					return Segment{}, err
+				}
+				if completed && r.readySegment.complete {
+					return r.completeReadySegment(index), nil
+				}
+
+				if seg, ok := r.reader.TakePendingSegment(); ok {
+					r.readySegment.segment = seg
+					r.readySegment.complete = true
+					return r.completeReadySegment(index), nil
+				}
+
+				r.freezeAtSegment(index)
 				return Segment{}, ErrSegmentNotReady
 			}
 			continue
@@ -377,22 +410,46 @@ func (r *gstRunner) GetSegment(ctx context.Context, index int, audio int) (Segme
 		}
 
 		if err := r.reader.Push(data); err != nil {
-			r.dead.Store(true)
-			r.Dispose()
+			r.freezeAtSegment(index)
 			return Segment{}, err
 		}
 
 		if r.readySegment.complete {
-			if index > 0 {
-				r.readySegment.index = index
-			} else {
-				r.readySegment.index = 0
-			}
-			return r.readySegment.segment, nil
+			return r.completeReadySegment(index), nil
 		}
 	}
 
 	return Segment{}, ErrSegmentNotReady
+}
+
+func (r *gstRunner) completeReadySegment(index int) Segment {
+	if index > 0 {
+		r.readySegment.index = index
+	} else {
+		r.readySegment.index = 0
+	}
+	return r.readySegment.segment
+}
+
+func (r *gstRunner) freezeAtSegment(index int) {
+	seconds := r.position()
+	if index > 0 {
+		seconds = float64(index * r.task.Config.SegmentSeconds)
+	}
+
+	r.freezeAtPosition(seconds)
+}
+
+func (r *gstRunner) freezeAtPosition(seconds float64) {
+	r.stopPipeline()
+	r.reader.SeekReset(seconds)
+	r.readySegment.index = -1
+	r.readySegment.complete = false
+	r.readySegment.segment = Segment{}
+	r.frozen.Store(true)
+	r.setPosition(seconds)
+	r.positionSeekSeconds = seconds
+	r.statePlaying = false
 }
 
 func (r *gstRunner) startPipeline(seconds float64) error {
@@ -480,18 +537,17 @@ func (r *gstRunner) stopPipeline() {
 
 func (r *gstRunner) Dispose() {
 	r.stopPipeline()
+	if r.reader != nil {
+		r.reader.SeekReset(r.position())
+	}
+	r.readySegment.index = -1
+	r.readySegment.complete = false
+	r.readySegment.segment = Segment{}
+	r.statePlaying = false
 }
 
 func (r *gstRunner) Frozen() {
-	if r.pipeline == 0 {
-		return
-	}
-	r.frozen.Store(true)
-	r.stopPipeline()
-}
-
-func (r *gstRunner) IsDead() bool {
-	return r.dead.Load()
+	r.freezeAtPosition(r.position())
 }
 
 func (r *gstRunner) IsFrozen() bool {

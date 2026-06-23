@@ -26,18 +26,22 @@ type Config struct {
 	PipelineTimeSeconds int
 	PipelineAudioQueue  int
 	PipelineVideoQueue  int
+
+	TempFS     bool
+	TempFSRing int
 }
 
 func DefaultConfig() Config {
 	conf := Config{
 		GSTVersion:          1.26,
 		InactiveMinutes:     5,
-		AACBitrateKbps:      192,
+		AACBitrateKbps:      256,
 		SegmentSeconds:      6,
-		VideoBitrate:        8_000,
-		PipelineTimeSeconds: 18,
+		VideoBitrate:        10_000,
+		PipelineTimeSeconds: 20,
 		PipelineAudioQueue:  4,
 		PipelineVideoQueue:  32,
+		TempFS:              true,
 	}
 
 	if runtime.GOOS == "windows" {
@@ -53,7 +57,7 @@ func (c Config) normalized() Config {
 		c.InactiveMinutes = 5
 	}
 	if c.AACBitrateKbps <= 0 {
-		c.AACBitrateKbps = 192
+		c.AACBitrateKbps = 256
 	}
 	if c.SegmentSeconds <= 0 {
 		c.SegmentSeconds = 6
@@ -62,13 +66,16 @@ func (c Config) normalized() Config {
 		c.VideoBitrate = 10_000
 	}
 	if c.PipelineTimeSeconds <= 0 {
-		c.PipelineTimeSeconds = 18
+		c.PipelineTimeSeconds = 20
 	}
 	if c.PipelineAudioQueue <= 0 {
 		c.PipelineAudioQueue = 4
 	}
 	if c.PipelineVideoQueue <= 0 {
 		c.PipelineVideoQueue = 32
+	}
+	if c.TempFSRing < 0 {
+		c.TempFSRing = 0
 	}
 	if c.GSTVersion <= 0 {
 		c.GSTVersion = 1.26
@@ -98,6 +105,9 @@ type storedConfig struct {
 	PipelineTimeSeconds *int
 	PipelineAudioQueue  *int
 	PipelineVideoQueue  *int
+
+	TempFS     *bool `json:"tempfs"`
+	TempFSRing *int  `json:"tempfs_ring"`
 }
 
 func applySettingsConfig(conf Config) Config {
@@ -164,6 +174,12 @@ func applySettingsConfig(conf Config) Config {
 	}
 	if stored.PipelineVideoQueue != nil {
 		conf.PipelineVideoQueue = *stored.PipelineVideoQueue
+	}
+	if stored.TempFS != nil {
+		conf.TempFS = *stored.TempFS
+	}
+	if stored.TempFSRing != nil {
+		conf.TempFSRing = *stored.TempFSRing
 	}
 
 	return conf

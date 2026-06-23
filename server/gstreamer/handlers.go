@@ -1,6 +1,7 @@
 package gstreamer
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 
 func (s *Service) SetupRoute(route gin.IRouter) {
 	route.GET("/gst/remove", s.remove)
+	route.GET("/gst/echo", s.echo)
 	route.GET("/gst/:hash/heartbeat", s.heartbeat)
 	route.GET("/gst/:hash/master.m3u8", s.master)
 	route.GET("/gst/:hash/init.mp4", s.initMP4)
@@ -51,6 +53,10 @@ func (s *Service) master(c *gin.Context) {
 
 	task, err := s.GetOrAdd(hash, fileID, audio)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			c.String(http.StatusGatewayTimeout, err.Error())
+			return
+		}
 		c.String(http.StatusBadGateway, err.Error())
 		return
 	}
@@ -139,7 +145,7 @@ func (s *Service) segment(c *gin.Context) {
 		c.AbortWithError(http.StatusBadGateway, err)
 		return
 	}
-	if len(seg.Audio) == 0 || len(seg.Video) == 0 {
+	if len(seg.Data) == 0 {
 		c.Status(http.StatusBadGateway)
 		return
 	}
@@ -156,8 +162,7 @@ func writeSegment(c *gin.Context, seg Segment) {
 	rangeHeader := c.GetHeader("Range")
 	if rangeHeader == "" {
 		c.Header("Content-Length", strconv.FormatInt(totalLength, 10))
-		_, _ = c.Writer.Write(seg.Video)
-		_, _ = c.Writer.Write(seg.Audio)
+		_, _ = c.Writer.Write(seg.Data)
 		return
 	}
 
@@ -173,41 +178,21 @@ func writeSegment(c *gin.Context, seg Segment) {
 	c.Header("Content-Range", "bytes "+strconv.FormatInt(start, 10)+"-"+strconv.FormatInt(end, 10)+"/"+strconv.FormatInt(totalLength, 10))
 	c.Header("Content-Length", strconv.FormatInt(length, 10))
 
-	_ = copyRange(c.Writer, seg.Video, seg.Audio, start, length)
+	_ = copyRange(c.Writer, seg.Data, start, length)
 }
 
-func copyRange(dst io.Writer, video []byte, audio []byte, offset int64, count int64) error {
-	videoLength := int64(len(video))
-
-	if offset < videoLength {
-		videoCount := minInt64(count, videoLength-offset)
-		if videoCount > 0 {
-			if _, err := dst.Write(video[offset : offset+videoCount]); err != nil {
-				return err
-			}
-			count -= videoCount
-		}
-		offset = 0
-	} else {
-		offset -= videoLength
-	}
-
-	if count <= 0 {
+func copyRange(dst io.Writer, data []byte, offset int64, count int64) error {
+	if count <= 0 || offset < 0 || offset >= int64(len(data)) {
 		return nil
 	}
 
-	audioLength := int64(len(audio))
-	if offset >= audioLength {
-		return nil
+	end := offset + count
+	if end > int64(len(data)) {
+		end = int64(len(data))
 	}
 
-	audioCount := minInt64(count, audioLength-offset)
-	if audioCount > 0 {
-		_, err := dst.Write(audio[offset : offset+audioCount])
-		return err
-	}
-
-	return nil
+	_, err := dst.Write(data[offset:end])
+	return err
 }
 
 func parseSingleRange(header string, totalLength int64) (int64, int64, bool) {
@@ -292,11 +277,4 @@ func noCache(c *gin.Context) {
 	c.Header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
 	c.Header("Pragma", "no-cache")
 	c.Header("Expires", "0")
-}
-
-func minInt64(a int64, b int64) int64 {
-	if a < b {
-		return a
-	}
-	return b
 }

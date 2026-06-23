@@ -33,20 +33,19 @@ func Exists() bool {
 }
 
 func ProbeUrl(link string) (*ffprobe.ProbeData, error) {
-	data, err := ffprobe.ProbeURL(getCtx(), link)
+	data, err := ProbeUrlWithTimeout(link, 5*time.Minute)
 	return data, err
+}
+
+func ProbeUrlWithTimeout(link string, timeout time.Duration) (*ffprobe.ProbeData, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	return ffprobe.ProbeURL(ctx, link)
 }
 
 func ProbeReader(reader io.Reader) (*ffprobe.ProbeData, error) {
-	data, err := ffprobe.ProbeReader(getCtx(), reader)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+	data, err := ffprobe.ProbeReader(ctx, reader)
 	return data, err
-}
-
-func getCtx() context.Context {
-	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		time.Sleep(5 * time.Minute)
-		cancel()
-	}()
-	return ctx
 }
