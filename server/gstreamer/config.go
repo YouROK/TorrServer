@@ -3,6 +3,7 @@ package gstreamer
 import (
 	"encoding/json"
 	"runtime"
+	"strings"
 	"time"
 
 	"server/settings"
@@ -11,6 +12,7 @@ import (
 type Config struct {
 	GSTVersion float64
 	GSTPath    string
+	Source     string
 
 	InactiveMinutes int
 
@@ -34,6 +36,7 @@ type Config struct {
 func DefaultConfig() Config {
 	conf := Config{
 		GSTVersion:          1.26,
+		Source:              "stream",
 		InactiveMinutes:     5,
 		AACBitrateKbps:      256,
 		SegmentSeconds:      6,
@@ -80,6 +83,10 @@ func (c Config) normalized() Config {
 	if c.GSTVersion <= 0 {
 		c.GSTVersion = 1.26
 	}
+	c.Source = strings.ToLower(strings.TrimSpace(c.Source))
+	if c.Source != "play" {
+		c.Source = "stream"
+	}
 	return c
 }
 
@@ -90,6 +97,7 @@ func (c Config) inactiveDuration() time.Duration {
 type storedConfig struct {
 	GSTVersion *float64
 	GSTPath    *string
+	Source     *string
 
 	InactiveMinutes *int
 
@@ -141,6 +149,9 @@ func applySettingsConfig(conf Config) Config {
 	}
 	if stored.GSTPath != nil {
 		conf.GSTPath = *stored.GSTPath
+	}
+	if stored.Source != nil {
+		conf.Source = *stored.Source
 	}
 	if stored.InactiveMinutes != nil {
 		conf.InactiveMinutes = *stored.InactiveMinutes

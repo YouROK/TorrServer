@@ -83,22 +83,28 @@ func (t *Task) setInitMP4(data []byte) {
 	t.initMu.Unlock()
 }
 
-func (t *Task) EnsureInit(ctx context.Context, audio int) error {
-	if len(t.InitMP4()) > 0 {
-		return nil
-	}
-
+func (t *Task) EnsureInit(ctx context.Context, audio int, startIndex int) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if len(t.InitMP4()) > 0 {
+	if startIndex < 0 {
+		startIndex = 0
+	}
+	if len(t.InitMP4()) > 0 && (startIndex == 0 || t.LastSentSegment != -1) {
 		return nil
 	}
 	if t.runner == nil {
 		return ErrTaskNotFound
 	}
 
-	_, err := t.runner.GetSegment(ctx, -1, audio)
+	index := -1
+	if startIndex > 0 {
+		index = startIndex
+	}
+	_, err := t.runner.GetSegment(ctx, index, audio)
+	if err == nil && startIndex > 0 && t.LastSentSegment == -1 {
+		t.LastSentSegment = startIndex - 1
+	}
 	return err
 }
 

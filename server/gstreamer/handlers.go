@@ -68,6 +68,8 @@ func (s *Service) master(c *gin.Context) {
 
 	segmentSeconds := task.Config.SegmentSeconds
 	count := duration / segmentSeconds
+	startIndex := startSegmentIndex(parseQueryInt(c, "seconds", 0), segmentSeconds, count)
+	startSeconds := startIndex * segmentSeconds
 
 	var playlist strings.Builder
 	playlist.WriteString("#EXTM3U\n")
@@ -76,12 +78,18 @@ func (s *Service) master(c *gin.Context) {
 	playlist.WriteString("#EXT-X-TARGETDURATION:")
 	playlist.WriteString(strconv.Itoa(segmentSeconds))
 	playlist.WriteByte('\n')
-	playlist.WriteString("#EXT-X-MEDIA-SEQUENCE:0\n")
+	playlist.WriteString("#EXT-X-MEDIA-SEQUENCE:")
+	playlist.WriteString(strconv.Itoa(startIndex))
+	playlist.WriteByte('\n')
 	playlist.WriteString("#EXT-X-MAP:URI=\"init.mp4?audio=")
 	playlist.WriteString(strconv.Itoa(audio))
+	if startSeconds > 0 {
+		playlist.WriteString("&seconds=")
+		playlist.WriteString(strconv.Itoa(startSeconds))
+	}
 	playlist.WriteString("\"\n")
 
-	for i := 0; i < count; i++ {
+	for i := startIndex; i < count; i++ {
 		playlist.WriteString("#EXTINF:")
 		playlist.WriteString(strconv.Itoa(segmentSeconds))
 		playlist.WriteString(".00,\n")
@@ -105,7 +113,8 @@ func (s *Service) initMP4(c *gin.Context) {
 	}
 
 	audio := parseQueryInt(c, "audio", task.Audio)
-	if err := task.EnsureInit(c.Request.Context(), audio); err != nil {
+	startIndex := startSegmentIndex(parseQueryInt(c, "seconds", 0), task.Config.SegmentSeconds, task.Probe.DurationSeconds()/task.Config.SegmentSeconds)
+	if err := task.EnsureInit(c.Request.Context(), audio, startIndex); err != nil {
 		c.AbortWithError(http.StatusBadGateway, err)
 		return
 	}
@@ -271,6 +280,21 @@ func parseQueryInt(c *gin.Context, key string, fallback int) int {
 		return fallback
 	}
 	return parsed
+}
+
+func startSegmentIndex(seconds int, segmentSeconds int, count int) int {
+	if seconds <= 0 || segmentSeconds <= 0 {
+		return 0
+	}
+
+	index := seconds / segmentSeconds
+	if index < 0 {
+		return 0
+	}
+	if count > 0 && index > count {
+		return count
+	}
+	return index
 }
 
 func noCache(c *gin.Context) {

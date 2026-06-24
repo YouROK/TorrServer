@@ -36,6 +36,7 @@ func NewService(conf Config) *Service {
 		tasks:       make(map[string]*Task),
 		stopCleanup: make(chan struct{}),
 	}
+	cleanupGSTTempFiles()
 	go service.cleanupLoop()
 	return service
 }
@@ -45,7 +46,7 @@ func (s *Service) GetOrAdd(hash string, fileID string, audio int) (*Task, error)
 		return nil, ErrBadSource
 	}
 
-	sourceURL := playURL(hash, fileID)
+	sourceURL := sourceURL(s.conf, hash, fileID)
 	id := hash
 
 	s.mu.RLock()
@@ -194,6 +195,17 @@ func (s *Service) isEmpty() bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return len(s.tasks) == 0
+}
+
+func sourceURL(conf Config, hash string, fileID string) string {
+	if conf.normalized().Source == "play" {
+		return playURL(hash, fileID)
+	}
+	return streamURL(hash, fileID)
+}
+
+func streamURL(hash string, fileID string) string {
+	return "http://127.0.0.1:" + settings.Port + "/stream/?link=" + url.QueryEscape(hash) + "&index=" + url.QueryEscape(fileID) + "&play"
 }
 
 func playURL(hash string, fileID string) string {
