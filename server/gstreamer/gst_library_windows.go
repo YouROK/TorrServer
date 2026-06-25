@@ -11,12 +11,13 @@ import (
 )
 
 func loadGST(conf Config) (*gstAPI, error) {
-	if conf.GSTPath != "" {
-		gstBin := filepath.Join(conf.GSTPath, "bin")
+	for _, root := range gstRuntimeRoots(conf) {
+		gstBin := filepath.Join(root, "bin")
 		if _, statErr := os.Stat(gstBin); statErr == nil {
 			if err := windows.SetDllDirectory(gstBin); err != nil {
 				return nil, fmt.Errorf("set gstreamer dll directory %q: %w", gstBin, err)
 			}
+			break
 		}
 	}
 
@@ -43,8 +44,8 @@ func loadGST(conf Config) (*gstAPI, error) {
 }
 
 func loadWindowsLibrary(conf Config, name string) (windows.Handle, error) {
-	if conf.GSTPath != "" {
-		fullPath := filepath.Join(conf.GSTPath, "bin", name)
+	for _, root := range gstRuntimeRoots(conf) {
+		fullPath := filepath.Join(root, "bin", name)
 		handle, err := windows.LoadLibraryEx(fullPath, 0, windows.LOAD_WITH_ALTERED_SEARCH_PATH)
 		if err == nil {
 			return handle, nil

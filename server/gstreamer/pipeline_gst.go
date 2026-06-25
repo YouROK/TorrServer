@@ -24,6 +24,12 @@ var (
 	gstInitStatus componentStatus
 )
 
+const (
+	tempFSBlockSeconds       = 30
+	tempFSBaseBlocks         = 3
+	tempFSFallbackBlockBytes = 32 * 1024 * 1024
+)
+
 type gstRunner struct {
 	task *Task
 
@@ -107,11 +113,13 @@ func setupGStreamer(conf Config) {
 		return
 	}
 
-	for _, root := range roots {
-		gstBin := filepath.Join(root, "bin")
-		if _, err := os.Stat(gstBin); err == nil {
-			prependEnvPath("PATH", gstBin)
-		}
+	prependExistingEnvPaths("PATH", gstBinDirCandidates(roots))
+
+	switch runtime.GOOS {
+	case "linux":
+		prependExistingEnvPaths("LD_LIBRARY_PATH", gstLibraryDirCandidates(roots))
+	case "darwin":
+		prependExistingEnvPaths("DYLD_LIBRARY_PATH", gstLibraryDirCandidates(roots))
 	}
 
 	var gstPlugins string
@@ -139,17 +147,75 @@ func setupGStreamer(conf Config) {
 }
 
 func gstRuntimeRoots(conf Config) []string {
+	var roots []string
+	if root := embeddedGSTRuntimeRoot(); root != "" {
+		roots = appendUniquePath(roots, root)
+	}
+	if root := portableGSTRuntimeRoot(); root != "" {
+		roots = appendUniquePath(roots, root)
+	}
 	if conf.GSTPath != "" {
-		return []string{conf.GSTPath}
+		roots = appendUniquePath(roots, conf.GSTPath)
 	}
 	if runtime.GOOS != "darwin" {
-		return nil
+		return roots
 	}
-	return []string{
+	for _, root := range []string{
 		"/Library/Frameworks/GStreamer.framework/Versions/1.0",
 		"/opt/homebrew",
 		"/usr/local",
+	} {
+		roots = appendUniquePath(roots, root)
 	}
+	return roots
+}
+
+func portableGSTRuntimeRoot() string {
+	exe, err := os.Executable()
+	if err != nil {
+		return ""
+	}
+
+	root := filepath.Join(filepath.Dir(exe), "gst-lib")
+	if info, err := os.Stat(root); err == nil && info.IsDir() {
+		return root
+	}
+	return ""
+}
+
+func appendUniquePath(paths []string, path string) []string {
+	if path == "" {
+		return paths
+	}
+	clean := filepath.Clean(path)
+	for _, existing := range paths {
+		if strings.EqualFold(filepath.Clean(existing), clean) {
+			return paths
+		}
+	}
+	return append(paths, path)
+}
+
+func gstBinDirCandidates(roots []string) []string {
+	candidates := make([]string, 0, len(roots))
+	for _, root := range roots {
+		candidates = append(candidates, filepath.Join(root, "bin"))
+	}
+	return candidates
+}
+
+func gstLibraryDirCandidates(roots []string) []string {
+	var candidates []string
+	for _, root := range roots {
+		candidates = append(candidates,
+			filepath.Join(root, "lib"),
+			filepath.Join(root, "lib64"),
+			filepath.Join(root, "lib", runtime.GOARCH+"-linux-gnu"),
+			filepath.Join(root, "lib", "x86_64-linux-gnu"),
+			filepath.Join(root, "lib", "aarch64-linux-gnu"),
+		)
+	}
+	return candidates
 }
 
 func gstPluginCandidates(roots []string) []string {
@@ -178,6 +244,16 @@ func gstPluginScannerCandidates(roots []string) []string {
 	return candidates
 }
 
+func existingPaths(candidates []string) []string {
+	paths := make([]string, 0, len(candidates))
+	for _, candidate := range candidates {
+		if _, err := os.Stat(candidate); err == nil {
+			paths = appendUniquePath(paths, candidate)
+		}
+	}
+	return paths
+}
+
 func firstExistingPath(candidates []string) string {
 	for _, candidate := range candidates {
 		if _, err := os.Stat(candidate); err == nil {
@@ -185,6 +261,43 @@ func firstExistingPath(candidates []string) string {
 		}
 	}
 	return ""
+}
+
+func prependExistingEnvPaths(key string, candidates []string) {
+	prependEnvPaths(key, existingPaths(candidates))
+}
+
+func prependEnvPaths(key string, values []string) {
+	if len(values) == 0 {
+		return
+	}
+
+	separator := string(os.PathListSeparator)
+	parts := make([]string, 0, len(values)+1)
+	for _, value := range values {
+		parts = appendUniqueEnvPath(parts, value)
+	}
+
+	current := os.Getenv(key)
+	for _, part := range strings.Split(current, separator) {
+		if part != "" {
+			parts = appendUniqueEnvPath(parts, part)
+		}
+	}
+
+	_ = os.Setenv(key, strings.Join(parts, separator))
+}
+
+func appendUniqueEnvPath(paths []string, path string) []string {
+	if path == "" {
+		return paths
+	}
+	for _, existing := range paths {
+		if strings.EqualFold(existing, path) {
+			return paths
+		}
+	}
+	return append(paths, path)
 }
 
 func prependEnvPath(key string, value string) {
@@ -237,7 +350,7 @@ func (r *gstRunner) createPipelineArgs() string {
 			sb.WriteString(strconv.Itoa(videoQueueBytes))
 			sb.WriteString(" max-size-time=")
 			sb.WriteString(strconv.FormatInt(queueNS, 10))
-			sb.WriteString(" leaky=0 ! h264parse config-interval=-1 ! h264timestamper ! video/x-h264,stream-format=avc,alignment=au ! mux.video_0 ")
+			sb.WriteString(" leaky=0 ! h264parse config-interval=0 ! h264timestamper ! video/x-h264,stream-format=avc,alignment=au ! mux.video_0 ")
 		}
 
 	case probe.IsH265():
@@ -248,7 +361,7 @@ func (r *gstRunner) createPipelineArgs() string {
 			sb.WriteString(strconv.Itoa(videoQueueBytes))
 			sb.WriteString(" max-size-time=")
 			sb.WriteString(strconv.FormatInt(queueNS, 10))
-			sb.WriteString(" leaky=0 ! h265parse config-interval=-1 ! h265timestamper ! video/x-h265,stream-format=hvc1,alignment=au ! mux.video_0 ")
+			sb.WriteString(" leaky=0 ! h265parse config-interval=0 ! h265timestamper ! video/x-h265,stream-format=hvc1,alignment=au ! mux.video_0 ")
 		}
 
 	case probe.IsAV1():
@@ -280,7 +393,7 @@ func (r *gstRunner) createPipelineArgs() string {
 	sb.WriteString(strconv.Itoa(audioQueueBytes))
 	sb.WriteString(" max-size-time=")
 	sb.WriteString(strconv.FormatInt(queueNS, 10))
-	sb.WriteString(" leaky=0 ! decodebin ! audioconvert ! audioresample ! audio/x-raw,rate=48000,channels=2 ! audiorate skip-to-first=true tolerance=40000000 ! avenc_aac bitrate=")
+	sb.WriteString(" leaky=0 ! decodebin ! audioconvert dithering=none noise-shaping=none ! audioresample quality=2 sinc-filter-mode=full ! audio/x-raw,format=F32LE,layout=interleaved,rate=48000,channels=2 ! avenc_aac bitrate=")
 	sb.WriteString(strconv.Itoa(conf.AACBitrateKbps * 1000))
 	sb.WriteString(" ! aacparse ! audio/mpeg,mpegversion=4,stream-format=raw,rate=48000,channels=2 ! mux.audio_0 ")
 
@@ -299,9 +412,13 @@ func (r *gstRunner) createPipelineArgs() string {
 
 func (r *gstRunner) writeSourceQueue(sb *strings.Builder, videoQueueBytes int, queueNS int64) {
 	conf := r.task.Config
+	sourceQueueBytes := int64(videoQueueBytes)
+	if conf.TempFS {
+		sourceQueueBytes = r.tempFSBlockBytes()
+	}
 
 	sb.WriteString("! queue2 use-buffering=false max-size-buffers=0 max-size-bytes=")
-	sb.WriteString(strconv.Itoa(videoQueueBytes))
+	sb.WriteString(strconv.FormatInt(sourceQueueBytes, 10))
 	sb.WriteString(" max-size-time=")
 	sb.WriteString(strconv.FormatInt(queueNS, 10))
 
@@ -309,14 +426,26 @@ func (r *gstRunner) writeSourceQueue(sb *strings.Builder, videoQueueBytes int, q
 		return
 	}
 
-	ringBlocks := 3 + conf.TempFSRing
-	ringBytes := ringBlocks * videoQueueBytes
+	ringBlocks := int64(tempFSBaseBlocks + conf.TempFSRing)
+	ringBytes := ringBlocks * sourceQueueBytes
 	template := gstPath(queue2TempTemplate())
 
 	sb.WriteString(" temp-template=\"")
 	sb.WriteString(template)
 	sb.WriteString("\" ring-buffer-max-size=")
-	sb.WriteString(strconv.Itoa(ringBytes))
+	sb.WriteString(strconv.FormatInt(ringBytes, 10))
+}
+
+func (r *gstRunner) tempFSBlockBytes() int64 {
+	probe := r.task.Probe
+	durationSeconds := probe.DurationSeconds()
+	if probe.FileSize > 0 && durationSeconds > 0 {
+		blockBytes := int64(math.Ceil(float64(probe.FileSize) * tempFSBlockSeconds / float64(durationSeconds)))
+		if blockBytes > 0 {
+			return blockBytes
+		}
+	}
+	return tempFSFallbackBlockBytes
 }
 
 func (r *gstRunner) transcodeToH264(sb *strings.Builder, maxQueueBytes int, queueNS int64) {
@@ -343,7 +472,7 @@ func (r *gstRunner) transcodeToH264(sb *strings.Builder, maxQueueBytes int, queu
 	sb.WriteString(strconv.Itoa(conf.VideoBitrate))
 	sb.WriteString(" key-int-max=")
 	sb.WriteString(strconv.Itoa(keyIntMax))
-	sb.WriteString(" bframes=0 byte-stream=false ! video/x-h264,profile=main,stream-format=avc,alignment=au ! h264parse config-interval=-1 ! h264timestamper ! video/x-h264,profile=main,stream-format=avc,alignment=au ! mux.video_0 ")
+	sb.WriteString(" bframes=0 byte-stream=false ! video/x-h264,profile=main,stream-format=avc,alignment=au ! h264parse config-interval=0 ! h264timestamper ! video/x-h264,profile=main,stream-format=avc,alignment=au ! mux.video_0 ")
 }
 
 func (r *gstRunner) Seek(seconds float64) bool {
@@ -434,13 +563,14 @@ func (r *gstRunner) GetSegment(ctx context.Context, index int, audio int) (Segme
 			continue
 		}
 
-		data := gstRuntime.sampleBytes(sample)
+		err := gstRuntime.withSampleBytes(sample, func(data []byte) error {
+			if len(data) == 0 {
+				return nil
+			}
+			return r.reader.Push(data)
+		})
 		gstRuntime.sampleUnref(sample)
-		if len(data) == 0 {
-			continue
-		}
-
-		if err := r.reader.Push(data); err != nil {
+		if err != nil {
 			r.freezeAtSegment(index)
 			return Segment{}, err
 		}

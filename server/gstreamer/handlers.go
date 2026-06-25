@@ -3,7 +3,6 @@ package gstreamer
 import (
 	"context"
 	"errors"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -154,7 +153,7 @@ func (s *Service) segment(c *gin.Context) {
 		c.AbortWithError(http.StatusBadGateway, err)
 		return
 	}
-	if len(seg.Data) == 0 {
+	if seg.Empty() {
 		c.Status(http.StatusBadGateway)
 		return
 	}
@@ -171,7 +170,7 @@ func writeSegment(c *gin.Context, seg Segment) {
 	rangeHeader := c.GetHeader("Range")
 	if rangeHeader == "" {
 		c.Header("Content-Length", strconv.FormatInt(totalLength, 10))
-		_, _ = c.Writer.Write(seg.Data)
+		_ = seg.WriteTo(c.Writer)
 		return
 	}
 
@@ -187,21 +186,7 @@ func writeSegment(c *gin.Context, seg Segment) {
 	c.Header("Content-Range", "bytes "+strconv.FormatInt(start, 10)+"-"+strconv.FormatInt(end, 10)+"/"+strconv.FormatInt(totalLength, 10))
 	c.Header("Content-Length", strconv.FormatInt(length, 10))
 
-	_ = copyRange(c.Writer, seg.Data, start, length)
-}
-
-func copyRange(dst io.Writer, data []byte, offset int64, count int64) error {
-	if count <= 0 || offset < 0 || offset >= int64(len(data)) {
-		return nil
-	}
-
-	end := offset + count
-	if end > int64(len(data)) {
-		end = int64(len(data))
-	}
-
-	_, err := dst.Write(data[offset:end])
-	return err
+	_ = seg.WriteRange(c.Writer, start, length)
 }
 
 func parseSingleRange(header string, totalLength int64) (int64, int64, bool) {
@@ -280,6 +265,15 @@ func parseQueryInt(c *gin.Context, key string, fallback int) int {
 		return fallback
 	}
 	return parsed
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if value != "" {
+			return value
+		}
+	}
+	return ""
 }
 
 func startSegmentIndex(seconds int, segmentSeconds int, count int) int {

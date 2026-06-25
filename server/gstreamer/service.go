@@ -3,17 +3,20 @@ package gstreamer
 import (
 	"errors"
 	"net/url"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"server/settings"
+	"server/torr"
+	torrstate "server/torr/state"
 )
 
 var (
 	ErrBadSource         = errors.New("bad gstreamer source")
 	ErrUnsupportedVideo  = errors.New("unsupported video codec")
-	ErrProbeUnavailable  = errors.New("ffprobe returned no stream info")
+	ErrProbeUnavailable  = errors.New("gst-discoverer returned no stream info")
 	ErrPipelineDisabled  = errors.New("gstreamer support is not built in")
 	ErrSegmentNotReady   = errors.New("segment is not ready")
 	ErrTaskNotFound      = errors.New("gstreamer task not found")
@@ -58,10 +61,11 @@ func (s *Service) GetOrAdd(hash string, fileID string, audio int) (*Task, error)
 		return task, nil
 	}
 
-	probe, err := probeSource(sourceURL)
+	probe, err := probeSource(sourceURL, s.conf)
 	if err != nil {
 		return nil, err
 	}
+	probe.FileSize = torrentFileSize(hash, fileID)
 	if len(probe.Tracks) == 0 || probe.Video() == nil {
 		return nil, ErrProbeUnavailable
 	}
@@ -88,6 +92,42 @@ func (s *Service) GetOrAdd(hash string, fileID string, audio int) (*Task, error)
 
 	s.tasks[id] = task
 	return task, nil
+}
+
+func torrentFileSize(hash string, fileID string) int64 {
+	index, err := strconv.Atoi(fileID)
+	if err != nil || index <= 0 {
+		return 0
+	}
+
+	tor := torr.GetTorrent(hash)
+	if tor == nil {
+		return 0
+	}
+
+	if size := torrentStatusFileSize(tor.Status(), index); size > 0 {
+		return size
+	}
+	if tor.Torrent == nil {
+		return 0
+	}
+	if !tor.GotInfo() {
+		return 0
+	}
+
+	return torrentStatusFileSize(tor.Status(), index)
+}
+
+func torrentStatusFileSize(status *torrstate.TorrentStatus, index int) int64 {
+	if status == nil {
+		return 0
+	}
+	for _, file := range status.FileStats {
+		if file != nil && file.Id == index && file.Length > 0 {
+			return file.Length
+		}
+	}
+	return 0
 }
 
 func (s *Service) Get(id string) *Task {

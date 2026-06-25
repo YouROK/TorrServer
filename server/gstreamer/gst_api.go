@@ -181,7 +181,7 @@ func (g *gstAPI) sampleUnref(sample uintptr) {
 	}
 }
 
-func (g *gstAPI) sampleBytes(sample uintptr) []byte {
+func (g *gstAPI) withSampleBytes(sample uintptr, consume func([]byte) error) error {
 	if sample == 0 {
 		return nil
 	}
@@ -203,7 +203,7 @@ func (g *gstAPI) sampleBytes(sample uintptr) []byte {
 	}
 
 	data := unsafe.Slice((*byte)(unsafe.Pointer(dataPtr)), size)
-	return cloneBytes(data)
+	return consume(data)
 }
 
 func (g *gstAPI) popBusError(bus uintptr, timeout time.Duration) error {

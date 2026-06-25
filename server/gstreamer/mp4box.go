@@ -287,18 +287,17 @@ func (r *mp4BoxReader) TakePendingSegment() (Segment, bool) {
 		mdatHeaderSize = 16
 	}
 
-	var segment bytes.Buffer
-	segment.Grow(len(r.styp) + r.prefix.Len() + r.sourceMoof.Len() + mdatHeaderSize + len(payload))
+	var header bytes.Buffer
+	header.Grow(len(r.styp) + r.prefix.Len() + r.sourceMoof.Len() + mdatHeaderSize)
 
 	if r.styp != nil {
-		_, _ = segment.Write(r.styp)
+		_, _ = header.Write(r.styp)
 	}
 	if r.prefixActive && r.prefix.Len() > 0 {
-		_, _ = segment.Write(r.prefix.Bytes())
+		_, _ = header.Write(r.prefix.Bytes())
 	}
-	_, _ = segment.Write(r.sourceMoof.Bytes())
-	writeMdatHeader(&segment, uint64(len(payload)), mdatHeaderSize)
-	_, _ = segment.Write(payload)
+	_, _ = header.Write(r.sourceMoof.Bytes())
+	writeMdatHeader(&header, uint64(len(payload)), mdatHeaderSize)
 
 	startSeconds := 0.0
 	if r.pending.timescale > 0 {
@@ -309,7 +308,8 @@ func (r *mp4BoxReader) TakePendingSegment() (Segment, bool) {
 	r.resetPrefix()
 
 	return Segment{
-		Data:         takeBuffer(&segment),
+		Header:       takeBuffer(&header),
+		Payloads:     [][]byte{payload},
 		StartSeconds: startSeconds,
 	}, true
 }
@@ -700,32 +700,31 @@ func (r *mp4BoxReader) buildSegment(videoCount int, audioCount int) error {
 		mdatHeaderSize = 16
 	}
 
-	var segment bytes.Buffer
-	segment.Grow(int(moofSize64) + mdatHeaderSize + int(payloadLength) + len(r.styp) + r.prefix.Len())
+	var header bytes.Buffer
+	header.Grow(int(moofSize64) + mdatHeaderSize + len(r.styp) + r.prefix.Len())
 
 	if r.styp != nil {
-		_, _ = segment.Write(r.styp)
+		_, _ = header.Write(r.styp)
 	}
 	if r.prefixActive && r.prefix.Len() > 0 {
-		_, _ = segment.Write(r.prefix.Bytes())
+		_, _ = header.Write(r.prefix.Bytes())
 	}
 
-	writeHeader(&segment, moofSize, boxMoof)
-	writeMfhd(&segment, r.sequence)
+	writeHeader(&header, moofSize, boxMoof)
+	writeMfhd(&header, r.sequence)
 	r.sequence++
-	if err := r.writeTraf(&segment, r.video, videoCount, moofSize, mdatHeaderSize); err != nil {
+	if err := r.writeTraf(&header, r.video, videoCount, moofSize, mdatHeaderSize); err != nil {
 		return err
 	}
-	if err := r.writeTraf(&segment, r.audio, audioCount, moofSize, mdatHeaderSize); err != nil {
+	if err := r.writeTraf(&header, r.audio, audioCount, moofSize, mdatHeaderSize); err != nil {
 		return err
 	}
-	writeMdatHeader(&segment, uint64(payloadLength), mdatHeaderSize)
-	appendPayloads(r.video, videoCount, &segment)
-	appendPayloads(r.audio, audioCount, &segment)
+	writeMdatHeader(&header, uint64(payloadLength), mdatHeaderSize)
 
 	startSeconds := float64(r.video[0].decodeTime) / float64(r.video[0].timescale)
 	r.onSegment(Segment{
-		Data:         takeBuffer(&segment),
+		Header:       takeBuffer(&header),
+		Payloads:     collectPayloads(r.video, videoCount, r.audio, audioCount),
 		StartSeconds: startSeconds,
 	})
 
@@ -1491,10 +1490,20 @@ func writeMdatHeader(output io.Writer, payloadLength uint64, headerSize int) {
 	_, _ = output.Write(header[:])
 }
 
-func appendPayloads(fragments []mp4Fragment, count int, output io.Writer) {
+func collectPayloads(video []mp4Fragment, videoCount int, audio []mp4Fragment, audioCount int) [][]byte {
+	payloads := make([][]byte, 0, videoCount+audioCount)
+	payloads = appendFragmentPayloads(payloads, video, videoCount)
+	payloads = appendFragmentPayloads(payloads, audio, audioCount)
+	return payloads
+}
+
+func appendFragmentPayloads(payloads [][]byte, fragments []mp4Fragment, count int) [][]byte {
 	for i := 0; i < count; i++ {
-		_, _ = output.Write(fragments[i].payload)
+		if len(fragments[i].payload) > 0 {
+			payloads = append(payloads, fragments[i].payload)
+		}
 	}
+	return payloads
 }
 
 func removeFragments(fragments []mp4Fragment, count int) []mp4Fragment {

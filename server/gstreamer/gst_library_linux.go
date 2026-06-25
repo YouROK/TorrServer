@@ -48,14 +48,10 @@ func loadLinuxLibrary(conf Config, name string) (uintptr, error) {
 }
 
 func linuxLibraryCandidates(conf Config, name string) []string {
-	if conf.GSTPath == "" {
-		return nil
+	roots := gstRuntimeRoots(conf)
+	candidates := make([]string, 0, len(roots)*5)
+	for _, dir := range gstLibraryDirCandidates(roots) {
+		candidates = append(candidates, filepath.Join(dir, name))
 	}
-
-	return []string{
-		filepath.Join(conf.GSTPath, "lib", name),
-		filepath.Join(conf.GSTPath, "lib64", name),
-		filepath.Join(conf.GSTPath, "lib", "x86_64-linux-gnu", name),
-		filepath.Join(conf.GSTPath, "lib", "aarch64-linux-gnu", name),
-	}
+	return candidates
 }

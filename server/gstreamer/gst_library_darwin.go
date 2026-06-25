@@ -56,8 +56,8 @@ func loadDarwinLibrary(conf Config, names ...string) (uintptr, error) {
 func darwinLibraryCandidates(conf Config, name string) []string {
 	roots := gstRuntimeRoots(conf)
 	var candidates []string
-	for _, root := range roots {
-		candidates = append(candidates, filepath.Join(root, "lib", name))
+	for _, dir := range gstLibraryDirCandidates(roots) {
+		candidates = append(candidates, filepath.Join(dir, name))
 	}
 	return candidates
 }
