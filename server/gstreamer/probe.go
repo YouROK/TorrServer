@@ -147,8 +147,9 @@ func gstDiscovererPath(conf Config) (string, error) {
 
 func gstDiscovererEnv(conf Config) []string {
 	env := os.Environ()
-	env = setEnvValue(env, "LANG", "ru_RU.UTF-8")
-	env = setEnvValue(env, "LC_ALL", "ru_RU.UTF-8")
+	env = setEnvValue(env, "LANG", "C.UTF-8")
+	env = setEnvValue(env, "LC_ALL", "C.UTF-8")
+	env = setEnvValue(env, "LANGUAGE", "en")
 	env = setEnvValue(env, "GST_DEBUG_NO_COLOR", "1")
 
 	roots := gstDiscovererRoots(conf)
