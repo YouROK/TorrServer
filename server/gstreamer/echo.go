@@ -16,9 +16,10 @@ type echoResponse struct {
 }
 
 type componentStatus struct {
-	Found     bool `json:"found"`
-	Available bool `json:"available"`
-	Works     bool `json:"works"`
+	Found     bool   `json:"found"`
+	Available bool   `json:"available"`
+	Works     bool   `json:"works"`
+	Error     string `json:"error,omitempty"`
 }
 
 func (s *Service) echo(c *gin.Context) {
@@ -50,6 +51,8 @@ func checkGSTDiscoverer(conf Config) componentStatus {
 	cmd.Env = gstDiscovererEnv(conf)
 	if err := cmd.Run(); err == nil {
 		status.Works = true
+	} else {
+		status.Error = err.Error()
 	}
 	return status
 }

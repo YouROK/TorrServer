@@ -58,3 +58,13 @@ func loadWindowsLibrary(conf Config, name string) (windows.Handle, error) {
 	}
 	return handle, nil
 }
+
+func gstreamerLibraryFound(conf Config) bool {
+	for _, root := range gstRuntimeRoots(conf) {
+		fullPath := filepath.Join(root, "bin", "libgstreamer-1.0-0.dll")
+		if info, err := os.Stat(fullPath); err == nil && !info.IsDir() {
+			return true
+		}
+	}
+	return false
+}

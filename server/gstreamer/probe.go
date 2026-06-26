@@ -17,15 +17,17 @@ import (
 const gstProbeTimeout = 30 * time.Second
 
 var (
-	discovererDurationRe = regexp.MustCompile(`(?i)Duration:\s*(\d+):(\d+):(\d+)(?:\.(\d+))?`)
-	discovererStreamRe   = regexp.MustCompile(`(?i)^(video|audio)(?:\s+#(\d+))?:\s*(.+)$`)
-	discovererIntRe      = regexp.MustCompile(`-?\d+`)
-	discovererRateRe     = regexp.MustCompile(`(\d+)\s*/\s*(\d+)`)
+	discovererDurationRe  = regexp.MustCompile(`(?i)Duration:\s*(\d+):(\d+):(\d+)(?:\.(\d+))?`)
+	discovererContainerRe = regexp.MustCompile(`(?i)^container(?:\s+#\d+)?:\s*(.+)$`)
+	discovererStreamRe    = regexp.MustCompile(`(?i)^(video|audio)(?:\s+#(\d+))?:\s*(.+)$`)
+	discovererIntRe       = regexp.MustCompile(`-?\d+`)
+	discovererRateRe      = regexp.MustCompile(`(\d+)\s*/\s*(\d+)`)
 )
 
 type ProbeInfo struct {
 	DurationNS int64
 	FileSize   int64
+	Container  string
 	Tracks     []TrackInfo
 }
 
@@ -75,6 +77,25 @@ func (p ProbeInfo) VideoCapsName() string {
 		return v.CapsName
 	}
 	return ""
+}
+
+func (p ProbeInfo) Audio() *TrackInfo {
+	for i := range p.Tracks {
+		if p.Tracks[i].Type == "audio" {
+			return &p.Tracks[i]
+		}
+	}
+	return nil
+}
+
+func (p ProbeInfo) HasAudio() bool {
+	return p.Audio() != nil
+}
+
+func (p ProbeInfo) IsMatroskaContainer() bool {
+	container := strings.ToLower(strings.TrimSpace(p.Container))
+	return strings.Contains(container, "matroska") ||
+		strings.Contains(container, "webm")
 }
 
 func (p ProbeInfo) IsH264() bool { return p.VideoCapsName() == "video/x-h264" }
@@ -182,25 +203,42 @@ func gstDiscovererEnv(conf Config) []string {
 
 func gstDiscovererRoots(conf Config) []string {
 	var roots []string
-	if root := embeddedGSTRuntimeRoot(); root != "" {
-		roots = appendUniqueProbePath(roots, root)
+	roots = appendAvailableProbeRoot(roots, conf.GSTPath)
+	for _, root := range gstDiscovererDefaultRoots() {
+		roots = appendAvailableProbeRoot(roots, root)
 	}
 	if root := gstDiscovererPortableRoot(); root != "" {
-		roots = appendUniqueProbePath(roots, root)
+		roots = appendAvailableProbeRoot(roots, root)
 	}
-	if conf.GSTPath != "" {
-		roots = appendUniqueProbePath(roots, conf.GSTPath)
+	if root := embeddedGSTRuntimeRoot(); root != "" {
+		roots = appendAvailableProbeRoot(roots, root)
 	}
-	if runtime.GOOS == "darwin" {
-		for _, root := range []string{
+	return roots
+}
+
+func gstDiscovererDefaultRoots() []string {
+	switch runtime.GOOS {
+	case "windows":
+		return []string{
+			`C:\Program Files\gstreamer\1.0\mingw_x86_64`,
+			`C:\gstreamer\1.0\mingw_x86_64`,
+		}
+	case "linux":
+		return []string{
+			"/usr",
+			"/usr/local",
+			"/opt/gstreamer",
+			"/opt/gstreamer/1.0",
+		}
+	case "darwin":
+		return []string{
 			"/Library/Frameworks/GStreamer.framework/Versions/1.0",
 			"/opt/homebrew",
 			"/usr/local",
-		} {
-			roots = appendUniqueProbePath(roots, root)
 		}
+	default:
+		return nil
 	}
-	return roots
 }
 
 func gstDiscovererPortableRoot() string {
@@ -213,6 +251,44 @@ func gstDiscovererPortableRoot() string {
 		return root
 	}
 	return ""
+}
+
+func appendAvailableProbeRoot(paths []string, path string) []string {
+	if path == "" || !gstDiscovererRootHasBaseLibrary(path) {
+		return paths
+	}
+	return appendUniqueProbePath(paths, path)
+}
+
+func gstDiscovererRootHasBaseLibrary(root string) bool {
+	for _, candidate := range gstDiscovererBaseLibraryCandidates(root) {
+		if info, err := os.Stat(candidate); err == nil && !info.IsDir() {
+			return true
+		}
+	}
+	return false
+}
+
+func gstDiscovererBaseLibraryCandidates(root string) []string {
+	switch runtime.GOOS {
+	case "windows":
+		return []string{filepath.Join(root, "bin", "libgstreamer-1.0-0.dll")}
+	case "darwin":
+		var candidates []string
+		for _, dir := range gstDiscovererLibraryCandidates([]string{root}) {
+			candidates = append(candidates,
+				filepath.Join(dir, "libgstreamer-1.0.0.dylib"),
+				filepath.Join(dir, "libgstreamer-1.0.dylib"),
+			)
+		}
+		return candidates
+	default:
+		var candidates []string
+		for _, dir := range gstDiscovererLibraryCandidates([]string{root}) {
+			candidates = append(candidates, filepath.Join(dir, "libgstreamer-1.0.so.0"))
+		}
+		return candidates
+	}
 }
 
 func gstDiscovererPluginPath(roots []string) string {
@@ -397,10 +473,18 @@ func probeFromDiscoverer(text string) ProbeInfo {
 			continue
 		}
 
+		if match := discovererContainerRe.FindStringSubmatch(line); match != nil {
+			container := strings.TrimSpace(match[1])
+			if probe.Container == "" && container != "" {
+				probe.Container = container
+			}
+			current = nil
+			continue
+		}
+
 		lower := strings.ToLower(line)
 		if strings.HasPrefix(lower, "subtitle") ||
 			strings.HasPrefix(lower, "subtitles") ||
-			strings.HasPrefix(lower, "container:") ||
 			strings.HasPrefix(lower, "properties:") {
 			current = nil
 			continue

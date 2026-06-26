@@ -10,6 +10,10 @@ func newPipelineRunner(_ *Task, _ int) (pipelineRunner, error) {
 	return nil, ErrPipelineDisabled
 }
 
+func (disabledRunner) EnsureInit(context.Context, int, int) error {
+	return ErrPipelineDisabled
+}
+
 func (disabledRunner) GetSegment(context.Context, int, int) (Segment, error) {
 	return Segment{}, ErrPipelineDisabled
 }
