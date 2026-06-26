@@ -17,6 +17,7 @@ require (
 	github.com/anacrolix/publicip v0.3.1
 	github.com/anacrolix/torrent v1.59.1
 	github.com/dustin/go-humanize v1.0.1
+	github.com/ebitengine/purego v0.10.1
 	github.com/fsnotify/fsnotify v1.10.1
 	github.com/gin-contrib/cors v1.7.6
 	github.com/gin-contrib/location/v2 v2.0.0
@@ -33,6 +34,7 @@ require (
 	golang.org/x/exp v0.0.0-20260527015227-08cc5374adb3
 	golang.org/x/image v0.33.0
 	golang.org/x/net v0.55.0
+	golang.org/x/sys v0.45.0
 	golang.org/x/time v0.15.0
 	gopkg.in/telebot.v4 v4.0.0-beta.7
 	gopkg.in/vansante/go-ffprobe.v2 v2.2.1
@@ -200,7 +202,6 @@ require (
 	golang.org/x/crypto v0.51.0 // indirect
 	golang.org/x/mod v0.36.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/telemetry v0.0.0-20260508192327-42602be52be6 // indirect
 	golang.org/x/text v0.37.0 // indirect
 	golang.org/x/tools v0.45.0 // indirect
