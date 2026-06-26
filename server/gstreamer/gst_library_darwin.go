@@ -4,6 +4,7 @@ package gstreamer
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/ebitengine/purego"
@@ -60,4 +61,15 @@ func darwinLibraryCandidates(conf Config, name string) []string {
 		candidates = append(candidates, filepath.Join(dir, name))
 	}
 	return candidates
+}
+
+func gstreamerLibraryFound(conf Config) bool {
+	for _, name := range []string{"libgstreamer-1.0.0.dylib", "libgstreamer-1.0.dylib"} {
+		for _, candidate := range darwinLibraryCandidates(conf, name) {
+			if info, err := os.Stat(candidate); err == nil && !info.IsDir() {
+				return true
+			}
+		}
+	}
+	return false
 }

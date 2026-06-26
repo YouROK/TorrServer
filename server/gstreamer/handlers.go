@@ -118,14 +118,14 @@ func (s *Service) initMP4(c *gin.Context) {
 		return
 	}
 
-	init := task.InitMP4()
-	if len(init) == 0 {
-		c.Status(http.StatusBadGateway)
+	if err := task.WithInitMP4(func(init []byte) error {
+		c.Header("Content-Length", strconv.Itoa(len(init)))
+		c.Data(http.StatusOK, "video/mp4", init)
+		return nil
+	}); err != nil {
+		c.AbortWithError(http.StatusBadGateway, err)
 		return
 	}
-
-	c.Header("Content-Length", strconv.Itoa(len(init)))
-	c.Data(http.StatusOK, "video/mp4", init)
 }
 
 func (s *Service) segment(c *gin.Context) {
@@ -136,10 +136,6 @@ func (s *Service) segment(c *gin.Context) {
 		c.Status(http.StatusNotFound)
 		return
 	}
-	if len(task.InitMP4()) == 0 {
-		c.Status(http.StatusBadGateway)
-		return
-	}
 
 	index, err := parseSegmentIndex(c.Param("segment"))
 	if err != nil {
@@ -148,20 +144,26 @@ func (s *Service) segment(c *gin.Context) {
 	}
 
 	audio := parseQueryInt(c, "audio", task.Audio)
-	seg, err := task.Segment(c.Request.Context(), index, audio)
+	if !task.hasInitMP4() {
+		if err := task.EnsureInit(c.Request.Context(), audio, index); err != nil {
+			c.AbortWithError(http.StatusBadGateway, err)
+			return
+		}
+	}
+
+	err = task.WithSegment(c.Request.Context(), index, audio, func(seg Segment) error {
+		if seg.Empty() {
+			return ErrSegmentNotReady
+		}
+		return writeSegment(c, seg)
+	})
 	if err != nil {
 		c.AbortWithError(http.StatusBadGateway, err)
 		return
 	}
-	if seg.Empty() {
-		c.Status(http.StatusBadGateway)
-		return
-	}
-
-	writeSegment(c, seg)
 }
 
-func writeSegment(c *gin.Context, seg Segment) {
+func writeSegment(c *gin.Context, seg Segment) error {
 	totalLength := int64(seg.Len())
 
 	c.Header("Content-Type", "video/mp4")
@@ -170,15 +172,14 @@ func writeSegment(c *gin.Context, seg Segment) {
 	rangeHeader := c.GetHeader("Range")
 	if rangeHeader == "" {
 		c.Header("Content-Length", strconv.FormatInt(totalLength, 10))
-		_ = seg.WriteTo(c.Writer)
-		return
+		return seg.WriteTo(c.Writer)
 	}
 
 	start, end, ok := parseSingleRange(rangeHeader, totalLength)
 	if !ok {
 		c.Header("Content-Range", "bytes */"+strconv.FormatInt(totalLength, 10))
 		c.Status(http.StatusRequestedRangeNotSatisfiable)
-		return
+		return nil
 	}
 
 	length := end - start + 1
@@ -186,7 +187,7 @@ func writeSegment(c *gin.Context, seg Segment) {
 	c.Header("Content-Range", "bytes "+strconv.FormatInt(start, 10)+"-"+strconv.FormatInt(end, 10)+"/"+strconv.FormatInt(totalLength, 10))
 	c.Header("Content-Length", strconv.FormatInt(length, 10))
 
-	_ = seg.WriteRange(c.Writer, start, length)
+	return seg.WriteRange(c.Writer, start, length)
 }
 
 func parseSingleRange(header string, totalLength int64) (int64, int64, bool) {
@@ -252,7 +253,11 @@ func parseSegmentIndex(value string) (int, error) {
 	if value == "" || strings.Contains(value, "/") {
 		return 0, errors.New("invalid segment index")
 	}
-	return strconv.Atoi(value)
+	index, err := strconv.Atoi(value)
+	if err != nil || index < 0 {
+		return 0, errors.New("invalid segment index")
+	}
+	return index, nil
 }
 
 func parseQueryInt(c *gin.Context, key string, fallback int) int {

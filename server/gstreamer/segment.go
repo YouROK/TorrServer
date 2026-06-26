@@ -1,14 +1,12 @@
 package gstreamer
 
-import (
-	"bytes"
-	"io"
-)
+import "io"
 
 type Segment struct {
 	Header       []byte
 	Payloads     [][]byte
 	StartSeconds float64
+	EndSeconds   float64
 }
 
 func (s Segment) Len() int {
@@ -43,45 +41,41 @@ func (s Segment) WriteRange(dst io.Writer, offset int64, count int64) error {
 		return nil
 	}
 
-	remainingOffset := offset
-	remainingCount := count
-	for _, part := range s.parts() {
-		if len(part) == 0 {
-			continue
-		}
-
-		partLength := int64(len(part))
-		if remainingOffset >= partLength {
-			remainingOffset -= partLength
-			continue
-		}
-
-		start := remainingOffset
-		length := partLength - start
-		if length > remainingCount {
-			length = remainingCount
-		}
-
-		if _, err := dst.Write(part[start : start+length]); err != nil {
+	if err := writeRangePart(dst, s.Header, &offset, &count); err != nil || count <= 0 {
+		return err
+	}
+	for _, payload := range s.Payloads {
+		if err := writeRangePart(dst, payload, &offset, &count); err != nil || count <= 0 {
 			return err
 		}
-
-		remainingCount -= length
-		if remainingCount <= 0 {
-			return nil
-		}
-		remainingOffset = 0
 	}
 	return nil
 }
 
-func (s Segment) parts() [][]byte {
-	parts := make([][]byte, 0, 1+len(s.Payloads))
-	if len(s.Header) > 0 {
-		parts = append(parts, s.Header)
+func writeRangePart(dst io.Writer, part []byte, offset *int64, count *int64) error {
+	if len(part) == 0 || *count <= 0 {
+		return nil
 	}
-	parts = append(parts, s.Payloads...)
-	return parts
+
+	partLength := int64(len(part))
+	if *offset >= partLength {
+		*offset -= partLength
+		return nil
+	}
+
+	start := *offset
+	length := partLength - start
+	if length > *count {
+		length = *count
+	}
+
+	if _, err := dst.Write(part[start : start+length]); err != nil {
+		return err
+	}
+
+	*count -= length
+	*offset = 0
+	return nil
 }
 
 func cloneBytes(src []byte) []byte {
@@ -91,14 +85,4 @@ func cloneBytes(src []byte) []byte {
 	dst := make([]byte, len(src))
 	copy(dst, src)
 	return dst
-}
-
-func takeBuffer(buf *bytes.Buffer) []byte {
-	if buf.Len() == 0 {
-		return nil
-	}
-
-	data := buf.Bytes()
-	*buf = bytes.Buffer{}
-	return data
 }

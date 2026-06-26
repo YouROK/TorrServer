@@ -2,8 +2,10 @@ package gstreamer
 
 import (
 	"errors"
+	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -14,13 +16,17 @@ import (
 )
 
 var (
-	ErrBadSource         = errors.New("bad gstreamer source")
-	ErrUnsupportedVideo  = errors.New("unsupported video codec")
-	ErrProbeUnavailable  = errors.New("gst-discoverer returned no stream info")
-	ErrPipelineDisabled  = errors.New("gstreamer support is not built in")
-	ErrSegmentNotReady   = errors.New("segment is not ready")
-	ErrTaskNotFound      = errors.New("gstreamer task not found")
-	ErrInvalidIdentifier = errors.New("invalid gstreamer task id")
+	ErrBadSource               = errors.New("bad gstreamer source")
+	ErrUnsupportedContainer    = errors.New("unsupported container; only Matroska/WebM is supported")
+	ErrUnsupportedVideo        = errors.New("unsupported video codec")
+	ErrProbeUnavailable        = errors.New("gst-discoverer returned no stream info")
+	ErrPipelineDisabled        = errors.New("gstreamer support is not built in")
+	ErrSegmentNotReady         = errors.New("segment is not ready")
+	ErrTaskNotFound            = errors.New("gstreamer task not found")
+	ErrInvalidIdentifier       = errors.New("invalid gstreamer task id")
+	ErrEndOfStreamExhausted    = errors.New("gstreamer end of stream is exhausted")
+	ErrTruncatedMP4Fragment    = errors.New("truncated mp4 fragment at end of stream")
+	ErrUndecodableEOSRemainder = errors.New("undecodable mp4 eos remainder")
 )
 
 type Service struct {
@@ -34,8 +40,11 @@ type Service struct {
 }
 
 func NewService(conf Config) *Service {
+	conf = conf.normalized()
+	ensureGStreamerRuntimeEnv(conf)
+
 	service := &Service{
-		conf:        conf.normalized(),
+		conf:        conf,
 		tasks:       make(map[string]*Task),
 		stopCleanup: make(chan struct{}),
 	}
@@ -56,7 +65,7 @@ func (s *Service) GetOrAdd(hash string, fileID string, audio int) (*Task, error)
 	task := s.tasks[id]
 	s.mu.RUnlock()
 
-	if task != nil && task.FileID == fileID && task.Audio == audio {
+	if task != nil && task.FileID == fileID && task.Audio == audio && !task.IsDisposed() {
 		task.UpdateLastActive()
 		return task, nil
 	}
@@ -66,11 +75,8 @@ func (s *Service) GetOrAdd(hash string, fileID string, audio int) (*Task, error)
 		return nil, err
 	}
 	probe.FileSize = torrentFileSize(hash, fileID)
-	if len(probe.Tracks) == 0 || probe.Video() == nil {
-		return nil, ErrProbeUnavailable
-	}
-	if !probe.IsH264() && !probe.IsH265() && !probe.IsAV1() && !probe.IsVP9() {
-		return nil, ErrUnsupportedVideo
+	if err := validateProbe(probe); err != nil {
+		return nil, err
 	}
 
 	task, err = NewTask(id, hash, fileID, audio, sourceURL, probe, s.conf)
@@ -78,20 +84,47 @@ func (s *Service) GetOrAdd(hash string, fileID string, audio int) (*Task, error)
 		return nil, err
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	var replaced *Task
 
-	if existing := s.tasks[id]; existing != nil {
-		if existing.FileID == fileID && existing.Audio == audio {
-			task.Dispose()
-			existing.UpdateLastActive()
-			return existing, nil
-		}
-		existing.Dispose()
+	s.mu.Lock()
+	existing := s.tasks[id]
+	if existing != nil &&
+		existing.FileID == fileID &&
+		existing.Audio == audio &&
+		!existing.IsDisposed() {
+		s.mu.Unlock()
+
+		task.Dispose()
+		existing.UpdateLastActive()
+		return existing, nil
 	}
 
+	replaced = existing
 	s.tasks[id] = task
+	s.mu.Unlock()
+
+	if replaced != nil {
+		replaced.Dispose()
+	}
+
 	return task, nil
+}
+
+func validateProbe(probe ProbeInfo) error {
+	if len(probe.Tracks) == 0 || probe.Video() == nil {
+		return ErrProbeUnavailable
+	}
+	if !probe.IsMatroskaContainer() {
+		name := strings.TrimSpace(probe.Container)
+		if name == "" {
+			name = "<unknown>"
+		}
+		return fmt.Errorf("%w: %s", ErrUnsupportedContainer, name)
+	}
+	if !probe.IsH264() && !probe.IsH265() && !probe.IsAV1() && !probe.IsVP9() {
+		return ErrUnsupportedVideo
+	}
+	return nil
 }
 
 func torrentFileSize(hash string, fileID string) int64 {
@@ -142,24 +175,47 @@ func (s *Service) Get(id string) *Task {
 	if task == nil {
 		return nil
 	}
+	if task.IsDisposed() {
+		return nil
+	}
 
 	task.UpdateLastActive()
 	return task
 }
 
 func (s *Service) TryRemove(id string) bool {
-	if id == "" {
+	task, ok := s.detachTask(id, nil)
+	if !ok {
 		return false
+	}
+
+	task.Dispose()
+	if s.isEmpty() {
+		cleanupGSTTempFiles()
+	}
+	return true
+}
+
+func (s *Service) detachTask(id string, expected *Task) (*Task, bool) {
+	if id == "" {
+		return nil, false
 	}
 
 	s.mu.Lock()
 	task := s.tasks[id]
-	if task != nil {
-		delete(s.tasks, id)
+	if task == nil || (expected != nil && task != expected) {
+		s.mu.Unlock()
+		return nil, false
 	}
-	s.mu.Unlock()
 
-	if task == nil {
+	delete(s.tasks, id)
+	s.mu.Unlock()
+	return task, true
+}
+
+func (s *Service) tryRemoveExpected(id string, expected *Task) bool {
+	task, ok := s.detachTask(id, expected)
+	if !ok {
 		return false
 	}
 
@@ -190,7 +246,12 @@ func (s *Service) cleanupLoop() {
 	for {
 		select {
 		case <-ticker.C:
-			s.cleanupInactive()
+			func() {
+				defer func() {
+					_ = recover()
+				}()
+				s.cleanupInactive()
+			}()
 		case <-s.stopCleanup:
 			return
 		}
@@ -218,10 +279,12 @@ func (s *Service) cleanupInactive() {
 	for id, task := range snapshot {
 		lastActive := task.LastActive()
 		if now.After(lastActive.Add(removeAfter)) {
-			s.TryRemove(id)
+			s.tryRemoveExpected(id, task)
 			continue
 		}
-		if !task.IsFrozen() && now.After(lastActive.Add(inactiveDuration)) {
+		if !task.IsFrozen() &&
+			now.After(lastActive.Add(inactiveDuration)) &&
+			s.isCurrentTask(id, task) {
 			task.Frozen()
 		}
 	}
@@ -235,6 +298,13 @@ func (s *Service) isEmpty() bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return len(s.tasks) == 0
+}
+
+func (s *Service) isCurrentTask(id string, expected *Task) bool {
+	s.mu.RLock()
+	current := s.tasks[id]
+	s.mu.RUnlock()
+	return current == expected
 }
 
 func sourceURL(conf Config, hash string, fileID string) string {

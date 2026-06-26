@@ -16,7 +16,10 @@ const (
 	gstStatePaused  int32 = 3
 	gstStatePlaying int32 = 4
 
-	gstStateChangeFailure int32 = 0
+	gstStateChangeFailure   int32 = 0
+	gstStateChangeSuccess   int32 = 1
+	gstStateChangeAsync     int32 = 2
+	gstStateChangeNoPreroll int32 = 3
 
 	gstFormatTime int32 = 3
 
@@ -29,25 +32,28 @@ const (
 	gstMessageError int32 = 1 << 1
 )
 
+const maxGStreamerSampleBytes = 128 * 1024 * 1024
+
 type gstAPI struct {
 	handles []uintptr
 
-	gstInitCheck           func(argc unsafe.Pointer, argv unsafe.Pointer, err unsafe.Pointer) int32
-	gstParseLaunch         func(description string, err unsafe.Pointer) uintptr
-	gstBinGetByName        func(bin uintptr, name string) uintptr
-	gstObjectUnref         func(obj uintptr)
-	gstMiniObjectUnref     func(obj uintptr)
-	gstElementSetState     func(element uintptr, state int32) int32
-	gstElementGetState     func(element uintptr, state unsafe.Pointer, pending unsafe.Pointer, timeout uint64) int32
-	gstElementSeekSimple   func(element uintptr, format int32, flags int32, position int64) int32
-	gstPipelineGetBus      func(pipeline uintptr) uintptr
-	gstBusTimedPopFiltered func(bus uintptr, timeout uint64, types int32) uintptr
-	gstMessageParseError   func(msg uintptr, err unsafe.Pointer, debug unsafe.Pointer)
-	gstSampleGetBuffer     func(sample uintptr) uintptr
-	gstSampleUnref         func(sample uintptr)
-	gstBufferGetSize       func(buffer uintptr) uintptr
-	gstBufferMap           func(buffer uintptr, mapInfo unsafe.Pointer, flags int32) int32
-	gstBufferUnmap         func(buffer uintptr, mapInfo unsafe.Pointer)
+	gstInitCheck            func(argc unsafe.Pointer, argv unsafe.Pointer, err unsafe.Pointer) int32
+	gstParseLaunch          func(description string, err unsafe.Pointer) uintptr
+	gstBinGetByName         func(bin uintptr, name string) uintptr
+	gstObjectUnref          func(obj uintptr)
+	gstMiniObjectUnref      func(obj uintptr)
+	gstElementSetState      func(element uintptr, state int32) int32
+	gstElementGetState      func(element uintptr, state unsafe.Pointer, pending unsafe.Pointer, timeout uint64) int32
+	gstElementSeekSimple    func(element uintptr, format int32, flags int32, position int64) int32
+	gstElementQueryPosition func(element uintptr, format int32, cur unsafe.Pointer) int32
+	gstPipelineGetBus       func(pipeline uintptr) uintptr
+	gstBusTimedPopFiltered  func(bus uintptr, timeout uint64, types int32) uintptr
+	gstMessageParseError    func(msg uintptr, err unsafe.Pointer, debug unsafe.Pointer)
+	gstSampleGetBuffer      func(sample uintptr) uintptr
+	gstSampleUnref          func(sample uintptr)
+	gstBufferGetSize        func(buffer uintptr) uintptr
+	gstBufferMap            func(buffer uintptr, mapInfo unsafe.Pointer, flags int32) int32
+	gstBufferUnmap          func(buffer uintptr, mapInfo unsafe.Pointer)
 
 	gstAppSinkTryPullSample func(sink uintptr, timeout uint64) uintptr
 	gstAppSinkIsEOS         func(sink uintptr) int32
@@ -71,6 +77,7 @@ func (g *gstAPI) bind(gstHandle uintptr, gstAppHandle uintptr, glibHandle uintpt
 	purego.RegisterLibFunc(&g.gstElementSetState, gstHandle, "gst_element_set_state")
 	purego.RegisterLibFunc(&g.gstElementGetState, gstHandle, "gst_element_get_state")
 	purego.RegisterLibFunc(&g.gstElementSeekSimple, gstHandle, "gst_element_seek_simple")
+	purego.RegisterLibFunc(&g.gstElementQueryPosition, gstHandle, "gst_element_query_position")
 	purego.RegisterLibFunc(&g.gstPipelineGetBus, gstHandle, "gst_pipeline_get_bus")
 	purego.RegisterLibFunc(&g.gstBusTimedPopFiltered, gstHandle, "gst_bus_timed_pop_filtered")
 	purego.RegisterLibFunc(&g.gstMessageParseError, gstHandle, "gst_message_parse_error")
@@ -104,16 +111,22 @@ func (g *gstAPI) init() error {
 func (g *gstAPI) parseLaunch(description string) (uintptr, error) {
 	var errPtr uintptr
 	pipeline := g.gstParseLaunch(description, unsafe.Pointer(&errPtr))
-	if pipeline == 0 {
+
+	if errPtr != 0 {
 		msg := g.takeGError(errPtr)
+		if pipeline != 0 {
+			g.objectUnref(pipeline)
+		}
 		if msg == "" {
-			msg = "gst_parse_launch failed"
+			msg = "gst_parse_launch reported an error"
 		}
 		return 0, errors.New(msg)
 	}
-	if errPtr != 0 {
-		g.gErrorFree(errPtr)
+
+	if pipeline == 0 {
+		return 0, errors.New("gst_parse_launch failed without GError")
 	}
+
 	return pipeline, nil
 }
 
@@ -157,6 +170,20 @@ func (g *gstAPI) elementSeekSimple(element uintptr, format int32, flags int32, p
 	return g.gstElementSeekSimple(element, format, flags, position) != 0
 }
 
+func (g *gstAPI) elementQueryPosition(element uintptr) (int64, bool) {
+	if element == 0 || g.gstElementQueryPosition == nil {
+		return 0, false
+	}
+	var position int64
+	if g.gstElementQueryPosition(element, gstFormatTime, unsafe.Pointer(&position)) == 0 {
+		return 0, false
+	}
+	if position < 0 {
+		return 0, false
+	}
+	return position, true
+}
+
 func (g *gstAPI) pipelineGetBus(pipeline uintptr) uintptr {
 	if pipeline == 0 {
 		return 0
@@ -187,13 +214,21 @@ func (g *gstAPI) withSampleBytes(sample uintptr, consume func([]byte) error) err
 	}
 
 	buffer := g.gstSampleGetBuffer(sample)
-	if buffer == 0 || g.gstBufferGetSize(buffer) == 0 {
+	if buffer == 0 {
+		return errors.New("gst_sample_get_buffer returned nil")
+	}
+
+	bufferSize := g.gstBufferGetSize(buffer)
+	if bufferSize == 0 {
 		return nil
+	}
+	if err := validateGStreamerSampleSize(bufferSize, 0); err != nil {
+		return err
 	}
 
 	var mapInfo [128]byte
 	if g.gstBufferMap(buffer, unsafe.Pointer(&mapInfo[0]), gstMapRead) == 0 {
-		return nil
+		return errors.New("gst_buffer_map failed")
 	}
 	defer g.gstBufferUnmap(buffer, unsafe.Pointer(&mapInfo[0]))
 
@@ -201,9 +236,33 @@ func (g *gstAPI) withSampleBytes(sample uintptr, consume func([]byte) error) err
 	if dataPtr == 0 || size == 0 {
 		return nil
 	}
+	if err := validateGStreamerSampleSize(bufferSize, size); err != nil {
+		return err
+	}
 
 	data := unsafe.Slice((*byte)(unsafe.Pointer(dataPtr)), size)
 	return consume(data)
+}
+
+func validateGStreamerSampleSize(bufferSize uintptr, mapSize int) error {
+	maxInt := int(^uint(0) >> 1)
+
+	if bufferSize > uintptr(maxInt) {
+		return fmt.Errorf("gst buffer is too large: %d bytes", bufferSize)
+	}
+	if bufferSize > uintptr(maxGStreamerSampleBytes) {
+		return fmt.Errorf("gst buffer exceeds safety limit: %d bytes", bufferSize)
+	}
+	if mapSize < 0 {
+		return errors.New("gst map size is negative")
+	}
+	if mapSize > maxGStreamerSampleBytes {
+		return fmt.Errorf("gst map size exceeds safety limit: %d bytes", mapSize)
+	}
+	if uintptr(mapSize) > bufferSize {
+		return fmt.Errorf("gst map size exceeds buffer size: map=%d buffer=%d", mapSize, bufferSize)
+	}
+	return nil
 }
 
 func (g *gstAPI) popBusError(bus uintptr, timeout time.Duration) error {

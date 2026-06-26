@@ -41,9 +41,9 @@ func DefaultConfig() Config {
 		AACBitrateKbps:      256,
 		SegmentSeconds:      6,
 		VideoBitrate:        10_000,
-		PipelineTimeSeconds: 20,
-		PipelineAudioQueue:  4,
-		PipelineVideoQueue:  32,
+		PipelineTimeSeconds: 18,
+		PipelineAudioQueue:  2,
+		PipelineVideoQueue:  16,
 		TempFS:              true,
 	}
 
@@ -69,13 +69,13 @@ func (c Config) normalized() Config {
 		c.VideoBitrate = 10_000
 	}
 	if c.PipelineTimeSeconds <= 0 {
-		c.PipelineTimeSeconds = 20
+		c.PipelineTimeSeconds = 18
 	}
 	if c.PipelineAudioQueue <= 0 {
-		c.PipelineAudioQueue = 4
+		c.PipelineAudioQueue = 2
 	}
 	if c.PipelineVideoQueue <= 0 {
-		c.PipelineVideoQueue = 32
+		c.PipelineVideoQueue = 16
 	}
 	if c.TempFSRing < 0 {
 		c.TempFSRing = 0

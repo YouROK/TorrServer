@@ -10,8 +10,6 @@ import (
 	"math/bits"
 )
 
-const audioBoundaryToleranceSeconds = 0.100
-
 type boxTarget int
 
 const (
@@ -53,6 +51,7 @@ const (
 	tfhdDefaultSampleDurationPresent  uint32 = 0x000008
 	tfhdDefaultSampleSizePresent      uint32 = 0x000010
 	tfhdDefaultSampleFlagsPresent     uint32 = 0x000020
+	tfhdDurationIsEmpty               uint32 = 0x010000
 	tfhdDefaultBaseIsMoof             uint32 = 0x020000
 	trunDataOffsetPresent             uint32 = 0x000001
 	trunFirstSampleFlagsPresent       uint32 = 0x000004
@@ -63,9 +62,10 @@ const (
 )
 
 type trexInfo struct {
-	duration uint32
-	size     uint32
-	flags    uint32
+	descriptionIndex uint32
+	duration         uint32
+	size             uint32
+	flags            uint32
 }
 
 type trackInfo struct {
@@ -79,27 +79,55 @@ type trexEntry struct {
 	value   trexInfo
 }
 
+type tfhdInfo struct {
+	version uint8
+	trackID uint32
+
+	sampleDescriptionIndex    uint32
+	hasSampleDescriptionIndex bool
+
+	defaultDuration uint32
+	defaultSize     uint32
+	defaultFlags    uint32
+	hasDefaultFlags bool
+}
+
+type mp4Sample struct {
+	duration                 uint32
+	size                     uint32
+	flags                    uint32
+	compositionTimeOffsetRaw uint32
+}
+
 type mp4Run struct {
-	box                 []byte
-	dataOffsetField     int
+	box             []byte
+	dataOffsetField int
+
 	sourceDataOffset    int32
 	hasSourceDataOffset bool
-	duration            uint64
-	dataSize            uint64
-	payloadOffset       int64
-	outputOffset        int64
-	startsWithSync      bool
+
+	samples                   []mp4Sample
+	version                   uint8
+	hasCompositionTimeOffsets bool
+
+	duration       uint64
+	dataSize       uint64
+	payloadOffset  int64
+	outputOffset   int64
+	startsWithSync bool
 }
 
 type mp4Fragment struct {
-	trackID        uint32
-	timescale      uint32
-	decodeTime     uint64
-	duration       uint64
-	startsWithSync bool
-	tfhd           []byte
-	runs           []mp4Run
-	payload        []byte
+	trackID                uint32
+	timescale              uint32
+	decodeTime             uint64
+	duration               uint64
+	startsWithSync         bool
+	sampleDescriptionIndex uint32
+	tfhd                   []byte
+	runs                   []mp4Run
+	payloadStart           int
+	payloadLen             int
 }
 
 func (f *mp4Fragment) endTime() uint64 {
@@ -120,9 +148,11 @@ type mp4BoxReader struct {
 	video []mp4Fragment
 	audio []mp4Fragment
 
-	sourcePayload bytes.Buffer
-	prefix        bytes.Buffer
-	prefixActive  bool
+	sourcePayload   bytes.Buffer
+	segmentHeader   bytes.Buffer
+	segmentPayloads [][]byte
+	prefix          bytes.Buffer
+	prefixActive    bool
 
 	pending *mp4Fragment
 	styp    []byte
@@ -138,6 +168,7 @@ type mp4BoxReader struct {
 	initDone              bool
 	moovCompleted         bool
 	sourcePayloadFromMoof int64
+	currentPayloadStart   int
 
 	videoTrack trackInfo
 	audioTrack trackInfo
@@ -160,6 +191,7 @@ func Mp4BoxReader(onInit func([]byte), onSegment func(Segment), segmentSeconds f
 	reader.sourceMoof.Grow(16 * 1024)
 	reader.sourceStyp.Grow(128)
 	reader.deferred.Grow(64 * 1024)
+	reader.segmentHeader.Grow(64 * 1024)
 	return reader
 }
 
@@ -181,6 +213,8 @@ func (r *mp4BoxReader) SeekReset(seconds float64) {
 	r.sourceMoof.Reset()
 	r.sourceStyp.Reset()
 	r.deferred.Reset()
+	r.segmentHeader.Reset()
+	r.segmentPayloads = r.segmentPayloads[:0]
 	r.clearSource()
 	r.clearFragments()
 	r.resetPrefix()
@@ -248,70 +282,88 @@ func (r *mp4BoxReader) TryProcessDeferred() (bool, error) {
 	return false, nil
 }
 
-func (r *mp4BoxReader) TryFlushFinalSegment() (bool, error) {
-	if len(r.video) == 0 || len(r.audio) == 0 {
-		return false, nil
-	}
-	if !r.video[0].startsWithSync {
-		return false, nil
-	}
-
+func (r *mp4BoxReader) TryBuildEndOfStreamRemainder() (bool, error) {
 	videoCount := len(r.video)
-	videoEnd := r.video[videoCount-1].endTime()
+	audioCount := len(r.audio)
 
-	audioCount, err := r.selectAudioCount(videoEnd)
-	if err != nil {
-		return false, err
-	}
-	if audioCount == 0 {
-		audioCount = len(r.audio)
-	}
-	if audioCount == 0 {
+	if videoCount == 0 && audioCount == 0 {
 		return false, nil
 	}
 
-	if err := r.buildSegment(videoCount, audioCount); err != nil {
+	if videoCount > 0 && !r.video[0].startsWithSync {
+		return false, r.undecodableEOSRemainderError()
+	}
+
+	if err := r.buildSegment(videoCount, audioCount, true); err != nil {
 		return false, err
 	}
 	return true, nil
 }
 
-func (r *mp4BoxReader) TakePendingSegment() (Segment, bool) {
-	if r.pending == nil || r.sourcePayload.Len() == 0 {
-		return Segment{}, false
+func (r *mp4BoxReader) undecodableEOSRemainderError() error {
+	start := 0.0
+	if len(r.video) > 0 && r.video[0].timescale != 0 {
+		start = float64(r.video[0].decodeTime) / float64(r.video[0].timescale)
+	}
+	return fmt.Errorf(
+		"%w: leftover video starts with a non-sync sample at %.6fs",
+		ErrUndecodableEOSRemainder,
+		start,
+	)
+}
+
+func (r *mp4BoxReader) EndOfStreamError() error {
+	if r.boxHeaderLength != 0 {
+		return fmt.Errorf(
+			"%w: incomplete top-level box header: have=%d, need=%d",
+			ErrTruncatedMP4Fragment,
+			r.boxHeaderLength,
+			r.boxHeaderRequired,
+		)
 	}
 
-	payload := takeBuffer(&r.sourcePayload)
-	mdatHeaderSize := 8
-	if uint64(len(payload))+8 > math.MaxUint32 {
-		mdatHeaderSize = 16
+	if r.currentBoxRemaining != 0 {
+		return fmt.Errorf(
+			"%w: incomplete %s box: missing=%d body bytes",
+			ErrTruncatedMP4Fragment,
+			fourCC(r.currentBoxType),
+			r.currentBoxRemaining,
+		)
 	}
 
-	var header bytes.Buffer
-	header.Grow(len(r.styp) + r.prefix.Len() + r.sourceMoof.Len() + mdatHeaderSize)
-
-	if r.styp != nil {
-		_, _ = header.Write(r.styp)
-	}
-	if r.prefixActive && r.prefix.Len() > 0 {
-		_, _ = header.Write(r.prefix.Bytes())
-	}
-	_, _ = header.Write(r.sourceMoof.Bytes())
-	writeMdatHeader(&header, uint64(len(payload)), mdatHeaderSize)
-
-	startSeconds := 0.0
-	if r.pending.timescale > 0 {
-		startSeconds = float64(r.pending.decodeTime) / float64(r.pending.timescale)
+	if r.pending != nil {
+		return fmt.Errorf(
+			"%w: moof for track_ID=%d has no complete mdat",
+			ErrTruncatedMP4Fragment,
+			r.pending.trackID,
+		)
 	}
 
-	r.clearSource()
-	r.resetPrefix()
+	if r.sourcePayload.Len() != 0 {
+		return fmt.Errorf(
+			"%w: %d uncommitted mdat payload bytes",
+			ErrTruncatedMP4Fragment,
+			r.sourcePayload.Len(),
+		)
+	}
 
-	return Segment{
-		Header:       takeBuffer(&header),
-		Payloads:     [][]byte{payload},
-		StartSeconds: startSeconds,
-	}, true
+	if r.sourceMoof.Len() != 0 {
+		return fmt.Errorf(
+			"%w: %d uncommitted moof bytes",
+			ErrTruncatedMP4Fragment,
+			r.sourceMoof.Len(),
+		)
+	}
+
+	if r.deferred.Len() != 0 {
+		return fmt.Errorf(
+			"%w: %d unprocessed deferred bytes",
+			ErrTruncatedMP4Fragment,
+			r.deferred.Len(),
+		)
+	}
+
+	return nil
 }
 
 func (r *mp4BoxReader) processBytes(data []byte) (int, bool, error) {
@@ -437,7 +489,7 @@ func (r *mp4BoxReader) beginBox(size uint64, headerSize int) error {
 			return errors.New("mdat does not follow a supported moof")
 		}
 
-		r.sourcePayload.Reset()
+		r.currentPayloadStart = r.sourcePayload.Len()
 		r.sourcePayloadFromMoof += int64(headerSize)
 		r.currentTarget = boxTargetPayload
 		return nil
@@ -558,28 +610,35 @@ func (r *mp4BoxReader) completeMdat() error {
 		return errors.New("completed mdat has no source moof")
 	}
 
-	payload := takeBuffer(&r.sourcePayload)
-	if err := attachPayload(r.pending, payload, r.sourcePayloadFromMoof); err != nil {
+	payloadLen := r.sourcePayload.Len() - r.currentPayloadStart
+	if err := attachPayload(r.pending, r.currentPayloadStart, payloadLen, r.sourcePayloadFromMoof); err != nil {
 		return err
 	}
 
-	switch r.pending.trackID {
-	case r.videoTrack.id:
+	switch {
+	case r.pending.trackID == r.videoTrack.id:
 		r.video = append(r.video, *r.pending)
-	case r.audioTrack.id:
+
+	case r.audioTrack.id != 0 && r.pending.trackID == r.audioTrack.id:
 		r.audio = append(r.audio, *r.pending)
+
 	default:
 		return fmt.Errorf("unsupported track_ID=%d", r.pending.trackID)
 	}
 
 	r.pending = nil
 	r.sourcePayloadFromMoof = 0
+	r.currentPayloadStart = 0
 	r.sourceMoof.Reset()
 	return nil
 }
 
-func attachPayload(fragment *mp4Fragment, payload []byte, payloadFromMoof int64) error {
+func attachPayload(fragment *mp4Fragment, payloadStart int, payloadLen int, payloadFromMoof int64) error {
 	var expected int64
+
+	if payloadStart < 0 || payloadLen < 0 {
+		return errors.New("negative source mdat payload range")
+	}
 
 	for i := range fragment.runs {
 		run := &fragment.runs[i]
@@ -599,11 +658,12 @@ func attachPayload(fragment *mp4Fragment, payload []byte, payloadFromMoof int64)
 		expected = offset + int64(run.dataSize)
 	}
 
-	if expected != int64(len(payload)) {
-		return fmt.Errorf("source mdat size mismatch: trun=%d, mdat=%d", expected, len(payload))
+	if expected != int64(payloadLen) {
+		return fmt.Errorf("source mdat size mismatch: trun=%d, mdat=%d", expected, payloadLen)
 	}
 
-	fragment.payload = payload
+	fragment.payloadStart = payloadStart
+	fragment.payloadLen = payloadLen
 	return nil
 }
 
@@ -613,13 +673,16 @@ func (r *mp4BoxReader) tryBuildSegment() (bool, error) {
 		return false, err
 	}
 
-	videoEnd := r.video[videoCount-1].endTime()
-	audioCount, err := r.selectAudioCount(videoEnd)
-	if err != nil || audioCount == 0 {
-		return false, err
+	audioCount := 0
+	if r.audioTrack.id != 0 {
+		videoEnd := r.video[videoCount-1].endTime()
+		audioCount, err = r.selectAudioCount(videoEnd)
+		if err != nil || audioCount == 0 {
+			return false, err
+		}
 	}
 
-	if err := r.buildSegment(videoCount, audioCount); err != nil {
+	if err := r.buildSegment(videoCount, audioCount, false); err != nil {
 		return false, err
 	}
 	return true, nil
@@ -655,41 +718,309 @@ func (r *mp4BoxReader) selectAudioCount(videoEnd uint64) (int, error) {
 		return 0, nil
 	}
 
-	tolerance, err := toUnits(audioBoundaryToleranceSeconds, r.audioTrack.timescale)
-	if err != nil {
-		return 0, err
-	}
-
 	for i := range r.audio {
-		audioEnd := r.audio[i].endTime()
-		withTolerance := audioEnd + tolerance
-		if withTolerance < audioEnd {
-			withTolerance = math.MaxUint64
+		splitSamples, reached, err := r.findAudioSplitSampleCount(
+			&r.audio[i],
+			videoEnd,
+		)
+		if err != nil {
+			return 0, err
+		}
+		if !reached {
+			continue
 		}
 
-		if scaledGreaterOrEqual(withTolerance, r.videoTrack.timescale, videoEnd, r.audioTrack.timescale) {
-			return i + 1, nil
+		totalSamples, err := fragmentSampleCount(r.audio[i])
+		if err != nil {
+			return 0, err
 		}
+		if splitSamples <= 0 || splitSamples > totalSamples {
+			return 0, errors.New("invalid audio split sample count")
+		}
+
+		if splitSamples < totalSamples {
+			left, right, err := splitFragmentAtSample(
+				r.audio[i],
+				splitSamples,
+			)
+			if err != nil {
+				return 0, err
+			}
+
+			r.audio[i] = left
+			r.audio = append(r.audio, mp4Fragment{})
+			copy(r.audio[i+2:], r.audio[i+1:])
+			r.audio[i+1] = right
+		}
+
+		return i + 1, nil
 	}
 
 	return 0, nil
 }
 
-func (r *mp4BoxReader) buildSegment(videoCount int, audioCount int) error {
-	if err := validateTrack(r.video, videoCount); err != nil {
-		return err
+func (r *mp4BoxReader) findAudioSplitSampleCount(
+	fragment *mp4Fragment,
+	videoEnd uint64,
+) (int, bool, error) {
+	if fragment == nil {
+		return 0, false, errors.New("audio fragment is nil")
 	}
-	if err := validateTrack(r.audio, audioCount); err != nil {
-		return err
+	if fragment.timescale == 0 || r.videoTrack.timescale == 0 {
+		return 0, false, errors.New("audio/video timescale is zero")
+	}
+
+	audioEnd := fragment.decodeTime
+	sampleCount := 0
+
+	for _, run := range fragment.runs {
+		if len(run.samples) == 0 {
+			return 0, false, errors.New("audio trun has no parsed samples")
+		}
+
+		for _, sample := range run.samples {
+			if math.MaxUint64-audioEnd < uint64(sample.duration) {
+				return 0, false, errors.New("audio sample timeline overflow")
+			}
+
+			audioEnd += uint64(sample.duration)
+			sampleCount++
+
+			if scaledGreaterOrEqual(
+				audioEnd,
+				r.videoTrack.timescale,
+				videoEnd,
+				fragment.timescale,
+			) {
+				return sampleCount, true, nil
+			}
+		}
+	}
+
+	if audioEnd != fragment.endTime() {
+		return 0, false, errors.New("audio sample durations do not match fragment duration")
+	}
+
+	return sampleCount, false, nil
+}
+
+func fragmentSampleCount(fragment mp4Fragment) (int, error) {
+	total := 0
+
+	for _, run := range fragment.runs {
+		if len(run.samples) == 0 {
+			return 0, errors.New("fragment trun has no parsed samples")
+		}
+		total += len(run.samples)
+	}
+
+	if total == 0 {
+		return 0, errors.New("fragment contains no samples")
+	}
+	return total, nil
+}
+
+func splitFragmentAtSample(
+	fragment mp4Fragment,
+	splitSamples int,
+) (mp4Fragment, mp4Fragment, error) {
+	var left mp4Fragment
+	var right mp4Fragment
+
+	totalSamples, err := fragmentSampleCount(fragment)
+	if err != nil {
+		return left, right, err
+	}
+	if splitSamples <= 0 || splitSamples >= totalSamples {
+		return left, right, fmt.Errorf(
+			"split sample must be inside fragment: split=%d total=%d",
+			splitSamples,
+			totalSamples,
+		)
+	}
+
+	left = mp4Fragment{
+		trackID:                fragment.trackID,
+		timescale:              fragment.timescale,
+		decodeTime:             fragment.decodeTime,
+		sampleDescriptionIndex: fragment.sampleDescriptionIndex,
+		tfhd:                   fragment.tfhd,
+	}
+	right = mp4Fragment{
+		trackID:                fragment.trackID,
+		timescale:              fragment.timescale,
+		sampleDescriptionIndex: fragment.sampleDescriptionIndex,
+		tfhd:                   fragment.tfhd,
+	}
+
+	remaining := splitSamples
+	var leftBytes uint64
+	var rightBytes uint64
+	var leftDuration uint64
+	var rightDuration uint64
+
+	for _, sourceRun := range fragment.runs {
+		if len(sourceRun.samples) == 0 {
+			return mp4Fragment{}, mp4Fragment{}, errors.New(
+				"cannot split a run without parsed samples",
+			)
+		}
+
+		take := 0
+		if remaining > 0 {
+			take = minInt(remaining, len(sourceRun.samples))
+		}
+
+		if take > 0 {
+			leftRun, err := buildExplicitRun(
+				sourceRun,
+				sourceRun.samples[:take],
+				false,
+			)
+			if err != nil {
+				return mp4Fragment{}, mp4Fragment{}, err
+			}
+			if leftBytes > math.MaxInt64 ||
+				leftRun.dataSize > uint64(math.MaxInt64)-leftBytes {
+				return mp4Fragment{}, mp4Fragment{}, errors.New(
+					"left audio payload offset overflow",
+				)
+			}
+
+			leftRun.payloadOffset = int64(leftBytes)
+			leftBytes += leftRun.dataSize
+			leftDuration += leftRun.duration
+			left.runs = append(left.runs, leftRun)
+			remaining -= take
+		}
+
+		if take < len(sourceRun.samples) {
+			rightRun, err := buildExplicitRun(
+				sourceRun,
+				sourceRun.samples[take:],
+				true,
+			)
+			if err != nil {
+				return mp4Fragment{}, mp4Fragment{}, err
+			}
+			if rightBytes > math.MaxInt64 ||
+				rightRun.dataSize > uint64(math.MaxInt64)-rightBytes {
+				return mp4Fragment{}, mp4Fragment{}, errors.New(
+					"right audio payload offset overflow",
+				)
+			}
+
+			rightRun.payloadOffset = int64(rightBytes)
+			rightBytes += rightRun.dataSize
+			rightDuration += rightRun.duration
+			right.runs = append(right.runs, rightRun)
+		}
+	}
+
+	if remaining != 0 || len(left.runs) == 0 || len(right.runs) == 0 {
+		return mp4Fragment{}, mp4Fragment{}, errors.New(
+			"failed to partition fragment runs",
+		)
+	}
+	if leftDuration+rightDuration != fragment.duration {
+		return mp4Fragment{}, mp4Fragment{}, errors.New(
+			"split fragment duration mismatch",
+		)
+	}
+	if leftBytes+rightBytes != uint64(fragment.payloadLen) {
+		return mp4Fragment{}, mp4Fragment{}, fmt.Errorf(
+			"split payload mismatch: left=%d right=%d source=%d",
+			leftBytes,
+			rightBytes,
+			fragment.payloadLen,
+		)
+	}
+	if leftBytes > uint64(fragment.payloadLen) {
+		return mp4Fragment{}, mp4Fragment{}, errors.New(
+			"left payload exceeds source payload",
+		)
+	}
+
+	splitByte := int(leftBytes)
+
+	left.duration = leftDuration
+	left.startsWithSync = left.runs[0].startsWithSync
+	left.payloadStart = fragment.payloadStart
+	left.payloadLen = splitByte
+
+	if math.MaxUint64-fragment.decodeTime < leftDuration {
+		return mp4Fragment{}, mp4Fragment{}, errors.New(
+			"right fragment decode time overflow",
+		)
+	}
+
+	right.decodeTime = fragment.decodeTime + leftDuration
+	right.duration = rightDuration
+	right.startsWithSync = right.runs[0].startsWithSync
+	right.payloadStart = fragment.payloadStart + splitByte
+	right.payloadLen = fragment.payloadLen - splitByte
+
+	return left, right, nil
+}
+
+func (r *mp4BoxReader) buildSegment(videoCount int, audioCount int, allowSingleTrack bool) error {
+	if videoCount < 0 || videoCount > len(r.video) {
+		return errors.New("invalid video fragment count")
+	}
+	if audioCount < 0 || audioCount > len(r.audio) {
+		return errors.New("invalid audio fragment count")
+	}
+
+	hasVideo := videoCount > 0
+	hasAudio := audioCount > 0
+	sourceHasAudio := r.audioTrack.id != 0
+
+	if !hasVideo && !hasAudio {
+		return errors.New("segment contains no fragments")
+	}
+
+	if hasAudio && !sourceHasAudio {
+		return errors.New("video-only source unexpectedly contains audio fragments")
+	}
+
+	if !allowSingleTrack {
+		if !hasVideo {
+			return errors.New("regular segment must contain video")
+		}
+		if sourceHasAudio && !hasAudio {
+			return errors.New("regular segment must contain audio for an audio/video source")
+		}
+	}
+
+	if hasVideo {
+		if err := validateTrack(r.video, videoCount); err != nil {
+			return err
+		}
+	}
+	if hasAudio {
+		if err := validateTrack(r.audio, audioCount); err != nil {
+			return err
+		}
 	}
 
 	var payloadLength int64
-	assignOffsets(r.video, videoCount, &payloadLength)
-	assignOffsets(r.audio, audioCount, &payloadLength)
+	if hasVideo {
+		assignOffsets(r.video, videoCount, &payloadLength)
+	}
+	if hasAudio {
+		assignOffsets(r.audio, audioCount, &payloadLength)
+	}
 
-	videoTrafSize := getTrafSize(r.video, videoCount)
-	audioTrafSize := getTrafSize(r.audio, audioCount)
-	moofSize64 := int64(8 + 16 + videoTrafSize + audioTrafSize)
+	var videoTrafSize int64
+	if hasVideo {
+		videoTrafSize = getTrafSize(r.video, videoCount)
+	}
+	var audioTrafSize int64
+	if hasAudio {
+		audioTrafSize = getTrafSize(r.audio, audioCount)
+	}
+
+	moofSize64 := int64(8+16) + videoTrafSize + audioTrafSize
 	if moofSize64 > math.MaxUint32 {
 		return errors.New("combined moof is too large")
 	}
@@ -700,7 +1031,8 @@ func (r *mp4BoxReader) buildSegment(videoCount int, audioCount int) error {
 		mdatHeaderSize = 16
 	}
 
-	var header bytes.Buffer
+	header := &r.segmentHeader
+	header.Reset()
 	header.Grow(int(moofSize64) + mdatHeaderSize + len(r.styp) + r.prefix.Len())
 
 	if r.styp != nil {
@@ -710,31 +1042,74 @@ func (r *mp4BoxReader) buildSegment(videoCount int, audioCount int) error {
 		_, _ = header.Write(r.prefix.Bytes())
 	}
 
-	writeHeader(&header, moofSize, boxMoof)
-	writeMfhd(&header, r.sequence)
+	writeHeader(header, moofSize, boxMoof)
+	writeMfhd(header, r.sequence)
 	r.sequence++
-	if err := r.writeTraf(&header, r.video, videoCount, moofSize, mdatHeaderSize); err != nil {
-		return err
+	if hasVideo {
+		if err := r.writeTraf(header, r.video, videoCount, moofSize, mdatHeaderSize); err != nil {
+			return err
+		}
 	}
-	if err := r.writeTraf(&header, r.audio, audioCount, moofSize, mdatHeaderSize); err != nil {
-		return err
+	if hasAudio {
+		if err := r.writeTraf(header, r.audio, audioCount, moofSize, mdatHeaderSize); err != nil {
+			return err
+		}
 	}
-	writeMdatHeader(&header, uint64(payloadLength), mdatHeaderSize)
+	writeMdatHeader(header, uint64(payloadLength), mdatHeaderSize)
 
-	startSeconds := float64(r.video[0].decodeTime) / float64(r.video[0].timescale)
+	var first mp4Fragment
+	var last mp4Fragment
+	if hasVideo {
+		first = r.video[0]
+		last = r.video[videoCount-1]
+	} else {
+		first = r.audio[0]
+		last = r.audio[audioCount-1]
+	}
+	if first.timescale == 0 {
+		return errors.New("segment first track has zero timescale")
+	}
+	if last.timescale == 0 {
+		return errors.New("segment last track has zero timescale")
+	}
+
+	startSeconds := float64(first.decodeTime) / float64(first.timescale)
+	endSeconds := float64(last.endTime()) / float64(last.timescale)
+	payloads, err := collectPayloadRangesInto(
+		r.segmentPayloads[:0],
+		r.sourcePayload.Bytes(),
+		r.video,
+		videoCount,
+		r.audio,
+		audioCount,
+	)
+	if err != nil {
+		return err
+	}
+	r.segmentPayloads = payloads
+
 	r.onSegment(Segment{
-		Header:       takeBuffer(&header),
-		Payloads:     collectPayloads(r.video, videoCount, r.audio, audioCount),
+		Header:       header.Bytes(),
+		Payloads:     r.segmentPayloads,
 		StartSeconds: startSeconds,
+		EndSeconds:   endSeconds,
 	})
 
-	r.video = removeFragments(r.video, videoCount)
-	r.audio = removeFragments(r.audio, audioCount)
+	if hasVideo {
+		r.video = removeFragments(r.video, videoCount)
+	}
+	if hasAudio {
+		r.audio = removeFragments(r.audio, audioCount)
+	}
 	r.resetPrefix()
 	return nil
 }
 
 func validateTrack(fragments []mp4Fragment, count int) error {
+	if count <= 0 || count > len(fragments) {
+		return errors.New("invalid fragment count")
+	}
+
 	first := fragments[0]
 	expected := first.endTime()
 
@@ -743,6 +1118,7 @@ func validateTrack(fragments []mp4Fragment, count int) error {
 		if current.trackID != first.trackID ||
 			current.timescale != first.timescale ||
 			current.decodeTime != expected ||
+			current.sampleDescriptionIndex != first.sampleDescriptionIndex ||
 			!bytes.Equal(current.tfhd, first.tfhd) {
 			return fmt.Errorf("track %d fragments cannot be merged into one traf", first.trackID)
 		}
@@ -761,7 +1137,7 @@ func assignOffsets(fragments []mp4Fragment, count int, outputOffset *int64) {
 			fragment.runs[j].outputOffset = baseOffset + fragment.runs[j].payloadOffset
 		}
 
-		*outputOffset += int64(len(fragment.payload))
+		*outputOffset += int64(fragment.payloadLen)
 	}
 }
 
@@ -784,7 +1160,11 @@ func (r *mp4BoxReader) writeTraf(output io.Writer, fragments []mp4Fragment, coun
 	first := fragments[0]
 	writeHeader(output, uint32(size), boxTraf)
 	_, _ = output.Write(first.tfhd)
-	writeTfdt(output, addTfdtOffset(first.decodeTime, first.timescale, r.tfdtOffsetSeconds))
+	decodeTime, err := addTfdtOffset(first.decodeTime, first.timescale, r.tfdtOffsetSeconds)
+	if err != nil {
+		return err
+	}
+	writeTfdt(output, decodeTime)
 
 	for i := 0; i < count; i++ {
 		for j := range fragments[i].runs {
@@ -849,12 +1229,8 @@ func parseSourceMoof(moof []byte, videoTrack trackInfo, audioTrack trackInfo) (*
 }
 
 func parseTraf(traf []byte, trafHeader int, videoTrack trackInfo, audioTrack trackInfo) (*mp4Fragment, error) {
-	var trackID uint32
-	var defaultDuration uint32
-	var defaultSize uint32
-	var defaultFlags uint32
-	var hasDefaultFlags bool
-	var tfhd []byte
+	var parsedTfhd tfhdInfo
+	hasTfhd := false
 	var decodeTime uint64
 	var hasTfdt bool
 
@@ -867,19 +1243,15 @@ func parseTraf(traf []byte, trafHeader int, videoTrack trackInfo, audioTrack tra
 
 		switch boxType {
 		case boxTfhd:
-			if tfhd != nil {
+			if hasTfhd {
 				return nil, errors.New("duplicate tfhd")
 			}
-			normalized, parsedTrackID, parsedDuration, parsedSize, parsedFlags, parsedHasFlags, err := normalizeTfhd(box, headerSize)
+			value, err := parseTfhd(box, headerSize)
 			if err != nil {
 				return nil, err
 			}
-			tfhd = normalized
-			trackID = parsedTrackID
-			defaultDuration = parsedDuration
-			defaultSize = parsedSize
-			defaultFlags = parsedFlags
-			hasDefaultFlags = parsedHasFlags
+			parsedTfhd = value
+			hasTfhd = true
 
 		case boxTfdt:
 			if hasTfdt {
@@ -900,42 +1272,58 @@ func parseTraf(traf []byte, trafHeader int, videoTrack trackInfo, audioTrack tra
 		}
 	}
 
-	if tfhd == nil || !hasTfdt {
+	if !hasTfhd || !hasTfdt {
 		return nil, errors.New("tfhd/tfdt was not found")
 	}
 
 	var timescale uint32
 	var trex trexInfo
-	switch trackID {
-	case videoTrack.id:
+	switch {
+	case parsedTfhd.trackID == videoTrack.id:
 		timescale = videoTrack.timescale
 		trex = videoTrack.trex
-	case audioTrack.id:
+
+	case audioTrack.id != 0 && parsedTfhd.trackID == audioTrack.id:
 		timescale = audioTrack.timescale
 		trex = audioTrack.trex
+
 	default:
-		return nil, fmt.Errorf("unsupported track_ID=%d", trackID)
+		return nil, fmt.Errorf("unsupported track_ID=%d", parsedTfhd.trackID)
 	}
 
 	if timescale == 0 {
-		return nil, fmt.Errorf("timescale is zero for track_ID=%d", trackID)
+		return nil, fmt.Errorf("timescale is zero for track_ID=%d", parsedTfhd.trackID)
 	}
 
+	sampleDescriptionIndex := parsedTfhd.sampleDescriptionIndex
+	if !parsedTfhd.hasSampleDescriptionIndex {
+		sampleDescriptionIndex = trex.descriptionIndex
+	}
+	if sampleDescriptionIndex == 0 {
+		return nil, fmt.Errorf("sample description index is absent for track_ID=%d", parsedTfhd.trackID)
+	}
+
+	defaultDuration := parsedTfhd.defaultDuration
 	if defaultDuration == 0 {
 		defaultDuration = trex.duration
 	}
+
+	defaultSize := parsedTfhd.defaultSize
 	if defaultSize == 0 {
 		defaultSize = trex.size
 	}
-	if !hasDefaultFlags {
+
+	defaultFlags := parsedTfhd.defaultFlags
+	if !parsedTfhd.hasDefaultFlags {
 		defaultFlags = trex.flags
 	}
 
 	result := &mp4Fragment{
-		trackID:    trackID,
-		timescale:  timescale,
-		decodeTime: decodeTime,
-		tfhd:       tfhd,
+		trackID:                parsedTfhd.trackID,
+		timescale:              timescale,
+		decodeTime:             decodeTime,
+		sampleDescriptionIndex: sampleDescriptionIndex,
+		tfhd:                   buildCanonicalTfhd(parsedTfhd.trackID, sampleDescriptionIndex),
 	}
 
 	var duration uint64
@@ -949,9 +1337,13 @@ func parseTraf(traf []byte, trafHeader int, videoTrack trackInfo, audioTrack tra
 			continue
 		}
 
-		run, err := normalizeTrun(box, headerSize, defaultDuration, defaultSize, defaultFlags)
+		keepSamples := parsedTfhd.trackID == audioTrack.id && audioTrack.id != 0
+		run, err := normalizeTrun(box, headerSize, defaultDuration, defaultSize, defaultFlags, keepSamples)
 		if err != nil {
 			return nil, err
+		}
+		if math.MaxUint64-duration < run.duration {
+			return nil, errors.New("fragment duration overflow")
 		}
 		duration += run.duration
 		result.runs = append(result.runs, run)
@@ -966,81 +1358,135 @@ func parseTraf(traf []byte, trafHeader int, videoTrack trackInfo, audioTrack tra
 	return result, nil
 }
 
-func normalizeTfhd(box []byte, headerSize int) ([]byte, uint32, uint32, uint32, uint32, bool, error) {
+func parseTfhd(box []byte, headerSize int) (tfhdInfo, error) {
+	var info tfhdInfo
+
 	if len(box) < headerSize+8 {
-		return nil, 0, 0, 0, 0, false, errors.New("tfhd is too small")
+		return info, errors.New("tfhd is too small")
 	}
 
 	versionFlags := binary.BigEndian.Uint32(box[headerSize : headerSize+4])
-	version := byte(versionFlags >> 24)
+	info.version = uint8(versionFlags >> 24)
 	flags := versionFlags & 0x00ffffff
+	if info.version != 0 {
+		return info, fmt.Errorf("unsupported tfhd version=%d", info.version)
+	}
+
+	const knownFlags = tfhdBaseDataOffsetPresent |
+		tfhdSampleDescriptionIndexPresent |
+		tfhdDefaultSampleDurationPresent |
+		tfhdDefaultSampleSizePresent |
+		tfhdDefaultSampleFlagsPresent |
+		tfhdDurationIsEmpty |
+		tfhdDefaultBaseIsMoof
+
+	if unknown := flags &^ knownFlags; unknown != 0 {
+		return info, fmt.Errorf("unsupported tfhd flags=0x%06x", unknown)
+	}
 	if flags&tfhdBaseDataOffsetPresent != 0 {
-		return nil, 0, 0, 0, 0, false, errors.New("tfhd.base-data-offset-present is not supported")
+		return info, errors.New("tfhd.base-data-offset-present is not supported")
+	}
+	if flags&tfhdDurationIsEmpty != 0 {
+		return info, errors.New("tfhd.duration-is-empty is not supported")
 	}
 
-	trackID := binary.BigEndian.Uint32(box[headerSize+4 : headerSize+8])
-	optionalStart := headerSize + 8
-	cursor := optionalStart
-
-	if flags&tfhdSampleDescriptionIndexPresent != 0 && !skip(box, &cursor, 4) {
-		return nil, 0, 0, 0, 0, false, errors.New("invalid tfhd sample_description_index")
+	info.trackID = binary.BigEndian.Uint32(box[headerSize+4 : headerSize+8])
+	if info.trackID == 0 {
+		return info, errors.New("tfhd track_ID is zero")
 	}
 
-	var defaultDuration uint32
-	var defaultSize uint32
-	var defaultFlags uint32
+	cursor := headerSize + 8
+
+	if flags&tfhdSampleDescriptionIndexPresent != 0 {
+		value, ok := readUint32(box, &cursor)
+		if !ok || value == 0 {
+			return info, errors.New("invalid tfhd sample_description_index")
+		}
+		info.sampleDescriptionIndex = value
+		info.hasSampleDescriptionIndex = true
+	}
 
 	if flags&tfhdDefaultSampleDurationPresent != 0 {
 		value, ok := readUint32(box, &cursor)
 		if !ok {
-			return nil, 0, 0, 0, 0, false, errors.New("invalid tfhd default_sample_duration")
+			return info, errors.New("invalid tfhd default_sample_duration")
 		}
-		defaultDuration = value
+		info.defaultDuration = value
 	}
 
 	if flags&tfhdDefaultSampleSizePresent != 0 {
 		value, ok := readUint32(box, &cursor)
 		if !ok {
-			return nil, 0, 0, 0, 0, false, errors.New("invalid tfhd default_sample_size")
+			return info, errors.New("invalid tfhd default_sample_size")
 		}
-		defaultSize = value
+		info.defaultSize = value
 	}
 
-	hasDefaultFlags := flags&tfhdDefaultSampleFlagsPresent != 0
-	if hasDefaultFlags {
+	if flags&tfhdDefaultSampleFlagsPresent != 0 {
 		value, ok := readUint32(box, &cursor)
 		if !ok {
-			return nil, 0, 0, 0, 0, false, errors.New("invalid tfhd default_sample_flags")
+			return info, errors.New("invalid tfhd default_sample_flags")
 		}
-		defaultFlags = value
+		info.defaultFlags = value
+		info.hasDefaultFlags = true
 	}
 
-	if cursor != len(box) || trackID == 0 {
-		return nil, 0, 0, 0, 0, false, errors.New("invalid tfhd body")
+	if cursor != len(box) {
+		return info, errors.New("invalid tfhd body")
 	}
 
-	optionalLength := cursor - optionalStart
-	size := 16 + optionalLength
+	return info, nil
+}
+
+func buildCanonicalTfhd(trackID uint32, sampleDescriptionIndex uint32) []byte {
+	const size = 20
+
 	normalized := make([]byte, size)
 	binary.BigEndian.PutUint32(normalized[0:4], uint32(size))
 	binary.BigEndian.PutUint32(normalized[4:8], boxTfhd)
-	binary.BigEndian.PutUint32(normalized[8:12], uint32(version)<<24|flags&^tfhdBaseDataOffsetPresent|tfhdDefaultBaseIsMoof)
+	binary.BigEndian.PutUint32(normalized[8:12], tfhdSampleDescriptionIndexPresent|tfhdDefaultBaseIsMoof)
 	binary.BigEndian.PutUint32(normalized[12:16], trackID)
-	copy(normalized[16:], box[optionalStart:cursor])
-
-	return normalized, trackID, defaultDuration, defaultSize, defaultFlags, hasDefaultFlags, nil
+	binary.BigEndian.PutUint32(normalized[16:20], sampleDescriptionIndex)
+	return normalized
 }
 
-func normalizeTrun(box []byte, headerSize int, defaultDuration uint32, defaultSize uint32, defaultFlags uint32) (mp4Run, error) {
+func normalizeTrun(
+	box []byte,
+	headerSize int,
+	defaultDuration uint32,
+	defaultSize uint32,
+	defaultFlags uint32,
+	keepSamples bool,
+) (mp4Run, error) {
 	var run mp4Run
+
 	if len(box) < headerSize+8 {
 		return run, errors.New("trun is too small")
 	}
 
 	versionFlags := binary.BigEndian.Uint32(box[headerSize : headerSize+4])
-	version := byte(versionFlags >> 24)
+	version := uint8(versionFlags >> 24)
 	flags := versionFlags & 0x00ffffff
+	if version > 1 {
+		return run, fmt.Errorf("unsupported trun version=%d", version)
+	}
+
+	const knownFlags = trunDataOffsetPresent |
+		trunFirstSampleFlagsPresent |
+		trunSampleDurationPresent |
+		trunSampleSizePresent |
+		trunSampleFlagsPresent |
+		trunCompositionTimeOffsetPresent
+
+	if unknown := flags &^ knownFlags; unknown != 0 {
+		return run, fmt.Errorf("unsupported trun flags=0x%06x", unknown)
+	}
+
 	sampleCount := binary.BigEndian.Uint32(box[headerSize+4 : headerSize+8])
+
+	if sampleCount == 0 {
+		return run, errors.New("trun sample_count is zero")
+	}
 
 	cursor := headerSize + 8
 	if flags&trunDataOffsetPresent != 0 {
@@ -1053,6 +1499,11 @@ func normalizeTrun(box []byte, headerSize int, defaultDuration uint32, defaultSi
 	}
 
 	hasFirstSampleFlags := flags&trunFirstSampleFlagsPresent != 0
+	hasSampleFlags := flags&trunSampleFlagsPresent != 0
+	if hasFirstSampleFlags && hasSampleFlags {
+		return run, errors.New("trun first_sample_flags and sample_flags are both present")
+	}
+
 	firstSampleFlags := defaultFlags
 	if hasFirstSampleFlags {
 		value, ok := readUint32(box, &cursor)
@@ -1064,6 +1515,8 @@ func normalizeTrun(box []byte, headerSize int, defaultDuration uint32, defaultSi
 
 	hasDuration := flags&trunSampleDurationPresent != 0
 	hasSize := flags&trunSampleSizePresent != 0
+	hasCompositionOffsets := flags&trunCompositionTimeOffsetPresent != 0
+
 	if !hasDuration && defaultDuration == 0 {
 		return run, errors.New("sample duration is absent")
 	}
@@ -1071,9 +1524,21 @@ func normalizeTrun(box []byte, headerSize int, defaultDuration uint32, defaultSi
 		return run, errors.New("sample size is absent")
 	}
 
+	var samples []mp4Sample
+	if keepSamples {
+		samples = make([]mp4Sample, int(sampleCount))
+	}
+
+	normalized, dataOffsetField, sampleCursor, err := newCanonicalTrunBox(version, int(sampleCount), hasCompositionOffsets)
+	if err != nil {
+		return run, err
+	}
+
 	var duration uint64
 	var dataSize uint64
-	for i := uint32(0); i < sampleCount; i++ {
+	var firstSampleEffectiveFlags uint32
+
+	for i := 0; i < int(sampleCount); i++ {
 		sampleDuration := defaultDuration
 		sampleSize := defaultSize
 
@@ -1093,54 +1558,175 @@ func normalizeTrun(box []byte, headerSize int, defaultDuration uint32, defaultSi
 			sampleSize = value
 		}
 
-		duration += uint64(sampleDuration)
-		dataSize += uint64(sampleSize)
-
-		if flags&trunSampleFlagsPresent != 0 {
-			sampleFlags, ok := readUint32(box, &cursor)
+		effectiveFlags := defaultFlags
+		if hasSampleFlags {
+			value, ok := readUint32(box, &cursor)
 			if !ok {
 				return run, errors.New("invalid trun sample_flags")
 			}
-			if i == 0 && !hasFirstSampleFlags {
-				firstSampleFlags = sampleFlags
-			}
+			effectiveFlags = value
+		} else if i == 0 && hasFirstSampleFlags {
+			effectiveFlags = firstSampleFlags
 		}
 
-		if flags&trunCompositionTimeOffsetPresent != 0 && !skip(box, &cursor, 4) {
-			return run, errors.New("invalid trun composition_time_offset")
+		var compositionTimeOffsetRaw uint32
+		if hasCompositionOffsets {
+			value, ok := readUint32(box, &cursor)
+			if !ok {
+				return run, errors.New("invalid trun composition_time_offset")
+			}
+			compositionTimeOffsetRaw = value
+		}
+
+		if math.MaxUint64-duration < uint64(sampleDuration) {
+			return run, errors.New("trun duration overflow")
+		}
+		if math.MaxUint64-dataSize < uint64(sampleSize) {
+			return run, errors.New("trun payload size overflow")
+		}
+
+		duration += uint64(sampleDuration)
+		dataSize += uint64(sampleSize)
+
+		sample := mp4Sample{
+			duration:                 sampleDuration,
+			size:                     sampleSize,
+			flags:                    effectiveFlags,
+			compositionTimeOffsetRaw: compositionTimeOffsetRaw,
+		}
+
+		writeCanonicalTrunSample(normalized, &sampleCursor, sample, hasCompositionOffsets)
+
+		if keepSamples {
+			samples[i] = sample
+		}
+		if i == 0 {
+			firstSampleEffectiveFlags = effectiveFlags
 		}
 	}
 
-	if cursor != len(box) || sampleCount == 0 || duration == 0 || dataSize == 0 {
+	if cursor != len(box) || duration == 0 || dataSize == 0 || sampleCursor != len(normalized) {
 		return run, errors.New("invalid trun body")
 	}
 
-	hadOffset := flags&trunDataOffsetPresent != 0
-	bodyLength := len(box) - headerSize
-	normalizedSize := 8 + bodyLength
-	if !hadOffset {
-		normalizedSize += 4
-	}
-
-	normalized := make([]byte, normalizedSize)
-	binary.BigEndian.PutUint32(normalized[0:4], uint32(normalizedSize))
-	binary.BigEndian.PutUint32(normalized[4:8], boxTrun)
-	binary.BigEndian.PutUint32(normalized[8:12], uint32(version)<<24|flags|trunDataOffsetPresent)
-	binary.BigEndian.PutUint32(normalized[12:16], sampleCount)
-
-	if hadOffset {
-		copy(normalized[16:], box[headerSize+8:])
-	} else {
-		binary.BigEndian.PutUint32(normalized[16:20], 0)
-		copy(normalized[20:], box[headerSize+8:])
-	}
-
 	run.box = normalized
-	run.dataOffsetField = 16
+	run.dataOffsetField = dataOffsetField
+	run.samples = samples
+	run.version = version
+	run.hasCompositionTimeOffsets = hasCompositionOffsets
 	run.duration = duration
 	run.dataSize = dataSize
-	run.startsWithSync = isSyncSample(firstSampleFlags)
+	run.startsWithSync = isSyncSample(firstSampleEffectiveFlags)
 	return run, nil
+}
+
+func buildExplicitRun(template mp4Run, samples []mp4Sample, keepSamples bool) (mp4Run, error) {
+	var run mp4Run
+
+	box, dataOffsetField, err := buildCanonicalTrun(template.version, samples, template.hasCompositionTimeOffsets)
+	if err != nil {
+		return run, err
+	}
+	var duration uint64
+	var dataSize uint64
+
+	for _, sample := range samples {
+		if math.MaxUint64-duration < uint64(sample.duration) {
+			return run, errors.New("derived trun duration overflow")
+		}
+		if math.MaxUint64-dataSize < uint64(sample.size) {
+			return run, errors.New("derived trun payload size overflow")
+		}
+
+		duration += uint64(sample.duration)
+		dataSize += uint64(sample.size)
+	}
+
+	if duration == 0 || dataSize == 0 {
+		return run, errors.New("invalid derived trun")
+	}
+
+	run.box = box
+	run.dataOffsetField = dataOffsetField
+	run.duration = duration
+	run.dataSize = dataSize
+	run.startsWithSync = isSyncSample(samples[0].flags)
+	run.version = template.version
+	run.hasCompositionTimeOffsets = template.hasCompositionTimeOffsets
+	if keepSamples {
+		run.samples = append([]mp4Sample(nil), samples...)
+	}
+	return run, nil
+}
+
+func buildCanonicalTrun(version uint8, samples []mp4Sample, includeCompositionOffsets bool) ([]byte, int, error) {
+	if len(samples) == 0 {
+		return nil, 0, errors.New("cannot build trun without samples")
+	}
+
+	box, dataOffsetField, cursor, err := newCanonicalTrunBox(version, len(samples), includeCompositionOffsets)
+	if err != nil {
+		return nil, 0, err
+	}
+	for _, sample := range samples {
+		writeCanonicalTrunSample(box, &cursor, sample, includeCompositionOffsets)
+	}
+
+	return box, dataOffsetField, nil
+}
+
+func newCanonicalTrunBox(version uint8, sampleCount int, includeCompositionOffsets bool) ([]byte, int, int, error) {
+	if sampleCount <= 0 {
+		return nil, 0, 0, errors.New("cannot build trun without samples")
+	}
+	if uint64(sampleCount) > math.MaxUint32 {
+		return nil, 0, 0, errors.New("too many trun samples")
+	}
+
+	flags := uint32(
+		trunDataOffsetPresent |
+			trunSampleDurationPresent |
+			trunSampleSizePresent |
+			trunSampleFlagsPresent,
+	)
+
+	entrySize := uint64(12)
+	if includeCompositionOffsets {
+		flags |= trunCompositionTimeOffsetPresent
+		entrySize += 4
+	}
+
+	size64 := uint64(20) + uint64(sampleCount)*entrySize
+	if size64 > math.MaxInt32 {
+		return nil, 0, 0, errors.New("canonical trun is too large")
+	}
+
+	box := make([]byte, int(size64))
+	binary.BigEndian.PutUint32(box[0:4], uint32(size64))
+	binary.BigEndian.PutUint32(box[4:8], boxTrun)
+	binary.BigEndian.PutUint32(box[8:12], uint32(version)<<24|flags)
+	binary.BigEndian.PutUint32(box[12:16], uint32(sampleCount))
+
+	const dataOffsetField = 16
+	binary.BigEndian.PutUint32(box[dataOffsetField:dataOffsetField+4], 0)
+
+	return box, dataOffsetField, 20, nil
+}
+
+func writeCanonicalTrunSample(box []byte, cursor *int, sample mp4Sample, includeCompositionOffsets bool) {
+	binary.BigEndian.PutUint32(box[*cursor:*cursor+4], sample.duration)
+	*cursor += 4
+
+	binary.BigEndian.PutUint32(box[*cursor:*cursor+4], sample.size)
+	*cursor += 4
+
+	binary.BigEndian.PutUint32(box[*cursor:*cursor+4], sample.flags)
+	*cursor += 4
+
+	if includeCompositionOffsets {
+		binary.BigEndian.PutUint32(box[*cursor:*cursor+4], sample.compositionTimeOffsetRaw)
+		*cursor += 4
+	}
 }
 
 func isSyncSample(flags uint32) bool {
@@ -1235,19 +1821,26 @@ func parseInitTracks(init []byte) (trackInfo, trackInfo, error) {
 	if videoID == 0 || videoTimescale == 0 {
 		return trackInfo{}, trackInfo{}, errors.New("video track was not found through hdlr=vide")
 	}
-	if audioID == 0 || audioTimescale == 0 {
-		return trackInfo{}, trackInfo{}, errors.New("audio track was not found through hdlr=soun")
+
+	video := trackInfo{
+		id:        videoID,
+		timescale: videoTimescale,
+		trex:      findTrex(trexEntries, videoID),
 	}
 
-	return trackInfo{
-			id:        videoID,
-			timescale: videoTimescale,
-			trex:      findTrex(trexEntries, videoID),
-		}, trackInfo{
+	var audio trackInfo
+	if audioID != 0 {
+		if audioTimescale == 0 {
+			return trackInfo{}, trackInfo{}, errors.New("audio timescale is zero")
+		}
+		audio = trackInfo{
 			id:        audioID,
 			timescale: audioTimescale,
 			trex:      findTrex(trexEntries, audioID),
-		}, nil
+		}
+	}
+
+	return video, audio, nil
 }
 
 func readTrack(trak []byte, trakHeader int) (uint32, uint32, uint32) {
@@ -1340,16 +1933,19 @@ func readTrex(box []byte, header int) (trexEntry, bool) {
 	}
 
 	trackID := binary.BigEndian.Uint32(box[header+4 : header+8])
-	if trackID == 0 {
+	descriptionIndex := binary.BigEndian.Uint32(box[header+8 : header+12])
+
+	if trackID == 0 || descriptionIndex == 0 {
 		return trexEntry{}, false
 	}
 
 	return trexEntry{
 		trackID: trackID,
 		value: trexInfo{
-			duration: binary.BigEndian.Uint32(box[header+12 : header+16]),
-			size:     binary.BigEndian.Uint32(box[header+16 : header+20]),
-			flags:    binary.BigEndian.Uint32(box[header+20 : header+24]),
+			descriptionIndex: descriptionIndex,
+			duration:         binary.BigEndian.Uint32(box[header+12 : header+16]),
+			size:             binary.BigEndian.Uint32(box[header+16 : header+20]),
+			flags:            binary.BigEndian.Uint32(box[header+20 : header+24]),
 		},
 	}, true
 }
@@ -1435,21 +2031,21 @@ func toUnits(seconds float64, timescale uint32) (uint64, error) {
 	return uint64(math.Ceil(value)), nil
 }
 
-func addTfdtOffset(value uint64, timescale uint32, seconds float64) uint64 {
+func addTfdtOffset(value uint64, timescale uint32, seconds float64) (uint64, error) {
 	if seconds <= 0 {
-		return value
+		return value, nil
 	}
 
 	units := seconds * float64(timescale)
 	if math.IsNaN(units) || math.IsInf(units, 0) || units < 0 || units > float64(math.MaxUint64) {
-		panic("invalid tfdt offset")
+		return 0, errors.New("invalid tfdt offset")
 	}
 
 	offset := uint64(math.Round(units))
 	if math.MaxUint64-value < offset {
-		panic("tfdt offset overflow")
+		return 0, errors.New("tfdt offset overflow")
 	}
-	return value + offset
+	return value + offset, nil
 }
 
 func writeTfdt(output io.Writer, decodeTime uint64) {
@@ -1490,20 +2086,38 @@ func writeMdatHeader(output io.Writer, payloadLength uint64, headerSize int) {
 	_, _ = output.Write(header[:])
 }
 
-func collectPayloads(video []mp4Fragment, videoCount int, audio []mp4Fragment, audioCount int) [][]byte {
-	payloads := make([][]byte, 0, videoCount+audioCount)
-	payloads = appendFragmentPayloads(payloads, video, videoCount)
-	payloads = appendFragmentPayloads(payloads, audio, audioCount)
-	return payloads
+func collectPayloadRangesInto(
+	dst [][]byte,
+	storage []byte,
+	video []mp4Fragment,
+	videoCount int,
+	audio []mp4Fragment,
+	audioCount int,
+) ([][]byte, error) {
+	var err error
+	dst, err = appendFragmentPayloadRanges(dst, storage, video, videoCount)
+	if err != nil {
+		return dst, err
+	}
+	return appendFragmentPayloadRanges(dst, storage, audio, audioCount)
 }
 
-func appendFragmentPayloads(payloads [][]byte, fragments []mp4Fragment, count int) [][]byte {
+func appendFragmentPayloadRanges(dst [][]byte, storage []byte, fragments []mp4Fragment, count int) ([][]byte, error) {
 	for i := 0; i < count; i++ {
-		if len(fragments[i].payload) > 0 {
-			payloads = append(payloads, fragments[i].payload)
+		fragment := fragments[i]
+		if fragment.payloadLen == 0 {
+			continue
 		}
+		if fragment.payloadStart < 0 || fragment.payloadLen < 0 {
+			return dst, errors.New("negative fragment payload range")
+		}
+		end := fragment.payloadStart + fragment.payloadLen
+		if end < fragment.payloadStart || end > len(storage) {
+			return dst, errors.New("fragment payload range exceeds storage")
+		}
+		dst = append(dst, storage[fragment.payloadStart:end])
 	}
-	return payloads
+	return dst, nil
 }
 
 func removeFragments(fragments []mp4Fragment, count int) []mp4Fragment {
@@ -1528,6 +2142,73 @@ func (r *mp4BoxReader) clearFragments() {
 	r.audio = r.audio[:0]
 }
 
+func (r *mp4BoxReader) ReclaimPayloads() {
+	if r.sourcePayload.Len() == 0 {
+		return
+	}
+
+	minStart := r.minQueuedPayloadStart()
+	if minStart < 0 {
+		r.sourcePayload.Reset()
+		r.currentPayloadStart = 0
+		return
+	}
+	if minStart == 0 {
+		return
+	}
+
+	data := r.sourcePayload.Bytes()
+	copy(data, data[minStart:])
+	r.sourcePayload.Truncate(len(data) - minStart)
+
+	shiftFragmentPayloadStarts(r.video, minStart)
+	shiftFragmentPayloadStarts(r.audio, minStart)
+	if r.pending != nil && r.pending.payloadLen > 0 {
+		r.pending.payloadStart -= minStart
+	}
+
+	if r.currentPayloadStart >= minStart {
+		r.currentPayloadStart -= minStart
+	} else {
+		r.currentPayloadStart = 0
+	}
+}
+
+func (r *mp4BoxReader) minQueuedPayloadStart() int {
+	minStart := -1
+	minStart = minFragmentPayloadStart(minStart, r.video)
+	minStart = minFragmentPayloadStart(minStart, r.audio)
+	if r.pending != nil && r.pending.payloadLen > 0 {
+		minStart = minPayloadStart(minStart, r.pending.payloadStart)
+	}
+	return minStart
+}
+
+func minFragmentPayloadStart(current int, fragments []mp4Fragment) int {
+	for i := range fragments {
+		if fragments[i].payloadLen <= 0 {
+			continue
+		}
+		current = minPayloadStart(current, fragments[i].payloadStart)
+	}
+	return current
+}
+
+func minPayloadStart(current int, value int) int {
+	if current < 0 || value < current {
+		return value
+	}
+	return current
+}
+
+func shiftFragmentPayloadStarts(fragments []mp4Fragment, delta int) {
+	for i := range fragments {
+		if fragments[i].payloadLen > 0 {
+			fragments[i].payloadStart -= delta
+		}
+	}
+}
+
 func (r *mp4BoxReader) resetPrefix() {
 	r.prefix.Reset()
 	r.prefixActive = false
@@ -1537,6 +2218,7 @@ func (r *mp4BoxReader) clearSource() {
 	r.pending = nil
 	r.sourcePayload.Reset()
 	r.sourcePayloadFromMoof = 0
+	r.currentPayloadStart = 0
 	r.sourceMoof.Reset()
 }
 

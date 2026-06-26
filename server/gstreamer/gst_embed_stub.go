@@ -1,4 +1,4 @@
-//go:build !windows || !amd64 || !embed_gstlib
+//go:build !embed_gstlib || (!windows && !linux) || (windows && !amd64) || (linux && !amd64 && !arm64)
 
 package gstreamer
 
