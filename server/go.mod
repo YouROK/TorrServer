@@ -18,6 +18,7 @@ require (
 	github.com/anacrolix/torrent v1.59.1
 	github.com/dustin/go-humanize v1.0.1
 	github.com/ebitengine/purego v0.10.1
+	github.com/fsnotify/fsnotify v1.10.1
 	github.com/gin-contrib/cors v1.7.6
 	github.com/gin-contrib/location/v2 v2.0.0
 	github.com/gin-gonic/gin v1.11.0
