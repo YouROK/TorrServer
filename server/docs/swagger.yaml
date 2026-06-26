@@ -41,6 +41,8 @@ definitions:
         type: integer
       hash:
         type: string
+      timecode:
+        type: number
     type: object
   models.TorrentDetails:
     properties:
@@ -179,6 +181,9 @@ definitions:
         items:
           $ref: '#/definitions/settings.TorznabConfig'
         type: array
+      trackTimecode:
+        description: Viewed timecodes
+        type: boolean
       uploadRateLimit:
         description: in kb, 0 - inf
         type: integer
@@ -216,6 +221,8 @@ definitions:
         type: integer
       hash:
         type: string
+      timecode:
+        type: number
     type: object
   state.CacheState:
     properties:
