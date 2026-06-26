@@ -803,6 +803,9 @@
                 },
                 "hash": {
                     "type": "string"
+                },
+                "timecode": {
+                    "type": "number"
                 }
             }
         },
@@ -1003,6 +1006,10 @@
                         "$ref": "#/definitions/settings.TorznabConfig"
                     }
                 },
+                "trackTimecode": {
+                    "description": "Viewed timecodes",
+                    "type": "boolean"
+                },
                 "uploadRateLimit": {
                     "description": "in kb, 0 - inf",
                     "type": "integer"
@@ -1056,6 +1063,9 @@
                 },
                 "hash": {
                     "type": "string"
+                },
+                "timecode": {
+                    "type": "number"
                 }
             }
         },

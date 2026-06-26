@@ -87,6 +87,9 @@ type BTSets struct {
 	StoreSettingsInJson bool
 	StoreViewedInJson   bool
 
+	// Viewed timecodes
+	TrackTimecode bool // store playback position (timecode) in viewed data
+
 	// P2P Proxy
 	EnableProxy bool
 	ProxyHosts  []string

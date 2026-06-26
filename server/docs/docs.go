@@ -810,6 +810,9 @@ const docTemplate = `{
                 },
                 "hash": {
                     "type": "string"
+                },
+                "timecode": {
+                    "type": "number"
                 }
             }
         },
@@ -1010,6 +1013,10 @@ const docTemplate = `{
                         "$ref": "#/definitions/settings.TorznabConfig"
                     }
                 },
+                "trackTimecode": {
+                    "description": "Viewed timecodes",
+                    "type": "boolean"
+                },
                 "uploadRateLimit": {
                     "description": "in kb, 0 - inf",
                     "type": "integer"
@@ -1063,6 +1070,9 @@ const docTemplate = `{
                 },
                 "hash": {
                     "type": "string"
+                },
+                "timecode": {
+                    "type": "number"
                 }
             }
         },

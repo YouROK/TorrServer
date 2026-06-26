@@ -3,6 +3,7 @@ package web
 import (
 	"net"
 	"os"
+	"server/gstreamer"
 	"server/proxy"
 	"sort"
 
@@ -81,6 +82,7 @@ func Start() {
 	route.GET("/echo", echo)
 
 	api.SetupRoute(route)
+	gstreamer.SetupRoute(route)
 	msx.SetupRoute(route)
 	pages.SetupRoute(route)
 	if settings.Args.WebDAV {
@@ -135,6 +137,7 @@ func Wait() error {
 }
 
 func Stop() {
+	gstreamer.Stop()
 	dlna.Stop()
 	// Unmount FUSE filesystem if mounted
 	fuse.FuseCleanup()
