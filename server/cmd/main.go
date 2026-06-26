@@ -16,6 +16,7 @@ import (
 
 	"github.com/alexflint/go-arg"
 	"github.com/pkg/browser"
+	"github.com/fsnotify/fsnotify"
 
 	"server"
 	"server/docs"
@@ -192,44 +193,89 @@ func main() {
 }
 
 func watchTDir(dir string) {
-	time.Sleep(5 * time.Second)
-	path, err := filepath.Abs(dir)
+
+	path, err := filepath.Abs(dir) // Attempt to convert the provided dir path into an absolute (full) filesystem path.
 	if err != nil {
 		path = dir
+	} // If an error occurs while obtaining the absolute path, the original relative path is used.
+
+	watcher, err := fsnotify.NewWatcher() // Create a new filesystem watcher (event-based instead of polling).
+	if err != nil {
+		log.TLogln("Error creating watcher:", err)
+		return
 	}
-	for {
-		files, err := os.ReadDir(path)
-		if err == nil {
-			for _, file := range files {
-				filename := filepath.Join(path, file.Name())
-				if strings.ToLower(filepath.Ext(file.Name())) == ".torrent" {
-					sp, err := utils.OpenTorrentFile(filename)
-					if err == nil {
-						tor, err := torr.AddTorrent(sp, "", "", "", "")
-						if err == nil {
-							if tor.GotInfo() {
-								if tor.Title == "" {
-									tor.Title = tor.Name()
-								}
-								torr.SaveTorrentToDB(tor)
-								tor.Drop()
-								os.Remove(filename)
-								time.Sleep(time.Second)
-							} else {
-								log.TLogln("Error get info from torrent")
-							}
-						} else {
-							log.TLogln("Error parse torrent file:", err)
-						}
-					} else {
-						log.TLogln("Error parse file name:", err)
-					}
-				}
+	defer watcher.Close()
+
+	err = watcher.Add(path) // Add target directory to watcher to receive filesystem events.
+	if err != nil {
+		log.TLogln("Error adding directory to watcher:", err)
+		return
+	}
+
+	for { // Start of an infinite loop for continuous background monitoring using filesystem events.
+
+		select {
+		case event, ok := <-watcher.Events:
+			if !ok {
+				return
 			}
-		} else {
-			log.TLogln("Error read dir:", err)
+
+			// Process only file creation or modification events
+			if event.Op&(fsnotify.Create|fsnotify.Write) == 0 {
+				continue
+			}
+
+			filename := event.Name
+			if strings.ToLower(filepath.Ext(filename)) != ".torrent" {
+				continue
+			}
+
+			func() { // Open an anonymous function to isolate processing context per file.
+				defer func() { // Deferred execution of a safety function that always runs at the end (even in case of panic).
+					if r := recover(); r != nil { // Catch critical runtime errors (panic) during torrent processing.
+						log.TLogln("Recovered from panic in watchTDir:", r) // Log recovered panic to prevent full service crash.
+					}
+				}()
+
+				sp, err := utils.OpenTorrentFile(filename) // Parse the torrent file: read Bencode structure and extract metadata.
+				if err != nil {
+					log.TLogln("Error parse file name:", err)
+					return
+				}
+
+				tor, err := torr.AddTorrent(sp, "", "", "", "") // Add parsed torrent specification into active torrent engine.
+				if err != nil {
+					log.TLogln("Error parse torrent file:", err)
+					return
+				}
+
+				if !tor.GotInfo() { // Check whether torrent metadata (info section) is available.
+					log.TLogln("Error get info from torrent") // If metadata is missing, log error and skip processing.
+					return
+				}
+
+				if tor.Title == "" { // If torrent has no custom title, assign default name from metadata.
+					tor.Title = tor.Name()
+				}
+
+				// Safely remove the original torrent file before writing to database.
+				// This prevents reprocessing in case of repeated filesystem events.
+				if err := os.Remove(filename); err != nil {
+					log.TLogln("Error removing torrent file:", err)
+				}
+
+				// Long database operation is now safe
+				torr.SaveTorrentToDB(tor) // Save torrent metadata into SQLite database.
+				tor.Drop() // Free RAM by removing torrent from active memory after processing.
+			}()
+
+		case err, ok := <-watcher.Errors:
+			if !ok {
+				return
+			}
+			// Log filesystem watcher errors
+			log.TLogln("Watcher error:", err)
 		}
-		time.Sleep(time.Second * 5)
 	}
 }
 
