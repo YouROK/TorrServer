@@ -44,8 +44,8 @@ func DefaultConfig() Config {
 		SegmentSeconds:      6,
 		VideoBitrate:        10_000,
 		PipelineTimeSeconds: 18,
-		PipelineAudioQueue:  3,
-		PipelineVideoQueue:  24,
+		PipelineAudioQueue:  8,
+		PipelineVideoQueue:  36,
 		TempFS:              false,
 	}
 
@@ -74,10 +74,10 @@ func (c Config) normalized() Config {
 		c.PipelineTimeSeconds = 18
 	}
 	if c.PipelineAudioQueue <= 0 {
-		c.PipelineAudioQueue = 3
+		c.PipelineAudioQueue = 8
 	}
 	if c.PipelineVideoQueue <= 0 {
-		c.PipelineVideoQueue = 24
+		c.PipelineVideoQueue = 36
 	}
 	if c.TempFSRing < 0 {
 		c.TempFSRing = 0

@@ -29,8 +29,8 @@ const (
 	tempFSBlockSeconds       = 30
 	tempFSBaseBlocks         = 3
 	tempFSFallbackBlockBytes = 32 * 1024 * 1024
-	sourceQueueBytes         = 4 * 1024 * 1024
-	appSinkByteLimit         = 42 * 1024 * 1024
+	sourceQueueBytes         = 5 * 1024 * 1024
+	appSinkByteLimit         = 48 * 1024 * 1024
 )
 
 type gstRunner struct {
