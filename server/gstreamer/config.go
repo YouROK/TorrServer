@@ -35,7 +35,7 @@ type Config struct {
 
 func DefaultConfig() Config {
 	conf := Config{
-		GSTVersion:          1.26,
+		GSTVersion:          1.22,
 		Source:              "stream",
 		InactiveMinutes:     5,
 		AACBitrateKbps:      256,
@@ -81,7 +81,7 @@ func (c Config) normalized() Config {
 		c.TempFSRing = 0
 	}
 	if c.GSTVersion <= 0 {
-		c.GSTVersion = 1.26
+		c.GSTVersion = 1.22
 	}
 	c.Source = strings.ToLower(strings.TrimSpace(c.Source))
 	if c.Source != "play" {

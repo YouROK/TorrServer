@@ -388,6 +388,7 @@ func prependEnvPath(key string, value string) {
 func (r *gstRunner) createPipelineArgs() string {
 	conf := r.task.Config
 	probe := r.task.Probe
+	gstVersion := effectiveGStreamerVersion(conf)
 
 	queueNS := int64(conf.PipelineTimeSeconds) * int64(time.Second)
 	audioQueueBytes := conf.PipelineAudioQueue * 1024 * 1024
@@ -398,7 +399,7 @@ func (r *gstRunner) createPipelineArgs() string {
 	sb.WriteString("location=\"")
 	sb.WriteString(r.task.SourceURL)
 	sb.WriteString("\" is-live=false keep-alive=true timeout=60 retries=5 ")
-	if conf.GSTVersion >= 1.26 {
+	if gstVersion.atLeast(1, 26) {
 		sb.WriteString("retry-backoff-factor=0.5 retry-backoff-max=10 ")
 	}
 	r.writeSourceQueue(&sb, queueNS)
@@ -470,8 +471,11 @@ func (r *gstRunner) createPipelineArgs() string {
 
 	sb.WriteString("mp4mux name=mux fragment-duration=")
 	sb.WriteString(strconv.Itoa(conf.SegmentSeconds * 1000))
-	sb.WriteString(" streamable=true ! appsink name=out emit-signals=false sync=false max-buffers=1 max-bytes=0 max-time=0")
-	if conf.GSTVersion >= 1.28 {
+	sb.WriteString(" streamable=true ! appsink name=out emit-signals=false sync=false max-buffers=1")
+	if gstVersion.atLeast(1, 24) {
+		sb.WriteString(" max-bytes=0 max-time=0")
+	}
+	if gstVersion.atLeast(1, 28) {
 		sb.WriteString(" leaky-type=none")
 	} else {
 		sb.WriteString(" drop=false")
@@ -479,6 +483,23 @@ func (r *gstRunner) createPipelineArgs() string {
 	sb.WriteString(" wait-on-eos=false")
 
 	return sb.String()
+}
+
+func effectiveGStreamerVersion(conf Config) gstVersionInfo {
+	if gstRuntime != nil && gstRuntime.version.valid() {
+		return gstRuntime.version
+	}
+	if conf.GSTVersion <= 0 {
+		conf.GSTVersion = 1.22
+	}
+
+	major := uint32(conf.GSTVersion)
+	minor := uint32(math.Round((conf.GSTVersion - float64(major)) * 100))
+	if minor >= 100 {
+		major += minor / 100
+		minor %= 100
+	}
+	return gstVersionInfo{major: major, minor: minor}
 }
 
 func (r *gstRunner) aacEncoder() string {
