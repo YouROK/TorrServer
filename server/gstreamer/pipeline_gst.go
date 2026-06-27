@@ -29,8 +29,7 @@ const (
 	tempFSBlockSeconds       = 30
 	tempFSBaseBlocks         = 3
 	tempFSFallbackBlockBytes = 32 * 1024 * 1024
-	sourceQueueBytes         = 5 * 1024 * 1024
-	appSinkByteLimit         = 48 * 1024 * 1024
+	sourceQueueBytes         = 4 * 1024 * 1024
 )
 
 type gstRunner struct {
@@ -489,7 +488,7 @@ func (r *gstRunner) writeAppSinkLimits(sb *strings.Builder, gstVersion gstVersio
 	sb.WriteString(" streamable=true ! appsink name=out emit-signals=false sync=false")
 	if conf.AppSinkMode == "bytes" && gstVersion.atLeast(1, 24) {
 		sb.WriteString(" max-buffers=0 max-bytes=")
-		sb.WriteString(strconv.Itoa(appSinkByteLimit))
+		sb.WriteString(strconv.FormatInt(appSinkByteLimit(conf), 10))
 		sb.WriteString(" max-time=0")
 		return
 	}
@@ -498,6 +497,12 @@ func (r *gstRunner) writeAppSinkLimits(sb *strings.Builder, gstVersion gstVersio
 	if gstVersion.atLeast(1, 24) {
 		sb.WriteString(" max-bytes=0 max-time=0")
 	}
+}
+
+func appSinkByteLimit(conf Config) int64 {
+	conf = conf.normalized()
+	baseBytes := int64(conf.PipelineVideoQueue+conf.PipelineAudioQueue) * 1024 * 1024
+	return baseBytes + baseBytes/10
 }
 
 func effectiveGStreamerVersion(conf Config) gstVersionInfo {
