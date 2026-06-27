@@ -143,7 +143,7 @@ func (t *Task) segmentLocked(ctx context.Context, index int, audio int) (Segment
 	if t.LastSentSegment != -1 && t.LastSentSegment != index {
 		if index != t.LastSentSegment+1 {
 			diff := index - t.LastSentSegment
-			cutoff := t.Config.PipelineVideoQueue
+			cutoff := t.Config.PipelineTimeSeconds
 
 			if diff > 0 && maxInt(60, cutoff) >= diff*t.Config.SegmentSeconds {
 				for i := 0; i < diff-1; i++ {

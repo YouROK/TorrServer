@@ -10,10 +10,9 @@ import (
 )
 
 type Config struct {
-	GSTVersion  float64
-	GSTPath     string
-	Source      string
-	AppSinkMode string
+	GSTVersion float64
+	GSTPath    string
+	Source     string
 
 	InactiveMinutes int
 
@@ -27,8 +26,6 @@ type Config struct {
 	VideoBitrate  int
 
 	PipelineTimeSeconds int
-	PipelineAudioQueue  int
-	PipelineVideoQueue  int
 
 	TempFS     bool
 	TempFSRing int
@@ -38,14 +35,11 @@ func DefaultConfig() Config {
 	conf := Config{
 		GSTVersion:          1.22,
 		Source:              "stream",
-		AppSinkMode:         "bytes",
 		InactiveMinutes:     5,
 		AACBitrateKbps:      256,
 		SegmentSeconds:      6,
 		VideoBitrate:        10_000,
 		PipelineTimeSeconds: 18,
-		PipelineAudioQueue:  8,
-		PipelineVideoQueue:  36,
 		TempFS:              false,
 	}
 
@@ -73,12 +67,6 @@ func (c Config) normalized() Config {
 	if c.PipelineTimeSeconds <= 0 {
 		c.PipelineTimeSeconds = 18
 	}
-	if c.PipelineAudioQueue <= 0 {
-		c.PipelineAudioQueue = 8
-	}
-	if c.PipelineVideoQueue <= 0 {
-		c.PipelineVideoQueue = 36
-	}
 	if c.TempFSRing < 0 {
 		c.TempFSRing = 0
 	}
@@ -89,15 +77,6 @@ func (c Config) normalized() Config {
 	if c.Source != "play" {
 		c.Source = "stream"
 	}
-	c.AppSinkMode = strings.ToLower(strings.TrimSpace(c.AppSinkMode))
-	switch c.AppSinkMode {
-	case "", "bytes", "max-bytes", "max-size-bytes":
-		c.AppSinkMode = "bytes"
-	case "buffer", "buffers", "max-buffers":
-		c.AppSinkMode = "buffers"
-	default:
-		c.AppSinkMode = "bytes"
-	}
 	return c
 }
 
@@ -106,10 +85,9 @@ func (c Config) inactiveDuration() time.Duration {
 }
 
 type storedConfig struct {
-	GSTVersion  *float64
-	GSTPath     *string
-	Source      *string
-	AppSinkMode *string
+	GSTVersion *float64
+	GSTPath    *string
+	Source     *string
 
 	InactiveMinutes *int
 
@@ -123,8 +101,6 @@ type storedConfig struct {
 	VideoBitrate  *int
 
 	PipelineTimeSeconds *int
-	PipelineAudioQueue  *int
-	PipelineVideoQueue  *int
 
 	TempFS     *bool `json:"tempfs"`
 	TempFSRing *int  `json:"tempfs_ring"`
@@ -165,9 +141,6 @@ func applySettingsConfig(conf Config) Config {
 	if stored.Source != nil {
 		conf.Source = *stored.Source
 	}
-	if stored.AppSinkMode != nil {
-		conf.AppSinkMode = *stored.AppSinkMode
-	}
 	if stored.InactiveMinutes != nil {
 		conf.InactiveMinutes = *stored.InactiveMinutes
 	}
@@ -194,12 +167,6 @@ func applySettingsConfig(conf Config) Config {
 	}
 	if stored.PipelineTimeSeconds != nil {
 		conf.PipelineTimeSeconds = *stored.PipelineTimeSeconds
-	}
-	if stored.PipelineAudioQueue != nil {
-		conf.PipelineAudioQueue = *stored.PipelineAudioQueue
-	}
-	if stored.PipelineVideoQueue != nil {
-		conf.PipelineVideoQueue = *stored.PipelineVideoQueue
 	}
 	if stored.TempFS != nil {
 		conf.TempFS = *stored.TempFS

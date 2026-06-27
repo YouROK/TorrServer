@@ -29,7 +29,6 @@ const (
 	tempFSBlockSeconds       = 30
 	tempFSBaseBlocks         = 3
 	tempFSFallbackBlockBytes = 32 * 1024 * 1024
-	sourceQueueBytes         = 4 * 1024 * 1024
 )
 
 type gstRunner struct {
@@ -391,8 +390,6 @@ func (r *gstRunner) createPipelineArgs() string {
 	gstVersion := effectiveGStreamerVersion(conf)
 
 	queueNS := int64(conf.PipelineTimeSeconds) * int64(time.Second)
-	audioQueueBytes := conf.PipelineAudioQueue * 1024 * 1024
-	videoQueueBytes := conf.PipelineVideoQueue * 1024 * 1024
 	var sb strings.Builder
 
 	sb.WriteString("souphttpsrc ")
@@ -402,52 +399,40 @@ func (r *gstRunner) createPipelineArgs() string {
 	if gstVersion.atLeast(1, 26) {
 		sb.WriteString("retry-backoff-factor=0.5 retry-backoff-max=10 ")
 	}
-	r.writeSourceQueue(&sb, queueNS)
-	sb.WriteString(" ! matroskademux name=d ")
+	r.writeSourceQueue(&sb)
+	sb.WriteString(" ! matroskademux name=d multiqueue name=mq use-buffering=false max-size-buffers=0 max-size-bytes=0 max-size-time=")
+	sb.WriteString(strconv.FormatInt(queueNS, 10))
+	sb.WriteString(" ")
+
+	sb.WriteString("d.video_0 ! mq.sink_0 ")
 
 	switch {
 	case probe.IsH264():
 		if conf.TranscodeH264 {
-			r.transcodeToH264(&sb, videoQueueBytes, queueNS)
+			r.transcodeToH264(&sb)
 		} else {
-			sb.WriteString("d.video_0 ! queue max-size-buffers=0 max-size-bytes=")
-			sb.WriteString(strconv.Itoa(videoQueueBytes))
-			sb.WriteString(" max-size-time=")
-			sb.WriteString(strconv.FormatInt(queueNS, 10))
-			sb.WriteString(" leaky=0 ! h264parse config-interval=0 ! h264timestamper ! video/x-h264,stream-format=avc,alignment=au ! mux.video_0 ")
+			sb.WriteString("mq.src_0 ! h264parse config-interval=0 ! h264timestamper ! video/x-h264,stream-format=avc,alignment=au ! mux.video_0 ")
 		}
 
 	case probe.IsH265():
 		if conf.TranscodeH265 {
-			r.transcodeToH264(&sb, videoQueueBytes, queueNS)
+			r.transcodeToH264(&sb)
 		} else {
-			sb.WriteString("d.video_0 ! queue max-size-buffers=0 max-size-bytes=")
-			sb.WriteString(strconv.Itoa(videoQueueBytes))
-			sb.WriteString(" max-size-time=")
-			sb.WriteString(strconv.FormatInt(queueNS, 10))
-			sb.WriteString(" leaky=0 ! h265parse config-interval=0 ! h265timestamper ! video/x-h265,stream-format=hvc1,alignment=au ! mux.video_0 ")
+			sb.WriteString("mq.src_0 ! h265parse config-interval=0 ! h265timestamper ! video/x-h265,stream-format=hvc1,alignment=au ! mux.video_0 ")
 		}
 
 	case probe.IsAV1():
 		if conf.TranscodeAV1 {
-			r.transcodeToH264(&sb, videoQueueBytes, queueNS)
+			r.transcodeToH264(&sb)
 		} else {
-			sb.WriteString("d.video_0 ! queue max-size-buffers=0 max-size-bytes=")
-			sb.WriteString(strconv.Itoa(videoQueueBytes))
-			sb.WriteString(" max-size-time=")
-			sb.WriteString(strconv.FormatInt(queueNS, 10))
-			sb.WriteString(" leaky=0 ! av1parse ! video/x-av1,stream-format=obu-stream,alignment=tu ! mux.video_0 ")
+			sb.WriteString("mq.src_0 ! av1parse ! video/x-av1,stream-format=obu-stream,alignment=tu ! mux.video_0 ")
 		}
 
 	case probe.IsVP9():
 		if conf.TranscodeVP9 {
-			r.transcodeToH264(&sb, videoQueueBytes, queueNS)
+			r.transcodeToH264(&sb)
 		} else {
-			sb.WriteString("d.video_0 ! queue max-size-buffers=0 max-size-bytes=")
-			sb.WriteString(strconv.Itoa(videoQueueBytes))
-			sb.WriteString(" max-size-time=")
-			sb.WriteString(strconv.FormatInt(queueNS, 10))
-			sb.WriteString(" leaky=0 ! vp9parse ! video/x-vp9,alignment=frame ! mux.video_0 ")
+			sb.WriteString("mq.src_0 ! vp9parse ! video/x-vp9,alignment=frame ! mux.video_0 ")
 		}
 	}
 
@@ -456,11 +441,7 @@ func (r *gstRunner) createPipelineArgs() string {
 
 		sb.WriteString("d.audio_")
 		sb.WriteString(strconv.Itoa(r.audioIndex))
-		sb.WriteString(" ! queue max-size-buffers=0 max-size-bytes=")
-		sb.WriteString(strconv.Itoa(audioQueueBytes))
-		sb.WriteString(" max-size-time=")
-		sb.WriteString(strconv.FormatInt(queueNS, 10))
-		sb.WriteString(" leaky=0 ! decodebin ! audioconvert dithering=none noise-shaping=none ! audioresample quality=2 sinc-filter-mode=full ! audio/x-raw,format=")
+		sb.WriteString(" ! mq.sink_1 mq.src_1 ! decodebin ! audioconvert dithering=none noise-shaping=none ! audioresample quality=2 sinc-filter-mode=full ! audio/x-raw,format=")
 		sb.WriteString(aacRawFormat())
 		sb.WriteString(",layout=interleaved,rate=48000,channels=2 ! ")
 		sb.WriteString(aacEncoder)
@@ -471,7 +452,7 @@ func (r *gstRunner) createPipelineArgs() string {
 
 	sb.WriteString("mp4mux name=mux fragment-duration=")
 	sb.WriteString(strconv.Itoa(conf.SegmentSeconds * 1000))
-	r.writeAppSinkLimits(&sb, gstVersion)
+	sb.WriteString(" streamable=true ! appsink name=out emit-signals=false sync=false max-buffers=1")
 	if gstVersion.atLeast(1, 28) {
 		sb.WriteString(" leaky-type=none")
 	} else {
@@ -480,29 +461,6 @@ func (r *gstRunner) createPipelineArgs() string {
 	sb.WriteString(" wait-on-eos=false")
 
 	return sb.String()
-}
-
-func (r *gstRunner) writeAppSinkLimits(sb *strings.Builder, gstVersion gstVersionInfo) {
-	conf := r.task.Config.normalized()
-
-	sb.WriteString(" streamable=true ! appsink name=out emit-signals=false sync=false")
-	if conf.AppSinkMode == "bytes" && gstVersion.atLeast(1, 24) {
-		sb.WriteString(" max-buffers=0 max-bytes=")
-		sb.WriteString(strconv.FormatInt(appSinkByteLimit(conf), 10))
-		sb.WriteString(" max-time=0")
-		return
-	}
-
-	sb.WriteString(" max-buffers=1")
-	if gstVersion.atLeast(1, 24) {
-		sb.WriteString(" max-bytes=0 max-time=0")
-	}
-}
-
-func appSinkByteLimit(conf Config) int64 {
-	conf = conf.normalized()
-	baseBytes := int64(conf.PipelineVideoQueue+conf.PipelineAudioQueue) * 1024 * 1024
-	return baseBytes + baseBytes/10
 }
 
 func effectiveGStreamerVersion(conf Config) gstVersionInfo {
@@ -530,26 +488,25 @@ func aacRawFormat() string {
 	return "F32LE"
 }
 
-func (r *gstRunner) writeSourceQueue(sb *strings.Builder, queueNS int64) {
+func (r *gstRunner) writeSourceQueue(sb *strings.Builder) {
 	conf := r.task.Config
-
-	sb.WriteString("! queue2 use-buffering=false max-size-buffers=0 max-size-bytes=")
-	sb.WriteString(strconv.Itoa(sourceQueueBytes))
-	sb.WriteString(" max-size-time=")
-	sb.WriteString(strconv.FormatInt(queueNS, 10))
 
 	if !conf.TempFS {
 		return
 	}
 
 	ringBlocks := int64(tempFSBaseBlocks + conf.TempFSRing)
-	ringBytes := ringBlocks * r.tempFSBlockBytes()
+	blockBytes := r.tempFSBlockBytes()
+	ringBytes := ringBlocks*blockBytes + 1024*1024
 	template := gstPath(queue2TempTemplate())
 
-	sb.WriteString(" temp-template=\"")
+	sb.WriteString(" ! queue2 use-buffering=false temp-template=\"")
 	sb.WriteString(template)
-	sb.WriteString("\" ring-buffer-max-size=")
+	sb.WriteString("\" temp-remove=true ring-buffer-max-size=")
 	sb.WriteString(strconv.FormatInt(ringBytes, 10))
+	sb.WriteString(" max-size-bytes=")
+	sb.WriteString(strconv.FormatInt(blockBytes, 10))
+	sb.WriteString(" max-size-buffers=0 max-size-time=0")
 }
 
 func (r *gstRunner) tempFSBlockBytes() int64 {
@@ -564,7 +521,7 @@ func (r *gstRunner) tempFSBlockBytes() int64 {
 	return tempFSFallbackBlockBytes
 }
 
-func (r *gstRunner) transcodeToH264(sb *strings.Builder, maxQueueBytes int, queueNS int64) {
+func (r *gstRunner) transcodeToH264(sb *strings.Builder) {
 	conf := r.task.Config
 	video := r.task.Probe.Video()
 
@@ -580,11 +537,7 @@ func (r *gstRunner) transcodeToH264(sb *strings.Builder, maxQueueBytes int, queu
 		keyIntMax = maxInt(1, int(math.Round(float64(frameRateNum*conf.SegmentSeconds)/float64(frameRateDen))))
 	}
 
-	sb.WriteString("d.video_0 ! queue max-size-buffers=0 max-size-bytes=")
-	sb.WriteString(strconv.Itoa(maxQueueBytes))
-	sb.WriteString(" max-size-time=")
-	sb.WriteString(strconv.FormatInt(queueNS, 10))
-	sb.WriteString(" leaky=0 ! decodebin ! videoconvert ! video/x-raw,format=I420 ! x264enc tune=zerolatency speed-preset=veryfast bitrate=")
+	sb.WriteString("mq.src_0 ! decodebin ! videoconvert ! video/x-raw,format=I420 ! x264enc tune=zerolatency speed-preset=veryfast bitrate=")
 	sb.WriteString(strconv.Itoa(conf.VideoBitrate))
 	sb.WriteString(" key-int-max=")
 	sb.WriteString(strconv.Itoa(keyIntMax))
