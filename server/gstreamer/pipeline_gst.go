@@ -148,11 +148,13 @@ func gstRuntimeRoots(conf Config) []string {
 	for _, root := range gstDefaultRuntimeRoots() {
 		roots = appendAvailableGSTRoot(roots, root)
 	}
-	if root := portableGSTRuntimeRoot(); root != "" {
-		roots = appendAvailableGSTRoot(roots, root)
-	}
-	if root := embeddedGSTRuntimeRoot(); root != "" {
-		roots = appendAvailableGSTRoot(roots, root)
+	if runtime.GOOS == "windows" {
+		if root := portableGSTRuntimeRoot(); root != "" {
+			roots = appendAvailableGSTRoot(roots, root)
+		}
+		if root := embeddedGSTRuntimeRoot(); root != "" {
+			roots = appendAvailableGSTRoot(roots, root)
+		}
 	}
 	return roots
 }

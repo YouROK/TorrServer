@@ -148,6 +148,11 @@ func runGSTDiscoverer(sourceURL string, conf Config, timeout time.Duration) (str
 }
 
 func gstDiscovererPath(conf Config) (string, error) {
+	path, _, err := gstDiscovererPathRoot(conf)
+	return path, err
+}
+
+func gstDiscovererPathRoot(conf Config) (string, string, error) {
 	name := "gst-discoverer-1.0"
 	if runtime.GOOS == "windows" {
 		name += ".exe"
@@ -156,14 +161,14 @@ func gstDiscovererPath(conf Config) (string, error) {
 	for _, root := range gstDiscovererRoots(conf) {
 		path := filepath.Join(root, "bin", name)
 		if info, err := os.Stat(path); err == nil && !info.IsDir() {
-			return path, nil
+			return path, root, nil
 		}
 	}
 
 	if path, err := exec.LookPath(name); err == nil {
-		return path, nil
+		return path, "", nil
 	}
-	return "", fmt.Errorf("%s not found", name)
+	return "", "", fmt.Errorf("%s not found", name)
 }
 
 func gstDiscovererEnv(conf Config) []string {
@@ -173,7 +178,7 @@ func gstDiscovererEnv(conf Config) []string {
 	env = setEnvValue(env, "LANGUAGE", "en")
 	env = setEnvValue(env, "GST_DEBUG_NO_COLOR", "1")
 
-	roots := gstDiscovererRoots(conf)
+	roots := gstDiscovererSelectedRoots(conf)
 	pathKey := "PATH"
 	if runtime.GOOS == "windows" {
 		pathKey = "Path"
@@ -201,17 +206,27 @@ func gstDiscovererEnv(conf Config) []string {
 	return env
 }
 
+func gstDiscovererSelectedRoots(conf Config) []string {
+	_, root, err := gstDiscovererPathRoot(conf)
+	if err != nil || root == "" {
+		return nil
+	}
+	return []string{root}
+}
+
 func gstDiscovererRoots(conf Config) []string {
 	var roots []string
 	roots = appendAvailableProbeRoot(roots, conf.GSTPath)
 	for _, root := range gstDiscovererDefaultRoots() {
 		roots = appendAvailableProbeRoot(roots, root)
 	}
-	if root := gstDiscovererPortableRoot(); root != "" {
-		roots = appendAvailableProbeRoot(roots, root)
-	}
-	if root := embeddedGSTRuntimeRoot(); root != "" {
-		roots = appendAvailableProbeRoot(roots, root)
+	if runtime.GOOS == "windows" {
+		if root := gstDiscovererPortableRoot(); root != "" {
+			roots = appendAvailableProbeRoot(roots, root)
+		}
+		if root := embeddedGSTRuntimeRoot(); root != "" {
+			roots = appendAvailableProbeRoot(roots, root)
+		}
 	}
 	return roots
 }

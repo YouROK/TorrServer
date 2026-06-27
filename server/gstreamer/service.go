@@ -41,7 +41,6 @@ type Service struct {
 
 func NewService(conf Config) *Service {
 	conf = conf.normalized()
-	ensureGStreamerRuntimeEnv(conf)
 
 	service := &Service{
 		conf:        conf,
