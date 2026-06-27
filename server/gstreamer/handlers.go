@@ -14,6 +14,7 @@ func (s *Service) SetupRoute(route gin.IRouter) {
 	route.GET("/gst/remove", s.remove)
 	route.GET("/gst/echo", s.echo)
 	route.GET("/gst/:hash/heartbeat", s.heartbeat)
+	route.GET("/gst/:hash/probe", s.probe)
 	route.GET("/gst/:hash/master.m3u8", s.master)
 	route.GET("/gst/:hash/init.mp4", s.initMP4)
 	route.GET("/gst/:hash/seg/*segment", s.segment)
@@ -41,6 +42,29 @@ func (s *Service) heartbeat(c *gin.Context) {
 	}
 
 	c.Status(http.StatusOK)
+}
+
+func (s *Service) probe(c *gin.Context) {
+	noCache(c)
+
+	hash := c.Param("hash")
+	fileID := firstNonEmpty(c.Query("index"), c.Query("id"), c.Query("fileID"))
+	if fileID == "" {
+		c.AbortWithError(http.StatusBadRequest, ErrBadSource)
+		return
+	}
+
+	probe, err := s.Probe(hash, fileID)
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			c.String(http.StatusGatewayTimeout, err.Error())
+			return
+		}
+		c.String(http.StatusBadGateway, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, probe)
 }
 
 func (s *Service) master(c *gin.Context) {
