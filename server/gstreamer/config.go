@@ -10,9 +10,10 @@ import (
 )
 
 type Config struct {
-	GSTVersion float64
-	GSTPath    string
-	Source     string
+	GSTVersion  float64
+	GSTPath     string
+	Source      string
+	AppSinkMode string
 
 	InactiveMinutes int
 
@@ -37,14 +38,15 @@ func DefaultConfig() Config {
 	conf := Config{
 		GSTVersion:          1.22,
 		Source:              "stream",
+		AppSinkMode:         "bytes",
 		InactiveMinutes:     5,
 		AACBitrateKbps:      256,
 		SegmentSeconds:      6,
 		VideoBitrate:        10_000,
 		PipelineTimeSeconds: 18,
-		PipelineAudioQueue:  2,
-		PipelineVideoQueue:  16,
-		TempFS:              true,
+		PipelineAudioQueue:  3,
+		PipelineVideoQueue:  24,
+		TempFS:              false,
 	}
 
 	if runtime.GOOS == "windows" {
@@ -72,10 +74,10 @@ func (c Config) normalized() Config {
 		c.PipelineTimeSeconds = 18
 	}
 	if c.PipelineAudioQueue <= 0 {
-		c.PipelineAudioQueue = 2
+		c.PipelineAudioQueue = 3
 	}
 	if c.PipelineVideoQueue <= 0 {
-		c.PipelineVideoQueue = 16
+		c.PipelineVideoQueue = 24
 	}
 	if c.TempFSRing < 0 {
 		c.TempFSRing = 0
@@ -87,6 +89,15 @@ func (c Config) normalized() Config {
 	if c.Source != "play" {
 		c.Source = "stream"
 	}
+	c.AppSinkMode = strings.ToLower(strings.TrimSpace(c.AppSinkMode))
+	switch c.AppSinkMode {
+	case "", "bytes", "max-bytes", "max-size-bytes":
+		c.AppSinkMode = "bytes"
+	case "buffer", "buffers", "max-buffers":
+		c.AppSinkMode = "buffers"
+	default:
+		c.AppSinkMode = "bytes"
+	}
 	return c
 }
 
@@ -95,9 +106,10 @@ func (c Config) inactiveDuration() time.Duration {
 }
 
 type storedConfig struct {
-	GSTVersion *float64
-	GSTPath    *string
-	Source     *string
+	GSTVersion  *float64
+	GSTPath     *string
+	Source      *string
+	AppSinkMode *string
 
 	InactiveMinutes *int
 
@@ -152,6 +164,9 @@ func applySettingsConfig(conf Config) Config {
 	}
 	if stored.Source != nil {
 		conf.Source = *stored.Source
+	}
+	if stored.AppSinkMode != nil {
+		conf.AppSinkMode = *stored.AppSinkMode
 	}
 	if stored.InactiveMinutes != nil {
 		conf.InactiveMinutes = *stored.InactiveMinutes

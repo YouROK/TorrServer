@@ -30,6 +30,7 @@ const (
 	tempFSBaseBlocks         = 3
 	tempFSFallbackBlockBytes = 32 * 1024 * 1024
 	sourceQueueBytes         = 4 * 1024 * 1024
+	appSinkByteLimit         = 42 * 1024 * 1024
 )
 
 type gstRunner struct {
@@ -471,10 +472,7 @@ func (r *gstRunner) createPipelineArgs() string {
 
 	sb.WriteString("mp4mux name=mux fragment-duration=")
 	sb.WriteString(strconv.Itoa(conf.SegmentSeconds * 1000))
-	sb.WriteString(" streamable=true ! appsink name=out emit-signals=false sync=false max-buffers=1")
-	if gstVersion.atLeast(1, 24) {
-		sb.WriteString(" max-bytes=0 max-time=0")
-	}
+	r.writeAppSinkLimits(&sb, gstVersion)
 	if gstVersion.atLeast(1, 28) {
 		sb.WriteString(" leaky-type=none")
 	} else {
@@ -483,6 +481,23 @@ func (r *gstRunner) createPipelineArgs() string {
 	sb.WriteString(" wait-on-eos=false")
 
 	return sb.String()
+}
+
+func (r *gstRunner) writeAppSinkLimits(sb *strings.Builder, gstVersion gstVersionInfo) {
+	conf := r.task.Config.normalized()
+
+	sb.WriteString(" streamable=true ! appsink name=out emit-signals=false sync=false")
+	if conf.AppSinkMode == "bytes" && gstVersion.atLeast(1, 24) {
+		sb.WriteString(" max-buffers=0 max-bytes=")
+		sb.WriteString(strconv.Itoa(appSinkByteLimit))
+		sb.WriteString(" max-time=0")
+		return
+	}
+
+	sb.WriteString(" max-buffers=1")
+	if gstVersion.atLeast(1, 24) {
+		sb.WriteString(" max-bytes=0 max-time=0")
+	}
 }
 
 func effectiveGStreamerVersion(conf Config) gstVersionInfo {
