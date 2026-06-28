@@ -347,7 +347,6 @@ func (r *gstRunner) createPipelineArgs() string {
 	probe := r.task.Probe
 	gstVersion := effectiveGStreamerVersion(conf)
 
-	queueNS := int64(conf.SegmentSeconds*2) * int64(time.Second)
 	var sb strings.Builder
 
 	sb.WriteString("souphttpsrc ")
@@ -358,9 +357,7 @@ func (r *gstRunner) createPipelineArgs() string {
 		sb.WriteString("retry-backoff-factor=0.5 retry-backoff-max=10 ")
 	}
 	r.writeSourceQueue(&sb)
-	sb.WriteString(" ! matroskademux name=d multiqueue name=mq use-buffering=false max-size-buffers=0 max-size-bytes=0 max-size-time=")
-	sb.WriteString(strconv.FormatInt(queueNS, 10))
-	sb.WriteString(" ")
+	sb.WriteString(" ! matroskademux name=d multiqueue name=mq use-buffering=false max-size-buffers=5 ")
 
 	sb.WriteString("d.video_0 ! mq.sink_0 ")
 
