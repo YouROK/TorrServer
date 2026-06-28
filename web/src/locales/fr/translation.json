@@ -101,7 +101,7 @@
   "PWAGuide": {
     "Header": "Installer l'application",
     "Description": "Installez l'application sur votre appareil pour y accéder facilement à tout moment. Pas de magasin d'applications. Pas de téléchargement.",
-    "PlayerButtons": "Les boutons VLC et Infuse seront ajoutés pour ouvrir la vidéo instantanément sur le téléphone",
+    "PlayerButtons": "Les boutons VLC, Infuse, IINA seront ajoutés pour ouvrir la vidéo instantanément dans ces lecteurs. Vous pouvez également utiliser le lecteur intégré.",
     "FirstStep": "Appuyez sur",
     "SecondStep": {
       "Select": "Sélectionner",

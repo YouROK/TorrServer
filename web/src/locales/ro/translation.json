@@ -100,8 +100,8 @@
   "Unmute": "Unmute",
   "PWAGuide": {
     "Header": "Instalați aplicația",
-    "Description": "Instalați aplicația pe dispozitivul dvs. pentru a o accesa cu ușurință oricând. Fără play store. Fără descărcare.",
-    "PlayerButtons": "Butonele VLC și Infuse vor fi adăugate pentru a deschide instantaneu videoclipurile pe telefon.",
+    "Description": "Instalați aplicația pe dispozitivul dvs. pentru a o accesa cu ușurință oricând. Fără AppStore. Fără descărcare.",
+    "PlayerButtons": "Butonele VLC, Infuse, IINA vor fi adăugate pentru a deschide instantaneu videoclipurile în aceste playere. Puteți de asemenea să folosiți playerul încorporat.",
     "FirstStep": "Apăsați pe",
     "SecondStep": {
       "Select": "Selectați",
