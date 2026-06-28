@@ -34,10 +34,29 @@ const (
 
 const maxGStreamerSampleBytes = 128 * 1024 * 1024
 
+type gstVersionInfo struct {
+	major uint32
+	minor uint32
+	micro uint32
+	nano  uint32
+}
+
+func (v gstVersionInfo) valid() bool {
+	return v.major != 0
+}
+
+func (v gstVersionInfo) atLeast(major uint32, minor uint32) bool {
+	if v.major != major {
+		return v.major > major
+	}
+	return v.minor >= minor
+}
+
 type gstAPI struct {
 	handles []uintptr
 
 	gstInitCheck            func(argc unsafe.Pointer, argv unsafe.Pointer, err unsafe.Pointer) int32
+	gstVersion              func(major unsafe.Pointer, minor unsafe.Pointer, micro unsafe.Pointer, nano unsafe.Pointer)
 	gstParseLaunch          func(description string, err unsafe.Pointer) uintptr
 	gstBinGetByName         func(bin uintptr, name string) uintptr
 	gstObjectUnref          func(obj uintptr)
@@ -60,6 +79,8 @@ type gstAPI struct {
 
 	gErrorFree func(err uintptr)
 	gFree      func(ptr uintptr)
+
+	version gstVersionInfo
 }
 
 func (g *gstAPI) bind(gstHandle uintptr, gstAppHandle uintptr, glibHandle uintptr) (err error) {
@@ -70,6 +91,7 @@ func (g *gstAPI) bind(gstHandle uintptr, gstAppHandle uintptr, glibHandle uintpt
 	}()
 
 	purego.RegisterLibFunc(&g.gstInitCheck, gstHandle, "gst_init_check")
+	purego.RegisterLibFunc(&g.gstVersion, gstHandle, "gst_version")
 	purego.RegisterLibFunc(&g.gstParseLaunch, gstHandle, "gst_parse_launch")
 	purego.RegisterLibFunc(&g.gstBinGetByName, gstHandle, "gst_bin_get_by_name")
 	purego.RegisterLibFunc(&g.gstObjectUnref, gstHandle, "gst_object_unref")
@@ -104,6 +126,21 @@ func (g *gstAPI) init() error {
 			msg = "gst_init_check failed"
 		}
 		return errors.New(msg)
+	}
+	if g.gstVersion != nil {
+		var major, minor, micro, nano uint32
+		g.gstVersion(
+			unsafe.Pointer(&major),
+			unsafe.Pointer(&minor),
+			unsafe.Pointer(&micro),
+			unsafe.Pointer(&nano),
+		)
+		g.version = gstVersionInfo{
+			major: major,
+			minor: minor,
+			micro: micro,
+			nano:  nano,
+		}
 	}
 	return nil
 }

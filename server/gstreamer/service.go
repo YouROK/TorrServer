@@ -35,17 +35,27 @@ type Service struct {
 	mu    sync.RWMutex
 	tasks map[string]*Task
 
+	probeMu    sync.Mutex
+	probeCache map[string]probeCacheEntry
+
 	cleanupRunning atomic.Bool
 	stopCleanup    chan struct{}
 }
 
+const probeCacheTTL = time.Hour
+
+type probeCacheEntry struct {
+	probe     ProbeInfo
+	expiresAt time.Time
+}
+
 func NewService(conf Config) *Service {
 	conf = conf.normalized()
-	ensureGStreamerRuntimeEnv(conf)
 
 	service := &Service{
 		conf:        conf,
 		tasks:       make(map[string]*Task),
+		probeCache:  make(map[string]probeCacheEntry),
 		stopCleanup: make(chan struct{}),
 	}
 	cleanupGSTTempFiles()
@@ -70,12 +80,8 @@ func (s *Service) GetOrAdd(hash string, fileID string, audio int) (*Task, error)
 		return task, nil
 	}
 
-	probe, err := probeSource(sourceURL, s.conf)
+	probe, err := s.Probe(hash, fileID)
 	if err != nil {
-		return nil, err
-	}
-	probe.FileSize = torrentFileSize(hash, fileID)
-	if err := validateProbe(probe); err != nil {
 		return nil, err
 	}
 
@@ -110,6 +116,31 @@ func (s *Service) GetOrAdd(hash string, fileID string, audio int) (*Task, error)
 	return task, nil
 }
 
+func (s *Service) Probe(hash string, fileID string) (ProbeInfo, error) {
+	if hash == "" || fileID == "" {
+		return ProbeInfo{}, ErrBadSource
+	}
+
+	probe, ok := s.getCachedProbe(hash, fileID)
+	if !ok {
+		var err error
+		probe, err = probeSource(sourceURL(s.conf, hash, fileID), s.conf)
+		if err != nil {
+			return ProbeInfo{}, err
+		}
+		probe = refreshProbeFileSize(probe, hash, fileID)
+		if err := validateProbe(probe); err != nil {
+			return ProbeInfo{}, err
+		}
+		s.setCachedProbe(hash, fileID, probe)
+		return probe, nil
+	}
+
+	probe = refreshProbeFileSize(probe, hash, fileID)
+	s.setCachedProbe(hash, fileID, probe)
+	return probe, nil
+}
+
 func validateProbe(probe ProbeInfo) error {
 	if len(probe.Tracks) == 0 || probe.Video() == nil {
 		return ErrProbeUnavailable
@@ -127,13 +158,13 @@ func validateProbe(probe ProbeInfo) error {
 	return nil
 }
 
-func torrentFileSize(hash string, fileID string) int64 {
+func torrentFileSize(hash string, fileID string) (size int64) {
 	index, err := strconv.Atoi(fileID)
 	if err != nil || index <= 0 {
 		return 0
 	}
 
-	tor := torr.GetTorrent(hash)
+	tor := getTorrentForGStreamer(hash)
 	if tor == nil {
 		return 0
 	}
@@ -151,6 +182,34 @@ func torrentFileSize(hash string, fileID string) int64 {
 	return torrentStatusFileSize(tor.Status(), index)
 }
 
+func keepAliveTorrent(hash string) {
+	_ = getTorrentForGStreamer(hash)
+}
+
+func dropTorrentForGStreamer(hash string) {
+	defer func() {
+		_ = recover()
+	}()
+
+	if hash == "" {
+		return
+	}
+	torr.DropTorrent(hash)
+}
+
+func getTorrentForGStreamer(hash string) (tor *torr.Torrent) {
+	defer func() {
+		if recover() != nil {
+			tor = nil
+		}
+	}()
+
+	if hash == "" {
+		return nil
+	}
+	return torr.GetTorrent(hash)
+}
+
 func torrentStatusFileSize(status *torrstate.TorrentStatus, index int) int64 {
 	if status == nil {
 		return 0
@@ -161,6 +220,69 @@ func torrentStatusFileSize(status *torrstate.TorrentStatus, index int) int64 {
 		}
 	}
 	return 0
+}
+
+func refreshProbeFileSize(probe ProbeInfo, hash string, fileID string) ProbeInfo {
+	if size := torrentFileSize(hash, fileID); size > 0 {
+		probe.FileSize = size
+	}
+	return probe
+}
+
+func (s *Service) getCachedProbe(hash string, fileID string) (ProbeInfo, bool) {
+	key := probeCacheKey(hash, fileID)
+	now := time.Now().UTC()
+
+	s.probeMu.Lock()
+	defer s.probeMu.Unlock()
+
+	entry, ok := s.probeCache[key]
+	if !ok {
+		return ProbeInfo{}, false
+	}
+	if !now.Before(entry.expiresAt) {
+		delete(s.probeCache, key)
+		return ProbeInfo{}, false
+	}
+	return cloneProbeInfo(entry.probe), true
+}
+
+func (s *Service) setCachedProbe(hash string, fileID string, probe ProbeInfo) {
+	key := probeCacheKey(hash, fileID)
+
+	s.probeMu.Lock()
+	defer s.probeMu.Unlock()
+
+	if s.probeCache == nil {
+		s.probeCache = make(map[string]probeCacheEntry)
+	}
+	s.probeCache[key] = probeCacheEntry{
+		probe:     cloneProbeInfo(probe),
+		expiresAt: time.Now().UTC().Add(probeCacheTTL),
+	}
+}
+
+func (s *Service) cleanupProbeCache(now time.Time) {
+	s.probeMu.Lock()
+	defer s.probeMu.Unlock()
+
+	for key, entry := range s.probeCache {
+		if !now.Before(entry.expiresAt) {
+			delete(s.probeCache, key)
+		}
+	}
+}
+
+func probeCacheKey(hash string, fileID string) string {
+	return hash + "\x00" + fileID
+}
+
+func cloneProbeInfo(probe ProbeInfo) ProbeInfo {
+	if len(probe.Tracks) == 0 {
+		return probe
+	}
+	probe.Tracks = append([]TrackInfo(nil), probe.Tracks...)
+	return probe
 }
 
 func (s *Service) Get(id string) *Task {
@@ -234,6 +356,10 @@ func (s *Service) Dispose() {
 	s.tasks = make(map[string]*Task)
 	s.mu.Unlock()
 
+	s.probeMu.Lock()
+	s.probeCache = make(map[string]probeCacheEntry)
+	s.probeMu.Unlock()
+
 	for _, task := range tasks {
 		task.Dispose()
 	}
@@ -292,6 +418,7 @@ func (s *Service) cleanupInactive() {
 	if s.isEmpty() {
 		cleanupGSTTempFiles()
 	}
+	s.cleanupProbeCache(now)
 }
 
 func (s *Service) isEmpty() bool {

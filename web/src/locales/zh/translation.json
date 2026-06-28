@@ -101,7 +101,7 @@
   "PWAGuide": {
     "Header": "安装应用程序",
     "Description": "将应用程序安装到您的设备上，以便随时方便地访问。无需应用商店、无需下载。",
-    "PlayerButtons": "将添加 VLC 和 Infuse 按钮以便在手机上即时打开视频",
+    "PlayerButtons": "将添加 VLC Infuse IINA 按钮以便在手机上即时打开视频",
     "FirstStep": "点击",
     "SecondStep": {
       "Select": "选择",

@@ -36,6 +36,7 @@ type TrackInfo struct {
 	PadName string
 
 	Type     string
+	Codec    string
 	CapsName string
 
 	Title    string
@@ -88,8 +89,39 @@ func (p ProbeInfo) Audio() *TrackInfo {
 	return nil
 }
 
+func (p ProbeInfo) AudioTrack(index int) *TrackInfo {
+	fallback := -1
+	for i := range p.Tracks {
+		if p.Tracks[i].Type != "audio" {
+			continue
+		}
+		if fallback < 0 {
+			fallback = i
+		}
+		if p.Tracks[i].Index == index {
+			return &p.Tracks[i]
+		}
+	}
+	if fallback >= 0 {
+		return &p.Tracks[fallback]
+	}
+	return nil
+}
+
 func (p ProbeInfo) HasAudio() bool {
 	return p.Audio() != nil
+}
+
+func (t TrackInfo) IsAACAudio() bool {
+	if t.Type != "audio" {
+		return false
+	}
+	codec := strings.ToLower(t.Codec)
+	return strings.Contains(codec, "aac") ||
+		strings.Contains(codec, "mp4a") ||
+		strings.Contains(codec, "mpeg-4") ||
+		strings.Contains(codec, "mpegversion=(int)4") ||
+		strings.Contains(codec, "mpegversion=4")
 }
 
 func (p ProbeInfo) IsMatroskaContainer() bool {
@@ -148,6 +180,11 @@ func runGSTDiscoverer(sourceURL string, conf Config, timeout time.Duration) (str
 }
 
 func gstDiscovererPath(conf Config) (string, error) {
+	path, _, err := gstDiscovererPathRoot(conf)
+	return path, err
+}
+
+func gstDiscovererPathRoot(conf Config) (string, string, error) {
 	name := "gst-discoverer-1.0"
 	if runtime.GOOS == "windows" {
 		name += ".exe"
@@ -156,14 +193,14 @@ func gstDiscovererPath(conf Config) (string, error) {
 	for _, root := range gstDiscovererRoots(conf) {
 		path := filepath.Join(root, "bin", name)
 		if info, err := os.Stat(path); err == nil && !info.IsDir() {
-			return path, nil
+			return path, root, nil
 		}
 	}
 
 	if path, err := exec.LookPath(name); err == nil {
-		return path, nil
+		return path, "", nil
 	}
-	return "", fmt.Errorf("%s not found", name)
+	return "", "", fmt.Errorf("%s not found", name)
 }
 
 func gstDiscovererEnv(conf Config) []string {
@@ -173,7 +210,7 @@ func gstDiscovererEnv(conf Config) []string {
 	env = setEnvValue(env, "LANGUAGE", "en")
 	env = setEnvValue(env, "GST_DEBUG_NO_COLOR", "1")
 
-	roots := gstDiscovererRoots(conf)
+	roots := gstDiscovererSelectedRoots(conf)
 	pathKey := "PATH"
 	if runtime.GOOS == "windows" {
 		pathKey = "Path"
@@ -201,17 +238,27 @@ func gstDiscovererEnv(conf Config) []string {
 	return env
 }
 
+func gstDiscovererSelectedRoots(conf Config) []string {
+	_, root, err := gstDiscovererPathRoot(conf)
+	if err != nil || root == "" {
+		return nil
+	}
+	return []string{root}
+}
+
 func gstDiscovererRoots(conf Config) []string {
 	var roots []string
 	roots = appendAvailableProbeRoot(roots, conf.GSTPath)
 	for _, root := range gstDiscovererDefaultRoots() {
 		roots = appendAvailableProbeRoot(roots, root)
 	}
-	if root := gstDiscovererPortableRoot(); root != "" {
-		roots = appendAvailableProbeRoot(roots, root)
-	}
-	if root := embeddedGSTRuntimeRoot(); root != "" {
-		roots = appendAvailableProbeRoot(roots, root)
+	if runtime.GOOS == "windows" {
+		if root := gstDiscovererPortableRoot(); root != "" {
+			roots = appendAvailableProbeRoot(roots, root)
+		}
+		if root := embeddedGSTRuntimeRoot(); root != "" {
+			roots = appendAvailableProbeRoot(roots, root)
+		}
 	}
 	return roots
 }
@@ -292,30 +339,10 @@ func gstDiscovererBaseLibraryCandidates(root string) []string {
 }
 
 func gstDiscovererPluginPath(roots []string) string {
-	if runtime.GOOS == "windows" {
-		for _, root := range roots {
-			path := filepath.Join(root, "lib", "gstreamer-1.0")
-			if info, err := os.Stat(path); err == nil && info.IsDir() {
-				return path
-			}
-		}
-		return ""
-	}
 	return firstExistingProbePath(gstDiscovererPluginCandidates(roots))
 }
 
 func gstDiscovererScannerPath(roots []string) string {
-	name := "gst-plugin-scanner"
-	if runtime.GOOS == "windows" {
-		name += ".exe"
-		for _, root := range roots {
-			path := filepath.Join(root, "libexec", "gstreamer-1.0", name)
-			if info, err := os.Stat(path); err == nil && !info.IsDir() {
-				return path
-			}
-		}
-		return ""
-	}
 	return firstExistingProbePath(gstDiscovererScannerCandidates(roots))
 }
 
@@ -349,11 +376,15 @@ func gstDiscovererLibraryCandidates(roots []string) []string {
 
 func gstDiscovererScannerCandidates(roots []string) []string {
 	var candidates []string
+	name := "gst-plugin-scanner"
+	if runtime.GOOS == "windows" {
+		name += ".exe"
+	}
 	for _, root := range roots {
 		candidates = append(candidates,
-			filepath.Join(root, "libexec", "gstreamer-1.0", "gst-plugin-scanner"),
-			filepath.Join(root, "lib", "gstreamer-1.0", "gst-plugin-scanner"),
-			filepath.Join(root, "lib64", "gstreamer-1.0", "gst-plugin-scanner"),
+			filepath.Join(root, "libexec", "gstreamer-1.0", name),
+			filepath.Join(root, "lib", "gstreamer-1.0", name),
+			filepath.Join(root, "lib64", "gstreamer-1.0", name),
 		)
 	}
 	return candidates
@@ -431,30 +462,6 @@ func setEnvValue(env []string, key string, value string) []string {
 	return append(env, prefix+value)
 }
 
-func prependPathValue(env []string, value string) []string {
-	pathKey := "PATH"
-	if runtime.GOOS == "windows" {
-		pathKey = "Path"
-	}
-	current := ""
-	for _, item := range env {
-		name, val, ok := strings.Cut(item, "=")
-		if ok && envKeyEqual(name, pathKey) {
-			current = val
-			break
-		}
-	}
-	if current == "" {
-		return setEnvValue(env, pathKey, value)
-	}
-	for _, part := range strings.Split(current, string(os.PathListSeparator)) {
-		if strings.EqualFold(part, value) {
-			return env
-		}
-	}
-	return setEnvValue(env, pathKey, value+string(os.PathListSeparator)+current)
-}
-
 func envKeyEqual(a string, b string) bool {
 	if runtime.GOOS == "windows" {
 		return strings.EqualFold(a, b)
@@ -530,6 +537,7 @@ func parseDiscovererStreamHeader(line string) *TrackInfo {
 	codec := strings.TrimSpace(match[3])
 	return &TrackInfo{
 		Type:     trackType,
+		Codec:    codec,
 		CapsName: codecToCapsName(trackType, codec),
 	}
 }
@@ -553,12 +561,18 @@ func parseDiscovererTrackLine(track *TrackInfo, line string) {
 	case startsWithFold(line, "title:"):
 		track.Title = valueAfterColon(line)
 	case startsWithFold(line, "audio codec:"):
+		if track.Codec == "" {
+			track.Codec = valueAfterColon(line)
+		}
 		if track.CapsName == "" {
-			track.CapsName = codecToCapsName(track.Type, valueAfterColon(line))
+			track.CapsName = codecToCapsName(track.Type, track.Codec)
 		}
 	case startsWithFold(line, "video codec:"):
+		if track.Codec == "" {
+			track.Codec = valueAfterColon(line)
+		}
 		if track.CapsName == "" {
-			track.CapsName = codecToCapsName(track.Type, valueAfterColon(line))
+			track.CapsName = codecToCapsName(track.Type, track.Codec)
 		}
 	case startsWithFold(line, "Frame rate:"):
 		track.FrameRateNum, track.FrameRateDen = parseDiscovererRate(valueAfterColon(line))

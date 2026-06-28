@@ -100,11 +100,11 @@
   "Unmute": "Unmute",
   "PWAGuide": {
     "Header": "Install application",
-    "Description": "Install the app on your device to easily access it anytime. No app store. No download.",
-    "PlayerButtons": "VLC and Infuse buttons will be added to open video instantly on the phone",
-    "FirstStep": "Tap on",
+    "Description": "Install the app on your device to easily access it anytime. No AppStore. No download.",
+    "PlayerButtons": "VLC, Infuse, IINA buttons can be added to open video instantly in these players. You can also use the built-in player.",
+    "FirstStep": "Tap on ",
     "SecondStep": {
-      "Select": "Select",
+      "Select": "Select ",
       "AddToHomeScreen": "Add to Home Screen"
     }
   },
