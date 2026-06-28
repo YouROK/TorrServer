@@ -36,11 +36,13 @@ func (s *Service) remove(c *gin.Context) {
 }
 
 func (s *Service) heartbeat(c *gin.Context) {
-	if s.Get(c.Param("hash")) == nil {
+	hash := c.Param("hash")
+	if s.Get(hash) == nil {
 		c.Status(http.StatusNotFound)
 		return
 	}
 
+	touchTorrent(hash)
 	c.Status(http.StatusOK)
 }
 

@@ -188,6 +188,14 @@ func torrentFileSize(hash string, fileID string) (size int64) {
 	return torrentStatusFileSize(tor.Status(), index)
 }
 
+func touchTorrent(hash string) {
+	defer func() {
+		_ = recover()
+	}()
+
+	_ = torr.GetTorrent(hash)
+}
+
 func torrentStatusFileSize(status *torrstate.TorrentStatus, index int) int64 {
 	if status == nil {
 		return 0
