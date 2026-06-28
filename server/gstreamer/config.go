@@ -18,6 +18,7 @@ type Config struct {
 
 	AACBitrateKbps int
 	SegmentSeconds int
+	AppSinkBuffers int
 
 	TranscodeH264 bool
 	TranscodeH265 bool
@@ -25,26 +26,20 @@ type Config struct {
 	TranscodeVP9  bool
 	VideoBitrate  int
 
-	PipelineTimeSeconds int
-	PipelineAudioQueue  int
-	PipelineVideoQueue  int
-
 	TempFS     bool
 	TempFSRing int
 }
 
 func DefaultConfig() Config {
 	conf := Config{
-		GSTVersion:          1.26,
-		Source:              "stream",
-		InactiveMinutes:     5,
-		AACBitrateKbps:      256,
-		SegmentSeconds:      6,
-		VideoBitrate:        10_000,
-		PipelineTimeSeconds: 18,
-		PipelineAudioQueue:  2,
-		PipelineVideoQueue:  16,
-		TempFS:              true,
+		GSTVersion:      1.22,
+		Source:          "stream",
+		InactiveMinutes: 5,
+		AACBitrateKbps:  256,
+		SegmentSeconds:  6,
+		AppSinkBuffers:  1000,
+		VideoBitrate:    10_000,
+		TempFS:          false,
 	}
 
 	if runtime.GOOS == "windows" {
@@ -65,23 +60,17 @@ func (c Config) normalized() Config {
 	if c.SegmentSeconds <= 0 {
 		c.SegmentSeconds = 6
 	}
+	if c.AppSinkBuffers <= 0 {
+		c.AppSinkBuffers = 1000
+	}
 	if c.VideoBitrate <= 0 {
 		c.VideoBitrate = 10_000
-	}
-	if c.PipelineTimeSeconds <= 0 {
-		c.PipelineTimeSeconds = 18
-	}
-	if c.PipelineAudioQueue <= 0 {
-		c.PipelineAudioQueue = 2
-	}
-	if c.PipelineVideoQueue <= 0 {
-		c.PipelineVideoQueue = 16
 	}
 	if c.TempFSRing < 0 {
 		c.TempFSRing = 0
 	}
 	if c.GSTVersion <= 0 {
-		c.GSTVersion = 1.26
+		c.GSTVersion = 1.22
 	}
 	c.Source = strings.ToLower(strings.TrimSpace(c.Source))
 	if c.Source != "play" {
@@ -103,16 +92,13 @@ type storedConfig struct {
 
 	AACBitrateKbps *int
 	SegmentSeconds *int
+	AppSinkBuffers *int `json:"appsinkBuffers"`
 
 	TranscodeH264 *bool
 	TranscodeH265 *bool
 	TranscodeAV1  *bool
 	TranscodeVP9  *bool
 	VideoBitrate  *int
-
-	PipelineTimeSeconds *int
-	PipelineAudioQueue  *int
-	PipelineVideoQueue  *int
 
 	TempFS     *bool `json:"tempfs"`
 	TempFSRing *int  `json:"tempfs_ring"`
@@ -162,6 +148,9 @@ func applySettingsConfig(conf Config) Config {
 	if stored.SegmentSeconds != nil {
 		conf.SegmentSeconds = *stored.SegmentSeconds
 	}
+	if stored.AppSinkBuffers != nil {
+		conf.AppSinkBuffers = *stored.AppSinkBuffers
+	}
 	if stored.TranscodeH264 != nil {
 		conf.TranscodeH264 = *stored.TranscodeH264
 	}
@@ -176,15 +165,6 @@ func applySettingsConfig(conf Config) Config {
 	}
 	if stored.VideoBitrate != nil {
 		conf.VideoBitrate = *stored.VideoBitrate
-	}
-	if stored.PipelineTimeSeconds != nil {
-		conf.PipelineTimeSeconds = *stored.PipelineTimeSeconds
-	}
-	if stored.PipelineAudioQueue != nil {
-		conf.PipelineAudioQueue = *stored.PipelineAudioQueue
-	}
-	if stored.PipelineVideoQueue != nil {
-		conf.PipelineVideoQueue = *stored.PipelineVideoQueue
 	}
 	if stored.TempFS != nil {
 		conf.TempFS = *stored.TempFS
