@@ -186,6 +186,17 @@ func keepAliveTorrent(hash string) {
 	_ = getTorrentForGStreamer(hash)
 }
 
+func dropTorrentForGStreamer(hash string) {
+	defer func() {
+		_ = recover()
+	}()
+
+	if hash == "" {
+		return
+	}
+	torr.DropTorrent(hash)
+}
+
 func getTorrentForGStreamer(hash string) (tor *torr.Torrent) {
 	defer func() {
 		if recover() != nil {

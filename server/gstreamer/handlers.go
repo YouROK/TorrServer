@@ -32,6 +32,7 @@ func (s *Service) remove(c *gin.Context) {
 		return
 	}
 
+	dropTorrentForGStreamer(id)
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
