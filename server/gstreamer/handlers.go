@@ -14,6 +14,7 @@ func (s *Service) SetupRoute(route gin.IRouter) {
 	route.GET("/gst/remove", s.remove)
 	route.GET("/gst/echo", s.echo)
 	route.GET("/gst/:hash/heartbeat", s.heartbeat)
+	route.GET("/gst/:hash/probe", s.probe)
 	route.GET("/gst/:hash/master.m3u8", s.master)
 	route.GET("/gst/:hash/init.mp4", s.initMP4)
 	route.GET("/gst/:hash/seg/*segment", s.segment)
@@ -31,16 +32,38 @@ func (s *Service) remove(c *gin.Context) {
 		return
 	}
 
+	dropTorrentForGStreamer(id)
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
 func (s *Service) heartbeat(c *gin.Context) {
-	if s.Get(c.Param("hash")) == nil {
+	hash := c.Param("hash")
+	if s.Get(hash) == nil {
 		c.Status(http.StatusNotFound)
 		return
 	}
 
+	keepAliveTorrent(hash)
 	c.Status(http.StatusOK)
+}
+
+func (s *Service) probe(c *gin.Context) {
+	noCache(c)
+
+	hash := c.Param("hash")
+	fileID := firstNonEmpty(c.Query("index"), c.Query("id"), c.Query("fileID"))
+	if fileID == "" {
+		c.AbortWithError(http.StatusBadRequest, ErrBadSource)
+		return
+	}
+
+	probe, err := s.Probe(hash, fileID)
+	if err != nil {
+		abortWithSourceError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, probe)
 }
 
 func (s *Service) master(c *gin.Context) {
@@ -52,11 +75,7 @@ func (s *Service) master(c *gin.Context) {
 
 	task, err := s.GetOrAdd(hash, fileID, audio)
 	if err != nil {
-		if errors.Is(err, context.DeadlineExceeded) {
-			c.String(http.StatusGatewayTimeout, err.Error())
-			return
-		}
-		c.String(http.StatusBadGateway, err.Error())
+		abortWithSourceError(c, err)
 		return
 	}
 
@@ -70,6 +89,11 @@ func (s *Service) master(c *gin.Context) {
 	startIndex := startSegmentIndex(parseQueryInt(c, "seconds", 0), segmentSeconds, count)
 	startSeconds := startIndex * segmentSeconds
 
+	playlist := buildMasterPlaylist(segmentSeconds, startIndex, startSeconds, count, audio)
+	c.Data(http.StatusOK, "application/vnd.apple.mpegurl; charset=utf-8", []byte(playlist))
+}
+
+func buildMasterPlaylist(segmentSeconds int, startIndex int, startSeconds int, count int, audio int) string {
 	var playlist strings.Builder
 	playlist.WriteString("#EXTM3U\n")
 	playlist.WriteString("#EXT-X-PLAYLIST-TYPE:VOD\n")
@@ -98,8 +122,7 @@ func (s *Service) master(c *gin.Context) {
 	}
 
 	playlist.WriteString("#EXT-X-ENDLIST\n")
-
-	c.Data(http.StatusOK, "application/vnd.apple.mpegurl; charset=utf-8", []byte(playlist.String()))
+	return playlist.String()
 }
 
 func (s *Service) initMP4(c *gin.Context) {
@@ -287,13 +310,18 @@ func startSegmentIndex(seconds int, segmentSeconds int, count int) int {
 	}
 
 	index := seconds / segmentSeconds
-	if index < 0 {
-		return 0
-	}
 	if count > 0 && index > count {
 		return count
 	}
 	return index
+}
+
+func abortWithSourceError(c *gin.Context, err error) {
+	if errors.Is(err, context.DeadlineExceeded) {
+		c.String(http.StatusGatewayTimeout, err.Error())
+		return
+	}
+	c.String(http.StatusBadGateway, err.Error())
 }
 
 func noCache(c *gin.Context) {

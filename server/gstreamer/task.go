@@ -142,10 +142,11 @@ func (t *Task) segmentLocked(ctx context.Context, index int, audio int) (Segment
 
 	if t.LastSentSegment != -1 && t.LastSentSegment != index {
 		if index != t.LastSentSegment+1 {
+			conf := t.Config.normalized()
 			diff := index - t.LastSentSegment
-			cutoff := t.Config.PipelineVideoQueue
+			cutoff := segmentCatchupCutoffSeconds(conf)
 
-			if diff > 0 && maxInt(60, cutoff) >= diff*t.Config.SegmentSeconds {
+			if diff > 0 && cutoff >= diff*conf.SegmentSeconds {
 				for i := 0; i < diff-1; i++ {
 					if ctx.Err() != nil {
 						return Segment{}, ctx.Err()
@@ -158,7 +159,7 @@ func (t *Task) segmentLocked(ctx context.Context, index int, audio int) (Segment
 					}
 				}
 			} else {
-				if !t.runner.Seek(float64(index * t.Config.SegmentSeconds)) {
+				if !t.runner.Seek(float64(index * conf.SegmentSeconds)) {
 					return Segment{}, ErrSegmentNotReady
 				}
 			}
@@ -172,6 +173,17 @@ func (t *Task) segmentLocked(ctx context.Context, index int, audio int) (Segment
 
 	t.LastSentSegment = index
 	return seg, nil
+}
+
+func segmentCatchupCutoffSeconds(conf Config) int {
+	conf = conf.normalized()
+	if !conf.TempFS {
+		return 60
+	}
+	if conf.TempFSRing > 0 {
+		return 90 + conf.TempFSRing*25
+	}
+	return 90
 }
 
 func (t *Task) Frozen() {
@@ -209,11 +221,4 @@ func (t *Task) IsFrozen() bool {
 		return false
 	}
 	return t.runner.IsFrozen()
-}
-
-func maxInt(a int, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }
