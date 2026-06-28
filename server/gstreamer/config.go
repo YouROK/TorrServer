@@ -18,6 +18,7 @@ type Config struct {
 
 	AACBitrateKbps int
 	SegmentSeconds int
+	AppSinkBuffers int
 
 	TranscodeH264 bool
 	TranscodeH265 bool
@@ -36,6 +37,7 @@ func DefaultConfig() Config {
 		InactiveMinutes: 5,
 		AACBitrateKbps:  256,
 		SegmentSeconds:  6,
+		AppSinkBuffers:  1000,
 		VideoBitrate:    10_000,
 		TempFS:          false,
 	}
@@ -57,6 +59,9 @@ func (c Config) normalized() Config {
 	}
 	if c.SegmentSeconds <= 0 {
 		c.SegmentSeconds = 6
+	}
+	if c.AppSinkBuffers <= 0 {
+		c.AppSinkBuffers = 1000
 	}
 	if c.VideoBitrate <= 0 {
 		c.VideoBitrate = 10_000
@@ -87,6 +92,7 @@ type storedConfig struct {
 
 	AACBitrateKbps *int
 	SegmentSeconds *int
+	AppSinkBuffers *int `json:"appsinkBuffers"`
 
 	TranscodeH264 *bool
 	TranscodeH265 *bool
@@ -141,6 +147,9 @@ func applySettingsConfig(conf Config) Config {
 	}
 	if stored.SegmentSeconds != nil {
 		conf.SegmentSeconds = *stored.SegmentSeconds
+	}
+	if stored.AppSinkBuffers != nil {
+		conf.AppSinkBuffers = *stored.AppSinkBuffers
 	}
 	if stored.TranscodeH264 != nil {
 		conf.TranscodeH264 = *stored.TranscodeH264

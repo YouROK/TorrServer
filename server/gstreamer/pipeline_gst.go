@@ -29,6 +29,7 @@ const (
 	tempFSBlockSeconds       = 30
 	tempFSBaseBlocks         = 3
 	tempFSFallbackBlockBytes = 32 * 1024 * 1024
+	appSinkMaxBytes          = 136 * 1024 * 1024
 )
 
 type gstRunner struct {
@@ -457,15 +458,29 @@ func (r *gstRunner) createPipelineArgs() string {
 
 	sb.WriteString("mp4mux name=mux fragment-duration=")
 	sb.WriteString(strconv.Itoa(conf.SegmentSeconds * 1000))
-	sb.WriteString(" streamable=true ! appsink name=out emit-signals=false sync=false max-buffers=1")
+	r.writeAppSink(&sb, conf, gstVersion)
+
+	return sb.String()
+}
+
+func (r *gstRunner) writeAppSink(sb *strings.Builder, conf Config, gstVersion gstVersionInfo) {
+	buffers := conf.normalized().AppSinkBuffers
+	if buffers <= 1 {
+		buffers = 1
+	}
+
+	sb.WriteString(" streamable=true ! appsink name=out emit-signals=false sync=false max-buffers=")
+	sb.WriteString(strconv.Itoa(buffers))
+	if gstVersion.atLeast(1, 24) && buffers > 1 {
+		sb.WriteString(" max-bytes=")
+		sb.WriteString(strconv.Itoa(appSinkMaxBytes))
+	}
 	if gstVersion.atLeast(1, 28) {
 		sb.WriteString(" leaky-type=none")
 	} else {
 		sb.WriteString(" drop=false")
 	}
 	sb.WriteString(" wait-on-eos=false")
-
-	return sb.String()
 }
 
 func effectiveGStreamerVersion(conf Config) gstVersionInfo {
