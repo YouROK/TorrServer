@@ -159,18 +159,12 @@ func validateProbe(probe ProbeInfo) error {
 }
 
 func torrentFileSize(hash string, fileID string) (size int64) {
-	defer func() {
-		if recover() != nil {
-			size = 0
-		}
-	}()
-
 	index, err := strconv.Atoi(fileID)
 	if err != nil || index <= 0 {
 		return 0
 	}
 
-	tor := torr.GetTorrent(hash)
+	tor := getTorrentForGStreamer(hash)
 	if tor == nil {
 		return 0
 	}
@@ -188,12 +182,21 @@ func torrentFileSize(hash string, fileID string) (size int64) {
 	return torrentStatusFileSize(tor.Status(), index)
 }
 
-func touchTorrent(hash string) {
+func keepAliveTorrent(hash string) {
+	_ = getTorrentForGStreamer(hash)
+}
+
+func getTorrentForGStreamer(hash string) (tor *torr.Torrent) {
 	defer func() {
-		_ = recover()
+		if recover() != nil {
+			tor = nil
+		}
 	}()
 
-	_ = torr.GetTorrent(hash)
+	if hash == "" {
+		return nil
+	}
+	return torr.GetTorrent(hash)
 }
 
 func torrentStatusFileSize(status *torrstate.TorrentStatus, index int) int64 {

@@ -118,26 +118,12 @@ func setupGStreamer(conf Config) {
 		prependExistingEnvPaths("DYLD_LIBRARY_PATH", gstLibraryDirCandidates(roots))
 	}
 
-	var gstPlugins string
-	switch runtime.GOOS {
-	case "windows":
-		gstPlugins = firstExistingPath(gstPluginCandidates(roots))
-	case "linux", "darwin":
-		gstPlugins = firstExistingPath(gstPluginCandidates(roots))
-	}
-	if gstPlugins != "" {
+	if gstPlugins := firstExistingPath(gstPluginCandidates(roots)); gstPlugins != "" {
 		_ = os.Setenv("GST_PLUGIN_PATH", gstPlugins)
 		_ = os.Setenv("GST_PLUGIN_SYSTEM_PATH_1_0", gstPlugins)
 	}
 
-	var gstPluginScanner string
-	switch runtime.GOOS {
-	case "windows":
-		gstPluginScanner = firstExistingPath(gstPluginScannerCandidates(roots))
-	case "linux", "darwin":
-		gstPluginScanner = firstExistingPath(gstPluginScannerCandidates(roots))
-	}
-	if gstPluginScanner != "" {
+	if gstPluginScanner := firstExistingPath(gstPluginScannerCandidates(roots)); gstPluginScanner != "" {
 		_ = os.Setenv("GST_PLUGIN_SCANNER", gstPluginScanner)
 	}
 }
@@ -323,14 +309,6 @@ func prependExistingEnvPaths(key string, candidates []string) {
 	prependEnvPaths(key, existingPaths(candidates))
 }
 
-func setExistingEnvPaths(key string, candidates []string) {
-	values := existingPaths(candidates)
-	if len(values) == 0 {
-		return
-	}
-	_ = os.Setenv(key, strings.Join(values, string(os.PathListSeparator)))
-}
-
 func prependEnvPaths(key string, values []string) {
 	if len(values) == 0 {
 		return
@@ -362,27 +340,6 @@ func appendUniqueEnvPath(paths []string, path string) []string {
 		}
 	}
 	return append(paths, path)
-}
-
-func prependEnvPath(key string, value string) {
-	if value == "" {
-		return
-	}
-
-	current := os.Getenv(key)
-	if current == "" {
-		_ = os.Setenv(key, value)
-		return
-	}
-
-	separator := string(os.PathListSeparator)
-	for _, part := range strings.Split(current, separator) {
-		if strings.EqualFold(part, value) {
-			return
-		}
-	}
-
-	_ = os.Setenv(key, value+separator+current)
 }
 
 func (r *gstRunner) createPipelineArgs() string {
@@ -554,7 +511,10 @@ func (r *gstRunner) transcodeToH264(sb *strings.Builder) {
 
 	keyIntMax := 25 * conf.SegmentSeconds
 	if frameRateNum > 0 && frameRateDen > 0 {
-		keyIntMax = maxInt(1, int(math.Round(float64(frameRateNum*conf.SegmentSeconds)/float64(frameRateDen))))
+		keyIntMax = int(math.Round(float64(frameRateNum*conf.SegmentSeconds) / float64(frameRateDen)))
+		if keyIntMax < 1 {
+			keyIntMax = 1
+		}
 	}
 
 	sb.WriteString("mq.src_0 ! decodebin ! videoconvert ! video/x-raw,format=I420 ! x264enc tune=zerolatency speed-preset=veryfast bitrate=")

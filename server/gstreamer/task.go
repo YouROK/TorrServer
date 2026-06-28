@@ -222,10 +222,3 @@ func (t *Task) IsFrozen() bool {
 	}
 	return t.runner.IsFrozen()
 }
-
-func maxInt(a int, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}

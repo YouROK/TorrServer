@@ -339,30 +339,10 @@ func gstDiscovererBaseLibraryCandidates(root string) []string {
 }
 
 func gstDiscovererPluginPath(roots []string) string {
-	if runtime.GOOS == "windows" {
-		for _, root := range roots {
-			path := filepath.Join(root, "lib", "gstreamer-1.0")
-			if info, err := os.Stat(path); err == nil && info.IsDir() {
-				return path
-			}
-		}
-		return ""
-	}
 	return firstExistingProbePath(gstDiscovererPluginCandidates(roots))
 }
 
 func gstDiscovererScannerPath(roots []string) string {
-	name := "gst-plugin-scanner"
-	if runtime.GOOS == "windows" {
-		name += ".exe"
-		for _, root := range roots {
-			path := filepath.Join(root, "libexec", "gstreamer-1.0", name)
-			if info, err := os.Stat(path); err == nil && !info.IsDir() {
-				return path
-			}
-		}
-		return ""
-	}
 	return firstExistingProbePath(gstDiscovererScannerCandidates(roots))
 }
 
@@ -396,11 +376,15 @@ func gstDiscovererLibraryCandidates(roots []string) []string {
 
 func gstDiscovererScannerCandidates(roots []string) []string {
 	var candidates []string
+	name := "gst-plugin-scanner"
+	if runtime.GOOS == "windows" {
+		name += ".exe"
+	}
 	for _, root := range roots {
 		candidates = append(candidates,
-			filepath.Join(root, "libexec", "gstreamer-1.0", "gst-plugin-scanner"),
-			filepath.Join(root, "lib", "gstreamer-1.0", "gst-plugin-scanner"),
-			filepath.Join(root, "lib64", "gstreamer-1.0", "gst-plugin-scanner"),
+			filepath.Join(root, "libexec", "gstreamer-1.0", name),
+			filepath.Join(root, "lib", "gstreamer-1.0", name),
+			filepath.Join(root, "lib64", "gstreamer-1.0", name),
 		)
 	}
 	return candidates
@@ -476,30 +460,6 @@ func setEnvValue(env []string, key string, value string) []string {
 		}
 	}
 	return append(env, prefix+value)
-}
-
-func prependPathValue(env []string, value string) []string {
-	pathKey := "PATH"
-	if runtime.GOOS == "windows" {
-		pathKey = "Path"
-	}
-	current := ""
-	for _, item := range env {
-		name, val, ok := strings.Cut(item, "=")
-		if ok && envKeyEqual(name, pathKey) {
-			current = val
-			break
-		}
-	}
-	if current == "" {
-		return setEnvValue(env, pathKey, value)
-	}
-	for _, part := range strings.Split(current, string(os.PathListSeparator)) {
-		if strings.EqualFold(part, value) {
-			return env
-		}
-	}
-	return setEnvValue(env, pathKey, value+string(os.PathListSeparator)+current)
 }
 
 func envKeyEqual(a string, b string) bool {

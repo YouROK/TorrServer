@@ -42,7 +42,7 @@ func (s *Service) heartbeat(c *gin.Context) {
 		return
 	}
 
-	touchTorrent(hash)
+	keepAliveTorrent(hash)
 	c.Status(http.StatusOK)
 }
 
@@ -58,11 +58,7 @@ func (s *Service) probe(c *gin.Context) {
 
 	probe, err := s.Probe(hash, fileID)
 	if err != nil {
-		if errors.Is(err, context.DeadlineExceeded) {
-			c.String(http.StatusGatewayTimeout, err.Error())
-			return
-		}
-		c.String(http.StatusBadGateway, err.Error())
+		abortWithSourceError(c, err)
 		return
 	}
 
@@ -78,11 +74,7 @@ func (s *Service) master(c *gin.Context) {
 
 	task, err := s.GetOrAdd(hash, fileID, audio)
 	if err != nil {
-		if errors.Is(err, context.DeadlineExceeded) {
-			c.String(http.StatusGatewayTimeout, err.Error())
-			return
-		}
-		c.String(http.StatusBadGateway, err.Error())
+		abortWithSourceError(c, err)
 		return
 	}
 
@@ -96,6 +88,11 @@ func (s *Service) master(c *gin.Context) {
 	startIndex := startSegmentIndex(parseQueryInt(c, "seconds", 0), segmentSeconds, count)
 	startSeconds := startIndex * segmentSeconds
 
+	playlist := buildMasterPlaylist(segmentSeconds, startIndex, startSeconds, count, audio)
+	c.Data(http.StatusOK, "application/vnd.apple.mpegurl; charset=utf-8", []byte(playlist))
+}
+
+func buildMasterPlaylist(segmentSeconds int, startIndex int, startSeconds int, count int, audio int) string {
 	var playlist strings.Builder
 	playlist.WriteString("#EXTM3U\n")
 	playlist.WriteString("#EXT-X-PLAYLIST-TYPE:VOD\n")
@@ -124,8 +121,7 @@ func (s *Service) master(c *gin.Context) {
 	}
 
 	playlist.WriteString("#EXT-X-ENDLIST\n")
-
-	c.Data(http.StatusOK, "application/vnd.apple.mpegurl; charset=utf-8", []byte(playlist.String()))
+	return playlist.String()
 }
 
 func (s *Service) initMP4(c *gin.Context) {
@@ -313,13 +309,18 @@ func startSegmentIndex(seconds int, segmentSeconds int, count int) int {
 	}
 
 	index := seconds / segmentSeconds
-	if index < 0 {
-		return 0
-	}
 	if count > 0 && index > count {
 		return count
 	}
 	return index
+}
+
+func abortWithSourceError(c *gin.Context, err error) {
+	if errors.Is(err, context.DeadlineExceeded) {
+		c.String(http.StatusGatewayTimeout, err.Error())
+		return
+	}
+	c.String(http.StatusBadGateway, err.Error())
 }
 
 func noCache(c *gin.Context) {
