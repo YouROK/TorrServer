@@ -25,22 +25,19 @@ type Config struct {
 	TranscodeVP9  bool
 	VideoBitrate  int
 
-	PipelineTimeSeconds int
-
 	TempFS     bool
 	TempFSRing int
 }
 
 func DefaultConfig() Config {
 	conf := Config{
-		GSTVersion:          1.22,
-		Source:              "stream",
-		InactiveMinutes:     5,
-		AACBitrateKbps:      256,
-		SegmentSeconds:      6,
-		VideoBitrate:        10_000,
-		PipelineTimeSeconds: 18,
-		TempFS:              false,
+		GSTVersion:      1.22,
+		Source:          "stream",
+		InactiveMinutes: 5,
+		AACBitrateKbps:  256,
+		SegmentSeconds:  6,
+		VideoBitrate:    10_000,
+		TempFS:          false,
 	}
 
 	if runtime.GOOS == "windows" {
@@ -63,9 +60,6 @@ func (c Config) normalized() Config {
 	}
 	if c.VideoBitrate <= 0 {
 		c.VideoBitrate = 10_000
-	}
-	if c.PipelineTimeSeconds <= 0 {
-		c.PipelineTimeSeconds = 18
 	}
 	if c.TempFSRing < 0 {
 		c.TempFSRing = 0
@@ -99,8 +93,6 @@ type storedConfig struct {
 	TranscodeAV1  *bool
 	TranscodeVP9  *bool
 	VideoBitrate  *int
-
-	PipelineTimeSeconds *int
 
 	TempFS     *bool `json:"tempfs"`
 	TempFSRing *int  `json:"tempfs_ring"`
@@ -164,9 +156,6 @@ func applySettingsConfig(conf Config) Config {
 	}
 	if stored.VideoBitrate != nil {
 		conf.VideoBitrate = *stored.VideoBitrate
-	}
-	if stored.PipelineTimeSeconds != nil {
-		conf.PipelineTimeSeconds = *stored.PipelineTimeSeconds
 	}
 	if stored.TempFS != nil {
 		conf.TempFS = *stored.TempFS

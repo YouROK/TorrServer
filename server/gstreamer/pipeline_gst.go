@@ -385,11 +385,11 @@ func prependEnvPath(key string, value string) {
 }
 
 func (r *gstRunner) createPipelineArgs() string {
-	conf := r.task.Config
+	conf := r.task.Config.normalized()
 	probe := r.task.Probe
 	gstVersion := effectiveGStreamerVersion(conf)
 
-	queueNS := int64(conf.PipelineTimeSeconds) * int64(time.Second)
+	queueNS := int64(conf.SegmentSeconds*2) * int64(time.Second)
 	var sb strings.Builder
 
 	sb.WriteString("souphttpsrc ")
