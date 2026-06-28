@@ -436,18 +436,23 @@ func (r *gstRunner) createPipelineArgs() string {
 		}
 	}
 
-	if probe.HasAudio() {
-		aacEncoder := r.aacEncoder()
-
+	if audioTrack := probe.AudioTrack(r.audioIndex); audioTrack != nil {
 		sb.WriteString("d.audio_")
-		sb.WriteString(strconv.Itoa(r.audioIndex))
-		sb.WriteString(" ! mq.sink_1 mq.src_1 ! decodebin ! audioconvert dithering=none noise-shaping=none ! audioresample quality=2 sinc-filter-mode=full ! audio/x-raw,format=")
-		sb.WriteString(aacRawFormat())
-		sb.WriteString(",layout=interleaved,rate=48000,channels=2 ! ")
-		sb.WriteString(aacEncoder)
-		sb.WriteString(" bitrate=")
-		sb.WriteString(strconv.Itoa(conf.AACBitrateKbps * 1000))
-		sb.WriteString(" ! aacparse ! audio/mpeg,mpegversion=4,stream-format=raw,rate=48000,channels=2 ! mux.audio_0 ")
+		sb.WriteString(strconv.Itoa(audioTrack.Index))
+		sb.WriteString(" ! mq.sink_1 mq.src_1 ! ")
+		if audioTrack.IsAACAudio() {
+			sb.WriteString("aacparse ! audio/mpeg,mpegversion=4,stream-format=raw ! mux.audio_0 ")
+		} else {
+			aacEncoder := r.aacEncoder()
+
+			sb.WriteString("decodebin ! audioconvert dithering=none noise-shaping=none ! audioresample quality=2 sinc-filter-mode=full ! audio/x-raw,format=")
+			sb.WriteString(aacRawFormat())
+			sb.WriteString(",layout=interleaved,rate=48000,channels=2 ! ")
+			sb.WriteString(aacEncoder)
+			sb.WriteString(" bitrate=")
+			sb.WriteString(strconv.Itoa(conf.AACBitrateKbps * 1000))
+			sb.WriteString(" ! aacparse ! audio/mpeg,mpegversion=4,stream-format=raw,rate=48000,channels=2 ! mux.audio_0 ")
+		}
 	}
 
 	sb.WriteString("mp4mux name=mux fragment-duration=")

@@ -36,6 +36,7 @@ type TrackInfo struct {
 	PadName string
 
 	Type     string
+	Codec    string
 	CapsName string
 
 	Title    string
@@ -88,8 +89,39 @@ func (p ProbeInfo) Audio() *TrackInfo {
 	return nil
 }
 
+func (p ProbeInfo) AudioTrack(index int) *TrackInfo {
+	fallback := -1
+	for i := range p.Tracks {
+		if p.Tracks[i].Type != "audio" {
+			continue
+		}
+		if fallback < 0 {
+			fallback = i
+		}
+		if p.Tracks[i].Index == index {
+			return &p.Tracks[i]
+		}
+	}
+	if fallback >= 0 {
+		return &p.Tracks[fallback]
+	}
+	return nil
+}
+
 func (p ProbeInfo) HasAudio() bool {
 	return p.Audio() != nil
+}
+
+func (t TrackInfo) IsAACAudio() bool {
+	if t.Type != "audio" {
+		return false
+	}
+	codec := strings.ToLower(t.Codec)
+	return strings.Contains(codec, "aac") ||
+		strings.Contains(codec, "mp4a") ||
+		strings.Contains(codec, "mpeg-4") ||
+		strings.Contains(codec, "mpegversion=(int)4") ||
+		strings.Contains(codec, "mpegversion=4")
 }
 
 func (p ProbeInfo) IsMatroskaContainer() bool {
@@ -545,6 +577,7 @@ func parseDiscovererStreamHeader(line string) *TrackInfo {
 	codec := strings.TrimSpace(match[3])
 	return &TrackInfo{
 		Type:     trackType,
+		Codec:    codec,
 		CapsName: codecToCapsName(trackType, codec),
 	}
 }
@@ -568,12 +601,18 @@ func parseDiscovererTrackLine(track *TrackInfo, line string) {
 	case startsWithFold(line, "title:"):
 		track.Title = valueAfterColon(line)
 	case startsWithFold(line, "audio codec:"):
+		if track.Codec == "" {
+			track.Codec = valueAfterColon(line)
+		}
 		if track.CapsName == "" {
-			track.CapsName = codecToCapsName(track.Type, valueAfterColon(line))
+			track.CapsName = codecToCapsName(track.Type, track.Codec)
 		}
 	case startsWithFold(line, "video codec:"):
+		if track.Codec == "" {
+			track.Codec = valueAfterColon(line)
+		}
 		if track.CapsName == "" {
-			track.CapsName = codecToCapsName(track.Type, valueAfterColon(line))
+			track.CapsName = codecToCapsName(track.Type, track.Codec)
 		}
 	case startsWithFold(line, "Frame rate:"):
 		track.FrameRateNum, track.FrameRateDen = parseDiscovererRate(valueAfterColon(line))
