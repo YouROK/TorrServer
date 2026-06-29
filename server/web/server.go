@@ -3,7 +3,7 @@ package web
 import (
 	"net"
 	"os"
-	"server/gstreamer"
+	gstreamer "server/gstreamer/bridge"
 	"server/proxy"
 	"sort"
 
