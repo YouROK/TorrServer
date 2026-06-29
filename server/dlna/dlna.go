@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/anacrolix/dms/dlna/dms"
@@ -121,7 +122,10 @@ func onBrowse(path, rootObjectPath, host, userAgent string) (ret []interface{}, 
 		ret = getRoot()
 		return
 	} else if path == "/TR" {
-		ret = getTorrents()
+		ret = getTorrentCategories()
+		return
+	} else if strings.HasPrefix(path, "/TR/") {
+		ret = getTorrentsByCategory(path)
 		return
 	} else if isHashPath(path) {
 		ret = getTorrent(path, host)
