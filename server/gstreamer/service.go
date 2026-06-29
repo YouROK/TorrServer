@@ -182,8 +182,34 @@ func torrentFileSize(hash string, fileID string) (size int64) {
 	return torrentStatusFileSize(tor.Status(), index)
 }
 
-func keepAliveTorrent(hash string) {
-	_ = getTorrentForGStreamer(hash)
+type heartbeatState struct {
+	Hash    string                   `json:"Hash"`
+	Torrent *torrstate.TorrentStatus `json:"Torrent,omitempty"`
+}
+
+func torrentHeartbeatState(hash string) (state any) {
+	state = heartbeatState{Hash: hash}
+
+	defer func() {
+		if recover() != nil {
+			state = heartbeatState{Hash: hash}
+		}
+	}()
+
+	tor := getTorrentForGStreamer(hash)
+	if tor == nil {
+		return state
+	}
+
+	cacheState := tor.CacheState()
+	if cacheState != nil {
+		return cacheState
+	}
+
+	return heartbeatState{
+		Hash:    hash,
+		Torrent: tor.Status(),
+	}
 }
 
 func dropTorrentForGStreamer(hash string) {

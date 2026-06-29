@@ -43,8 +43,7 @@ func (s *Service) heartbeat(c *gin.Context) {
 		return
 	}
 
-	keepAliveTorrent(hash)
-	c.Status(http.StatusOK)
+	c.JSON(http.StatusOK, torrentHeartbeatState(hash))
 }
 
 func (s *Service) probe(c *gin.Context) {

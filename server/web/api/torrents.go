@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"server/dlna"
-	"server/gstreamer"
+	gstreamer "server/gstreamer/bridge"
 	"server/log"
 	set "server/settings"
 	"server/torr"
