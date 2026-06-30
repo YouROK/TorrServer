@@ -7,6 +7,10 @@ import "github.com/gin-gonic/gin"
 func SetupRoute(_ gin.IRouter) {
 }
 
+func BuiltIn() bool {
+	return false
+}
+
 func Stop() {
 }
 

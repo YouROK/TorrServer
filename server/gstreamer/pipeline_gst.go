@@ -441,8 +441,8 @@ func effectiveGStreamerVersion(conf Config) gstVersionInfo {
 	if gstRuntime != nil && gstRuntime.version.valid() {
 		return gstRuntime.version
 	}
-	if conf.GSTVersion <= 0 {
-		conf.GSTVersion = 1.22
+	if conf.GSTVersion < minGSTVersion {
+		conf.GSTVersion = minGSTVersion
 	}
 
 	major := uint32(conf.GSTVersion)

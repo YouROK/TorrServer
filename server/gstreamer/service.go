@@ -49,6 +49,18 @@ type probeCacheEntry struct {
 	expiresAt time.Time
 }
 
+func (s *Service) currentConfig() Config {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.conf
+}
+
+func (s *Service) updateConfig(conf Config) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.conf = conf.normalized()
+}
+
 func NewService(conf Config) *Service {
 	conf = conf.normalized()
 

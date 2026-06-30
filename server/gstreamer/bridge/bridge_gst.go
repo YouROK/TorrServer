@@ -12,6 +12,10 @@ func SetupRoute(route gin.IRouter) {
 	gstreamer.SetupRoute(route)
 }
 
+func BuiltIn() bool {
+	return true
+}
+
 func Stop() {
 	gstreamer.Stop()
 }

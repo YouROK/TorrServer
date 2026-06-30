@@ -47,3 +47,28 @@ func getDefaultService() *Service {
 
 	return defaultService
 }
+
+func CurrentConfig() Config {
+	return getDefaultService().currentConfig()
+}
+
+func UpdateConfig(conf Config) error {
+	if err := SaveConfig(conf); err != nil {
+		return err
+	}
+	getDefaultService().updateConfig(conf)
+	return nil
+}
+
+func PlatformDefaults() Config {
+	return defaultConfigWithoutSettings().normalized()
+}
+
+func ResetConfig() error {
+	conf := PlatformDefaults()
+	if err := SaveConfig(conf); err != nil {
+		return err
+	}
+	getDefaultService().updateConfig(conf)
+	return nil
+}
