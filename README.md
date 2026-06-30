@@ -49,13 +49,15 @@ allowing the cache size to be adjusted according to the system parameters and th
 - Torznab search (Jackett, Prowlarr, and similar indexer managers)
 - Cross-browser modern web interface
 - Optional DLNA server
-- Optional GStreamer HLS transcoding (`-gst` builds)
+- Optional GStreamer HLS transcoding support (`-gst` builds from release 141.10))
 
 ## Getting Started
 
 ### Installation
 
 Download the application for the required platform in the [releases](https://github.com/YouROK/TorrServer/releases) page. After installation, open the link <http://127.0.0.1:8090> in the browser.
+
+Standard binaries are named `TorrServer-<platform>-<arch>` (for example, `TorrServer-linux-amd64`). From release **141.10**, an optional **GStreamer (gst)** build is also available as `TorrServer-gst-<platform>-<arch>` with transcoding support (published for **amd64** and **arm64** only). The install scripts below can install either variant.
 
 #### Windows
 
@@ -72,6 +74,7 @@ curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrSe
 The script supports interactive and non-interactive installation, configuration, updates, and removal. When running the script interactively, you can:
 
 - **Install/Update**: Choose to install or update TorrServer
+- **GStreamer build**: For releases 141.10+ on amd64/arm64, choose the gst build with transcoding support (or pass `--gst`)
 - **Reconfigure**: If TorrServer is already installed, you'll be prompted to reconfigure settings (port, auth, read-only mode, logging, BBR)
 - **Uninstall**: Type `Delete` (or `Удалить` in Russian) to uninstall TorrServer
 
@@ -93,6 +96,13 @@ curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrSe
 
   ```bash
   sudo bash ./installTorrServerLinux.sh --update --silent
+  ```
+
+- Install GStreamer build (141.10+):
+
+  ```bash
+  sudo bash ./installTorrServerLinux.sh --install --gst
+  sudo bash ./installTorrServerLinux.sh --update --gst --silent
   ```
 
 - Reconfigure settings interactively:
@@ -134,6 +144,7 @@ curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrSe
 - `--down VERSION` - Downgrade to specific version
 - `--remove` - Uninstall TorrServer
 - `--change-user USER` - Change service user (root|torrserver)
+- `--gst` - Install GStreamer build with transcoding support (141.10+, amd64/arm64 only)
 - `--root` - Run service as root user
 - `--silent` - Non-interactive mode with defaults
 - `--help` - Show help message
@@ -145,6 +156,28 @@ Run in Terminal.app
 ```bash
 curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerMac.sh -o installTorrserverMac.sh && chmod 755 installTorrServerMac.sh && bash ./installTorrServerMac.sh
 ```
+
+The macOS install script supports the same commands as the Linux script, including `--install`, `--update`, `--remove`, `--reconfigure`, and `--gst` for the GStreamer build (141.10+).
+
+**Command-line examples:**
+
+- Install latest version:
+
+  ```bash
+  bash ./installTorrServerMac.sh --install
+  ```
+
+- Install GStreamer build:
+
+  ```bash
+  bash ./installTorrServerMac.sh --install --gst
+  ```
+
+- Update silently:
+
+  ```bash
+  bash ./installTorrServerMac.sh --update --silent
+  ```
 
 Alternative install script for Intel Macs: <https://github.com/dancheskus/TorrServerMacInstaller>
 
