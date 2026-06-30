@@ -69,6 +69,7 @@
   "Host": "Host",
   "Info": "Informații",
   "Infuse": "Infuse",
+  "SenPlayer": "SenPlayer",
   "KB": "KB",
   "kbps": "kbps",
   "Kilobytes": "Kilobytes",
@@ -101,7 +102,7 @@
   "PWAGuide": {
     "Header": "Instalați aplicația",
     "Description": "Instalați aplicația pe dispozitivul dvs. pentru a o accesa cu ușurință oricând. Fără AppStore. Fără descărcare.",
-    "PlayerButtons": "Butonele VLC, Infuse, IINA vor fi adăugate pentru a deschide instantaneu videoclipurile în aceste playere. Puteți de asemenea să folosiți playerul încorporat.",
+    "PlayerButtons": "Butonele VLC, Infuse, SenPlayer, IINA vor fi adăugate pentru a deschide instantaneu videoclipurile în aceste playere. Puteți de asemenea să folosiți playerul încorporat.",
     "FirstStep": "Apăsați pe",
     "SecondStep": {
       "Select": "Selectați",
@@ -204,6 +205,8 @@
     "UseDiskDesc": "Utilizați mai bine memoria RAM sau spațiul de stocare extern pe dispozitivele bazate pe flash.",
     "UseInfuse": "Solicitare pentru deschiderea videoclipului în Infuse",
     "UseInfuseHint": "Adăugați butonul Infuse player la lista de conținut torrent",
+    "UseSenPlayer": "Solicitare pentru deschiderea videoclipului în SenPlayer",
+    "UseSenPlayerHint": "Adăugați butonul SenPlayer la lista de conținut torrent",
     "UseVLC": "Solicitare pentru deschiderea videoclipului în VLC",
     "UseVLCHint": "Adăugați butonul VLC player la lista de conținut torrent",
     "UseVLCDesktopHintPrefix": "Pe desktop necesită",

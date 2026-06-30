@@ -69,6 +69,7 @@
   "Host": "Hôte",
   "Info": "Info",
   "Infuse": "Infuse",
+  "SenPlayer": "SenPlayer",
   "KB": "Ko",
   "kbps": "kbit/s",
   "Kilobytes": "Kilooctets",
@@ -101,7 +102,7 @@
   "PWAGuide": {
     "Header": "Installer l'application",
     "Description": "Installez l'application sur votre appareil pour y accéder facilement à tout moment. Pas de magasin d'applications. Pas de téléchargement.",
-    "PlayerButtons": "Les boutons VLC, Infuse, IINA seront ajoutés pour ouvrir la vidéo instantanément dans ces lecteurs. Vous pouvez également utiliser le lecteur intégré.",
+    "PlayerButtons": "Les boutons VLC, Infuse, SenPlayer, IINA seront ajoutés pour ouvrir la vidéo instantanément dans ces lecteurs. Vous pouvez également utiliser le lecteur intégré.",
     "FirstStep": "Appuyez sur",
     "SecondStep": {
       "Select": "Sélectionner",
@@ -204,6 +205,8 @@
     "UseDiskDesc": "Mieux vaut utiliser la RAM ou un stockage externe sur les appareils à base de flash",
     "UseInfuse": "Demander d'ouvrir la vidéo dans Infuse",
     "UseInfuseHint": "Ajouter un bouton de lecteur Infuse à la liste de contenu du torrent",
+    "UseSenPlayer": "Demander d'ouvrir la vidéo dans SenPlayer",
+    "UseSenPlayerHint": "Ajouter un bouton SenPlayer à la liste de contenu du torrent",
     "UseVLC": "Demander d'ouvrir la vidéo dans VLC",
     "UseVLCHint": "Ajouter un bouton de lecteur VLC à la liste de contenu du torrent",
     "UseVLCDesktopHintPrefix": "Sur PC nécessite",

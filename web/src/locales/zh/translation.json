@@ -69,6 +69,7 @@
   "Host": "主机",
   "Info": "信息",
   "Infuse": "Infuse",
+  "SenPlayer": "SenPlayer",
   "KB": "KB",
   "kbps": "kbps",
   "Kilobytes": "千字节",
@@ -101,7 +102,7 @@
   "PWAGuide": {
     "Header": "安装应用程序",
     "Description": "将应用程序安装到您的设备上，以便随时方便地访问。无需应用商店、无需下载。",
-    "PlayerButtons": "将添加 VLC Infuse IINA 按钮以便在手机上即时打开视频",
+    "PlayerButtons": "将添加 VLC、Infuse、SenPlayer、IINA 按钮以便在手机上即时打开视频",
     "FirstStep": "点击",
     "SecondStep": {
       "Select": "选择",
@@ -204,6 +205,8 @@
     "UseDiskDesc": "最好使用内存或固态存储作为缓存",
     "UseInfuse": "提示在 Infuse 中打开视频",
     "UseInfuseHint": "将 Infuse 播放器按钮添加到种子内容列表",
+    "UseSenPlayer": "提示在 SenPlayer 中打开视频",
+    "UseSenPlayerHint": "将 SenPlayer 播放器按钮添加到种子内容列表",
     "UseVLC": "提示在VLC中打开视频",
     "UseVLCHint": "将VLC播放器按钮添加到种子内容列表",
     "UseVLCDesktopHintPrefix": "桌面端需要",

@@ -69,6 +69,7 @@
   "Host": "Host",
   "Info": "Info",
   "Infuse": "Infuse",
+  "SenPlayer": "SenPlayer",
   "KB": "KB",
   "kbps": "kbps",
   "Kilobytes": "Kilobytes",
@@ -101,7 +102,7 @@
   "PWAGuide": {
     "Header": "Install application",
     "Description": "Install the app on your device to easily access it anytime. No AppStore. No download.",
-    "PlayerButtons": "VLC, Infuse, IINA buttons can be added to open video instantly in these players. You can also use the built-in player.",
+    "PlayerButtons": "VLC, Infuse, SenPlayer, IINA buttons can be added to open video instantly in these players. You can also use the built-in player.",
     "FirstStep": "Tap on ",
     "SecondStep": {
       "Select": "Select ",
@@ -204,6 +205,8 @@
     "UseDiskDesc": "Better use RAM or external storage on flash-based devices",
     "UseInfuse": "Prompt to open video in Infuse",
     "UseInfuseHint": "Add Infuse player button to torrent content list",
+    "UseSenPlayer": "Prompt to open video in SenPlayer",
+    "UseSenPlayerHint": "Add SenPlayer button to torrent content list",
     "UseVLC": "Prompt to open video in VLC",
     "UseVLCHint": "Add VLC player button to torrent content list",
     "UseVLCDesktopHintPrefix": "Desktop requires",

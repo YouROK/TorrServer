@@ -34,6 +34,7 @@ export default function SettingsDialog({ handleClose }) {
   const [isProMode, setIsProMode] = useState(JSON.parse(localStorage.getItem('isProMode')) || false)
   const [isVlcUsed, setIsVlcUsed] = useState(JSON.parse(localStorage.getItem('isVlcUsed')) ?? false)
   const [isInfuseUsed, setIsInfuseUsed] = useState(JSON.parse(localStorage.getItem('isInfuseUsed')) ?? false)
+  const [isSenPlayerUsed, setIsSenPlayerUsed] = useState(JSON.parse(localStorage.getItem('isSenPlayerUsed')) ?? false)
   const [isIinaUsed, setIsIinaUsed] = useState(JSON.parse(localStorage.getItem('isIinaUsed')) ?? false)
 
   useEffect(() => {
@@ -55,6 +56,7 @@ export default function SettingsDialog({ handleClose }) {
     clearTMDBCache()
     localStorage.setItem('isVlcUsed', isVlcUsed)
     localStorage.setItem('isInfuseUsed', isInfuseUsed)
+    localStorage.setItem('isSenPlayerUsed', isSenPlayerUsed)
     localStorage.setItem('isIinaUsed', isIinaUsed)
   }
 
@@ -184,6 +186,8 @@ export default function SettingsDialog({ handleClose }) {
                   setIsVlcUsed={setIsVlcUsed}
                   isInfuseUsed={isInfuseUsed}
                   setIsInfuseUsed={setIsInfuseUsed}
+                  isSenPlayerUsed={isSenPlayerUsed}
+                  setIsSenPlayerUsed={setIsSenPlayerUsed}
                   isIinaUsed={isIinaUsed}
                   setIsIinaUsed={setIsIinaUsed}
                 />
