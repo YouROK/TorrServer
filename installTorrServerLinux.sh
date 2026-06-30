@@ -22,6 +22,9 @@ scriptname=$(basename "$(test -L "$0" && readlink "$0" || echo "$0")")
 SILENT_MODE=0
 USE_ROOT_USER=0
 ROOT_PROMPTED=0
+USE_GST_BINARY=0
+GST_BINARY_EXPLICIT=0
+DETECTED_GST_VARIANT=-1
 
 # Command-line state
 parsedCommand=""
@@ -43,8 +46,10 @@ readonly REPO_URL="https://github.com/YouROK/TorrServer"
 readonly REPO_API_URL="https://api.github.com/repos/YouROK/TorrServer"
 readonly VERSION_PREFIX="MatriX"
 readonly BINARY_NAME_PREFIX="TorrServer-linux"
+readonly BINARY_PLATFORM="linux"
 readonly MIN_GLIBC_VERSION="2.32"
 readonly MIN_VERSION_REQUIRING_GLIBC=136
+readonly MIN_VERSION_WITH_GST="141.10"
 readonly SYSCTL_BBR_FILE="/etc/sysctl.d/90-torrserver.conf"
 
 # Color support
@@ -103,6 +108,10 @@ declare -A MSG_EN=(
 
   # Installation
   [installing_packages]="Installing missing packages…"
+  [pkg_running]="Running: %s"
+  [pkg_install_failed]="ERROR: Failed to install system packages"
+  [pkg_install_log]="Full log saved to: %s"
+  [pkg_install_output]="Package manager output:"
   [install_configure]="Install and configure TorrServer…"
   [starting_service]="Starting TorrServer…"
   [install_complete]="TorrServer %s installed to %s"
@@ -190,6 +199,12 @@ declare -A MSG_EN=(
   [installing_specific_version]="Installing specific version: %s"
   [service_reconfigured_user]="Service reconfigured for user: %s"
   [install_first_required]="Please install TorrServer first using: %s --install"
+  [enable_gst]="Install GStreamer (gst) build with transcoding support? (available from version %s+)"
+  [gst_not_available]="ERROR: GStreamer build is not available for version %s (requires %s+)"
+  [gst_not_available_arch]="ERROR: GStreamer build is not available for architecture %s (requires amd64 or arm64)"
+  [gst_fallback_standard]="Target version %s has no GStreamer build; using standard binary"
+  [using_gst_build]="Using GStreamer (gst) build"
+  [using_standard_build]="Using standard build"
 )
 
 declare -A MSG_RU=(
@@ -230,6 +245,10 @@ declare -A MSG_RU=(
 
   # Installation
   [installing_packages]="Устанавливаем недостающие пакеты…"
+  [pkg_running]="Выполняется: %s"
+  [pkg_install_failed]="ОШИБКА: Не удалось установить системные пакеты"
+  [pkg_install_log]="Полный журнал сохранён в: %s"
+  [pkg_install_output]="Вывод менеджера пакетов:"
   [install_configure]="Устанавливаем и настраиваем TorrServer…"
   [starting_service]="Запускаем службу TorrServer…"
   [install_complete]="TorrServer %s установлен в директории %s"
@@ -317,6 +336,12 @@ declare -A MSG_RU=(
   [installing_specific_version]="Установка конкретной версии: %s"
   [service_reconfigured_user]="Служба перенастроена для пользователя: %s"
   [install_first_required]="Пожалуйста, сначала установите TorrServer используя: %s --install"
+  [enable_gst]="Установить сборку GStreamer (gst) с поддержкой транскодирования? (доступна с версии %s+)"
+  [gst_not_available]="ОШИБКА: Сборка GStreamer недоступна для версии %s (требуется %s+)"
+  [gst_not_available_arch]="ОШИБКА: Сборка GStreamer недоступна для архитектуры %s (требуется amd64 или arm64)"
+  [gst_fallback_standard]="Для версии %s нет сборки GStreamer; используется стандартная сборка"
+  [using_gst_build]="Используется сборка GStreamer (gst)"
+  [using_standard_build]="Используется стандартная сборка"
 )
 
 # Translation function
@@ -366,7 +391,126 @@ isRoot() {
 }
 
 getBinaryName() {
-  echo "${BINARY_NAME_PREFIX}-${architecture}"
+  if [[ $USE_GST_BINARY -eq 1 ]]; then
+    echo "TorrServer-gst-${BINARY_PLATFORM}-${architecture}"
+  else
+    echo "${BINARY_NAME_PREFIX}-${architecture}"
+  fi
+}
+
+getAlternateBinaryName() {
+  if [[ $USE_GST_BINARY -eq 1 ]]; then
+    echo "${BINARY_NAME_PREFIX}-${architecture}"
+  else
+    echo "TorrServer-gst-${BINARY_PLATFORM}-${architecture}"
+  fi
+}
+
+getReleaseVersionNumber() {
+  local target_version="$1"
+  echo "${target_version#"${VERSION_PREFIX}".}"
+}
+
+supportsGstArch() {
+  [[ "$architecture" == "amd64" || "$architecture" == "arm64" ]]
+}
+
+supportsGstBinary() {
+  local target_version="$1"
+  local ver
+
+  supportsGstArch || return 1
+  ver=$(getReleaseVersionNumber "$target_version")
+  [[ -n "$ver" ]] && compareVersions "$ver" "$MIN_VERSION_WITH_GST"
+}
+
+reportGstUnavailableError() {
+  local target_version="$1"
+
+  if ! supportsGstArch; then
+    echo " - $(colorize red "$(msg gst_not_available_arch "$architecture")")"
+  else
+    echo " - $(colorize red "$(msg gst_not_available "$target_version" "$MIN_VERSION_WITH_GST")")"
+  fi
+  exit 1
+}
+
+detectInstalledBinaryVariant() {
+  if [[ $GST_BINARY_EXPLICIT -eq 1 ]]; then
+    return
+  fi
+
+  local gst_bin="TorrServer-gst-${BINARY_PLATFORM}-${architecture}"
+  local std_bin="${BINARY_NAME_PREFIX}-${architecture}"
+
+  if [[ -f "$dirInstall/$gst_bin" ]] && [[ $(stat -c%s "$dirInstall/$gst_bin" 2>/dev/null) -ne 0 ]]; then
+    DETECTED_GST_VARIANT=1
+    USE_GST_BINARY=1
+  elif [[ -f "$dirInstall/$std_bin" ]] && [[ $(stat -c%s "$dirInstall/$std_bin" 2>/dev/null) -ne 0 ]]; then
+    DETECTED_GST_VARIANT=0
+    USE_GST_BINARY=0
+  fi
+}
+
+removeAlternateBinary() {
+  local alt_bin
+  alt_bin=$(getAlternateBinaryName)
+  if [[ -f "$dirInstall/$alt_bin" ]]; then
+    rm -f "$dirInstall/$alt_bin"
+  fi
+}
+
+configureGstBinary() {
+  local target_version="$1"
+
+  if [[ $GST_BINARY_EXPLICIT -eq 1 ]]; then
+    if ! supportsGstBinary "$target_version"; then
+      reportGstUnavailableError "$target_version"
+    fi
+    USE_GST_BINARY=1
+    if [[ $SILENT_MODE -eq 0 ]]; then
+      echo " - $(msg using_gst_build)"
+    fi
+    return
+  fi
+
+  if ! supportsGstBinary "$target_version"; then
+    if [[ $USE_GST_BINARY -eq 1 ]]; then
+      USE_GST_BINARY=0
+      if [[ $SILENT_MODE -eq 0 ]]; then
+        echo " - $(msg gst_fallback_standard "$target_version")"
+      fi
+    else
+      USE_GST_BINARY=0
+    fi
+    return
+  fi
+
+  if [[ $SILENT_MODE -eq 1 ]]; then
+    if [[ $DETECTED_GST_VARIANT -eq 1 ]]; then
+      USE_GST_BINARY=1
+    else
+      USE_GST_BINARY=0
+    fi
+    return
+  fi
+
+  local recommended="n"
+  if [[ $DETECTED_GST_VARIANT -eq 1 ]]; then
+    recommended="y"
+  fi
+
+  if promptYesNo "$(msg enable_gst "$MIN_VERSION_WITH_GST")" "$recommended" "y"; then
+    USE_GST_BINARY=1
+  else
+    USE_GST_BINARY=0
+  fi
+
+  if [[ $USE_GST_BINARY -eq 1 ]]; then
+    echo " - $(msg using_gst_build)"
+  else
+    echo " - $(msg using_standard_build)"
+  fi
 }
 
 getVersionTag() {
@@ -789,10 +933,58 @@ delUser() {
 #     OS DETECTION & PACKAGES
 #############################################
 
+reportPackageInstallFailure() {
+  local cmd_display="$1"
+  local log_file="$2"
+
+  echo ""
+  echo " $(colorize red "$(msg pkg_install_failed)")"
+  echo " - $(msg pkg_running "$cmd_display")"
+  printf ' - %s\n' "$(msg pkg_install_log "$log_file")"
+  echo ""
+  echo " $(msg pkg_install_output)"
+  echo " -------------------------------------------------------------"
+  if [[ -s "$log_file" ]]; then
+    cat "$log_file" >&2
+  else
+    echo " (empty log)" >&2
+  fi
+  echo " -------------------------------------------------------------"
+  echo ""
+}
+
+runPackageManagerCommand() {
+  local log_file="$1"
+  local cmd_display="$2"
+  shift 2
+  local rc=0
+
+  if [[ $SILENT_MODE -eq 0 ]]; then
+    echo " - $(msg pkg_running "$cmd_display")"
+  fi
+
+  set +e
+  if [[ $SILENT_MODE -eq 0 ]]; then
+    "$@" 2>&1 | tee -a "$log_file"
+    rc=${PIPESTATUS[0]}
+  else
+    "$@" >>"$log_file" 2>&1
+    rc=$?
+  fi
+  set -e
+
+  if [[ $rc -ne 0 ]]; then
+    reportPackageInstallFailure "$cmd_display" "$log_file"
+    exit 1
+  fi
+}
+
 installPackages() {
   local pkg_type="$1"
   shift
   local packages=("$@")
+  local log_file
+  log_file=$(mktemp /tmp/torrserver-pkg-install.XXXXXX.log)
 
   case "$pkg_type" in
     deb)
@@ -806,8 +998,8 @@ installPackages() {
         if [[ $SILENT_MODE -eq 0 ]]; then
           echo " $(msg installing_packages)"
         fi
-        apt update >/dev/null 2>&1
-        apt -y install "${missing[@]}"
+        runPackageManagerCommand "$log_file" "apt update" apt update
+        runPackageManagerCommand "$log_file" "apt install ${missing[*]}" apt -y install "${missing[@]}"
       fi
       ;;
     rpm)
@@ -822,14 +1014,17 @@ installPackages() {
         fi
       done
       if [[ $needs_update -eq 1 ]]; then
+        if [[ $SILENT_MODE -eq 0 ]]; then
+          echo " $(msg installing_packages)"
+        fi
         if [[ "$pkg_manager" == "dnf" ]]; then
-          dnf makecache -q >/dev/null 2>&1 || true
+          runPackageManagerCommand "$log_file" "dnf makecache" dnf makecache -q
         elif [[ "$pkg_manager" == "yum" ]]; then
-          yum makecache fast -q >/dev/null 2>&1 || true
+          runPackageManagerCommand "$log_file" "yum makecache fast" yum makecache fast -q
         fi
         for pkg in "${packages[@]}"; do
           if [[ -z "$(rpm -qa "$pkg" 2>/dev/null)" ]]; then
-            $pkg_manager -y install "$pkg"
+            runPackageManagerCommand "$log_file" "$pkg_manager install $pkg" "$pkg_manager" -y install "$pkg"
           fi
         done
       fi
@@ -842,11 +1037,16 @@ installPackages() {
         fi
       done
       if [[ ${#missing[@]} -gt 0 ]]; then
-        pacman -Sy --noconfirm >/dev/null 2>&1
-        pacman -S --noconfirm "${missing[@]}"
+        if [[ $SILENT_MODE -eq 0 ]]; then
+          echo " $(msg installing_packages)"
+        fi
+        runPackageManagerCommand "$log_file" "pacman -Sy" pacman -Sy --noconfirm
+        runPackageManagerCommand "$log_file" "pacman -S ${missing[*]}" pacman -S --noconfirm "${missing[@]}"
       fi
       ;;
   esac
+
+  rm -f "$log_file"
 }
 
 getRpmPackageManager() {
@@ -987,6 +1187,8 @@ checkInstalled() {
       username="root"
     fi
   fi
+
+  detectInstalledBinaryVariant
 
   local binName
   binName=$(getBinaryName)
@@ -1516,6 +1718,9 @@ installTorrServer() {
     exit 1
   fi
 
+  detectInstalledBinaryVariant
+  configureGstBinary "$target_version"
+
   # Check if already installed and up to date
   if checkInstalled; then
       if ! checkInstalledVersion; then
@@ -1578,6 +1783,7 @@ installTorrServer() {
     fi
     downloadBinary "$urlBin" "$dirInstall/$binName" "$target_version"
   fi
+  removeAlternateBinary
 
   # Create service and config files
   createServiceFile
@@ -1659,6 +1865,9 @@ updateTorrServerVersion() {
     return 1
   fi
 
+  detectInstalledBinaryVariant
+  configureGstBinary "$target_version"
+
   if ! systemctlCmd stop "$serviceName.service"; then
     :
   fi
@@ -1673,6 +1882,7 @@ updateTorrServerVersion() {
   fi
 
   downloadBinary "$urlBin" "$dirInstall/$binName" "$target_version"
+  removeAlternateBinary
 
   # Update service file to reflect user change
   if [[ -f "$dirInstall/$serviceName.service" ]]; then
@@ -1849,6 +2059,7 @@ Commands:
     help
 
 Options:
+  --gst                             Install GStreamer build (141.10+, amd64/arm64 only)
   --root                            Run service as root user
   --silent                          Non-interactive mode with defaults
 
@@ -1858,6 +2069,9 @@ Examples:
 
   # Install specific version as root user silently
   sudo $scriptname --install 135 --root --silent
+
+  # Install GStreamer build
+  sudo $scriptname --install --gst
 
   # Update with silent mode
   sudo $scriptname --update --silent
@@ -1958,6 +2172,11 @@ parseArguments() {
         ;;
       --root)
         USE_ROOT_USER=1
+        shift
+        ;;
+      --gst)
+        USE_GST_BINARY=1
+        GST_BINARY_EXPLICIT=1
         shift
         ;;
       --silent)
