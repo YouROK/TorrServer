@@ -49,6 +49,8 @@ const emptyConfig = {
   Source: 'stream',
   InactiveMinutes: 5,
   AACBitrateKbps: 256,
+  AACChannels: 0,
+  AACSamplerate: 0,
   SegmentSeconds: 6,
   appsinkBuffers: 1000,
   TranscodeH264: false,
@@ -307,6 +309,30 @@ export default function GStreamerSettings() {
         variant='outlined'
         fullWidth
         inputProps={{ min: 32 }}
+      />
+
+      <TextField
+        label={t('GStreamer.AACChannels')}
+        type='number'
+        value={gstreamerSettings.AACChannels ?? 0}
+        onChange={e => updateField('AACChannels', Number(e.target.value))}
+        margin='normal'
+        helperText={t('GStreamer.AACChannelsHint')}
+        variant='outlined'
+        fullWidth
+        inputProps={{ min: 0 }}
+      />
+
+      <TextField
+        label={t('GStreamer.AACSamplerate')}
+        type='number'
+        value={gstreamerSettings.AACSamplerate ?? 0}
+        onChange={e => updateField('AACSamplerate', Number(e.target.value))}
+        margin='normal'
+        helperText={t('GStreamer.AACSamplerateHint')}
+        variant='outlined'
+        fullWidth
+        inputProps={{ min: 0 }}
       />
 
       <TextField
