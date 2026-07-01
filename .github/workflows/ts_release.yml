@@ -48,6 +48,7 @@ jobs:
           LDFLAGS="-s -w -checklinkname=0 -X server/version.Version=${{ env.VERSION }}"
           mkdir -p "${{ github.workspace }}/dist"
           cd server
+          export CGO_ENABLED=0
 
           # Linux
           GOOS=linux GOARCH=amd64 go build -ldflags="$LDFLAGS" -tags=nosqlite -trimpath -o "${{ github.workspace }}/dist/TorrServer-linux-amd64" ./cmd
@@ -85,6 +86,17 @@ jobs:
           # GST Darwin / macOS
           GOOS=darwin GOARCH=amd64 go build -ldflags="$LDFLAGS" -tags="nosqlite gst" -trimpath -o "${{ github.workspace }}/dist/TorrServer-gst-darwin-amd64" ./cmd
           GOOS=darwin GOARCH=arm64 go build -ldflags="$LDFLAGS" -tags="nosqlite gst" -trimpath -o "${{ github.workspace }}/dist/TorrServer-gst-darwin-arm64" ./cmd
+
+      - name: Verify static Linux binary (no shared libs)
+        if: matrix.group == 'standard'
+        run: |
+          bin="${{ github.workspace }}/dist/TorrServer-linux-amd64"
+          if readelf -d "$bin" 2>/dev/null | grep -q NEEDED; then
+            echo "Expected a statically linked binary without DT_NEEDED entries:" >&2
+            readelf -d "$bin" | grep NEEDED >&2 || true
+            exit 1
+          fi
+          echo "OK: TorrServer-linux-amd64 has no dynamic library dependencies"
 
       - name: Build Android (Go 1.25)
         if: matrix.group == 'android'
