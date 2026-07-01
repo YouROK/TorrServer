@@ -25,7 +25,7 @@ import {
   SettingsStatusMessage,
 } from './style'
 
-const GST_MIN_VERSION = 1.26
+const GST_MIN_VERSION = 1.22
 
 const parseDecimalInput = value => {
   const normalized = String(value).trim().replace(',', '.')

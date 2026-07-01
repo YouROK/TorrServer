@@ -12,7 +12,7 @@ import (
 
 const gstreamerSettingsKey = "gstreamer"
 
-const minGSTVersion = 1.26
+const minGSTVersion = 1.22
 
 type Config struct {
 	GSTVersion float64 `json:"GSTVersion"`
