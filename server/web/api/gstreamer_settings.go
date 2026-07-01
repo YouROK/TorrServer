@@ -29,12 +29,13 @@ type gstreamerSettingsRequest struct {
 // @Router /gst/settings [get]
 func GetGStreamerSettings(c *gin.Context) {
 	if !gstreamerbridge.BuiltIn() {
-		c.JSON(http.StatusNotFound, gin.H{"error": "gstreamer is not built in"})
+		c.JSON(http.StatusOK, gin.H{"built_in": false})
 		return
 	}
-	c.JSON(http.StatusOK, gstreamerSettingsResponse{
-		Config:   gstreamer.CurrentConfig(),
-		Defaults: gstreamer.PlatformDefaults(),
+	c.JSON(http.StatusOK, gin.H{
+		"built_in": true,
+		"config":   gstreamer.CurrentConfig(),
+		"defaults": gstreamer.PlatformDefaults(),
 	})
 }
 
