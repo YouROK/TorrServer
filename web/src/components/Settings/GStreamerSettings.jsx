@@ -479,6 +479,7 @@ export default function GStreamerSettings() {
 
       <Box mt={3} mb={2} display='flex' flexWrap='wrap' style={{ gap: 10 }}>
         <Button
+          type='button'
           variant='contained'
           color='primary'
           onClick={saveSettings}
@@ -487,7 +488,7 @@ export default function GStreamerSettings() {
         >
           {t('GStreamer.SaveSettings')}
         </Button>
-        <Button variant='outlined' color='secondary' onClick={resetToDefaults} disabled={loading}>
+        <Button type='button' variant='outlined' color='secondary' onClick={resetToDefaults} disabled={loading}>
           {t('SettingsDialog.ResetToDefault')}
         </Button>
       </Box>
@@ -495,7 +496,7 @@ export default function GStreamerSettings() {
       {status.message && (
         <SettingsStatusMessage severity={status.type}>
           <span>{status.message}</span>
-          <Button onClick={() => setStatus({ message: '', type: '' })} size='small'>
+          <Button type='button' onClick={() => setStatus({ message: '', type: '' })} size='small'>
             ×
           </Button>
         </SettingsStatusMessage>
