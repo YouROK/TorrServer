@@ -25,7 +25,7 @@ import {
   SettingsStatusMessage,
 } from './style'
 
-const GST_MIN_VERSION = 1.26
+const GST_MIN_VERSION = 1.22
 
 const parseDecimalInput = value => {
   const normalized = String(value).trim().replace(',', '.')
@@ -47,8 +47,11 @@ const emptyConfig = {
   GSTVersion: GST_MIN_VERSION,
   GSTPath: '',
   Source: 'stream',
+  MaxTasks: 0,
   InactiveMinutes: 5,
   AACBitrateKbps: 256,
+  AACChannels: 0,
+  AACSamplerate: 0,
   SegmentSeconds: 6,
   appsinkBuffers: 1000,
   TranscodeH264: false,
@@ -286,6 +289,18 @@ export default function GStreamerSettings() {
       <GstSubsectionLabel>{t('GStreamer.SectionPipeline')}</GstSubsectionLabel>
 
       <TextField
+        label={t('GStreamer.MaxTasks')}
+        type='number'
+        value={gstreamerSettings.MaxTasks ?? 0}
+        onChange={e => updateField('MaxTasks', Number(e.target.value))}
+        margin='normal'
+        helperText={t('GStreamer.MaxTasksHint')}
+        variant='outlined'
+        fullWidth
+        inputProps={{ min: 0 }}
+      />
+
+      <TextField
         label={t('GStreamer.InactiveMinutes')}
         type='number'
         value={gstreamerSettings.InactiveMinutes}
@@ -307,6 +322,30 @@ export default function GStreamerSettings() {
         variant='outlined'
         fullWidth
         inputProps={{ min: 32 }}
+      />
+
+      <TextField
+        label={t('GStreamer.AACChannels')}
+        type='number'
+        value={gstreamerSettings.AACChannels ?? 0}
+        onChange={e => updateField('AACChannels', Number(e.target.value))}
+        margin='normal'
+        helperText={t('GStreamer.AACChannelsHint')}
+        variant='outlined'
+        fullWidth
+        inputProps={{ min: 0 }}
+      />
+
+      <TextField
+        label={t('GStreamer.AACSamplerate')}
+        type='number'
+        value={gstreamerSettings.AACSamplerate ?? 0}
+        onChange={e => updateField('AACSamplerate', Number(e.target.value))}
+        margin='normal'
+        helperText={t('GStreamer.AACSamplerateHint')}
+        variant='outlined'
+        fullWidth
+        inputProps={{ min: 0 }}
       />
 
       <TextField
@@ -440,6 +479,7 @@ export default function GStreamerSettings() {
 
       <Box mt={3} mb={2} display='flex' flexWrap='wrap' style={{ gap: 10 }}>
         <Button
+          type='button'
           variant='contained'
           color='primary'
           onClick={saveSettings}
@@ -448,7 +488,7 @@ export default function GStreamerSettings() {
         >
           {t('GStreamer.SaveSettings')}
         </Button>
-        <Button variant='outlined' color='secondary' onClick={resetToDefaults} disabled={loading}>
+        <Button type='button' variant='outlined' color='secondary' onClick={resetToDefaults} disabled={loading}>
           {t('SettingsDialog.ResetToDefault')}
         </Button>
       </Box>
@@ -456,7 +496,7 @@ export default function GStreamerSettings() {
       {status.message && (
         <SettingsStatusMessage severity={status.type}>
           <span>{status.message}</span>
-          <Button onClick={() => setStatus({ message: '', type: '' })} size='small'>
+          <Button type='button' onClick={() => setStatus({ message: '', type: '' })} size='small'>
             ×
           </Button>
         </SettingsStatusMessage>

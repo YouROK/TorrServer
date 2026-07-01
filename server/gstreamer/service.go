@@ -56,9 +56,14 @@ func (s *Service) currentConfig() Config {
 }
 
 func (s *Service) updateConfig(conf Config) {
+	conf = conf.normalized()
+
 	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.conf = conf.normalized()
+	s.conf = conf
+	evicted := s.evictTasksForLimitLocked("")
+	s.mu.Unlock()
+
+	disposeTasks(evicted)
 }
 
 func NewService(conf Config) *Service {
@@ -80,7 +85,8 @@ func (s *Service) GetOrAdd(hash string, fileID string, audio int) (*Task, error)
 		return nil, ErrBadSource
 	}
 
-	sourceURL := sourceURL(s.conf, hash, fileID)
+	conf := s.currentConfig()
+	sourceURL := sourceURL(conf, hash, fileID)
 	id := hash
 
 	s.mu.RLock()
@@ -97,12 +103,13 @@ func (s *Service) GetOrAdd(hash string, fileID string, audio int) (*Task, error)
 		return nil, err
 	}
 
-	task, err = NewTask(id, hash, fileID, audio, sourceURL, probe, s.conf)
+	task, err = NewTask(id, hash, fileID, audio, sourceURL, probe, conf)
 	if err != nil {
 		return nil, err
 	}
 
 	var replaced *Task
+	var evicted []*Task
 
 	s.mu.Lock()
 	existing := s.tasks[id]
@@ -119,13 +126,66 @@ func (s *Service) GetOrAdd(hash string, fileID string, audio int) (*Task, error)
 
 	replaced = existing
 	s.tasks[id] = task
+	evicted = s.evictTasksForLimitLocked(id)
 	s.mu.Unlock()
 
 	if replaced != nil {
 		replaced.Dispose()
 	}
+	disposeTasks(evicted)
 
 	return task, nil
+}
+
+func (s *Service) evictTasksForLimitLocked(protectedID string) []*Task {
+	limit := s.conf.normalized().MaxTasks
+	if limit <= 0 || len(s.tasks) <= limit {
+		return nil
+	}
+
+	evicted := make([]*Task, 0, len(s.tasks)-limit)
+	for len(s.tasks) > limit {
+		id, task := oldestEvictableTask(s.tasks, protectedID)
+		if id == "" {
+			break
+		}
+		delete(s.tasks, id)
+		if task != nil {
+			evicted = append(evicted, task)
+		}
+	}
+	return evicted
+}
+
+func oldestEvictableTask(tasks map[string]*Task, protectedID string) (string, *Task) {
+	var oldestID string
+	var oldestTask *Task
+	var oldestActive time.Time
+
+	for id, task := range tasks {
+		if id == protectedID {
+			continue
+		}
+		if task == nil {
+			return id, nil
+		}
+
+		lastActive := task.LastActive()
+		if oldestID == "" || task.IsDisposed() || lastActive.Before(oldestActive) {
+			oldestID = id
+			oldestTask = task
+			oldestActive = lastActive
+		}
+	}
+	return oldestID, oldestTask
+}
+
+func disposeTasks(tasks []*Task) {
+	for _, task := range tasks {
+		if task != nil {
+			task.Dispose()
+		}
+	}
 }
 
 func (s *Service) Probe(hash string, fileID string) (ProbeInfo, error) {
@@ -133,10 +193,11 @@ func (s *Service) Probe(hash string, fileID string) (ProbeInfo, error) {
 		return ProbeInfo{}, ErrBadSource
 	}
 
+	conf := s.currentConfig()
 	probe, ok := s.getCachedProbe(hash, fileID)
 	if !ok {
 		var err error
-		probe, err = probeSource(sourceURL(s.conf, hash, fileID), s.conf)
+		probe, err = probeSource(sourceURL(conf, hash, fileID), conf)
 		if err != nil {
 			return ProbeInfo{}, err
 		}
@@ -437,7 +498,8 @@ func (s *Service) cleanupInactive() {
 	}
 	s.mu.RUnlock()
 
-	inactiveDuration := s.conf.inactiveDuration()
+	conf := s.currentConfig()
+	inactiveDuration := conf.inactiveDuration()
 	removeAfter := inactiveDuration + 20*time.Minute
 
 	for id, task := range snapshot {

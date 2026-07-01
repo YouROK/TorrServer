@@ -1,3 +1,5 @@
+//go:build gst
+
 package api
 
 import (
@@ -5,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	gstreamerbridge "server/gstreamer/bridge"
 	"server/gstreamer"
 )
 
@@ -28,10 +29,6 @@ type gstreamerSettingsRequest struct {
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Router /gst/settings [get]
 func GetGStreamerSettings(c *gin.Context) {
-	if !gstreamerbridge.BuiltIn() {
-		c.JSON(http.StatusOK, gin.H{"built_in": false})
-		return
-	}
 	c.JSON(http.StatusOK, gin.H{
 		"built_in": true,
 		"config":   gstreamer.CurrentConfig(),
@@ -53,10 +50,6 @@ func GetGStreamerSettings(c *gin.Context) {
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /gst/settings [post]
 func UpdateGStreamerSettings(c *gin.Context) {
-	if !gstreamerbridge.BuiltIn() {
-		c.JSON(http.StatusNotFound, gin.H{"error": "gstreamer is not built in"})
-		return
-	}
 	var req gstreamerSettingsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
