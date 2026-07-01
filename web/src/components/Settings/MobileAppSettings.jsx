@@ -52,6 +52,10 @@ export default function MobileAppSettings({
               labelPlacement='start'
             />
             <FormHelperText margin='none'>{t('SettingsDialog.UseInfuseHint')}</FormHelperText>
+          </>
+        )}
+        {isApple && (
+          <>
             <FormControlLabel
               control={
                 <Switch

@@ -90,6 +90,9 @@ export default function GStreamerSettings() {
 
         if (settingsResponse.ok) {
           const data = await settingsResponse.json()
+          if (!data.built_in) {
+            return
+          }
           const config = data.config || emptyConfig
           setGstreamerSettings(config)
           setDefaults(data.defaults || emptyConfig)

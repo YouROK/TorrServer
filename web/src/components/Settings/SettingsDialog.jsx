@@ -42,12 +42,14 @@ export default function SettingsDialog({ handleClose }) {
   const tabMain = 0
   const tabAdditional = 1
   const tabSearch = 2
-  const tabGStreamer = gstAvailable ? 3 : -1
-  const tabApp = gstAvailable ? 4 : 3
+  const tabApp = 3
+  const tabGStreamer = 4
+  const maxTab = gstAvailable ? tabGStreamer : tabApp
 
   useEffect(() => {
     fetch(gstSettingsHost())
-      .then(response => setGstAvailable(response.ok))
+      .then(response => (response.ok ? response.json() : { built_in: false }))
+      .then(data => setGstAvailable(Boolean(data.built_in)))
       .catch(() => setGstAvailable(false))
   }, [])
 
@@ -100,10 +102,10 @@ export default function SettingsDialog({ handleClose }) {
   }
 
   useEffect(() => {
-    if (selectedTab > tabApp) {
+    if (selectedTab > maxTab) {
       setSelectedTab(0)
     }
-  }, [gstAvailable, selectedTab, tabApp])
+  }, [gstAvailable, selectedTab, maxTab])
 
   const { CacheSize, ReaderReadAHead, PreloadCache } = settings || {}
 
@@ -164,6 +166,8 @@ export default function SettingsDialog({ handleClose }) {
 
           <StyledTab label={t('Search')} {...a11yProps(tabSearch)} />
 
+          <StyledTab label={t('SettingsDialog.Tabs.App')} {...a11yProps(tabApp)} />
+
           {gstAvailable && (
             <StyledTab
               disabled={!isProMode}
@@ -176,8 +180,6 @@ export default function SettingsDialog({ handleClose }) {
               {...a11yProps(tabGStreamer)}
             />
           )}
-
-          <StyledTab label={t('SettingsDialog.Tabs.App')} {...a11yProps(tabApp)} />
         </StyledTabs>
       </AppBar>
 
@@ -212,12 +214,6 @@ export default function SettingsDialog({ handleClose }) {
                 <TorznabSettings settings={settings} inputForm={inputForm} updateSettings={updateSettings} />
               </TabPanel>
 
-              {gstAvailable && (
-                <TabPanel value={selectedTab} index={tabGStreamer} dir={direction}>
-                  <GStreamerSettings />
-                </TabPanel>
-              )}
-
               <TabPanel value={selectedTab} index={tabApp} dir={direction}>
                 <TMDBSettings settings={settings} updateSettings={updateSettings} />
                 <MobileAppSettings
@@ -231,6 +227,12 @@ export default function SettingsDialog({ handleClose }) {
                   setIsIinaUsed={setIsIinaUsed}
                 />
               </TabPanel>
+
+              {gstAvailable && (
+                <TabPanel value={selectedTab} index={tabGStreamer} dir={direction}>
+                  <GStreamerSettings />
+                </TabPanel>
+              )}
             </SwipeableViews>
           </>
         ) : (
