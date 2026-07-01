@@ -277,6 +277,8 @@
     "SourceStream": "stream",
     "SourcePlay": "play",
     "SourceHint": "Use /stream or /play as the pipeline input source",
+    "MaxTasks": "Max GST tasks",
+    "MaxTasksHint": "0 = unlimited; when the limit is reached, the task with the oldest activity time is disposed",
     "InactiveMinutes": "Inactive timeout (minutes)",
     "InactiveMinutesHint": "Freeze pipeline after this many minutes without playback",
     "AACBitrateKbps": "AAC bitrate (kbps)",

@@ -18,6 +18,7 @@ type Config struct {
 	GSTVersion float64 `json:"GSTVersion"`
 	GSTPath    string  `json:"GSTPath"`
 	Source     string  `json:"Source"`
+	MaxTasks   int     `json:"MaxTasks"`
 
 	InactiveMinutes int `json:"InactiveMinutes"`
 
@@ -74,6 +75,9 @@ func (c Config) normalized() Config {
 	if c.AACSamplerate < 0 {
 		c.AACSamplerate = 0
 	}
+	if c.MaxTasks < 0 {
+		c.MaxTasks = 0
+	}
 	if c.SegmentSeconds <= 0 {
 		c.SegmentSeconds = 6
 	}
@@ -104,6 +108,7 @@ type storedConfig struct {
 	GSTVersion *float64
 	GSTPath    *string
 	Source     *string
+	MaxTasks   *int
 
 	InactiveMinutes *int
 
@@ -157,6 +162,9 @@ func applySettingsConfig(conf Config) Config {
 	}
 	if stored.Source != nil {
 		conf.Source = *stored.Source
+	}
+	if stored.MaxTasks != nil {
+		conf.MaxTasks = *stored.MaxTasks
 	}
 	if stored.InactiveMinutes != nil {
 		conf.InactiveMinutes = *stored.InactiveMinutes

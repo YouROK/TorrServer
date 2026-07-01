@@ -47,6 +47,7 @@ const emptyConfig = {
   GSTVersion: GST_MIN_VERSION,
   GSTPath: '',
   Source: 'stream',
+  MaxTasks: 0,
   InactiveMinutes: 5,
   AACBitrateKbps: 256,
   AACChannels: 0,
@@ -286,6 +287,18 @@ export default function GStreamerSettings() {
       <Divider />
 
       <GstSubsectionLabel>{t('GStreamer.SectionPipeline')}</GstSubsectionLabel>
+
+      <TextField
+        label={t('GStreamer.MaxTasks')}
+        type='number'
+        value={gstreamerSettings.MaxTasks ?? 0}
+        onChange={e => updateField('MaxTasks', Number(e.target.value))}
+        margin='normal'
+        helperText={t('GStreamer.MaxTasksHint')}
+        variant='outlined'
+        fullWidth
+        inputProps={{ min: 0 }}
+      />
 
       <TextField
         label={t('GStreamer.InactiveMinutes')}
