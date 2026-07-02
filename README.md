@@ -338,11 +338,14 @@ To build an Android server you will need the Android Toolchain.
 
 ```bash
 go install github.com/swaggo/swag/cmd/swag@latest
-cd server; swag init -g web/server.go
+cd server
+swag init -g web/server.go --parseDependency --parseInternal --parseDepth 5
 
 # Documentation can be linted using
 swag fmt
 ```
+
+Standard binaries serve a filtered Swagger spec at runtime (only `/gst/settings`); `-gst` builds include all `/gst/*` endpoints.
 
 ## API
 

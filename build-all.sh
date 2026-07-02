@@ -59,7 +59,7 @@ $GOBIN run gen_web.go
 echo "Build docs"
 $GOBIN install github.com/swaggo/swag/cmd/swag@latest
 cd "${ROOT}/server" || exit 1
-swag init -g web/server.go
+swag init -g web/server.go --parseDependency --parseInternal --parseDepth 5
 
 #### Build server
 echo "Build server"

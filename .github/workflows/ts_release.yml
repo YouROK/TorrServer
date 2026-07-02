@@ -40,7 +40,7 @@ jobs:
           REACT_APP_TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
         run: |
           go run gen_web.go
-          cd server && ~/go/bin/swag init -g web/server.go
+          cd server && ~/go/bin/swag init -g web/server.go --parseDependency --parseInternal --parseDepth 5
 
       - name: Build Standard Platforms
         if: matrix.group == 'standard'
