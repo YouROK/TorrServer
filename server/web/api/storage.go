@@ -14,7 +14,7 @@ import (
 // @Tags API
 // @Accept json
 // @Produce json
-// @Security ApiKeyAuth
+// @Security BasicAuth
 // @Success 200 {object} map[string]interface{} "Storage preferences"
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 500 {object} map[string]string "Internal server error"
@@ -30,7 +30,7 @@ func GetStorageSettings(c *gin.Context) {
 // @Tags API
 // @Accept json,x-www-form-urlencoded
 // @Produce json
-// @Security ApiKeyAuth
+// @Security BasicAuth
 // @Param request body map[string]interface{} true "Storage preferences to update"
 // @Param settings formData string false "Settings storage type" Enums(json,bbolt)
 // @Param viewed formData string false "Viewed history storage type" Enums(json,bbolt)

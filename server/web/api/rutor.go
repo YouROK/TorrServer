@@ -21,6 +21,7 @@ import (
 //	@Param			query	query	string	true	"Rutor query"
 //
 //	@Produce		json
+//	@Security		BasicAuth
 //	@Success		200	{array}	models.TorrentDetails	"Rutor torrent search result(s)"
 //	@Router			/search [get]
 func rutorSearch(c *gin.Context) {

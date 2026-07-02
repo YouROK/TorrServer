@@ -338,11 +338,14 @@ To build an Android server you will need the Android Toolchain.
 
 ```bash
 go install github.com/swaggo/swag/cmd/swag@latest
-cd server; swag init -g web/server.go
+cd server
+swag init -g web/server.go --parseDependency --parseInternal --parseDepth 5
 
 # Documentation can be linted using
 swag fmt
 ```
+
+Standard binaries serve a filtered Swagger spec at runtime (only `/gst/settings`); `-gst` builds include all `/gst/*` endpoints.
 
 ## API
 
@@ -432,7 +435,7 @@ The **only** way to enable GStreamer in TorrServer is to run a build compiled wi
 | Binary | GStreamer |
 | --- | --- |
 | `TorrServer-gst-<os>-<arch>` | **Yes** — `/gst/*` routes and transcoding |
-| `TorrServer-<os>-<arch>` (standard) | **No** — GStreamer settings can be saved but pipelines will not run |
+| `TorrServer-<os>-<arch>` (standard) | **No** — `GET /gst/settings` returns `built_in: false`; `POST` is rejected and pipelines do not run |
 
 Download `TorrServer-gst-*` from [releases](https://github.com/YouROK/TorrServer/releases) (Windows/Linux amd64+arm64/macOS amd64+arm64), or build:
 
@@ -572,10 +575,10 @@ Example (`settings.json`):
 
 ### API
 
-**Settings** (requires authentication when `--httpauth` is enabled):
+**Settings** (requires authentication when `--httpauth` is enabled; read/write only in `-gst` builds):
 
-- `GET /gst/settings` — current config and platform defaults
-- `POST /gst/settings` — update config
+- `GET /gst/settings` — on `-gst` builds: `built_in`, current config, and platform defaults; on standard builds: `{ "built_in": false }` only
+- `POST /gst/settings` — update or reset config (`404` on standard builds)
 
   ```json
   { "action": "set", "config": { "GSTVersion": 1.26, "Source": "stream" } }

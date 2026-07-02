@@ -17,6 +17,7 @@ import (
 //
 // @Tags			API
 //
+// @Security		BasicAuth
 // @Success		200
 // @Router			/shutdown [get]
 func shutdown(c *gin.Context) {

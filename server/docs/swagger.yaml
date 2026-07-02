@@ -7,6 +7,81 @@ definitions:
       hash:
         type: string
     type: object
+  api.gstreamerComponentDocStatus:
+    properties:
+      available:
+        type: boolean
+      error:
+        type: string
+      found:
+        type: boolean
+      works:
+        type: boolean
+    type: object
+  api.gstreamerEchoDocResponse:
+    properties:
+      gst_discoverer:
+        $ref: '#/definitions/api.gstreamerComponentDocStatus'
+      gstreamer:
+        $ref: '#/definitions/api.gstreamerComponentDocStatus'
+    type: object
+  api.gstreamerProbeInfoDoc:
+    properties:
+      Container:
+        type: string
+      DurationNS:
+        type: integer
+      FileSize:
+        type: integer
+      Tracks:
+        items:
+          $ref: '#/definitions/api.gstreamerTrackDoc'
+        type: array
+    type: object
+  api.gstreamerSettingsDocRequest:
+    properties:
+      action:
+        type: string
+      config:
+        additionalProperties: {}
+        type: object
+    type: object
+  api.gstreamerSettingsDocResponse:
+    properties:
+      built_in:
+        type: boolean
+      config: {}
+      defaults: {}
+    type: object
+  api.gstreamerTrackDoc:
+    properties:
+      CapsName:
+        type: string
+      Channels:
+        type: integer
+      Codec:
+        type: string
+      FrameRateDen:
+        type: integer
+      FrameRateNum:
+        type: integer
+      Height:
+        type: integer
+      Index:
+        type: integer
+      Language:
+        type: string
+      PadName:
+        type: string
+      Rate:
+        type: integer
+      Title:
+        type: string
+      Type:
+        type: string
+      Width:
+        type: integer
+    type: object
   api.setsReqJS:
     properties:
       action:
@@ -402,6 +477,8 @@ paths:
           description: Cache stats
           schema:
             $ref: '#/definitions/state.CacheState'
+      security:
+      - BasicAuth: []
       summary: Return cache stats
       tags:
       - API
@@ -421,6 +498,8 @@ paths:
           description: OK
           schema:
             type: file
+      security:
+      - BasicAuth: []
       summary: Generates test file of given size
       tags:
       - API
@@ -456,9 +535,327 @@ paths:
       responses:
         "200":
           description: Data returned from ffprobe
+      security:
+      - BasicAuth: []
       summary: Gather informations using ffprobe
       tags:
       - API
+  /gst/{hash}/heartbeat:
+    get:
+      description: Requires a `-gst` build. Not available in standard binaries.
+      parameters:
+      - description: Torrent infohash
+        in: path
+        name: hash
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Torrent heartbeat state
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Task not found
+      summary: GStreamer task heartbeat
+      tags:
+      - GStreamer
+  /gst/{hash}/init.mp4:
+    get:
+      description: Requires a `-gst` build. Returns the fMP4 init segment for the
+        transcode session.
+      parameters:
+      - description: Torrent infohash
+        in: path
+        name: hash
+        required: true
+        type: string
+      - description: Audio track index
+        in: query
+        name: audio
+        type: integer
+      - default: 0
+        description: Start offset in seconds
+        in: query
+        name: seconds
+        type: integer
+      produces:
+      - video/mp4
+      responses:
+        "200":
+          description: video/mp4 init segment
+          schema:
+            type: file
+        "404":
+          description: Task not found
+        "502":
+          description: Pipeline error
+          schema:
+            type: string
+      summary: HLS initialization segment
+      tags:
+      - GStreamer
+  /gst/{hash}/master.m3u8:
+    get:
+      description: Requires a `-gst` build. Returns an HLS VOD master playlist for
+        transcoded playback.
+      parameters:
+      - description: Torrent infohash
+        in: path
+        name: hash
+        required: true
+        type: string
+      - description: File index in torrent
+        in: query
+        name: index
+        type: string
+      - description: File index (alias)
+        in: query
+        name: id
+        type: string
+      - description: File index (alias)
+        in: query
+        name: fileID
+        type: string
+      - default: 0
+        description: Audio track index
+        in: query
+        name: audio
+        type: integer
+      - default: 0
+        description: Start offset in seconds
+        in: query
+        name: seconds
+        type: integer
+      produces:
+      - application/vnd.apple.mpegurl
+      responses:
+        "200":
+          description: application/vnd.apple.mpegurl playlist
+          schema:
+            type: string
+        "502":
+          description: Pipeline error
+          schema:
+            type: string
+      summary: HLS master playlist
+      tags:
+      - GStreamer
+  /gst/{hash}/probe:
+    get:
+      description: Requires a `-gst` build. Uses gst-discoverer to inspect container
+        and codec information.
+      parameters:
+      - description: Torrent infohash
+        in: path
+        name: hash
+        required: true
+        type: string
+      - description: File index in torrent
+        in: query
+        name: index
+        type: string
+      - description: File index (alias)
+        in: query
+        name: id
+        type: string
+      - description: File index (alias)
+        in: query
+        name: fileID
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Media probe result
+          schema:
+            $ref: '#/definitions/api.gstreamerProbeInfoDoc'
+        "400":
+          description: Invalid source
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "502":
+          description: Probe failed
+          schema:
+            type: string
+        "504":
+          description: Probe timed out
+          schema:
+            type: string
+      summary: Probe torrent media tracks
+      tags:
+      - GStreamer
+  /gst/{hash}/seg/{segment}:
+    get:
+      description: Requires a `-gst` build. Returns an fMP4 media segment for HLS
+        playback.
+      parameters:
+      - description: Torrent infohash
+        in: path
+        name: hash
+        required: true
+        type: string
+      - description: Segment index (e.g. 0.m4s)
+        in: path
+        name: segment
+        required: true
+        type: string
+      - description: Audio track index
+        in: query
+        name: audio
+        type: integer
+      produces:
+      - video/mp4
+      responses:
+        "200":
+          description: video/mp4 media segment
+          schema:
+            type: file
+        "206":
+          description: Partial content
+          schema:
+            type: file
+        "400":
+          description: Invalid segment
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Task not found
+        "502":
+          description: Pipeline error
+          schema:
+            type: string
+      summary: HLS media segment
+      tags:
+      - GStreamer
+  /gst/echo:
+    get:
+      description: Requires a `-gst` build. Not available in standard binaries.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: GStreamer runtime status
+          schema:
+            $ref: '#/definitions/api.gstreamerEchoDocResponse'
+      summary: GStreamer health check
+      tags:
+      - GStreamer
+  /gst/remove:
+    get:
+      description: Requires a `-gst` build. Not available in standard binaries.
+      parameters:
+      - description: Torrent infohash
+        in: query
+        name: hash
+        type: string
+      - description: Torrent infohash (alias)
+        in: query
+        name: id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Task removed
+          schema:
+            additionalProperties:
+              type: boolean
+            type: object
+        "400":
+          description: Invalid identifier
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Task not found
+      summary: Stop GStreamer transcode task
+      tags:
+      - GStreamer
+  /gst/settings:
+    get:
+      description: 'On `-gst` builds returns built_in, config and defaults. On standard
+        builds returns built_in: false only.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: GStreamer settings
+          schema:
+            $ref: '#/definitions/api.gstreamerSettingsDocResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BasicAuth: []
+      summary: Get GStreamer configuration
+      tags:
+      - GStreamer
+    post:
+      consumes:
+      - application/json
+      description: Available on `-gst` builds only; standard builds return 404.
+      parameters:
+      - description: GStreamer settings request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.gstreamerSettingsDocRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Update successful
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input data
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Read-only mode
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: GStreamer is not built in
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BasicAuth: []
+      summary: Update GStreamer configuration
+      tags:
+      - GStreamer
   /magnets:
     get:
       description: Get HTML of magnet links.
@@ -525,6 +922,8 @@ paths:
           description: OK
           schema:
             type: file
+      security:
+      - BasicAuth: []
       summary: Get a M3U playlist with all torrents
       tags:
       - API
@@ -546,6 +945,8 @@ paths:
             items:
               $ref: '#/definitions/models.TorrentDetails'
             type: array
+      security:
+      - BasicAuth: []
       summary: Makes a rutor search
       tags:
       - API
@@ -568,6 +969,8 @@ paths:
           description: Settings JSON or nothing. Depends on what action has been asked.
           schema:
             $ref: '#/definitions/settings.BTSets'
+      security:
+      - BasicAuth: []
       summary: Get / Set server settings
       tags:
       - API
@@ -577,6 +980,8 @@ paths:
       responses:
         "200":
           description: OK
+      security:
+      - BasicAuth: []
       summary: Shuts down server
       tags:
       - API
@@ -618,7 +1023,7 @@ paths:
               type: string
             type: object
       security:
-      - ApiKeyAuth: []
+      - BasicAuth: []
       summary: Get storage configuration settings
       tags:
       - API
@@ -684,7 +1089,7 @@ paths:
               type: string
             type: object
       security:
-      - ApiKeyAuth: []
+      - BasicAuth: []
       summary: Update storage configuration settings
       tags:
       - API
@@ -755,6 +1160,8 @@ paths:
           description: TMDB settings
           schema:
             $ref: '#/definitions/settings.TMDBConfig'
+      security:
+      - BasicAuth: []
       summary: Get TMDB settings
       tags:
       - API
@@ -796,6 +1203,8 @@ paths:
           description: Torrent statuses
           schema:
             type: if
+      security:
+      - BasicAuth: []
       summary: Add .torrent files
       tags:
       - API
@@ -819,6 +1228,8 @@ paths:
       responses:
         "200":
           description: OK
+      security:
+      - BasicAuth: []
       summary: Handle torrents informations
       tags:
       - API
@@ -840,6 +1251,8 @@ paths:
             items:
               $ref: '#/definitions/models.TorrentDetails'
             type: array
+      security:
+      - BasicAuth: []
       summary: Makes a torznab search
       tags:
       - API
@@ -865,6 +1278,8 @@ paths:
             items:
               $ref: '#/definitions/settings.Viewed'
             type: array
+      security:
+      - BasicAuth: []
       summary: Set / List / Remove viewed torrents
       tags:
       - API
