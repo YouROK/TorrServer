@@ -12,16 +12,19 @@ import (
 
 const gstreamerSettingsKey = "gstreamer"
 
-const minGSTVersion = 1.26
+const minGSTVersion = 1.22
 
 type Config struct {
 	GSTVersion float64 `json:"GSTVersion"`
 	GSTPath    string  `json:"GSTPath"`
 	Source     string  `json:"Source"`
+	MaxTasks   int     `json:"MaxTasks"`
 
 	InactiveMinutes int `json:"InactiveMinutes"`
 
 	AACBitrateKbps int `json:"AACBitrateKbps"`
+	AACChannels    int `json:"AACChannels"`
+	AACSamplerate  int `json:"AACSamplerate"`
 	SegmentSeconds int `json:"SegmentSeconds"`
 	AppSinkBuffers int `json:"appsinkBuffers"`
 
@@ -66,6 +69,15 @@ func (c Config) normalized() Config {
 	if c.AACBitrateKbps <= 0 {
 		c.AACBitrateKbps = 256
 	}
+	if c.AACChannels < 0 {
+		c.AACChannels = 0
+	}
+	if c.AACSamplerate < 0 {
+		c.AACSamplerate = 0
+	}
+	if c.MaxTasks < 0 {
+		c.MaxTasks = 0
+	}
 	if c.SegmentSeconds <= 0 {
 		c.SegmentSeconds = 6
 	}
@@ -96,10 +108,13 @@ type storedConfig struct {
 	GSTVersion *float64
 	GSTPath    *string
 	Source     *string
+	MaxTasks   *int
 
 	InactiveMinutes *int
 
 	AACBitrateKbps *int
+	AACChannels    *int
+	AACSamplerate  *int
 	SegmentSeconds *int
 	AppSinkBuffers *int `json:"appsinkBuffers"`
 
@@ -148,11 +163,20 @@ func applySettingsConfig(conf Config) Config {
 	if stored.Source != nil {
 		conf.Source = *stored.Source
 	}
+	if stored.MaxTasks != nil {
+		conf.MaxTasks = *stored.MaxTasks
+	}
 	if stored.InactiveMinutes != nil {
 		conf.InactiveMinutes = *stored.InactiveMinutes
 	}
 	if stored.AACBitrateKbps != nil {
 		conf.AACBitrateKbps = *stored.AACBitrateKbps
+	}
+	if stored.AACChannels != nil {
+		conf.AACChannels = *stored.AACChannels
+	}
+	if stored.AACSamplerate != nil {
+		conf.AACSamplerate = *stored.AACSamplerate
 	}
 	if stored.SegmentSeconds != nil {
 		conf.SegmentSeconds = *stored.SegmentSeconds

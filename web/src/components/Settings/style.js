@@ -352,10 +352,10 @@ export const SettingSectionLabel = styled.div`
 `
 
 export const SettingsStatusMessage = styled.div`
-  ${({ severity, theme }) => css`
-    padding: ${theme.spacing(1.5, 2)};
-    margin-top: ${theme.spacing(1)};
-    border-radius: ${theme.shape.borderRadius}px;
+  ${({ severity }) => css`
+    padding: 12px 16px;
+    margin-top: 8px;
+    border-radius: 5px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -372,7 +372,7 @@ export const SettingsStatusMessage = styled.div`
       color: #fff;
       min-width: auto;
       padding: 4px 8px;
-      margin-left: ${theme.spacing(1)};
+      margin-left: 8px;
     }
   `}
 `
