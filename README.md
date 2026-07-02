@@ -540,6 +540,7 @@ Example (`settings.json`):
     "Source": "stream",
     "InactiveMinutes": 5,
     "AACBitrateKbps": 256,
+    "StereoVoiceBoost": 0,
     "SegmentSeconds": 6,
     "appsinkBuffers": 1000,
     "TranscodeH264": false,
@@ -560,6 +561,7 @@ Example (`settings.json`):
 | `Source` | Input URL mode: `stream` (`/stream/...`) or `play` (`/play/...`). |
 | `InactiveMinutes` | Freeze pipeline after this many minutes without playback. |
 | `AACBitrateKbps` | Audio transcoding bitrate in kbps. |
+| `StereoVoiceBoost` | StereoVoiceBoost defaults to 0 (off). Stereo voice boost for decoded/re-encoded 5.1/7.1 audio when `AACChannels = 2`: `0` = off, `1` = mild, `2` = medium, `3` = strong. |
 | `SegmentSeconds` | HLS segment length in seconds. |
 | `appsinkBuffers` | Number of buffers in the appsink queue. |
 | `TranscodeH264` | Transcode H.264 video when needed. |

@@ -404,7 +404,14 @@ func (r *gstRunner) createPipelineArgs() string {
 			aacChannels := effectiveAACChannels(conf, audioTrack)
 			aacSampleRate := effectiveAACSampleRate(conf, audioTrack)
 
-			sb.WriteString("decodebin ! audioconvert dithering=none noise-shaping=none ! audioresample quality=2 sinc-filter-mode=full ! audio/x-raw,format=")
+			sb.WriteString("decodebin ! audioconvert dithering=none noise-shaping=none ! ")
+			r.writeDownmixMatrix(
+				&sb,
+				audioTrack.Channels,
+				aacChannels,
+				conf.StereoVoiceBoost,
+			)
+			sb.WriteString("audioresample quality=2 sinc-filter-mode=full ! audio/x-raw,format=")
 			sb.WriteString(aacRawFormat())
 			sb.WriteString(",layout=interleaved,rate=")
 			sb.WriteString(strconv.Itoa(aacSampleRate))
@@ -472,6 +479,60 @@ func (r *gstRunner) aacEncoder() string {
 
 func aacRawFormat() string {
 	return "F32LE"
+}
+
+func (r *gstRunner) writeDownmixMatrix(
+	sb *strings.Builder,
+	inputChannels int,
+	outputChannels int,
+	voiceBoost int,
+) {
+	if outputChannels != 2 || voiceBoost <= 0 {
+		return
+	}
+
+	matrix := stereoVoiceBoostMatrix(inputChannels, voiceBoost)
+	if matrix == "" {
+		return
+	}
+
+	sb.WriteString("audio/x-raw,channels=")
+	sb.WriteString(strconv.Itoa(inputChannels))
+	sb.WriteString(" ! ")
+
+	sb.WriteString("audiomixmatrix in-channels=")
+	sb.WriteString(strconv.Itoa(inputChannels))
+	sb.WriteString(" out-channels=2 channel-mask=-1 matrix=\"")
+	sb.WriteString(matrix)
+	sb.WriteString("\" ! ")
+
+	sb.WriteString("audio/x-raw,channels=2 ! ")
+}
+
+func stereoVoiceBoostMatrix(inputChannels int, voiceBoost int) string {
+	switch inputChannels {
+	case 6:
+		switch voiceBoost {
+		case 1:
+			return "<<0.65,0.0,0.75,0.15,0.25,0.0>,<0.0,0.65,0.75,0.15,0.0,0.25>>"
+		case 2:
+			return "<<0.60,0.0,0.85,0.15,0.20,0.0>,<0.0,0.60,0.85,0.15,0.0,0.20>>"
+		case 3:
+			return "<<0.50,0.0,1.00,0.10,0.15,0.0>,<0.0,0.50,1.00,0.10,0.0,0.15>>"
+		}
+
+	case 8:
+		switch voiceBoost {
+		case 1:
+			return "<<0.65,0.0,0.75,0.15,0.125,0.0,0.125,0.0>,<0.0,0.65,0.75,0.15,0.0,0.125,0.0,0.125>>"
+		case 2:
+			return "<<0.60,0.0,0.85,0.15,0.12,0.0,0.12,0.0>,<0.0,0.60,0.85,0.15,0.0,0.12,0.0,0.12>>"
+		case 3:
+			return "<<0.50,0.0,1.00,0.10,0.08,0.0,0.08,0.0>,<0.0,0.50,1.00,0.10,0.0,0.08,0.0,0.08>>"
+		}
+	}
+
+	return ""
 }
 
 func effectiveAACChannels(conf Config, track *TrackInfo) int {

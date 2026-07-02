@@ -52,6 +52,7 @@ const emptyConfig = {
   AACBitrateKbps: 256,
   AACChannels: 0,
   AACSamplerate: 0,
+  StereoVoiceBoost: 0,
   SegmentSeconds: 6,
   appsinkBuffers: 1000,
   TranscodeH264: false,
@@ -347,6 +348,27 @@ export default function GStreamerSettings() {
         fullWidth
         inputProps={{ min: 0 }}
       />
+
+      <FormGroup style={{ marginBottom: 20 }}>
+        <InputLabel htmlFor='gstreamer-stereo-voice-boost'>{t('GStreamer.StereoVoiceBoost')}</InputLabel>
+        <Select
+          id='gstreamer-stereo-voice-boost'
+          value={gstreamerSettings.StereoVoiceBoost ?? 0}
+          onChange={e =>
+            updateField('StereoVoiceBoost', Number(e.target.value))
+          }
+          variant='outlined'
+          margin='dense'
+          fullWidth
+        >
+          {[0, 1, 2, 3].map(level => (
+            <MenuItem key={level} value={level}>
+              {level}
+            </MenuItem>
+          ))}
+        </Select>
+        <FormHelperText style={{ marginTop: 8 }}>{t('GStreamer.StereoVoiceBoostHint')}</FormHelperText>
+      </FormGroup>
 
       <TextField
         label={t('GStreamer.SegmentSeconds')}

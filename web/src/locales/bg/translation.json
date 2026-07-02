@@ -291,6 +291,8 @@
     "AACChannelsHint": "0 = use the selected audio track probe value; fallback is 2.",
     "AACSamplerate": "AAC sample rate",
     "AACSamplerateHint": "0 = use the selected audio track probe value; fallback is 48000 Hz.",
+    "StereoVoiceBoost": "Stereo voice boost",
+    "StereoVoiceBoostHint": "0 — изключено, 1 — леко, 2 — средно, 3 — силно.",
     "SegmentSeconds": "Segment duration (seconds)",
     "SegmentSecondsHint": "Target duration of one HLS/fMP4 segment.",
     "AppSinkBuffers": "AppSink buffers",

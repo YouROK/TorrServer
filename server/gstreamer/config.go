@@ -22,11 +22,12 @@ type Config struct {
 
 	InactiveMinutes int `json:"InactiveMinutes"`
 
-	AACBitrateKbps int `json:"AACBitrateKbps"`
-	AACChannels    int `json:"AACChannels"`
-	AACSamplerate  int `json:"AACSamplerate"`
-	SegmentSeconds int `json:"SegmentSeconds"`
-	AppSinkBuffers int `json:"appsinkBuffers"`
+	AACBitrateKbps   int `json:"AACBitrateKbps"`
+	AACChannels      int `json:"AACChannels"`
+	AACSamplerate    int `json:"AACSamplerate"`
+	StereoVoiceBoost int `json:"StereoVoiceBoost"`
+	SegmentSeconds   int `json:"SegmentSeconds"`
+	AppSinkBuffers   int `json:"appsinkBuffers"`
 
 	TranscodeH264 bool `json:"TranscodeH264"`
 	TranscodeH265 bool `json:"TranscodeH265"`
@@ -44,14 +45,15 @@ func DefaultConfig() Config {
 
 func defaultConfigWithoutSettings() Config {
 	conf := Config{
-		GSTVersion:      minGSTVersion,
-		Source:          "stream",
-		InactiveMinutes: 5,
-		AACBitrateKbps:  256,
-		SegmentSeconds:  6,
-		AppSinkBuffers:  1000,
-		VideoBitrate:    10_000,
-		TempFS:          false,
+		GSTVersion:       minGSTVersion,
+		Source:           "stream",
+		InactiveMinutes:  5,
+		AACBitrateKbps:   256,
+		StereoVoiceBoost: 0,
+		SegmentSeconds:   6,
+		AppSinkBuffers:   1000,
+		VideoBitrate:     10_000,
+		TempFS:           false,
 	}
 
 	if runtime.GOOS == "windows" {
@@ -74,6 +76,12 @@ func (c Config) normalized() Config {
 	}
 	if c.AACSamplerate < 0 {
 		c.AACSamplerate = 0
+	}
+	if c.StereoVoiceBoost < 0 {
+		c.StereoVoiceBoost = 0
+	}
+	if c.StereoVoiceBoost > 3 {
+		c.StereoVoiceBoost = 3
 	}
 	if c.MaxTasks < 0 {
 		c.MaxTasks = 0
@@ -112,11 +120,12 @@ type storedConfig struct {
 
 	InactiveMinutes *int
 
-	AACBitrateKbps *int
-	AACChannels    *int
-	AACSamplerate  *int
-	SegmentSeconds *int
-	AppSinkBuffers *int `json:"appsinkBuffers"`
+	AACBitrateKbps   *int
+	AACChannels      *int
+	AACSamplerate    *int
+	StereoVoiceBoost *int
+	SegmentSeconds   *int
+	AppSinkBuffers   *int `json:"appsinkBuffers"`
 
 	TranscodeH264 *bool
 	TranscodeH265 *bool
@@ -177,6 +186,9 @@ func applySettingsConfig(conf Config) Config {
 	}
 	if stored.AACSamplerate != nil {
 		conf.AACSamplerate = *stored.AACSamplerate
+	}
+	if stored.StereoVoiceBoost != nil {
+		conf.StereoVoiceBoost = *stored.StereoVoiceBoost
 	}
 	if stored.SegmentSeconds != nil {
 		conf.SegmentSeconds = *stored.SegmentSeconds

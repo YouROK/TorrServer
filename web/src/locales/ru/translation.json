@@ -291,6 +291,8 @@
     "AACChannelsHint": "0 = взять из probe выбранной аудиодорожки; если не удалось, используется 2.",
     "AACSamplerate": "Частота AAC",
     "AACSamplerateHint": "0 = взять из probe выбранной аудиодорожки; если не удалось, используется 48000 Гц.",
+    "StereoVoiceBoost": "Усиление речи в стерео",
+    "StereoVoiceBoostHint": "0 — выключено, 1 — мягкое, 2 — среднее, 3 — сильное.",
     "SegmentSeconds": "Длительность сегмента (секунды)",
     "SegmentSecondsHint": "Целевая длительность одного HLS/fMP4-сегмента.",
     "AppSinkBuffers": "Буферы AppSink",

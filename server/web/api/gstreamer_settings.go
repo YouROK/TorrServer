@@ -22,7 +22,7 @@ type gstreamerSettingsRequest struct {
 
 // GetGStreamerSettings godoc
 // @Summary Get GStreamer configuration
-// @Description Retrieves current GStreamer settings and platform defaults
+// @Description Retrieves current GStreamer settings and platform defaults. StereoVoiceBoost defaults to 0 (off), accepts 0=Off, 1=Mild, 2=Medium, 3=Strong, and applies only when AACChannels is set to 2 and the source audio is 5.1 or 7.1.
 // @Tags API
 // @Produce json
 // @Success 200 {object} gstreamerSettingsResponse "GStreamer settings"
@@ -38,7 +38,7 @@ func GetGStreamerSettings(c *gin.Context) {
 
 // UpdateGStreamerSettings godoc
 // @Summary Update GStreamer configuration
-// @Description Updates GStreamer settings in settings.json and applies them to the running server
+// @Description Updates GStreamer settings in settings.json and applies them to the running server. StereoVoiceBoost defaults to 0 (off), accepts 0=Off, 1=Mild, 2=Medium, 3=Strong, and applies only when AACChannels is set to 2 and the source audio is 5.1 or 7.1.
 // @Tags API
 // @Accept json
 // @Produce json
