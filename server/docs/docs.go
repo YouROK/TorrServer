@@ -204,7 +204,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BasicAuth": []
                     }
                 ],
                 "description": "On ` + "`" + `-gst` + "`" + ` builds returns built_in, config and defaults. On standard builds returns built_in: false only.",
@@ -236,7 +236,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BasicAuth": []
                     }
                 ],
                 "description": "Available on ` + "`" + `-gst` + "`" + ` builds only; standard builds return 404.",
@@ -511,7 +511,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Media probe result",
                         "schema": {
-                            "$ref": "#/definitions/gstreamer.ProbeInfo"
+                            "$ref": "#/definitions/api.gstreamerProbeInfoDoc"
                         }
                     },
                     "400": {
@@ -810,7 +810,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BasicAuth": []
                     }
                 ],
                 "description": "Retrieves the current storage preferences for settings and viewed history",
@@ -855,7 +855,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BasicAuth": []
                     }
                 ],
                 "description": "Updates the storage preferences for settings and viewed history. Requires application restart for changes to take effect.",
@@ -1260,6 +1260,26 @@ const docTemplate = `{
                 }
             }
         },
+        "api.gstreamerProbeInfoDoc": {
+            "type": "object",
+            "properties": {
+                "Container": {
+                    "type": "string"
+                },
+                "DurationNS": {
+                    "type": "integer"
+                },
+                "FileSize": {
+                    "type": "integer"
+                },
+                "Tracks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.gstreamerTrackDoc"
+                    }
+                }
+            }
+        },
         "api.gstreamerSettingsDocRequest": {
             "type": "object",
             "properties": {
@@ -1267,7 +1287,8 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "config": {
-                    "$ref": "#/definitions/gstreamer.Config"
+                    "type": "object",
+                    "additionalProperties": {}
                 }
             }
         },
@@ -1279,6 +1300,50 @@ const docTemplate = `{
                 },
                 "config": {},
                 "defaults": {}
+            }
+        },
+        "api.gstreamerTrackDoc": {
+            "type": "object",
+            "properties": {
+                "CapsName": {
+                    "type": "string"
+                },
+                "Channels": {
+                    "type": "integer"
+                },
+                "Codec": {
+                    "type": "string"
+                },
+                "FrameRateDen": {
+                    "type": "integer"
+                },
+                "FrameRateNum": {
+                    "type": "integer"
+                },
+                "Height": {
+                    "type": "integer"
+                },
+                "Index": {
+                    "type": "integer"
+                },
+                "Language": {
+                    "type": "string"
+                },
+                "PadName": {
+                    "type": "string"
+                },
+                "Rate": {
+                    "type": "integer"
+                },
+                "Title": {
+                    "type": "string"
+                },
+                "Type": {
+                    "type": "string"
+                },
+                "Width": {
+                    "type": "integer"
+                }
             }
         },
         "api.setsReqJS": {
@@ -1335,128 +1400,6 @@ const docTemplate = `{
                 },
                 "timecode": {
                     "type": "number"
-                }
-            }
-        },
-        "gstreamer.Config": {
-            "type": "object",
-            "properties": {
-                "AACBitrateKbps": {
-                    "type": "integer"
-                },
-                "AACChannels": {
-                    "type": "integer"
-                },
-                "AACSamplerate": {
-                    "type": "integer"
-                },
-                "GSTPath": {
-                    "type": "string"
-                },
-                "GSTVersion": {
-                    "type": "number"
-                },
-                "InactiveMinutes": {
-                    "type": "integer"
-                },
-                "MaxTasks": {
-                    "type": "integer"
-                },
-                "SegmentSeconds": {
-                    "type": "integer"
-                },
-                "Source": {
-                    "type": "string"
-                },
-                "TranscodeAV1": {
-                    "type": "boolean"
-                },
-                "TranscodeH264": {
-                    "type": "boolean"
-                },
-                "TranscodeH265": {
-                    "type": "boolean"
-                },
-                "TranscodeVP9": {
-                    "type": "boolean"
-                },
-                "VideoBitrate": {
-                    "type": "integer"
-                },
-                "appsinkBuffers": {
-                    "type": "integer"
-                },
-                "tempfs": {
-                    "type": "boolean"
-                },
-                "tempfs_ring": {
-                    "type": "integer"
-                }
-            }
-        },
-        "gstreamer.ProbeInfo": {
-            "type": "object",
-            "properties": {
-                "container": {
-                    "type": "string"
-                },
-                "durationNS": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "fileSize": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "tracks": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/gstreamer.TrackInfo"
-                    }
-                }
-            }
-        },
-        "gstreamer.TrackInfo": {
-            "type": "object",
-            "properties": {
-                "capsName": {
-                    "type": "string"
-                },
-                "channels": {
-                    "type": "integer"
-                },
-                "codec": {
-                    "type": "string"
-                },
-                "frameRateDen": {
-                    "type": "integer"
-                },
-                "frameRateNum": {
-                    "type": "integer"
-                },
-                "height": {
-                    "type": "integer"
-                },
-                "index": {
-                    "type": "integer"
-                },
-                "language": {
-                    "type": "string"
-                },
-                "padName": {
-                    "type": "string"
-                },
-                "rate": {
-                    "type": "integer"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "type": {
-                    "type": "string"
-                },
-                "width": {
-                    "type": "integer"
                 }
             }
         },

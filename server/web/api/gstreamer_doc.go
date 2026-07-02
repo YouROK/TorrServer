@@ -1,7 +1,5 @@
 package api
 
-import "server/gstreamer"
-
 type gstreamerSettingsDocResponse struct {
 	BuiltIn  bool        `json:"built_in"`
 	Config   interface{} `json:"config,omitempty"`
@@ -9,8 +7,8 @@ type gstreamerSettingsDocResponse struct {
 }
 
 type gstreamerSettingsDocRequest struct {
-	Action string            `json:"action,omitempty"`
-	Config *gstreamer.Config `json:"config,omitempty"`
+	Action string         `json:"action,omitempty"`
+	Config map[string]any `json:"config,omitempty"`
 }
 
 type gstreamerEchoDocResponse struct {
@@ -25,12 +23,35 @@ type gstreamerComponentDocStatus struct {
 	Error     string `json:"error,omitempty"`
 }
 
+type gstreamerProbeInfoDoc struct {
+	DurationNS int64               `json:"DurationNS"`
+	FileSize   int64               `json:"FileSize"`
+	Container  string              `json:"Container"`
+	Tracks     []gstreamerTrackDoc `json:"Tracks"`
+}
+
+type gstreamerTrackDoc struct {
+	Index        int    `json:"Index"`
+	PadName      string `json:"PadName"`
+	Type         string `json:"Type"`
+	Codec        string `json:"Codec"`
+	CapsName     string `json:"CapsName"`
+	Title        string `json:"Title"`
+	Language     string `json:"Language"`
+	Width        int    `json:"Width"`
+	Height       int    `json:"Height"`
+	Channels     int    `json:"Channels"`
+	Rate         int    `json:"Rate"`
+	FrameRateNum int    `json:"FrameRateNum"`
+	FrameRateDen int    `json:"FrameRateDen"`
+}
+
 // GetGStreamerSettingsDoc godoc
 // @Summary Get GStreamer configuration
 // @Description On `-gst` builds returns built_in, config and defaults. On standard builds returns built_in: false only.
 // @Tags GStreamer
 // @Produce json
-// @Security ApiKeyAuth
+// @Security BasicAuth
 // @Success 200 {object} gstreamerSettingsDocResponse "GStreamer settings"
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Router /gst/settings [get]
@@ -42,7 +63,7 @@ func GetGStreamerSettingsDoc() {}
 // @Tags GStreamer
 // @Accept json
 // @Produce json
-// @Security ApiKeyAuth
+// @Security BasicAuth
 // @Param request body gstreamerSettingsDocRequest true "GStreamer settings request"
 // @Success 200 {object} map[string]string "Update successful"
 // @Failure 400 {object} map[string]string "Invalid input data"
@@ -95,7 +116,7 @@ func GetGStreamerHeartbeatDoc() {}
 // @Param index query string false "File index in torrent"
 // @Param id query string false "File index (alias)"
 // @Param fileID query string false "File index (alias)"
-// @Success 200 {object} gstreamer.ProbeInfo "Media probe result"
+// @Success 200 {object} gstreamerProbeInfoDoc "Media probe result"
 // @Failure 400 {object} map[string]string "Invalid source"
 // @Failure 502 {string} string "Probe failed"
 // @Failure 504 {string} string "Probe timed out"

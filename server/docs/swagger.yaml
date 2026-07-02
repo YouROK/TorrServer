@@ -25,12 +25,26 @@ definitions:
       gstreamer:
         $ref: '#/definitions/api.gstreamerComponentDocStatus'
     type: object
+  api.gstreamerProbeInfoDoc:
+    properties:
+      Container:
+        type: string
+      DurationNS:
+        type: integer
+      FileSize:
+        type: integer
+      Tracks:
+        items:
+          $ref: '#/definitions/api.gstreamerTrackDoc'
+        type: array
+    type: object
   api.gstreamerSettingsDocRequest:
     properties:
       action:
         type: string
       config:
-        $ref: '#/definitions/gstreamer.Config'
+        additionalProperties: {}
+        type: object
     type: object
   api.gstreamerSettingsDocResponse:
     properties:
@@ -38,6 +52,35 @@ definitions:
         type: boolean
       config: {}
       defaults: {}
+    type: object
+  api.gstreamerTrackDoc:
+    properties:
+      CapsName:
+        type: string
+      Channels:
+        type: integer
+      Codec:
+        type: string
+      FrameRateDen:
+        type: integer
+      FrameRateNum:
+        type: integer
+      Height:
+        type: integer
+      Index:
+        type: integer
+      Language:
+        type: string
+      PadName:
+        type: string
+      Rate:
+        type: integer
+      Title:
+        type: string
+      Type:
+        type: string
+      Width:
+        type: integer
     type: object
   api.setsReqJS:
     properties:
@@ -75,87 +118,6 @@ definitions:
         type: string
       timecode:
         type: number
-    type: object
-  gstreamer.Config:
-    properties:
-      AACBitrateKbps:
-        type: integer
-      AACChannels:
-        type: integer
-      AACSamplerate:
-        type: integer
-      GSTPath:
-        type: string
-      GSTVersion:
-        type: number
-      InactiveMinutes:
-        type: integer
-      MaxTasks:
-        type: integer
-      SegmentSeconds:
-        type: integer
-      Source:
-        type: string
-      TranscodeAV1:
-        type: boolean
-      TranscodeH264:
-        type: boolean
-      TranscodeH265:
-        type: boolean
-      TranscodeVP9:
-        type: boolean
-      VideoBitrate:
-        type: integer
-      appsinkBuffers:
-        type: integer
-      tempfs:
-        type: boolean
-      tempfs_ring:
-        type: integer
-    type: object
-  gstreamer.ProbeInfo:
-    properties:
-      container:
-        type: string
-      durationNS:
-        format: int64
-        type: integer
-      fileSize:
-        format: int64
-        type: integer
-      tracks:
-        items:
-          $ref: '#/definitions/gstreamer.TrackInfo'
-        type: array
-    type: object
-  gstreamer.TrackInfo:
-    properties:
-      capsName:
-        type: string
-      channels:
-        type: integer
-      codec:
-        type: string
-      frameRateDen:
-        type: integer
-      frameRateNum:
-        type: integer
-      height:
-        type: integer
-      index:
-        type: integer
-      language:
-        type: string
-      padName:
-        type: string
-      rate:
-        type: integer
-      title:
-        type: string
-      type:
-        type: string
-      width:
-        type: integer
     type: object
   models.TorrentDetails:
     properties:
@@ -703,7 +665,7 @@ paths:
         "200":
           description: Media probe result
           schema:
-            $ref: '#/definitions/gstreamer.ProbeInfo'
+            $ref: '#/definitions/api.gstreamerProbeInfoDoc'
         "400":
           description: Invalid source
           schema:
@@ -829,7 +791,7 @@ paths:
               type: string
             type: object
       security:
-      - ApiKeyAuth: []
+      - BasicAuth: []
       summary: Get GStreamer configuration
       tags:
       - GStreamer
@@ -884,7 +846,7 @@ paths:
               type: string
             type: object
       security:
-      - ApiKeyAuth: []
+      - BasicAuth: []
       summary: Update GStreamer configuration
       tags:
       - GStreamer
@@ -1047,7 +1009,7 @@ paths:
               type: string
             type: object
       security:
-      - ApiKeyAuth: []
+      - BasicAuth: []
       summary: Get storage configuration settings
       tags:
       - API
@@ -1113,7 +1075,7 @@ paths:
               type: string
             type: object
       security:
-      - ApiKeyAuth: []
+      - BasicAuth: []
       summary: Update storage configuration settings
       tags:
       - API
