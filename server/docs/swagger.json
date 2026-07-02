@@ -13,6 +13,11 @@
     "paths": {
         "/cache": {
             "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Return cache stats.",
                 "produces": [
                     "application/json"
@@ -44,6 +49,11 @@
         },
         "/download/{size}": {
             "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Download the test file of given size (for speed testing purpose).",
                 "produces": [
                     "application/octet-stream"
@@ -93,6 +103,11 @@
         },
         "/ffp/{hash}/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Gather informations using ffprobe.",
                 "produces": [
                     "application/json"
@@ -684,6 +699,11 @@
         },
         "/playlistall/all.m3u": {
             "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Retrieve all torrents and generates a bundled M3U playlist.",
                 "produces": [
                     "audio/x-mpegurl"
@@ -704,6 +724,11 @@
         },
         "/search": {
             "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Makes a rutor search.",
                 "produces": [
                     "application/json"
@@ -736,6 +761,11 @@
         },
         "/settings": {
             "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Allow to get or set server settings.",
                 "consumes": [
                     "application/json"
@@ -770,6 +800,11 @@
         },
         "/shutdown": {
             "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Gracefully shuts down server after 1 second.",
                 "tags": [
                     "API"
@@ -1032,6 +1067,11 @@
         },
         "/tmdb/settings": {
             "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Get TMDB API configuration",
                 "produces": [
                     "application/json"
@@ -1052,6 +1092,11 @@
         },
         "/torrent/upload": {
             "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Supports multiple files. Returns array of statuses.",
                 "consumes": [
                     "multipart/form-data"
@@ -1114,6 +1159,11 @@
         },
         "/torrents": {
             "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Allow to list, add, remove, get, set, drop, wipe torrents on server. The action depends of what has been asked.",
                 "consumes": [
                     "application/json"
@@ -1145,6 +1195,11 @@
         },
         "/torznab/search": {
             "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Makes a torznab search.",
                 "produces": [
                     "application/json"
@@ -1177,6 +1232,11 @@
         },
         "/viewed": {
             "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Allow to set, list or remove viewed torrents from server.",
                 "consumes": [
                     "application/json"

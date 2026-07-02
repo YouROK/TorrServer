@@ -20,6 +20,11 @@ const docTemplate = `{
     "paths": {
         "/cache": {
             "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Return cache stats.",
                 "produces": [
                     "application/json"
@@ -51,6 +56,11 @@ const docTemplate = `{
         },
         "/download/{size}": {
             "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Download the test file of given size (for speed testing purpose).",
                 "produces": [
                     "application/octet-stream"
@@ -100,6 +110,11 @@ const docTemplate = `{
         },
         "/ffp/{hash}/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Gather informations using ffprobe.",
                 "produces": [
                     "application/json"
@@ -691,6 +706,11 @@ const docTemplate = `{
         },
         "/playlistall/all.m3u": {
             "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Retrieve all torrents and generates a bundled M3U playlist.",
                 "produces": [
                     "audio/x-mpegurl"
@@ -711,6 +731,11 @@ const docTemplate = `{
         },
         "/search": {
             "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Makes a rutor search.",
                 "produces": [
                     "application/json"
@@ -743,6 +768,11 @@ const docTemplate = `{
         },
         "/settings": {
             "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Allow to get or set server settings.",
                 "consumes": [
                     "application/json"
@@ -777,6 +807,11 @@ const docTemplate = `{
         },
         "/shutdown": {
             "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Gracefully shuts down server after 1 second.",
                 "tags": [
                     "API"
@@ -1039,6 +1074,11 @@ const docTemplate = `{
         },
         "/tmdb/settings": {
             "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Get TMDB API configuration",
                 "produces": [
                     "application/json"
@@ -1059,6 +1099,11 @@ const docTemplate = `{
         },
         "/torrent/upload": {
             "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Supports multiple files. Returns array of statuses.",
                 "consumes": [
                     "multipart/form-data"
@@ -1121,6 +1166,11 @@ const docTemplate = `{
         },
         "/torrents": {
             "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Allow to list, add, remove, get, set, drop, wipe torrents on server. The action depends of what has been asked.",
                 "consumes": [
                     "application/json"
@@ -1152,6 +1202,11 @@ const docTemplate = `{
         },
         "/torznab/search": {
             "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Makes a torznab search.",
                 "produces": [
                     "application/json"
@@ -1184,6 +1239,11 @@ const docTemplate = `{
         },
         "/viewed": {
             "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "description": "Allow to set, list or remove viewed torrents from server.",
                 "consumes": [
                     "application/json"

@@ -477,6 +477,8 @@ paths:
           description: Cache stats
           schema:
             $ref: '#/definitions/state.CacheState'
+      security:
+      - BasicAuth: []
       summary: Return cache stats
       tags:
       - API
@@ -496,6 +498,8 @@ paths:
           description: OK
           schema:
             type: file
+      security:
+      - BasicAuth: []
       summary: Generates test file of given size
       tags:
       - API
@@ -531,6 +535,8 @@ paths:
       responses:
         "200":
           description: Data returned from ffprobe
+      security:
+      - BasicAuth: []
       summary: Gather informations using ffprobe
       tags:
       - API
@@ -916,6 +922,8 @@ paths:
           description: OK
           schema:
             type: file
+      security:
+      - BasicAuth: []
       summary: Get a M3U playlist with all torrents
       tags:
       - API
@@ -937,6 +945,8 @@ paths:
             items:
               $ref: '#/definitions/models.TorrentDetails'
             type: array
+      security:
+      - BasicAuth: []
       summary: Makes a rutor search
       tags:
       - API
@@ -959,6 +969,8 @@ paths:
           description: Settings JSON or nothing. Depends on what action has been asked.
           schema:
             $ref: '#/definitions/settings.BTSets'
+      security:
+      - BasicAuth: []
       summary: Get / Set server settings
       tags:
       - API
@@ -968,6 +980,8 @@ paths:
       responses:
         "200":
           description: OK
+      security:
+      - BasicAuth: []
       summary: Shuts down server
       tags:
       - API
@@ -1146,6 +1160,8 @@ paths:
           description: TMDB settings
           schema:
             $ref: '#/definitions/settings.TMDBConfig'
+      security:
+      - BasicAuth: []
       summary: Get TMDB settings
       tags:
       - API
@@ -1187,6 +1203,8 @@ paths:
           description: Torrent statuses
           schema:
             type: if
+      security:
+      - BasicAuth: []
       summary: Add .torrent files
       tags:
       - API
@@ -1210,6 +1228,8 @@ paths:
       responses:
         "200":
           description: OK
+      security:
+      - BasicAuth: []
       summary: Handle torrents informations
       tags:
       - API
@@ -1231,6 +1251,8 @@ paths:
             items:
               $ref: '#/definitions/models.TorrentDetails'
             type: array
+      security:
+      - BasicAuth: []
       summary: Makes a torznab search
       tags:
       - API
@@ -1256,6 +1278,8 @@ paths:
             items:
               $ref: '#/definitions/settings.Viewed'
             type: array
+      security:
+      - BasicAuth: []
       summary: Set / List / Remove viewed torrents
       tags:
       - API

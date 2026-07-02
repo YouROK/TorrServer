@@ -30,6 +30,7 @@ import (
 //	@Tags			API
 //
 //	@Produce		audio/x-mpegurl
+//	@Security		BasicAuth
 //	@Success		200	{file}	file
 //	@Router			/playlistall/all.m3u [get]
 func allPlayList(c *gin.Context) {
