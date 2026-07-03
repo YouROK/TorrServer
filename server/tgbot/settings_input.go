@@ -144,17 +144,6 @@ func applySettingsInput(c tele.Context, setting, value string) {
 	case "tmdbkey":
 		sets.TMDBSettings.APIKey = value
 		_ = c.Send(fmt.Sprintf(tr(uid, "settings_input_done"), "TMDB API Key", valueOrClear(value)))
-	case "proxyhosts":
-		if value == "" {
-			sets.ProxyHosts = nil
-		} else {
-			parts := strings.Split(value, ",")
-			for i := range parts {
-				parts[i] = strings.TrimSpace(parts[i])
-			}
-			sets.ProxyHosts = parts
-		}
-		_ = c.Send(fmt.Sprintf(tr(uid, "settings_input_done"), "ProxyHosts", valueOrClear(value)))
 	case "torznab_add":
 		if value == "" {
 			_ = c.Send(tr(uid, "settings_input_torznab_usage"))

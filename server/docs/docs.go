@@ -1568,10 +1568,6 @@ const docTemplate = `{
                     "description": "LPD",
                     "type": "boolean"
                 },
-                "enableProxy": {
-                    "description": "P2P Proxy",
-                    "type": "boolean"
-                },
                 "enableRutorSearch": {
                     "description": "Rutor",
                     "type": "boolean"
@@ -1596,12 +1592,6 @@ const docTemplate = `{
                 "preloadCache": {
                     "description": "in percent",
                     "type": "integer"
-                },
-                "proxyHosts": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
                 },
                 "readerReadAHead": {
                     "description": "in percent, 5%-100%, [...S__X__E...] [S-E] not clean",

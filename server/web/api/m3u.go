@@ -36,6 +36,30 @@ import (
 func allPlayList(c *gin.Context) {
 	torrs := torr.ListTorrent()
 
+	category := c.Query("category")
+	search := c.Query("search")
+
+	if category != "" || search != "" {
+		var filtered []*torr.Torrent
+		for _, tr := range torrs {
+			st := tr.Status()
+			
+			if category == "uncategorized" {
+				if st.Category != "" {
+					continue
+			    }
+            } else if category != "" && st.Category != category {
+				continue
+			}
+			if search != "" &&
+				!strings.Contains(strings.ToLower(st.Title), strings.ToLower(search)) {
+				continue
+			}
+			filtered = append(filtered, tr)
+		}
+		torrs = filtered
+	}
+
 	host := utils.GetScheme(c) + "://" + utils.GetHost(c)
 	list := "#EXTM3U\n"
 	hash := ""

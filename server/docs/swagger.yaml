@@ -191,9 +191,6 @@ definitions:
       enableLPD:
         description: LPD
         type: boolean
-      enableProxy:
-        description: P2P Proxy
-        type: boolean
       enableRutorSearch:
         description: Rutor
         type: boolean
@@ -212,10 +209,6 @@ definitions:
       preloadCache:
         description: in percent
         type: integer
-      proxyHosts:
-        items:
-          type: string
-        type: array
       readerReadAHead:
         description: in percent, 5%-100%, [...S__X__E...] [S-E] not clean
         type: integer
