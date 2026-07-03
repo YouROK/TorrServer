@@ -22,6 +22,7 @@ import (
 //	@Param			id		path	string	true	"File index in torrent"
 //
 //	@Produce		json
+//	@Security		BasicAuth
 //	@Success		200	"Data returned from ffprobe"
 //	@Router			/ffp/{hash}/{id} [get]
 func ffp(c *gin.Context) {

@@ -8,8 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type gstreamerStubSettingsResponse struct {
+	BuiltIn bool `json:"built_in"`
+}
+
 func GetGStreamerSettings(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"built_in": false})
+	c.JSON(http.StatusOK, gstreamerStubSettingsResponse{BuiltIn: false})
 }
 
 func UpdateGStreamerSettings(c *gin.Context) {

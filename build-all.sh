@@ -59,7 +59,7 @@ $GOBIN run gen_web.go
 echo "Build docs"
 $GOBIN install github.com/swaggo/swag/cmd/swag@latest
 cd "${ROOT}/server" || exit 1
-swag init -g web/server.go
+swag init -g web/server.go --parseDependency --parseInternal --parseDepth 5
 
 #### Build server
 echo "Build server"
@@ -80,7 +80,7 @@ for PLATFORM in "${PLATFORMS[@]}"; do
   set_gomips "$GOARCH"
   BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}${GOARM}"
   if [[ "${GOOS}" == "windows" ]]; then BIN_FILENAME="${BIN_FILENAME}.exe"; fi
-  CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GO_ARM} ${GO_MIPS} ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
+  CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GO_ARM} ${GO_MIPS} CGO_ENABLED=0 ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
   echo "${CMD}"
   eval "$CMD" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
 #  CMD="../upx -q ${BIN_FILENAME}"; # upx --brute produce much smaller binaries

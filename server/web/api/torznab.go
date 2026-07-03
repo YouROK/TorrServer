@@ -22,6 +22,7 @@ import (
 //	@Param			query	query	string	true	"Torznab query"
 //
 //	@Produce		json
+//	@Security		BasicAuth
 //	@Success		200	{array}	models.TorrentDetails	"Torznab torrent search result(s)"
 //	@Router			/torznab/search [get]
 func torznabSearch(c *gin.Context) {
