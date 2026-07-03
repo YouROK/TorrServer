@@ -89,6 +89,31 @@ for PLATFORM in "${PLATFORMS[@]}"; do
 done
 
 #####################################
+### GStreamer build section
+#####
+
+GST_PLATFORMS=(
+  'windows/amd64'
+  'linux/amd64'
+  'linux/arm64'
+  'darwin/amd64'
+  'darwin/arm64'
+)
+
+BUILD_FLAGS_GST="-ldflags=${LDFLAGS} -tags=nosqlite,gst -trimpath"
+
+echo "Build GStreamer server"
+for PLATFORM in "${GST_PLATFORMS[@]}"; do
+  GOOS=${PLATFORM%/*}
+  GOARCH=${PLATFORM#*/}
+  BIN_FILENAME="${OUTPUT}-gst-${GOOS}-${GOARCH}"
+  if [[ "${GOOS}" == "windows" ]]; then BIN_FILENAME="${BIN_FILENAME}.exe"; fi
+  CMD="GOOS=${GOOS} GOARCH=${GOARCH} CGO_ENABLED=0 ${GOBIN} build ${BUILD_FLAGS_GST} -o ${BIN_FILENAME} ./cmd"
+  echo "${CMD}"
+  eval "$CMD" || FAILURES="${FAILURES} gst/${GOOS}/${GOARCH}"
+done
+
+#####################################
 ### Android build section
 #####
 
