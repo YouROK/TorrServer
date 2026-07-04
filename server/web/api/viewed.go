@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 
 	sets "server/settings"
@@ -15,7 +16,7 @@ file index starts from 1
 // Action: set, rem, list
 type viewedReqJS struct {
 	requestI
-	*sets.Viewed
+	sets.Viewed
 }
 
 // viewed godoc
@@ -57,12 +58,20 @@ func viewed(c *gin.Context) {
 }
 
 func setViewed(req viewedReqJS, c *gin.Context) {
-	sets.SetViewed(req.Viewed)
+	if req.Hash == "" {
+		c.AbortWithError(http.StatusBadRequest, errors.New("hash is required"))
+		return
+	}
+	sets.SetViewed(&req.Viewed)
 	c.Status(200)
 }
 
 func remViewed(req viewedReqJS, c *gin.Context) {
-	sets.RemViewed(req.Viewed)
+	if req.Hash == "" {
+		c.AbortWithError(http.StatusBadRequest, errors.New("hash is required"))
+		return
+	}
+	sets.RemViewed(&req.Viewed)
 	c.Status(200)
 }
 
