@@ -77,8 +77,8 @@ func main() {
 	settings.HttpAuth = params.HttpAuth
 	log.Init(params.LogPath, params.WebLogPath)
 
-	fmt.Println("=========== START ===========")
-	fmt.Println("TorrServer", version.Version+",", runtime.Version()+",", "CPU Num:", runtime.NumCPU())
+	log.TLogln("=========== START ===========")
+	log.TLogln("TorrServer", version.Version+",", runtime.Version()+",", "CPU Num:", runtime.NumCPU())
 	if params.HttpAuth {
 		log.TLogln("Use HTTP Auth file", settings.Path+"/accs.db")
 	}

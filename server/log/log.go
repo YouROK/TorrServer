@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -24,13 +25,34 @@ var (
 )
 
 func Init(path, webpath string) {
-	webLogPath = webpath
 	logPath = path
+	webLogPath = webpath
+
+	shared := path != "" && webpath != "" && filepath.Clean(path) == filepath.Clean(webpath)
+	if path != "" {
+		path = filepath.Clean(path)
+	}
+	if webpath != "" {
+		webpath = filepath.Clean(webpath)
+	}
+
+	if shared {
+		ff, err := openLogFile(path)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error create log file: %v\n", err)
+			return
+		}
+		logFile = ff
+		webLogFile = ff
+		webLog = log.New(ff, " ", log.LstdFlags)
+		applyServerLog(ff)
+		return
+	}
 
 	if webpath != "" {
-		ff, err := os.OpenFile(webLogPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0o666)
+		ff, err := os.OpenFile(webpath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0o666)
 		if err != nil {
-			TLogln("Error create web log file:", err)
+			fmt.Fprintf(os.Stderr, "Error create web log file: %v\n", err)
 		} else {
 			webLogFile = ff
 			webLog = log.New(ff, " ", log.LstdFlags)
@@ -38,39 +60,47 @@ func Init(path, webpath string) {
 	}
 
 	if path != "" {
-		if fi, err := os.Lstat(path); err == nil {
-			if fi.Size() >= 100*1024*1024 { // 100MB
-				os.Remove(path)
-			}
-		}
-		ff, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0o666)
+		ff, err := openLogFile(path)
 		if err != nil {
-			TLogln("Error create log file:", err)
+			fmt.Fprintf(os.Stderr, "Error create log file: %v\n", err)
 			return
 		}
 		logFile = ff
-		os.Stdout = ff
-		os.Stderr = ff
-		// var timeFmt string
-		// var ok bool
-		// timeFmt, ok = os.LookupEnv("GO_LOG_TIME_FMT")
-		// if !ok {
-		// 	timeFmt = "2006-01-02T15:04:05-0700"
-		// }
-		// log.SetFlags(log.Lmsgprefix)
-		// log.SetPrefix(time.Now().Format(timeFmt) + " TSM ")
-		log.SetFlags(log.LstdFlags | log.LUTC | log.Lmsgprefix)
-		log.SetPrefix("UTC0 ")
-		log.SetOutput(ff)
+		applyServerLog(ff)
 	}
+}
+
+func openLogFile(path string) (*os.File, error) {
+	if fi, err := os.Lstat(path); err == nil {
+		if fi.Size() >= 100*1024*1024 { // 100MB
+			os.Remove(path)
+		}
+	}
+	return os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0o666)
+}
+
+func applyServerLog(ff *os.File) {
+	if err := redirectStdFDs(ff); err != nil {
+		fmt.Fprintf(os.Stderr, "Error redirect stdout/stderr: %v\n", err)
+	}
+	log.SetFlags(log.LstdFlags | log.LUTC | log.Lmsgprefix)
+	log.SetPrefix("UTC0 ")
+	log.SetOutput(ff)
 }
 
 func Close() {
 	if logFile != nil {
 		logFile.Close()
+		if webLogFile == logFile {
+			webLogFile = nil
+			webLog = nil
+		}
+		logFile = nil
 	}
 	if webLogFile != nil {
 		webLogFile.Close()
+		webLogFile = nil
+		webLog = nil
 	}
 }
 
@@ -93,8 +123,9 @@ func WebLogger() gin.HandlerFunc {
 		body := ""
 		// save body if not form or file
 		if !strings.HasPrefix(c.Request.Header.Get("Content-Type"), "multipart/form-data") {
-			body, _ := io.ReadAll(c.Request.Body)
-			c.Request.Body = io.NopCloser(bytes.NewBuffer(body))
+			bodyBytes, _ := io.ReadAll(c.Request.Body)
+			c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+			body = string(bodyBytes)
 		} else {
 			body = "body hidden, too large"
 		}
@@ -114,7 +145,7 @@ func WebLogger() gin.HandlerFunc {
 			clientIP,
 			method,
 			path,
-			string(body),
+			body,
 		)
 		WebLogln(logStr)
 	}
