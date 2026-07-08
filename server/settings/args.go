@@ -2,7 +2,7 @@ package settings
 
 type ExecArgs struct {
 	Port        string
-	IP          string
+	IPs         []string
 	Ssl         bool
 	SslPort     string
 	SslCert     string
