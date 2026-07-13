@@ -175,6 +175,8 @@ type mp4BoxReader struct {
 
 	tfdtOffsetSeconds float64
 	sequence          uint32
+
+	emittedVideoSegment bool
 }
 
 func Mp4BoxReader(onInit func([]byte), onSegment func(Segment), segmentSeconds float64) *mp4BoxReader {
@@ -219,6 +221,7 @@ func (r *mp4BoxReader) SeekReset(seconds float64) {
 	r.clearFragments()
 	r.resetPrefix()
 	r.resetBoxState()
+
 }
 
 func (r *mp4BoxReader) Push(data []byte) error {
@@ -290,7 +293,7 @@ func (r *mp4BoxReader) TryBuildEndOfStreamRemainder() (bool, error) {
 		return false, nil
 	}
 
-	if videoCount > 0 && !r.video[0].startsWithSync {
+	if videoCount > 0 && !r.emittedVideoSegment && !r.video[0].startsWithSync {
 		return false, r.undecodableEOSRemainderError()
 	}
 
@@ -693,7 +696,7 @@ func (r *mp4BoxReader) selectVideoCount() (int, error) {
 		return 0, nil
 	}
 
-	if !r.video[0].startsWithSync {
+	if !r.emittedVideoSegment && !r.video[0].startsWithSync {
 		return 0, fmt.Errorf("video segment starts with a non-sync sample at %.6fs", float64(r.video[0].decodeTime)/float64(r.videoTrack.timescale))
 	}
 
@@ -703,14 +706,88 @@ func (r *mp4BoxReader) selectVideoCount() (int, error) {
 	}
 
 	var duration uint64
-	for i := 0; i+1 < len(r.video); i++ {
-		duration += r.video[i].duration
-		if duration >= target && r.video[i+1].startsWithSync {
+	for i := range r.video {
+		fragment := &r.video[i]
+		if math.MaxUint64-duration < fragment.duration {
+			return 0, errors.New("video timeline overflow")
+		}
+		end := duration + fragment.duration
+		if end >= target {
+			if end == target {
+				return i + 1, nil
+			}
+
+			splitSamples, reached, err := findVideoSplitSampleCount(fragment, target-duration)
+			if err != nil {
+				return 0, err
+			}
+			if !reached {
+				return 0, errors.New("video split target was not reached")
+			}
+
+			totalSamples, err := fragmentSampleCount(*fragment)
+			if err != nil {
+				return 0, err
+			}
+			if splitSamples <= 0 || splitSamples > totalSamples {
+				return 0, errors.New("invalid video split sample count")
+			}
+
+			if splitSamples < totalSamples {
+				left, right, err := splitFragmentAtSample(*fragment, splitSamples)
+				if err != nil {
+					return 0, err
+				}
+
+				r.video[i] = left
+				r.video = append(r.video, mp4Fragment{})
+				copy(r.video[i+2:], r.video[i+1:])
+				r.video[i+1] = right
+			}
+
 			return i + 1, nil
 		}
+		duration = end
 	}
 
 	return 0, nil
+}
+
+func findVideoSplitSampleCount(fragment *mp4Fragment, target uint64) (int, bool, error) {
+	if fragment == nil {
+		return 0, false, errors.New("video fragment is nil")
+	}
+	if target == 0 {
+		return 0, false, errors.New("video split target is zero")
+	}
+
+	videoEnd := uint64(0)
+	sampleCount := 0
+
+	for _, run := range fragment.runs {
+		if len(run.samples) == 0 {
+			return 0, false, errors.New("video trun has no parsed samples")
+		}
+
+		for _, sample := range run.samples {
+			if math.MaxUint64-videoEnd < uint64(sample.duration) {
+				return 0, false, errors.New("video sample timeline overflow")
+			}
+
+			videoEnd += uint64(sample.duration)
+			sampleCount++
+
+			if videoEnd >= target {
+				return sampleCount, true, nil
+			}
+		}
+	}
+
+	if videoEnd != fragment.duration {
+		return 0, false, errors.New("video sample durations do not match fragment duration")
+	}
+
+	return sampleCount, false, nil
 }
 
 func (r *mp4BoxReader) selectAudioCount(videoEnd uint64) (int, error) {
@@ -875,7 +952,7 @@ func splitFragmentAtSample(
 			leftRun, err := buildExplicitRun(
 				sourceRun,
 				sourceRun.samples[:take],
-				false,
+				true,
 			)
 			if err != nil {
 				return mp4Fragment{}, mp4Fragment{}, err
@@ -1094,6 +1171,9 @@ func (r *mp4BoxReader) buildSegment(videoCount int, audioCount int, allowSingleT
 		StartSeconds: startSeconds,
 		EndSeconds:   endSeconds,
 	})
+	if hasVideo {
+		r.emittedVideoSegment = true
+	}
 
 	if hasVideo {
 		r.video = removeFragments(r.video, videoCount)
@@ -1337,7 +1417,7 @@ func parseTraf(traf []byte, trafHeader int, videoTrack trackInfo, audioTrack tra
 			continue
 		}
 
-		keepSamples := parsedTfhd.trackID == audioTrack.id && audioTrack.id != 0
+		keepSamples := parsedTfhd.trackID == videoTrack.id || (parsedTfhd.trackID == audioTrack.id && audioTrack.id != 0)
 		run, err := normalizeTrun(box, headerSize, defaultDuration, defaultSize, defaultFlags, keepSamples)
 		if err != nil {
 			return nil, err
@@ -2140,6 +2220,7 @@ func (r *mp4BoxReader) clearFragments() {
 	}
 	r.video = r.video[:0]
 	r.audio = r.audio[:0]
+	r.emittedVideoSegment = false
 }
 
 func (r *mp4BoxReader) ReclaimPayloads() {

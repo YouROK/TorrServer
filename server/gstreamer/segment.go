@@ -9,6 +9,15 @@ type Segment struct {
 	EndSeconds   float64
 }
 
+func (s Segment) Clone() Segment {
+	return Segment{
+		Header:       cloneBytes(s.Header),
+		Payloads:     clonePayloads(s.Payloads),
+		StartSeconds: s.StartSeconds,
+		EndSeconds:   s.EndSeconds,
+	}
+}
+
 func (s Segment) Len() int {
 	total := len(s.Header)
 	for _, payload := range s.Payloads {
@@ -84,5 +93,16 @@ func cloneBytes(src []byte) []byte {
 	}
 	dst := make([]byte, len(src))
 	copy(dst, src)
+	return dst
+}
+
+func clonePayloads(src [][]byte) [][]byte {
+	if len(src) == 0 {
+		return nil
+	}
+	dst := make([][]byte, len(src))
+	for i := range src {
+		dst[i] = cloneBytes(src[i])
+	}
 	return dst
 }

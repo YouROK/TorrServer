@@ -2,7 +2,10 @@
 
 package gstreamer
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 type disabledRunner struct{}
 
@@ -18,7 +21,12 @@ func (disabledRunner) GetSegment(context.Context, int, int) (Segment, error) {
 	return Segment{}, ErrPipelineDisabled
 }
 
-func (disabledRunner) Seek(float64) bool { return false }
-func (disabledRunner) Frozen()           {}
-func (disabledRunner) Dispose()          {}
-func (disabledRunner) IsFrozen() bool    { return false }
+func (r disabledRunner) GetSegmentWithTimeout(ctx context.Context, index int, audio int, timeout time.Duration) (Segment, error) {
+	return r.GetSegment(ctx, index, audio)
+}
+
+func (disabledRunner) Seek(float64) error { return ErrPipelineDisabled }
+func (disabledRunner) Frozen()            {}
+func (disabledRunner) Dispose()           {}
+func (disabledRunner) IsFrozen() bool     { return false }
+func (disabledRunner) Position() float64  { return 0 }

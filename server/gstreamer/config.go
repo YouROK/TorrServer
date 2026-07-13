@@ -22,11 +22,11 @@ type Config struct {
 
 	InactiveMinutes int `json:"InactiveMinutes"`
 
-	AACBitrateKbps int `json:"AACBitrateKbps"`
-	AACChannels    int `json:"AACChannels"`
-	AACSamplerate  int `json:"AACSamplerate"`
-	SegmentSeconds int `json:"SegmentSeconds"`
-	AppSinkBuffers int `json:"appsinkBuffers"`
+	AACBitrateKbps   int `json:"AACBitrateKbps"`
+	AACChannels      int `json:"AACChannels"`
+	AACSamplerate    int `json:"AACSamplerate"`
+	SegmentSeconds   int `json:"SegmentSeconds"`
+	AppSinkBuffers   int `json:"appsinkBuffers"`
 
 	TranscodeH264 bool `json:"TranscodeH264"`
 	TranscodeH265 bool `json:"TranscodeH265"`
@@ -44,14 +44,14 @@ func DefaultConfig() Config {
 
 func defaultConfigWithoutSettings() Config {
 	conf := Config{
-		GSTVersion:      minGSTVersion,
-		Source:          "stream",
-		InactiveMinutes: 5,
-		AACBitrateKbps:  256,
-		SegmentSeconds:  6,
-		AppSinkBuffers:  1000,
-		VideoBitrate:    10_000,
-		TempFS:          false,
+		GSTVersion:       minGSTVersion,
+		Source:           "stream",
+		InactiveMinutes:  5,
+		AACBitrateKbps:   256,
+		SegmentSeconds:   6,
+		AppSinkBuffers:   1000,
+		VideoBitrate:     10_000,
+		TempFS:           false,
 	}
 
 	if runtime.GOOS == "windows" {
@@ -112,11 +112,11 @@ type storedConfig struct {
 
 	InactiveMinutes *int
 
-	AACBitrateKbps *int
-	AACChannels    *int
-	AACSamplerate  *int
-	SegmentSeconds *int
-	AppSinkBuffers *int `json:"appsinkBuffers"`
+	AACBitrateKbps   *int
+	AACChannels      *int
+	AACSamplerate    *int
+	SegmentSeconds   *int
+	AppSinkBuffers   *int `json:"appsinkBuffers"`
 
 	TranscodeH264 *bool
 	TranscodeH265 *bool

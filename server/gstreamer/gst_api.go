@@ -23,9 +23,10 @@ const (
 
 	gstFormatTime int32 = 3
 
-	gstSeekFlagFlush     int32 = 1
-	gstSeekFlagKeyUnit   int32 = 4
-	gstSeekFlagSnapAfter int32 = 64
+	gstSeekFlagFlush      int32 = 1
+	gstSeekFlagKeyUnit    int32 = 4
+	gstSeekFlagSnapBefore int32 = 32
+	gstSeekFlagSnapAfter  int32 = 64
 
 	gstMapRead int32 = 1
 
@@ -55,24 +56,33 @@ func (v gstVersionInfo) atLeast(major uint32, minor uint32) bool {
 type gstAPI struct {
 	handles []uintptr
 
-	gstInitCheck            func(argc unsafe.Pointer, argv unsafe.Pointer, err unsafe.Pointer) int32
-	gstVersion              func(major unsafe.Pointer, minor unsafe.Pointer, micro unsafe.Pointer, nano unsafe.Pointer)
-	gstParseLaunch          func(description string, err unsafe.Pointer) uintptr
-	gstBinGetByName         func(bin uintptr, name string) uintptr
-	gstObjectUnref          func(obj uintptr)
-	gstMiniObjectUnref      func(obj uintptr)
-	gstElementSetState      func(element uintptr, state int32) int32
-	gstElementGetState      func(element uintptr, state unsafe.Pointer, pending unsafe.Pointer, timeout uint64) int32
-	gstElementSeekSimple    func(element uintptr, format int32, flags int32, position int64) int32
-	gstElementQueryPosition func(element uintptr, format int32, cur unsafe.Pointer) int32
-	gstPipelineGetBus       func(pipeline uintptr) uintptr
-	gstBusTimedPopFiltered  func(bus uintptr, timeout uint64, types int32) uintptr
-	gstMessageParseError    func(msg uintptr, err unsafe.Pointer, debug unsafe.Pointer)
-	gstSampleGetBuffer      func(sample uintptr) uintptr
-	gstSampleUnref          func(sample uintptr)
-	gstBufferGetSize        func(buffer uintptr) uintptr
-	gstBufferMap            func(buffer uintptr, mapInfo unsafe.Pointer, flags int32) int32
-	gstBufferUnmap          func(buffer uintptr, mapInfo unsafe.Pointer)
+	gstInitCheck             func(argc unsafe.Pointer, argv unsafe.Pointer, err unsafe.Pointer) int32
+	gstVersion               func(major unsafe.Pointer, minor unsafe.Pointer, micro unsafe.Pointer, nano unsafe.Pointer)
+	gstParseLaunch           func(description string, err unsafe.Pointer) uintptr
+	gstBinGetByName          func(bin uintptr, name string) uintptr
+	gstElementGetStaticPad   func(element uintptr, name string) uintptr
+	gstObjectUnref           func(obj uintptr)
+	gstMiniObjectUnref       func(obj uintptr)
+	gstElementSetState       func(element uintptr, state int32) int32
+	gstElementGetState       func(element uintptr, state unsafe.Pointer, pending unsafe.Pointer, timeout uint64) int32
+	gstElementSeekSimple     func(element uintptr, format int32, flags int32, position int64) int32
+	gstElementQueryPosition  func(element uintptr, format int32, cur unsafe.Pointer) int32
+	gstPipelineGetBus        func(pipeline uintptr) uintptr
+	gstBusTimedPopFiltered   func(bus uintptr, timeout uint64, types int32) uintptr
+	gstMessageParseError     func(msg uintptr, err unsafe.Pointer, debug unsafe.Pointer)
+	gstSampleGetBuffer       func(sample uintptr) uintptr
+	gstSampleUnref           func(sample uintptr)
+	gstBufferGetSize         func(buffer uintptr) uintptr
+	gstBufferMap             func(buffer uintptr, mapInfo unsafe.Pointer, flags int32) int32
+	gstBufferUnmap           func(buffer uintptr, mapInfo unsafe.Pointer)
+	gstPadAddProbe           func(pad uintptr, mask int32, callback uintptr, userData uintptr, destroyData uintptr) uintptr
+	gstPadRemoveProbe        func(pad uintptr, id uintptr)
+	gstPadProbeInfoGetBuffer func(info uintptr) uintptr
+	gstPadProbeInfoGetEvent  func(info uintptr) uintptr
+	gstEventTypeGetName      func(eventType int32) uintptr
+	gstEventParseCaps        func(event uintptr, caps unsafe.Pointer)
+	gstEventParseSegment     func(event uintptr, segment unsafe.Pointer)
+	gstCapsToString          func(caps uintptr) uintptr
 
 	gstAppSinkTryPullSample func(sink uintptr, timeout uint64) uintptr
 	gstAppSinkIsEOS         func(sink uintptr) int32
@@ -94,6 +104,7 @@ func (g *gstAPI) bind(gstHandle uintptr, gstAppHandle uintptr, glibHandle uintpt
 	purego.RegisterLibFunc(&g.gstVersion, gstHandle, "gst_version")
 	purego.RegisterLibFunc(&g.gstParseLaunch, gstHandle, "gst_parse_launch")
 	purego.RegisterLibFunc(&g.gstBinGetByName, gstHandle, "gst_bin_get_by_name")
+	purego.RegisterLibFunc(&g.gstElementGetStaticPad, gstHandle, "gst_element_get_static_pad")
 	purego.RegisterLibFunc(&g.gstObjectUnref, gstHandle, "gst_object_unref")
 	purego.RegisterLibFunc(&g.gstMiniObjectUnref, gstHandle, "gst_mini_object_unref")
 	purego.RegisterLibFunc(&g.gstElementSetState, gstHandle, "gst_element_set_state")
@@ -108,6 +119,14 @@ func (g *gstAPI) bind(gstHandle uintptr, gstAppHandle uintptr, glibHandle uintpt
 	purego.RegisterLibFunc(&g.gstBufferGetSize, gstHandle, "gst_buffer_get_size")
 	purego.RegisterLibFunc(&g.gstBufferMap, gstHandle, "gst_buffer_map")
 	purego.RegisterLibFunc(&g.gstBufferUnmap, gstHandle, "gst_buffer_unmap")
+	purego.RegisterLibFunc(&g.gstPadAddProbe, gstHandle, "gst_pad_add_probe")
+	purego.RegisterLibFunc(&g.gstPadRemoveProbe, gstHandle, "gst_pad_remove_probe")
+	purego.RegisterLibFunc(&g.gstPadProbeInfoGetBuffer, gstHandle, "gst_pad_probe_info_get_buffer")
+	purego.RegisterLibFunc(&g.gstPadProbeInfoGetEvent, gstHandle, "gst_pad_probe_info_get_event")
+	purego.RegisterLibFunc(&g.gstEventTypeGetName, gstHandle, "gst_event_type_get_name")
+	purego.RegisterLibFunc(&g.gstEventParseCaps, gstHandle, "gst_event_parse_caps")
+	purego.RegisterLibFunc(&g.gstEventParseSegment, gstHandle, "gst_event_parse_segment")
+	purego.RegisterLibFunc(&g.gstCapsToString, gstHandle, "gst_caps_to_string")
 
 	purego.RegisterLibFunc(&g.gstAppSinkTryPullSample, gstAppHandle, "gst_app_sink_try_pull_sample")
 	purego.RegisterLibFunc(&g.gstAppSinkIsEOS, gstAppHandle, "gst_app_sink_is_eos")
@@ -172,6 +191,13 @@ func (g *gstAPI) binGetByName(bin uintptr, name string) uintptr {
 		return 0
 	}
 	return g.gstBinGetByName(bin, name)
+}
+
+func (g *gstAPI) elementGetStaticPad(element uintptr, name string) uintptr {
+	if element == 0 {
+		return 0
+	}
+	return g.gstElementGetStaticPad(element, name)
 }
 
 func (g *gstAPI) objectUnref(obj uintptr) {
@@ -279,6 +305,69 @@ func (g *gstAPI) withSampleBytes(sample uintptr, consume func([]byte) error) err
 
 	data := unsafe.Slice((*byte)(unsafe.Pointer(dataPtr)), size)
 	return consume(data)
+}
+
+func (g *gstAPI) padAddProbe(pad uintptr, mask int32, callback uintptr, userData uintptr) uintptr {
+	if pad == 0 || callback == 0 {
+		return 0
+	}
+	return g.gstPadAddProbe(pad, mask, callback, userData, 0)
+}
+
+func (g *gstAPI) padRemoveProbe(pad uintptr, id uintptr) {
+	if pad != 0 && id != 0 {
+		g.gstPadRemoveProbe(pad, id)
+	}
+}
+
+func (g *gstAPI) padProbeInfoBuffer(info uintptr) uintptr {
+	if info == 0 {
+		return 0
+	}
+	return g.gstPadProbeInfoGetBuffer(info)
+}
+
+func (g *gstAPI) padProbeInfoEvent(info uintptr) uintptr {
+	if info == 0 {
+		return 0
+	}
+	return g.gstPadProbeInfoGetEvent(info)
+}
+
+func (g *gstAPI) eventTypeName(eventType int32) string {
+	if g.gstEventTypeGetName == nil {
+		return ""
+	}
+	return cString(g.gstEventTypeGetName(eventType))
+}
+
+func (g *gstAPI) eventCapsString(event uintptr) string {
+	if event == 0 || g.gstEventParseCaps == nil || g.gstCapsToString == nil {
+		return ""
+	}
+	var caps uintptr
+	g.gstEventParseCaps(event, unsafe.Pointer(&caps))
+	if caps == 0 {
+		return ""
+	}
+	textPtr := g.gstCapsToString(caps)
+	text := cString(textPtr)
+	if textPtr != 0 {
+		g.gFree(textPtr)
+	}
+	return text
+}
+
+func (g *gstAPI) eventSegment(event uintptr) (gstSegmentSnapshot, bool) {
+	if event == 0 || g.gstEventParseSegment == nil {
+		return gstSegmentSnapshot{}, false
+	}
+	var segmentPtr uintptr
+	g.gstEventParseSegment(event, unsafe.Pointer(&segmentPtr))
+	if segmentPtr == 0 {
+		return gstSegmentSnapshot{}, false
+	}
+	return readGstSegment(segmentPtr), true
 }
 
 func validateGStreamerSampleSize(bufferSize uintptr, mapSize int) error {

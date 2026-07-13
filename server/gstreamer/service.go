@@ -81,7 +81,10 @@ func NewService(conf Config) *Service {
 }
 
 func (s *Service) GetOrAdd(hash string, fileID string, audio int) (*Task, error) {
+	started := time.Now()
+	gstDebugf("GetOrAdd start hash=%s file=%s audio=%d", hash, fileID, audio)
 	if hash == "" || fileID == "" {
+		gstErrorf("GetOrAdd failed hash=%s file=%s audio=%d err=%v duration=%s", hash, fileID, audio, ErrBadSource, time.Since(started))
 		return nil, ErrBadSource
 	}
 
@@ -94,17 +97,20 @@ func (s *Service) GetOrAdd(hash string, fileID string, audio int) (*Task, error)
 	s.mu.RUnlock()
 
 	if task != nil && task.FileID == fileID && task.Audio == audio && !task.IsDisposed() {
+		gstDebugf("GetOrAdd existing task task=%s hash=%s file=%s audio=%d duration=%s", task.ID, hash, fileID, audio, time.Since(started))
 		task.UpdateLastActive()
 		return task, nil
 	}
 
 	probe, err := s.Probe(hash, fileID)
 	if err != nil {
+		gstErrorf("GetOrAdd probe failed hash=%s file=%s audio=%d err=%v duration=%s", hash, fileID, audio, err, time.Since(started))
 		return nil, err
 	}
 
 	task, err = NewTask(id, hash, fileID, audio, sourceURL, probe, conf)
 	if err != nil {
+		gstErrorf("GetOrAdd task create failed hash=%s file=%s audio=%d err=%v duration=%s", hash, fileID, audio, err, time.Since(started))
 		return nil, err
 	}
 
@@ -121,6 +127,7 @@ func (s *Service) GetOrAdd(hash string, fileID string, audio int) (*Task, error)
 
 		task.Dispose()
 		existing.UpdateLastActive()
+		gstDebugf("GetOrAdd existing task after create task=%s hash=%s file=%s audio=%d duration=%s", existing.ID, hash, fileID, audio, time.Since(started))
 		return existing, nil
 	}
 
@@ -130,10 +137,12 @@ func (s *Service) GetOrAdd(hash string, fileID string, audio int) (*Task, error)
 	s.mu.Unlock()
 
 	if replaced != nil {
+		gstDebugf("GetOrAdd task replaced task=%s hash=%s file=%s audio=%d replacedFile=%s replacedAudio=%d", task.ID, hash, fileID, audio, replaced.FileID, replaced.Audio)
 		replaced.Dispose()
 	}
 	disposeTasks(evicted)
 
+	gstDebugf("GetOrAdd new task task=%s hash=%s file=%s audio=%d evicted=%d duration=%s", task.ID, hash, fileID, audio, len(evicted), time.Since(started))
 	return task, nil
 }
 
@@ -189,29 +198,65 @@ func disposeTasks(tasks []*Task) {
 }
 
 func (s *Service) Probe(hash string, fileID string) (ProbeInfo, error) {
+	started := time.Now()
+	gstDebugf("Probe start hash=%s file=%s", hash, fileID)
 	if hash == "" || fileID == "" {
+		gstErrorf("Probe failed hash=%s file=%s err=%v duration=%s", hash, fileID, ErrBadSource, time.Since(started))
 		return ProbeInfo{}, ErrBadSource
 	}
 
 	conf := s.currentConfig()
 	probe, ok := s.getCachedProbe(hash, fileID)
 	if !ok {
+		gstDebugf("Probe cache miss hash=%s file=%s", hash, fileID)
 		var err error
 		probe, err = probeSource(sourceURL(conf, hash, fileID), conf)
 		if err != nil {
+			gstErrorf("Probe source failed hash=%s file=%s err=%v duration=%s", hash, fileID, err, time.Since(started))
 			return ProbeInfo{}, err
 		}
 		probe = refreshProbeFileSize(probe, hash, fileID)
 		if err := validateProbe(probe); err != nil {
+			logProbeInfo("Probe invalid", hash, fileID, probe)
+			gstErrorf("Probe validation failed hash=%s file=%s err=%v duration=%s", hash, fileID, err, time.Since(started))
 			return ProbeInfo{}, err
 		}
 		s.setCachedProbe(hash, fileID, probe)
+		logProbeInfo("Probe completed", hash, fileID, probe)
+		gstDebugf("Probe completed hash=%s file=%s duration=%s", hash, fileID, time.Since(started))
 		return probe, nil
 	}
 
+	gstDebugf("Probe cache hit hash=%s file=%s", hash, fileID)
 	probe = refreshProbeFileSize(probe, hash, fileID)
 	s.setCachedProbe(hash, fileID, probe)
+	logProbeInfo("Probe completed", hash, fileID, probe)
+	gstDebugf("Probe completed hash=%s file=%s duration=%s", hash, fileID, time.Since(started))
 	return probe, nil
+}
+
+func logProbeInfo(prefix string, hash string, fileID string, probe ProbeInfo) {
+	videoCodec := ""
+	if video := probe.Video(); video != nil {
+		videoCodec = firstNonEmpty(video.Codec, video.CapsName)
+	}
+	gstDebugf("%s hash=%s file=%s container=%q videoCodec=%q duration=%d fileSize=%d audioTracks=%d", prefix, hash, fileID, probe.Container, videoCodec, probe.DurationSeconds(), probe.FileSize, countAudioTracks(probe))
+	for _, track := range probe.Tracks {
+		if track.Type != "audio" {
+			continue
+		}
+		gstDebugf("%s audio hash=%s file=%s index=%d codec=%q channels=%d rate=%d", prefix, hash, fileID, track.Index, firstNonEmpty(track.Codec, track.CapsName), track.Channels, track.Rate)
+	}
+}
+
+func countAudioTracks(probe ProbeInfo) int {
+	count := 0
+	for _, track := range probe.Tracks {
+		if track.Type == "audio" {
+			count++
+		}
+	}
+	return count
 }
 
 func validateProbe(probe ProbeInfo) error {
