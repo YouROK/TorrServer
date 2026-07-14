@@ -25,6 +25,7 @@ func (r disabledRunner) GetSegmentWithTimeout(ctx context.Context, index int, au
 	return r.GetSegment(ctx, index, audio)
 }
 
+func (disabledRunner) DiscardSegment()       {}
 func (disabledRunner) Seek(float64) error { return ErrPipelineDisabled }
 func (disabledRunner) Frozen()            {}
 func (disabledRunner) Dispose()           {}

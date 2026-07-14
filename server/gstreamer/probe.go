@@ -19,7 +19,7 @@ const gstProbeTimeout = 30 * time.Second
 var (
 	discovererDurationRe  = regexp.MustCompile(`(?i)Duration:\s*(\d+):(\d+):(\d+)(?:\.(\d+))?`)
 	discovererContainerRe = regexp.MustCompile(`(?i)^container(?:\s+#\d+)?:\s*(.+)$`)
-	discovererStreamRe    = regexp.MustCompile(`(?i)^(video|audio)(?:\s+#(\d+))?:\s*(.+)$`)
+	discovererStreamRe    = regexp.MustCompile(`(?i)^(video|audio|subtitle|subtitles)(?:\s+#(\d+))?:\s*(.+)$`)
 	discovererIntRe       = regexp.MustCompile(`-?\d+`)
 	discovererRateRe      = regexp.MustCompile(`(\d+)\s*/\s*(\d+)`)
 )
@@ -108,6 +108,25 @@ func (p ProbeInfo) AudioTrack(index int) *TrackInfo {
 	return nil
 }
 
+func (p ProbeInfo) SubtitleTrack(index int) *TrackInfo {
+	for i := range p.Tracks {
+		if p.Tracks[i].Type == "subtitle" && p.Tracks[i].Index == index {
+			return &p.Tracks[i]
+		}
+	}
+	return nil
+}
+
+func (p ProbeInfo) SubtitleTracks() []TrackInfo {
+	tracks := make([]TrackInfo, 0)
+	for _, track := range p.Tracks {
+		if track.Type == "subtitle" {
+			tracks = append(tracks, track)
+		}
+	}
+	return tracks
+}
+
 func (p ProbeInfo) HasAudio() bool {
 	return p.Audio() != nil
 }
@@ -122,6 +141,31 @@ func (t TrackInfo) IsAACAudio() bool {
 		strings.Contains(codec, "mpeg-4") ||
 		strings.Contains(codec, "mpegversion=(int)4") ||
 		strings.Contains(codec, "mpegversion=4")
+}
+
+func (t TrackInfo) IsSupportedSubtitle() bool {
+	if t.Type != "subtitle" {
+		return false
+	}
+	codec := strings.ToLower(strings.Join([]string{t.Codec, t.CapsName}, " "))
+	switch {
+	case strings.Contains(codec, "subrip"):
+		return true
+	case strings.Contains(codec, "srt"):
+		return true
+	case strings.Contains(codec, "utf8") || strings.Contains(codec, "utf-8"):
+		return true
+	case strings.Contains(codec, "webvtt") || strings.Contains(codec, "vtt"):
+		return true
+	case strings.Contains(codec, "text/x-raw") || strings.Contains(codec, "application/x-subtitle"):
+		return true
+	case strings.Contains(codec, "timed text") || strings.Contains(codec, "tx3g") || strings.Contains(codec, " text") || strings.HasPrefix(codec, "text"):
+		return true
+	case strings.Contains(codec, "ssa") || strings.Contains(codec, "ass"):
+		return true
+	default:
+		return false
+	}
 }
 
 func (p ProbeInfo) IsMatroskaContainer() bool {
@@ -489,17 +533,15 @@ func probeFromDiscoverer(text string) ProbeInfo {
 			continue
 		}
 
-		lower := strings.ToLower(line)
-		if strings.HasPrefix(lower, "subtitle") ||
-			strings.HasPrefix(lower, "subtitles") ||
-			strings.HasPrefix(lower, "properties:") {
-			current = nil
-			continue
-		}
-
 		if stream := parseDiscovererStreamHeader(line); stream != nil {
 			probe.Tracks = append(probe.Tracks, *stream)
 			current = &probe.Tracks[len(probe.Tracks)-1]
+			continue
+		}
+
+		lower := strings.ToLower(line)
+		if strings.HasPrefix(lower, "properties:") {
+			current = nil
 			continue
 		}
 
@@ -511,6 +553,7 @@ func probeFromDiscoverer(text string) ProbeInfo {
 
 	videoIndex := 0
 	audioIndex := 0
+	subtitleIndex := 0
 	for i := range probe.Tracks {
 		switch probe.Tracks[i].Type {
 		case "video":
@@ -521,6 +564,10 @@ func probeFromDiscoverer(text string) ProbeInfo {
 			probe.Tracks[i].Index = audioIndex
 			probe.Tracks[i].PadName = "audio_" + strconv.Itoa(audioIndex)
 			audioIndex++
+		case "subtitle":
+			probe.Tracks[i].Index = subtitleIndex
+			probe.Tracks[i].PadName = "subtitle_" + strconv.Itoa(subtitleIndex)
+			subtitleIndex++
 		}
 	}
 
@@ -534,6 +581,9 @@ func parseDiscovererStreamHeader(line string) *TrackInfo {
 	}
 
 	trackType := strings.ToLower(match[1])
+	if trackType == "subtitles" {
+		trackType = "subtitle"
+	}
 	codec := strings.TrimSpace(match[3])
 	return &TrackInfo{
 		Type:     trackType,
@@ -568,6 +618,13 @@ func parseDiscovererTrackLine(track *TrackInfo, line string) {
 			track.CapsName = codecToCapsName(track.Type, track.Codec)
 		}
 	case startsWithFold(line, "video codec:"):
+		if track.Codec == "" {
+			track.Codec = valueAfterColon(line)
+		}
+		if track.CapsName == "" {
+			track.CapsName = codecToCapsName(track.Type, track.Codec)
+		}
+	case startsWithFold(line, "subtitle codec:"):
 		if track.Codec == "" {
 			track.Codec = valueAfterColon(line)
 		}
@@ -636,6 +693,27 @@ func codecToCapsName(kind string, values ...string) string {
 			return "audio/x-flac"
 		case strings.Contains(codec, "mpeg") || strings.Contains(codec, "mp3"):
 			return "audio/mpeg"
+		}
+	}
+
+	if kind == "subtitle" {
+		switch {
+		case strings.Contains(codec, "subrip") || strings.Contains(codec, "srt"):
+			return "application/x-subtitle"
+		case strings.Contains(codec, "utf8") || strings.Contains(codec, "utf-8"):
+			return "text/x-raw"
+		case strings.Contains(codec, "webvtt") || strings.Contains(codec, "vtt"):
+			return "text/vtt"
+		case strings.Contains(codec, "timed text") || strings.Contains(codec, "tx3g") || strings.Contains(codec, "text/x-raw"):
+			return "text/x-raw"
+		case strings.Contains(codec, "text"):
+			return "text/x-raw"
+		case strings.Contains(codec, "ass") || strings.Contains(codec, "ssa"):
+			return "application/x-ass"
+		case strings.Contains(codec, "pgs"):
+			return "subpicture/x-pgs"
+		case strings.Contains(codec, "dvd") || strings.Contains(codec, "vobsub"):
+			return "subpicture/x-dvd"
 		}
 	}
 

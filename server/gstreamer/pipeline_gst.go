@@ -54,6 +54,7 @@ type gstRunner struct {
 	pipeline uintptr
 	bus      uintptr
 	sink     uintptr
+	subtitleSinks map[int]uintptr
 	probes   *gstPipelineProbes
 
 	frozen atomic.Bool
@@ -427,6 +428,8 @@ func (r *gstRunner) createPipelineArgs() string {
 		}
 	}
 
+	r.writeSubtitleBranches(&sb)
+
 	sb.WriteString("mp4mux name=mux fragment-duration=")
 	sb.WriteString(strconv.Itoa(conf.SegmentSeconds * 1000))
 	r.writeAppSink(&sb, conf, gstVersion)
@@ -654,6 +657,7 @@ func (r *gstRunner) EnsureInit(ctx context.Context, audio int, startIndex int) e
 		}
 	}
 
+	r.drainSubtitleSinks()
 	if r.task.hasInitMP4() {
 		if r.readySegment.complete {
 			r.completeReadySegment(startIndex)
@@ -673,6 +677,7 @@ func (r *gstRunner) EnsureInit(ctx context.Context, audio int, startIndex int) e
 			return err
 		}
 
+		r.drainSubtitleSinks()
 		if err := r.pollPipelineError(); err != nil {
 			r.freezeAtSegment(startIndex)
 			return err
@@ -708,6 +713,7 @@ func (r *gstRunner) EnsureInit(ctx context.Context, audio int, startIndex int) e
 			r.freezeAtSegment(startIndex)
 			return err
 		}
+		r.drainSubtitleSinks()
 
 		if err := r.pollPipelineError(); err != nil {
 			r.freezeAtSegment(startIndex)
@@ -774,6 +780,7 @@ func (r *gstRunner) getSegmentWithTimeout(ctx context.Context, index int, audio 
 		}
 	}
 
+	r.drainSubtitleSinks()
 	if r.readySegment.index == index && r.readySegment.complete {
 		seg := r.readySegment.segment
 		return seg, nil
@@ -793,6 +800,7 @@ func (r *gstRunner) getSegmentWithTimeout(ctx context.Context, index int, audio 
 			return Segment{}, err
 		}
 
+		r.drainSubtitleSinks()
 		if err := r.pollPipelineError(); err != nil {
 			r.freezeAtSegment(index)
 			return Segment{}, err
@@ -806,6 +814,7 @@ func (r *gstRunner) getSegmentWithTimeout(ctx context.Context, index int, audio 
 			}
 
 			if gstRuntime.appSinkIsEOS(r.sink) {
+				r.drainSubtitleSinks()
 				gstDebugf("runner GetSegment EOS task=%s file=%s audio=%d segment=%d samples=%d bytes=%d elapsed=%s", r.task.ID, r.task.FileID, audio, index, samples, bytes, time.Since(started))
 				seg, err := r.drainEndOfStream(index)
 				if err != nil {
@@ -833,6 +842,7 @@ func (r *gstRunner) getSegmentWithTimeout(ctx context.Context, index int, audio 
 			r.freezeAtSegment(index)
 			return Segment{}, err
 		}
+		r.drainSubtitleSinks()
 
 		if err := r.pollPipelineError(); err != nil {
 			r.freezeAtSegment(index)
@@ -841,6 +851,7 @@ func (r *gstRunner) getSegmentWithTimeout(ctx context.Context, index int, audio 
 
 		if r.readySegment.complete {
 			seg := r.completeReadySegment(index)
+			r.drainSubtitleSinks()
 			gstDebugf("runner GetSegment ready task=%s file=%s audio=%d segment=%d samples=%d bytes=%d size=%d duration=%s", r.task.ID, r.task.FileID, audio, index, samples, bytes, seg.Len(), time.Since(started))
 			return seg, nil
 		}
@@ -870,6 +881,7 @@ func (r *gstRunner) pollPipelineError() error {
 func (r *gstRunner) drainEndOfStream(index int) (Segment, error) {
 	started := time.Now()
 	gstDebugf("drainEndOfStream start task=%s file=%s audio=%d segment=%d", r.task.ID, r.task.FileID, r.audioIndex, index)
+	r.drainSubtitleSinks()
 	if r.reader == nil {
 		gstErrorf("drainEndOfStream failed task=%s file=%s audio=%d segment=%d err=%v duration=%s", r.task.ID, r.task.FileID, r.audioIndex, index, ErrSegmentNotReady, time.Since(started))
 		return Segment{}, ErrSegmentNotReady
@@ -892,6 +904,7 @@ func (r *gstRunner) drainEndOfStream(index int) (Segment, error) {
 			return Segment{}, err
 		}
 		seg := r.completeReadySegment(index)
+		r.drainSubtitleSinks()
 		gstDebugf("drainEndOfStream completed deferred task=%s file=%s audio=%d segment=%d size=%d duration=%s", r.task.ID, r.task.FileID, r.audioIndex, index, seg.Len(), time.Since(started))
 		return seg, nil
 	}
@@ -908,6 +921,7 @@ func (r *gstRunner) drainEndOfStream(index int) (Segment, error) {
 			return Segment{}, err
 		}
 		seg := r.completeReadySegment(index)
+		r.drainSubtitleSinks()
 		gstDebugf("drainEndOfStream completed remainder task=%s file=%s audio=%d segment=%d size=%d duration=%s", r.task.ID, r.task.FileID, r.audioIndex, index, seg.Len(), time.Since(started))
 		return seg, nil
 	}
@@ -959,6 +973,10 @@ func (r *gstRunner) discardReadySegment() {
 	}
 }
 
+func (r *gstRunner) DiscardSegment() {
+	r.discardReadySegment()
+}
+
 func (r *gstRunner) freezeAtSegment(index int) {
 	position := r.position()
 	virtualSeconds := position
@@ -993,7 +1011,8 @@ func (r *gstRunner) freezeAtPosition(seconds float64) {
 
 func (r *gstRunner) startPipeline(seconds float64) (float64, error) {
 	started := time.Now()
-	gstDebugf("startPipeline start task=%s file=%s audio=%d requested=%.3f", r.task.ID, r.task.FileID, r.audioIndex, seconds)
+	timelineGeneration := r.task.resetSubtitleTimeline(seconds)
+	gstDebugf("startPipeline start task=%s file=%s audio=%d requested=%.3f subtitleGeneration=%d", r.task.ID, r.task.FileID, r.audioIndex, seconds, timelineGeneration)
 	stageStarted := time.Now()
 	pipeline, err := gstRuntime.parseLaunch(r.createPipelineArgs())
 	if err != nil {
@@ -1024,6 +1043,7 @@ func (r *gstRunner) startPipeline(seconds float64) (float64, error) {
 	gstDebugf("startPipeline bus acquired task=%s file=%s audio=%d bus=%t duration=%s", r.task.ID, r.task.FileID, r.audioIndex, bus != 0, time.Since(stageStarted))
 	actualStartSeconds := seconds
 	var demux uintptr
+	var subtitleSinks map[int]uintptr
 
 	cleanup := func() {
 		probes.release()
@@ -1031,10 +1051,21 @@ func (r *gstRunner) startPipeline(seconds float64) (float64, error) {
 		if demux != 0 {
 			gstRuntime.objectUnref(demux)
 		}
+		for _, subtitleSink := range subtitleSinks {
+			gstRuntime.objectUnref(subtitleSink)
+		}
 		gstRuntime.objectUnref(sink)
 		gstRuntime.objectUnref(pipeline)
 		gstRuntime.objectUnref(bus)
 	}
+
+	subtitleSinks, err = r.lookupSubtitleSinks(pipeline)
+	if err != nil {
+		cleanup()
+		gstErrorf("startPipeline subtitle appsink lookup failed task=%s file=%s audio=%d err=%v", r.task.ID, r.task.FileID, r.audioIndex, err)
+		return 0, err
+	}
+	gstDebugf("startPipeline subtitle appsinks acquired task=%s file=%s audio=%d count=%d", r.task.ID, r.task.FileID, r.audioIndex, len(subtitleSinks))
 
 	if seconds > 0 {
 		stageStarted = time.Now()
@@ -1125,8 +1156,10 @@ func (r *gstRunner) startPipeline(seconds float64) (float64, error) {
 	r.pipeline = pipeline
 	r.bus = bus
 	r.sink = sink
+	r.subtitleSinks = subtitleSinks
 	r.probes = probes
-	gstDebugf("startPipeline completed task=%s file=%s audio=%d requested=%.3f actual=%.3f delta=%.3f duration=%s", r.task.ID, r.task.FileID, r.audioIndex, seconds, actualStartSeconds, actualStartSeconds-seconds, time.Since(started))
+	r.task.setSubtitleTimelineOrigin(timelineGeneration, seconds, actualStartSeconds)
+	gstDebugf("startPipeline completed task=%s file=%s audio=%d requested=%.3f actual=%.3f delta=%.3f subtitleGeneration=%d duration=%s", r.task.ID, r.task.FileID, r.audioIndex, seconds, actualStartSeconds, actualStartSeconds-seconds, timelineGeneration, time.Since(started))
 	return actualStartSeconds, nil
 }
 
@@ -1177,6 +1210,13 @@ func (r *gstRunner) stopPipeline() {
 	if r.pipeline != 0 {
 		_ = gstRuntime.elementSetState(r.pipeline, gstStateNull)
 	}
+	for subtitleIndex, subtitleSink := range r.subtitleSinks {
+		if subtitleSink != 0 {
+			gstRuntime.objectUnref(subtitleSink)
+		}
+		delete(r.subtitleSinks, subtitleIndex)
+	}
+	r.subtitleSinks = nil
 	if r.sink != 0 {
 		gstRuntime.objectUnref(r.sink)
 		r.sink = 0

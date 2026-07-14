@@ -177,6 +177,9 @@ type mp4BoxReader struct {
 	sequence          uint32
 
 	emittedVideoSegment bool
+	videoTimelineStart  uint64
+	videoTimelineSet    bool
+	videoSegmentNumber  uint64
 }
 
 func Mp4BoxReader(onInit func([]byte), onSegment func(Segment), segmentSeconds float64) *mp4BoxReader {
@@ -700,54 +703,77 @@ func (r *mp4BoxReader) selectVideoCount() (int, error) {
 		return 0, fmt.Errorf("video segment starts with a non-sync sample at %.6fs", float64(r.video[0].decodeTime)/float64(r.videoTrack.timescale))
 	}
 
-	target, err := toUnits(r.segmentSeconds, r.videoTrack.timescale)
+	if !r.videoTimelineSet {
+		r.videoTimelineStart = r.video[0].decodeTime
+		r.videoTimelineSet = true
+	}
+
+	targetOffset, err := toNearestUnits(
+		r.segmentSeconds*float64(r.videoSegmentNumber+1),
+		r.videoTrack.timescale,
+	)
 	if err != nil {
 		return 0, err
 	}
+	if math.MaxUint64-r.videoTimelineStart < targetOffset {
+		return 0, errors.New("video segment timeline overflow")
+	}
+	target := r.videoTimelineStart + targetOffset
 
-	var duration uint64
 	for i := range r.video {
 		fragment := &r.video[i]
-		if math.MaxUint64-duration < fragment.duration {
-			return 0, errors.New("video timeline overflow")
+		fragmentEnd := fragment.endTime()
+		if fragmentEnd < target {
+			continue
 		}
-		end := duration + fragment.duration
-		if end >= target {
-			if end == target {
-				return i + 1, nil
-			}
-
-			splitSamples, reached, err := findVideoSplitSampleCount(fragment, target-duration)
-			if err != nil {
-				return 0, err
-			}
-			if !reached {
-				return 0, errors.New("video split target was not reached")
-			}
-
-			totalSamples, err := fragmentSampleCount(*fragment)
-			if err != nil {
-				return 0, err
-			}
-			if splitSamples <= 0 || splitSamples > totalSamples {
-				return 0, errors.New("invalid video split sample count")
-			}
-
-			if splitSamples < totalSamples {
-				left, right, err := splitFragmentAtSample(*fragment, splitSamples)
-				if err != nil {
-					return 0, err
-				}
-
-				r.video[i] = left
-				r.video = append(r.video, mp4Fragment{})
-				copy(r.video[i+2:], r.video[i+1:])
-				r.video[i+1] = right
-			}
-
+		if fragmentEnd == target {
 			return i + 1, nil
 		}
-		duration = end
+		if target <= fragment.decodeTime {
+			if i > 0 {
+				return i, nil
+			}
+			return 0, errors.New("video segment target precedes the first sample")
+		}
+
+		splitSamples, reached, err := findVideoSplitSampleCount(
+			fragment,
+			target-fragment.decodeTime,
+		)
+		if err != nil {
+			return 0, err
+		}
+		if !reached {
+			return 0, errors.New("video split target was not reached")
+		}
+
+		totalSamples, err := fragmentSampleCount(*fragment)
+		if err != nil {
+			return 0, err
+		}
+		if splitSamples == 0 {
+			if i > 0 {
+				return i, nil
+			}
+			splitSamples = 1
+		}
+		if splitSamples < 0 || splitSamples > totalSamples {
+			return 0, errors.New("invalid video split sample count")
+		}
+
+		if splitSamples < totalSamples {
+			left, right, err := splitFragmentAtSample(*fragment, splitSamples)
+			if err != nil {
+				return 0, err
+			}
+
+			r.video[i] = left
+			r.video = append(r.video, mp4Fragment{})
+			copy(r.video[i+2:], r.video[i+1:])
+			r.video[i+1] = right
+		}
+
+		return i + 1, nil
 	}
 
 	return 0, nil
@@ -763,6 +789,7 @@ func findVideoSplitSampleCount(fragment *mp4Fragment, target uint64) (int, bool,
 
 	videoEnd := uint64(0)
 	sampleCount := 0
+	previousEnd := uint64(0)
 
 	for _, run := range fragment.runs {
 		if len(run.samples) == 0 {
@@ -778,8 +805,13 @@ func findVideoSplitSampleCount(fragment *mp4Fragment, target uint64) (int, bool,
 			sampleCount++
 
 			if videoEnd >= target {
+				if videoEnd > target &&
+					target-previousEnd < videoEnd-target {
+					return sampleCount - 1, true, nil
+				}
 				return sampleCount, true, nil
 			}
+			previousEnd = videoEnd
 		}
 	}
 
@@ -1173,6 +1205,7 @@ func (r *mp4BoxReader) buildSegment(videoCount int, audioCount int, allowSingleT
 	})
 	if hasVideo {
 		r.emittedVideoSegment = true
+		r.videoSegmentNumber++
 	}
 
 	if hasVideo {
@@ -2111,6 +2144,18 @@ func toUnits(seconds float64, timescale uint32) (uint64, error) {
 	return uint64(math.Ceil(value)), nil
 }
 
+func toNearestUnits(seconds float64, timescale uint32) (uint64, error) {
+	value := seconds * float64(timescale)
+	if math.IsNaN(value) || math.IsInf(value, 0) || value < 0 || value > float64(math.MaxUint64) {
+		return 0, errors.New("invalid timeline value")
+	}
+	units := uint64(math.Round(value))
+	if seconds > 0 && units == 0 {
+		units = 1
+	}
+	return units, nil
+}
+
 func addTfdtOffset(value uint64, timescale uint32, seconds float64) (uint64, error) {
 	if seconds <= 0 {
 		return value, nil
@@ -2221,6 +2266,9 @@ func (r *mp4BoxReader) clearFragments() {
 	r.video = r.video[:0]
 	r.audio = r.audio[:0]
 	r.emittedVideoSegment = false
+	r.videoTimelineStart = 0
+	r.videoTimelineSet = false
+	r.videoSegmentNumber = 0
 }
 
 func (r *mp4BoxReader) ReclaimPayloads() {

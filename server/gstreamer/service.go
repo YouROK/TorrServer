@@ -240,12 +240,12 @@ func logProbeInfo(prefix string, hash string, fileID string, probe ProbeInfo) {
 	if video := probe.Video(); video != nil {
 		videoCodec = firstNonEmpty(video.Codec, video.CapsName)
 	}
-	gstDebugf("%s hash=%s file=%s container=%q videoCodec=%q duration=%d fileSize=%d audioTracks=%d", prefix, hash, fileID, probe.Container, videoCodec, probe.DurationSeconds(), probe.FileSize, countAudioTracks(probe))
+	gstDebugf("%s hash=%s file=%s container=%q videoCodec=%q duration=%d fileSize=%d audioTracks=%d subtitleTracks=%d", prefix, hash, fileID, probe.Container, videoCodec, probe.DurationSeconds(), probe.FileSize, countAudioTracks(probe), countSubtitleTracks(probe))
 	for _, track := range probe.Tracks {
-		if track.Type != "audio" {
+		if track.Type != "audio" && track.Type != "subtitle" {
 			continue
 		}
-		gstDebugf("%s audio hash=%s file=%s index=%d codec=%q channels=%d rate=%d", prefix, hash, fileID, track.Index, firstNonEmpty(track.Codec, track.CapsName), track.Channels, track.Rate)
+		gstDebugf("%s %s hash=%s file=%s index=%d codec=%q caps=%q title=%q language=%q supported=%t channels=%d rate=%d", prefix, track.Type, hash, fileID, track.Index, track.Codec, track.CapsName, track.Title, track.Language, track.Type != "subtitle" || track.IsSupportedSubtitle(), track.Channels, track.Rate)
 	}
 }
 
@@ -253,6 +253,16 @@ func countAudioTracks(probe ProbeInfo) int {
 	count := 0
 	for _, track := range probe.Tracks {
 		if track.Type == "audio" {
+			count++
+		}
+	}
+	return count
+}
+
+func countSubtitleTracks(probe ProbeInfo) int {
+	count := 0
+	for _, track := range probe.Tracks {
+		if track.Type == "subtitle" {
 			count++
 		}
 	}

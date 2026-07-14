@@ -23,6 +23,31 @@ func parseSegmentIndex(value string) (int, error) {
 	return index, nil
 }
 
+func parseSubtitleIndex(value string) (int, error) {
+	value = strings.TrimSuffix(value, ".m3u8")
+	if value == "" || strings.Contains(value, "/") {
+		return 0, errors.New("invalid subtitle index")
+	}
+	index, err := strconv.Atoi(value)
+	if err != nil || index < 0 {
+		return 0, errors.New("invalid subtitle index")
+	}
+	return index, nil
+}
+
+func parseSubtitleSegmentIndex(value string) (int, error) {
+	value = strings.TrimPrefix(value, "/")
+	value = strings.TrimSuffix(value, ".vtt")
+	if value == "" || strings.Contains(value, "/") {
+		return 0, errors.New("invalid subtitle segment index")
+	}
+	index, err := strconv.Atoi(value)
+	if err != nil || index < 0 {
+		return 0, errors.New("invalid subtitle segment index")
+	}
+	return index, nil
+}
+
 func parseQueryInt(c *gin.Context, key string, fallback int) int {
 	value := c.Query(key)
 	if value == "" {

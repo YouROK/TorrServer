@@ -11,6 +11,7 @@ import (
 type pipelineRunner interface {
 	EnsureInit(ctx context.Context, audio int, startIndex int) error
 	GetSegmentWithTimeout(ctx context.Context, index int, audio int, timeout time.Duration) (Segment, error)
+	DiscardSegment()
 	Position() float64
 	Seek(seconds float64) error
 	Frozen()
@@ -18,7 +19,10 @@ type pipelineRunner interface {
 	IsFrozen() bool
 }
 
-const forwardGapDrainSegmentLimit = 10
+const (
+	forwardGapDrainSegmentLimit = 10
+	seekPrerollDrainSegmentLimit = 10
+)
 
 type Task struct {
 	ID        string
@@ -34,6 +38,15 @@ type Task struct {
 
 	initMu  sync.RWMutex
 	initMP4 []byte
+
+	subtitleMu         sync.Mutex
+	subtitleTracks     map[int]*subtitleTrackState
+	subtitleSegments   map[int]subtitleSegmentTimeline
+	subtitleNotify     chan struct{}
+	subtitleGeneration uint64
+	subtitleGenerationStart int
+	subtitleFirstReady      int
+	subtitleHighestReady    int
 
 	pendingSeek        bool
 	pendingSeekRequest float64
@@ -60,6 +73,10 @@ func NewTask(id string, hash string, fileID string, audio int, sourceURL string,
 		Config:          conf.normalized(),
 		LastSentSegment: -1,
 		lastActive:      time.Now().UTC(),
+		subtitleNotify:  make(chan struct{}),
+		subtitleGenerationStart: -1,
+		subtitleFirstReady:      -1,
+		subtitleHighestReady:    -1,
 	}
 
 	runner, err := newPipelineRunner(task, audio)
@@ -238,48 +255,44 @@ func (t *Task) segmentLocked(ctx context.Context, index int, audio int) (Segment
 	}
 
 	gstDebugf("segment runner request task=%s file=%s audio=%d segment=%d playlistStart=%.3f playlistEnd=%.3f LastSentSegment=%d runnerPosition=%.3f pendingSeek=%t", t.ID, t.FileID, audio, index, playlistStart, playlistEnd, t.LastSentSegment, t.runner.Position(), t.pendingSeek)
-	seg, err := t.runner.GetSegmentWithTimeout(ctx, index, audio, 0)
-	if err != nil {
-		gstErrorf("segmentLocked failed task=%s file=%s audio=%d segment=%d err=%v duration=%s", t.ID, t.FileID, audio, index, err, time.Since(started))
-		return Segment{}, err
-	}
-
-	runnerPosition = t.runner.Position()
-	t.logSegmentResultLocked("runner-result", index, audio, seg, runnerPosition, started)
-	if t.isStaleSegmentLocked(index, seg, runnerPosition) {
-		gstErrorf("segmentLocked stale segment task=%s file=%s audio=%d segment=%d playlistStart=%.3f runnerPosition=%.3f action=virtual-seek-retry duration=%s", t.ID, t.FileID, audio, index, playlistStart, runnerPosition, time.Since(started))
-		if err := t.seekVirtualSegmentLocked(index, audio, started); err != nil {
-			return Segment{}, err
-		}
-
+	var seg Segment
+	for discarded := 0; ; discarded++ {
+		var err error
 		seg, err = t.runner.GetSegmentWithTimeout(ctx, index, audio, 0)
 		if err != nil {
-			gstErrorf("segmentLocked stale retry failed task=%s file=%s audio=%d segment=%d err=%v duration=%s", t.ID, t.FileID, audio, index, err, time.Since(started))
+			gstErrorf("segmentLocked failed task=%s file=%s audio=%d segment=%d prerollDiscarded=%d err=%v duration=%s", t.ID, t.FileID, audio, index, discarded, err, time.Since(started))
 			return Segment{}, err
 		}
+
 		runnerPosition = t.runner.Position()
-		t.logSegmentResultLocked("runner-result-retry", index, audio, seg, runnerPosition, started)
-		if t.isStaleSegmentLocked(index, seg, runnerPosition) {
-			gstErrorf("segmentLocked stale retry rejected task=%s file=%s audio=%d segment=%d playlistStart=%.3f runnerPosition=%.3f duration=%s", t.ID, t.FileID, audio, index, playlistStart, runnerPosition, time.Since(started))
+		source := "runner-result"
+		if discarded > 0 {
+			source = "preroll-drain"
+		}
+		t.logSegmentResultLocked(source, index, audio, seg, runnerPosition, started)
+
+		absoluteEnd := runnerPosition
+		if absoluteEnd <= 0 {
+			absoluteEnd = seg.EndSeconds
+		}
+		if index <= 0 || absoluteEnd > playlistStart {
+			break
+		}
+
+		localDuration := seg.EndSeconds - seg.StartSeconds
+		absoluteStart := absoluteEnd - localDuration
+		if discarded >= seekPrerollDrainSegmentLimit {
+			gstErrorf("segmentLocked preroll drain limit reached task=%s file=%s audio=%d segment=%d playlistStart=%.3f absoluteStart=%.3f absoluteEnd=%.3f discarded=%d limit=%d duration=%s", t.ID, t.FileID, audio, index, playlistStart, absoluteStart, absoluteEnd, discarded, seekPrerollDrainSegmentLimit, time.Since(started))
 			return Segment{}, ErrSegmentNotReady
 		}
+
+		gstDebugf("segmentLocked preroll discard task=%s file=%s audio=%d segment=%d playlistStart=%.3f absoluteStart=%.3f absoluteEnd=%.3f discard=%d limit=%d duration=%s", t.ID, t.FileID, audio, index, playlistStart, absoluteStart, absoluteEnd, discarded+1, seekPrerollDrainSegmentLimit, time.Since(started))
+		t.runner.DiscardSegment()
 	}
+	t.markSubtitleSegmentReady(index, seg, runnerPosition)
 	t.markSegmentSentLocked(index)
 	gstDebugf("segmentLocked completed task=%s file=%s audio=%d segment=%d size=%d duration=%s", t.ID, t.FileID, audio, index, seg.Len(), time.Since(started))
 	return seg, nil
-}
-
-func (t *Task) isStaleSegmentLocked(index int, seg Segment, absoluteEnd float64) bool {
-	if index <= 0 {
-		return false
-	}
-
-	conf := t.Config.normalized()
-	playlistStart := float64(index * conf.SegmentSeconds)
-	if absoluteEnd <= 0 {
-		absoluteEnd = seg.EndSeconds
-	}
-	return absoluteEnd < playlistStart-float64(conf.SegmentSeconds*2)
 }
 
 func (t *Task) logSegmentResultLocked(source string, index int, audio int, seg Segment, absoluteEndSeconds float64, started time.Time) {
@@ -344,6 +357,7 @@ func (t *Task) drainForwardGapLocked(ctx context.Context, targetIndex int, audio
 		}
 
 		t.logSegmentResultLocked("forward-gap-drain", nextIndex, audio, seg, t.runner.Position(), started)
+		t.markSubtitleSegmentReady(nextIndex, seg, t.runner.Position())
 		t.markSegmentSentLocked(nextIndex)
 		gstDebugf("segmentLocked forward gap drain completed task=%s file=%s audio=%d segment=%d target=%d size=%d LastSentSegment=%d duration=%s", t.ID, t.FileID, audio, nextIndex, targetIndex, seg.Len(), t.LastSentSegment, time.Since(started))
 	}
@@ -395,6 +409,7 @@ func (t *Task) Dispose() {
 		t.runner = nil
 	}
 	t.setInitMP4(nil)
+	t.closeSubtitleStore()
 }
 
 func (t *Task) IsDisposed() bool {
