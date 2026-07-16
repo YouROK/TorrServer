@@ -1,3 +1,5 @@
+//go:build gst
+
 package gstreamer
 
 import (
@@ -18,17 +20,18 @@ const gstProbeTimeout = 30 * time.Second
 
 var (
 	discovererDurationRe  = regexp.MustCompile(`(?i)Duration:\s*(\d+):(\d+):(\d+)(?:\.(\d+))?`)
-	discovererContainerRe = regexp.MustCompile(`(?i)^container(?:\s+#\d+)?:\s*(.+)$`)
-	discovererStreamRe    = regexp.MustCompile(`(?i)^(video|audio)(?:\s+#(\d+))?:\s*(.+)$`)
+	discovererContainerRe = regexp.MustCompile(`(?i)^(?:container(?:\s+#\d+)?|container[\s-]+format)\s*:\s*(.+)$`)
+	discovererStreamRe    = regexp.MustCompile(`(?i)^(video|audio|subtitle|subtitles)(?:\s+#(\d+))?:\s*(.+)$`)
 	discovererIntRe       = regexp.MustCompile(`-?\d+`)
 	discovererRateRe      = regexp.MustCompile(`(\d+)\s*/\s*(\d+)`)
 )
 
 type ProbeInfo struct {
-	DurationNS int64
-	FileSize   int64
-	Container  string
-	Tracks     []TrackInfo
+	DurationNS        int64
+	FileSize          int64
+	Container         string
+	ContainerCapsName string
+	Tracks            []TrackInfo
 }
 
 type TrackInfo struct {
@@ -49,13 +52,24 @@ type TrackInfo struct {
 
 	FrameRateNum int
 	FrameRateDen int
+
+	Colorimetry             string
+	Transfer                string
+	Primaries               string
+	Matrix                  string
+	BitDepth                int
+	HasMasteringDisplayInfo bool
+	HasContentLightLevel    bool
+	IsDolbyVision           bool
+	DolbyVisionProfile      int
+	VideoTransfer           string
 }
 
 func (p ProbeInfo) DurationSeconds() int {
 	if p.DurationNS <= 0 {
 		return 0
 	}
-	return int(float64(p.DurationNS) / 1_000_000_000.0)
+	return int(p.DurationNS / int64(time.Second))
 }
 
 func (p ProbeInfo) Video() *TrackInfo {
@@ -124,10 +138,19 @@ func (t TrackInfo) IsAACAudio() bool {
 		strings.Contains(codec, "mpegversion=4")
 }
 
+func (t TrackInfo) IsHDRVideo() bool {
+	return t.Type == "video" && (t.IsDolbyVision || t.VideoTransfer == "pq" || t.VideoTransfer == "hlg")
+}
+
 func (p ProbeInfo) IsMatroskaContainer() bool {
-	container := strings.ToLower(strings.TrimSpace(p.Container))
+	container := strings.ToLower(strings.TrimSpace(p.Container + " " + p.ContainerCapsName))
 	return strings.Contains(container, "matroska") ||
 		strings.Contains(container, "webm")
+}
+
+func (p ProbeInfo) IsAVIContainer() bool {
+	container := strings.ToLower(strings.TrimSpace(p.Container + " " + p.ContainerCapsName))
+	return strings.Contains(container, "video/x-msvideo") || strings.Contains(container, "avi")
 }
 
 func (p ProbeInfo) IsH264() bool { return p.VideoCapsName() == "video/x-h264" }
@@ -185,10 +208,7 @@ func gstDiscovererPath(conf Config) (string, error) {
 }
 
 func gstDiscovererPathRoot(conf Config) (string, string, error) {
-	name := "gst-discoverer-1.0"
-	if runtime.GOOS == "windows" {
-		name += ".exe"
-	}
+	name := gstDiscovererExecutableName()
 
 	for _, root := range gstDiscovererRoots(conf) {
 		path := filepath.Join(root, "bin", name)
@@ -201,6 +221,13 @@ func gstDiscovererPathRoot(conf Config) (string, string, error) {
 		return path, "", nil
 	}
 	return "", "", fmt.Errorf("%s not found", name)
+}
+
+func gstDiscovererExecutableName() string {
+	if runtime.GOOS == "windows" {
+		return "gst-discoverer-1.0.exe"
+	}
+	return "gst-discoverer-1.0"
 }
 
 func gstDiscovererEnv(conf Config) []string {
@@ -223,9 +250,9 @@ func gstDiscovererEnv(conf Config) []string {
 
 	switch runtime.GOOS {
 	case "linux":
-		env = prependExistingPathValues(env, "LD_LIBRARY_PATH", gstDiscovererLibraryCandidates(roots))
+		env = prependExistingPathValues(env, "LD_LIBRARY_PATH", gstLibraryDirCandidates(roots))
 	case "darwin":
-		env = prependExistingPathValues(env, "DYLD_LIBRARY_PATH", gstDiscovererLibraryCandidates(roots))
+		env = prependExistingPathValues(env, "DYLD_LIBRARY_PATH", gstLibraryDirCandidates(roots))
 	}
 
 	if plugins := gstDiscovererPluginPath(roots); plugins != "" {
@@ -248,175 +275,45 @@ func gstDiscovererSelectedRoots(conf Config) []string {
 
 func gstDiscovererRoots(conf Config) []string {
 	var roots []string
-	roots = appendAvailableProbeRoot(roots, conf.GSTPath)
-	for _, root := range gstDiscovererDefaultRoots() {
-		roots = appendAvailableProbeRoot(roots, root)
+	roots = appendAvailableGSTRoot(roots, conf.GSTPath)
+	for _, root := range gstDefaultRuntimeRoots() {
+		roots = appendAvailableGSTRoot(roots, root)
 	}
 	if runtime.GOOS == "windows" {
-		if root := gstDiscovererPortableRoot(); root != "" {
-			roots = appendAvailableProbeRoot(roots, root)
+		if root := portableGSTRuntimeRoot(); root != "" {
+			roots = appendAvailableGSTRoot(roots, root)
 		}
-		if root := embeddedGSTRuntimeRoot(); root != "" {
-			roots = appendAvailableProbeRoot(roots, root)
+		if !gstDiscovererExecutableAvailable(roots) {
+			root := embeddedGSTRuntimeRoot()
+			roots = appendAvailableGSTRoot(roots, root)
 		}
 	}
 	return roots
 }
 
-func gstDiscovererDefaultRoots() []string {
-	switch runtime.GOOS {
-	case "windows":
-		return []string{
-			`C:\Program Files\gstreamer\1.0\mingw_x86_64`,
-			`C:\gstreamer\1.0\mingw_x86_64`,
-		}
-	case "linux":
-		return []string{
-			"/usr",
-			"/usr/local",
-			"/opt/gstreamer",
-			"/opt/gstreamer/1.0",
-		}
-	case "darwin":
-		return []string{
-			"/Library/Frameworks/GStreamer.framework/Versions/1.0",
-			"/opt/homebrew",
-			"/usr/local",
-		}
-	default:
-		return nil
-	}
-}
-
-func gstDiscovererPortableRoot() string {
-	exe, err := os.Executable()
-	if err != nil {
-		return ""
-	}
-	root := filepath.Join(filepath.Dir(exe), "gst-lib")
-	if info, err := os.Stat(root); err == nil && info.IsDir() {
-		return root
-	}
-	return ""
-}
-
-func appendAvailableProbeRoot(paths []string, path string) []string {
-	if path == "" || !gstDiscovererRootHasBaseLibrary(path) {
-		return paths
-	}
-	return appendUniqueProbePath(paths, path)
-}
-
-func gstDiscovererRootHasBaseLibrary(root string) bool {
-	for _, candidate := range gstDiscovererBaseLibraryCandidates(root) {
-		if info, err := os.Stat(candidate); err == nil && !info.IsDir() {
+func gstDiscovererExecutableAvailable(roots []string) bool {
+	name := gstDiscovererExecutableName()
+	for _, root := range roots {
+		if info, err := os.Stat(filepath.Join(root, "bin", name)); err == nil && !info.IsDir() {
 			return true
 		}
 	}
 	return false
 }
 
-func gstDiscovererBaseLibraryCandidates(root string) []string {
-	switch runtime.GOOS {
-	case "windows":
-		return []string{filepath.Join(root, "bin", "libgstreamer-1.0-0.dll")}
-	case "darwin":
-		var candidates []string
-		for _, dir := range gstDiscovererLibraryCandidates([]string{root}) {
-			candidates = append(candidates,
-				filepath.Join(dir, "libgstreamer-1.0.0.dylib"),
-				filepath.Join(dir, "libgstreamer-1.0.dylib"),
-			)
-		}
-		return candidates
-	default:
-		var candidates []string
-		for _, dir := range gstDiscovererLibraryCandidates([]string{root}) {
-			candidates = append(candidates, filepath.Join(dir, "libgstreamer-1.0.so.0"))
-		}
-		return candidates
-	}
-}
-
 func gstDiscovererPluginPath(roots []string) string {
-	return firstExistingProbePath(gstDiscovererPluginCandidates(roots))
+	return firstExistingPath(gstPluginCandidates(roots))
 }
 
 func gstDiscovererScannerPath(roots []string) string {
-	return firstExistingProbePath(gstDiscovererScannerCandidates(roots))
-}
-
-func gstDiscovererPluginCandidates(roots []string) []string {
-	var candidates []string
-	for _, root := range roots {
-		candidates = append(candidates,
-			filepath.Join(root, "lib", "gstreamer-1.0"),
-			filepath.Join(root, "lib64", "gstreamer-1.0"),
-			filepath.Join(root, "lib", runtime.GOARCH+"-linux-gnu", "gstreamer-1.0"),
-			filepath.Join(root, "lib", "x86_64-linux-gnu", "gstreamer-1.0"),
-			filepath.Join(root, "lib", "aarch64-linux-gnu", "gstreamer-1.0"),
-		)
-	}
-	return candidates
-}
-
-func gstDiscovererLibraryCandidates(roots []string) []string {
-	var candidates []string
-	for _, root := range roots {
-		candidates = append(candidates,
-			filepath.Join(root, "lib"),
-			filepath.Join(root, "lib64"),
-			filepath.Join(root, "lib", runtime.GOARCH+"-linux-gnu"),
-			filepath.Join(root, "lib", "x86_64-linux-gnu"),
-			filepath.Join(root, "lib", "aarch64-linux-gnu"),
-		)
-	}
-	return candidates
-}
-
-func gstDiscovererScannerCandidates(roots []string) []string {
-	var candidates []string
-	name := "gst-plugin-scanner"
-	if runtime.GOOS == "windows" {
-		name += ".exe"
-	}
-	for _, root := range roots {
-		candidates = append(candidates,
-			filepath.Join(root, "libexec", "gstreamer-1.0", name),
-			filepath.Join(root, "lib", "gstreamer-1.0", name),
-			filepath.Join(root, "lib64", "gstreamer-1.0", name),
-		)
-	}
-	return candidates
-}
-
-func firstExistingProbePath(candidates []string) string {
-	for _, candidate := range candidates {
-		if _, err := os.Stat(candidate); err == nil {
-			return candidate
-		}
-	}
-	return ""
-}
-
-func appendUniqueProbePath(paths []string, path string) []string {
-	if path == "" {
-		return paths
-	}
-	clean := filepath.Clean(path)
-	for _, existing := range paths {
-		if strings.EqualFold(filepath.Clean(existing), clean) {
-			return paths
-		}
-	}
-	return append(paths, path)
+	return firstExistingPath(gstPluginScannerCandidates(roots))
 }
 
 func prependExistingPathValues(env []string, key string, values []string) []string {
 	existing := make([]string, 0, len(values))
 	for _, value := range values {
 		if info, err := os.Stat(value); err == nil && info.IsDir() {
-			existing = appendUniqueProbePath(existing, value)
+			existing = appendUniquePath(existing, value)
 		}
 	}
 	return prependPathValues(env, key, existing)
@@ -439,11 +336,11 @@ func prependPathValues(env []string, key string, values []string) []string {
 	separator := string(os.PathListSeparator)
 	parts := make([]string, 0, len(values)+1)
 	for _, value := range values {
-		parts = appendUniqueProbePath(parts, value)
+		parts = appendUniquePath(parts, value)
 	}
 	for _, part := range strings.Split(current, separator) {
 		if part != "" {
-			parts = appendUniqueProbePath(parts, part)
+			parts = appendUniquePath(parts, part)
 		}
 	}
 
@@ -484,15 +381,20 @@ func probeFromDiscoverer(text string) ProbeInfo {
 			container := strings.TrimSpace(match[1])
 			if probe.Container == "" && container != "" {
 				probe.Container = container
+				probe.ContainerCapsName = containerToCapsName(container)
 			}
+			current = nil
+			continue
+		}
+		if caps := containerCapsFromLine(line); caps != "" {
+			probe.Container = caps
+			probe.ContainerCapsName = caps
 			current = nil
 			continue
 		}
 
 		lower := strings.ToLower(line)
-		if strings.HasPrefix(lower, "subtitle") ||
-			strings.HasPrefix(lower, "subtitles") ||
-			strings.HasPrefix(lower, "properties:") {
+		if strings.HasPrefix(lower, "properties:") {
 			current = nil
 			continue
 		}
@@ -511,6 +413,7 @@ func probeFromDiscoverer(text string) ProbeInfo {
 
 	videoIndex := 0
 	audioIndex := 0
+	subtitleIndex := 0
 	for i := range probe.Tracks {
 		switch probe.Tracks[i].Type {
 		case "video":
@@ -521,6 +424,10 @@ func probeFromDiscoverer(text string) ProbeInfo {
 			probe.Tracks[i].Index = audioIndex
 			probe.Tracks[i].PadName = "audio_" + strconv.Itoa(audioIndex)
 			audioIndex++
+		case "subtitle":
+			probe.Tracks[i].Index = subtitleIndex
+			probe.Tracks[i].PadName = "subtitle_" + strconv.Itoa(subtitleIndex)
+			subtitleIndex++
 		}
 	}
 
@@ -534,7 +441,13 @@ func parseDiscovererStreamHeader(line string) *TrackInfo {
 	}
 
 	trackType := strings.ToLower(match[1])
+	if trackType == "subtitles" {
+		trackType = "subtitle"
+	}
 	codec := strings.TrimSpace(match[3])
+	if trackType == "subtitle" {
+		codec = subtitleCodec(codec)
+	}
 	return &TrackInfo{
 		Type:     trackType,
 		Codec:    codec,
@@ -543,6 +456,7 @@ func parseDiscovererStreamHeader(line string) *TrackInfo {
 }
 
 func parseDiscovererTrackLine(track *TrackInfo, line string) {
+	parseVideoMetadata(track, line)
 	switch {
 	case startsWithFold(line, "Width:"):
 		track.Width = parseIntAfterColon(line)
@@ -574,6 +488,9 @@ func parseDiscovererTrackLine(track *TrackInfo, line string) {
 		if track.CapsName == "" {
 			track.CapsName = codecToCapsName(track.Type, track.Codec)
 		}
+	case startsWithFold(line, "subtitle codec:"):
+		track.Codec = subtitleCodec(valueAfterColon(line))
+		track.CapsName = codecToCapsName(track.Type, track.Codec)
 	case startsWithFold(line, "Frame rate:"):
 		track.FrameRateNum, track.FrameRateDen = parseDiscovererRate(valueAfterColon(line))
 	}
@@ -639,6 +556,164 @@ func codecToCapsName(kind string, values ...string) string {
 		}
 	}
 
+	if kind == "subtitle" {
+		switch subtitleCodec(codec) {
+		case "text", "subrip", "utf8":
+			return "text/x-raw"
+		case "ass":
+			return "application/x-ass"
+		case "ssa":
+			return "application/x-ssa"
+		case "pgs":
+			return "subpicture/x-pgs"
+		case "dvd":
+			return "subpicture/x-dvd"
+		case "kate":
+			return "subtitle/x-kate"
+		default:
+			return "application/x-subtitle-unknown"
+		}
+	}
+
+	return ""
+}
+
+func subtitleCodec(value string) string {
+	codec := strings.ToLower(strings.TrimSpace(value))
+	switch {
+	case strings.Contains(codec, "subrip") || strings.Contains(codec, "srt"):
+		return "subrip"
+	case strings.Contains(codec, "utf8") || strings.Contains(codec, "utf-8"):
+		return "utf8"
+	case strings.Contains(codec, "ass"):
+		return "ass"
+	case strings.Contains(codec, "ssa"):
+		return "ssa"
+	case strings.Contains(codec, "pgs"):
+		return "pgs"
+	case strings.Contains(codec, "dvd"):
+		return "dvd"
+	case strings.Contains(codec, "kate"):
+		return "kate"
+	case strings.Contains(codec, "text"):
+		return "text"
+	default:
+		return codec
+	}
+}
+
+func parseVideoMetadata(track *TrackInfo, line string) {
+	if track == nil || track.Type != "video" {
+		return
+	}
+	if track.Colorimetry == "" {
+		track.Colorimetry = metadataField(line, "colorimetry")
+	}
+	if track.Transfer == "" {
+		track.Transfer = firstNonEmpty(
+			metadataField(line, "transfer"),
+			metadataField(line, "transfer-characteristics"),
+			metadataField(line, "transfer-function"),
+		)
+	}
+	if track.Primaries == "" {
+		track.Primaries = firstNonEmpty(metadataField(line, "primaries"), metadataField(line, "color-primaries"))
+	}
+	if track.Matrix == "" {
+		track.Matrix = firstNonEmpty(metadataField(line, "matrix"), metadataField(line, "matrix-coefficients"))
+	}
+	if track.BitDepth == 0 {
+		for _, name := range []string{"bit-depth-luma", "bit-depth", "bits-per-component"} {
+			if value := metadataField(line, name); value != "" {
+				track.BitDepth, _ = strconv.Atoi(firstInteger(value))
+				if track.BitDepth > 0 {
+					break
+				}
+			}
+		}
+		upper := strings.ToUpper(line)
+		if track.BitDepth == 0 && (strings.Contains(upper, "P010") || strings.Contains(upper, "10LE") || strings.Contains(upper, "10BE")) {
+			track.BitDepth = 10
+		} else if track.BitDepth == 0 && (strings.Contains(upper, "P012") || strings.Contains(upper, "12LE") || strings.Contains(upper, "12BE")) {
+			track.BitDepth = 12
+		}
+	}
+	lower := strings.ToLower(line)
+	track.HasMasteringDisplayInfo = track.HasMasteringDisplayInfo || strings.Contains(lower, "mastering-display-info")
+	track.HasContentLightLevel = track.HasContentLightLevel || strings.Contains(lower, "content-light-level") || strings.Contains(lower, "max-cll")
+	track.IsDolbyVision = track.IsDolbyVision || strings.Contains(lower, "dolby vision") || strings.Contains(lower, "video/x-dolby-vision") || strings.Contains(lower, "dovi")
+	if track.DolbyVisionProfile == 0 {
+		if profile := metadataField(line, "profile"); track.IsDolbyVision && profile != "" {
+			track.DolbyVisionProfile, _ = strconv.Atoi(firstInteger(profile))
+		}
+	}
+	transfer := strings.ToLower(track.Transfer + " " + track.Colorimetry + " " + line)
+	switch {
+	case strings.Contains(transfer, "smpte2084") || strings.Contains(transfer, "st2084") || strings.Contains(transfer, "pq"):
+		track.VideoTransfer = "pq"
+	case strings.Contains(transfer, "arib-std-b67") || strings.Contains(transfer, "hlg"):
+		track.VideoTransfer = "hlg"
+	}
+}
+
+func metadataField(line string, name string) string {
+	lower := strings.ToLower(line)
+	needle := strings.ToLower(name)
+	index := strings.Index(lower, needle)
+	if index < 0 {
+		return ""
+	}
+	rest := strings.TrimSpace(line[index+len(name):])
+	rest = strings.TrimLeft(rest, " =:")
+	if strings.HasPrefix(rest, "(") {
+		if close := strings.Index(rest, ")"); close >= 0 {
+			rest = strings.TrimSpace(rest[close+1:])
+		}
+	}
+	if comma := strings.IndexByte(rest, ','); comma >= 0 {
+		rest = rest[:comma]
+	}
+	return strings.Trim(strings.TrimSpace(rest), "\"'")
+}
+
+func firstInteger(value string) string {
+	return discovererIntRe.FindString(value)
+}
+
+func containerToCapsName(value string) string {
+	if direct := containerCapsFromLine(value); direct != "" {
+		return direct
+	}
+	lower := strings.ToLower(value)
+	switch {
+	case strings.Contains(lower, "webm"):
+		return "video/webm"
+	case strings.Contains(lower, "matroska"):
+		return "video/x-matroska"
+	case strings.Contains(lower, "avi"):
+		return "video/x-msvideo"
+	case strings.Contains(lower, "quicktime") || strings.Contains(lower, "mp4"):
+		return "video/quicktime"
+	default:
+		return ""
+	}
+}
+
+func containerCapsFromLine(value string) string {
+	lower := strings.ToLower(strings.TrimSpace(value))
+	if comma := strings.IndexByte(lower, ','); comma >= 0 {
+		lower = lower[:comma]
+	}
+	lower = strings.Trim(lower, "\"'")
+	for _, caps := range []string{
+		"audio/x-matroska", "video/x-matroska", "video/x-matroska-3d",
+		"audio/webm", "video/webm", "video/x-msvideo", "video/quicktime",
+		"video/mp4", "video/mpegts", "application/ogg", "video/x-flv",
+	} {
+		if lower == caps {
+			return caps
+		}
+	}
 	return ""
 }
 

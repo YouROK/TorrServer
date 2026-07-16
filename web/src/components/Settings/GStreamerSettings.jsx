@@ -6,14 +6,16 @@ import {
   FormControlLabel,
   FormGroup,
   FormHelperText,
-  InputLabel,
+  IconButton,
   MenuItem,
-  Select,
   Switch,
   TextField,
 } from '@material-ui/core'
+import CloseIcon from '@material-ui/icons/Close'
 import { useEffect, useMemo, useState } from 'react'
+import { useQueryClient } from 'react-query'
 import { gstSettingsHost } from 'utils/Hosts'
+import { GST_RUNTIME_QUERY_KEY } from 'utils/GStreamer'
 
 import {
   Divider,
@@ -53,14 +55,19 @@ const emptyConfig = {
   AACChannels: 0,
   AACSamplerate: 0,
   SegmentSeconds: 6,
-  appsinkBuffers: 1000,
+  SegmentDiff: 20,
+  Subtitles: true,
   TranscodeH264: false,
   TranscodeH265: false,
   TranscodeAV1: false,
   TranscodeVP9: false,
+  TranscodeVP8: false,
+  TranscodeAVI: false,
+  HDRToSDR: false,
+  HardwareAcceleration: true,
+  UseGPU: true,
+  X264Ultrafast: false,
   VideoBitrate: 10000,
-  tempfs: false,
-  tempfs_ring: 0,
 }
 
 const componentStatusKind = component => {
@@ -73,6 +80,7 @@ const componentStatusKind = component => {
 
 export default function GStreamerSettings() {
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
   const [gstreamerSettings, setGstreamerSettings] = useState(emptyConfig)
   const [defaults, setDefaults] = useState(emptyConfig)
   const [status, setStatus] = useState({ message: '', type: '' })
@@ -149,6 +157,7 @@ export default function GStreamerSettings() {
       }
 
       setGstreamerSettings(config)
+      queryClient.invalidateQueries(GST_RUNTIME_QUERY_KEY)
       setStatus({
         message: t('GStreamer.SettingsSaved'),
         type: 'success',
@@ -188,6 +197,7 @@ export default function GStreamerSettings() {
         setDefaults(data.defaults || defaults)
         setGstVersionText(formatDecimalInput(config.GSTVersion))
       }
+      queryClient.invalidateQueries(GST_RUNTIME_QUERY_KEY)
       setStatus({
         message: t('GStreamer.SettingsSaved'),
         type: 'success',
@@ -268,22 +278,20 @@ export default function GStreamerSettings() {
         fullWidth
       />
 
-      <FormGroup style={{ marginBottom: 20 }}>
-        <InputLabel htmlFor='gstreamer-source'>{t('GStreamer.Source')}</InputLabel>
-        <Select
-          native
-          id='gstreamer-source'
-          name='gstreamer-source'
-          value={gstreamerSettings.Source || 'stream'}
-          onChange={e => updateField('Source', e.target.value)}
-          variant='outlined'
-          margin='dense'
-        >
-          <MenuItem value='stream'>{t('GStreamer.SourceStream')}</MenuItem>
-          <MenuItem value='play'>{t('GStreamer.SourcePlay')}</MenuItem>
-        </Select>
-        <FormHelperText style={{ marginTop: 8 }}>{t('GStreamer.SourceHint')}</FormHelperText>
-      </FormGroup>
+      <TextField
+        select
+        id='gstreamer-source'
+        label={t('GStreamer.Source')}
+        value={gstreamerSettings.Source || 'stream'}
+        onChange={e => updateField('Source', e.target.value)}
+        margin='normal'
+        helperText={t('GStreamer.SourceHint')}
+        variant='outlined'
+        fullWidth
+      >
+        <MenuItem value='stream'>{t('GStreamer.SourceStream')}</MenuItem>
+        <MenuItem value='play'>{t('GStreamer.SourcePlay')}</MenuItem>
+      </TextField>
 
       <Divider />
 
@@ -312,6 +320,34 @@ export default function GStreamerSettings() {
         fullWidth
         inputProps={{ min: 1 }}
       />
+
+      <TextField
+        label={t('GStreamer.SegmentSeconds')}
+        type='number'
+        value={gstreamerSettings.SegmentSeconds}
+        onChange={e => updateField('SegmentSeconds', Number(e.target.value))}
+        margin='normal'
+        helperText={t('GStreamer.SegmentSecondsHint')}
+        variant='outlined'
+        fullWidth
+        inputProps={{ min: 1 }}
+      />
+
+      <TextField
+        label={t('GStreamer.SegmentDiff')}
+        type='number'
+        value={gstreamerSettings.SegmentDiff ?? 20}
+        onChange={e => updateField('SegmentDiff', Number(e.target.value))}
+        margin='normal'
+        helperText={t('GStreamer.SegmentDiffHint')}
+        variant='outlined'
+        fullWidth
+        inputProps={{ min: 0 }}
+      />
+
+      <Divider />
+
+      <GstSubsectionLabel>{t('GStreamer.SectionAudio')}</GstSubsectionLabel>
 
       <TextField
         label={t('GStreamer.AACBitrateKbps')}
@@ -349,29 +385,9 @@ export default function GStreamerSettings() {
         inputProps={{ min: 0 }}
       />
 
-      <TextField
-        label={t('GStreamer.SegmentSeconds')}
-        type='number'
-        value={gstreamerSettings.SegmentSeconds}
-        onChange={e => updateField('SegmentSeconds', Number(e.target.value))}
-        margin='normal'
-        helperText={t('GStreamer.SegmentSecondsHint')}
-        variant='outlined'
-        fullWidth
-        inputProps={{ min: 1 }}
-      />
+      <Divider />
 
-      <TextField
-        label={t('GStreamer.AppSinkBuffers')}
-        type='number'
-        value={gstreamerSettings.appsinkBuffers}
-        onChange={e => updateField('appsinkBuffers', Number(e.target.value))}
-        margin='normal'
-        helperText={t('GStreamer.AppSinkBuffersHint')}
-        variant='outlined'
-        fullWidth
-        inputProps={{ min: 1 }}
-      />
+      <GstSubsectionLabel>{t('GStreamer.SectionTranscoding')}</GstSubsectionLabel>
 
       <TextField
         label={t('GStreamer.VideoBitrate')}
@@ -385,9 +401,7 @@ export default function GStreamerSettings() {
         inputProps={{ min: 100 }}
       />
 
-      <Divider />
-
-      <GstSubsectionLabel>{t('GStreamer.SectionTranscoding')}</GstSubsectionLabel>
+      <FormHelperText style={{ marginBottom: 8 }}>{t('GStreamer.TranscodeHint')}</FormHelperText>
 
       <FormGroup>
         <FormControlLabel
@@ -443,7 +457,49 @@ export default function GStreamerSettings() {
           label={t('GStreamer.TranscodeVP9')}
           labelPlacement='start'
         />
-        <FormHelperText margin='none'>{t('GStreamer.TranscodeHint')}</FormHelperText>
+      </FormGroup>
+
+      <FormGroup>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={Boolean(gstreamerSettings.TranscodeVP8)}
+              onChange={e => updateField('TranscodeVP8', e.target.checked)}
+              color='secondary'
+            />
+          }
+          label={t('GStreamer.TranscodeVP8')}
+          labelPlacement='start'
+        />
+      </FormGroup>
+
+      <FormGroup>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={Boolean(gstreamerSettings.TranscodeAVI)}
+              onChange={e => updateField('TranscodeAVI', e.target.checked)}
+              color='secondary'
+            />
+          }
+          label={t('GStreamer.TranscodeAVI')}
+          labelPlacement='start'
+        />
+      </FormGroup>
+
+      <FormGroup>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={Boolean(gstreamerSettings.HDRToSDR)}
+              onChange={e => updateField('HDRToSDR', e.target.checked)}
+              color='secondary'
+            />
+          }
+          label={t('GStreamer.HDRToSDR')}
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('GStreamer.HDRToSDRHint')}</FormHelperText>
       </FormGroup>
 
       <Divider />
@@ -454,29 +510,61 @@ export default function GStreamerSettings() {
         <FormControlLabel
           control={
             <Switch
-              checked={Boolean(gstreamerSettings.tempfs)}
-              onChange={e => updateField('tempfs', e.target.checked)}
+              checked={Boolean(gstreamerSettings.Subtitles)}
+              onChange={e => updateField('Subtitles', e.target.checked)}
               color='secondary'
             />
           }
-          label={t('GStreamer.TempFS')}
+          label={t('GStreamer.Subtitles')}
           labelPlacement='start'
         />
-        <FormHelperText margin='none'>{t('GStreamer.TempFSHint')}</FormHelperText>
+        <FormHelperText margin='none'>{t('GStreamer.SubtitlesHint')}</FormHelperText>
       </FormGroup>
 
-      <TextField
-        label={t('GStreamer.TempFSRing')}
-        type='number'
-        value={gstreamerSettings.tempfs_ring}
-        onChange={e => updateField('tempfs_ring', Number(e.target.value))}
-        margin='normal'
-        helperText={t('GStreamer.TempFSRingHint')}
-        variant='outlined'
-        fullWidth
-        inputProps={{ min: 0 }}
-        disabled={!gstreamerSettings.tempfs}
-      />
+      <FormGroup>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={Boolean(gstreamerSettings.UseGPU)}
+              onChange={e => updateField('UseGPU', e.target.checked)}
+              color='secondary'
+            />
+          }
+          label={t('GStreamer.UseGPU')}
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('GStreamer.UseGPUHint')}</FormHelperText>
+      </FormGroup>
+
+      <FormGroup>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={Boolean(gstreamerSettings.HardwareAcceleration)}
+              onChange={e => updateField('HardwareAcceleration', e.target.checked)}
+              color='secondary'
+            />
+          }
+          label={t('GStreamer.HardwareAcceleration')}
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('GStreamer.HardwareAccelerationHint')}</FormHelperText>
+      </FormGroup>
+
+      <FormGroup>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={Boolean(gstreamerSettings.X264Ultrafast)}
+              onChange={e => updateField('X264Ultrafast', e.target.checked)}
+              color='secondary'
+            />
+          }
+          label={t('GStreamer.X264Ultrafast')}
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('GStreamer.X264UltrafastHint')}</FormHelperText>
+      </FormGroup>
 
       <Box mt={3} mb={2} display='flex' flexWrap='wrap' style={{ gap: 10 }}>
         <Button
@@ -497,9 +585,14 @@ export default function GStreamerSettings() {
       {status.message && (
         <SettingsStatusMessage severity={status.type}>
           <span>{status.message}</span>
-          <Button type='button' onClick={() => setStatus({ message: '', type: '' })} size='small'>
-            ×
-          </Button>
+          <IconButton
+            type='button'
+            aria-label={t('Close')}
+            onClick={() => setStatus({ message: '', type: '' })}
+            size='small'
+          >
+            <CloseIcon fontSize='small' />
+          </IconButton>
         </SettingsStatusMessage>
       )}
     </GstSettingsContent>

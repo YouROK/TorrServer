@@ -1,3 +1,5 @@
+//go:build gst
+
 package gstreamer
 
 import (
@@ -22,20 +24,24 @@ type Config struct {
 
 	InactiveMinutes int `json:"InactiveMinutes"`
 
-	AACBitrateKbps int `json:"AACBitrateKbps"`
-	AACChannels    int `json:"AACChannels"`
-	AACSamplerate  int `json:"AACSamplerate"`
-	SegmentSeconds int `json:"SegmentSeconds"`
-	AppSinkBuffers int `json:"appsinkBuffers"`
+	AACBitrateKbps int  `json:"AACBitrateKbps"`
+	AACChannels    int  `json:"AACChannels"`
+	AACSamplerate  int  `json:"AACSamplerate"`
+	SegmentSeconds int  `json:"SegmentSeconds"`
+	SegmentDiff    int  `json:"SegmentDiff"`
+	Subtitles      bool `json:"Subtitles"`
 
-	TranscodeH264 bool `json:"TranscodeH264"`
-	TranscodeH265 bool `json:"TranscodeH265"`
-	TranscodeAV1  bool `json:"TranscodeAV1"`
-	TranscodeVP9  bool `json:"TranscodeVP9"`
-	VideoBitrate  int  `json:"VideoBitrate"`
-
-	TempFS     bool `json:"tempfs"`
-	TempFSRing int  `json:"tempfs_ring"`
+	TranscodeH264        bool `json:"TranscodeH264"`
+	TranscodeH265        bool `json:"TranscodeH265"`
+	TranscodeAV1         bool `json:"TranscodeAV1"`
+	TranscodeVP9         bool `json:"TranscodeVP9"`
+	TranscodeVP8         bool `json:"TranscodeVP8"`
+	TranscodeAVI         bool `json:"TranscodeAVI"`
+	HDRToSDR             bool `json:"HDRToSDR"`
+	HardwareAcceleration bool `json:"HardwareAcceleration"`
+	UseGPU               bool `json:"UseGPU"`
+	X264Ultrafast        bool `json:"X264Ultrafast"`
+	VideoBitrate         int  `json:"VideoBitrate"`
 }
 
 func DefaultConfig() Config {
@@ -44,14 +50,16 @@ func DefaultConfig() Config {
 
 func defaultConfigWithoutSettings() Config {
 	conf := Config{
-		GSTVersion:      minGSTVersion,
-		Source:          "stream",
-		InactiveMinutes: 5,
-		AACBitrateKbps:  256,
-		SegmentSeconds:  6,
-		AppSinkBuffers:  1000,
-		VideoBitrate:    10_000,
-		TempFS:          false,
+		GSTVersion:           minGSTVersion,
+		Source:               "stream",
+		InactiveMinutes:      5,
+		AACBitrateKbps:       256,
+		SegmentSeconds:       6,
+		SegmentDiff:          20,
+		Subtitles:            true,
+		HardwareAcceleration: true,
+		UseGPU:               true,
+		VideoBitrate:         10_000,
 	}
 
 	if runtime.GOOS == "windows" {
@@ -81,14 +89,11 @@ func (c Config) normalized() Config {
 	if c.SegmentSeconds <= 0 {
 		c.SegmentSeconds = 6
 	}
-	if c.AppSinkBuffers <= 0 {
-		c.AppSinkBuffers = 1000
+	if c.SegmentDiff < 0 {
+		c.SegmentDiff = 0
 	}
 	if c.VideoBitrate <= 0 {
 		c.VideoBitrate = 10_000
-	}
-	if c.TempFSRing < 0 {
-		c.TempFSRing = 0
 	}
 	if c.GSTVersion < minGSTVersion {
 		c.GSTVersion = minGSTVersion
@@ -116,16 +121,20 @@ type storedConfig struct {
 	AACChannels    *int
 	AACSamplerate  *int
 	SegmentSeconds *int
-	AppSinkBuffers *int `json:"appsinkBuffers"`
+	SegmentDiff    *int
+	Subtitles      *bool
 
-	TranscodeH264 *bool
-	TranscodeH265 *bool
-	TranscodeAV1  *bool
-	TranscodeVP9  *bool
-	VideoBitrate  *int
-
-	TempFS     *bool `json:"tempfs"`
-	TempFSRing *int  `json:"tempfs_ring"`
+	TranscodeH264        *bool
+	TranscodeH265        *bool
+	TranscodeAV1         *bool
+	TranscodeVP9         *bool
+	TranscodeVP8         *bool
+	TranscodeAVI         *bool
+	HDRToSDR             *bool
+	HardwareAcceleration *bool
+	UseGPU               *bool
+	X264Ultrafast        *bool
+	VideoBitrate         *int
 }
 
 func applySettingsConfig(conf Config) Config {
@@ -181,8 +190,11 @@ func applySettingsConfig(conf Config) Config {
 	if stored.SegmentSeconds != nil {
 		conf.SegmentSeconds = *stored.SegmentSeconds
 	}
-	if stored.AppSinkBuffers != nil {
-		conf.AppSinkBuffers = *stored.AppSinkBuffers
+	if stored.SegmentDiff != nil {
+		conf.SegmentDiff = *stored.SegmentDiff
+	}
+	if stored.Subtitles != nil {
+		conf.Subtitles = *stored.Subtitles
 	}
 	if stored.TranscodeH264 != nil {
 		conf.TranscodeH264 = *stored.TranscodeH264
@@ -196,21 +208,28 @@ func applySettingsConfig(conf Config) Config {
 	if stored.TranscodeVP9 != nil {
 		conf.TranscodeVP9 = *stored.TranscodeVP9
 	}
+	if stored.TranscodeVP8 != nil {
+		conf.TranscodeVP8 = *stored.TranscodeVP8
+	}
+	if stored.TranscodeAVI != nil {
+		conf.TranscodeAVI = *stored.TranscodeAVI
+	}
+	if stored.HDRToSDR != nil {
+		conf.HDRToSDR = *stored.HDRToSDR
+	}
+	if stored.HardwareAcceleration != nil {
+		conf.HardwareAcceleration = *stored.HardwareAcceleration
+	}
+	if stored.UseGPU != nil {
+		conf.UseGPU = *stored.UseGPU
+	}
+	if stored.X264Ultrafast != nil {
+		conf.X264Ultrafast = *stored.X264Ultrafast
+	}
 	if stored.VideoBitrate != nil {
 		conf.VideoBitrate = *stored.VideoBitrate
 	}
-	if stored.TempFS != nil {
-		conf.TempFS = *stored.TempFS
-	}
-	if stored.TempFSRing != nil {
-		conf.TempFSRing = *stored.TempFSRing
-	}
-
 	return conf
-}
-
-func LoadConfig() Config {
-	return DefaultConfig()
 }
 
 func SaveConfig(conf Config) error {

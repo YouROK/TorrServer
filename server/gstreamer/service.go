@@ -1,3 +1,5 @@
+//go:build gst
+
 package gstreamer
 
 import (
@@ -13,16 +15,20 @@ import (
 	"server/settings"
 	"server/torr"
 	torrstate "server/torr/state"
+
+	"golang.org/x/sync/singleflight"
 )
 
 var (
 	ErrBadSource               = errors.New("bad gstreamer source")
 	ErrUnsupportedContainer    = errors.New("unsupported container; only Matroska/WebM is supported")
 	ErrUnsupportedVideo        = errors.New("unsupported video codec")
+	ErrUnsupportedHDRTransfer  = errors.New("HDR tone mapping requires a PQ or HLG base layer")
 	ErrProbeUnavailable        = errors.New("gst-discoverer returned no stream info")
-	ErrPipelineDisabled        = errors.New("gstreamer support is not built in")
+	ErrPipelineUnavailable     = errors.New("gstreamer runtime is unavailable")
 	ErrSegmentNotReady         = errors.New("segment is not ready")
 	ErrTaskNotFound            = errors.New("gstreamer task not found")
+	ErrServiceClosed           = errors.New("gstreamer service is closed")
 	ErrInvalidIdentifier       = errors.New("invalid gstreamer task id")
 	ErrEndOfStreamExhausted    = errors.New("gstreamer end of stream is exhausted")
 	ErrTruncatedMP4Fragment    = errors.New("truncated mp4 fragment at end of stream")
@@ -37,8 +43,11 @@ type Service struct {
 
 	probeMu    sync.Mutex
 	probeCache map[string]probeCacheEntry
+	probeCalls singleflight.Group
+	taskCalls  singleflight.Group
 
 	cleanupRunning atomic.Bool
+	disposed       atomic.Bool
 	stopCleanup    chan struct{}
 }
 
@@ -56,6 +65,9 @@ func (s *Service) currentConfig() Config {
 }
 
 func (s *Service) updateConfig(conf Config) {
+	if s.disposed.Load() {
+		return
+	}
 	conf = conf.normalized()
 
 	s.mu.Lock()
@@ -75,7 +87,6 @@ func NewService(conf Config) *Service {
 		probeCache:  make(map[string]probeCacheEntry),
 		stopCleanup: make(chan struct{}),
 	}
-	cleanupGSTTempFiles()
 	go service.cleanupLoop()
 	return service
 }
@@ -85,25 +96,53 @@ func (s *Service) GetOrAdd(hash string, fileID string, audio int) (*Task, error)
 		return nil, ErrBadSource
 	}
 
+	for {
+		if s.disposed.Load() {
+			return nil, ErrServiceClosed
+		}
+		value, err, _ := s.taskCalls.Do(hash, func() (any, error) {
+			return s.getOrAdd(hash, fileID, audio)
+		})
+		if err != nil {
+			return nil, err
+		}
+		task, ok := value.(*Task)
+		if !ok {
+			return nil, errors.New("gstreamer task creation returned an invalid result")
+		}
+		if taskMatchesRequest(task, hash, fileID, audio) {
+			return task, nil
+		}
+	}
+}
+
+func (s *Service) getOrAdd(hash string, fileID string, audio int) (*Task, error) {
+	if s.disposed.Load() {
+		return nil, ErrServiceClosed
+	}
 	conf := s.currentConfig()
 	sourceURL := sourceURL(conf, hash, fileID)
 	id := hash
 
 	s.mu.RLock()
 	task := s.tasks[id]
-	s.mu.RUnlock()
-
 	if task != nil && task.FileID == fileID && task.Audio == audio && !task.IsDisposed() {
 		task.UpdateLastActive()
+		s.mu.RUnlock()
 		return task, nil
 	}
+	s.mu.RUnlock()
 
 	probe, err := s.Probe(hash, fileID)
 	if err != nil {
 		return nil, err
 	}
+	var cue *CueTimeline
+	if shouldUseCueTimeline(conf, probe) {
+		cue = readMatroskaCueTimeline(sourceURL, probe.FileSize, probe.DurationNS)
+	}
 
-	task, err = NewTask(id, hash, fileID, audio, sourceURL, probe, conf)
+	task, err = NewTask(id, fileID, audio, sourceURL, probe, cue, conf)
 	if err != nil {
 		return nil, err
 	}
@@ -112,15 +151,20 @@ func (s *Service) GetOrAdd(hash string, fileID string, audio int) (*Task, error)
 	var evicted []*Task
 
 	s.mu.Lock()
+	if s.disposed.Load() {
+		s.mu.Unlock()
+		task.Dispose()
+		return nil, ErrServiceClosed
+	}
 	existing := s.tasks[id]
 	if existing != nil &&
 		existing.FileID == fileID &&
 		existing.Audio == audio &&
 		!existing.IsDisposed() {
+		existing.UpdateLastActive()
 		s.mu.Unlock()
 
 		task.Dispose()
-		existing.UpdateLastActive()
 		return existing, nil
 	}
 
@@ -135,6 +179,28 @@ func (s *Service) GetOrAdd(hash string, fileID string, audio int) (*Task, error)
 	disposeTasks(evicted)
 
 	return task, nil
+}
+
+func taskMatchesRequest(task *Task, hash string, fileID string, audio int) bool {
+	return task != nil && !task.IsDisposed() && task.ID == hash && task.FileID == fileID && task.Audio == audio
+}
+
+func shouldUseCueTimeline(conf Config, probe ProbeInfo) bool {
+	if !probe.IsMatroskaContainer() {
+		return false
+	}
+	switch {
+	case probe.IsH264():
+		return !conf.TranscodeH264
+	case probe.IsH265():
+		return !conf.TranscodeH265
+	case probe.IsAV1():
+		return !conf.TranscodeAV1
+	case probe.IsVP9():
+		return !conf.TranscodeVP9
+	default:
+		return false
+	}
 }
 
 func (s *Service) evictTasksForLimitLocked(protectedID string) []*Task {
@@ -161,6 +227,7 @@ func oldestEvictableTask(tasks map[string]*Task, protectedID string) (string, *T
 	var oldestID string
 	var oldestTask *Task
 	var oldestActive time.Time
+	oldestDisposed := false
 
 	for id, task := range tasks {
 		if id == protectedID {
@@ -170,11 +237,13 @@ func oldestEvictableTask(tasks map[string]*Task, protectedID string) (string, *T
 			return id, nil
 		}
 
+		disposed := task.IsDisposed()
 		lastActive := task.LastActive()
-		if oldestID == "" || task.IsDisposed() || lastActive.Before(oldestActive) {
+		if oldestID == "" || (disposed && !oldestDisposed) || (disposed == oldestDisposed && lastActive.Before(oldestActive)) {
 			oldestID = id
 			oldestTask = task
 			oldestActive = lastActive
+			oldestDisposed = disposed
 		}
 	}
 	return oldestID, oldestTask
@@ -192,40 +261,83 @@ func (s *Service) Probe(hash string, fileID string) (ProbeInfo, error) {
 	if hash == "" || fileID == "" {
 		return ProbeInfo{}, ErrBadSource
 	}
+	if s.disposed.Load() {
+		return ProbeInfo{}, ErrServiceClosed
+	}
 
-	conf := s.currentConfig()
-	probe, ok := s.getCachedProbe(hash, fileID)
-	if !ok {
-		var err error
-		probe, err = probeSource(sourceURL(conf, hash, fileID), conf)
+	if probe, ok, err := s.cachedProbe(hash, fileID); ok {
+		return probe, err
+	}
+
+	key := probeCacheKey(hash, fileID)
+	value, err, _ := s.probeCalls.Do(key, func() (any, error) {
+		if s.disposed.Load() {
+			return ProbeInfo{}, ErrServiceClosed
+		}
+		if cached, found, err := s.cachedProbe(hash, fileID); found {
+			return cached, err
+		}
+		conf := s.currentConfig()
+		result, err := probeSource(sourceURL(conf, hash, fileID), conf)
 		if err != nil {
 			return ProbeInfo{}, err
 		}
-		probe = refreshProbeFileSize(probe, hash, fileID)
-		if err := validateProbe(probe); err != nil {
+		result = refreshProbeFileSize(result, hash, fileID)
+		if err := validateProbe(result, conf); err != nil {
 			return ProbeInfo{}, err
 		}
-		s.setCachedProbe(hash, fileID, probe)
-		return probe, nil
+		if s.disposed.Load() {
+			return ProbeInfo{}, ErrServiceClosed
+		}
+		s.setCachedProbe(hash, fileID, result)
+		return result, nil
+	})
+	if err != nil {
+		return ProbeInfo{}, err
 	}
-
-	probe = refreshProbeFileSize(probe, hash, fileID)
+	if s.disposed.Load() {
+		return ProbeInfo{}, ErrServiceClosed
+	}
+	probe := refreshProbeFileSize(value.(ProbeInfo), hash, fileID)
+	if err := validateProbe(probe, s.currentConfig()); err != nil {
+		return ProbeInfo{}, err
+	}
 	s.setCachedProbe(hash, fileID, probe)
 	return probe, nil
 }
 
-func validateProbe(probe ProbeInfo) error {
+func (s *Service) cachedProbe(hash string, fileID string) (ProbeInfo, bool, error) {
+	probe, ok := s.getCachedProbe(hash, fileID)
+	if !ok {
+		return ProbeInfo{}, false, nil
+	}
+
+	probe = refreshProbeFileSize(probe, hash, fileID)
+	if err := validateProbe(probe, s.currentConfig()); err != nil {
+		return ProbeInfo{}, true, err
+	}
+	s.setCachedProbe(hash, fileID, probe)
+	return probe, true, nil
+}
+
+func validateProbe(probe ProbeInfo, conf Config) error {
 	if len(probe.Tracks) == 0 || probe.Video() == nil {
 		return ErrProbeUnavailable
 	}
-	if !probe.IsMatroskaContainer() {
+	if conf.HDRToSDR && probe.Video().IsHDRVideo() && probe.Video().VideoTransfer != "pq" && probe.Video().VideoTransfer != "hlg" {
+		return ErrUnsupportedHDRTransfer
+	}
+	transcodeAVI := probe.IsAVIContainer() && conf.TranscodeAVI
+	if !probe.IsMatroskaContainer() && !transcodeAVI {
 		name := strings.TrimSpace(probe.Container)
 		if name == "" {
 			name = "<unknown>"
 		}
 		return fmt.Errorf("%w: %s", ErrUnsupportedContainer, name)
 	}
-	if !probe.IsH264() && !probe.IsH265() && !probe.IsAV1() && !probe.IsVP9() {
+	supported := probe.IsH264() || probe.IsH265() || probe.IsAV1() || probe.IsVP9() ||
+		(probe.IsVP8() && conf.TranscodeVP8) || transcodeAVI
+	if !supported {
 		return ErrUnsupportedVideo
 	}
 	return nil
@@ -347,10 +459,16 @@ func (s *Service) getCachedProbe(hash string, fileID string) (ProbeInfo, bool) {
 }
 
 func (s *Service) setCachedProbe(hash string, fileID string, probe ProbeInfo) {
+	if s.disposed.Load() {
+		return
+	}
 	key := probeCacheKey(hash, fileID)
 
 	s.probeMu.Lock()
 	defer s.probeMu.Unlock()
+	if s.disposed.Load() {
+		return
+	}
 
 	if s.probeCache == nil {
 		s.probeCache = make(map[string]probeCacheEntry)
@@ -385,22 +503,18 @@ func cloneProbeInfo(probe ProbeInfo) ProbeInfo {
 }
 
 func (s *Service) Get(id string) *Task {
-	if id == "" {
+	if id == "" || s.disposed.Load() {
 		return nil
 	}
 
 	s.mu.RLock()
 	task := s.tasks[id]
-	s.mu.RUnlock()
-
-	if task == nil {
+	if task == nil || task.IsDisposed() {
+		s.mu.RUnlock()
 		return nil
 	}
-	if task.IsDisposed() {
-		return nil
-	}
-
 	task.UpdateLastActive()
+	s.mu.RUnlock()
 	return task
 }
 
@@ -411,9 +525,6 @@ func (s *Service) TryRemove(id string) bool {
 	}
 
 	task.Dispose()
-	if s.isEmpty() {
-		cleanupGSTTempFiles()
-	}
 	return true
 }
 
@@ -434,21 +545,31 @@ func (s *Service) detachTask(id string, expected *Task) (*Task, bool) {
 	return task, true
 }
 
-func (s *Service) tryRemoveExpected(id string, expected *Task) bool {
-	task, ok := s.detachTask(id, expected)
-	if !ok {
+func (s *Service) tryRemoveExpectedInactive(id string, expected *Task, cutoff time.Time) bool {
+	if id == "" || expected == nil {
 		return false
 	}
 
-	task.Dispose()
-	if s.isEmpty() {
-		cleanupGSTTempFiles()
+	s.mu.Lock()
+	task := s.tasks[id]
+	if task != expected || !task.LastActive().Before(cutoff) {
+		s.mu.Unlock()
+		return false
 	}
+	delete(s.tasks, id)
+	s.mu.Unlock()
+
+	task.Dispose()
 	return true
 }
 
 func (s *Service) Dispose() {
-	closeOnce(s.stopCleanup)
+	if !s.disposed.CompareAndSwap(false, true) {
+		return
+	}
+	if s.stopCleanup != nil {
+		close(s.stopCleanup)
+	}
 
 	s.mu.Lock()
 	tasks := s.tasks
@@ -473,7 +594,9 @@ func (s *Service) cleanupLoop() {
 		case <-ticker.C:
 			func() {
 				defer func() {
-					_ = recover()
+					if recovered := recover(); recovered != nil {
+						gstErrorf("inactive cleanup panic: %v", recovered)
+					}
 				}()
 				s.cleanupInactive()
 			}()
@@ -484,6 +607,9 @@ func (s *Service) cleanupLoop() {
 }
 
 func (s *Service) cleanupInactive() {
+	if s.disposed.Load() {
+		return
+	}
 	if !s.cleanupRunning.CompareAndSwap(false, true) {
 		return
 	}
@@ -491,40 +617,36 @@ func (s *Service) cleanupInactive() {
 
 	now := time.Now().UTC()
 
+	type snapshotEntry struct {
+		id   string
+		task *Task
+	}
 	s.mu.RLock()
-	snapshot := make(map[string]*Task, len(s.tasks))
+	snapshot := make([]snapshotEntry, 0, len(s.tasks))
 	for id, task := range s.tasks {
-		snapshot[id] = task
+		snapshot = append(snapshot, snapshotEntry{id: id, task: task})
 	}
 	s.mu.RUnlock()
 
 	conf := s.currentConfig()
 	inactiveDuration := conf.inactiveDuration()
 	removeAfter := inactiveDuration + 20*time.Minute
+	freezeCutoff := now.Add(-inactiveDuration)
+	removeCutoff := now.Add(-removeAfter)
 
-	for id, task := range snapshot {
+	for _, entry := range snapshot {
+		id, task := entry.id, entry.task
 		lastActive := task.LastActive()
-		if now.After(lastActive.Add(removeAfter)) {
-			s.tryRemoveExpected(id, task)
+		if lastActive.Before(removeCutoff) {
+			s.tryRemoveExpectedInactive(id, task, removeCutoff)
 			continue
 		}
-		if !task.IsFrozen() &&
-			now.After(lastActive.Add(inactiveDuration)) &&
-			s.isCurrentTask(id, task) {
-			task.Frozen()
+		if lastActive.Before(freezeCutoff) && s.isCurrentTask(id, task) {
+			task.FreezeIfInactive(freezeCutoff)
 		}
 	}
 
-	if s.isEmpty() {
-		cleanupGSTTempFiles()
-	}
 	s.cleanupProbeCache(now)
-}
-
-func (s *Service) isEmpty() bool {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return len(s.tasks) == 0
 }
 
 func (s *Service) isCurrentTask(id string, expected *Task) bool {
@@ -547,9 +669,4 @@ func streamURL(hash string, fileID string) string {
 
 func playURL(hash string, fileID string) string {
 	return "http://127.0.0.1:" + settings.Port + "/play/" + url.PathEscape(hash) + "/" + url.PathEscape(fileID)
-}
-
-func closeOnce(ch chan struct{}) {
-	defer func() { _ = recover() }()
-	close(ch)
 }

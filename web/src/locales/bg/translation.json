@@ -257,6 +257,7 @@
   "GStreamer": {
     "Tab": "GStreamer",
     "Settings": "GStreamer",
+    "AudioTrack": "Аудио писта",
     "SaveSettings": "Save GStreamer Settings",
     "SettingsSaved": "GStreamer settings saved.",
     "Runtime": "GStreamer runtime",
@@ -266,7 +267,7 @@
     "StatusFound": "found",
     "StatusMissing": "not found",
     "Version": "GStreamer version",
-    "VersionHint": "Installed GStreamer version (minimum 1.22, e.g. 1.22 or 1.28)",
+    "VersionHint": "Определя се автоматично. Задайте ръчно само при неправилно разпознаване. Минимум: 1.22.",
     "Path": "GStreamer path",
     "PathHint": "Path to GStreamer installation. Leave empty for auto-detection.",
     "SectionGeneral": "General",
@@ -289,8 +290,6 @@
     "AACSamplerateHint": "0 = use the selected audio track probe value; fallback is 48000 Hz.",
     "SegmentSeconds": "Segment duration (seconds)",
     "SegmentSecondsHint": "Target duration of one HLS/fMP4 segment.",
-    "AppSinkBuffers": "AppSink buffers",
-    "AppSinkBuffersHint": "Queue of ready appsink buffers. Usually leave the default value.",
     "VideoBitrate": "Video bitrate (kbps)",
     "VideoBitrateHint": "Used only when video transcoding to H.264 is enabled.",
     "TranscodeH264": "Transcode H.264",
@@ -298,10 +297,7 @@
     "TranscodeAV1": "Transcode AV1",
     "TranscodeVP9": "Transcode VP9",
     "TranscodeHint": "When disabled, compatible tracks are copied. Enable for codecs the client cannot play directly.",
-    "TempFS": "Enable file buffer for source stream",
-    "TempFSHint": "Creates a temporary gst-XXXXXX ring buffer in the TorrServer working directory. Helps smooth speed drops on weak torrents; SSD storage is recommended.",
-    "TempFSRing": "Additional stream buffer",
-    "TempFSRingHint": "0 = base buffer around 90 seconds. Each unit adds roughly 30 seconds; 10 adds about 300 seconds."
+    "X264Ultrafast": "Use x264 ultrafast preset"
   },
   "TMDB": {
     "Settings": "TMDB",

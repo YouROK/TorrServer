@@ -7,6 +7,7 @@
     "@material-ui/icons": "^4.11.2",
     "axios": "^1.16.0",
     "clsx": "^1.1.1",
+    "hls.js": "1.6.16",
     "i18next": "^20.3.1",
     "i18next-browser-languagedetector": "^6.1.8",
     "lodash": "^4.18.1",

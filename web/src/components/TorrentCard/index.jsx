@@ -1,5 +1,6 @@
-import { forwardRef, memo, useState } from 'react'
+import { forwardRef, memo, useEffect, useRef, useState } from 'react'
 import {
+  Audiotrack as AudiotrackIcon,
   UnfoldMore as UnfoldMoreIcon,
   PlayArrow as PlayArrowIcon,
   Close as CloseIcon,
@@ -11,7 +12,18 @@ import { NoImageIcon } from 'icons'
 import DialogTorrentDetailsContent from 'components/DialogTorrentDetailsContent'
 import Dialog from '@material-ui/core/Dialog'
 import Slide from '@material-ui/core/Slide'
-import { Button, DialogActions, DialogTitle, useMediaQuery, useTheme } from '@material-ui/core'
+import {
+  Button,
+  CircularProgress,
+  DialogActions,
+  DialogTitle,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  useMediaQuery,
+  useTheme,
+} from '@material-ui/core'
 import axios from 'axios'
 import ptt from 'parse-torrent-title'
 import { useTranslation } from 'react-i18next'
@@ -22,6 +34,13 @@ import { GETTING_INFO, IN_DB, CLOSED, PRELOAD, WORKING } from 'torrentStates'
 import { TORRENT_CATEGORIES } from 'components/categories'
 import VideoPlayer from 'components/VideoPlayer'
 import { isFilePlayable } from 'components/DialogTorrentDetailsContent/helpers'
+import {
+  gstreamerHeartbeatUrl,
+  gstreamerMasterUrl,
+  gstreamerProbeUrl,
+  shouldUseGStreamerPlayer,
+  useGStreamerRuntime,
+} from 'utils/GStreamer'
 
 import {
   StatusIndicators,
@@ -34,11 +53,122 @@ import {
 
 const Transition = forwardRef((props, ref) => <Slide direction='up' ref={ref} {...props} />)
 
+const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds))
+
+const requestTorrentFiles = async (hash, isActive, attemptsLeft = 60) => {
+  const { data: status } = await axios.post(torrentsHost(), { action: 'get', hash })
+  const files = status?.file_stats || []
+  if (!isActive() || files.length || attemptsLeft <= 1) return files
+
+  await wait(1000)
+  if (!isActive()) return []
+  return requestTorrentFiles(hash, isActive, attemptsLeft - 1)
+}
+
+const fileName = path => path.split('\\').pop().split('/').pop()
+
+const filesFromMetadata = data => {
+  if (!data) return []
+  try {
+    return JSON.parse(data).TorrServer?.Files || []
+  } catch (_) {
+    return []
+  }
+}
+
+const episodeLabel = (path, index) => {
+  const name = fileName(path)
+  const parsed = ptt.parse(name)
+  const season = Number(parsed.season)
+  const episode = Number(parsed.episode)
+  const code = `${season ? `S${String(season).padStart(2, '0')}` : ''}${
+    episode ? `E${String(episode).padStart(2, '0')}` : ''
+  }`
+  const title = parsed.title || name.replace(/\.[^/.]+$/, '')
+  return code ? `${code} - ${title}` : `${index + 1}. ${title}`
+}
+
+const probeTrackValue = (track, name) => track?.[name] ?? track?.[`${name[0].toLowerCase()}${name.slice(1)}`]
+
+const probeAudioTracks = probe =>
+  (probe?.Tracks || probe?.tracks || []).filter(
+    track => String(probeTrackValue(track, 'Type')).toLowerCase() === 'audio',
+  )
+
+const audioCodecName = track => {
+  const codec = String(probeTrackValue(track, 'Codec') || '')
+  const caps = String(probeTrackValue(track, 'CapsName') || '')
+  const value = `${caps} ${codec}`.toLowerCase()
+
+  switch (true) {
+    case value.includes('eac3') || value.includes('e-ac3') || value.includes('e-ac-3'):
+      return 'E-AC3'
+    case value.includes('truehd') || value.includes('true-hd') || value.includes('mlp'):
+      return 'TrueHD'
+    case value.includes('ac3') || value.includes('ac-3') || value.includes('a/52'):
+      return 'AC3'
+    case value.includes('dts'):
+      return 'DTS'
+    case value.includes('aac') || value.includes('mpegversion=(int)4') || value.includes('mpegversion=4'):
+      return 'AAC'
+    case value.includes('opus'):
+      return 'Opus'
+    case value.includes('vorbis'):
+      return 'Vorbis'
+    case value.includes('flac'):
+      return 'FLAC'
+    case value.includes('mp3') || value.includes('layer=(int)3'):
+      return 'MP3'
+    case value.includes('pcm') || value.includes('audio/x-raw'):
+      return 'PCM'
+    default: {
+      const shortName = (caps || codec).split(',')[0].trim()
+      return shortName
+        .replace(/^audio\/(?:x-)?/i, '')
+        .replace(/[_-]+/g, ' ')
+        .toUpperCase()
+    }
+  }
+}
+
+const sameFileList = (left, right) => {
+  const leftFiles = left || []
+  const rightFiles = right || []
+  return (
+    leftFiles.length === rightFiles.length &&
+    leftFiles.every((file, index) => {
+      const other = rightFiles[index]
+      return file.id === other?.id && file.path === other.path && file.length === other.length
+    })
+  )
+}
+
 const Torrent = ({ torrent }) => {
   const { t } = useTranslation()
   const [isDetailedInfoOpened, setIsDetailedInfoOpened] = useState(false)
   const [isDeleteTorrentOpened, setIsDeleteTorrentOpened] = useState(false)
-  const [isSupported, setIsSupported] = useState(true)
+  const [unsupportedPlayers, setUnsupportedPlayers] = useState({})
+  const [episodeMenuAnchor, setEpisodeMenuAnchor] = useState(null)
+  const [selectedPlayer, setSelectedPlayer] = useState(null)
+  const [resolvedFileList, setResolvedFileList] = useState([])
+  const [isResolvingPlayers, setIsResolvingPlayers] = useState(false)
+  const [playerResolveFailed, setPlayerResolveFailed] = useState(false)
+  const [openEpisodeMenuAfterResolve, setOpenEpisodeMenuAfterResolve] = useState(false)
+  const [audioTracksByFile, setAudioTracksByFile] = useState({})
+  const [audioMenuAnchor, setAudioMenuAnchor] = useState(null)
+  const [audioMenuPlayer, setAudioMenuPlayer] = useState(null)
+  const [isResolvingAudio, setIsResolvingAudio] = useState(false)
+  const isMounted = useRef(true)
+  const episodeButtonRef = useRef(null)
+  const audioButtonRef = useRef(null)
+  const gstRuntime = useGStreamerRuntime()
+
+  useEffect(
+    () => () => {
+      isMounted.current = false
+    },
+    [],
+  )
 
   const theme = useTheme()
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'))
@@ -58,6 +188,7 @@ const Torrent = ({ torrent }) => {
     hash,
     stat,
     data,
+    file_stats: torrentFileList,
   } = torrent
 
   const dropTorrent = () => axios.post(torrentsHost(), { action: 'drop', hash })
@@ -90,9 +221,13 @@ const Torrent = ({ torrent }) => {
   const catIndex = TORRENT_CATEGORIES.findIndex(e => e.key === category)
   const catArray = TORRENT_CATEGORIES.find(e => e.key === category)
   const getFileLink = (path, id) =>
-    `${streamHost()}/${encodeURIComponent(path.split('\\').pop().split('/').pop())}?link=${hash}&index=${id}&play`
+    `${streamHost()}/${encodeURIComponent(fileName(path))}?link=${hash}&index=${id}&play`
 
-  const fileList = (data && JSON.parse(data).TorrServer?.Files) || []
+  const fileList = torrentFileList?.length
+    ? torrentFileList
+    : resolvedFileList.length
+    ? resolvedFileList
+    : filesFromMetadata(data)
   const playableVideoList = fileList.filter(({ path }) => isFilePlayable(path))
   const getVideoCaption = path => {
     // Get base name without extension
@@ -101,6 +236,133 @@ const Torrent = ({ torrent }) => {
     const captionFile = fileList.find(file => file.path.startsWith(baseName) && /\.(srt|vtt)$/i.test(file.path))
     return captionFile ? getFileLink(captionFile.path, captionFile.id) : ''
   }
+  const createPlayer = (file, index) => {
+    const hls = shouldUseGStreamerPlayer(file.path, gstRuntime)
+    const downloadSrc = getFileLink(file.path, file.id)
+    return {
+      ...file,
+      key: `${file.id}:${hls ? 'gst' : 'stream'}`,
+      label: episodeLabel(file.path, index),
+      videoSrc: hls ? gstreamerMasterUrl(hash, file.id) : downloadSrc,
+      downloadSrc,
+      hls,
+      heartbeatSrc: hls ? gstreamerHeartbeatUrl(hash) : '',
+    }
+  }
+  const players = playableVideoList.map(createPlayer)
+  const availablePlayers = players.filter(player => !unsupportedPlayers[player.key])
+  const singlePlayer = players.length === 1 ? players[0] : null
+  const audioMenuTracks = audioMenuPlayer ? audioTracksByFile[audioMenuPlayer.id] || [] : []
+
+  const playerWithAudio = (player, audio) => ({
+    ...player,
+    key: `${player.key}:audio:${audio}`,
+    videoSrc: gstreamerMasterUrl(hash, player.id, audio),
+    playerTitle: title || player.label,
+  })
+
+  const showAudioTracks = (player, tracks, anchor) => {
+    if (!tracks.length) {
+      setSelectedPlayer(playerWithAudio(player, 0))
+      return
+    }
+    setAudioMenuPlayer(player)
+    const target = anchor || audioButtonRef.current
+    if (target) {
+      setAudioMenuAnchor(target)
+    } else {
+      window.requestAnimationFrame(() => {
+        if (isMounted.current) setAudioMenuAnchor(audioButtonRef.current)
+      })
+    }
+  }
+
+  const resolveAudioTracks = async (player, anchor) => {
+    const cached = audioTracksByFile[player.id]
+    if (cached !== undefined) {
+      showAudioTracks(player, cached, anchor)
+      return
+    }
+
+    setIsResolvingAudio(true)
+    try {
+      const { data: probe } = await axios.get(gstreamerProbeUrl(hash, player.id))
+      if (!isMounted.current) return
+
+      const tracks = probeAudioTracks(probe)
+      setAudioTracksByFile(current => ({ ...current, [player.id]: tracks }))
+      showAudioTracks(player, tracks, anchor)
+    } catch (_) {
+      if (isMounted.current) setSelectedPlayer(playerWithAudio(player, 0))
+    } finally {
+      if (isMounted.current) setIsResolvingAudio(false)
+    }
+  }
+
+  const audioTrackLabel = (track, ordinal) => {
+    const trackTitle = String(probeTrackValue(track, 'Title') || '').trim()
+    const language = String(probeTrackValue(track, 'Language') || '').trim()
+    const codec = audioCodecName(track)
+    const channels = Number(probeTrackValue(track, 'Channels'))
+    const rate = Number(probeTrackValue(track, 'Rate'))
+    const details = [
+      trackTitle && language ? language.toUpperCase() : '',
+      codec,
+      channels > 0 ? `${channels} ch` : '',
+      rate > 0 ? `${Math.round(rate / 1000)} kHz` : '',
+    ].filter(Boolean)
+    return {
+      primary: trackTitle || language.toUpperCase() || `${t('GStreamer.AudioTrack')} ${ordinal + 1}`,
+      secondary: details.join(' / '),
+    }
+  }
+
+  const selectAudioTrack = (track, ordinal) => {
+    if (!audioMenuPlayer) return
+    const value = Number(probeTrackValue(track, 'Index'))
+    const audio = Number.isInteger(value) && value >= 0 ? value : ordinal
+    setAudioMenuAnchor(null)
+    setSelectedPlayer(playerWithAudio(audioMenuPlayer, audio))
+  }
+
+  useEffect(() => {
+    if (!openEpisodeMenuAfterResolve || players.length <= 1 || !episodeButtonRef.current) return
+    setEpisodeMenuAnchor(episodeButtonRef.current)
+    setOpenEpisodeMenuAfterResolve(false)
+  }, [openEpisodeMenuAfterResolve, players.length])
+
+  const markPlayerUnsupported = key => {
+    setUnsupportedPlayers(current => ({ ...current, [key]: true }))
+    setSelectedPlayer(current => (current?.key === key ? null : current))
+  }
+  const resolvePlayers = async () => {
+    setIsResolvingPlayers(true)
+    setPlayerResolveFailed(false)
+
+    try {
+      const files = await requestTorrentFiles(hash, () => isMounted.current)
+      if (!isMounted.current) return
+
+      const loadedPlayers = files.filter(({ path }) => isFilePlayable(path)).map(createPlayer)
+      setResolvedFileList(files)
+      if (loadedPlayers.length === 1) {
+        if (loadedPlayers[0].hls) {
+          await resolveAudioTracks(loadedPlayers[0])
+        } else {
+          setSelectedPlayer(loadedPlayers[0])
+        }
+      } else if (loadedPlayers.length > 1) {
+        setOpenEpisodeMenuAfterResolve(true)
+      } else {
+        setPlayerResolveFailed(true)
+      }
+    } catch (_) {
+      if (isMounted.current) setPlayerResolveFailed(true)
+    } finally {
+      if (isMounted.current) setIsResolvingPlayers(false)
+    }
+  }
+
   return (
     <>
       <TorrentCard>
@@ -114,13 +376,97 @@ const Torrent = ({ torrent }) => {
             <span>{t('Details')}</span>
           </StyledButton>
 
-          {playableVideoList?.length === 1 && isSupported ? (
-            <VideoPlayer
-              title={title}
-              videoSrc={getFileLink(playableVideoList[0].path, playableVideoList[0].id)}
-              captionSrc={getVideoCaption(playableVideoList[0].path)}
-              onNotSupported={() => setIsSupported(false)}
-            />
+          {singlePlayer && !unsupportedPlayers[singlePlayer.key] ? (
+            singlePlayer.hls ? (
+              <>
+                <StyledButton
+                  ref={audioButtonRef}
+                  disabled={isResolvingAudio || isResolvingPlayers}
+                  aria-haspopup='menu'
+                  aria-expanded={Boolean(audioMenuAnchor)}
+                  onClick={event => resolveAudioTracks(singlePlayer, event.currentTarget)}
+                >
+                  {isResolvingAudio || isResolvingPlayers ? (
+                    <CircularProgress size={20} color='inherit' />
+                  ) : (
+                    <PlayArrowIcon />
+                  )}
+                  <span>{t('Play')}</span>
+                </StyledButton>
+                <Menu
+                  anchorEl={audioMenuAnchor}
+                  open={Boolean(audioMenuAnchor)}
+                  onClose={() => setAudioMenuAnchor(null)}
+                  getContentAnchorEl={null}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                  PaperProps={{ style: { maxHeight: '65vh', width: 420, maxWidth: 'calc(100vw - 32px)' } }}
+                >
+                  {audioMenuTracks.map((track, ordinal) => {
+                    const label = audioTrackLabel(track, ordinal)
+                    const index = probeTrackValue(track, 'Index') ?? ordinal
+                    return (
+                      <MenuItem key={index} onClick={() => selectAudioTrack(track, ordinal)}>
+                        <ListItemIcon style={{ minWidth: 34 }}>
+                          <AudiotrackIcon fontSize='small' />
+                        </ListItemIcon>
+                        <ListItemText primary={label.primary} secondary={label.secondary} />
+                      </MenuItem>
+                    )
+                  })}
+                </Menu>
+              </>
+            ) : (
+              <VideoPlayer
+                title={title}
+                videoSrc={singlePlayer.videoSrc}
+                downloadSrc={singlePlayer.downloadSrc}
+                captionSrc={getVideoCaption(singlePlayer.path)}
+                heartbeatSrc={singlePlayer.heartbeatSrc}
+                onNotSupported={() => markPlayerUnsupported(singlePlayer.key)}
+              />
+            )
+          ) : players.length > 1 && availablePlayers.length ? (
+            <>
+              <StyledButton
+                ref={episodeButtonRef}
+                aria-haspopup='menu'
+                aria-expanded={Boolean(episodeMenuAnchor)}
+                onClick={event => setEpisodeMenuAnchor(event.currentTarget)}
+              >
+                <PlayArrowIcon />
+                <span>{t('Play')}</span>
+              </StyledButton>
+              <Menu
+                anchorEl={episodeMenuAnchor}
+                open={Boolean(episodeMenuAnchor)}
+                onClose={() => setEpisodeMenuAnchor(null)}
+                getContentAnchorEl={null}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                PaperProps={{ style: { maxHeight: '65vh', width: 420, maxWidth: 'calc(100vw - 32px)' } }}
+              >
+                {availablePlayers.map(player => (
+                  <MenuItem
+                    key={player.key}
+                    onClick={() => {
+                      setEpisodeMenuAnchor(null)
+                      setSelectedPlayer(player)
+                    }}
+                  >
+                    <ListItemIcon style={{ minWidth: 34 }}>
+                      <PlayArrowIcon fontSize='small' />
+                    </ListItemIcon>
+                    <ListItemText primary={player.label} secondary={humanizeSize(player.length)} />
+                  </MenuItem>
+                ))}
+              </Menu>
+            </>
+          ) : gstRuntime.built_in && !playerResolveFailed && players.length === 0 ? (
+            <StyledButton disabled={isResolvingPlayers} onClick={resolvePlayers}>
+              {isResolvingPlayers ? <CircularProgress size={20} color='inherit' /> : <PlayArrowIcon />}
+              <span>{t('Play')}</span>
+            </StyledButton>
           ) : (
             <StyledButton
               onClick={() => {
@@ -130,6 +476,22 @@ const Torrent = ({ torrent }) => {
               <PlayArrowIcon />
               <span>{t('Playlist')}</span>
             </StyledButton>
+          )}
+
+          {selectedPlayer && (
+            <VideoPlayer
+              key={selectedPlayer.key}
+              title={selectedPlayer.playerTitle || selectedPlayer.label}
+              videoSrc={selectedPlayer.videoSrc}
+              downloadSrc={selectedPlayer.downloadSrc}
+              captionSrc={selectedPlayer.hls ? '' : getVideoCaption(selectedPlayer.path)}
+              hls={selectedPlayer.hls}
+              heartbeatSrc={selectedPlayer.heartbeatSrc}
+              initiallyOpen
+              showTrigger={false}
+              onClose={() => setSelectedPlayer(null)}
+              onNotSupported={() => markPlayerUnsupported(selectedPlayer.key)}
+            />
           )}
 
           <StyledButton onClick={() => dropTorrent(torrent)}>
@@ -260,6 +622,7 @@ export default memo(Torrent, (prev, next) => {
     p.stat === n.stat &&
     p.torrent_size === n.torrent_size &&
     p.download_speed === n.download_speed &&
-    p.data === n.data
+    p.data === n.data &&
+    sameFileList(p.file_stats, n.file_stats)
   )
 })

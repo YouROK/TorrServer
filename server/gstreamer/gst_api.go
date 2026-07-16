@@ -13,6 +13,7 @@ import (
 
 const (
 	gstStateNull    int32 = 1
+	gstStateReady   int32 = 2
 	gstStatePaused  int32 = 3
 	gstStatePlaying int32 = 4
 
@@ -24,8 +25,12 @@ const (
 	gstFormatTime int32 = 3
 
 	gstSeekFlagFlush     int32 = 1
+	gstSeekFlagAccurate  int32 = 2
 	gstSeekFlagKeyUnit   int32 = 4
 	gstSeekFlagSnapAfter int32 = 64
+
+	gstSeekTypeNone int32 = 0
+	gstSeekTypeSet  int32 = 1
 
 	gstMapRead int32 = 1
 
@@ -52,6 +57,20 @@ func (v gstVersionInfo) atLeast(major uint32, minor uint32) bool {
 	return v.minor >= minor
 }
 
+func (v gstVersionInfo) configValue() float64 {
+	return float64(v.major) + float64(v.minor)/100
+}
+
+func (v gstVersionInfo) String() string {
+	if !v.valid() {
+		return ""
+	}
+	if v.nano != 0 {
+		return fmt.Sprintf("%d.%d.%d.%d", v.major, v.minor, v.micro, v.nano)
+	}
+	return fmt.Sprintf("%d.%d.%d", v.major, v.minor, v.micro)
+}
+
 type gstAPI struct {
 	handles []uintptr
 
@@ -63,8 +82,10 @@ type gstAPI struct {
 	gstMiniObjectUnref      func(obj uintptr)
 	gstElementSetState      func(element uintptr, state int32) int32
 	gstElementGetState      func(element uintptr, state unsafe.Pointer, pending unsafe.Pointer, timeout uint64) int32
-	gstElementSeekSimple    func(element uintptr, format int32, flags int32, position int64) int32
+	gstElementGetStaticPad  func(element uintptr, name string) uintptr
 	gstElementQueryPosition func(element uintptr, format int32, cur unsafe.Pointer) int32
+	gstEventNewSeek         func(rate float64, format int32, flags int32, startType int32, start int64, stopType int32, stop int64) uintptr
+	gstPadSendEvent         func(pad uintptr, event uintptr) int32
 	gstPipelineGetBus       func(pipeline uintptr) uintptr
 	gstBusTimedPopFiltered  func(bus uintptr, timeout uint64, types int32) uintptr
 	gstMessageParseError    func(msg uintptr, err unsafe.Pointer, debug unsafe.Pointer)
@@ -98,8 +119,10 @@ func (g *gstAPI) bind(gstHandle uintptr, gstAppHandle uintptr, glibHandle uintpt
 	purego.RegisterLibFunc(&g.gstMiniObjectUnref, gstHandle, "gst_mini_object_unref")
 	purego.RegisterLibFunc(&g.gstElementSetState, gstHandle, "gst_element_set_state")
 	purego.RegisterLibFunc(&g.gstElementGetState, gstHandle, "gst_element_get_state")
-	purego.RegisterLibFunc(&g.gstElementSeekSimple, gstHandle, "gst_element_seek_simple")
+	purego.RegisterLibFunc(&g.gstElementGetStaticPad, gstHandle, "gst_element_get_static_pad")
 	purego.RegisterLibFunc(&g.gstElementQueryPosition, gstHandle, "gst_element_query_position")
+	purego.RegisterLibFunc(&g.gstEventNewSeek, gstHandle, "gst_event_new_seek")
+	purego.RegisterLibFunc(&g.gstPadSendEvent, gstHandle, "gst_pad_send_event")
 	purego.RegisterLibFunc(&g.gstPipelineGetBus, gstHandle, "gst_pipeline_get_bus")
 	purego.RegisterLibFunc(&g.gstBusTimedPopFiltered, gstHandle, "gst_bus_timed_pop_filtered")
 	purego.RegisterLibFunc(&g.gstMessageParseError, gstHandle, "gst_message_parse_error")
@@ -200,11 +223,32 @@ func (g *gstAPI) elementGetState(element uintptr, timeout time.Duration) int32 {
 	return g.gstElementGetState(element, nil, nil, uint64(timeout))
 }
 
-func (g *gstAPI) elementSeekSimple(element uintptr, format int32, flags int32, position int64) bool {
-	if element == 0 {
+func (g *gstAPI) elementGetStaticPad(element uintptr, name string) uintptr {
+	if element == 0 || g.gstElementGetStaticPad == nil {
+		return 0
+	}
+	return g.gstElementGetStaticPad(element, name)
+}
+
+func (g *gstAPI) sendTimeSeekEvent(pad uintptr, flags int32, position int64) bool {
+	if pad == 0 || g.gstEventNewSeek == nil || g.gstPadSendEvent == nil {
 		return false
 	}
-	return g.gstElementSeekSimple(element, format, flags, position) != 0
+	event := g.gstEventNewSeek(
+		1.0,
+		gstFormatTime,
+		flags,
+		gstSeekTypeSet,
+		position,
+		gstSeekTypeNone,
+		-1,
+	)
+	if event == 0 {
+		return false
+	}
+
+	// gst_pad_send_event takes ownership of the event.
+	return g.gstPadSendEvent(pad, event) != 0
 }
 
 func (g *gstAPI) elementQueryPosition(element uintptr) (int64, bool) {

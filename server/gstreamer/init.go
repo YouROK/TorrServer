@@ -1,3 +1,5 @@
+//go:build gst
+
 package gstreamer
 
 import (
@@ -49,7 +51,12 @@ func getDefaultService() *Service {
 }
 
 func CurrentConfig() Config {
-	return getDefaultService().currentConfig()
+	conf := getDefaultService().currentConfig()
+	checkGStreamer(conf)
+	if version := effectiveGStreamerVersion(conf); version.valid() {
+		conf.GSTVersion = version.configValue()
+	}
+	return conf
 }
 
 func UpdateConfig(conf Config) error {

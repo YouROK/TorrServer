@@ -1,3 +1,5 @@
+//go:build gst
+
 package gstreamer
 
 import (
@@ -11,21 +13,28 @@ import (
 )
 
 type echoResponse struct {
-	GSTDiscoverer componentStatus `json:"gst_discoverer"`
-	GStreamer     componentStatus `json:"gstreamer"`
+	GSTDiscoverer   componentStatus `json:"gst_discoverer"`
+	GStreamer       componentStatus `json:"gstreamer"`
+	HDRToneMapping  componentStatus `json:"hdr_tone_mapping"`
+	EmbeddedRuntime componentStatus `json:"embedded_runtime"`
 }
 
 type componentStatus struct {
 	Found     bool   `json:"found"`
 	Available bool   `json:"available"`
 	Works     bool   `json:"works"`
+	Version   string `json:"version,omitempty"`
 	Error     string `json:"error,omitempty"`
 }
 
 func (s *Service) echo(c *gin.Context) {
+	conf := s.currentConfig()
+	gstreamer := checkGStreamer(conf)
 	c.JSON(http.StatusOK, echoResponse{
-		GSTDiscoverer: checkGSTDiscoverer(s.conf),
-		GStreamer:     checkGStreamer(s.conf),
+		GSTDiscoverer:   checkGSTDiscoverer(conf),
+		GStreamer:       gstreamer,
+		HDRToneMapping:  checkHDRToneMapping(gstreamer),
+		EmbeddedRuntime: embeddedGSTRuntimeStatus(),
 	})
 }
 

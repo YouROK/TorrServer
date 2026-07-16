@@ -1061,6 +1061,64 @@ getRpmPackageManager() {
   fi
 }
 
+installGStreamerPackages() {
+  if [[ $USE_GST_BINARY -ne 1 ]]; then
+    return
+  fi
+
+  if [[ -e /etc/debian_version ]]; then
+    installPackages deb \
+      libgstreamer1.0-0 \
+      libgstreamer-plugins-base1.0-0 \
+      gstreamer1.0-plugins-base \
+      gstreamer1.0-plugins-good \
+      gstreamer1.0-plugins-bad \
+      gstreamer1.0-plugins-base-apps \
+      gstreamer1.0-plugins-ugly \
+      gstreamer1.0-libav \
+      gstreamer1.0-tools \
+      ocl-icd-libopencl1 \
+      ca-certificates
+    return
+  fi
+
+  if [[ -e /etc/system-release ]]; then
+    # shellcheck source=/dev/null
+    source /etc/os-release
+    local pkg_manager
+    if [[ ${ID:-} == "amzn" ]]; then
+      pkg_manager="yum"
+    else
+      pkg_manager=$(getRpmPackageManager "${VERSION_ID%%.*}")
+    fi
+
+    installPackages rpm "$pkg_manager" \
+      gstreamer1 \
+      gstreamer1-tools \
+      gstreamer1-plugins-base \
+      gstreamer1-plugins-base-tools \
+      gstreamer1-plugins-good \
+      gstreamer1-plugins-bad-free \
+      gstreamer1-plugins-ugly-free \
+      gstreamer1-libav \
+      ocl-icd \
+      ca-certificates
+    return
+  fi
+
+  if [[ -e /etc/arch-release ]]; then
+    installPackages arch \
+      gstreamer \
+      gst-plugins-base \
+      gst-plugins-good \
+      gst-plugins-bad \
+      gst-plugins-ugly \
+      gst-libav \
+      ocl-icd \
+      ca-certificates
+  fi
+}
+
 validateOSVersion() {
   local os_name="$1"
   local supported_versions="$2"
@@ -1720,6 +1778,7 @@ installTorrServer() {
 
   detectInstalledBinaryVariant
   configureGstBinary "$target_version"
+  installGStreamerPackages
 
   # Check if already installed and up to date
   if checkInstalled; then
@@ -1867,6 +1926,7 @@ updateTorrServerVersion() {
 
   detectInstalledBinaryVariant
   configureGstBinary "$target_version"
+  installGStreamerPackages
 
   if ! systemctlCmd stop "$serviceName.service"; then
     :

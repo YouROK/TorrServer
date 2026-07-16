@@ -75,9 +75,6 @@ jobs:
           GOOS=linux GOARCH=mips64 GOMIPS64=softfloat go build -ldflags="$LDFLAGS" -tags=nosqlite -trimpath -o "${{ github.workspace }}/dist/TorrServer-linux-mips64" ./cmd
           GOOS=linux GOARCH=mips64le GOMIPS64=softfloat go build -ldflags="$LDFLAGS" -tags=nosqlite -trimpath -o "${{ github.workspace }}/dist/TorrServer-linux-mips64le" ./cmd
           GOOS=linux GOARCH=riscv64 go build -ldflags="$LDFLAGS" -tags=nosqlite -trimpath -o "${{ github.workspace }}/dist/TorrServer-linux-riscv64" ./cmd
-          
-          # GST Windows
-          GOOS=windows GOARCH=amd64 go build -ldflags="$LDFLAGS" -tags="nosqlite gst" -trimpath -o "${{ github.workspace }}/dist/TorrServer-gst-windows-amd64.exe" ./cmd
 
           # GST Linux
           GOOS=linux GOARCH=amd64 go build -ldflags="$LDFLAGS" -tags="nosqlite gst" -trimpath -o "${{ github.workspace }}/dist/TorrServer-gst-linux-amd64" ./cmd
@@ -119,8 +116,58 @@ jobs:
           name: binaries-${{ matrix.group }}
           path: ${{ github.workspace }}/dist/*
 
+  build-gst:
+    runs-on: windows-latest
+    env:
+      NODE_OPTIONS: --openssl-legacy-provider
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Set version from tag
+        shell: pwsh
+        run: |
+          "VERSION=$($env:GITHUB_REF -replace '^refs/tags/', '')" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Install Swag
+        shell: pwsh
+        run: go install github.com/swaggo/swag/cmd/swag@latest
+
+      - name: Build Web and Docs
+        shell: pwsh
+        env:
+          REACT_APP_TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+        run: |
+          corepack enable
+          go run gen_web.go
+          cd server
+          swag init -g web/server.go --parseDependency --parseInternal --parseDepth 5
+
+      - name: Build Embedded Windows GST Binary
+        shell: pwsh
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File .\.github\scripts\build-gst-windows.ps1
+
+      - name: Upload GST Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-gst
+          path: ${{ github.workspace }}/dist/TorrServer-gst-windows-amd64.exe
+
   release:
-    needs: build
+    needs:
+      - build
+      - build-gst
     runs-on: ubuntu-latest
     permissions:
       contents: write

@@ -255,8 +255,10 @@
     "TorznabHostURL": "URL-ul gazdei Torznab"
   },
   "GStreamer": {
+    "X264Ultrafast": "Use x264 ultrafast preset",
     "Tab": "GStreamer",
     "Settings": "GStreamer",
+    "AudioTrack": "Pistă audio",
     "SaveSettings": "Salvează setările GStreamer",
     "SettingsSaved": "Setările GStreamer au fost salvate.",
     "Runtime": "Rulare GStreamer",
@@ -266,7 +268,7 @@
     "StatusFound": "Detectat",
     "StatusMissing": "Nu a fost găsit",
     "Version": "Versiune GStreamer",
-    "VersionHint": "Versiunea instalată GStreamer (minim 1.22, de ex. 1.22 sau 1.28)",
+    "VersionHint": "Detectată automat. Specificați-o manual doar dacă detectarea este incorectă. Minim: 1.22.",
     "Path": "Cale GStreamer",
     "PathHint": "Calea către instalarea GStreamer. Lăsați gol pentru detectare automată.",
     "SectionGeneral": "General",

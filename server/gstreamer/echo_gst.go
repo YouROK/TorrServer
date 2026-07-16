@@ -15,6 +15,20 @@ func checkGStreamer(conf Config) componentStatus {
 		return status
 	}
 
+	status.Version = gstRuntime.version.String()
 	status.Works = true
+	return status
+}
+
+func checkHDRToneMapping(gstreamer componentStatus) componentStatus {
+	if !gstreamer.Works {
+		return componentStatus{}
+	}
+	status := componentStatus{Found: gstElementAvailable("hdrtonemap")}
+	status.Available = status.Found
+	status.Works = status.Found
+	if !status.Found {
+		status.Error = "hdrtonemap element is not available"
+	}
 	return status
 }

@@ -49,7 +49,7 @@ allowing the cache size to be adjusted according to the system parameters and th
 - Torznab search (Jackett, Prowlarr, and similar indexer managers)
 - Cross-browser modern web interface
 - Optional DLNA server
-- Optional GStreamer HLS transcoding support (`-gst` builds from release 141.10))
+- Optional GStreamer HLS remuxing and transcoding (`-gst` builds from release 141.10)
 
 ## Getting Started
 
@@ -57,7 +57,7 @@ allowing the cache size to be adjusted according to the system parameters and th
 
 Download the application for the required platform in the [releases](https://github.com/YouROK/TorrServer/releases) page. After installation, open the link <http://127.0.0.1:8090> in the browser.
 
-Standard binaries are named `TorrServer-<platform>-<arch>` (for example, `TorrServer-linux-amd64`). From release **141.10**, an optional **GStreamer (gst)** build is also available as `TorrServer-gst-<platform>-<arch>` with transcoding support (published for **amd64** and **arm64** only). The install scripts below can install either variant.
+Standard binaries are named `TorrServer-<platform>-<arch>` (for example, `TorrServer-linux-amd64`). From release **141.10**, optional **GStreamer (gst)** builds are named `TorrServer-gst-<platform>-<arch>`. Supported gst targets are Windows amd64, Linux amd64/arm64, and macOS amd64/arm64. The install scripts below can install either variant when the matching release asset is available.
 
 #### Windows
 
@@ -154,7 +154,7 @@ curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrSe
 Run in Terminal.app
 
 ```bash
-curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerMac.sh -o installTorrserverMac.sh && chmod 755 installTorrServerMac.sh && bash ./installTorrServerMac.sh
+curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerMac.sh -o installTorrServerMac.sh && chmod 755 installTorrServerMac.sh && bash ./installTorrServerMac.sh
 ```
 
 The macOS install script supports the same commands as the Linux script, including `--install`, `--update`, `--remove`, `--reconfigure`, and `--gst` for the GStreamer build (141.10+).
@@ -426,99 +426,165 @@ Each Torznab indexer needs:
 
 ## GStreamer
 
-GStreamer enables **HLS transcoding** for Matroska/WebM torrents when the client cannot play the original video or audio codec directly.
+GStreamer adds HLS output for Matroska/WebM torrents and, when enabled, AVI files. Compatible video and AAC audio can be remuxed without quality loss; unsupported streams can be transcoded to H.264/AAC.
 
-### The `-gst` binary (main requirement)
+### The `-gst` binary
 
-The **only** way to enable GStreamer in TorrServer is to run a build compiled with the `gst` tag. There is no on/off switch in `settings.json`.
+GStreamer support is available only in a binary compiled with the `gst` build tag. There is no runtime switch that can add `/gst/*` routes to a standard binary.
 
 | Binary | GStreamer |
 | --- | --- |
-| `TorrServer-gst-<os>-<arch>` | **Yes** — `/gst/*` routes and transcoding |
-| `TorrServer-<os>-<arch>` (standard) | **No** — `GET /gst/settings` returns `built_in: false`; `POST` is rejected and pipelines do not run |
+| `TorrServer-gst-<os>-<arch>` | Yes - `/gst/*` routes, remuxing, and transcoding |
+| `TorrServer-<os>-<arch>` | No - `GET /gst/settings` reports `built_in: false` |
 
-Download `TorrServer-gst-*` from [releases](https://github.com/YouROK/TorrServer/releases) (Windows/Linux amd64+arm64/macOS amd64+arm64), or build:
+Use the `--gst` option with the Linux/macOS install scripts, download a matching asset from [releases](https://github.com/YouROK/TorrServer/releases), or build from the repository root:
 
 ```bash
 cd server
-go build -tags="nosqlite gst" -trimpath -o TorrServer-gst ./cmd
+CGO_ENABLED=0 go build -tags="nosqlite gst" -trimpath -o TorrServer-gst ./cmd
 ```
 
-Windows builds with embedded libs additionally use the `embed_gstlib` tag (see below).
+Supported gst targets are Windows amd64, Linux amd64/arm64, and macOS amd64/arm64. A Windows single-file build with an embedded runtime additionally uses the `embed_gstlib` tag and `server/gstreamer/gst-libs/win-x86_64`; see [BUILD_WINDOWS_GSTREAMER.md](BUILD_WINDOWS_GSTREAMER.md).
 
-Per-codec behavior is configured in the `gstreamer` settings block (`TranscodeH264`, `TranscodeH265`, `TranscodeAV1`, `TranscodeVP9`).
+### Runtime loading
 
-Linux/macOS [install scripts](installTorrServerLinux.sh) install the **standard** binary only — for GStreamer, use the `-gst` release manually.
+The gst build uses `purego` to load GStreamer at runtime. It is built with `CGO_ENABLED=0` and does not link GStreamer into the executable at build time.
 
-### Bundled vs dynamically loaded GStreamer
-
-TorrServer itself stays a single Go binary. GStreamer is **not** linked into it at compile time (Linux/macOS/Windows use runtime loading via `dlopen` / `LoadLibrary`). What changes is **where** the GStreamer libraries and plugins come from:
-
-| Mode | How it works | Typical use |
+| Runtime mode | Platforms | How it works |
 | --- | --- | --- |
-| **Bundled (embedded)** | GStreamer runtime is packed inside the `-gst` binary and extracted to cache on first run | Windows `TorrServer-gst-windows-amd64.exe` built with `embed_gstlib` |
-| **Bundled (portable)** | Place a `gst-lib/` directory next to the TorrServer executable (same layout as an extracted GStreamer runtime) | Portable installs, custom deployments |
-| **Dynamic (system)** | TorrServer loads `libgstreamer` / DLLs from OS packages or a system install path (`GSTPath`, `/opt/gstreamer`, framework path, etc.) | Linux, macOS, Windows with [official GStreamer installer](https://gstreamer.freedesktop.org/download/) |
+| System or custom path | Windows, Linux, macOS | Loads libraries and plugins from `GSTPath` or a platform installation |
+| Portable `gst-lib/` beside the executable | Windows amd64 | Uses the normal GStreamer directory layout without embedding it |
+| Embedded `gst-lib` | Windows amd64 | Extracts the runtime from the executable into a versioned TorrServer cache directory on first use |
 
-Auto-detection order includes: `GSTPath` from settings → `gst-lib/` beside the binary → common system paths → `LD_LIBRARY_PATH` / `PATH`.
+Runtime roots are tried in this order:
 
-Verify whichever mode you use with `GET /gst/echo` or the status lines on the **GStreamer** settings tab.
+1. `GSTPath` from settings.
+2. Platform defaults such as `/usr`, `/usr/local`, the macOS framework/Homebrew prefixes, or the Windows MinGW install directory.
+3. Windows only: `gst-lib/` beside the executable.
+4. Windows only: the embedded runtime, when compiled with `embed_gstlib`.
+5. The operating-system loader search path (`PATH`, `LD_LIBRARY_PATH`, or `DYLD_LIBRARY_PATH`).
 
-### Installing GStreamer for dynamic loading
+Linux and macOS do not use a portable `gst-lib` directory. Install GStreamer system-wide or set `GSTPath`. When GStreamer loads successfully, its real version from `gst_version()` takes precedence over the configured fallback version.
 
-Only needed when GStreamer is **not** already bundled (most Linux/macOS `-gst` builds, Windows without `embed_gstlib`).
+### Runtime requirements
+
+TorrServer requires **GStreamer 1.22 or newer** and `gst-discoverer-1.0`. The full package set is recommended because the pipeline may need HTTP/TLS support, container demuxers, codec parsers, audio decoders, `avenc_aac`, and `x264enc` depending on the source and configuration.
+
+`HDRToSDR` additionally requires the custom `hdrtonemap` GStreamer element. It is included in the embedded Windows runtime. A system/custom runtime must provide a compatible plugin through its normal plugin directory or `GST_PLUGIN_PATH`.
+
+### Installing GStreamer
+
+Installation is required for Linux/macOS gst builds and Windows gst builds that do not embed or ship `gst-lib`.
 
 **Debian / Ubuntu**
 
 ```bash
-sudo apt update
-sudo apt install -y \
-  gstreamer1.0-tools \
+sudo apt-get update
+
+sudo apt-get install -y --no-install-recommends \
+  libgstreamer1.0-0 \
+  libgstreamer-plugins-base1.0-0 \
   gstreamer1.0-plugins-base \
   gstreamer1.0-plugins-good \
   gstreamer1.0-plugins-bad \
+  gstreamer1.0-plugins-base-apps \
   gstreamer1.0-plugins-ugly \
-  gstreamer1.0-libav
+  gstreamer1.0-libav \
+  gstreamer1.0-tools \
+  ocl-icd-libopencl1 \
+  ca-certificates
 ```
+
+Package roles:
+
+| Package group | Purpose |
+| --- | --- |
+| `libgstreamer1.0-0`, `libgstreamer-plugins-base1.0-0` | Core and GstApp libraries loaded by TorrServer |
+| `gstreamer1.0-plugins-base`, `gstreamer1.0-plugins-base-apps` | Base elements and `gst-discoverer-1.0` |
+| `gstreamer1.0-plugins-good` | HTTP source, Matroska/WebM demuxing, and common media elements |
+| `gstreamer1.0-plugins-bad` | Modern codec parsers, timestamp helpers, and additional format support |
+| `gstreamer1.0-plugins-ugly` | `x264enc` CPU fallback for H.264 transcoding |
+| `gstreamer1.0-libav` | `avenc_aac` and FFmpeg-based codec support |
+| `gstreamer1.0-tools` | `gst-inspect-1.0` diagnostics |
+| `ocl-icd-libopencl1` | OpenCL loader for optional GPU HDR tone mapping; CPU fallback is used when unavailable |
+| `ca-certificates` | TLS certificate validation for HTTPS sources |
+
+The selected repository must provide GStreamer 1.22 or newer.
+
+Hardware encoders are optional. They also require a compatible vendor driver and GStreamer encoder plugin; TorrServer tests the available candidates and falls back to `x264enc` when none can start.
 
 **Fedora / RHEL / Rocky / AlmaLinux**
 
 ```bash
 sudo dnf install -y \
+  gstreamer1 \
   gstreamer1-tools \
   gstreamer1-plugins-base \
+  gstreamer1-plugins-base-tools \
   gstreamer1-plugins-good \
   gstreamer1-plugins-bad-free \
   gstreamer1-plugins-ugly-free \
-  gstreamer1-libav
+  gstreamer1-libav \
+  ocl-icd \
+  ca-certificates
 ```
 
-`x264enc` (used when transcoding video to H.264) may require [RPM Fusion](https://rpmfusion.org/) on Fedora.
+`gstreamer1-plugins-base-tools` provides `gst-discoverer-1.0`. Full `x264enc` and libav support may require [RPM Fusion](https://rpmfusion.org/) or the equivalent repository for the distribution.
 
 **Arch Linux**
 
 ```bash
 sudo pacman -S --needed \
+  gstreamer \
   gst-plugins-base \
   gst-plugins-good \
   gst-plugins-bad \
   gst-plugins-ugly \
-  gst-libav
+  gst-libav \
+  ocl-icd \
+  ca-certificates
 ```
 
 **macOS**
 
-[Official framework](https://gstreamer.freedesktop.org/download/) or Homebrew:
+Install the [official GStreamer Runtime](https://gstreamer.freedesktop.org/download/#macos), or use the current Homebrew formula, which includes the GStreamer plugin sets:
 
 ```bash
-brew install gstreamer gst-plugins-base gst-plugins-good gst-plugins-bad gst-plugins-ugly gst-libav
+brew install gstreamer
 ```
 
-Set `GSTPath` if needed (e.g. `/Library/Frameworks/GStreamer.framework/Versions/1.0`).
+Set `GSTPath` when auto-detection cannot find the installation. Common roots are `/Library/Frameworks/GStreamer.framework/Versions/1.0`, `/opt/homebrew`, and `/usr/local`.
 
-**Windows (dynamic)**
+**Windows**
 
-Install MSVC 64-bit runtime from [gstreamer.freedesktop.org](https://gstreamer.freedesktop.org/download/) (default: `C:\Program Files\gstreamer\1.0\mingw_x86_64`), or use a `gst-lib/` folder next to the exe. Embedded `-gst` Windows builds may not need a separate install.
+The embedded `TorrServer-gst-windows-amd64.exe` needs no separate GStreamer installation. For a dynamic build, install the **MinGW x86_64 Runtime** from [gstreamer.freedesktop.org](https://gstreamer.freedesktop.org/download/#windows). The runtime installer is sufficient; development files are not required to run TorrServer.
+
+The default root is:
+
+```text
+C:\Program Files\gstreamer\1.0\mingw_x86_64
+```
+
+Alternatively, place the same runtime layout in `gst-lib/` beside the executable. Do not mix an MSVC installation path with the MinGW libraries or the bundled MinGW `hdrtonemap` plugin.
+
+### Verifying the installation
+
+Check the runtime and discoverer first:
+
+```bash
+gst-inspect-1.0 --version
+gst-discoverer-1.0 --version
+gst-inspect-1.0 souphttpsrc
+gst-inspect-1.0 matroskademux
+gst-inspect-1.0 mp4mux
+gst-inspect-1.0 appsink
+gst-inspect-1.0 avenc_aac
+gst-inspect-1.0 x264enc
+```
+
+`avenc_aac` is needed when the selected audio is not already AAC. `x264enc` is the CPU fallback when video transcoding is enabled. Check `gst-inspect-1.0 hdrtonemap` only when `HDRToSDR` is required.
+
+The shell commands require the GStreamer `bin` directory on `PATH`. For an embedded Windows build, use `GET /gst/echo` or the **GStreamer** settings tab instead. The health response reports `found`, `available`, and `works` for the native runtime, `gst-discoverer`, HDR tone mapping, and the embedded runtime where applicable.
 
 ### Web UI configuration
 
@@ -527,51 +593,71 @@ Install MSVC 64-bit runtime from [gstreamer.freedesktop.org](https://gstreamer.f
 3. Open the **GStreamer** tab.
 4. Adjust options and click **Save GStreamer Settings**.
 
-Settings are stored separately from main BitTorrent settings and take effect immediately for new streams.
+Settings are stored separately from the main BitTorrent settings and take effect for new tasks. Existing tasks keep the configuration with which they were created.
 
 ### `settings.json` block
 
-GStreamer options are stored in `settings.json` under the `gstreamer` key (inside the `Settings` section). Legacy keys `gst` and `GStreamer` are still read on load; saving from the web UI or API writes the `gstreamer` key.
+GStreamer options are stored under the top-level `gstreamer` key in `settings.json`. Legacy keys `gst` and `GStreamer` are still read on load; saving from the web UI or API writes the `gstreamer` key.
 
 Example (`settings.json`):
 
 ```json
 {
   "gstreamer": {
-    "GSTVersion": 1.26,
+    "GSTVersion": 1.22,
     "GSTPath": "",
     "Source": "stream",
+    "MaxTasks": 0,
     "InactiveMinutes": 5,
     "AACBitrateKbps": 256,
+    "AACChannels": 0,
+    "AACSamplerate": 0,
     "SegmentSeconds": 6,
-    "appsinkBuffers": 1000,
+    "SegmentDiff": 20,
+    "Subtitles": true,
     "TranscodeH264": false,
     "TranscodeH265": false,
     "TranscodeAV1": false,
     "TranscodeVP9": false,
-    "VideoBitrate": 10000,
-    "tempfs": false,
-    "tempfs_ring": 0
+    "TranscodeVP8": false,
+    "TranscodeAVI": false,
+    "HDRToSDR": false,
+    "HardwareAcceleration": true,
+    "UseGPU": true,
+    "X264Ultrafast": false,
+    "VideoBitrate": 10000
   }
 }
 ```
 
+On Windows, platform defaults use `GSTVersion: 1.28` and `GSTPath: "C:\\Program Files\\gstreamer\\1.0\\mingw_x86_64"`. Other platforms default to version `1.22` and an empty path.
+
 | Field | Description |
 | --- | --- |
-| `GSTVersion` | Installed GStreamer version (minimum `1.26`, e.g. `1.26`, `1.28`). Used for pipeline feature selection. |
-| `GSTPath` | Path to GStreamer installation. Empty = auto-detection. |
-| `Source` | Input URL mode: `stream` (`/stream/...`) or `play` (`/play/...`). |
-| `InactiveMinutes` | Freeze pipeline after this many minutes without playback. |
-| `AACBitrateKbps` | Audio transcoding bitrate in kbps. |
-| `SegmentSeconds` | HLS segment length in seconds. |
-| `appsinkBuffers` | Number of buffers in the appsink queue. |
-| `TranscodeH264` | Transcode H.264 video when needed. |
-| `TranscodeH265` | Transcode H.265/HEVC video when needed. |
-| `TranscodeAV1` | Transcode AV1 video when needed. |
-| `TranscodeVP9` | Transcode VP9 video when needed. |
-| `VideoBitrate` | Target video bitrate in kbps when transcoding. |
-| `tempfs` | Use memory-backed tempfs for segments (Linux). |
-| `tempfs_ring` | Extra tempfs ring blocks (`0` = default). |
+| `GSTVersion` | Pipeline compatibility fallback, minimum `1.22`. A successfully detected runtime version takes precedence. |
+| `GSTPath` | GStreamer installation root. Empty uses platform auto-detection. |
+| `Source` | `stream` accepts any info hash; `play` requires a torrent already listed in TorrServer. |
+| `MaxTasks` | Maximum concurrent GStreamer tasks. `0` is unlimited; the least recently active task is removed when the limit is exceeded. |
+| `InactiveMinutes` | Freeze and release an idle pipeline after this timeout. The task is removed 20 minutes later if it stays inactive. |
+| `AACBitrateKbps` | Bitrate for non-AAC audio transcoding. It is doubled for more than two channels. |
+| `AACChannels` | Output channels for non-AAC audio. `0` uses the source value, clamped to 1-8; fallback is 2. |
+| `AACSamplerate` | Output sample rate for non-AAC audio. `0` selects the nearest supported source rate; fallback is 48000 Hz. |
+| `SegmentSeconds` | Target HLS duration. Copy mode uses Matroska Cue boundaries when available. |
+| `SegmentDiff` | Keyframe alignment tolerance in copy mode. `0` disables the limit. |
+| `Subtitles` | Expose supported embedded text subtitles as segmented WebVTT. Bitmap subtitles are not converted. |
+| `TranscodeH264` | Convert H.264 video to H.264 instead of copying it. |
+| `TranscodeH265` | Convert H.265/HEVC video to H.264 instead of copying it. |
+| `TranscodeAV1` | Convert AV1 video to H.264 instead of copying it. |
+| `TranscodeVP9` | Convert VP9 video to H.264 instead of copying it. |
+| `TranscodeVP8` | Allow VP8 input and convert it to H.264. VP8 is rejected when disabled. |
+| `TranscodeAVI` | Allow AVI input and convert its video to H.264. AVI is rejected when disabled. |
+| `HDRToSDR` | Tone-map detected PQ/HLG HDR to SDR and convert the video to H.264. Requires `hdrtonemap`. |
+| `HardwareAcceleration` | Use a tested hardware H.264 encoder when available; otherwise use `x264enc`. |
+| `UseGPU` | Allow GPU video encoding and HDR processing. CPU fallbacks are used when unavailable. |
+| `X264Ultrafast` | Use the x264 `ultrafast` preset instead of `veryfast`, reducing CPU load at the cost of compression efficiency. |
+| `VideoBitrate` | Target H.264 video bitrate in kbps when video transcoding is active. |
+
+With all `Transcode*` options disabled, H.264, H.265/HEVC, AV1, and VP9 video is copied. AAC audio is also copied; other audio codecs are decoded and encoded to AAC.
 
 ### API
 
@@ -581,7 +667,7 @@ Example (`settings.json`):
 - `POST /gst/settings` — update or reset config (`404` on standard builds)
 
   ```json
-  { "action": "set", "config": { "GSTVersion": 1.26, "Source": "stream" } }
+  { "action": "set", "config": { "GSTVersion": 1.22, "Source": "stream" } }
   ```
 
   Reset to defaults:
@@ -595,12 +681,15 @@ Example (`settings.json`):
 | Endpoint | Description |
 | --- | --- |
 | `GET /gst/echo` | GStreamer / gst-discoverer health check |
-| `GET /gst/:hash/probe` | Probe torrent file codecs (`index`, `id`, or `fileID` query) |
-| `GET /gst/:hash/master.m3u8` | HLS master playlist |
+| `GET /gst/:hash/probe` | Probe torrent file metadata (`index`, `id`, or `fileID` query); successful probes are cached for one hour |
+| `GET /gst/:hash/master.m3u8` | Create/reuse a task and return the HLS master playlist (`index`, `audio`, and optional `seconds` query) |
+| `GET /gst/:hash/video.m3u8` | HLS media playlist referenced by the master playlist |
 | `GET /gst/:hash/init.mp4` | Initialization segment |
 | `GET /gst/:hash/seg/*segment` | Media segment |
-| `GET /gst/:hash/heartbeat` | Keep-alive for active transcode task |
-| `GET /gst/remove` | Stop transcode task (`hash` or `id` query) |
+| `GET /gst/:hash/subs/:track.m3u8` | Segmented WebVTT subtitle playlist |
+| `GET /gst/:hash/subs/:track/:segment.vtt` | WebVTT subtitle segment |
+| `GET /gst/:hash/heartbeat` | Keep the task and its torrent active; returns torrent state details |
+| `GET /gst/remove` | Dispose the task and drop the torrent cache (`hash` or `id` query) |
 
 ## Donate
 

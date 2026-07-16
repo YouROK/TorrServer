@@ -8,19 +8,24 @@ import (
 	"crypto/sha256"
 	_ "embed"
 	"encoding/hex"
+	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"server/settings"
 )
 
 //go:embed embedded_gstlib_windows_amd64.zip
 var embeddedGSTLibZip []byte
 
 var (
-	embeddedGSTOnce sync.Once
-	embeddedGSTRoot string
+	embeddedGSTOnce  sync.Once
+	embeddedGSTRoot  string
+	embeddedGSTError string
 )
 
 func embeddedGSTRuntimeRoot() string {
@@ -32,6 +37,7 @@ func embeddedGSTRuntimeRoot() string {
 
 func extractEmbeddedGSTRuntime() string {
 	if len(embeddedGSTLibZip) == 0 {
+		embeddedGSTError = "embedded GStreamer archive is empty"
 		return ""
 	}
 
@@ -39,36 +45,69 @@ func extractEmbeddedGSTRuntime() string {
 	fullHash := hex.EncodeToString(sum[:])
 	shortHash := fullHash[:16]
 
-	cacheRoot, err := os.UserCacheDir()
-	if err != nil || cacheRoot == "" {
-		cacheRoot = os.TempDir()
-	}
-
-	root := filepath.Join(cacheRoot, "TorrServer", "gst-lib-"+shortHash)
-	if embeddedGSTRuntimeReady(root, fullHash) {
+	var failures []string
+	for _, cacheRoot := range embeddedGSTCacheRoots() {
+		root := filepath.Join(cacheRoot, "gst-lib-"+shortHash)
+		if embeddedGSTRuntimeReady(root, fullHash) {
+			embeddedGSTError = ""
+			return root
+		}
+		if err := extractEmbeddedGSTRuntimeAt(root, fullHash); err != nil {
+			failures = append(failures, fmt.Sprintf("%s: %v", root, err))
+			continue
+		}
+		embeddedGSTError = ""
 		return root
 	}
+	embeddedGSTError = strings.Join(failures, "; ")
+	return ""
+}
 
-	_ = os.RemoveAll(root)
-	if err := os.MkdirAll(root, 0o755); err != nil {
-		return ""
+func embeddedGSTCacheRoots() []string {
+	var roots []string
+	if cacheRoot, err := os.UserCacheDir(); err == nil && cacheRoot != "" {
+		roots = appendUniquePath(roots, filepath.Join(cacheRoot, "TorrServer"))
 	}
+	if settings.Path != "" {
+		if workingRoot, err := filepath.Abs(settings.Path); err == nil {
+			roots = appendUniquePath(roots, filepath.Join(workingRoot, ".cache", "TorrServer"))
+		}
+	}
+	if tempRoot := os.TempDir(); tempRoot != "" {
+		roots = appendUniquePath(roots, filepath.Join(tempRoot, "TorrServer"))
+	}
+	return roots
+}
 
+func extractEmbeddedGSTRuntimeAt(root string, fullHash string) error {
+	if err := os.RemoveAll(root); err != nil {
+		return fmt.Errorf("remove stale runtime: %w", err)
+	}
+	if err := os.MkdirAll(root, 0o755); err != nil {
+		return fmt.Errorf("create directory: %w", err)
+	}
 	if err := unzipEmbeddedGSTRuntime(root); err != nil {
 		_ = os.RemoveAll(root)
-		return ""
+		return fmt.Errorf("extract runtime: %w", err)
 	}
-
 	if err := os.WriteFile(embeddedGSTMarkerPath(root), []byte(fullHash), 0o644); err != nil {
 		_ = os.RemoveAll(root)
-		return ""
+		return fmt.Errorf("write marker: %w", err)
 	}
-
 	if !embeddedGSTRuntimeReady(root, fullHash) {
 		_ = os.RemoveAll(root)
-		return ""
+		return errors.New("runtime failed integrity validation")
 	}
-	return root
+	return nil
+}
+
+func embeddedGSTRuntimeStatus() componentStatus {
+	status := componentStatus{Found: len(embeddedGSTLibZip) > 0}
+	root := embeddedGSTRuntimeRoot()
+	status.Available = root != ""
+	status.Works = status.Available
+	status.Error = embeddedGSTError
+	return status
 }
 
 func embeddedGSTRuntimeReady(root string, hash string) bool {
@@ -124,9 +163,12 @@ func unzipEmbeddedGSTRuntime(root string) error {
 			return err
 		}
 		err = writeEmbeddedGSTFile(target, src, file.Mode())
-		_ = src.Close()
+		closeErr := src.Close()
 		if err != nil {
 			return err
+		}
+		if closeErr != nil {
+			return closeErr
 		}
 	}
 	return nil

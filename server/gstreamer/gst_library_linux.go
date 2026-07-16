@@ -6,46 +6,80 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ebitengine/purego"
 )
 
 func loadGST(conf Config) (*gstAPI, error) {
-	glibHandle, err := loadLinuxLibrary(conf, "libglib-2.0.so.0")
-	if err != nil {
-		return nil, err
-	}
-	gstHandle, err := loadLinuxLibrary(conf, "libgstreamer-1.0.so.0")
-	if err != nil {
-		return nil, err
-	}
-	gstAppHandle, err := loadLinuxLibrary(conf, "libgstapp-1.0.so.0")
-	if err != nil {
-		return nil, err
+	roots := gstRuntimeRoots(conf)
+	var failures []string
+	for _, root := range roots {
+		api, err := loadLinuxGSTRoot(root)
+		if err == nil {
+			return api, nil
+		}
+		failures = append(failures, fmt.Sprintf("%s: %v", root, err))
 	}
 
-	api := &gstAPI{
-		handles: []uintptr{glibHandle, gstHandle, gstAppHandle},
+	api, err := loadLinuxGST(func(name string) (uintptr, error) {
+		return purego.Dlopen(name, purego.RTLD_NOW|purego.RTLD_GLOBAL)
+	})
+	if err == nil {
+		return api, nil
 	}
-	if err := api.bind(gstHandle, gstAppHandle, glibHandle); err != nil {
+	failures = append(failures, fmt.Sprintf("system search path: %v", err))
+	return nil, fmt.Errorf("load gstreamer runtime: %s", strings.Join(failures, "; "))
+}
+
+func loadLinuxGSTRoot(root string) (*gstAPI, error) {
+	dirs := gstLibraryDirCandidates([]string{root})
+	api, err := loadLinuxGST(func(name string) (uintptr, error) {
+		return openLinuxLibrary(dirs, name)
+	})
+	if err != nil {
+		return nil, err
+	}
+	setupGStreamerRoots([]string{root})
+	return api, nil
+}
+
+func loadLinuxGST(load func(string) (uintptr, error)) (*gstAPI, error) {
+	names := [...]string{"libglib-2.0.so.0", "libgstreamer-1.0.so.0", "libgstapp-1.0.so.0"}
+	handles := make([]uintptr, 0, len(names))
+	for _, name := range names {
+		handle, err := load(name)
+		if err != nil {
+			closeLinuxLibraries(handles)
+			return nil, fmt.Errorf("load %s: %w", name, err)
+		}
+		handles = append(handles, handle)
+	}
+
+	api := &gstAPI{handles: handles}
+	if err := api.bind(handles[1], handles[2], handles[0]); err != nil {
+		closeLinuxLibraries(handles)
 		return nil, err
 	}
 	return api, nil
 }
 
-func loadLinuxLibrary(conf Config, name string) (uintptr, error) {
-	for _, candidate := range linuxLibraryCandidates(conf, name) {
-		handle, err := purego.Dlopen(candidate, purego.RTLD_NOW|purego.RTLD_GLOBAL)
+func openLinuxLibrary(dirs []string, name string) (uintptr, error) {
+	var lastErr error
+	for _, dir := range dirs {
+		handle, err := purego.Dlopen(filepath.Join(dir, name), purego.RTLD_NOW|purego.RTLD_GLOBAL)
 		if err == nil {
 			return handle, nil
 		}
+		lastErr = err
 	}
+	return 0, lastErr
+}
 
-	handle, err := purego.Dlopen(name, purego.RTLD_NOW|purego.RTLD_GLOBAL)
-	if err != nil {
-		return 0, fmt.Errorf("load %s: %w", name, err)
+func closeLinuxLibraries(handles []uintptr) {
+	for i := len(handles) - 1; i >= 0; i-- {
+		_ = purego.Dlclose(handles[i])
 	}
-	return handle, nil
 }
 
 func linuxLibraryCandidates(conf Config, name string) []string {

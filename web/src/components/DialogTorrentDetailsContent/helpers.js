@@ -19,6 +19,7 @@ const playableExtList = [
   'm2v',
   'm4p',
   'm4v',
+  'mk3d',
   'mkv',
   'mng',
   'mov',
