@@ -49,20 +49,36 @@ func (s *Storage) CloseHash(hash metainfo.Hash) {
 		return
 	}
 	s.mu.Lock()
-	defer s.mu.Unlock()
-	if ch, ok := s.caches[hash]; ok {
-		_ = ch.Close()
+	ch, ok := s.caches[hash]
+	if ok {
 		delete(s.caches, hash)
+	}
+	s.mu.Unlock()
+	// Cache.Close must be called without s.mu held: it calls removeCache
+	// and blocks on disk/anacrolix operations.
+	if ok {
+		_ = ch.Close()
 	}
 }
 
 func (s *Storage) Close() error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
+	caches := make([]*Cache, 0, len(s.caches))
 	for _, ch := range s.caches {
+		caches = append(caches, ch)
+	}
+	s.caches = make(map[metainfo.Hash]*Cache)
+	s.mu.Unlock()
+	for _, ch := range caches {
 		_ = ch.Close()
 	}
 	return nil
+}
+
+func (s *Storage) removeCache(hash metainfo.Hash) {
+	s.mu.Lock()
+	delete(s.caches, hash)
+	s.mu.Unlock()
 }
 
 func (s *Storage) GetCache(hash metainfo.Hash) *Cache {

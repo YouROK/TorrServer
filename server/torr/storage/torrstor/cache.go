@@ -127,7 +127,7 @@ func (c *Cache) Close() error {
 	}
 	c.isClosed = true
 
-	delete(c.storage.caches, c.hash)
+	c.storage.removeCache(c.hash)
 
 	if settings.BTsets.RemoveCacheOnDrop {
 		name := filepath.Join(settings.BTsets.TorrentsSavePath, c.hash.HexString())
@@ -161,6 +161,9 @@ func (c *Cache) removePiece(piece *Piece) {
 }
 
 func (c *Cache) AdjustRA(readahead int64) {
+	if c == nil {
+		return
+	}
 	if settings.BTsets.CacheSize == 0 {
 		c.capacity = readahead * 3
 	}

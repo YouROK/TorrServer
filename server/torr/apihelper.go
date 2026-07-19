@@ -270,7 +270,7 @@ func SetDefSettings() {
 }
 
 func dropAllTorrent() {
-	for _, torr := range bts.torrents {
+	for _, torr := range bts.ListTorrents() {
 		torr.drop()
 		<-torr.closed
 	}

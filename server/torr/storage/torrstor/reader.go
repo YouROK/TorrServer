@@ -211,13 +211,8 @@ func (r *Reader) readerOff() {
 }
 
 func (r *Reader) getUseReaders() int {
-	readers := 0
-	if r.cache != nil {
-		for reader := range r.cache.readers {
-			if reader.isUse {
-				readers++
-			}
-		}
+	if r.cache == nil {
+		return 0
 	}
-	return readers
+	return r.cache.GetUseReaders()
 }
