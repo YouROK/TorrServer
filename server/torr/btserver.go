@@ -29,7 +29,7 @@ type BTServer struct {
 
 	torrents map[metainfo.Hash]*Torrent
 
-	mu sync.Mutex
+	mu sync.RWMutex
 }
 
 var privateIPBlocks []*net.IPNet
@@ -258,20 +258,23 @@ func (bt *BTServer) configureProxy() error {
 }
 
 func (bt *BTServer) GetTorrent(hash torrent.InfoHash) *Torrent {
-	if torr, ok := bt.torrents[hash]; ok {
-		return torr
-	}
-	return nil
+	bt.mu.RLock()
+	torr := bt.torrents[hash]
+	bt.mu.RUnlock()
+	return torr
 }
 
 func (bt *BTServer) ListTorrents() map[metainfo.Hash]*Torrent {
 	list := make(map[metainfo.Hash]*Torrent)
+	bt.mu.RLock()
 	maps.Copy(list, bt.torrents)
+	bt.mu.RUnlock()
 	return list
 }
 
 func (bt *BTServer) RemoveTorrent(hash torrent.InfoHash) bool {
-	if torr, ok := bt.torrents[hash]; ok {
+	// Torrent.Close takes bt.mu, so the lock must be released before calling it
+	if torr := bt.GetTorrent(hash); torr != nil {
 		return torr.Close()
 	}
 	return false
