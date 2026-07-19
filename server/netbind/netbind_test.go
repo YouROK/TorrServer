@@ -1,9 +1,8 @@
 package netbind
 
 import (
-	"strconv"
-
 	"net"
+	"strconv"
 	"testing"
 )
 

@@ -4,9 +4,10 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"sort"
+
 	gstreamer "server/gstreamer/bridge"
 	"server/netbind"
-	"sort"
 
 	"server/torrfs/fuse"
 	"server/torrfs/webdav"

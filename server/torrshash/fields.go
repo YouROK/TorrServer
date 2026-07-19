@@ -68,7 +68,6 @@ func ReadField(reader io.Reader) (*Field, error) {
 
 	valBytes := make([]byte, length)
 	n, err := io.ReadFull(reader, valBytes)
-
 	if err != nil {
 		return nil, err
 	}

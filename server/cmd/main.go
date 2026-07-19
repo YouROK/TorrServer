@@ -198,7 +198,6 @@ func main() {
 }
 
 func watchTDir(dir string) {
-
 	path, err := filepath.Abs(dir) // Attempt to convert the provided dir path into an absolute (full) filesystem path.
 	if err != nil {
 		path = dir

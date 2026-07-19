@@ -8,9 +8,11 @@ import (
 	tele "gopkg.in/telebot.v4"
 )
 
-var magnetRegex = regexp.MustCompile(`magnet:\?[^\s]+`)
-var torrsRegex = regexp.MustCompile(`torrs://[^\s]+`)
-var hashRegex = regexp.MustCompile(`\b([a-fA-F0-9]{40})\b`)
+var (
+	magnetRegex = regexp.MustCompile(`magnet:\?[^\s]+`)
+	torrsRegex  = regexp.MustCompile(`torrs://[^\s]+`)
+	hashRegex   = regexp.MustCompile(`\b([a-fA-F0-9]{40})\b`)
+)
 
 func cmdImport(c tele.Context) error {
 	text := ""

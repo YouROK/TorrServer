@@ -200,7 +200,6 @@ func (v *TDB) Clear(xPath string) {
 			return buckt.Delete(k)
 		})
 	})
-
 	if err != nil {
 		log.TLogln("Error clear xPath", xPath, ", error:", err)
 	}

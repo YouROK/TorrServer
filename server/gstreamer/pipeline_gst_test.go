@@ -913,18 +913,21 @@ func (f *fakePipelineRunner) EnsureInit(ctx context.Context, audio int, startInd
 	}
 	return nil
 }
+
 func (f *fakePipelineRunner) GetSegment(ctx context.Context, index int, audio int) (Segment, error) {
 	if f.getSegment != nil {
 		return f.getSegment(ctx, index, audio)
 	}
 	return Segment{}, nil
 }
+
 func (f *fakePipelineRunner) Seek(seconds float64) bool {
 	if f.seek != nil {
 		return f.seek(seconds)
 	}
 	return true
 }
+
 func (f *fakePipelineRunner) Frozen() {
 	f.frozen.Store(true)
 }
