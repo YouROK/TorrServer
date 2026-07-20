@@ -379,13 +379,49 @@ colorize() {
   fi
 }
 
-# Highlight first letter of a word with specified color
+# Highlight first letter of a word with specified color (UTF-8 safe)
 highlightFirstLetter() {
   local color="$1"
   local word="$2"
   local first_char="${word:0:1}"
   local rest="${word:1}"
-  printf "%s%s" "$(colorize "$color" "$first_char")" "$rest"
+
+  # Under C/POSIX locales ${word:0:1} splits UTF-8 Cyrillic mid-sequence.
+  # That produces an invalid prompt for `read -p` and can hang (seen on Ubuntu).
+  # Only highlight a single ASCII letter; otherwise color the whole word.
+  case "$first_char" in
+    [A-Za-z])
+      printf "%s%s" "$(colorize "$color" "$first_char")" "$rest"
+      ;;
+    *)
+      printf "%s" "$(colorize "$color" "$word")"
+      ;;
+  esac
+}
+
+ensureUtf8Locale() {
+  local charmap
+  charmap=$(locale charmap 2>/dev/null || true)
+  if [[ "$charmap" == "UTF-8" ]]; then
+    return 0
+  fi
+
+  local candidate
+  for candidate in C.UTF-8 C.utf8 en_US.UTF-8 en_US.utf8; do
+    if LC_ALL="$candidate" locale charmap 2>/dev/null | grep -qx 'UTF-8'; then
+      export LC_ALL="$candidate"
+      export LANG="$candidate"
+      return 0
+    fi
+  done
+}
+
+trimInput() {
+  local value="$1"
+  # Trim leading/trailing whitespace without xargs (can fail in restricted envs)
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  printf '%s' "$value"
 }
 
 isRoot() {
@@ -532,8 +568,11 @@ buildDownloadUrl() {
 }
 
 getLang() {
-  lang=$(locale | grep LANG | cut -d= -f2 | tr -d '"' | cut -d_ -f1)
-  if [[ $lang != "ru" ]]; then
+  local locale_lang=""
+  locale_lang=$(locale 2>/dev/null | grep -E '^LANG=' | head -n1 | cut -d= -f2 | tr -d '"' | cut -d_ -f1 || true)
+  if [[ "$locale_lang" == "ru" ]]; then
+    lang="ru"
+  else
     lang="en"
   fi
 }
@@ -542,13 +581,13 @@ getIP() {
   local ip="localhost"
 
   if command -v dig >/dev/null 2>&1; then
-    ip=$(dig +short myip.opendns.com @resolver1.opendns.com 2>/dev/null || echo "")
+    ip=$(dig +time=2 +tries=1 +short myip.opendns.com @resolver1.opendns.com 2>/dev/null || echo "")
     if [[ -z "$ip" ]]; then
       ip="localhost"
     fi
   elif command -v host >/dev/null 2>&1; then
     local host_output=""
-    host_output=$(host myip.opendns.com resolver1.opendns.com 2>/dev/null || true)
+    host_output=$(host -W 2 myip.opendns.com resolver1.opendns.com 2>/dev/null || true)
     ip=$(printf "%s\n" "$host_output" | tail -n1 | awk '{print $NF}')
     if [[ -z "$ip" ]]; then
       ip="localhost"
@@ -598,7 +637,9 @@ promptYesNo() {
   no_text="$(highlightFirstLetter "$no_color" "$no_word")"
 
   local answer
-  IFS= read -r -p " $prompt ($yes_text/$no_text) " answer </dev/tty
+  # Print prompt to stderr so it stays visible when the caller uses $(...)
+  printf ' %s (%s/%s) ' "$prompt" "$yes_text" "$no_text" >&2
+  IFS= read -r answer </dev/tty
 
   # Support both English (Yy) and Russian (Дд) for Yes
   if [[ "$answer" =~ ^[YyДд] ]]; then
@@ -649,8 +690,11 @@ promptYesNoDelete() {
   no_text="$(highlightFirstLetter "$no_color" "$no_word")"
 
   local answer
-  IFS= read -r -p " $prompt ($yes_text/$no_text) " answer </dev/tty
-  answer=$(echo "$answer" | tr '[:upper:]' '[:lower:]' | xargs)
+  # Print prompt to stderr so it stays visible when the caller uses $(...)
+  printf ' %s (%s/%s) ' "$prompt" "$yes_text" "$no_text" >&2
+  IFS= read -r answer </dev/tty
+  answer=$(printf '%s' "$answer" | tr '[:upper:]' '[:lower:]')
+  answer=$(trimInput "$answer")
 
   # Check for Delete (case-insensitive, supports both English and Russian)
   if [[ "$answer" == "delete" ]] || [[ "$answer" == "удалить" ]] || [[ "$answer" == "удаление" ]]; then
@@ -672,7 +716,8 @@ promptInput() {
   fi
 
   local answer
-  IFS= read -r -p " $prompt " answer </dev/tty
+  printf ' %s ' "$prompt" >&2
+  IFS= read -r answer </dev/tty
   echo "${answer:-$default}"
 }
 
@@ -708,7 +753,7 @@ systemctlCmd() {
 #############################################
 
 getLatestRelease() {
-  curl -s "${REPO_API_URL}/releases/latest" |
+  curl -s --connect-timeout 10 --max-time 30 "${REPO_API_URL}/releases/latest" |
   grep -iE '"tag_name":|"version":' |
   sed -E 's/.*"([^"]+)".*/\1/' |
   head -n1
@@ -719,7 +764,7 @@ getSpecificRelease() {
   local tag_name
   tag_name=$(getVersionTag "$version")
   local response
-  response=$(curl -s "${REPO_API_URL}/releases/tags/$tag_name")
+  response=$(curl -s --connect-timeout 10 --max-time 30 "${REPO_API_URL}/releases/tags/$tag_name")
 
   if echo "$response" | grep -q '"tag_name"'; then
     echo "$tag_name"
@@ -748,7 +793,7 @@ downloadBinary() {
   local destination="$2"
   local version_info="$3"
 
-  local curl_args=(-L)
+  local curl_args=(-L --connect-timeout 10 --max-time 600)
 
   if [[ $SILENT_MODE -eq 0 ]]; then
     echo " - $(msg downloading) $version_info..."
@@ -2306,6 +2351,7 @@ parseArguments() {
 #############################################
 
 main() {
+  ensureUtf8Locale
   getLang
 
   parseArguments "$@"
