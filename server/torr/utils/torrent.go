@@ -52,6 +52,7 @@ func GetTrackerFromFile() []string {
 		list := strings.Split(string(buf), "\n")
 		var ret []string
 		for _, l := range list {
+			l = strings.TrimSpace(l)
 			if strings.HasPrefix(l, "udp") || strings.HasPrefix(l, "http") {
 				ret = append(ret, l)
 			}
