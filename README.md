@@ -518,18 +518,17 @@ Hardware encoders are optional. They also require a compatible vendor driver and
 ```bash
 sudo dnf install -y \
   gstreamer1 \
-  gstreamer1-tools \
   gstreamer1-plugins-base \
   gstreamer1-plugins-base-tools \
   gstreamer1-plugins-good \
   gstreamer1-plugins-bad-free \
   gstreamer1-plugins-ugly-free \
-  gstreamer1-libav \
+  gstreamer1-plugin-libav \
   ocl-icd \
   ca-certificates
 ```
 
-`gstreamer1-plugins-base-tools` provides `gst-discoverer-1.0`. Full `x264enc` and libav support may require [RPM Fusion](https://rpmfusion.org/) or the equivalent repository for the distribution.
+`gstreamer1` provides `gst-inspect-1.0` and related tools; `gstreamer1-plugins-base-tools` provides `gst-discoverer-1.0`. On RHEL and derivatives, `gstreamer1-plugin-libav` may require [EPEL](https://docs.fedoraproject.org/en-US/epel/). Full `x264enc` support may require [RPM Fusion](https://rpmfusion.org/) or the equivalent repository for the distribution.
 
 **Arch Linux**
 

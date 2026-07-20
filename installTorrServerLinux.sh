@@ -84,7 +84,8 @@ declare -A MSG_EN=(
   # Checks
   [need_root]="Script must run as root or user with sudo privileges. Example: sudo $scriptname"
   [unsupported_arch]="Unsupported Arch. Can't continue."
-  [unsupported_os]="It looks like you are running this installer on a system other than Debian, Ubuntu, Fedora, CentOS, Amazon Linux, Oracle Linux or Arch Linux."
+  [unsupported_os]="It looks like you are running this installer on a system other than Debian, Ubuntu, Fedora, CentOS, Amazon Linux, Oracle Linux, ALT Linux or Arch Linux."
+  [pkg_manager_missing]="ERROR: Neither dnf nor yum is available. Cannot install RPM packages."
 
   # User management
   [user_exists]="User %s exists!"
@@ -221,7 +222,8 @@ declare -A MSG_RU=(
   # Checks
   [need_root]="Вам нужно запустить скрипт от root или пользователя с правами sudo. Пример: sudo $scriptname"
   [unsupported_arch]="Не поддерживаемая архитектура. Продолжение невозможно."
-  [unsupported_os]="Похоже, что вы запускаете этот установщик в системе отличной от Debian, Ubuntu, Fedora, CentOS, Amazon Linux, Oracle Linux или Arch Linux."
+  [unsupported_os]="Похоже, что вы запускаете этот установщик в системе отличной от Debian, Ubuntu, Fedora, CentOS, Amazon Linux, Oracle Linux, ALT Linux или Arch Linux."
+  [pkg_manager_missing]="ОШИБКА: Не найдены dnf или yum. Невозможно установить RPM-пакеты."
 
   # User management
   [user_exists]="пользователь %s найден!"
@@ -1002,6 +1004,21 @@ installPackages() {
         runPackageManagerCommand "$log_file" "apt install ${missing[*]}" apt -y install "${missing[@]}"
       fi
       ;;
+    apt-rpm)
+      local missing=()
+      for pkg in "${packages[@]}"; do
+        if ! rpm -q "$pkg" >/dev/null 2>&1; then
+          missing+=("$pkg")
+        fi
+      done
+      if [[ ${#missing[@]} -gt 0 ]]; then
+        if [[ $SILENT_MODE -eq 0 ]]; then
+          echo " $(msg installing_packages)"
+        fi
+        runPackageManagerCommand "$log_file" "apt-get update" apt-get update
+        runPackageManagerCommand "$log_file" "apt-get install ${missing[*]}" apt-get -y install "${missing[@]}"
+      fi
+      ;;
     rpm)
       local pkg_manager="$1"
       shift
@@ -1049,15 +1066,24 @@ installPackages() {
   rm -f "$log_file"
 }
 
-getRpmPackageManager() {
-  local version_id="$1"
+isAltLinux() {
+  if [[ -e /etc/altlinux-release ]]; then
+    return 0
+  fi
+  if [[ -r /etc/os-release ]] && grep -qE '^ID=["'\'']?altlinux["'\'']?$' /etc/os-release 2>/dev/null; then
+    return 0
+  fi
+  return 1
+}
 
-  if [[ "$version_id" =~ ^[0-9]+$ ]] && [[ $version_id -ge 8 ]] && command -v dnf >/dev/null 2>&1; then
+getRpmPackageManager() {
+  if command -v dnf >/dev/null 2>&1; then
     echo "dnf"
-  elif command -v dnf >/dev/null 2>&1; then
-    echo "dnf"
-  else
+  elif command -v yum >/dev/null 2>&1; then
     echo "yum"
+  else
+    echo " $(msg pkg_manager_missing)" >&2
+    exit 1
   fi
 }
 
@@ -1082,25 +1108,41 @@ installGStreamerPackages() {
     return
   fi
 
+  if isAltLinux; then
+    installPackages apt-rpm \
+      libgstreamer1.0 \
+      gst-plugins-base1.0 \
+      gst-plugins-good1.0 \
+      gst-plugins-bad1.0 \
+      gst-plugins-ugly1.0 \
+      gst-libav \
+      ocl-icd \
+      ca-certificates
+    return
+  fi
+
   if [[ -e /etc/system-release ]]; then
     # shellcheck source=/dev/null
     source /etc/os-release
     local pkg_manager
     if [[ ${ID:-} == "amzn" ]]; then
+      if ! command -v yum >/dev/null 2>&1; then
+        echo " $(msg pkg_manager_missing)" >&2
+        exit 1
+      fi
       pkg_manager="yum"
     else
-      pkg_manager=$(getRpmPackageManager "${VERSION_ID%%.*}")
+      pkg_manager=$(getRpmPackageManager)
     fi
 
     installPackages rpm "$pkg_manager" \
       gstreamer1 \
-      gstreamer1-tools \
       gstreamer1-plugins-base \
       gstreamer1-plugins-base-tools \
       gstreamer1-plugins-good \
       gstreamer1-plugins-bad-free \
       gstreamer1-plugins-ugly-free \
-      gstreamer1-libav \
+      gstreamer1-plugin-libav \
       ocl-icd \
       ca-certificates
     return
@@ -1160,6 +1202,9 @@ checkOS() {
 
     installPackages deb curl iputils-ping dnsutils
 
+  elif isAltLinux; then
+    installPackages apt-rpm curl iputils bind-utils
+
   elif [[ -e /etc/system-release ]]; then
     # shellcheck source=/dev/null
     source /etc/os-release
@@ -1167,32 +1212,36 @@ checkOS() {
 
     case "$ID" in
       fedora)
-        pkg_manager=$(getRpmPackageManager "${VERSION_ID%%.*}")
+        pkg_manager=$(getRpmPackageManager)
         installPackages rpm "$pkg_manager" curl iputils bind-utils
         ;;
       centos|redhat)
         validateOSVersion "CentOS/RedHat" "7|8|9|10" "$VERSION_ID"
-        pkg_manager=$(getRpmPackageManager "${VERSION_ID%%.*}")
+        pkg_manager=$(getRpmPackageManager)
         installPackages rpm "$pkg_manager" curl iputils bind-utils
         ;;
       rocky)
         validateOSVersion "RockyLinux" "8|9|10" "$VERSION_ID"
-        pkg_manager=$(getRpmPackageManager "${VERSION_ID%%.*}")
+        pkg_manager=$(getRpmPackageManager)
         installPackages rpm "$pkg_manager" curl iputils bind-utils
         ;;
       almalinux)
         validateOSVersion "AlmaLinux" "8|9|10" "$VERSION_ID"
-        pkg_manager=$(getRpmPackageManager "${VERSION_ID%%.*}")
+        pkg_manager=$(getRpmPackageManager)
         installPackages rpm "$pkg_manager" curl iputils bind-utils
         ;;
       ol)
         validateOSVersion "Oracle Linux" "8|9|10" "$VERSION_ID"
-        pkg_manager=$(getRpmPackageManager "${VERSION_ID%%.*}")
+        pkg_manager=$(getRpmPackageManager)
         installPackages rpm "$pkg_manager" curl iputils bind-utils
         ;;
       amzn)
         if [[ $VERSION_ID != "2" ]]; then
           validateOSVersion "Amazon Linux" "2" "$VERSION_ID"
+        fi
+        if ! command -v yum >/dev/null 2>&1; then
+          echo " $(msg pkg_manager_missing)" >&2
+          exit 1
         fi
         installPackages rpm yum curl iputils bind-utils
         ;;
