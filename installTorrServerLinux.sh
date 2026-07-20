@@ -86,7 +86,8 @@ declare -A MSG_EN=(
   # Checks
   [need_root]="Script must run as root or user with sudo privileges. Example: sudo $scriptname"
   [unsupported_arch]="Unsupported Arch. Can't continue."
-  [unsupported_os]="It looks like you are running this installer on a system other than Debian, Ubuntu, Fedora, CentOS, Amazon Linux, Oracle Linux or Arch Linux."
+  [unsupported_os]="It looks like you are running this installer on a system other than Debian, Ubuntu, Fedora, CentOS, Amazon Linux, Oracle Linux, ALT Linux or Arch Linux."
+  [pkg_manager_missing]="ERROR: Neither dnf nor yum is available. Cannot install RPM packages."
 
   # User management
   [user_exists]="User %s exists!"
@@ -223,7 +224,8 @@ declare -A MSG_RU=(
   # Checks
   [need_root]="Вам нужно запустить скрипт от root или пользователя с правами sudo. Пример: sudo $scriptname"
   [unsupported_arch]="Не поддерживаемая архитектура. Продолжение невозможно."
-  [unsupported_os]="Похоже, что вы запускаете этот установщик в системе отличной от Debian, Ubuntu, Fedora, CentOS, Amazon Linux, Oracle Linux или Arch Linux."
+  [unsupported_os]="Похоже, что вы запускаете этот установщик в системе отличной от Debian, Ubuntu, Fedora, CentOS, Amazon Linux, Oracle Linux, ALT Linux или Arch Linux."
+  [pkg_manager_missing]="ОШИБКА: Не найдены dnf или yum. Невозможно установить RPM-пакеты."
 
   # User management
   [user_exists]="пользователь %s найден!"
@@ -379,13 +381,49 @@ colorize() {
   fi
 }
 
-# Highlight first letter of a word with specified color
+# Highlight first letter of a word with specified color (UTF-8 safe)
 highlightFirstLetter() {
   local color="$1"
   local word="$2"
   local first_char="${word:0:1}"
   local rest="${word:1}"
-  printf "%s%s" "$(colorize "$color" "$first_char")" "$rest"
+
+  # Under C/POSIX locales ${word:0:1} splits UTF-8 Cyrillic mid-sequence.
+  # That produces an invalid prompt for `read -p` and can hang (seen on Ubuntu).
+  # Only highlight a single ASCII letter; otherwise color the whole word.
+  case "$first_char" in
+    [A-Za-z])
+      printf "%s%s" "$(colorize "$color" "$first_char")" "$rest"
+      ;;
+    *)
+      printf "%s" "$(colorize "$color" "$word")"
+      ;;
+  esac
+}
+
+ensureUtf8Locale() {
+  local charmap
+  charmap=$(locale charmap 2>/dev/null || true)
+  if [[ "$charmap" == "UTF-8" ]]; then
+    return 0
+  fi
+
+  local candidate
+  for candidate in C.UTF-8 C.utf8 en_US.UTF-8 en_US.utf8; do
+    if LC_ALL="$candidate" locale charmap 2>/dev/null | grep -qx 'UTF-8'; then
+      export LC_ALL="$candidate"
+      export LANG="$candidate"
+      return 0
+    fi
+  done
+}
+
+trimInput() {
+  local value="$1"
+  # Trim leading/trailing whitespace without xargs (can fail in restricted envs)
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  printf '%s' "$value"
 }
 
 isRoot() {
@@ -532,8 +570,11 @@ buildDownloadUrl() {
 }
 
 getLang() {
-  lang=$(locale | grep LANG | cut -d= -f2 | tr -d '"' | cut -d_ -f1)
-  if [[ $lang != "ru" ]]; then
+  local locale_lang=""
+  locale_lang=$(locale 2>/dev/null | grep -E '^LANG=' | head -n1 | cut -d= -f2 | tr -d '"' | cut -d_ -f1 || true)
+  if [[ "$locale_lang" == "ru" ]]; then
+    lang="ru"
+  else
     lang="en"
   fi
 }
@@ -542,13 +583,13 @@ getIP() {
   local ip="localhost"
 
   if command -v dig >/dev/null 2>&1; then
-    ip=$(dig +short myip.opendns.com @resolver1.opendns.com 2>/dev/null || echo "")
+    ip=$(dig +time=2 +tries=1 +short myip.opendns.com @resolver1.opendns.com 2>/dev/null || echo "")
     if [[ -z "$ip" ]]; then
       ip="localhost"
     fi
   elif command -v host >/dev/null 2>&1; then
     local host_output=""
-    host_output=$(host myip.opendns.com resolver1.opendns.com 2>/dev/null || true)
+    host_output=$(host -W 2 myip.opendns.com resolver1.opendns.com 2>/dev/null || true)
     ip=$(printf "%s\n" "$host_output" | tail -n1 | awk '{print $NF}')
     if [[ -z "$ip" ]]; then
       ip="localhost"
@@ -598,7 +639,9 @@ promptYesNo() {
   no_text="$(highlightFirstLetter "$no_color" "$no_word")"
 
   local answer
-  IFS= read -r -p " $prompt ($yes_text/$no_text) " answer </dev/tty
+  # Print prompt to stderr so it stays visible when the caller uses $(...)
+  printf ' %s (%s/%s) ' "$prompt" "$yes_text" "$no_text" >&2
+  IFS= read -r answer </dev/tty
 
   # Support both English (Yy) and Russian (Дд) for Yes
   if [[ "$answer" =~ ^[YyДд] ]]; then
@@ -649,8 +692,11 @@ promptYesNoDelete() {
   no_text="$(highlightFirstLetter "$no_color" "$no_word")"
 
   local answer
-  IFS= read -r -p " $prompt ($yes_text/$no_text) " answer </dev/tty
-  answer=$(echo "$answer" | tr '[:upper:]' '[:lower:]' | xargs)
+  # Print prompt to stderr so it stays visible when the caller uses $(...)
+  printf ' %s (%s/%s) ' "$prompt" "$yes_text" "$no_text" >&2
+  IFS= read -r answer </dev/tty
+  answer=$(printf '%s' "$answer" | tr '[:upper:]' '[:lower:]')
+  answer=$(trimInput "$answer")
 
   # Check for Delete (case-insensitive, supports both English and Russian)
   if [[ "$answer" == "delete" ]] || [[ "$answer" == "удалить" ]] || [[ "$answer" == "удаление" ]]; then
@@ -672,7 +718,8 @@ promptInput() {
   fi
 
   local answer
-  IFS= read -r -p " $prompt " answer </dev/tty
+  printf ' %s ' "$prompt" >&2
+  IFS= read -r answer </dev/tty
   echo "${answer:-$default}"
 }
 
@@ -708,7 +755,7 @@ systemctlCmd() {
 #############################################
 
 getLatestRelease() {
-  curl -s "${REPO_API_URL}/releases/latest" |
+  curl -s --connect-timeout 10 --max-time 30 "${REPO_API_URL}/releases/latest" |
   grep -iE '"tag_name":|"version":' |
   sed -E 's/.*"([^"]+)".*/\1/' |
   head -n1
@@ -719,7 +766,7 @@ getSpecificRelease() {
   local tag_name
   tag_name=$(getVersionTag "$version")
   local response
-  response=$(curl -s "${REPO_API_URL}/releases/tags/$tag_name")
+  response=$(curl -s --connect-timeout 10 --max-time 30 "${REPO_API_URL}/releases/tags/$tag_name")
 
   if echo "$response" | grep -q '"tag_name"'; then
     echo "$tag_name"
@@ -748,7 +795,7 @@ downloadBinary() {
   local destination="$2"
   local version_info="$3"
 
-  local curl_args=(-L)
+  local curl_args=(-L --connect-timeout 10 --max-time 600)
 
   if [[ $SILENT_MODE -eq 0 ]]; then
     echo " - $(msg downloading) $version_info..."
@@ -1004,6 +1051,21 @@ installPackages() {
         runPackageManagerCommand "$log_file" "apt install ${missing[*]}" apt -y install "${missing[@]}"
       fi
       ;;
+    apt-rpm)
+      local missing=()
+      for pkg in "${packages[@]}"; do
+        if ! rpm -q "$pkg" >/dev/null 2>&1; then
+          missing+=("$pkg")
+        fi
+      done
+      if [[ ${#missing[@]} -gt 0 ]]; then
+        if [[ $SILENT_MODE -eq 0 ]]; then
+          echo " $(msg installing_packages)"
+        fi
+        runPackageManagerCommand "$log_file" "apt-get update" apt-get update
+        runPackageManagerCommand "$log_file" "apt-get install ${missing[*]}" apt-get -y install "${missing[@]}"
+      fi
+      ;;
     rpm)
       local pkg_manager="$1"
       shift
@@ -1051,15 +1113,24 @@ installPackages() {
   rm -f "$log_file"
 }
 
-getRpmPackageManager() {
-  local version_id="$1"
+isAltLinux() {
+  if [[ -e /etc/altlinux-release ]]; then
+    return 0
+  fi
+  if [[ -r /etc/os-release ]] && grep -qE '^ID=["'\'']?altlinux["'\'']?$' /etc/os-release 2>/dev/null; then
+    return 0
+  fi
+  return 1
+}
 
-  if [[ "$version_id" =~ ^[0-9]+$ ]] && [[ $version_id -ge 8 ]] && command -v dnf >/dev/null 2>&1; then
+getRpmPackageManager() {
+  if command -v dnf >/dev/null 2>&1; then
     echo "dnf"
-  elif command -v dnf >/dev/null 2>&1; then
-    echo "dnf"
-  else
+  elif command -v yum >/dev/null 2>&1; then
     echo "yum"
+  else
+    echo " $(msg pkg_manager_missing)" >&2
+    exit 1
   fi
 }
 
@@ -1084,25 +1155,41 @@ installGStreamerPackages() {
     return
   fi
 
+  if isAltLinux; then
+    installPackages apt-rpm \
+      libgstreamer1.0 \
+      gst-plugins-base1.0 \
+      gst-plugins-good1.0 \
+      gst-plugins-bad1.0 \
+      gst-plugins-ugly1.0 \
+      gst-libav \
+      ocl-icd \
+      ca-certificates
+    return
+  fi
+
   if [[ -e /etc/system-release ]]; then
     # shellcheck source=/dev/null
     source /etc/os-release
     local pkg_manager
     if [[ ${ID:-} == "amzn" ]]; then
+      if ! command -v yum >/dev/null 2>&1; then
+        echo " $(msg pkg_manager_missing)" >&2
+        exit 1
+      fi
       pkg_manager="yum"
     else
-      pkg_manager=$(getRpmPackageManager "${VERSION_ID%%.*}")
+      pkg_manager=$(getRpmPackageManager)
     fi
 
     installPackages rpm "$pkg_manager" \
       gstreamer1 \
-      gstreamer1-tools \
       gstreamer1-plugins-base \
       gstreamer1-plugins-base-tools \
       gstreamer1-plugins-good \
       gstreamer1-plugins-bad-free \
       gstreamer1-plugins-ugly-free \
-      gstreamer1-libav \
+      gstreamer1-plugin-libav \
       ocl-icd \
       ca-certificates
     return
@@ -1162,6 +1249,9 @@ checkOS() {
 
     installPackages deb curl iputils-ping dnsutils
 
+  elif isAltLinux; then
+    installPackages apt-rpm curl iputils bind-utils
+
   elif [[ -e /etc/system-release ]]; then
     # shellcheck source=/dev/null
     source /etc/os-release
@@ -1169,32 +1259,36 @@ checkOS() {
 
     case "$ID" in
       fedora)
-        pkg_manager=$(getRpmPackageManager "${VERSION_ID%%.*}")
+        pkg_manager=$(getRpmPackageManager)
         installPackages rpm "$pkg_manager" curl iputils bind-utils
         ;;
       centos|redhat)
         validateOSVersion "CentOS/RedHat" "7|8|9|10" "$VERSION_ID"
-        pkg_manager=$(getRpmPackageManager "${VERSION_ID%%.*}")
+        pkg_manager=$(getRpmPackageManager)
         installPackages rpm "$pkg_manager" curl iputils bind-utils
         ;;
       rocky)
         validateOSVersion "RockyLinux" "8|9|10" "$VERSION_ID"
-        pkg_manager=$(getRpmPackageManager "${VERSION_ID%%.*}")
+        pkg_manager=$(getRpmPackageManager)
         installPackages rpm "$pkg_manager" curl iputils bind-utils
         ;;
       almalinux)
         validateOSVersion "AlmaLinux" "8|9|10" "$VERSION_ID"
-        pkg_manager=$(getRpmPackageManager "${VERSION_ID%%.*}")
+        pkg_manager=$(getRpmPackageManager)
         installPackages rpm "$pkg_manager" curl iputils bind-utils
         ;;
       ol)
         validateOSVersion "Oracle Linux" "8|9|10" "$VERSION_ID"
-        pkg_manager=$(getRpmPackageManager "${VERSION_ID%%.*}")
+        pkg_manager=$(getRpmPackageManager)
         installPackages rpm "$pkg_manager" curl iputils bind-utils
         ;;
       amzn)
         if [[ $VERSION_ID != "2" ]]; then
           validateOSVersion "Amazon Linux" "2" "$VERSION_ID"
+        fi
+        if ! command -v yum >/dev/null 2>&1; then
+          echo " $(msg pkg_manager_missing)" >&2
+          exit 1
         fi
         installPackages rpm yum curl iputils bind-utils
         ;;
@@ -2259,6 +2353,7 @@ parseArguments() {
 #############################################
 
 main() {
+  ensureUtf8Locale
   getLang
 
   parseArguments "$@"
