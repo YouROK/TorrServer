@@ -5,12 +5,13 @@ import (
 	"sync"
 	"time"
 
-	tele "gopkg.in/telebot.v4"
 	"server/bonjour"
 	"server/dlna"
 	"server/rutor"
 	"server/settings"
 	"server/torr"
+
+	tele "gopkg.in/telebot.v4"
 )
 
 type pendingPreset struct {

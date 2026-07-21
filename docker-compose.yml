@@ -1,0 +1,77 @@
+# TorrServer — Docker Compose
+#
+# Quick start:
+#   docker compose up -d
+#   open http://127.0.0.1:8090
+#
+# DLNA / UPnP (host networking, Linux only):
+#   docker compose -f docker-compose.yml -f docker-compose.dlna.yml up -d
+#
+# Copy and edit environment defaults:
+#   cp .env.example .env
+#
+# All-in README.md § "Running in Docker & Docker Compose"
+
+name: torrserver
+
+services:
+  torrserver:
+    image: ${TORRSERVER_IMAGE:-ghcr.io/yourok/torrserver:latest}
+    container_name: ${TORRSERVER_CONTAINER_NAME:-torrserver}
+    restart: unless-stopped
+
+    ports:
+      - "${TS_PORT:-8090}:${TS_PORT:-8090}"
+      # Uncomment when TS_EN_SSL=1 and TS_SSL_PORT is set:
+      # - "${TS_SSL_PORT:-8443}:${TS_SSL_PORT:-8443}"
+
+    environment:
+      # Paths — defaults match Dockerfile + docker-entrypoint.sh
+      TS_CONF_PATH: ${TS_CONF_PATH:-/opt/ts/config}
+      TS_LOG_PATH: ${TS_LOG_PATH:-/opt/ts/log/torrserver.log}
+      TS_TORR_DIR: ${TS_TORR_DIR:-/opt/ts/torrents}
+      TS_PORT: ${TS_PORT:-8090}
+
+      # Go runtime (from Dockerfile)
+      GODEBUG: ${GODEBUG:-madvdontneed=1}
+
+      # Bind address inside the container (optional; passed as `-i` to torrserver)
+      TS_IP: ${TS_IP:-}
+
+      # Feature flags — set to "1" to enable (see docker-entrypoint.sh)
+      TS_HTTPAUTH: ${TS_HTTPAUTH:-0}   # basic auth; place auth file in TS_CONF_PATH
+      TS_STREAMWA: ${TS_STREAMWA:-0}   # allow /stream play and /play without auth
+      TS_RDB: ${TS_RDB:-0}             # remote debug (`--rdb`)
+      TS_DONTKILL: ${TS_DONTKILL:-0}    # keep torrents after last client disconnects
+
+      # TLS — mount certs and set TS_EN_SSL=1 (see volumes below)
+      TS_EN_SSL: ${TS_EN_SSL:-0}
+      TS_SSL_PORT: ${TS_SSL_PORT:-}
+
+      # BitTorrent proxy (http, socks4, socks5, socks5h)
+      TS_PROXYURL: ${TS_PROXYURL:-}
+      TS_PROXYMODE: ${TS_PROXYMODE:-tracker}  # tracker | peers | full
+
+    volumes:
+      - ${TORRSERVER_DATA_DIR:-./data}/config:${TS_CONF_PATH:-/opt/ts/config}
+      - ${TORRSERVER_DATA_DIR:-./data}/torrents:${TS_TORR_DIR:-/opt/ts/torrents}
+      - ${TORRSERVER_DATA_DIR:-./data}/log:/opt/ts/log
+      # TLS certificates (when TS_EN_SSL=1; torrserver expects cert/key under config path):
+      # - ${TORRSERVER_DATA_DIR:-./data}/ssl:/opt/ts/ssl:ro
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://127.0.0.1:$${TS_PORT:-8090}/echo >/dev/null 2>&1 || exit 1",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+    # Optional resource limits
+    # deploy:
+    #   resources:
+    #     limits:
+    #       memory: 2G

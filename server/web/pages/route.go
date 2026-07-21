@@ -8,23 +8,14 @@ import (
 	"server/torr"
 	"server/web/auth"
 	"server/web/pages/template"
-
-	"golang.org/x/exp/slices"
 )
 
 func SetupRoute(route gin.IRouter) {
 	authorized := route.Group("/", auth.CheckAuth())
 
-	webPagesAuth := route.Group("/", func() gin.HandlerFunc {
-		return func(c *gin.Context) {
-			if slices.Contains([]string{"/site.webmanifest"}, c.FullPath()) {
-				return
-			}
-			auth.CheckAuth()(c)
-		}
-	}())
-
-	template.RouteWebPages(webPagesAuth)
+	// SPA + static assets are public so the web UI can show a custom Basic login
+	// form. API routes (and /stat, /magnets) stay behind CheckAuth.
+	template.RouteWebPages(route)
 	authorized.GET("/stat", statPage)
 	authorized.GET("/magnets", getTorrents)
 }

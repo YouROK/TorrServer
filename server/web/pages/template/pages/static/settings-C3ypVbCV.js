@@ -1,0 +1,1 @@
+import{i as e}from"./vendor-DX_-Mk4S.js";import{f as t}from"./hosts-DnQLd-FX.js";var n=[`settings`],r=async n=>{let{data:r}=await e.post(t(),{action:`get`},{signal:n});return r},i=async n=>{await e.post(t(),{action:`set`,sets:n})},a=async()=>{await e.post(t(),{action:`def`})};export{i,r as n,a as r,n as t};

@@ -5,8 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	tele "gopkg.in/telebot.v4"
 	"server/torr"
+
+	tele "gopkg.in/telebot.v4"
 )
 
 func callbackLink(c tele.Context, data string) error {
@@ -36,6 +37,9 @@ func callbackLink(c tele.Context, data string) error {
 				btn := tele.InlineButton{Text: fmt.Sprintf("#%d", f.Id), Unique: "flink", Data: hash + "|" + strconv.Itoa(f.Id)}
 				rows = append(rows, []tele.InlineButton{btn})
 			}
+			rows = append(rows, []tele.InlineButton{
+				{Text: tr(uid, "btn_back_torrent"), Unique: "ftpick", Data: hash + "|0"},
+			})
 			kbd := &tele.ReplyMarkup{InlineKeyboard: rows}
 			_ = c.Respond(&tele.CallbackResponse{})
 			return c.Send("🔗 "+tr(uid, "btn_link")+":", kbd)

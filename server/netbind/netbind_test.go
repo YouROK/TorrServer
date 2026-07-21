@@ -37,12 +37,12 @@ func TestListenMultiple(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer l.Close()
+	defer func() { _ = l.Close() }()
 
 	port := l.Addr().(*net.TCPAddr).Port
 	conn, err := net.Dial("tcp", Addr("127.0.0.1", strconv.Itoa(port)))
 	if err != nil {
 		t.Fatal(err)
 	}
-	conn.Close()
+	_ = conn.Close()
 }

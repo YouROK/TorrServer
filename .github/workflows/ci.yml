@@ -1,0 +1,181 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint (Go)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Load toolchain versions
+        working-directory: ${{ github.workspace }}
+        run: grep -v '^#' .github/versions.env >> "$GITHUB_ENV"
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: server/go.sum
+
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: latest
+          working-directory: server
+          install-only: true
+          verify: true
+
+      - name: go fmt
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "The following files need gofmt:" >&2
+            echo "$unformatted" >&2
+            exit 1
+          fi
+          echo "OK: gofmt clean"
+
+      - name: golangci-lint fmt
+        run: |
+          diff=$(golangci-lint fmt -d ./...)
+          if [ -n "$diff" ]; then
+            echo "The following formatting changes are required (golangci-lint fmt):" >&2
+            echo "$diff" >&2
+            exit 1
+          fi
+          echo "OK: golangci-lint fmt clean"
+
+      - name: golangci-lint run
+        run: golangci-lint run ./...
+
+  goreleaser-check:
+    name: GoReleaser config
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Validate .goreleaser.yaml
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: check --config .goreleaser.yaml
+
+      - name: Validate .goreleaser.local.yaml
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: check --config .goreleaser.local.yaml
+
+  web:
+    name: Web (typecheck lint test build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: yarn
+          cache-dependency-path: web/yarn.lock
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Typecheck
+        run: yarn typecheck
+
+      - name: Lint
+        run: yarn lint
+
+      - name: Test
+        run: yarn test
+
+      - name: Build
+        run: yarn build
+        env:
+          # Ensure release-like embed build (no localhost API baked in)
+          VITE_SERVER_HOST: ''
+
+  build:
+    name: Build (linux amd64)
+    runs-on: ubuntu-22.04
+    needs: [lint, goreleaser-check, web]
+    env:
+      VITE_TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Load toolchain versions
+        run: grep -v '^#' .github/versions.env >> "$GITHUB_ENV"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: yarn
+          cache-dependency-path: web/yarn.lock
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: server/go.sum
+
+      - name: Install Go toolchain wrapper (GoReleaser tool)
+        run: |
+          go install golang.org/dl/go${{ env.GO_VERSION }}@latest
+          go${{ env.GO_VERSION }} download
+
+      - name: Snapshot build (single target, no docker)
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: build --snapshot --clean --single-target --id binary
+        env:
+          GO_BINARY: go${{ env.GO_VERSION }}
+          UPX_ENABLED: false
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify binary artifact
+        run: test -x dist/TorrServer-linux-amd64
+
+      - name: Verify static Linux binary (no shared libs)
+        run: |
+          bin=dist/TorrServer-linux-amd64
+          if readelf -d "$bin" 2>/dev/null | grep -q NEEDED; then
+            echo "Expected a statically linked binary without DT_NEEDED entries:" >&2
+            readelf -d "$bin" | grep NEEDED >&2 || true
+            exit 1
+          fi
+          echo "OK: no dynamic library dependencies"

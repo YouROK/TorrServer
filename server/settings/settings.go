@@ -31,15 +31,17 @@ var (
 	ReadOnly bool
 	HttpAuth bool
 	SearchWA bool
+	StreamWA bool
 	PubIPv4  string
 	PubIPv6  string
 	TorAddr  string
 	MaxSize  int64
 )
 
-func InitSets(readOnly, searchWA bool) {
+func InitSets(readOnly, searchWA, streamWA bool) {
 	ReadOnly = readOnly
 	SearchWA = searchWA
+	StreamWA = streamWA
 
 	bboltDB := NewTDB()
 	if bboltDB == nil {
@@ -243,18 +245,28 @@ func setupDatabaseRouting(bboltDB, jsonDB TorrServerDB, settingsInJson, viewedIn
 	dbRouter := NewXPathDBRouter()
 
 	if settingsInJson {
-		dbRouter.RegisterRoute(jsonDB, "Settings")
+		if err := dbRouter.RegisterRoute(jsonDB, "Settings"); err != nil {
+			log.TLogln("Error register Settings route:", err)
+		}
 	} else {
-		dbRouter.RegisterRoute(bboltDB, "Settings")
+		if err := dbRouter.RegisterRoute(bboltDB, "Settings"); err != nil {
+			log.TLogln("Error register Settings route:", err)
+		}
 	}
 
 	if viewedInJson {
-		dbRouter.RegisterRoute(jsonDB, "Viewed")
+		if err := dbRouter.RegisterRoute(jsonDB, "Viewed"); err != nil {
+			log.TLogln("Error register Viewed route:", err)
+		}
 	} else {
-		dbRouter.RegisterRoute(bboltDB, "Viewed")
+		if err := dbRouter.RegisterRoute(bboltDB, "Viewed"); err != nil {
+			log.TLogln("Error register Viewed route:", err)
+		}
 	}
 
-	dbRouter.RegisterRoute(bboltDB, "Torrents")
+	if err := dbRouter.RegisterRoute(bboltDB, "Torrents"); err != nil {
+		log.TLogln("Error register Torrents route:", err)
+	}
 	tdb = NewDBReadCache(dbRouter)
 }
 

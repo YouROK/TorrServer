@@ -23,12 +23,15 @@ func (p *MemPiece) WriteAt(b []byte, off int64) (n int, err error) {
 
 	if p.buffer == nil {
 		go p.piece.cache.cleanPieces()
-		p.buffer = make([]byte, p.piece.cache.pieceLength, p.piece.cache.pieceLength)
+		p.buffer = make([]byte, p.piece.cache.pieceLength)
 	}
 	n = copy(p.buffer[off:], b[:])
 	p.piece.Size += int64(n)
 	if p.piece.Size > p.piece.cache.pieceLength {
 		p.piece.Size = p.piece.cache.pieceLength
+	}
+	if p.piece.Size > 0 {
+		p.piece.cache.notePieceFilled(p.piece.Id)
 	}
 	p.piece.Accessed = time.Now().Unix()
 	return
@@ -67,4 +70,5 @@ func (p *MemPiece) Release() {
 	}
 	p.piece.Size = 0
 	p.piece.Complete = false
+	p.piece.cache.notePieceEmpty(p.piece.Id)
 }

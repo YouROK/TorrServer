@@ -134,20 +134,22 @@ func SetBTSets(sets *BTSets) {
 	} else if sets.UseDisk {
 		BTsets = sets
 
-		go filepath.WalkDir(sets.TorrentsSavePath, func(path string, d fs.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-			if d.IsDir() && strings.ToLower(d.Name()) == ".tsc" {
-				BTsets.TorrentsSavePath = path
-				log.TLogln("Find directory \"" + BTsets.TorrentsSavePath + "\", use as cache dir")
-				return io.EOF
-			}
-			if d.IsDir() && strings.HasPrefix(d.Name(), ".") {
-				return filepath.SkipDir
-			}
-			return nil
-		})
+		go func() {
+			_ = filepath.WalkDir(sets.TorrentsSavePath, func(path string, d fs.DirEntry, err error) error {
+				if err != nil {
+					return err
+				}
+				if d.IsDir() && strings.ToLower(d.Name()) == ".tsc" {
+					BTsets.TorrentsSavePath = path
+					log.TLogln("Find directory \"" + BTsets.TorrentsSavePath + "\", use as cache dir")
+					return io.EOF
+				}
+				if d.IsDir() && strings.HasPrefix(d.Name(), ".") {
+					return filepath.SkipDir
+				}
+				return nil
+			})
+		}()
 	}
 
 	BTsets = sets

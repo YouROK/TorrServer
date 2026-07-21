@@ -2,6 +2,7 @@ package web
 
 import (
 	"net"
+	"net/http"
 	"os"
 	"sort"
 
@@ -72,7 +73,10 @@ func Start() {
 	corsCfg := cors.DefaultConfig()
 	corsCfg.AllowAllOrigins = true
 	corsCfg.AllowPrivateNetwork = true
-	corsCfg.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "X-Requested-With", "Accept", "Authorization"}
+	corsCfg.AllowHeaders = []string{
+		"Origin", "Content-Length", "Content-Type", "X-Requested-With",
+		"Accept", "Authorization", "X-Telegram-Init-Data",
+	}
 
 	route := gin.New()
 	route.Use(log.WebLogger(), blocker.Blocker(), gin.Recovery(), cors.New(corsCfg), location.Default())
@@ -98,7 +102,19 @@ func Start() {
 	// Auto-mount FUSE filesystem if enabled
 	fuse.FuseAutoMount()
 
-	route.GET("/swagger/*any", swaggerHandler())
+	// /swagger and /swagger/ → index.html. Do not register GET "/swagger/" separately:
+	// in gin it conflicts with "/swagger/*any" (empty segment vs catch-all).
+	route.GET("/swagger", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/swagger/index.html")
+	})
+	swagger := swaggerHandler()
+	route.GET("/swagger/*any", func(c *gin.Context) {
+		if c.Param("any") == "/" {
+			c.Redirect(http.StatusFound, "/swagger/index.html")
+			return
+		}
+		swagger(c)
+	})
 
 	// check if https enabled
 	if settings.Ssl {

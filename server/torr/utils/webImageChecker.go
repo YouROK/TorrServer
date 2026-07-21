@@ -39,7 +39,7 @@ func CheckImgUrl(link string) bool {
 		log.TLogln("Error check image:", err)
 		return false
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	limitedReader := io.LimitReader(resp.Body, 2*1024*1024)
 

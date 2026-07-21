@@ -1,9 +1,9 @@
 package utils
 
 import (
+	"crypto/rand"
 	"encoding/base32"
 	"io"
-	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -77,7 +77,7 @@ func loadNewTracker() {
 	}
 	resp, err := http.Get("https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best_ip.txt")
 	if err == nil {
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		buf, err := io.ReadAll(resp.Body)
 		if err == nil {
 			arr := strings.Split(string(buf), "\n")

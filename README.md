@@ -18,8 +18,8 @@
   <a href="https://github.com/YouROK/TorrServer/issues">
     <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" alt="CodeFactor" />
   </a>
-  <a href="https://github.com/YouROK/TorrServer/actions/workflows/docker_image.yml" rel="nofollow">
-    <img src="https://img.shields.io/github/actions/workflow/status/YouROK/TorrServer/docker_image.yml?logo=Github" alt="Build" />
+  <a href="https://github.com/YouROK/TorrServer/actions/workflows/ci.yml" rel="nofollow">
+    <img src="https://img.shields.io/github/actions/workflow/status/YouROK/TorrServer/ci.yml?logo=Github" alt="CI" />
   </a>
   <a href="https://github.com/YouROK/TorrServer/releases" rel="nofollow">
     <img alt="GitHub release (latest SemVer)" src="https://img.shields.io/github/v/release/YouROK/TorrServer?label=version"/>
@@ -234,15 +234,21 @@ Run in console
 docker run --rm -d --name torrserver -p 8090:8090 ghcr.io/yourok/torrserver:latest
 ```
 
-For running in persistence mode, just mount volume to container by adding `-v ~/ts:/opt/ts`, where `~/ts` folder path is just example, but you could use it anyway... Result example command:
+For persistent data, mount a local directory and set paths explicitly:
 
 ```bash
-docker run --rm -d --name torrserver -v ~/ts:/opt/ts -p 8090:8090 ghcr.io/yourok/torrserver:latest
+docker run --rm -d --name torrserver \
+  -v ./ts:/opt/ts \
+  -e TS_CONF_PATH=/opt/ts \
+  -e TS_LOG_PATH=/opt/ts/torrserver.log \
+  -e TS_TORR_DIR=/opt/ts/torrents \
+  -p 8090:8090 \
+  ghcr.io/yourok/torrserver:latest
 ```
 
 #### Environments
 
-- `TS_HTTPAUTH` - 1, and place auth file into `~/ts/config` folder for enabling basic auth
+- `TS_HTTPAUTH` - 1, and place auth file into `./ts` (config dir) for enabling basic auth
 - `TS_RDB` - if 1, then the enabling `--rdb` flag
 - `TS_DONTKILL` - if 1, then the enabling `--dontkill` flag
 - `TS_PORT` - for changind default port to **5555** (example), also u need to change `-p 8090:8090` to `-p 5555:5555` (example)
@@ -252,10 +258,22 @@ docker run --rm -d --name torrserver -v ~/ts:/opt/ts -p 8090:8090 ghcr.io/yourok
 - `TS_PROXYURL` - set proxy URL for BitTorrent traffic (http, socks4, socks5, socks5h), example: socks5h://user:password@example.com:2080
 - `TS_PROXYMODE` - set proxy mode: "tracker" (only HTTP trackers, default), "peers" (only peer connections), or "full" (all traffic)
 
-Example with full overrided command (on default values):
+Example with full overridden command:
 
 ```bash
-docker run --rm -d -e TS_PORT=5665 -e TS_DONTKILL=1 -e TS_HTTPAUTH=1 -e TS_RDB=1 -e TS_CONF_PATH=/opt/ts/config -e TS_LOG_PATH=/opt/ts/log -e TS_TORR_DIR=/opt/ts/torrents -e TS_PROXYURL=socks5h://user:password@example.com:2080 -e TS_PROXYMODE=tracker --name torrserver -v ~/ts:/opt/ts -p 5665:5665 ghcr.io/yourok/torrserver:latest
+docker run --rm -d --name torrserver \
+  -v ./ts:/opt/ts \
+  -e TS_PORT=5665 \
+  -e TS_DONTKILL=1 \
+  -e TS_HTTPAUTH=1 \
+  -e TS_RDB=1 \
+  -e TS_CONF_PATH=/opt/ts \
+  -e TS_LOG_PATH=/opt/ts/torrserver.log \
+  -e TS_TORR_DIR=/opt/ts/torrents \
+  -e TS_PROXYURL=socks5h://user:password@example.com:2080 \
+  -e TS_PROXYMODE=tracker \
+  -p 5665:5665 \
+  ghcr.io/yourok/torrserver:latest
 ```
 
 #### Docker Compose
@@ -295,53 +313,91 @@ services:
 
 ## Development
 
+See **[docs/BUILD.md](docs/BUILD.md)** for Makefile commands, CI, tagged releases, GHCR images, and fork setup.
+
 ### Go server
 
-To run the Go server locally, just run
+Run from source:
 
 ```bash
-cd server
-go run ./cmd
+make run
+# or
+cd server && go run ./cmd
 ```
 
 ### Web development
 
-To run the web server locally, just run
+React 19 + Vite 8 + HeroUI v3 UI. See **[web/README.md](web/README.md)** for stack, scripts, and env setup.
 
 ```bash
-yarn start
+cd web && yarn && yarn start
+# ship into binary:
+cd web && yarn build && cd .. && make webgen-clean
 ```
-
-More info at <https://github.com/YouROK/TorrServer/tree/master/web#readme>
 
 ### Build
 
+Use the **Makefile** (wraps [GoReleaser](https://goreleaser.com/)):
+
+- **Local dev:** `.goreleaser.local.yaml` — linux/darwin amd64+arm64 (`make binary`, `make build`, `make dist`)
+- **CI / release:** `.goreleaser.yaml` — full matrix (`make dist-full`, `make release`)
+
+```bash
+make help              # command overview
+make install-tools     # goreleaser v2 + swag
+make start-build       # build host binary, install to data/, run
+make binary            # build host platform → dist/TorrServer-<os>-<arch>
+make binary-gst         # GStreamer build for host platform
+make dist              # local snapshot (4 platforms, no publish)
+make dist-full         # full snapshot (all platforms)
+make update            # web embed + swagger
+```
+
+Install Go toolchain wrappers used by GoReleaser:
+
+```bash
+go install golang.org/dl/go1.26.4@latest && go1.26.4 download
+go install golang.org/dl/go1.25.7@latest && go1.25.7 download   # Android (release only)
+```
+
+**Tagged releases** (`.goreleaser.yaml`, workflow `.github/workflows/release.yml`) use the `MatriX.*` tag scheme and publish to `ghcr.io/<owner>/<repo>` where `<owner>/<repo>` is the GitHub repository lowercased. Override locally with `REGISTRY_IMAGE=owner/repo make …`.
+
+Direct GoReleaser (without Make):
+
+```bash
+goreleaser build --snapshot --clean --single-target --id binary
+GOOS=linux GOARCH=amd64 goreleaser build --snapshot --clean --single-target --id binary
+```
+
+Web UI build inside `gen_web.go` needs **Node.js 22+** (see `web/.nvmrc`).
+
+`binary` builds use **Go 1.26.4**; `android` uses **Go 1.25.7**.
+
+See [docs/BUILD.md](docs/BUILD.md) for cross-compilation, Docker builder mode (`USE_DOCKER_BUILDER=1`), and Android NDK setup.
+
 #### Server
 
-- Install [Golang](https://golang.org/doc/install) 1.20+
+- Install [Golang](https://golang.org/doc/install) 1.26+ (1.25.7 additionally for Android via GoReleaser)
 - Go to the TorrServer source directory
-- Run build script under linux or macOS `build-all.sh`
+- Run `make binary` or GoReleaser as above
 
 #### Web
 
-- Install **npm** and **yarn**
-- Go to the web directory
-- Run `NODE_OPTIONS=--openssl-legacy-provider yarn build`
+- Install **Node.js 22+** and **yarn**
+- Go to the web directory, run `yarn build`
+- From the repo root, embed with `make webgen-clean` (or `go run gen_web.go --clean`)
 
 #### Android
 
-To build an Android server you will need the Android Toolchain.
+To build an Android server you will need the Android Toolchain (release workflow / full `.goreleaser.yaml`).
 
 #### Swagger
 
-`swag` must be installed on the system to [re]build Swagger documentation.
-
 ```bash
-go install github.com/swaggo/swag/cmd/swag@latest
-cd server
-swag init -g web/server.go --parseDependency --parseInternal --parseDepth 5
-
-# Documentation can be linted using
+make install-swag
+make update-swag
+# or manually:
+cd server && swag init -g web/server.go
 swag fmt
 ```
 
@@ -391,35 +447,41 @@ local:127.0.0.1
 
 TorrServer can talk to **Torznab** indexers so you can search for torrents from tools like **Jackett** and **Prowlarr**, including searching several configured indexers at once.
 
-Configure it in the web UI: **Settings → Torznab**.
+Configure it in the web UI: **Settings → Search**.
 
 ### Indexer parameters
 
 Each Torznab indexer needs:
 
-- **Host URL**: full URL to the Torznab API endpoint.
+- **Host URL**: full URL to the Torznab API endpoint (or indexer base that TorrServer can turn into `/api`).
   - Jackett example:
 
   ```shell
   http://192.168.1.10:9117/api/v2.0/indexers/all/results/torznab/
   ```
 
+  TorrServer normalizes this to `…/torznab/api` when the path does not already end with `/api`.
+
   - Prowlarr example:
-  
+
   ```shell
   http://localhost:9696/1
   ```
-  
-  - Make sure to include the correct trailing slash (`/`) in your indexer's URL,
-  as required by your Torznab provider. TorrServer will try to properly format the path,
-  but matching your indexer's expected format is best to avoid connection issues.
-  
+
+  That becomes `http://localhost:9696/1/api`.
+
+  - Matching your indexer's expected format is best to avoid connection issues. A missing `http://` / `https://` scheme is added automatically.
+
 - **API Key**: the key from your Torznab indexer manager.
+
+Search requests are not limited to Movies/TV categories; results come from all categories the indexer returns.
+
+In the web **Search** dialog, **All Trackers** queries every configured Torznab indexer and, when RuTor search is also enabled, merges RuTor results into the same list.
 
 ### Enabling Torznab search
 
 1. Open **Settings**.
-2. Open the **Torznab** tab.
+2. Open the **Search** tab.
 3. Turn on **Enable Torznab Search**.
 4. Enter **Host URL** and **API Key**, then **Add Server** for each indexer.
 5. **Save** settings.
@@ -518,18 +580,17 @@ Hardware encoders are optional. They also require a compatible vendor driver and
 ```bash
 sudo dnf install -y \
   gstreamer1 \
-  gstreamer1-tools \
   gstreamer1-plugins-base \
   gstreamer1-plugins-base-tools \
   gstreamer1-plugins-good \
   gstreamer1-plugins-bad-free \
   gstreamer1-plugins-ugly-free \
-  gstreamer1-libav \
+  gstreamer1-plugin-libav \
   ocl-icd \
   ca-certificates
 ```
 
-`gstreamer1-plugins-base-tools` provides `gst-discoverer-1.0`. Full `x264enc` and libav support may require [RPM Fusion](https://rpmfusion.org/) or the equivalent repository for the distribution.
+`gstreamer1` provides `gst-inspect-1.0` and related tools; `gstreamer1-plugins-base-tools` provides `gst-discoverer-1.0`. On RHEL and derivatives, `gstreamer1-plugin-libav` may require [EPEL](https://docs.fedoraproject.org/en-US/epel/). Full `x264enc` support may require [RPM Fusion](https://rpmfusion.org/) or the equivalent repository for the distribution.
 
 **Arch Linux**
 

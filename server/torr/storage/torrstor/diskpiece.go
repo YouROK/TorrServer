@@ -27,6 +27,9 @@ func NewDiskPiece(p *Piece) *DiskPiece {
 		p.Size = ff.Size()
 		p.Complete = ff.Size() == p.cache.pieceLength
 		p.Accessed = ff.ModTime().Unix()
+		if p.Size > 0 {
+			p.cache.notePieceFilled(p.Id)
+		}
 	}
 	return &DiskPiece{piece: p, name: name}
 }
@@ -40,12 +43,15 @@ func (p *DiskPiece) WriteAt(b []byte, off int64) (n int, err error) {
 		log.TLogln("Error open file:", err)
 		return 0, err
 	}
-	defer ff.Close()
+	defer func() { _ = ff.Close() }()
 	n, err = ff.WriteAt(b, off)
 
 	p.piece.Size += int64(n)
 	if p.piece.Size > p.piece.cache.pieceLength {
 		p.piece.Size = p.piece.cache.pieceLength
+	}
+	if p.piece.Size > 0 {
+		p.piece.cache.notePieceFilled(p.piece.Id)
 	}
 	p.piece.Accessed = time.Now().Unix()
 	return
@@ -63,7 +69,7 @@ func (p *DiskPiece) ReadAt(b []byte, off int64) (n int, err error) {
 		log.TLogln("Error open file:", err)
 		return 0, err
 	}
-	defer ff.Close()
+	defer func() { _ = ff.Close() }()
 
 	n, err = ff.ReadAt(b, off)
 
@@ -80,6 +86,7 @@ func (p *DiskPiece) Release() {
 
 	p.piece.Size = 0
 	p.piece.Complete = false
+	p.piece.cache.notePieceEmpty(p.piece.Id)
 
-	os.Remove(p.name)
+	_ = os.Remove(p.name)
 }

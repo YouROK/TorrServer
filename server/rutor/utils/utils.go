@@ -24,7 +24,7 @@ func MD5File(fname string) string {
 		return ""
 	}
 
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	buf := make([]byte, 1024*1024)
 	h := sha256.New()

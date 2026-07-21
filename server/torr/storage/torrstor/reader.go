@@ -118,7 +118,7 @@ func (r *Reader) Close() {
 	// this struct close in cache
 	r.isClosed = true
 	if len(r.file.Torrent().Files()) > 0 {
-		r.Reader.Close()
+		_ = r.Reader.Close()
 	}
 	go r.cache.getRemPieces()
 }
@@ -173,7 +173,7 @@ func (r *Reader) readerOn() {
 	defer r.mu.Unlock()
 	if !r.isUse {
 		if pos, err := r.Reader.Seek(0, io.SeekCurrent); err == nil && pos == 0 {
-			r.Reader.Seek(r.offset, io.SeekStart)
+			_, _ = r.Reader.Seek(r.offset, io.SeekStart)
 		}
 		r.SetReadahead(r.readahead)
 		r.isUse = true
@@ -187,7 +187,7 @@ func (r *Reader) readerOff() {
 		r.SetReadahead(0)
 		r.isUse = false
 		if r.offset > 0 {
-			r.Reader.Seek(0, io.SeekStart)
+			_, _ = r.Reader.Seek(0, io.SeekStart)
 		}
 	}
 }

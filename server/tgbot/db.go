@@ -4,10 +4,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dustin/go-humanize"
-	tele "gopkg.in/telebot.v4"
 	"server/log"
 	sets "server/settings"
+
+	"github.com/dustin/go-humanize"
+	tele "gopkg.in/telebot.v4"
 )
 
 const dbPageSize = 10

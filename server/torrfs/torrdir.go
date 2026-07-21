@@ -11,8 +11,7 @@ import (
 )
 
 type TorrDir struct {
-	parent   INode
-	children map[string]INode
+	parent INode
 
 	info fs.FileInfo
 

@@ -176,44 +176,6 @@ func getTorrentsByCategory(path string) (ret []interface{}) {
 	return
 }
 
-func getTorrents() (ret []interface{}) {
-	torrs := torr.ListTorrent()
-	// sort by title as in cds SortCaps
-	sort.Slice(torrs, func(i, j int) bool {
-		return torrs[i].Title < torrs[j].Title
-	})
-
-	vol := 0
-	for _, t := range torrs {
-		vol++
-		obj := upnpav.Object{
-			ID:          "%2F" + t.TorrentSpec.InfoHash.HexString(),
-			ParentID:    "%2FTR",
-			Restricted:  1,
-			Title:       strings.ReplaceAll(t.Title, "/", "|"),
-			Class:       "object.container.storageFolder",
-			Icon:        t.Poster,
-			AlbumArtURI: t.Poster,
-			Date:        upnpav.Timestamp{Time: time.Unix(t.Timestamp, 0)}, // time.Now()
-		}
-		cnt := upnpav.Container{Object: obj, ChildCount: 1}
-		ret = append(ret, cnt)
-	}
-	if vol == 0 {
-		obj := upnpav.Object{
-			ID:         "%2FNT",
-			ParentID:   "%2FTR",
-			Restricted: 1,
-			Title:      "No Torrents",
-			Class:      "object.container.storageFolder",
-			Date:       upnpav.Timestamp{Time: time.Now()},
-		}
-		cnt := upnpav.Container{Object: obj, ChildCount: 0}
-		ret = append(ret, cnt)
-	}
-	return
-}
-
 func getTorrent(path, host string) (ret []interface{}) {
 	// find torrent without load
 	torrs := torr.ListTorrent()

@@ -1,9 +1,10 @@
 package torrstor
 
 import (
+	"server/settings"
+
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/storage"
-	"server/settings"
 )
 
 type Piece struct {
@@ -74,7 +75,7 @@ func (p *Piece) Release() {
 	} else {
 		p.dPiece.Release()
 	}
-	// if !p.cache.isClosed {
+	//if !p.cache.isClosed {
 	p.cache.torrent.Piece(p.Id).SetPriority(torrent.PiecePriorityNone)
 	p.cache.torrent.Piece(p.Id).UpdateCompletion()
 	//}

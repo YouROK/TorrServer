@@ -52,8 +52,10 @@ func SetupRoute(route gin.IRouter) {
 
 	if config.SearchWA {
 		route.GET("/torznab/search/*query", torznabSearch)
+		route.GET("/torznab/caps", torznabCaps)
 	} else {
 		authorized.GET("/torznab/search/*query", torznabSearch)
+		authorized.GET("/torznab/caps", torznabCaps)
 	}
 
 	// Add storage settings endpoints
@@ -67,4 +69,6 @@ func SetupRoute(route gin.IRouter) {
 	authorized.POST("/gst/settings", UpdateGStreamerSettings)
 
 	authorized.GET("/ffp/:hash/:id", ffp)
+
+	authorized.GET("/runtime/status", runtimeStatus)
 }

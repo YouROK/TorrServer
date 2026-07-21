@@ -30,7 +30,7 @@ func LoadConfig() {
 		Cfg.HostTG = "https://api.telegram.org"
 		buf, _ = json.MarshalIndent(Cfg, "", " ")
 		if buf != nil {
-			os.WriteFile(fn, buf, 0o600)
+			_ = os.WriteFile(fn, buf, 0o600)
 		}
 		return
 	}

@@ -80,7 +80,7 @@ func MigrateTorrents() {
 		}
 		return nil
 	})
-	db.Close()
+	_ = db.Close()
 	if err == nil && len(torrs) > 0 {
 		for _, torr := range torrs {
 			spec, err := utils.ParseLink(torr.Magnet)
@@ -101,7 +101,7 @@ func MigrateTorrents() {
 			})
 		}
 	}
-	os.Remove(filepath.Join(Path, "torrserver.db"))
+	_ = os.Remove(filepath.Join(Path, "torrserver.db"))
 }
 
 // MigrateSettingsToJson migrates Settings from BBolt to JSON
@@ -415,8 +415,8 @@ func mergeViewedDataSimple(data1, data2 []byte) []byte {
 
 	// Try to merge
 	var indices1, indices2 map[int]struct{}
-	json.Unmarshal(data1, &indices1)
-	json.Unmarshal(data2, &indices2)
+	_ = json.Unmarshal(data1, &indices1)
+	_ = json.Unmarshal(data2, &indices2)
 
 	merged := make(map[int]struct{})
 	for idx := range indices1 {

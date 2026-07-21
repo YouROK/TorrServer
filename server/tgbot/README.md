@@ -47,8 +47,20 @@ Config file `tg.cfg` (JSON) in the TorrServer data directory:
 | `HostTG`   | Telegram API URL (default: `https://api.telegram.org`) |
 | `HostWeb`  | Base URL for stream links (auto-detected if empty) |
 | `Socks5`   | Optional SOCKS5 for reaching Telegram (e.g. `127.0.0.1:1080`, `socks5://user:pass@host:port`) if direct access to `api.telegram.org` is blocked or times out |
-| `WhiteIds` | Allowed user IDs (empty = allow all) |
+| `WhiteIds` | Allowed Telegram user IDs. Empty = allow everyone for normal commands, but **no admins** (`/settings`, `/shutdown`, `/preset` require an ID in this list). |
 | `BlackIds` | Blocked user IDs |
+
+**Admin note:** put your Telegram user ID (from `/start` / `/help`) into `WhiteIds`, otherwise admin commands never work.
+
+### Mini App (optional)
+
+Set `HostWeb` to a public **HTTPS** URL of TorrServer (reverse proxy / tunnel). Then:
+
+- Bot menu **Open Web** launches the existing web UI inside Telegram
+- Chat menu button (next to the text field) opens the same Mini App when HTTPS is configured
+- Valid Telegram `initData` can satisfy HTTP Basic auth for whitelisted users (or any user if `WhiteIds` is empty)
+
+HTTP `HostWeb` (LAN IP) still works for stream links, but Telegram will not open it as a Mini App.
 
 Example:
 
@@ -66,15 +78,30 @@ If your network cannot connect to Telegram’s API directly, run a local SOCKS5 
 
 ## Commands
 
+Slash menu (`/`) shows **primary** commands only: `/start`, `/help`, `/list`, `/add`, `/search`, `/more`, `/cancel`, `/lang`, plus admin `/settings`, `/preset`, `/shutdown`. Everything else still works if typed; use **⋯ More** / `/more` for the hub.
+
+### Reply keyboard
+
+| Button | Action |
+|--------|--------|
+| Library | `/list` hub (one message) |
+| Search | Ask for query (next message), or `/search <query>` |
+| Status | `/stat` |
+| Add | Hint to paste magnet/hash |
+| More | Inline hub: Library / Tools / Links / Admin / Help / Open Web |
+
 ### Core
 
 | Command | Description |
 |---------|-------------|
 | `/help`, `/start`, `/id` | Help and user ID |
-| `/list [compact]` | List torrents with buttons |
+| `/more` | Extra actions hub |
+| `/list` | Library hub |
 | `/add <link>` | Add torrent (magnet, hash, torrs://) |
 | `/clear` | Remove all (with confirmation) |
 | `/hash [N]` | Show info hashes |
+| `/cancel` | Cancel pending settings/preset/search input |
+| `/lang [RU\|EN]` | Language |
 
 ### Management
 
@@ -113,7 +140,9 @@ If your network cannot connect to Telegram’s API directly, run a local SOCKS5 
 | `/ffp <hash\|N> <id> [json]` | FFprobe metadata |
 | `/speedtest [size]` | Download test (1–100 MB) |
 | `/snake [hash\|N] [cols] [rows]` | Cache visualization |
-| `/lang [RU\|EN]` | Language |
+| `/queue` | Telegram upload queue |
+| `/echo` | Version |
+| `/db` | DB dump |
 
 ### Admin Only
 

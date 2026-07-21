@@ -13,11 +13,8 @@ import (
 )
 
 var (
-	logPath    = ""
-	webLogPath = ""
+	webLog *log.Logger
 )
-
-var webLog *log.Logger
 
 var (
 	logFile    *os.File
@@ -25,9 +22,6 @@ var (
 )
 
 func Init(path, webpath string) {
-	logPath = path
-	webLogPath = webpath
-
 	shared := path != "" && webpath != "" && filepath.Clean(path) == filepath.Clean(webpath)
 	if path != "" {
 		path = filepath.Clean(path)
@@ -73,7 +67,7 @@ func Init(path, webpath string) {
 func openLogFile(path string) (*os.File, error) {
 	if fi, err := os.Lstat(path); err == nil {
 		if fi.Size() >= 100*1024*1024 { // 100MB
-			os.Remove(path)
+			_ = os.Remove(path)
 		}
 	}
 	return os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0o666)
@@ -90,7 +84,7 @@ func applyServerLog(ff *os.File) {
 
 func Close() {
 	if logFile != nil {
-		logFile.Close()
+		_ = logFile.Close()
 		if webLogFile == logFile {
 			webLogFile = nil
 			webLog = nil
@@ -98,7 +92,7 @@ func Close() {
 		logFile = nil
 	}
 	if webLogFile != nil {
-		webLogFile.Close()
+		_ = webLogFile.Close()
 		webLogFile = nil
 		webLog = nil
 	}

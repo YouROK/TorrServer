@@ -2,9 +2,6 @@ package torrsearch
 
 import (
 	"strings"
-
-	snowballeng "github.com/kljensen/snowball/english"
-	snowballru "github.com/kljensen/snowball/russian"
 )
 
 // lowercaseFilter returns a slice of tokens normalized to lower case.
@@ -22,24 +19,6 @@ func stopwordFilter(tokens []string) []string {
 	for _, token := range tokens {
 		if !isStopWord(token) {
 			r = append(r, token)
-		}
-	}
-	return r
-}
-
-// stemmerFilter returns a slice of stemmed tokens.
-func stemmerFilter(tokens []string) []string {
-	r := make([]string, len(tokens))
-	for i, token := range tokens {
-		worden := snowballeng.Stem(token, false)
-		wordru := snowballru.Stem(token, false)
-		if wordru == "" || worden == "" {
-			continue
-		}
-		if wordru != token {
-			r[i] = wordru
-		} else {
-			r[i] = worden
 		}
 	}
 	return r

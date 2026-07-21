@@ -1,0 +1,1 @@
+var e=/^web\+torrs:\/\//i,t=/^torrs:\/\//i;function n(n){let r=n.trim();return e.test(r)||t.test(r)}function r(n){let r=n.trim();return r&&(e.test(r)?r.replace(/^web\+/i,``):t.test(r)?r:`torrs://${r.replace(/^\/+/,``)}`)}function i(e){let t=r(e);return t&&t.replace(/^torrs:\/\//i,`web+torrs://`)}export{r as n,i as r,n as t};

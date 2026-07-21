@@ -16,7 +16,7 @@ import (
 )
 
 func Start() {
-	settings.InitSets(settings.Args.RDB, settings.Args.SearchWA)
+	settings.InitSets(settings.Args.RDB, settings.Args.SearchWA, settings.Args.StreamWA)
 	// https checks
 	if settings.Args.Ssl {
 		// set settings ssl enabled
@@ -121,9 +121,9 @@ func removeAllFiles(path string) {
 	}
 	for _, f := range files {
 		name := filepath.Join(path, f.Name())
-		os.Remove(name)
+		_ = os.Remove(name)
 	}
-	os.Remove(path)
+	_ = os.Remove(path)
 }
 
 func WaitServer() string {

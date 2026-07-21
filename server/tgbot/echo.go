@@ -3,8 +3,9 @@ package tgbot
 import (
 	"fmt"
 
-	tele "gopkg.in/telebot.v4"
 	"server/version"
+
+	tele "gopkg.in/telebot.v4"
 )
 
 func cmdEcho(c tele.Context) error {

@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	tele "gopkg.in/telebot.v4"
 	"server/torr"
+
+	tele "gopkg.in/telebot.v4"
 )
 
 func callbackM3u(c tele.Context, hash string) error {

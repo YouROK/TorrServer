@@ -1,6 +1,7 @@
 package tgbot
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -8,13 +9,14 @@ import (
 	"sync"
 	"time"
 
-	tele "gopkg.in/telebot.v4"
 	"server/bonjour"
 	"server/dlna"
 	"server/rutor"
 	"server/settings"
 	"server/torr"
 	"server/torznab"
+
+	tele "gopkg.in/telebot.v4"
 )
 
 const pendingInputTTL = 30 * time.Minute
@@ -177,7 +179,7 @@ func applySettingsInput(c tele.Context, setting, value string) {
 		if !strings.HasPrefix(host, "http") {
 			host = "https://" + host
 		}
-		if err := torznab.Test(host, key); err != nil {
+		if err := torznab.Test(context.Background(), host, key); err != nil {
 			_ = c.Send(fmt.Sprintf(tr(uid, "settings_torznab_test_fail"), err.Error()))
 			return
 		}

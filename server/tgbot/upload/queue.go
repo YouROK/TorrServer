@@ -5,19 +5,11 @@ import (
 	"strconv"
 	"time"
 
+	"server/torr"
+
 	"github.com/dustin/go-humanize"
 	tele "gopkg.in/telebot.v4"
-	"server/torr"
 )
-
-type DLQueue struct {
-	id        int
-	c         tele.Context
-	hash      string
-	fileID    string
-	fileName  string
-	updateMsg *tele.Message
-}
 
 var manager = &Manager{}
 
@@ -38,15 +30,14 @@ func ShowQueue(c tele.Context) error {
 		for _, dlQueue := range manager.working {
 			s := "#" + strconv.Itoa(i+1) + ": <code>" + dlQueue.torrentHash + "</code>\n"
 			if len(msg+s) > 1024 {
-				c.Send(msg)
+				_ = c.Send(msg)
 				msg = ""
 			}
 			msg += s
 			i++
 		}
 		if len(msg) > 0 {
-			c.Send(msg)
-			msg = ""
+			_ = c.Send(msg)
 		}
 	}
 	if len(manager.queue) > 0 {
@@ -54,14 +45,13 @@ func ShowQueue(c tele.Context) error {
 		for i, dlQueue := range manager.queue {
 			s := "#" + strconv.Itoa(i+1) + ": <code>" + dlQueue.torrentHash + "</code>\n"
 			if len(msg+s) > 1024 {
-				c.Send(msg)
+				_ = c.Send(msg)
 				msg = ""
 			}
 			msg += s
 		}
 		if len(msg) > 0 {
-			c.Send(msg)
-			msg = ""
+			_ = c.Send(msg)
 		}
 	}
 	return nil
@@ -85,9 +75,9 @@ func updateLoadStatus(wrk *Worker, file *TorrFile, fi, fc int) {
 	}
 	ti := t.Status()
 	if wrk.isCancelled {
-		wrk.c.Bot().Edit(wrk.msg, tr(wrk.c.Sender().ID, "upload_stopping"))
+		_, _ = wrk.c.Bot().Edit(wrk.msg, tr(wrk.c.Sender().ID, "upload_stopping"))
 	} else {
-		wrk.c.Send(tele.UploadingVideo)
+		_ = wrk.c.Send(tele.UploadingVideo)
 		if ti.DownloadSpeed == 0 {
 			ti.DownloadSpeed = 1.0
 		}
@@ -119,12 +109,12 @@ func updateLoadStatus(wrk *Worker, file *TorrFile, fi, fc int) {
 		}
 		if file.offset >= file.size {
 			msg += "\n<b>" + tr(uid, "upload_finishing") + "</b>"
-			wrk.c.Bot().Edit(wrk.msg, msg)
+			_, _ = wrk.c.Bot().Edit(wrk.msg, msg)
 			return
 		}
 
 		torrKbd := &tele.ReplyMarkup{}
 		torrKbd.Inline([]tele.Row{torrKbd.Row(torrKbd.Data(tr(wrk.c.Sender().ID, "upload_cancel"), "cancel", strconv.Itoa(wrk.id)))}...)
-		wrk.c.Bot().Edit(wrk.msg, msg, torrKbd)
+		_, _ = wrk.c.Bot().Edit(wrk.msg, msg, torrKbd)
 	}
 }

@@ -3,6 +3,7 @@
 FLAGS="--path $TS_CONF_PATH --logpath $TS_LOG_PATH --port $TS_PORT --torrentsdir $TS_TORR_DIR"
 if [ -n "$TS_IP" ]; then FLAGS="${FLAGS} -i ${TS_IP}"; fi
 if [ "$TS_HTTPAUTH" = "1" ]; then FLAGS="${FLAGS} --httpauth"; fi
+if [ "$TS_STREAMWA" = "1" ]; then FLAGS="${FLAGS} --streamwa"; fi
 if [ "$TS_RDB" = "1" ]; then FLAGS="${FLAGS} --rdb"; fi
 if [ "$TS_DONTKILL" = "1" ]; then FLAGS="${FLAGS} --dontkill"; fi
 if [ "$TS_EN_SSL" = "1" ]; then FLAGS="${FLAGS} --ssl"; fi

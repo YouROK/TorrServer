@@ -51,7 +51,6 @@ type Manager struct {
 	queue     []*Worker
 	working   map[int]*Worker
 	ids       int
-	wrkSync   sync.Mutex
 	queueLock sync.Mutex
 }
 
@@ -65,7 +64,7 @@ func (m *Manager) AddRange(c tele.Context, hash string, from, to int) {
 	defer m.queueLock.Unlock()
 
 	if len(m.queue) > 50 {
-		c.Bot().Send(c.Recipient(), fmt.Sprintf(tr(c.Sender().ID, "upload_queue_full"), len(m.queue)))
+		_, _ = c.Bot().Send(c.Recipient(), fmt.Sprintf(tr(c.Sender().ID, "upload_queue_full"), len(m.queue)))
 		return
 	}
 
@@ -99,7 +98,7 @@ func (m *Manager) AddRange(c tele.Context, hash string, from, to int) {
 
 	t := torr.GetTorrent(hash)
 	if t == nil {
-		c.Bot().Edit(msg, tr(c.Sender().ID, "torrent_not_found")+":\n<code>"+hash+"</code>")
+		_, _ = c.Bot().Edit(msg, tr(c.Sender().ID, "torrent_not_found")+":\n<code>"+hash+"</code>")
 		return
 	}
 	t.WaitInfo()
@@ -147,7 +146,7 @@ func (m *Manager) Cancel(id int) {
 	for i, w := range m.queue {
 		if w.id == id {
 			w.isCancelled = true
-			w.c.Bot().Delete(w.msg)
+			_ = w.c.Bot().Delete(w.msg)
 			m.queue = append(m.queue[:i], m.queue[i+1:]...)
 			return
 		}
@@ -199,7 +198,7 @@ func (m *Manager) sendQueueStatus() {
 
 		msg := fmt.Sprintf(tr(wrk.c.Sender().ID, "upload_queue_pos"), i+1)
 
-		wrk.c.Bot().Edit(wrk.msg, msg, torrKbd)
+		_, _ = wrk.c.Bot().Edit(wrk.msg, msg, torrKbd)
 	}
 }
 
@@ -208,7 +207,7 @@ func loading(wrk *Worker) {
 
 	t := torr.GetTorrent(wrk.torrentHash)
 	if t == nil {
-		wrk.c.Bot().Edit(wrk.msg, tr(wrk.c.Sender().ID, "torrent_not_found")+":\n<code>"+wrk.torrentHash+"</code>")
+		_, _ = wrk.c.Bot().Edit(wrk.msg, tr(wrk.c.Sender().ID, "torrent_not_found")+":\n<code>"+wrk.torrentHash+"</code>")
 		return
 	}
 	t.WaitInfo()
@@ -230,13 +229,13 @@ func loading(wrk *Worker) {
 		err := uploadFile(wrk, file, i+1, len(wrk.ti.FileStats))
 		if err != nil {
 			errstr := fmt.Sprintf(tr(wrk.c.Sender().ID, "upload_error"), err)
-			wrk.c.Bot().Edit(wrk.msg, errstr)
+			_, _ = wrk.c.Bot().Edit(wrk.msg, errstr)
 			iserr = true
 			break
 		}
 	}
 	if !iserr {
-		wrk.c.Bot().Delete(wrk.msg)
+		_ = wrk.c.Bot().Delete(wrk.msg)
 	}
 }
 
@@ -261,11 +260,11 @@ func uploadFile(wrk *Worker, file *state.TorrentFileStat, fi, fc int) error {
 	d := &tele.Document{}
 	d.FileName = file.Path
 	d.Caption = caption
-	d.File.FileReader = torrFile
+	d.FileReader = torrFile
 
 	for i := 0; i < 20; i++ {
 		err = wrk.c.Send(d)
-		if err == nil || errors.Is(err, ERR_STOPPED) {
+		if err == nil || errors.Is(err, ErrStopped) {
 			break
 		}
 		log.TLogln("tg upload retry", i+1, "/", 20)
@@ -281,7 +280,7 @@ func uploadFile(wrk *Worker, file *state.TorrentFileStat, fi, fc int) error {
 	complete = true
 	wa.Wait()
 	torrFile.Close()
-	if errors.Is(err, ERR_STOPPED) {
+	if errors.Is(err, ErrStopped) {
 		err = nil
 	}
 	return err

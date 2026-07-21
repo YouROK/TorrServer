@@ -9,8 +9,9 @@ import (
 	"sync"
 	"time"
 
-	tele "gopkg.in/telebot.v4"
 	"server/settings"
+
+	tele "gopkg.in/telebot.v4"
 )
 
 const (

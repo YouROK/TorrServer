@@ -71,7 +71,7 @@ func ParseLink(link string) (*torrent.TorrentSpec, error) {
 	case "file":
 		return fromFile(urlLink.Path)
 	default:
-		err = fmt.Errorf("unknown scheme:", urlLink, urlLink.Scheme)
+		err = fmt.Errorf("unknown scheme %q", urlLink.Scheme)
 	}
 	return nil, err
 }
@@ -96,9 +96,7 @@ func fromMagnet(link string) (*torrent.TorrentSpec, error) {
 }
 
 func ParseTorrsHash(token string) (*torrent.TorrentSpec, *torrshash.TorrsHash, error) {
-	if strings.HasPrefix(token, "torrs://") {
-		token = strings.TrimPrefix(token, "torrs://")
-	}
+	token = strings.TrimPrefix(token, "torrs://")
 	th, err := torrshash.Unpack(token)
 	if err != nil {
 		return nil, nil, err
@@ -136,7 +134,7 @@ func fromHttp(link string) (*torrent.TorrentSpec, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != 200 {
 		return nil, errors.New(resp.Status)
 	}

@@ -109,7 +109,7 @@ func Start() {
 
 func Stop() {
 	if dmsServer != nil {
-		dmsServer.Close()
+		_ = dmsServer.Close()
 		dmsServer = nil
 	}
 }

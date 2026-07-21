@@ -16,9 +16,8 @@ type TorrFile struct {
 
 	info fs.FileInfo
 
-	torr   *torr.Torrent
-	file   *torrent.File
-	reader *torrstor.Reader
+	torr *torr.Torrent
+	file *torrent.File
 }
 
 type TorrFileHandle struct {

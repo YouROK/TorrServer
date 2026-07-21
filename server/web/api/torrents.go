@@ -49,7 +49,7 @@ func torrents(c *gin.Context) {
 	var req torrReqJS
 	err := c.ShouldBindJSON(&req)
 	if err != nil {
-		c.AbortWithError(http.StatusBadRequest, err)
+		_ = c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 	c.Status(http.StatusBadRequest)
@@ -87,7 +87,7 @@ func torrents(c *gin.Context) {
 
 func addTorrent(req torrReqJS, c *gin.Context) {
 	if req.Link == "" {
-		c.AbortWithError(http.StatusBadRequest, errors.New("link is empty"))
+		_ = c.AbortWithError(http.StatusBadRequest, errors.New("link is empty"))
 		return
 	}
 
@@ -102,7 +102,7 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 		torrSpec, torrsHash, err = utils.ParseTorrsHash(req.Link)
 		if err != nil {
 			log.TLogln("error parse torrshash:", err)
-			c.AbortWithError(http.StatusBadRequest, err)
+			_ = c.AbortWithError(http.StatusBadRequest, err)
 			return
 		}
 		if req.Title == "" {
@@ -118,7 +118,7 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 		torrSpec, err = utils.ParseLink(req.Link)
 		if err != nil {
 			log.TLogln("error parse link:", err)
-			c.AbortWithError(http.StatusBadRequest, err)
+			_ = c.AbortWithError(http.StatusBadRequest, err)
 			return
 		}
 	}
@@ -126,7 +126,7 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 	tor, err := torr.AddTorrent(torrSpec, req.Title, req.Poster, req.Data, req.Category)
 	if err != nil {
 		log.TLogln("error add torrent:", err)
-		c.AbortWithError(http.StatusInternalServerError, err)
+		_ = c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
@@ -160,7 +160,7 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 
 func getTorrent(req torrReqJS, c *gin.Context) {
 	if req.Hash == "" {
-		c.AbortWithError(http.StatusBadRequest, errors.New("hash is empty"))
+		_ = c.AbortWithError(http.StatusBadRequest, errors.New("hash is empty"))
 		return
 	}
 	tor := torr.GetTorrent(req.Hash)
@@ -175,7 +175,7 @@ func getTorrent(req torrReqJS, c *gin.Context) {
 
 func setTorrent(req torrReqJS, c *gin.Context) {
 	if req.Hash == "" {
-		c.AbortWithError(http.StatusBadRequest, errors.New("hash is empty"))
+		_ = c.AbortWithError(http.StatusBadRequest, errors.New("hash is empty"))
 		return
 	}
 	torr.SetTorrent(req.Hash, req.Title, req.Poster, req.Category, req.Data)
@@ -184,11 +184,11 @@ func setTorrent(req torrReqJS, c *gin.Context) {
 
 func remTorrent(req torrReqJS, c *gin.Context) {
 	if req.Hash == "" {
-		c.AbortWithError(http.StatusBadRequest, errors.New("hash is empty"))
+		_ = c.AbortWithError(http.StatusBadRequest, errors.New("hash is empty"))
 		return
 	}
 	torr.RemTorrent(req.Hash)
-	gstreamer.Remove(req.Hash)
+	_ = gstreamer.Remove(req.Hash)
 	// TODO: remove
 	if set.BTsets.EnableDLNA {
 		dlna.Stop()
@@ -212,11 +212,11 @@ func listTorrents(c *gin.Context) {
 
 func dropTorrent(req torrReqJS, c *gin.Context) {
 	if req.Hash == "" {
-		c.AbortWithError(http.StatusBadRequest, errors.New("hash is empty"))
+		_ = c.AbortWithError(http.StatusBadRequest, errors.New("hash is empty"))
 		return
 	}
 	torr.DropTorrent(req.Hash)
-	gstreamer.Remove(req.Hash)
+	_ = gstreamer.Remove(req.Hash)
 	c.Status(200)
 }
 
@@ -225,7 +225,7 @@ func wipeTorrents(c *gin.Context) {
 	for _, t := range torrents {
 		hash := t.TorrentSpec.InfoHash.HexString()
 		torr.RemTorrent(hash)
-		gstreamer.Remove(hash)
+		_ = gstreamer.Remove(hash)
 	}
 	// TODO: remove (copied todo from remTorrent())
 	if set.BTsets.EnableDLNA {

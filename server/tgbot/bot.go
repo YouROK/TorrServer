@@ -87,33 +87,11 @@ func Start(token string) error {
 	up.TrFunc = tr
 	up.EscapeFunc = escapeHtml
 
-	if err := b.SetCommands([]tele.Command{
-		{Text: "help", Description: "Help and user ID"},
-		{Text: "start", Description: "Start bot"},
-		{Text: "list", Description: "List torrents"},
-		{Text: "add", Description: "Add torrent"},
-		{Text: "search", Description: "Search all (RuTor+Torznab)"},
-		{Text: "rutor", Description: "Search RuTor"},
-		{Text: "torznab", Description: "Search Torznab"},
-		{Text: "remove", Description: "Remove torrent"},
-		{Text: "status", Description: "Torrent status"},
-		{Text: "link", Description: "Stream link"},
-		{Text: "m3u", Description: "M3U playlist"},
-		{Text: "preload", Description: "Preload file"},
-		{Text: "queue", Description: "Upload queue status"},
-		{Text: "server", Description: "Server info"},
-		{Text: "stats", Description: "Summary statistics"},
-		{Text: "stat", Description: "Detailed status"},
-		{Text: "snake", Description: "Cache visualization"},
-		{Text: "clear", Description: "Remove all torrents"},
-		{Text: "hash", Description: "Show hashes"},
-		{Text: "export", Description: "Export torrents"},
-		{Text: "import", Description: "Import torrents"},
-		{Text: "categories", Description: "List categories"},
-		{Text: "lang", Description: "Set language RU|EN"},
-	}); err != nil {
+	if err := setBotCommands(b); err != nil {
 		log.TLogln("tg setcmd err", err)
 	}
+
+	setupMenuButton(b)
 
 	if len(config.Cfg.WhiteIds) > 0 {
 		b.Use(middleware.Whitelist(config.Cfg.WhiteIds...))
@@ -143,8 +121,10 @@ func Start(token string) error {
 	b.Handle("Help", help)
 	b.Handle("/help", help)
 	b.Handle("/Help", help)
-	b.Handle("/start", help)
+	b.Handle("/start", cmdStart)
 	b.Handle("/id", help)
+	b.Handle("/cancel", cmdCancel)
+	b.Handle("/more", sendMoreHub)
 
 	b.Handle("/list", list)
 	b.Handle("/clear", clear)
@@ -197,7 +177,7 @@ func Start(token string) error {
 			if err != nil {
 				return err
 			}
-			return list(c)
+			return sendListHub(c, 0, false)
 		}
 		return nil
 	})
@@ -207,15 +187,24 @@ func Start(token string) error {
 		if handleSettingsInputReply(c) {
 			return nil
 		}
+		uid := c.Sender().ID
+		if isMenuButton(uid, txt) {
+			return handleMenuButton(c, txt)
+		}
 		lower := strings.ToLower(txt)
-		if strings.HasPrefix(lower, "magnet:") || strings.HasPrefix(lower, "torrs://") ||
+		isLink := strings.HasPrefix(lower, "magnet:") || strings.HasPrefix(lower, "torrs://") ||
 			strings.HasPrefix(lower, "http://") || strings.HasPrefix(lower, "https://") ||
-			isHash(txt) {
+			isHash(txt)
+		if !isLink && takePendingSearch(uid) {
+			return runSearchQuery(c, strings.TrimSpace(txt))
+		}
+		if isLink {
+			clearPendingSearch(uid)
 			err := addTorrent(c, txt)
 			if err != nil {
 				return err
 			}
-			return list(c)
+			return sendListHub(c, 0, false)
 		} else if c.Message().ReplyTo != nil && c.Message().ReplyTo.ReplyMarkup != nil && len(c.Message().ReplyTo.ReplyMarkup.InlineKeyboard) > 0 {
 			var hash string
 			for _, row := range c.Message().ReplyTo.ReplyMarkup.InlineKeyboard {
@@ -251,7 +240,7 @@ func Start(token string) error {
 			}
 			return nil
 		} else {
-			return c.Send(tr(c.Sender().ID, "add_magnet"))
+			return sendWithMenu(c, tr(c.Sender().ID, "add_magnet"))
 		}
 	})
 
@@ -280,50 +269,88 @@ func Start(token string) error {
 	return nil
 }
 
+func setBotCommands(b *tele.Bot) error {
+	makeCmds := func(lang string) []tele.Command {
+		return []tele.Command{
+			{Text: "start", Description: trLang(lang, "cmd_desc_start")},
+			{Text: "help", Description: trLang(lang, "cmd_desc_help")},
+			{Text: "list", Description: trLang(lang, "cmd_desc_list")},
+			{Text: "add", Description: trLang(lang, "cmd_desc_add")},
+			{Text: "search", Description: trLang(lang, "cmd_desc_search")},
+			{Text: "more", Description: trLang(lang, "cmd_desc_more")},
+			{Text: "cancel", Description: trLang(lang, "cmd_desc_cancel")},
+			{Text: "lang", Description: trLang(lang, "cmd_desc_lang")},
+			{Text: "settings", Description: trLang(lang, "cmd_desc_settings")},
+			{Text: "preset", Description: trLang(lang, "cmd_desc_preset")},
+			{Text: "shutdown", Description: trLang(lang, "cmd_desc_shutdown")},
+		}
+	}
+	if err := b.SetCommands(makeCmds(LangEN)); err != nil {
+		return err
+	}
+	for _, lang := range []string{LangEN, LangRU} {
+		if err := b.SetCommands(makeCmds(lang), lang); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func help(c tele.Context) error {
 	uid := c.Sender().ID
 	id := strconv.FormatInt(uid, 10)
-	var arr []string
-	if c.Sender().Username != "" {
-		arr = append(arr, c.Sender().Username)
-	}
-	if c.Sender().FirstName != "" {
-		arr = append(arr, c.Sender().FirstName)
-	}
-	if c.Sender().LastName != "" {
-		arr = append(arr, c.Sender().LastName)
-	}
 	msg := "🤖 <b>" + tr(uid, "help") + "</b>\n\n"
-	msg += "📋 <b>" + tr(uid, "help_main") + "</b>\n"
-	msg += "  • /help — " + tr(uid, "help_help") + "\n"
-	msg += "  • " + tr(uid, "help_list") + "\n"
-	msg += "  • " + tr(uid, "help_clear") + "\n"
-	msg += "  • " + tr(uid, "help_add") + "\n"
-	msg += "  • " + tr(uid, "help_hash") + "\n"
-	msg += "  • /stats, /stat — " + tr(uid, "help_stats") + ", " + tr(uid, "help_stat") + "\n\n"
-	msg += "🎛 <b>" + tr(uid, "help_manage") + "</b> " + tr(uid, "help_manage_desc") + "\n"
-	msg += "  • " + tr(uid, "help_remove") + "\n"
-	msg += "  • " + tr(uid, "help_links") + "\n\n"
-	msg += "🔍 <b>" + tr(uid, "help_search") + "</b> " + tr(uid, "help_search_desc") + "\n"
-	msg += "  • " + tr(uid, "help_search_cmd") + "\n\n"
-	msg += "📦 <b>" + tr(uid, "help_export_import") + "</b>\n"
-	msg += "  • " + tr(uid, "help_export") + "\n"
-	msg += "  • " + tr(uid, "help_import") + "\n\n"
-	msg += "📁 <b>" + tr(uid, "help_categories_section") + "</b>\n"
-	msg += "  • " + tr(uid, "help_categories") + "\n\n"
-	msg += "🖥 <b>" + tr(uid, "help_server") + "</b>\n"
-	msg += "  • " + tr(uid, "help_server_cmd") + "\n"
-	msg += "  • " + tr(uid, "help_echo") + "\n"
-	msg += "  • " + tr(uid, "help_db") + "\n\n"
-	msg += "⚙️ <b>" + tr(uid, "help_other") + "</b>\n"
-	msg += "  • " + tr(uid, "help_other_cmd") + "\n"
-	msg += "  • " + tr(uid, "help_lang") + "\n"
-	msg += "  • " + tr(uid, "help_admin") + "\n\n"
-	msg += "👤 " + tr(uid, "help_id") + ": <code>" + id + "</code>"
-	if len(arr) > 0 {
-		msg += " • " + strings.Join(arr, ", ")
+	msg += tr(uid, "help_short") + "\n\n"
+
+	msg += "<b>" + tr(uid, "help_menu_section") + "</b>\n"
+	msg += "• " + tr(uid, "menu_library") + " — /list\n"
+	msg += "• " + tr(uid, "menu_search") + " — /search\n"
+	msg += "• " + tr(uid, "menu_status") + " — /stat\n"
+	msg += "• " + tr(uid, "menu_add") + " — /add\n"
+	msg += "• " + tr(uid, "menu_more") + " — /more\n"
+	msg += "• /cancel — " + tr(uid, "help_cancel") + "\n\n"
+
+	msg += "<b>" + tr(uid, "help_all_commands") + "</b>\n"
+	msg += "<b>" + tr(uid, "help_main") + "</b>\n"
+	msg += "• /help, /start, /id — " + tr(uid, "help_help") + "\n"
+	msg += "• " + tr(uid, "help_list") + "\n"
+	msg += "• " + tr(uid, "help_add") + "\n"
+	msg += "• " + tr(uid, "help_clear") + "\n"
+	msg += "• " + tr(uid, "help_hash") + "\n"
+	msg += "• /more — " + tr(uid, "cmd_desc_more") + "\n"
+	msg += "• /cancel — " + tr(uid, "help_cancel") + "\n"
+	msg += "• " + tr(uid, "help_lang") + "\n\n"
+
+	msg += "<b>" + tr(uid, "help_manage") + "</b> " + tr(uid, "help_manage_desc") + "\n"
+	msg += "• " + tr(uid, "help_remove") + "\n"
+	msg += "• " + tr(uid, "help_use_index") + "\n"
+	msg += "• " + tr(uid, "help_reply") + "\n\n"
+
+	msg += "<b>" + tr(uid, "help_status") + "</b>\n"
+	msg += "• " + tr(uid, "help_links") + "\n"
+	msg += "• " + tr(uid, "help_m3uall") + "\n"
+	msg += "• " + tr(uid, "help_stat") + "\n"
+	msg += "• " + tr(uid, "help_stats") + "\n"
+	msg += "• " + tr(uid, "help_server_cmd") + "\n\n"
+
+	msg += "<b>" + tr(uid, "help_search") + "</b> " + tr(uid, "help_search_desc") + "\n"
+	msg += "• " + tr(uid, "help_search_cmd") + "\n\n"
+
+	msg += "<b>" + tr(uid, "help_other") + "</b>\n"
+	msg += "• " + tr(uid, "help_export") + "\n"
+	msg += "• " + tr(uid, "help_import") + "\n"
+	msg += "• " + tr(uid, "help_categories") + "\n"
+	msg += "• " + tr(uid, "help_other_cmd") + "\n"
+	msg += "• " + tr(uid, "help_echo") + "\n"
+	msg += "• " + tr(uid, "help_db") + "\n"
+
+	if isAdmin(uid) {
+		msg += "\n<b>" + tr(uid, "help_server") + "</b>\n"
+		msg += "• " + tr(uid, "help_admin") + "\n"
 	}
-	return c.Send(msg)
+
+	msg += "\n👤 " + tr(uid, "help_id") + ": <code>" + id + "</code>"
+	return sendWithMenu(c, msg)
 }
 
 func isHash(txt string) bool {

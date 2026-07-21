@@ -1,0 +1,1 @@
+var e=(e,t)=>{try{let n=localStorage.getItem(e);return n==null||n===``?t:JSON.parse(n)}catch{return t}},t=(t,n=!1)=>{let r=e(t,n);return typeof r==`boolean`?r:r===`true`||r===1?!0:r===`false`||r===0?!1:n},n=(e,t)=>{try{localStorage.setItem(e,JSON.stringify(t))}catch{}};export{e as n,n as r,t};

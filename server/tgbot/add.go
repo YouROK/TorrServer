@@ -6,12 +6,13 @@ import (
 	"io"
 	"strings"
 
-	"github.com/anacrolix/torrent"
-	tele "gopkg.in/telebot.v4"
 	"server/log"
 	set "server/settings"
 	"server/torr"
 	"server/web/api/utils"
+
+	"github.com/anacrolix/torrent"
+	tele "gopkg.in/telebot.v4"
 )
 
 func addTorrentFromSpec(c tele.Context, torrSpec *torrent.TorrentSpec, displayLabel string) error {
