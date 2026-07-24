@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -93,6 +94,7 @@ func allPlayList(c *gin.Context) {
 func playList(c *gin.Context) {
 	hash, _ := c.GetQuery("hash")
 	_, fromlast := c.GetQuery("fromlast")
+	index := c.Query("index")
 	if hash == "" {
 		c.AbortWithError(http.StatusBadRequest, errors.New("hash is empty"))
 		return
@@ -113,7 +115,7 @@ func playList(c *gin.Context) {
 	}
 
 	host := utils.GetScheme(c) + "://" + utils.GetHost(c)
-	list := getM3uList(tor.Status(), host, fromlast)
+	list := getM3uList(tor.Status(), host, fromlast, index)
 	list = "#EXTM3U\n" + list
 	name := strings.ReplaceAll(c.Param("fname"), `/`, "") // strip starting / from param
 	if name == "" {
@@ -139,10 +141,20 @@ func sendM3U(c *gin.Context, name, hash string, m3u string) {
 	http.ServeContent(c.Writer, c.Request, name, time.Now(), bytes.NewReader([]byte(m3u)))
 }
 
-func getM3uList(tor *state.TorrentStatus, host string, fromLast bool) string {
+func getM3uList(tor *state.TorrentStatus, host string, fromLast bool, startIndex string) string {
 	m3u := ""
 	from := 0
-	if fromLast {
+	if startIndex != "" {
+		id, err := strconv.Atoi(startIndex)
+		if err == nil {
+			for i, f := range tor.FileStats {
+				if f.Id == id {
+					from = i
+					break
+				}
+			}
+		}
+	} else if fromLast {
 		pos := searchLastPlayed(tor)
 		if pos != -1 {
 			from = pos
