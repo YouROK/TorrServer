@@ -37,10 +37,12 @@ const TorrentCache = ({ cache, isMini, isSnakeDebugMode }) => {
 
   const pieceSizeWithGap = pieceSize + gapBetweenPieces
   const piecesInOneRow = Math.floor(canvasWidth / pieceSizeWithGap)
+  const maxShortCachePiecesAmount = 8192
 
   let shortCacheMap
   if (isMini) {
-    const preloadPiecesAmount = Math.round(cache.Capacity / cache.PiecesLength - 1)
+    const preloadPiecesAmount = Math.min(Math.round(cache.Capacity / cache.PiecesLength - 1),
+                                         maxShortCachePiecesAmount)
     shortCacheMap = getShortCacheMap({ cacheMap, preloadPiecesAmount, piecesInOneRow })
   }
   const source = isMini ? shortCacheMap : cacheMap
