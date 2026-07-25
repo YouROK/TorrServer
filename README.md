@@ -194,28 +194,29 @@ On FreeBSD (TrueNAS/FreeNAS) you can use this plugin: <https://github.com/filka9
 
 - `--port PORT`, `-p PORT` - web server port (default 8090)
 - `--ip IP`, `-i IP` - web server bind addr (repeatable; default empty binds to all interfaces)
-- `--ssl` - enables https for web server
+- `--ssl` - enables HTTPS for web server
 - `--sslport PORT` -  web server https port (default 8091). If not set, will be taken from db (if stored previously) or the default will be used.
-- `--sslcert PATH` -  path to ssl cert file. If not set, will be taken from db (if stored previously) or default self-signed certificate/key will be generated.
-- `--sslkey PATH` - path to ssl key file. If not set, will be taken from db (if stored previously) or default self-signed certificate/key will be generated.
+- `--sslcert PATH` -  path to SSL cert file. If not set, will be taken from db (if stored previously) or default self-signed certificate/key will be generated.
+- `--sslkey PATH` - path to SSL key file. If not set, will be taken from db (if stored previously) or default self-signed certificate/key will be generated.
 - `--force-https` - with `--ssl`, the HTTP listener (`--port`) answers only with **307 Temporary Redirect** to the same path on HTTPS (`--sslport`). The web UI and API are served on HTTPS only; nothing is served on HTTP except redirects. Requires `--ssl` (startup fails if `--force-https` is set without `--ssl`). Default is off so plain HTTP still works when SSL is disabled.
 - `--path PATH`, `-d PATH` - database and config dir path
 - `--logpath LOGPATH`, `-l LOGPATH` - server log file path
 - `--weblogpath WEBLOGPATH`, `-w WEBLOGPATH` - web access log file path
 - `--rdb`, `-r` - start in read-only DB mode
-- `--httpauth`, `-a` - enable http auth on all requests
+- `--httpauth`, `-a` - enable HTTP Auth on all requests
 - `--dontkill`, `-k` - don't kill server on signal
 - `--ui`, `-u` - open torrserver page in browser
 - `--torrentsdir TORRENTSDIR`, `-t TORRENTSDIR` - autoload torrents from dir
-- `--torrentaddr TORRENTADDR` - Torrent client address (format [IP]:PORT, ex. :32000, 127.0.0.1:32768 etc)
+- `--torrentaddr TORRENTADDR` - Torrent client address (format [IP]:PORT, ex. :32000, 127.0.0.1:32768 etc.)
 - `--pubipv4 PUBIPV4`, `-4 PUBIPV4` - set public IPv4 addr
 - `--pubipv6 PUBIPV6`, `-6 PUBIPV6` - set public IPv6 addr
 - `--searchwa`, `-s` - allow search without authentication
+- `--streamwa` - stream play and m3u without authentication (auto-add torrents for external players)
 - `--maxsize MAXSIZE`, `-m MAXSIZE` - max allowed stream size (in Bytes)
 - `--tg TGTOKEN`, `-T TGTOKEN` - [Telegram bot](server/tgbot/README.md) token
-- `--fuse FUSEPATH`, `-f FUSEPATH` - fuse mount path
-- `--webdav` - enable web dav
-- `--proxyurl PROXYURL` - set proxy URL for BitTorrent traffic (http, socks4, socks5, socks5h), example: socks5h://user:password@example.com:2080
+- `--fuse FUSEPATH`, `-f FUSEPATH` - FUSE mount path
+- `--webdav` - enable WebDAV
+- `--proxyurl PROXYURL` - set proxy URL for BitTorrent traffic (HTTP, SOCKS4, SOCKS5, SOCKS5H), example: socks5h://user:password@example.com:2080
 - `--proxymode PROXYMODE` - set proxy mode: "tracker" (only HTTP trackers, default), "peers" (only peer connections), or "full" (all traffic)
 - `--help`, `-h` - display this help and exit
 - `--version` - display version and exit
@@ -223,7 +224,7 @@ On FreeBSD (TrueNAS/FreeNAS) you can use this plugin: <https://github.com/filka9
 Example:
 
 ```bash
-TorrServer-darwin-arm64 [--port PORT] [--ip IP ...] [--path PATH] [--logpath LOGPATH] [--weblogpath WEBLOGPATH] [--rdb] [--httpauth] [--dontkill] [--ui] [--torrentsdir TORRENTSDIR] [--torrentaddr TORRENTADDR] [--pubipv4 PUBIPV4] [--pubipv6 PUBIPV6] [--searchwa] [--maxsize MAXSIZE] [--tg TGTOKEN] [--fuse FUSEPATH] [--webdav] [--ssl] [--sslport PORT] [--sslcert PATH] [--sslkey PATH] [--force-https]
+TorrServer-darwin-arm64 [--port PORT] [--ip IP ...] [--path PATH] [--logpath LOGPATH] [--weblogpath WEBLOGPATH] [--rdb] [--httpauth] [--dontkill] [--ui] [--torrentsdir TORRENTSDIR] [--torrentaddr TORRENTADDR] [--pubipv4 PUBIPV4] [--pubipv6 PUBIPV6] [--searchwa] [--streamwa] [--maxsize MAXSIZE] [--tg TGTOKEN] [--fuse FUSEPATH] [--webdav] [--ssl] [--sslport PORT] [--sslcert PATH] [--sslkey PATH] [--force-https]
 ```
 
 ### Running in Docker & Docker Compose
@@ -246,20 +247,38 @@ docker run --rm -d --name torrserver \
   ghcr.io/yourok/torrserver:latest
 ```
 
-#### Environments
+#### Environment Variables
 
-- `TS_HTTPAUTH` - 1, and place auth file into `./ts` (config dir) for enabling basic auth
-- `TS_RDB` - if 1, then the enabling `--rdb` flag
-- `TS_DONTKILL` - if 1, then the enabling `--dontkill` flag
-- `TS_PORT` - for changind default port to **5555** (example), also u need to change `-p 8090:8090` to `-p 5555:5555` (example)
-- `TS_CONF_PATH` - for overriding torrserver config path inside container. Example `/opt/tsss`
-- `TS_TORR_DIR` - for overriding torrents directory. Example `/opt/torr_files`
-- `TS_LOG_PATH` - for overriding log path. Example `/opt/torrserver.log`
-- `TS_PROXYURL` - set proxy URL for BitTorrent traffic (http, socks4, socks5, socks5h), example: socks5h://user:password@example.com:2080
-- `TS_PROXYMODE` - set proxy mode: "tracker" (only HTTP trackers, default), "peers" (only peer connections), or "full" (all traffic)
+- `TS_HTTPAUTH` – Set to `1` to enable basic authentication. The authentication file must be placed in the `~/ts/config` directory.
+- `TS_RDB` – If set to `1`, enables the `--rdb` command-line flag.
+- `TS_DONTKILL` – If set to `1`, enables the `--dontkill` command-line flag.
+- `TS_IP` – Specifies the bind address for the web server using the `--ip` flag.
+- `TS_PORT` – Overrides the default port (e.g., to `5555`). The corresponding port mapping must also be updated from `-p 8090:8090` to `-p 5555:5555` to reflect the change.
+- `TS_CONF_PATH` – Overrides the internal configuration path for TorrServer inside the container (e.g., `/opt/tsss`).
+- `TS_TORR_DIR` – Overrides the directory used for storing torrent files (e.g., `/opt/torr_files`).
+- `TS_TORR_ADDR` – Sets the torrent client address via the `--torrentaddr` flag.
+- `TS_LOG_PATH` – Overrides the log file path (e.g., `/opt/torrserver.log`).
+- `TS_PROXYURL` – Defines a proxy URL for BitTorrent traffic. Supports HTTP, SOCKS4, SOCKS5, and SOCKS5H protocols (e.g., `socks5h://user:password@example.com:2080`).
+- `TS_PROXYMODE` – Determines the proxy usage mode. Acceptable values are:
+  - `tracker` – Proxy only HTTP trackers (default).
+  - `peers` – Proxy only peer connections.
+  - `full` – Proxy all BitTorrent traffic.
+- `TS_SEARCH_WA_ENABLE` – If set to `1`, enables the `--searchwa` flag.
+- `TS_STREAMWA` – If set to `1`, enables the `--streamwa` flag (stream play and m3u without auth).
+- `TS_SSL_ENABLE` – If set to `1`, enables the `--ssl` flag.
+- `TS_SSL_PORT` – If set to `1`, enables the `--sslport` flag.
+- `TS_SSL_CERT_PATH` – Specifies the path to the SSL certificate file via the `--sslcert` flag.
+- `TS_SSL_KEY_PATH` – Specifies the path to the SSL private key file via the `--sslkey` flag.
+- `TS_FORCE_HTTPS_ENABLE` – If set to `1`, enables the `--force-https` flag.
+- `TS_WEB_LOG_PATH` – Overrides the web server log path using the `--weblogpath` flag.
+- `TS_PUBLIC_IPV4_ADDR` – Sets the public IPv4 address using the `--pubipv4` flag.
+- `TS_PUBLIC_IPV6_ADDR` – Sets the public IPv6 address using the `--pubipv6` flag.
+- `TS_MAX_SIZE` – Defines the maximum allowed stream size (in bytes) via the `--maxsize` flag.
+- `TS_TELEGRAM_TOKEN` – Sets the Telegram bot token using the `--tg` flag.
+- `TS_FUSE_PATH` – Sets the FUSE mount point path using the `--fuse` flag.
+- `TS_WEBDAV_ENABLE` – If set to `1`, enables WebDAV support via the `--webdav` flag.
 
-Example with full overridden command:
-
+Example with full override command (on default values):
 ```bash
 docker run --rm -d --name torrserver \
   -v ./ts:/opt/ts \
