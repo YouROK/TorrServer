@@ -112,14 +112,8 @@ var Indexhtml []byte
 //go:embed pages/logo.png
 var Logopng []byte
 
-//go:embed pages/lordicon/jkzgajyr.json
-var Lordiconjkzgajyrjson []byte
-
-//go:embed pages/lordicon/lord-icon-2.0.2.js
-var Lordiconlordicon202js []byte
-
-//go:embed pages/lordicon/wrprwmwt.json
-var Lordiconwrprwmwtjson []byte
+//go:embed pages/lord-icon-2.0.2.js
+var Lordicon202js []byte
 
 //go:embed pages/mstile-150x150.png
 var Mstile150x150png []byte
@@ -127,20 +121,20 @@ var Mstile150x150png []byte
 //go:embed pages/site.webmanifest
 var Sitewebmanifest []byte
 
-//go:embed pages/static/js/2.f2fe60bf.chunk.js
-var Staticjs2f2fe60bfchunkjs []byte
+//go:embed pages/static/js/2.f7ad277c.chunk.js
+var Staticjs2f7ad277cchunkjs []byte
 
-//go:embed pages/static/js/2.f2fe60bf.chunk.js.LICENSE.txt
-var Staticjs2f2fe60bfchunkjsLICENSEtxt []byte
+//go:embed pages/static/js/2.f7ad277c.chunk.js.LICENSE.txt
+var Staticjs2f7ad277cchunkjsLICENSEtxt []byte
 
-//go:embed pages/static/js/2.f2fe60bf.chunk.js.map
-var Staticjs2f2fe60bfchunkjsmap []byte
+//go:embed pages/static/js/2.f7ad277c.chunk.js.map
+var Staticjs2f7ad277cchunkjsmap []byte
 
-//go:embed pages/static/js/main.95752178.chunk.js
-var Staticjsmain95752178chunkjs []byte
+//go:embed pages/static/js/main.b5f380b9.chunk.js
+var Staticjsmainb5f380b9chunkjs []byte
 
-//go:embed pages/static/js/main.95752178.chunk.js.map
-var Staticjsmain95752178chunkjsmap []byte
+//go:embed pages/static/js/main.b5f380b9.chunk.js.map
+var Staticjsmainb5f380b9chunkjsmap []byte
 
 //go:embed pages/static/js/runtime-main.5ed86a79.js
 var Staticjsruntimemain5ed86a79js []byte

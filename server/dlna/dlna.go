@@ -9,12 +9,14 @@ import (
 	"runtime"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/anacrolix/dms/dlna/dms"
 	"github.com/anacrolix/log"
 	"github.com/wlynxg/anet"
 
+	"server/netbind"
 	"server/settings"
 	"server/web/pages/template"
 )
@@ -46,17 +48,13 @@ func Start() {
 			port := 9080
 			for {
 				logger.Levelf(log.Info, "Check dlna port %d", port)
-				m, err := net.Listen("tcp", settings.IP+":"+strconv.Itoa(port))
-				if m != nil {
-					m.Close()
-				}
-				if err == nil {
+				if err := netbind.CheckPort(settings.IPs, strconv.Itoa(port)); err == nil {
 					break
 				}
 				port++
 			}
 			logger.Levelf(log.Info, "Set dlna port %d", port)
-			conn, err := net.Listen("tcp", settings.IP+":"+strconv.Itoa(port))
+			conn, err := netbind.Listen(settings.IPs, strconv.Itoa(port))
 			if err != nil {
 				logger.Levelf(log.Error, "%v", err)
 				os.Exit(1)
@@ -121,7 +119,10 @@ func onBrowse(path, rootObjectPath, host, userAgent string) (ret []interface{}, 
 		ret = getRoot()
 		return
 	} else if path == "/TR" {
-		ret = getTorrents()
+		ret = getTorrentCategories()
+		return
+	} else if strings.HasPrefix(path, "/TR/") {
+		ret = getTorrentsByCategory(path)
 		return
 	} else if isHashPath(path) {
 		ret = getTorrent(path, host)

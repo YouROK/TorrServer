@@ -21,9 +21,11 @@ type JsonDB struct {
 	xPathDelimeter    string
 }
 
-var globalJsonDB TorrServerDB
-var jsonDbLocks = make(map[string]*sync.Mutex)
-var jsonDbLocksMutex sync.Mutex
+var (
+	globalJsonDB     TorrServerDB
+	jsonDbLocks      = make(map[string]*sync.Mutex)
+	jsonDbLocksMutex sync.Mutex
+)
 
 func NewJsonDB() TorrServerDB {
 	if globalJsonDB != nil {

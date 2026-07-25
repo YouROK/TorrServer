@@ -16,7 +16,7 @@ import (
 )
 
 // TestConcurrentSearchAndLoadDB проверяет отсутствие гонки при одновременном
-// обновлении индекса (loadDB) и поиске (Search). 
+// обновлении индекса (loadDB) и поиске (Search).
 // !Запускать с -count=3
 func TestConcurrentSearchAndLoadDB(t *testing.T) {
 	if settings.BTsets == nil {

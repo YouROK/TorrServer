@@ -59,7 +59,7 @@ $GOBIN run gen_web.go
 echo "Build docs"
 $GOBIN install github.com/swaggo/swag/cmd/swag@latest
 cd "${ROOT}/server" || exit 1
-swag init -g web/server.go
+swag init -g web/server.go --parseDependency --parseInternal --parseDepth 5
 
 #### Build server
 echo "Build server"
@@ -80,12 +80,37 @@ for PLATFORM in "${PLATFORMS[@]}"; do
   set_gomips "$GOARCH"
   BIN_FILENAME="${OUTPUT}-${GOOS}-${GOARCH}${GOARM}"
   if [[ "${GOOS}" == "windows" ]]; then BIN_FILENAME="${BIN_FILENAME}.exe"; fi
-  CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GO_ARM} ${GO_MIPS} ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
+  CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GO_ARM} ${GO_MIPS} CGO_ENABLED=0 ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
   echo "${CMD}"
   eval "$CMD" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
 #  CMD="../upx -q ${BIN_FILENAME}"; # upx --brute produce much smaller binaries
 #  echo "compress with ${CMD}"
 #  eval "$CMD"
+done
+
+#####################################
+### GStreamer build section
+#####
+
+GST_PLATFORMS=(
+  'windows/amd64'
+  'linux/amd64'
+  'linux/arm64'
+  'darwin/amd64'
+  'darwin/arm64'
+)
+
+BUILD_FLAGS_GST="-ldflags=${LDFLAGS} -tags=nosqlite,gst -trimpath"
+
+echo "Build GStreamer server"
+for PLATFORM in "${GST_PLATFORMS[@]}"; do
+  GOOS=${PLATFORM%/*}
+  GOARCH=${PLATFORM#*/}
+  BIN_FILENAME="${OUTPUT}-gst-${GOOS}-${GOARCH}"
+  if [[ "${GOOS}" == "windows" ]]; then BIN_FILENAME="${BIN_FILENAME}.exe"; fi
+  CMD="GOOS=${GOOS} GOARCH=${GOARCH} CGO_ENABLED=0 ${GOBIN} build ${BUILD_FLAGS_GST} -o ${BIN_FILENAME} ./cmd"
+  echo "${CMD}"
+  eval "$CMD" || FAILURES="${FAILURES} gst/${GOOS}/${GOARCH}"
 done
 
 #####################################
@@ -99,7 +124,7 @@ declare -a COMPILERS=(
   "amd64:x86_64-linux-android21-clang"
 )
 
-export NDK_VERSION="25.2.9519653" # 25.1.8937393
+export NDK_VERSION="27.0.12077973" # 25.1.8937393 26.2.11394342 27.0.12077973
 #export NDK_TOOLCHAIN=${ANDROID_HOME}/ndk/${NDK_VERSION}/toolchains/llvm/prebuilt/darwin-x86_64
 #export NDK_TOOLCHAIN="${PWD}/../android-ndk-r25c/toolchains/llvm/prebuilt/linux-x86_64"
 export NDK_TOOLCHAIN=/Users/yourok/Projects/AndroidNDK

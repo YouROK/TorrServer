@@ -3,8 +3,10 @@ package web
 import (
 	"net"
 	"os"
-	"server/proxy"
 	"sort"
+
+	gstreamer "server/gstreamer/bridge"
+	"server/netbind"
 
 	"server/torrfs/fuse"
 	"server/torrfs/webdav"
@@ -16,6 +18,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/wlynxg/anet"
 
+	"server/bonjour"
 	"server/dlna"
 	"server/settings"
 	"server/web/msx"
@@ -28,9 +31,6 @@ import (
 	"server/web/blocker"
 	"server/web/pages"
 	"server/web/sslcerts"
-
-	swaggerFiles "github.com/swaggo/files"     // swagger embed files
-	ginSwagger "github.com/swaggo/gin-swagger" // gin-swagger middleware
 )
 
 var (
@@ -81,6 +81,7 @@ func Start() {
 	route.GET("/echo", echo)
 
 	api.SetupRoute(route)
+	gstreamer.SetupRoute(route)
 	msx.SetupRoute(route)
 	pages.SetupRoute(route)
 	if settings.Args.WebDAV {
@@ -90,11 +91,14 @@ func Start() {
 	if settings.BTsets.EnableDLNA {
 		dlna.Start()
 	}
+	if settings.BTsets.EnableBonjour {
+		bonjour.Start()
+	}
 
 	// Auto-mount FUSE filesystem if enabled
 	fuse.FuseAutoMount()
 
-	route.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	route.GET("/swagger/*any", swaggerHandler())
 
 	// check if https enabled
 	if settings.Ssl {
@@ -114,19 +118,33 @@ func Start() {
 			settings.SetBTSets(settings.BTsets)
 		}
 		go func() {
-			log.TLogln("Start https server at", settings.IP+":"+settings.SslPort)
-			waitChan <- route.RunTLS(settings.IP+":"+settings.SslPort, settings.BTsets.SslCert, settings.BTsets.SslKey)
+			for _, ip := range netbind.Normalize(settings.IPs) {
+				addr := netbind.Addr(ip, settings.SslPort)
+				go func(addr string) {
+					log.TLogln("Start https server at", addr)
+					waitChan <- route.RunTLS(addr, settings.BTsets.SslCert, settings.BTsets.SslKey)
+				}(addr)
+			}
 		}()
 	}
 
 	go func() {
-		addr := settings.IP + ":" + settings.Port
 		if settings.Args != nil && settings.Args.ForceHTTPS && settings.Ssl {
-			waitChan <- runHTTPRedirectToHTTPS(addr)
+			for _, ip := range netbind.Normalize(settings.IPs) {
+				addr := netbind.Addr(ip, settings.Port)
+				go func(addr string) {
+					waitChan <- runHTTPRedirectToHTTPS(addr)
+				}(addr)
+			}
 			return
 		}
-		log.TLogln("Start http server at", addr)
-		waitChan <- route.Run(addr)
+		for _, ip := range netbind.Normalize(settings.IPs) {
+			addr := netbind.Addr(ip, settings.Port)
+			go func(addr string) {
+				log.TLogln("Start http server at", addr)
+				waitChan <- route.Run(addr)
+			}(addr)
+		}
 	}()
 }
 
@@ -135,11 +153,12 @@ func Wait() error {
 }
 
 func Stop() {
+	gstreamer.Stop()
 	dlna.Stop()
+	bonjour.Stop()
 	// Unmount FUSE filesystem if mounted
 	fuse.FuseCleanup()
 	BTS.Disconnect()
-	proxy.Stop()
 	waitChan <- nil
 }
 

@@ -7,54 +7,52 @@ import (
 )
 
 type Viewed struct {
-	Hash      string `json:"hash"`
-	FileIndex int    `json:"file_index"`
+	Hash      string  `json:"hash"`
+	FileIndex int     `json:"file_index"`
+	TimeCode  float64 `json:"timecode"`
+}
+
+func readIndexes(buf []byte) map[int]float64 {
+	m := map[int]float64{}
+	if json.Unmarshal(buf, &m) == nil {
+		return m
+	}
+	var old map[int]struct{}
+	if json.Unmarshal(buf, &old) == nil {
+		for k := range old {
+			m[k] = 0
+		}
+	}
+	return m
 }
 
 func SetViewed(vv *Viewed) {
-	var indexes map[int]struct{}
-	var err error
-
-	buf := tdb.Get("Viewed", vv.Hash)
-	if len(buf) == 0 {
-		indexes = make(map[int]struct{})
-		indexes[vv.FileIndex] = struct{}{}
-		buf, err = json.Marshal(indexes)
-		if err == nil {
-			tdb.Set("Viewed", vv.Hash, buf)
-		}
-	} else {
-		err = json.Unmarshal(buf, &indexes)
-		if err == nil {
-			indexes[vv.FileIndex] = struct{}{}
-			buf, err = json.Marshal(indexes)
-			if err == nil {
-				tdb.Set("Viewed", vv.Hash, buf)
-			}
-		}
+	val := vv.TimeCode
+	if BTsets == nil || !BTsets.TrackTimecode {
+		val = 0
 	}
-	if err != nil {
+
+	m := readIndexes(tdb.Get("Viewed", vv.Hash))
+	m[vv.FileIndex] = val
+	buf, err := json.Marshal(m)
+	if err == nil {
+		tdb.Set("Viewed", vv.Hash, buf)
+	} else {
 		log.TLogln("Error set viewed:", err)
 	}
 }
 
 func RemViewed(vv *Viewed) {
 	buf := tdb.Get("Viewed", vv.Hash)
-	var indeces map[int]struct{}
-	err := json.Unmarshal(buf, &indeces)
-	if err == nil {
-		if vv.FileIndex != -1 {
-			delete(indeces, vv.FileIndex)
-			buf, err = json.Marshal(indeces)
-			if err == nil {
-				tdb.Set("Viewed", vv.Hash, buf)
-			}
-		} else {
-			tdb.Rem("Viewed", vv.Hash)
+	m := readIndexes(buf)
+	if vv.FileIndex != -1 {
+		delete(m, vv.FileIndex)
+		buf, err := json.Marshal(m)
+		if err == nil {
+			tdb.Set("Viewed", vv.Hash, buf)
 		}
-	}
-	if err != nil {
-		log.TLogln("Error rem viewed:", err)
+	} else {
+		tdb.Rem("Viewed", vv.Hash)
 	}
 }
 
@@ -65,29 +63,23 @@ func ListViewed(hash string) []*Viewed {
 		if len(buf) == 0 {
 			return []*Viewed{}
 		}
-		var indeces map[int]struct{}
-		err = json.Unmarshal(buf, &indeces)
-		if err == nil {
-			var ret []*Viewed
-			for i := range indeces {
-				ret = append(ret, &Viewed{hash, i})
-			}
-			return ret
+		m := readIndexes(buf)
+		var ret []*Viewed
+		for i, tc := range m {
+			ret = append(ret, &Viewed{Hash: hash, FileIndex: i, TimeCode: tc})
 		}
+		return ret
 	} else {
 		var ret []*Viewed
 		keys := tdb.List("Viewed")
 		for _, key := range keys {
 			buf := tdb.Get("Viewed", key)
 			if len(buf) == 0 {
-				return []*Viewed{}
+				continue
 			}
-			var indeces map[int]struct{}
-			err = json.Unmarshal(buf, &indeces)
-			if err == nil {
-				for i := range indeces {
-					ret = append(ret, &Viewed{key, i})
-				}
+			m := readIndexes(buf)
+			for i, tc := range m {
+				ret = append(ret, &Viewed{Hash: key, FileIndex: i, TimeCode: tc})
 			}
 		}
 		return ret

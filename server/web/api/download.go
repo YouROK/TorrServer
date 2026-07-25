@@ -50,6 +50,7 @@ func (f *fileReader) Seek(offset int64, whence int) (int64, error) {
 //	@Param			size	path	string	true	"Test file size (in MB)"
 //
 //	@Produce		application/octet-stream
+//	@Security		BasicAuth
 //	@Success		200 {file} file
 //	@Router			/download/{size} [get]
 func download(c *gin.Context) {

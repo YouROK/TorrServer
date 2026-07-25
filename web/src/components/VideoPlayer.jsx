@@ -22,8 +22,10 @@ import PictureInPictureIcon from '@material-ui/icons/PictureInPicture'
 import PlayArrowIcon from '@material-ui/icons/PlayArrow'
 import Replay10Icon from '@material-ui/icons/Replay10'
 import SpeedIcon from '@material-ui/icons/Speed'
+import SubtitlesIcon from '@material-ui/icons/Subtitles'
 import VolumeOffIcon from '@material-ui/icons/VolumeOff'
 import VolumeUpIcon from '@material-ui/icons/VolumeUp'
+import Hls from 'hls.js'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { StyledDialog } from 'style/CustomMaterialUiStyles'
 import { useTranslation } from 'react-i18next'
@@ -44,6 +46,9 @@ function getMimeType(url) {
       return ''
   }
 }
+
+const canPlayNativeHls = video =>
+  Boolean(video.canPlayType('application/vnd.apple.mpegurl') || video.canPlayType('application/x-mpegURL'))
 
 const PrettoSlider = withStyles(theme => ({
   root: {
@@ -203,6 +208,12 @@ const useStyles = makeStyles(theme => ({
     },
   },
   speedMenu: { minWidth: 100 },
+  subtitleMenu: {
+    '& .MuiPaper-root': {
+      minWidth: 180,
+      maxWidth: 320,
+    },
+  },
   '@keyframes pulse': {
     '0%': { transform: 'translate(-50%, -50%) scale(0.5)', opacity: 0 },
     '50%': { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
@@ -222,12 +233,31 @@ const formatTime = seconds => {
   return `${hh}:${mm}:${ss}`
 }
 
-const VideoPlayer = ({ videoSrc, captionSrc = '', title, onNotSupported }) => {
+const subtitleLabel = track => {
+  const name = track.name || track.lang || 'Subtitle'
+  return track.lang && track.lang.toLowerCase() !== name.toLowerCase() ? `${name} (${track.lang})` : name
+}
+
+const VideoPlayer = ({
+  videoSrc,
+  downloadSrc = videoSrc,
+  captionSrc = '',
+  title,
+  onNotSupported,
+  hls = false,
+  heartbeatSrc = '',
+  showTrigger = true,
+  initiallyOpen = false,
+  onClose,
+}) => {
   const classes = useStyles()
   const isMobile = useMediaQuery('@media (max-width:930px)')
   const videoRef = useRef(null)
+  const hlsRef = useRef(null)
+  const onNotSupportedRef = useRef(onNotSupported)
   const { t } = useTranslation()
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(initiallyOpen)
+  const [videoElement, setVideoElement] = useState(null)
   const [loading, setLoading] = useState(true)
   const [playing, setPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -237,11 +267,96 @@ const VideoPlayer = ({ videoSrc, captionSrc = '', title, onNotSupported }) => {
   const [fullscreen, setFullscreen] = useState(false)
   const [anchorEl, setAnchorEl] = useState(null)
   const [speed, setSpeed] = useState(1)
+  const [subtitleAnchorEl, setSubtitleAnchorEl] = useState(null)
+  const [subtitleTracks, setSubtitleTracks] = useState([])
+  const [subtitleTrack, setSubtitleTrack] = useState(-1)
+
+  const setVideoNode = useCallback(node => {
+    videoRef.current = node
+    setVideoElement(node)
+  }, [])
+
+  useEffect(() => {
+    onNotSupportedRef.current = onNotSupported
+  }, [onNotSupported])
 
   useEffect(() => {
     const vid = document.createElement('video')
-    if (!vid.canPlayType(getMimeType(videoSrc))) onNotSupported()
-  }, [videoSrc, onNotSupported])
+    const supported = hls ? Hls.isSupported() || canPlayNativeHls(vid) : Boolean(vid.canPlayType(getMimeType(videoSrc)))
+    if (!supported) onNotSupportedRef.current?.()
+  }, [hls, videoSrc])
+
+  useEffect(() => {
+    if (!open || !hls || !videoElement) return undefined
+
+    const video = videoElement
+
+    let hlsPlayer
+    let nativeHls = false
+    setLoading(true)
+    setSubtitleTracks([])
+    setSubtitleTrack(-1)
+
+    if (Hls.isSupported()) {
+      hlsPlayer = new Hls()
+      hlsRef.current = hlsPlayer
+      hlsPlayer.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
+        setSubtitleTracks(data.subtitleTracks || [])
+        setSubtitleTrack(hlsPlayer.subtitleTrack)
+        video.play().catch(() => {})
+      })
+      hlsPlayer.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, (_, data) => {
+        setSubtitleTracks(data.subtitleTracks || [])
+      })
+      hlsPlayer.on(Hls.Events.SUBTITLE_TRACK_SWITCH, (_, data) => {
+        setSubtitleTrack(data.id)
+      })
+      hlsPlayer.on(Hls.Events.ERROR, (_, data) => {
+        if (!data.fatal) return
+
+        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+          hlsPlayer.startLoad()
+        } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+          hlsPlayer.recoverMediaError()
+        } else {
+          hlsPlayer.stopLoad()
+          setLoading(false)
+        }
+      })
+      hlsPlayer.loadSource(videoSrc)
+      hlsPlayer.attachMedia(video)
+    } else if (canPlayNativeHls(video)) {
+      nativeHls = true
+      video.src = videoSrc
+      video.load()
+      video.play().catch(() => {})
+    } else {
+      onNotSupportedRef.current?.()
+    }
+
+    return () => {
+      if (hlsRef.current === hlsPlayer) hlsRef.current = null
+      if (hlsPlayer) hlsPlayer.destroy()
+      setSubtitleAnchorEl(null)
+      setSubtitleTracks([])
+      setSubtitleTrack(-1)
+      if (nativeHls) {
+        video.pause()
+        video.removeAttribute('src')
+        video.load()
+      }
+    }
+  }, [hls, open, videoElement, videoSrc])
+
+  useEffect(() => {
+    if (!open || !heartbeatSrc) return undefined
+
+    const timer = window.setInterval(() => {
+      fetch(heartbeatSrc, { cache: 'no-store' }).catch(() => {})
+    }, 30 * 1000)
+
+    return () => window.clearInterval(timer)
+  }, [heartbeatSrc, open])
 
   const handlePlayPause = useCallback(() => {
     const video = videoRef.current
@@ -297,13 +412,29 @@ const VideoPlayer = ({ videoSrc, captionSrc = '', title, onNotSupported }) => {
     setSpeed(val)
     closeSpeedMenu()
   }
+  const openSubtitleMenu = e => setSubtitleAnchorEl(e.currentTarget)
+  const closeSubtitleMenu = () => setSubtitleAnchorEl(null)
+  const changeSubtitleTrack = index => {
+    const hlsPlayer = hlsRef.current
+    if (hlsPlayer) {
+      hlsPlayer.subtitleDisplay = index >= 0
+      hlsPlayer.subtitleTrack = index
+    }
+    setSubtitleTrack(index)
+    closeSubtitleMenu()
+  }
   const downloadVideo = () => {
     const a = document.createElement('a')
-    a.href = videoSrc
+    a.href = downloadSrc
     a.download = ''
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
+  }
+
+  const closePlayer = () => {
+    setOpen(false)
+    onClose?.()
   }
 
   const handleKey = useCallback(
@@ -335,13 +466,20 @@ const VideoPlayer = ({ videoSrc, captionSrc = '', title, onNotSupported }) => {
 
   return (
     <>
-      <StyledButton onClick={() => setOpen(true)}>
-        <PlayArrowIcon />
-        <span>{t('Play')}</span>
-      </StyledButton>
+      {showTrigger && (
+        <StyledButton
+          onClick={() => {
+            setLoading(true)
+            setOpen(true)
+          }}
+        >
+          <PlayArrowIcon />
+          <span>{t('Play')}</span>
+        </StyledButton>
+      )}
       <StyledDialog
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={closePlayer}
         maxWidth='lg'
         fullWidth
         fullScreen={isMobile}
@@ -351,7 +489,7 @@ const VideoPlayer = ({ videoSrc, captionSrc = '', title, onNotSupported }) => {
           <Typography variant='h6' noWrap>
             {title || 'Video Player'}
           </Typography>
-          <IconButton size='medium' onClick={() => setOpen(false)} className={classes.iconButton}>
+          <IconButton size='medium' onClick={closePlayer} className={classes.iconButton}>
             <CloseIcon fontSize='medium' />
           </IconButton>
         </DialogTitle>
@@ -359,15 +497,15 @@ const VideoPlayer = ({ videoSrc, captionSrc = '', title, onNotSupported }) => {
           <Box className={classes.videoWrapper} onClick={handlePlayPause} style={isMobile ? { minHeight: 240 } : {}}>
             <video
               autoPlay
-              ref={videoRef}
-              src={videoSrc}
+              ref={setVideoNode}
+              src={hls ? undefined : videoSrc}
               onTimeUpdate={handleTimeUpdate}
               onLoadedMetadata={handleLoaded}
               onPlay={togglePlay}
               onPause={togglePlay}
               className={classes.video}
             >
-              <track kind='captions' srcLang='en' label='English captions' src={captionSrc} default />
+              <track kind='captions' srcLang='en' label='English captions' src={hls ? undefined : captionSrc} default />
             </video>
             {loading && (
               <Box className={classes.loadingOverlay}>
@@ -451,6 +589,39 @@ const VideoPlayer = ({ videoSrc, captionSrc = '', title, onNotSupported }) => {
                   </Box>
                 )}
                 <Box flexGrow={1} />
+                {subtitleTracks.length > 0 && (
+                  <>
+                    <Tooltip title={t('GStreamer.Subtitles')}>
+                      <IconButton
+                        size='medium'
+                        onClick={openSubtitleMenu}
+                        className={classes.iconButton}
+                        style={subtitleTrack >= 0 ? { color: '#00e68a' } : undefined}
+                      >
+                        <SubtitlesIcon fontSize='medium' />
+                      </IconButton>
+                    </Tooltip>
+                    <Menu
+                      anchorEl={subtitleAnchorEl}
+                      open={Boolean(subtitleAnchorEl)}
+                      onClose={closeSubtitleMenu}
+                      className={classes.subtitleMenu}
+                    >
+                      <MenuItem selected={subtitleTrack === -1} onClick={() => changeSubtitleTrack(-1)}>
+                        {t('None')}
+                      </MenuItem>
+                      {subtitleTracks.map((track, index) => (
+                        <MenuItem
+                          key={`${track.groupId || 'subs'}:${track.id ?? index}`}
+                          selected={subtitleTrack === index}
+                          onClick={() => changeSubtitleTrack(index)}
+                        >
+                          {subtitleLabel(track)}
+                        </MenuItem>
+                      ))}
+                    </Menu>
+                  </>
+                )}
                 <Tooltip title={t('Speed')}>
                   <IconButton size='medium' onClick={openSpeedMenu} className={classes.iconButton}>
                     <SpeedIcon fontSize='medium' />

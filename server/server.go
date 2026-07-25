@@ -1,15 +1,17 @@
 package server
 
 import (
-	"net"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"server/tgbot"
 
 	"server/log"
+	"server/netbind"
 	"server/settings"
+	"server/torr/utils"
 	"server/web"
 )
 
@@ -39,11 +41,7 @@ func Start() {
 			settings.BTsets.SslKey = settings.Args.SslKey
 		}
 		log.TLogln("Check web ssl port", settings.Args.SslPort)
-		l, err := net.Listen("tcp", settings.Args.IP+":"+settings.Args.SslPort)
-		if l != nil {
-			l.Close()
-		}
-		if err != nil {
+		if err := netbind.CheckPort(settings.Args.IPs, settings.Args.SslPort); err != nil {
 			log.TLogln("Port", settings.Args.SslPort, "already in use! Please set different ssl port for HTTPS. Abort")
 			os.Exit(1)
 		}
@@ -53,13 +51,9 @@ func Start() {
 		settings.Args.Port = "8090"
 	}
 
-	log.TLogln("Check web port", settings.Args.Port)
-	l, err := net.Listen("tcp", settings.Args.IP+":"+settings.Args.Port)
-	if l != nil {
-		l.Close()
-	}
-	if err != nil {
-		log.TLogln("Port", settings.Args.Port, "already in use! Please set different port for HTTP. Abort")
+	log.TLogln("Check web port", settings.Args.Port, "on", netbind.Normalize(settings.Args.IPs))
+	if err := netbind.CheckPort(settings.Args.IPs, settings.Args.Port); err != nil {
+		log.TLogln("Cannot bind HTTP port", settings.Args.Port+":", err)
 		os.Exit(1)
 	}
 	// remove old disk caches
@@ -67,7 +61,7 @@ func Start() {
 	// set settings http and https ports. Start web server.
 	settings.Port = settings.Args.Port
 	settings.SslPort = settings.Args.SslPort
-	settings.IP = settings.Args.IP
+	settings.IPs = settings.Args.IPs
 
 	if settings.Args.TGToken != "" {
 		if err := tgbot.Start(settings.Args.TGToken); err != nil {
@@ -143,4 +137,16 @@ func WaitServer() string {
 func Stop() {
 	web.Stop()
 	settings.CloseDB()
+}
+
+func AddTrackers(trackers string) {
+	lines := strings.Split(trackers, "\n")
+	var tracks []string
+	for _, l := range lines {
+		l = strings.Trim(l, " ,\r")
+		if l != "" {
+			tracks = append(tracks, l)
+		}
+	}
+	utils.SetDefTrackers(tracks)
 }

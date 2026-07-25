@@ -9,6 +9,8 @@ export default function MobileAppSettings({
   setIsVlcUsed,
   isInfuseUsed,
   setIsInfuseUsed,
+  isSenPlayerUsed,
+  setIsSenPlayerUsed,
   isIinaUsed,
   setIsIinaUsed,
 }) {
@@ -50,6 +52,22 @@ export default function MobileAppSettings({
               labelPlacement='start'
             />
             <FormHelperText margin='none'>{t('SettingsDialog.UseInfuseHint')}</FormHelperText>
+          </>
+        )}
+        {isApple && (
+          <>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={isSenPlayerUsed}
+                  onChange={() => setIsSenPlayerUsed(prev => !prev)}
+                  color='secondary'
+                />
+              }
+              label={t('SettingsDialog.UseSenPlayer')}
+              labelPlacement='start'
+            />
+            <FormHelperText margin='none'>{t('SettingsDialog.UseSenPlayerHint')}</FormHelperText>
           </>
         )}
         {isMac && (

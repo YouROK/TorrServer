@@ -25,6 +25,7 @@ type cacheReqJS struct {
 //	@Param			request	body	cacheReqJS	true	"Cache stats request"
 //
 //	@Produce		json
+//	@Security		BasicAuth
 //	@Success		200	{object} state.CacheState	"Cache stats"
 //	@Router			/cache [post]
 func cache(c *gin.Context) {

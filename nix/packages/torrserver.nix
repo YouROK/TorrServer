@@ -81,7 +81,7 @@ pkgs.stdenv.mkDerivation rec {
 
     cd server
     mkdir -p ../dist
-    GOOS=linux GOARCH=amd64 go build \
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
       -ldflags="-s -w -checklinkname=0" \
       -tags=nosqlite \
       -trimpath \

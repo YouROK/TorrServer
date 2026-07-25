@@ -11,6 +11,7 @@ export default {
   TorrentDisconnectTimeout: 30,
   EnableDebug: false,
   EnableDLNA: false,
+  EnableBonjour: true,
   FriendlyName: '',
   EnableRutorSearch: false,
   EnableIPv6: false,
@@ -20,6 +21,8 @@ export default {
   DisableDHT: false,
   DisablePEX: false,
   DisableUpload: false,
+  EnableLPD: true,
+  LPDIPv6: false,
   DownloadRateLimit: 0,
   UploadRateLimit: 0,
   ConnectionsLimit: 25,
@@ -30,6 +33,4 @@ export default {
   SslKey: '',
   ShowFSActiveTorr: true,
   StoreSettingsInJson: true,
-  EnableProxy: false,
-  ProxyHosts: ['*themoviedb.org', '*tmdb.org', 'rutor.info'],
 }

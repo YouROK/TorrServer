@@ -30,7 +30,8 @@ import (
 //	@Accept			multipart/form-data
 //
 //	@Produce		json
-//	@Success		200	{array}		state.TorrentStatus	"Torrent statuses"
+//	@Security		BasicAuth
+//	@Success		200	if multiple files upload requested then {array} else a single state.TorrentStatus object	"Torrent statuses"
 //	@Router			/torrent/upload [post]
 func torrentUpload(c *gin.Context) {
 	form, err := c.MultipartForm()
@@ -110,5 +111,11 @@ func torrentUpload(c *gin.Context) {
 
 		stats = append(stats, tor.Status())
 	}
+
+	if len(stats) == 1 {
+		c.JSON(200, stats[0])
+		return
+	}
+
 	c.JSON(200, stats)
 }
