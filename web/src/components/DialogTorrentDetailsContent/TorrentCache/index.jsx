@@ -38,12 +38,12 @@ const TorrentCache = ({ cache, isMini, isSnakeDebugMode }) => {
   const pieceSizeWithGap = pieceSize + gapBetweenPieces
   const piecesInOneRow = Math.floor(canvasWidth / pieceSizeWithGap)
 
-  let shotCacheMap
+  let shortCacheMap
   if (isMini) {
     const preloadPiecesAmount = Math.round(cache.Capacity / cache.PiecesLength - 1)
-    shotCacheMap = getShortCacheMap({ cacheMap, preloadPiecesAmount, piecesInOneRow })
+    shortCacheMap = getShortCacheMap({ cacheMap, preloadPiecesAmount, piecesInOneRow })
   }
-  const source = isMini ? shotCacheMap : cacheMap
+  const source = isMini ? shortCacheMap : cacheMap
   const startingXPoint = Math.ceil((canvasWidth - pieceSizeWithGap * piecesInOneRow) / 2) // needed to center grid
   const height = Math.ceil(source.length / piecesInOneRow) * pieceSizeWithGap
 
