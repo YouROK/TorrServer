@@ -298,8 +298,16 @@ func saveViewedPosition(t *Torrent, fileID int, file *torrent.File, reader *torr
 
 	buffer := int64(sets.BTsets.BufferSizeMB) * 1024 * 1024
 	if sets.BTsets.AutoBuffer {
+		fillBytes, fillSeconds, rate, filled := reader.FillStats()
 		if measured, ok := reader.BufferEstimate(); ok {
+			log.Printf("[Position] %s:%d buffer measured %dMB (fill %dMB in %.1fs, playback %.2fMB/s, fallback %dMB)",
+				t.Hash().HexString()[:8], fileID, measured>>20, fillBytes>>20, fillSeconds,
+				rate/(1<<20), sets.BTsets.BufferSizeMB)
 			buffer = measured
+		} else {
+			log.Printf("[Position] %s:%d buffer not measurable (filled=%v fill %dMB in %.1fs, playback %.2fMB/s), using %dMB",
+				t.Hash().HexString()[:8], fileID, filled, fillBytes>>20, fillSeconds,
+				rate/(1<<20), sets.BTsets.BufferSizeMB)
 		}
 	}
 	if buffer <= 0 {

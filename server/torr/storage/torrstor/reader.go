@@ -156,6 +156,19 @@ func (r *Reader) SessionSeconds() float64 {
 	return r.lastRead.Sub(r.firstRead).Seconds()
 }
 
+// FillStats exposes what the buffer estimate is derived from: how much was read before
+// the client first paused, over how long, and the playback rate measured afterwards.
+func (r *Reader) FillStats() (fillBytes int64, fillSeconds, rate float64, filled bool) {
+	if !r.fillDone {
+		return 0, 0, 0, false
+	}
+	postSeconds := r.lastRead.Sub(r.postFillTime).Seconds()
+	if postSeconds > 0 {
+		rate = float64(r.offset-r.postFillBytes) / postSeconds
+	}
+	return r.fillBytes, r.fillSeconds, rate, true
+}
+
 // BufferEstimate infers the client's buffer size in bytes from the fill dynamics:
 // after the buffer is full the client reads at the playback rate, so that rate times
 // the fill duration is what was played while filling; the rest is the buffer.

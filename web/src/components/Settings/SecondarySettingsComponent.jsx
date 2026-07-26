@@ -471,8 +471,8 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         onChange={inputForm}
         margin='normal'
         id='BufferSizeMB'
-        label={t('SettingsDialog.BufferSizeMB')}
-        helperText={t('SettingsDialog.BufferSizeMBHint')}
+        label={AutoBuffer ? t('SettingsDialog.BufferSizeMBFallback') : t('SettingsDialog.BufferSizeMB')}
+        helperText={AutoBuffer ? t('SettingsDialog.BufferSizeMBFallbackHint') : t('SettingsDialog.BufferSizeMBHint')}
         InputProps={{
           endAdornment: <InputAdornment position='end'>{t('MB')}</InputAdornment>,
         }}
@@ -480,7 +480,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         type='number'
         variant='outlined'
         fullWidth
-        disabled={!ffprobeAvailable || !SavePosition || AutoBuffer}
+        disabled={!ffprobeAvailable || !SavePosition}
       />
       <br />
       {/* Storage Settings Section */}

@@ -181,6 +181,8 @@
     "SavePositionNoFfprobe": "Requires ffprobe: install it to enable this feature",
     "BufferSizeMB": "Player buffer",
     "BufferSizeMBHint": "How much the player reads ahead of the picture. Subtracted from the read position, so a wrong value shifts the saved position.",
+    "BufferSizeMBFallback": "Player buffer (fallback)",
+    "BufferSizeMBFallbackHint": "Used only until the buffer can be measured, e.g. at the very start of playback or for short sessions.",
     "AutoBuffer": "Measure buffer automatically",
     "AutoBufferHint": "Infer the buffer size from how the player loads data instead of using the value above. Falls back to it when the measurement is unreliable.",
     "SaveStorageSettings": "Save Storage Settings",
