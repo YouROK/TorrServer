@@ -113,7 +113,7 @@ func (t *Torrent) Preload(index int, size int64) {
 			t.BitRate = data.Format.BitRate
 			t.DurationSeconds = data.Format.DurationSeconds
 			// reuse it for saving playback position, so that never needs its own probe
-			SetDuration(t.Hash().HexString(), index, data.Format.DurationSeconds)
+			setDuration(t.Hash().HexString(), index, data.Format.DurationSeconds)
 		}
 	}
 

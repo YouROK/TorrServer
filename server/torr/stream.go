@@ -110,7 +110,7 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 
 	// Our own ffprobe reads through this same endpoint; such a stream must not trigger
 	// any position work, otherwise probing would recurse into itself.
-	isProbe := req.URL.Query().Get(ProbeMarker) != ""
+	isProbe := req.URL.Query().Get(probeMarker) != ""
 
 	// Mark as viewed (never clears an already saved playback position)
 	if !isProbe {
@@ -205,12 +205,14 @@ const (
 	eofMargin = 8 << 20
 	// How often the position is refreshed while a stream is still running.
 	saveInterval = 30 * time.Second
+	// Used if the configured buffer is missing, e.g. in a settings file written before it existed.
+	fallbackBuffer = 32 << 20
 )
 
-// ProbeMarker is a query flag added to the URL ffprobe is pointed at. A stream carrying
+// probeMarker is a query flag added to the URL ffprobe is pointed at. A stream carrying
 // it is our own probe, so it must never start another probe — without this guard probing
 // would stream from ourselves and recurse.
-const ProbeMarker = "tsprobe"
+const probeMarker = "tsprobe"
 
 // durEntry is a cached media duration, or the time of the last failed attempt to get it.
 type durEntry struct {
@@ -218,8 +220,8 @@ type durEntry struct {
 	lastTry time.Time
 }
 
-// durations caches durations per "hash:fileIndex"; lastSaved holds the last stored byte
-// offset per file so an idle (paused) stream is not rewritten over and over.
+// Both maps are keyed by fileKey. durations caches media durations; lastSaved holds the
+// last stored byte offset per file, so an idle (paused) stream is not rewritten over and over.
 var (
 	durations sync.Map
 	lastSaved sync.Map
@@ -231,19 +233,19 @@ var probeSlot = make(chan struct{}, 1)
 
 const probeRetryDelay = 10 * time.Minute
 
-func durationKey(hash string, fileID int) string {
+func fileKey(hash string, fileID int) string {
 	return hash + ":" + strconv.Itoa(fileID)
 }
 
-// SetDuration records a media duration discovered elsewhere (preload already runs ffprobe).
-func SetDuration(hash string, fileID int, seconds float64) {
+// setDuration records a media duration discovered elsewhere (preload already runs ffprobe).
+func setDuration(hash string, fileID int, seconds float64) {
 	if seconds > 0 {
-		durations.Store(durationKey(hash, fileID), durEntry{seconds: seconds})
+		durations.Store(fileKey(hash, fileID), durEntry{seconds: seconds})
 	}
 }
 
 func getDuration(hash string, fileID int) float64 {
-	if v, ok := durations.Load(durationKey(hash, fileID)); ok {
+	if v, ok := durations.Load(fileKey(hash, fileID)); ok {
 		if e, ok := v.(durEntry); ok {
 			return e.seconds
 		}
@@ -258,7 +260,7 @@ func positionSavingEnabled() bool {
 }
 
 func probeDuration(hash string, fileID int) {
-	key := durationKey(hash, fileID)
+	key := fileKey(hash, fileID)
 	if v, ok := durations.Load(key); ok {
 		if e, ok := v.(durEntry); ok {
 			if e.seconds > 0 || time.Since(e.lastTry) < probeRetryDelay {
@@ -278,7 +280,7 @@ func probeDuration(hash string, fileID int) {
 	if sets.Ssl {
 		link = "https://127.0.0.1:" + sets.SslPort + "/play/" + hash + "/" + strconv.Itoa(fileID)
 	}
-	data, err := ffprobe.ProbeUrl(link + "?" + ProbeMarker + "=1")
+	data, err := ffprobe.ProbeUrl(link + "?" + probeMarker + "=1")
 	if err != nil || data == nil || data.Format == nil || data.Format.DurationSeconds <= 0 {
 		return // the claimed attempt stands; retried after probeRetryDelay
 	}
@@ -297,14 +299,15 @@ func saveViewedPosition(t *Torrent, fileID int, file *torrent.File, reader *torr
 	hash := t.Hash().HexString()
 
 	buffer := int64(sets.BTsets.BufferSizeMB) * 1024 * 1024
-	measured, measuredOK := int64(0), false
+	var measured int64
+	var measuredOK bool
 	if sets.BTsets.AutoBuffer {
 		if measured, measuredOK = reader.BufferEstimate(); measuredOK {
 			buffer = measured
 		}
 	}
 	if buffer <= 0 {
-		buffer = 32 << 20
+		buffer = fallbackBuffer
 	}
 
 	head := reader.Offset() // last byte handed to the client = what is on screen + its buffer
@@ -343,7 +346,7 @@ func saveViewedPosition(t *Torrent, fileID int, file *torrent.File, reader *torr
 	}
 
 	// Nothing new to store (e.g. the stream is paused and the position is unchanged).
-	key := durationKey(hash, fileID)
+	key := fileKey(hash, fileID)
 	if prev, ok := lastSaved.Load(key); ok {
 		if off, ok := prev.(int64); ok && off == screen {
 			return
@@ -354,7 +357,6 @@ func saveViewedPosition(t *Torrent, fileID int, file *torrent.File, reader *torr
 	// The gates above are passed only by a genuine viewing session, so the duration is
 	// looked up (and probed, if still unknown) at most once per watched file. Done in the
 	// background: the client is already gone and the reader must not be held open for it.
-	debug := sets.BTsets.EnableDebug
 	go func() {
 		dur := getDuration(hash, fileID)
 		if dur <= 0 {
@@ -373,10 +375,8 @@ func saveViewedPosition(t *Torrent, fileID int, file *torrent.File, reader *torr
 			Length:    flen,
 			Duration:  dur,
 		})
-		if debug {
-			log.Printf("[Stream] saved position hash=%s idx=%d time=%.0fs/%.0fs (head=%dMB buf=%dMB)",
-				hash[:8], fileID, timecode, dur, head>>20, buffer>>20)
-		}
+		log.Printf("[Position] %s:%d saved %.0fs of %.0fs (head %dMB, buffer %dMB)",
+			hash[:8], fileID, timecode, dur, head>>20, buffer>>20)
 	}()
 }
 

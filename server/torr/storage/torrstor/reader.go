@@ -208,7 +208,6 @@ func (r *Reader) Offset() int64 {
 	return r.offset
 }
 
-
 func (r *Reader) Readahead() int64 {
 	return r.readahead
 }

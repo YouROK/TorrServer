@@ -111,7 +111,6 @@ func RemViewed(vv *Viewed) {
 }
 
 func ListViewed(hash string) []*Viewed {
-	var err error
 	if hash != "" {
 		buf := tdb.Get("Viewed", hash)
 		if len(buf) == 0 {
@@ -138,7 +137,4 @@ func ListViewed(hash string) []*Viewed {
 		}
 		return ret
 	}
-
-	log.TLogln("Error list viewed:", err)
-	return []*Viewed{}
 }
