@@ -297,17 +297,10 @@ func saveViewedPosition(t *Torrent, fileID int, file *torrent.File, reader *torr
 	hash := t.Hash().HexString()
 
 	buffer := int64(sets.BTsets.BufferSizeMB) * 1024 * 1024
+	measured, measuredOK := int64(0), false
 	if sets.BTsets.AutoBuffer {
-		fillBytes, fillSeconds, rate, filled := reader.FillStats()
-		if measured, ok := reader.BufferEstimate(); ok {
-			log.Printf("[Position] %s:%d buffer measured %dMB (fill %dMB in %.1fs, playback %.2fMB/s, fallback %dMB)",
-				t.Hash().HexString()[:8], fileID, measured>>20, fillBytes>>20, fillSeconds,
-				rate/(1<<20), sets.BTsets.BufferSizeMB)
+		if measured, measuredOK = reader.BufferEstimate(); measuredOK {
 			buffer = measured
-		} else {
-			log.Printf("[Position] %s:%d buffer not measurable (filled=%v fill %dMB in %.1fs, playback %.2fMB/s), using %dMB",
-				t.Hash().HexString()[:8], fileID, filled, fillBytes>>20, fillSeconds,
-				rate/(1<<20), sets.BTsets.BufferSizeMB)
 		}
 	}
 	if buffer <= 0 {
@@ -325,6 +318,17 @@ func saveViewedPosition(t *Torrent, fileID int, file *torrent.File, reader *torr
 	}
 	if active < minSessionSeconds || head-anchor <= buffer {
 		return
+	}
+
+	if sets.BTsets.AutoBuffer {
+		fillBytes, fillSeconds, rate, filled := reader.FillStats()
+		if measuredOK {
+			log.Printf("[Position] %s:%d buffer measured %dMB (fill %dMB in %.0fs, playback %.2fMB/s, fallback %dMB)",
+				hash[:8], fileID, measured>>20, fillBytes>>20, fillSeconds, rate/(1<<20), sets.BTsets.BufferSizeMB)
+		} else {
+			log.Printf("[Position] %s:%d buffer not measured yet (buffered=%v, %dMB in %.0fs, playback %.2fMB/s), using fallback %dMB",
+				hash[:8], fileID, filled, fillBytes>>20, fillSeconds, rate/(1<<20), sets.BTsets.BufferSizeMB)
+		}
 	}
 
 	screen := head - buffer

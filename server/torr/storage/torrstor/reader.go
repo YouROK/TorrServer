@@ -115,8 +115,12 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 }
 
 // stallGap: a pause between reads longer than this means the client stopped pulling
-// data because its buffer is full.
-const stallGap = 2 * time.Second
+// data because its buffer is full. steadyPhase is how much playing-at-its-own-pace has
+// to be observed after that before the playback rate is trustworthy.
+const (
+	stallGap    = 2 * time.Second
+	steadyPhase = 30.0 // seconds
+)
 
 // trackPosition records the playback anchor and the buffer-fill dynamics. Called from
 // Read before the offset is advanced, so r.offset is where this read started.
@@ -179,7 +183,7 @@ func (r *Reader) BufferEstimate() (int64, bool) {
 	}
 	postBytes := r.offset - r.postFillBytes
 	postSeconds := r.lastRead.Sub(r.postFillTime).Seconds()
-	if postBytes <= 0 || postSeconds < 60 { // need a steady phase to read the playback rate
+	if postBytes <= 0 || postSeconds < steadyPhase { // need a steady phase to read the playback rate
 		return 0, false
 	}
 	rate := float64(postBytes) / postSeconds
