@@ -15,6 +15,7 @@ import {
 } from '@material-ui/core'
 import { styled } from '@material-ui/core/styles'
 import { useEffect, useMemo, useState } from 'react'
+import { ffprobeStatusHost } from 'utils/Hosts'
 
 import { SecondarySettingsContent, SettingSectionLabel } from './style'
 
@@ -71,7 +72,19 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
     SslCert,
     SslKey,
     ShowFSActiveTorr,
+    SavePosition,
+    BufferSizeMB,
+    AutoBuffer,
   } = settings || {}
+
+  // Saving the playback position needs the real media duration, which comes from ffprobe
+  const [ffprobeAvailable, setFfprobeAvailable] = useState(false)
+  useEffect(() => {
+    fetch(ffprobeStatusHost())
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => setFfprobeAvailable(!!(data && data.available)))
+      .catch(() => setFfprobeAvailable(false))
+  }, [])
 
   // Use useMemo to compute basePath once
   const basePath = useMemo(() => {
@@ -412,6 +425,64 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         />
         <FormHelperText margin='none'>{t('SettingsDialog.ShowFSActiveTorrHint')}</FormHelperText>
       </FormGroup>
+      {/* Playback position (resume) */}
+      <SettingSectionLabel style={{ marginTop: '20px' }}>
+        {t('SettingsDialog.PlaybackPosition')}
+        <small>{t('SettingsDialog.PlaybackPositionDesc')}</small>
+      </SettingSectionLabel>
+      {!ffprobeAvailable && (
+        <FormHelperText margin='none' error>
+          {t('SettingsDialog.SavePositionNoFfprobe')}
+        </FormHelperText>
+      )}
+      <FormGroup>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={!!SavePosition}
+              onChange={inputForm}
+              id='SavePosition'
+              color='secondary'
+              disabled={!ffprobeAvailable}
+            />
+          }
+          label={t('SettingsDialog.SavePosition')}
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('SettingsDialog.SavePositionHint')}</FormHelperText>
+      </FormGroup>
+      <FormGroup>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={!!AutoBuffer}
+              onChange={inputForm}
+              id='AutoBuffer'
+              color='secondary'
+              disabled={!ffprobeAvailable || !SavePosition}
+            />
+          }
+          label={t('SettingsDialog.AutoBuffer')}
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('SettingsDialog.AutoBufferHint')}</FormHelperText>
+      </FormGroup>
+      <TextField
+        onChange={inputForm}
+        margin='normal'
+        id='BufferSizeMB'
+        label={t('SettingsDialog.BufferSizeMB')}
+        helperText={t('SettingsDialog.BufferSizeMBHint')}
+        InputProps={{
+          endAdornment: <InputAdornment position='end'>{t('MB')}</InputAdornment>,
+        }}
+        value={BufferSizeMB}
+        type='number'
+        variant='outlined'
+        fullWidth
+        disabled={!ffprobeAvailable || !SavePosition || AutoBuffer}
+      />
+      <br />
       {/* Storage Settings Section */}
       <Box mt={4} mb={2}>
         <SettingSectionLabel>{t('SettingsDialog.StorageConfiguration')}</SettingSectionLabel>

@@ -13,11 +13,27 @@ import (
 
 type Reader struct {
 	torrent.Reader
-	offset      int64
-	startOffset int64 // first Range-seek target = screen position at buffer-empty (resume anchor)
-	startSet    bool
-	readahead   int64
-	file        *torrent.File
+	offset    int64
+	readahead int64
+	file      *torrent.File
+
+	// Playback position tracking (resume feature).
+	// anchor is the offset of the first actual Read — i.e. the client's Range target.
+	// It is captured on Read, not Seek: http.ServeContent always seeks to EOF then to 0
+	// to measure the size before seeking to the requested range, so Seek is not a
+	// reliable signal of where playback really starts.
+	anchor    int64
+	anchorSet bool
+	firstRead time.Time
+	lastRead  time.Time
+	// Buffer auto-measure: the client fills its buffer as fast as it can, then stalls
+	// and settles to the playback rate. Bytes read up to the first stall minus what was
+	// played during that time is the client's buffer size.
+	fillDone      bool
+	fillBytes     int64
+	fillSeconds   float64
+	postFillBytes int64
+	postFillTime  time.Time
 
 	cache    *Cache
 	isClosed bool
@@ -50,10 +66,6 @@ func (r *Reader) Seek(offset int64, whence int) (n int64, err error) {
 	switch whence {
 	case io.SeekStart:
 		r.offset = offset
-		if !r.startSet { // first real seek = the client's Range start (resume anchor)
-			r.startOffset = offset
-			r.startSet = true
-		}
 	case io.SeekCurrent:
 		r.offset += offset
 	case io.SeekEnd:
@@ -93,12 +105,76 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 		//	}
 		//}
 
+		r.trackPosition(n)
 		r.offset += int64(n)
 		r.lastAccess = time.Now().Unix()
 	} else {
 		log.TLogln("Torrent closed and readed")
 	}
 	return
+}
+
+// stallGap: a pause between reads longer than this means the client stopped pulling
+// data because its buffer is full.
+const stallGap = 2 * time.Second
+
+// trackPosition records the playback anchor and the buffer-fill dynamics. Called from
+// Read before the offset is advanced, so r.offset is where this read started.
+func (r *Reader) trackPosition(n int) {
+	if n <= 0 {
+		return
+	}
+	now := time.Now()
+	if !r.anchorSet {
+		r.anchor = r.offset
+		r.anchorSet = true
+		r.firstRead = now
+		r.lastRead = now
+		return
+	}
+	if !r.fillDone && now.Sub(r.lastRead) > stallGap {
+		// first stall => the client buffer just got full
+		r.fillDone = true
+		r.fillBytes = r.offset - r.anchor
+		r.fillSeconds = r.lastRead.Sub(r.firstRead).Seconds()
+		r.postFillBytes = r.offset
+		r.postFillTime = now
+	}
+	r.lastRead = now
+}
+
+// Anchor is the offset where playback started (client's Range target), and whether it is known.
+func (r *Reader) Anchor() (int64, bool) {
+	return r.anchor, r.anchorSet
+}
+
+// SessionSeconds is how long this reader has actually been streaming.
+func (r *Reader) SessionSeconds() float64 {
+	if !r.anchorSet {
+		return 0
+	}
+	return r.lastRead.Sub(r.firstRead).Seconds()
+}
+
+// BufferEstimate infers the client's buffer size in bytes from the fill dynamics:
+// after the buffer is full the client reads at the playback rate, so that rate times
+// the fill duration is what was played while filling; the rest is the buffer.
+// Returns false when the session is too short or the result is implausible.
+func (r *Reader) BufferEstimate() (int64, bool) {
+	if !r.fillDone || r.fillBytes <= 0 {
+		return 0, false
+	}
+	postBytes := r.offset - r.postFillBytes
+	postSeconds := r.lastRead.Sub(r.postFillTime).Seconds()
+	if postBytes <= 0 || postSeconds < 60 { // need a steady phase to read the playback rate
+		return 0, false
+	}
+	rate := float64(postBytes) / postSeconds
+	buf := float64(r.fillBytes) - rate*r.fillSeconds
+	if buf < 4<<20 || buf > 1<<30 {
+		return 0, false
+	}
+	return int64(buf), true
 }
 
 func (r *Reader) SetReadahead(length int64) {
@@ -115,10 +191,6 @@ func (r *Reader) Offset() int64 {
 	return r.offset
 }
 
-// StartOffset is the client's initial Range-seek target (screen position at buffer-empty).
-func (r *Reader) StartOffset() int64 {
-	return r.startOffset
-}
 
 func (r *Reader) Readahead() int64 {
 	return r.readahead
