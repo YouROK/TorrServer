@@ -18,6 +18,7 @@ import (
 	mt "server/mimetype"
 	sets "server/settings"
 	"server/torr/state"
+	"server/torr/storage/torrstor"
 )
 
 // Add atomic counter for concurrent streams
@@ -156,6 +157,11 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 
 	http.ServeContent(resp, req, file.Path(), time.Unix(t.Timestamp, 0), reader)
 
+	// Auto-save playback position on stream close (resume feature)
+	if sets.BTsets.SavePosition && sets.BTsets.TrackTimecode {
+		saveViewedPosition(t, fileID, file, reader)
+	}
+
 	if sets.BTsets.EnableDebug {
 		if clerr != nil {
 			log.Printf("[Stream:%d] Disconnect client", streamID)
@@ -164,6 +170,42 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 		}
 	}
 	return nil
+}
+
+// saveViewedPosition estimates the on-screen playback position (read head minus the client's
+// buffer) and stores it into the viewed record as a 0..1 byte-fraction of the file. Duration-free
+// (no ffprobe): consumers multiply the fraction by the media duration to get seconds.
+func saveViewedPosition(t *Torrent, fileID int, file *torrent.File, reader *torrstor.Reader) {
+	flen := file.Length()
+	if flen <= 0 {
+		return
+	}
+	head := reader.Offset() // last in-file byte the client read = screen + buffer
+	buffer := int64(sets.BTsets.BufferSizeMB) * 1024 * 1024
+	if buffer <= 0 {
+		buffer = 32 * 1024 * 1024
+	}
+	// Skip pure preload/probe requests: require real playback well past the buffer.
+	if head-reader.StartOffset() < buffer {
+		return
+	}
+	screen := head - buffer
+	if screen < 0 {
+		screen = 0
+	}
+	frac := float64(screen) / float64(flen)
+	if frac > 0.999 {
+		frac = 0.999
+	}
+	sets.SetViewed(&sets.Viewed{
+		Hash:      t.Hash().HexString(),
+		FileIndex: fileID,
+		TimeCode:  frac,
+	})
+	if sets.BTsets.EnableDebug {
+		log.Printf("[Stream] saved position hash=%s idx=%d frac=%.4f (head=%dMB buf=%dMB)",
+			t.Hash().HexString()[:8], fileID, frac, head/1024/1024, buffer/1024/1024)
+	}
 }
 
 // GetActiveStreams returns number of currently active streams

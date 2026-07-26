@@ -13,9 +13,11 @@ import (
 
 type Reader struct {
 	torrent.Reader
-	offset    int64
-	readahead int64
-	file      *torrent.File
+	offset      int64
+	startOffset int64 // first Range-seek target = screen position at buffer-empty (resume anchor)
+	startSet    bool
+	readahead   int64
+	file        *torrent.File
 
 	cache    *Cache
 	isClosed bool
@@ -48,6 +50,10 @@ func (r *Reader) Seek(offset int64, whence int) (n int64, err error) {
 	switch whence {
 	case io.SeekStart:
 		r.offset = offset
+		if !r.startSet { // first real seek = the client's Range start (resume anchor)
+			r.startOffset = offset
+			r.startSet = true
+		}
 	case io.SeekCurrent:
 		r.offset += offset
 	case io.SeekEnd:
@@ -107,6 +113,11 @@ func (r *Reader) SetReadahead(length int64) {
 
 func (r *Reader) Offset() int64 {
 	return r.offset
+}
+
+// StartOffset is the client's initial Range-seek target (screen position at buffer-empty).
+func (r *Reader) StartOffset() int64 {
+	return r.startOffset
 }
 
 func (r *Reader) Readahead() int64 {
