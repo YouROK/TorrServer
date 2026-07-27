@@ -2,6 +2,7 @@ package torrstor
 
 import (
 	"io"
+	"math"
 	"sync"
 	"time"
 
@@ -26,14 +27,17 @@ type Reader struct {
 	anchorSet bool
 	firstRead time.Time
 	lastRead  time.Time
-	// Buffer auto-measure: the client fills its buffer as fast as it can, then stalls
-	// and settles to the playback rate. Bytes read up to the first stall minus what was
-	// played during that time is the client's buffer size.
-	fillDone      bool
-	fillBytes     int64
-	fillSeconds   float64
-	postFillBytes int64
-	postFillTime  time.Time
+	// Buffer auto-measure. A client tops its buffer up in bursts rather than reading
+	// evenly, so the rate is only meaningful averaged over a window. Positions are
+	// sampled once a second and the buffer is derived from them; once derived it is
+	// kept and sampling stops.
+	posMu     sync.Mutex
+	samples   []posSample
+	sampledAt time.Time
+	buffer    int64
+	bufferSet bool
+	fillSecs  float64 // how long the lead took to build, for logging
+	playRate  float64 // playback speed it was measured against, for logging
 
 	cache    *Cache
 	isClosed bool
@@ -114,13 +118,32 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 	return
 }
 
-// stallGap: a pause between reads longer than this means the client stopped pulling
-// data because its buffer is full. steadyPhase is how much playing-at-its-own-pace has
-// to be observed after that before the playback rate is trustworthy.
+// Buffer measurement tuning. A client tops its buffer up in bursts, so a rate only means
+// something when averaged over a window; playback speed is taken from the tail of the
+// session, once two consecutive windows agree that it has settled.
 const (
-	stallGap    = 2 * time.Second
-	steadyPhase = 30.0 // seconds
+	steadyPhase = 30.0    // seconds of playback averaged into one rate window
+	steadyDrift = 0.4     // how much two consecutive windows may differ and still count as settled
+	maxSamples  = 20 * 60 // once a second, so twenty minutes of history
+	minBuffer   = 4 << 20
+	maxBuffer   = 1 << 30
 )
+
+// posSample is where the reader stood at a moment in time.
+type posSample struct {
+	at  time.Time
+	off int64
+}
+
+// indexBefore returns the latest sample at least d seconds older than samples[i].
+func indexBefore(samples []posSample, i int, d float64) int {
+	for j := i - 1; j >= 0; j-- {
+		if samples[i].at.Sub(samples[j].at).Seconds() >= d {
+			return j
+		}
+	}
+	return -1
+}
 
 // trackPosition records the playback anchor and the buffer-fill dynamics. Called from
 // Read before the offset is advanced, so r.offset is where this read started.
@@ -136,15 +159,16 @@ func (r *Reader) trackPosition(n int) {
 		r.lastRead = now
 		return
 	}
-	if !r.fillDone && now.Sub(r.lastRead) > stallGap {
-		// first stall => the client buffer just got full
-		r.fillDone = true
-		r.fillBytes = r.offset - r.anchor
-		r.fillSeconds = r.lastRead.Sub(r.firstRead).Seconds()
-		r.postFillBytes = r.offset
-		r.postFillTime = now
-	}
 	r.lastRead = now
+	if r.bufferSet || now.Sub(r.sampledAt) < time.Second {
+		return
+	}
+	r.sampledAt = now
+	r.posMu.Lock()
+	if len(r.samples) < maxSamples {
+		r.samples = append(r.samples, posSample{at: now, off: r.offset})
+	}
+	r.posMu.Unlock()
 }
 
 // Anchor is the offset where playback started (client's Range target), and whether it is known.
@@ -160,45 +184,77 @@ func (r *Reader) SessionSeconds() float64 {
 	return r.lastRead.Sub(r.firstRead).Seconds()
 }
 
-// FillStats exposes what the buffer estimate is derived from: how much was read before
-// the client first paused, over how long, and the playback rate measured afterwards.
-func (r *Reader) FillStats() (fillBytes int64, fillSeconds, rate float64, filled bool) {
-	if !r.fillDone {
-		return 0, 0, 0, false
-	}
-	postSeconds := r.lastRead.Sub(r.postFillTime).Seconds()
-	if postSeconds > 0 {
-		rate = float64(r.offset-r.postFillBytes) / postSeconds
-	}
-	return r.fillBytes, r.fillSeconds, rate, true
+// FillStats exposes what the estimate was derived from: the reader's lead over playback,
+// how long it took to build up, and the playback rate it was measured against.
+func (r *Reader) FillStats() (lead int64, leadSeconds, rate float64, measured bool) {
+	r.posMu.Lock()
+	defer r.posMu.Unlock()
+	return r.buffer, r.fillSecs, r.playRate, r.bufferSet
 }
 
-// BufferEstimate infers the client's buffer size in bytes from the fill dynamics:
-// after the buffer is full the client reads at the playback rate, so that rate times
-// the fill duration is what was played while filling; the rest is the buffer.
-// Returns false when the session is too short or the result is implausible.
+// BufferEstimate derives how much the client keeps buffered ahead of the picture. The
+// buffer is by definition how far the reader runs ahead of playback, so it is the largest
+// lead seen: bytes read beyond the start, minus what playback consumed in the same time.
+// Taking the maximum means a network hiccup while filling cannot cut the measurement
+// short, and the burst-and-idle pattern of topping the buffer up cannot either.
+// The result is kept once found, and sampling stops.
 func (r *Reader) BufferEstimate() (int64, bool) {
-	if !r.fillDone || r.fillBytes <= 0 {
+	r.posMu.Lock()
+	defer r.posMu.Unlock()
+	if r.bufferSet {
+		return r.buffer, true
+	}
+	if !r.anchorSet || len(r.samples) < 2 {
 		return 0, false
 	}
-	postBytes := r.offset - r.postFillBytes
-	postSeconds := r.lastRead.Sub(r.postFillTime).Seconds()
-	// The playback rate is multiplied by the fill duration, so an error in it grows with
-	// however long the fill took. Watch playback for at least as long as the fill lasted
-	// (a slow line fills slowly), and never for less than steadyPhase.
-	need := steadyPhase
-	if r.fillSeconds > need {
-		need = r.fillSeconds
-	}
-	if postBytes <= 0 || postSeconds < need {
+	samples := r.samples
+	last := len(samples) - 1
+
+	// Playback speed, from the tail of the session. Two consecutive windows have to agree,
+	// which is what tells filling (still racing ahead) apart from playing at its own pace.
+	recent := indexBefore(samples, last, steadyPhase)
+	if recent < 0 {
 		return 0, false
 	}
-	rate := float64(postBytes) / postSeconds
-	buf := float64(r.fillBytes) - rate*r.fillSeconds
-	if buf < 4<<20 || buf > 1<<30 {
+	earlier := indexBefore(samples, recent, steadyPhase)
+	if earlier < 0 {
 		return 0, false
 	}
-	return int64(buf), true
+	play := rateBetween(samples[recent], samples[last])
+	prev := rateBetween(samples[earlier], samples[recent])
+	if play <= 0 || math.Abs(prev-play) > steadyDrift*math.Max(prev, play) {
+		return 0, false
+	}
+
+	var lead int64
+	var leadAt time.Time
+	for _, sm := range samples {
+		played := int64(play * sm.at.Sub(r.firstRead).Seconds())
+		if ahead := sm.off - r.anchor - played; ahead > lead {
+			lead, leadAt = ahead, sm.at
+		}
+	}
+	if lead < minBuffer || lead > maxBuffer {
+		return 0, false
+	}
+	// An error in the playback rate is multiplied by the time it took to build the lead,
+	// so watch playback for at least that long before trusting the result.
+	building := leadAt.Sub(r.firstRead).Seconds()
+	if samples[last].at.Sub(leadAt).Seconds() < math.Max(steadyPhase, building) {
+		return 0, false
+	}
+
+	r.buffer, r.bufferSet, r.fillSecs, r.playRate = lead, true, building, play
+	r.samples = nil
+	return lead, true
+}
+
+func rateBetween(from, to posSample) float64 {
+	seconds := to.at.Sub(from.at).Seconds()
+	if seconds <= 0 {
+		return 0
+	}
+	return float64(to.off-from.off) / seconds
 }
 
 func (r *Reader) SetReadahead(length int64) {

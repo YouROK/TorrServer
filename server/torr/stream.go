@@ -324,13 +324,12 @@ func saveViewedPosition(t *Torrent, fileID int, file *torrent.File, reader *torr
 	}
 
 	if sets.BTsets.AutoBuffer {
-		fillBytes, fillSeconds, rate, filled := reader.FillStats()
-		if measuredOK {
-			log.Printf("[Position] %s:%d buffer measured %dMB (fill %dMB in %.0fs, playback %.2fMB/s, fallback %dMB)",
-				hash[:8], fileID, measured>>20, fillBytes>>20, fillSeconds, rate/(1<<20), sets.BTsets.BufferSizeMB)
+		if lead, leadSeconds, rate, ok := reader.FillStats(); ok {
+			log.Printf("[Position] %s:%d buffer measured %dMB (lead built in %.0fs, playback %.2fMB/s, fallback %dMB)",
+				hash[:8], fileID, lead>>20, leadSeconds, rate/(1<<20), sets.BTsets.BufferSizeMB)
 		} else {
-			log.Printf("[Position] %s:%d buffer not measured yet (buffered=%v, %dMB in %.0fs, playback %.2fMB/s), using fallback %dMB",
-				hash[:8], fileID, filled, fillBytes>>20, fillSeconds, rate/(1<<20), sets.BTsets.BufferSizeMB)
+			log.Printf("[Position] %s:%d buffer not measured yet, using fallback %dMB",
+				hash[:8], fileID, sets.BTsets.BufferSizeMB)
 		}
 	}
 
