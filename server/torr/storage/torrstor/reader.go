@@ -183,7 +183,14 @@ func (r *Reader) BufferEstimate() (int64, bool) {
 	}
 	postBytes := r.offset - r.postFillBytes
 	postSeconds := r.lastRead.Sub(r.postFillTime).Seconds()
-	if postBytes <= 0 || postSeconds < steadyPhase { // need a steady phase to read the playback rate
+	// The playback rate is multiplied by the fill duration, so an error in it grows with
+	// however long the fill took. Watch playback for at least as long as the fill lasted
+	// (a slow line fills slowly), and never for less than steadyPhase.
+	need := steadyPhase
+	if r.fillSeconds > need {
+		need = r.fillSeconds
+	}
+	if postBytes <= 0 || postSeconds < need {
 		return 0, false
 	}
 	rate := float64(postBytes) / postSeconds
