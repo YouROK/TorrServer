@@ -42,7 +42,11 @@ type Cache struct {
 	isRemove atomic.Bool
 	isClosed atomic.Bool
 	muRemove sync.Mutex
-	torrent  *torrent.Torrent
+	// muPrio serializes clearPriority and setLoadPriority so that the priority
+	// reset of a reader that has just closed cannot wipe the priorities a
+	// freshly created reader has already set.
+	muPrio  sync.Mutex
+	torrent *torrent.Torrent
 }
 
 func NewCache(capacity int64, storage *Storage) *Cache {
@@ -282,6 +286,8 @@ func (c *Cache) setLoadPriority(ranges []Range) {
 	if len(readers) == 0 || pieces == nil {
 		return
 	}
+	c.muPrio.Lock()
+	defer c.muPrio.Unlock()
 	for _, r := range readers {
 		if !r.isUse {
 			continue
@@ -379,7 +385,12 @@ func (c *Cache) clearPriority() {
 	if c.torrent == nil {
 		return
 	}
-	time.Sleep(time.Second)
+	// This used to sleep for a second before clearing priorities. A reader
+	// created during that window could have its PiecePriorityNow/Next/Readahead
+	// reset to None right after setLoadPriority had assigned them, starving the
+	// player. A mutex provides the same ordering without the race window.
+	c.muPrio.Lock()
+	defer c.muPrio.Unlock()
 	ranges := make([]Range, 0)
 	for _, r := range c.readersSnapshot() {
 		r.checkReader()
