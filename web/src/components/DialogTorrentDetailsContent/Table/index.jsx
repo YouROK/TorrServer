@@ -2,9 +2,11 @@ import { streamHost } from 'utils/Hosts'
 import isEqual from 'lodash/isEqual'
 import { humanizeSize, detectStandaloneApp, isMacOS, isAppleDevice } from 'utils/Utils'
 import ptt from 'parse-torrent-title'
-import { Button } from '@material-ui/core'
+import { Button, CircularProgress, Snackbar } from '@material-ui/core'
 import CopyToClipboard from 'react-copy-to-clipboard'
 import { useTranslation } from 'react-i18next'
+import { usePlayback } from 'playback/PlaybackContext'
+import { useBooleanPlayerPreference } from 'utils/PlayerPreferences'
 import {
   gstreamerHeartbeatUrl,
   gstreamerMasterUrl,
@@ -32,6 +34,9 @@ const Table = memo(
   ({ playableFileList, viewedFileList, selectedSeason, seasonAmount, hash }) => {
     const { t } = useTranslation()
     const [unsupportedPlayers, setUnsupportedPlayers] = useState({})
+    const [vlcLaunchingFileId, setVlcLaunchingFileId] = useState(null)
+    const [vlcLaunchError, setVlcLaunchError] = useState(false)
+    const { launchVlc, selectedTarget } = usePlayback()
     const gstRuntime = useGStreamerRuntime()
     const preloadBuffer = fileId => fetch(`${streamHost()}?link=${hash}&index=${fileId}&preload`)
     const getFileLink = (path, id) =>
@@ -48,6 +53,17 @@ const Table = memo(
     const markPlayerUnsupported = key => {
       setUnsupportedPlayers(current => ({ ...current, [key]: true }))
     }
+    const openFileInVlc = async (path, id, streamUrl) => {
+      if (!selectedTarget) return
+      setVlcLaunchingFileId(id)
+      try {
+        await launchVlc({ path, hash, index: id, streamUrl })
+      } catch (_) {
+        setVlcLaunchError(true)
+      } finally {
+        setVlcLaunchingFileId(null)
+      }
+    }
     const fileHasEpisodeText = !!playableFileList?.find(({ path }) => ptt.parse(path).episode)
     const fileHasSeasonText = !!playableFileList?.find(({ path }) => ptt.parse(path).season)
     const fileHasResolutionText = !!playableFileList?.find(({ path }) => ptt.parse(path).resolution)
@@ -55,7 +71,7 @@ const Table = memo(
     // if files in list is more then 1 and no season text detected by ptt.parse, show full name
     const shouldDisplayFullFileName = playableFileList?.length > 1 && !fileHasEpisodeText
 
-    const isVlcUsed = JSON.parse(localStorage.getItem('isVlcUsed')) ?? false
+    const isVlcUsed = useBooleanPlayerPreference('isVlcUsed')
     const isInfuseUsed = JSON.parse(localStorage.getItem('isInfuseUsed')) ?? false
     const isSenPlayerUsed = JSON.parse(localStorage.getItem('isSenPlayerUsed')) ?? false
     const isIinaUsed = JSON.parse(localStorage.getItem('isIinaUsed')) ?? false
@@ -124,11 +140,16 @@ const Table = memo(
                           </a>
                         )}
                         {isVlcUsed && (
-                          <a style={{ textDecoration: 'none' }} href={`vlc://${fullLink}`}>
-                            <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
-                              VLC
-                            </Button>
-                          </a>
+                          <Button
+                            style={{ width: '100%' }}
+                            variant='outlined'
+                            color='primary'
+                            size='small'
+                            disabled={!selectedTarget || vlcLaunchingFileId === id}
+                            onClick={() => openFileInVlc(path, id, fullLink.toString())}
+                          >
+                            {vlcLaunchingFileId === id ? <CircularProgress size={18} color='inherit' /> : 'VLC'}
+                          </Button>
                         )}
                         {isMac && isIinaUsed && (
                           <a style={{ textDecoration: 'none' }} href={iinaLink}>
@@ -246,11 +267,16 @@ const Table = memo(
                     )}
 
                     {isVlcUsed && (
-                      <a style={{ textDecoration: 'none' }} href={`vlc://${fullLink}`}>
-                        <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
-                          VLC
-                        </Button>
-                      </a>
+                      <Button
+                        style={{ width: '100%' }}
+                        variant='outlined'
+                        color='primary'
+                        size='small'
+                        disabled={!selectedTarget || vlcLaunchingFileId === id}
+                        onClick={() => openFileInVlc(path, id, fullLink.toString())}
+                      >
+                        {vlcLaunchingFileId === id ? <CircularProgress size={18} color='inherit' /> : 'VLC'}
+                      </Button>
                     )}
 
                     {isMac && isIinaUsed && (
@@ -291,6 +317,12 @@ const Table = memo(
             )
           })}
         </ShortTableWrapper>
+        <Snackbar
+          open={vlcLaunchError}
+          autoHideDuration={2500}
+          onClose={() => setVlcLaunchError(false)}
+          message={t('Playback.LaunchFailed')}
+        />
       </>
     )
   },
