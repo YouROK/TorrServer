@@ -421,7 +421,7 @@ TorrServer sends the optional bearer token and the following JSON to `/play`:
 }
 ```
 
-Use **TorrServer URL for this device** when the agent reaches TorrServer through a different hostname or address than the browser. A reference Linux/VLC agent is maintained as a separate optional component.
+Use **TorrServer URL for this device** when the agent reaches TorrServer through a different hostname or address than the browser. A reference [Linux/VLC playback agent](extras/vlc-agent/README.md) is included as an optional component.
 
 ## Whitelist/Blacklist IP
 

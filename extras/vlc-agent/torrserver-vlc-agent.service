@@ -1,0 +1,18 @@
+[Unit]
+Description=TorrServer VLC playback agent
+Documentation=https://github.com/YouROK/TorrServer
+After=network-online.target graphical-session.target
+Wants=network-online.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/torrserver-vlc-agent.env
+ExecStart=/usr/bin/python3 %h/.local/lib/torrserver-vlc-agent/torrserver_vlc_agent.py
+Restart=on-failure
+RestartSec=2
+KillMode=control-group
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target
