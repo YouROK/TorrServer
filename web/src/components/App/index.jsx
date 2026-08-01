@@ -26,6 +26,7 @@ import GlobalStyle from 'style/GlobalStyle'
 import { /* lightTheme, */ THEME_MODES, useMaterialUITheme } from 'style/materialUISetup'
 import getStyledComponentsTheme from 'style/getStyledComponentsTheme'
 import SearchDialog from 'components/Search/SearchDialog'
+import PlaybackTargetSelector from 'components/Playback/PlaybackTargetSelector'
 
 import { AppWrapper, AppHeader, HeaderToggle, StyledIconButton, SidebarOverlay } from './style'
 import Sidebar from './Sidebar'
@@ -86,11 +87,13 @@ export default function App() {
                   <div
                     style={{
                       justifySelf: 'end',
-                      display: 'grid',
-                      gridTemplateColumns: isStandaloneApp ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)',
+                      display: 'flex',
+                      alignItems: 'center',
                       gap: '10px',
                     }}
                   >
+                    <PlaybackTargetSelector />
+
                     {isStandaloneApp && (
                       <HeaderToggle onClick={() => setIsSearchDialogOpen(true)}>
                         <SearchIcon />

@@ -22,6 +22,7 @@ import MobileAppSettings from './MobileAppSettings'
 import TorznabSettings from './TorznabSettings'
 import TMDBSettings from './TMDBSettings'
 import GStreamerSettings from './GStreamerSettings'
+import PlaybackSettings from './PlaybackSettings'
 
 export default function SettingsDialog({ handleClose }) {
   const { t } = useTranslation()
@@ -234,6 +235,7 @@ export default function SettingsDialog({ handleClose }) {
                   isIinaUsed={isIinaUsed}
                   setIsIinaUsed={setIsIinaUsed}
                 />
+                <PlaybackSettings />
               </TabPanel>
 
               {gstAvailable && (
