@@ -22,6 +22,14 @@ func SetupRoute(route gin.IRouter) {
 	authorized.POST("/waf", updateWAF)
 	authorized.POST("/torznab/test", torznabTest)
 
+	authorized.GET("/playback/devices", listPlaybackDevices)
+	authorized.GET("/playback/devices/config", listPlaybackDeviceConfigs)
+	authorized.POST("/playback/settings", updatePlaybackSettings)
+	authorized.POST("/playback/devices", upsertPlaybackDevice)
+	authorized.DELETE("/playback/devices/:id", deletePlaybackDevice)
+	authorized.POST("/playback/devices/:id/test", testPlaybackDevice)
+	authorized.POST("/playback/play", playOnDevice)
+
 	authorized.POST("/torrents", torrents)
 
 	authorized.POST("/torrent/upload", torrentUpload)

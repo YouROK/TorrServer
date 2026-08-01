@@ -10,6 +10,7 @@ import (
 
 	"server/log"
 	"server/netbind"
+	"server/playback"
 	"server/settings"
 	"server/torr/utils"
 	"server/web"
@@ -17,6 +18,9 @@ import (
 
 func Start() {
 	settings.InitSets(settings.Args.RDB, settings.Args.SearchWA)
+	if err := playback.Init(settings.Path, settings.ReadOnly); err != nil {
+		log.TLogln("Playback devices init failed:", err)
+	}
 	// https checks
 	if settings.Args.Ssl {
 		// set settings ssl enabled
