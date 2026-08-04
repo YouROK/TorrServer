@@ -32,4 +32,7 @@ export default {
   SslKey: '',
   ShowFSActiveTorr: true,
   StoreSettingsInJson: true,
+  SavePosition: false,
+  BufferSizeMB: 32,
+  AutoBuffer: true,
 }

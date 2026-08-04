@@ -91,6 +91,12 @@ type BTSets struct {
 
 	// Viewed timecodes
 	TrackTimecode bool // store playback position (timecode) in viewed data
+
+	// Auto-save playback position (resume). While a stream runs and when it ends, the
+	// read head minus the client's buffer is stored in the viewed data, in seconds.
+	SavePosition bool // enable auto-saving playback position (needs ffprobe)
+	BufferSizeMB int  // fallback player buffer in MB, used when it cannot be measured
+	AutoBuffer   bool // measure the client's buffer from how it loads data
 }
 
 func (v *BTSets) String() string {
@@ -113,6 +119,11 @@ func SetBTSets(sets *BTSets) {
 	}
 	if sets.TorrentDisconnectTimeout == 0 {
 		sets.TorrentDisconnectTimeout = 30
+	}
+
+	if sets.SavePosition && sets.BufferSizeMB <= 0 {
+		// only used when the buffer cannot be measured
+		sets.BufferSizeMB = 32
 	}
 
 	if sets.ReaderReadAHead < 5 {
