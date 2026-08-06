@@ -37,6 +37,7 @@ type TorznabItem struct {
 	Description string             `xml:"description"`
 	PubDate     string             `xml:"pubDate"`
 	Size        int64              `xml:"size"`
+	Indexer     string             `xml:"jackettindexer"`
 	Enclosure   []TorznabEnclosure `xml:"enclosure"`
 	Attributes  []TorznabAttribute `xml:"attr"`
 }
@@ -218,6 +219,7 @@ func searchOne(ctx context.Context, host, key, query, label, cat string, offset,
 			Title:      item.Title,
 			Name:       item.Title,
 			Link:       item.Link,
+			Tracker:    item.Indexer,
 			CreateDate: parseDate(item.PubDate),
 			Tracker:    label,
 		}
