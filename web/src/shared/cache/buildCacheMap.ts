@@ -371,10 +371,9 @@ export const resolveFocusVisibleCells = (containerWidth: number, isMini = false,
   const cellFootprint = isMini ? 26 + 5 : 20 + 4
   if (!containerWidth || containerWidth <= 0) return 10 * defaultRows
   const cols = Math.max(1, Math.floor(containerWidth / cellFootprint))
-  // Detailed cache tab: grow rows with available height so the map fills the sheet.
+  // Detailed cache tab: fit rows to the available height so the map never needs a scrollbar.
+  // Mini keeps a fixed target row count (height is not passed / not used for budget).
   const rows =
-    !isMini && containerHeight > cellFootprint
-      ? Math.max(defaultRows, Math.floor(containerHeight / cellFootprint))
-      : defaultRows
+    !isMini && containerHeight > cellFootprint ? Math.max(1, Math.floor(containerHeight / cellFootprint)) : defaultRows
   return cols * rows
 }

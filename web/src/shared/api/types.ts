@@ -29,6 +29,16 @@ export interface TorrentStat {
   half_open_peers?: number
   bytes_read?: number
   bytes_written?: number
+  bytes_read_data?: number
+  bytes_read_useful_data?: number
+  bytes_written_data?: number
+  chunks_read?: number
+  chunks_read_useful?: number
+  chunks_read_wasted?: number
+  chunks_written?: number
+  /** Media bitrate string from metadata when known (e.g. "1234 kb/s"). */
+  bit_rate?: string
+  duration_seconds?: number
   timestamp?: number
   stat?: number
   stat_string?: string

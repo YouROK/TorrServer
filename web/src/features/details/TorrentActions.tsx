@@ -12,6 +12,7 @@ import {
   Share2,
   SquareArrowOutUpRight,
   Trash2,
+  ChevronRight,
 } from 'lucide-react'
 import ptt from 'parse-torrent-title'
 import { useQueryClient } from '@tanstack/react-query'
@@ -45,6 +46,8 @@ export interface TorrentActionsProps {
   onDeleted?: () => void
   /** Switch details sheet to the Files tab (multi-file "Play" entry point). */
   onShowFiles?: () => void
+  /** Switch details sheet to the Cache tab. */
+  onOpenCache?: () => void
   /** Continue Watching: auto-play this file when the list is ready. */
   autoPlayFileId?: number
   autoPlayTimecode?: number
@@ -54,39 +57,45 @@ export interface TorrentActionsProps {
 
 type PendingConfirm = 'drop' | 'delete' | 'clearViews' | null
 
-/** Renders Infuse/VLC/… as a single button or a ButtonGroup when several are enabled. */
+/** Renders Infuse/VLC/… as equal secondary pills (same look as Copy link beside them). */
 function ExternalPlayersGroup({
   players,
   size = 'md',
   compact = false,
+  stretch = false,
 }: {
   players: { label: string; href: string }[]
   size?: 'sm' | 'md' | 'lg'
   compact?: boolean
+  /** Equal-width chips across the row (desktop Stats). */
+  stretch?: boolean
 }) {
   if (players.length === 0) return null
 
-  const buttons = players.map(player => (
-    <Button
-      key={player.label}
-      variant='secondary'
-      size={compact ? 'sm' : size}
-      className={compact ? 'min-h-11 max-w-[5rem] px-2 text-xs' : 'min-h-11'}
-      onPress={() => {
-        window.location.href = player.href
-      }}
-    >
-      {compact ? null : <SquareArrowOutUpRight {...iconMenu} aria-hidden />}
-      <span className='truncate'>{player.label}</span>
-    </Button>
-  ))
-
-  if (players.length === 1) return buttons[0]
-  return <ButtonGroup>{buttons}</ButtonGroup>
+  return (
+    <>
+      {players.map(player => (
+        <Button
+          key={player.label}
+          variant='secondary'
+          size={compact ? 'sm' : size}
+          className={
+            compact ? 'min-h-11 max-w-[5rem] px-2 text-xs' : stretch ? 'min-h-11 min-w-0 flex-1 px-2' : 'min-h-11'
+          }
+          onPress={() => {
+            window.location.href = player.href
+          }}
+        >
+          {compact ? null : <SquareArrowOutUpRight {...iconMenu} aria-hidden />}
+          <span className='truncate'>{player.label}</span>
+        </Button>
+      ))}
+    </>
+  )
 }
 
 /**
- * Overview-tab action block: Play / playlist / magnet / hash / drop / clear viewed.
+ * Stats-tab action block: Play / playlist / magnet / hash / drop / clear viewed.
  * Copy helpers go through {@link copyToClipboard} so LAN HTTP phones do not error.
  */
 function TorrentActions({
@@ -101,6 +110,7 @@ function TorrentActions({
   onDropped,
   onDeleted,
   onShowFiles,
+  onOpenCache,
   autoPlayFileId,
   autoPlayTimecode,
   compact: compactProp = false,
@@ -228,8 +238,11 @@ function TorrentActions({
   const hasPartialProgress = !isSingleFileTorrent && !!viewedFileList?.length
   const playLabel: ReactNode =
     !isSingleFileTorrent && (playableFileList?.length ?? 0) > 1
-      ? `${t('TorrentContent')} (${playableFileList!.length})`
+      ? compact
+        ? `${t('TorrentFiles')} (${playableFileList!.length})`
+        : `${t('TorrentContent')} (${playableFileList!.length})`
       : t('Play')
+  const cacheLabel = compact ? t('Cache') : t('DetailedCacheView.button')
 
   const onPlayPress = () => {
     runConfiguredPlay({
@@ -276,6 +289,12 @@ function TorrentActions({
     return (
       <div className='space-y-2.5'>
         <div className='flex items-center gap-1.5'>
+          {onOpenCache ? (
+            <Button variant='primary' size='md' className='min-h-11 min-w-0 flex-1 gap-2' onPress={onOpenCache}>
+              <span className='truncate text-sm'>{cacheLabel}</span>
+              <ChevronRight size={16} strokeWidth={1.75} className='shrink-0' aria-hidden />
+            </Button>
+          ) : null}
           <Button
             variant='primary'
             size='md'
@@ -290,11 +309,10 @@ function TorrentActions({
                 ) : (
                   <Play {...iconMenu} fill='currentColor' aria-hidden />
                 )}
-                <span className='truncate'>{playLabel}</span>
+                <span className='truncate text-sm'>{playLabel}</span>
               </>
             )}
           </Button>
-          <ExternalPlayersGroup players={externalPlayers} compact />
           <Dropdown>
             <Dropdown.Trigger>
               <Button variant='ghost' isIconOnly className={`${iconBtn} shrink-0 text-muted`} aria-label={t('Info')}>
@@ -347,6 +365,12 @@ function TorrentActions({
             </Dropdown.Popover>
           </Dropdown>
         </div>
+
+        {externalPlayers.length > 0 ? (
+          <div className='flex flex-wrap items-center gap-1.5'>
+            <ExternalPlayersGroup players={externalPlayers} compact />
+          </div>
+        ) : null}
 
         {isSingleFileTorrent && !hasAnyExternalPlayer ? (
           <button
@@ -402,12 +426,17 @@ function TorrentActions({
 
   return (
     <div className='space-y-4'>
-      <div className='flex flex-wrap items-center gap-2'>
+      <div className='flex w-full items-stretch gap-2'>
+        {onOpenCache ? (
+          <Button variant='primary' size='lg' className='min-h-11 min-w-0 flex-1 gap-2' onPress={onOpenCache}>
+            <span className='truncate'>{t('DetailedCacheView.button')}</span>
+            <ChevronRight size={16} strokeWidth={1.75} className='shrink-0' aria-hidden />
+          </Button>
+        ) : null}
         <Button
           variant='primary'
           size='lg'
-          fullWidth
-          className='sm:w-auto'
+          className='min-h-11 min-w-0 flex-1 gap-2'
           isPending={isResolving}
           onPress={onPlayPress}
         >
@@ -418,18 +447,22 @@ function TorrentActions({
               ) : (
                 <Play {...iconMenu} fill='currentColor' aria-hidden />
               )}
-              {playLabel}
+              <span className='truncate'>{playLabel}</span>
             </>
           )}
         </Button>
-        <ExternalPlayersGroup players={externalPlayers} />
-        {singleFileStream ? (
-          <Button variant='secondary' onPress={() => void copyStreamLink()}>
-            <Link2 {...iconMenu} aria-hidden />
-            {t('CopyLink')}
-          </Button>
-        ) : null}
       </div>
+      {externalPlayers.length > 0 || singleFileStream ? (
+        <div className='flex w-full items-center gap-2'>
+          <ExternalPlayersGroup players={externalPlayers} stretch />
+          {singleFileStream ? (
+            <Button variant='secondary' className='min-h-11 min-w-0 flex-1 px-2' onPress={() => void copyStreamLink()}>
+              <Link2 {...iconMenu} aria-hidden />
+              <span className='truncate'>{t('CopyLink')}</span>
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
 
       {isSingleFileTorrent && !hasAnyExternalPlayer ? (
         <button
@@ -460,11 +493,19 @@ function TorrentActions({
               ) : null}
             </strong>
           </p>
-          <ButtonGroup>
-            <Button variant='primary' onPress={() => window.open(fullPlaylistLink, '_blank')}>
+          <ButtonGroup className='w-full'>
+            <Button
+              variant='primary'
+              className='min-h-11 flex-1'
+              onPress={() => window.open(fullPlaylistLink, '_blank')}
+            >
               {t('Full')}
             </Button>
-            <Button variant='primary' onPress={() => window.open(fromLatestPlaylistLink, '_blank')}>
+            <Button
+              variant='primary'
+              className='min-h-11 flex-1'
+              onPress={() => window.open(fromLatestPlaylistLink, '_blank')}
+            >
               {t('FromLatestFile')}
             </Button>
           </ButtonGroup>
@@ -473,30 +514,38 @@ function TorrentActions({
 
       <div>
         <p className='mb-2 text-sm font-semibold text-muted'>{t('Info')}</p>
-        <div className='flex flex-wrap items-center gap-2'>
+        <div className='flex w-full flex-wrap items-stretch gap-2'>
           {isSingleFileTorrent || !viewedFileList?.length ? (
-            <Button variant='primary' onPress={() => window.open(fullPlaylistLink, '_blank')}>
+            <Button
+              variant='primary'
+              className='min-h-11 min-w-0 flex-1'
+              onPress={() => window.open(fullPlaylistLink, '_blank')}
+            >
               <ListMusic {...iconMenu} aria-hidden />
-              {t('DownloadPlaylist')}
+              <span className='truncate'>{t('DownloadPlaylist')}</span>
             </Button>
           ) : null}
-          <ButtonGroup>
-            <Button variant='secondary' onPress={() => void copyMagnetLink()}>
+          <ButtonGroup className='min-w-0 flex-[2]'>
+            <Button variant='secondary' className='min-h-11 min-w-0 flex-1' onPress={() => void copyMagnetLink()}>
               <Magnet {...iconMenu} aria-hidden />
-              {t('CopyMagnet')}
+              <span className='truncate'>{t('CopyMagnet')}</span>
             </Button>
-            <Button variant='secondary' onPress={() => void copyInfoHash()}>
+            <Button variant='secondary' className='min-h-11 min-w-0 flex-1' onPress={() => void copyInfoHash()}>
               <Hash {...iconMenu} aria-hidden />
-              {t('CopyHash')}
+              <span className='truncate'>{t('CopyHash')}</span>
             </Button>
-            <Button variant='secondary' onPress={() => void copyTorrsLink()}>
+            <Button variant='secondary' className='min-h-11 min-w-0 flex-1' onPress={() => void copyTorrsLink()}>
               <Share2 {...iconMenu} aria-hidden />
-              {t('CopyTorrs')}
+              <span className='truncate'>{t('CopyTorrs')}</span>
             </Button>
           </ButtonGroup>
-          <Button variant='tertiary' onPress={() => window.open(playlistAllUrl({ category: undefined }), '_blank')}>
+          <Button
+            variant='tertiary'
+            className='min-h-11 min-w-0 flex-1'
+            onPress={() => window.open(playlistAllUrl({ category: undefined }), '_blank')}
+          >
             <ListMusic {...iconMenu} aria-hidden />
-            {t('DownloadAllPlaylists')}
+            <span className='truncate'>{t('DownloadAllPlaylists')}</span>
           </Button>
         </div>
       </div>
@@ -505,18 +554,18 @@ function TorrentActions({
 
       <div>
         <p className='mb-2 text-sm font-semibold text-muted'>{t('TorrentState')}</p>
-        <div className='flex flex-wrap gap-2'>
-          <Button variant='outline' onPress={() => setPendingConfirm('clearViews')}>
+        <div className='flex w-full flex-wrap gap-2'>
+          <Button variant='outline' className='min-h-11 min-w-0 flex-1' onPress={() => setPendingConfirm('clearViews')}>
             <EyeOff {...iconMenu} aria-hidden />
-            {t('RemoveViews')}
+            <span className='truncate'>{t('RemoveViews')}</span>
           </Button>
-          <Button variant='danger' onPress={() => setPendingConfirm('drop')}>
+          <Button variant='danger' className='min-h-11 min-w-0 flex-1' onPress={() => setPendingConfirm('drop')}>
             <Trash2 {...iconMenu} aria-hidden />
-            {t('DropTorrent')}
+            <span className='truncate'>{t('DropTorrent')}</span>
           </Button>
-          <Button variant='danger' onPress={() => setPendingConfirm('delete')}>
+          <Button variant='danger' className='min-h-11 min-w-0 flex-1' onPress={() => setPendingConfirm('delete')}>
             <Trash2 {...iconMenu} aria-hidden />
-            {t('Delete')}
+            <span className='truncate'>{t('Delete')}</span>
           </Button>
         </div>
       </div>

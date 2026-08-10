@@ -101,7 +101,7 @@
   "OpenLink": "Deschide link-ul",
   "OpenIn": "Deschide în…",
   "Other": "Altele",
-  "Overview": "Prezentare generală",
+  "Stats": "Statistici",
   "Status": "Stare",
   "CacheViewCompact": "Compact",
   "SnakeDebug": "Depanare piese",
@@ -590,5 +590,16 @@
   "ServerStatusLoaded": "Loaded",
   "ServerStatusRaw": "Raw /stat",
   "Refresh": "Refresh",
-  "PwaUpdateFailed": "Nu s-a putut actualiza cache-ul offline. Faceți hard-reload sau ștergeți datele site-ului dacă UI-ul pare blocat."
+  "PwaUpdateFailed": "Nu s-a putut actualiza cache-ul offline. Faceți hard-reload sau ștergeți datele site-ului dacă UI-ul pare blocat.",
+  "UsefulRead": "Citire utilă",
+  "ChunksWasted": "Chunk-uri irosite",
+  "BitRate": "Bitrate",
+  "ActivePeers": "Activi",
+  "ConnectedSeeders": "Seeders",
+  "TotalPeers": "Peers total",
+  "BytesReadData": "Date citite",
+  "ChunksRead": "Chunk-uri citite",
+  "ChunksWritten": "Chunk-uri scrise",
+  "ChunksUseful": "Chunk-uri utile",
+  "CacheReaders": "Cititori"
 }

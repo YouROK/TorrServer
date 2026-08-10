@@ -23,7 +23,7 @@ export interface RunConfiguredPlayArgs {
   resolvePlayableFile: (onFile: (file: PlayableFile) => void) => void
   copyText: (text: string) => void | Promise<void>
   /**
-   * Details overview: when action is built-in and there are several files, open the Files tab
+   * Details Stats: when action is built-in and there are several files, open the Files tab
    * instead of the launcher picker (poster keeps using {@link handlePlay}).
    */
   onBuiltinMultiFile?: () => void
@@ -31,7 +31,7 @@ export interface RunConfiguredPlayArgs {
 
 /**
  * Shared Play-button preference (Settings → Players): built-in / copy link / external.
- * Used by library posters and the details overview Play button.
+ * Used by library posters and the details Stats Play button.
  */
 export function useConfiguredPlayAction() {
   const isIOS = detectApplePlatform().isIOS

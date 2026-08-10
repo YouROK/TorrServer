@@ -9,8 +9,10 @@ const CHART_HEIGHT = 96
 interface SpeedChartsProps {
   downloadSpeed?: number | null
   uploadSpeed?: number | null
-  /** Hide speed legend + shorter chart — used when hero already shows live speeds. */
+  /** Hide full legend + shorter chart — used when hero already shows live speeds. */
   compact?: boolean
+  /** Grow into leftover Stats panel height (desktop two-col layout). */
+  fill?: boolean
 }
 
 function buildAreaPath(values: number[], max: number): { line: string; area: string } {
@@ -26,8 +28,39 @@ function buildAreaPath(values: number[], max: number): { line: string; area: str
   return { line, area }
 }
 
-/** Live download/upload sparkline for the torrent overview tab. */
-export default function SpeedCharts({ downloadSpeed, uploadSpeed, compact = false }: SpeedChartsProps) {
+function ChartSvg({
+  gradientId,
+  downloadPath,
+  uploadPath,
+  className,
+}: {
+  gradientId: string
+  downloadPath: { line: string; area: string }
+  uploadPath: { line: string; area: string }
+  className: string
+}) {
+  return (
+    <svg
+      viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
+      className={`overflow-visible ${className}`}
+      preserveAspectRatio='none'
+      aria-hidden
+    >
+      <defs>
+        <linearGradient id={gradientId} x1='0' y1='0' x2='0' y2='1'>
+          <stop offset='0%' stopColor='currentColor' stopOpacity='0.35' className='text-accent' />
+          <stop offset='100%' stopColor='currentColor' stopOpacity='0' className='text-accent' />
+        </linearGradient>
+      </defs>
+      <polygon points={downloadPath.area} fill={`url(#${gradientId})`} />
+      <polyline points={downloadPath.line} className='fill-none stroke-accent' strokeWidth='2' />
+      <polyline points={uploadPath.line} className='fill-none stroke-warning' strokeWidth='1.5' strokeDasharray='4 3' />
+    </svg>
+  )
+}
+
+/** Live download/upload sparkline for the torrent Stats tab. */
+export default function SpeedCharts({ downloadSpeed, uploadSpeed, compact = false, fill = false }: SpeedChartsProps) {
   const { t } = useTranslation()
   const [downloadHistory, setDownloadHistory] = useState<number[]>(() => Array(HISTORY_LENGTH).fill(0))
   const [uploadHistory, setUploadHistory] = useState<number[]>(() => Array(HISTORY_LENGTH).fill(0))
@@ -45,10 +78,16 @@ export default function SpeedCharts({ downloadSpeed, uploadSpeed, compact = fals
   const downloadPath = useMemo(() => buildAreaPath(downloadHistory, peak), [downloadHistory, peak])
   const uploadPath = useMemo(() => buildAreaPath(uploadHistory, peak), [uploadHistory, peak])
 
+  const showInlineLive = fill || !compact
+
   return (
-    <div className={`w-full min-w-0 rounded-xl border border-border bg-surface-secondary ${compact ? 'p-2.5' : 'p-4'}`}>
-      {compact ? null : (
-        <div className='mb-3 flex flex-wrap items-center gap-4'>
+    <div
+      className={`flex w-full min-w-0 flex-col rounded-xl border border-border bg-surface-secondary ${
+        fill ? 'h-full min-h-[14rem] p-2.5' : compact ? 'p-2.5' : 'p-4'
+      }`}
+    >
+      {showInlineLive ? (
+        <div className='mb-2 flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1'>
           <div className='flex items-center gap-2'>
             <span className='size-2.5 rounded-full bg-accent' aria-hidden />
             <span className='text-xs text-muted'>{t('DownloadSpeed')}</span>
@@ -60,29 +99,18 @@ export default function SpeedCharts({ downloadSpeed, uploadSpeed, compact = fals
             <span className='text-sm font-bold tabular-nums text-foreground'>{humanizeSpeed(uploadSpeed)}</span>
           </div>
         </div>
-      )}
+      ) : null}
 
-      <svg
-        viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
-        className={`w-full ${compact ? 'h-16' : 'h-[110px]'}`}
-        preserveAspectRatio='none'
-        aria-hidden
-      >
-        <defs>
-          <linearGradient id={gradientId} x1='0' y1='0' x2='0' y2='1'>
-            <stop offset='0%' stopColor='currentColor' stopOpacity='0.35' className='text-accent' />
-            <stop offset='100%' stopColor='currentColor' stopOpacity='0' className='text-accent' />
-          </linearGradient>
-        </defs>
-        <polygon points={downloadPath.area} fill={`url(#${gradientId})`} />
-        <polyline points={downloadPath.line} className='fill-none stroke-accent' strokeWidth='2' />
-        <polyline
-          points={uploadPath.line}
-          className='fill-none stroke-warning'
-          strokeWidth='1.5'
-          strokeDasharray='4 3'
-        />
-      </svg>
+      {/*
+        Avoid absolute + flex-1 height chains inside HeroUI Tabs — they often collapse to ~0
+        and clip the sparkline to a bottom tip. Explicit min-height (fill) is reliable.
+      */}
+      <ChartSvg
+        gradientId={gradientId}
+        downloadPath={downloadPath}
+        uploadPath={uploadPath}
+        className={fill ? 'h-full min-h-[11rem] w-full flex-1' : `w-full ${compact ? 'h-16' : 'h-[110px]'}`}
+      />
     </div>
   )
 }

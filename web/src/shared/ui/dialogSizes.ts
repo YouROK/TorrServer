@@ -65,7 +65,7 @@ export const DIALOG_SEARCH: CSSProperties = {
   width: 'min(92vw, 56rem)',
 }
 
-/** Details sheet — fixed height so Overview / Files / Cache tabs don't resize the window. */
+/** Details sheet — fixed height so Files / Stats / Cache tabs don't resize the window. */
 export const DIALOG_DETAILS: CSSProperties = {
   ...DIALOG_SHEET_L,
   height: 'min(80dvh, 46rem)',

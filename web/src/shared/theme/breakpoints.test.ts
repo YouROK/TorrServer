@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-import { MEDIA_SHORT_VIEWPORT, MEDIA_TABLET_LANDSCAPE, queryMax } from './breakpoints'
+import { MEDIA_SHORT_VIEWPORT, MEDIA_TABLET_LANDSCAPE, queryMax, queryMin } from './breakpoints'
 
 describe('breakpoints', () => {
   it('exports dialog max-width query at 960px', () => {
     expect(queryMax('dialog')).toBe('(max-width: 960px)')
+  })
+
+  it('exports phone min-width query for 6-chip hero band', () => {
+    expect(queryMin('phone')).toBe('(min-width: 420px)')
   })
 
   it('exports tablet landscape media for iPad-style fullscreen sheets', () => {

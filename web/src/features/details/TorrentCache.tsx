@@ -1,7 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CacheMapItem, TorrentCache as TorrentCacheData } from 'shared/api/types'
-import { priorityDebugLabel, resolveFocusVisibleCells, resolveFocusWindow } from 'shared/cache/buildCacheMap'
+import { priorityDebugLabel, resolveFocusVisibleCells } from 'shared/cache/buildCacheMap'
 import { drawSnake, hitTestSnakeCell, setupHiDpiCanvas } from 'shared/cache/drawSnake'
 import { resolvePieceMetrics, resolveSnakeSettings, type SnakeThemeMode } from 'shared/cache/snakeSettings'
 import { useCreateFocusMap } from 'shared/cache/useUpdateCache'
@@ -16,9 +16,6 @@ export interface TorrentCacheProps {
   mode?: SnakeViewMode
   isSnakeDebugMode?: boolean
 }
-
-/** Resume auto-follow this long after the user last scrolled/touched the map. */
-const FOLLOW_RESUME_DELAY_MS = 4000
 
 const emptyCell = (): CacheMapItem => ({
   percentage: 0,
@@ -63,10 +60,7 @@ function TorrentCache({ cache, mode = 'detailed', isSnakeDebugMode }: TorrentCac
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const scrollWrapperRef = useRef<HTMLDivElement | null>(null)
   const rootRef = useRef<HTMLDivElement | null>(null)
-  const lastWindowStartRef = useRef<number | undefined>(undefined)
   const drawFrame = useRef(0)
-  const isFollowingPlayhead = useRef(true)
-  const resumeFollowTimer = useRef(0)
   const [tooltip, setTooltip] = useState<{ index: number; x: number; y: number; text: string } | null>(null)
 
   useEffect(() => {
@@ -92,10 +86,6 @@ function TorrentCache({ cache, mode = 'detailed', isSnakeDebugMode }: TorrentCac
   const cells = focusModel.cells
   const hasActiveReaders = (cache.Readers?.length ?? 0) > 0
 
-  useEffect(() => {
-    if (focusModel.windowStart != null) lastWindowStartRef.current = focusModel.windowStart
-  }, [focusModel.windowStart])
-
   const variant = isMiniView ? 'mini' : 'default'
   // Re-resolve when palette changes so canvas accents track CSS `--accent`.
   const baseSettings = useMemo(() => {
@@ -114,19 +104,32 @@ function TorrentCache({ cache, mode = 'detailed', isSnakeDebugMode }: TorrentCac
   const piecesPerRow = canvasWidth > 0 ? Math.max(1, Math.floor(canvasWidth / cellStride)) : 0
 
   const emptyRowCount = isMiniView ? 4 : 6
-  const canvasHeight =
+  const naturalRowCount =
     piecesPerRow > 0
-      ? Math.max(cells.length > 0 ? Math.ceil(cells.length / piecesPerRow) : emptyRowCount, emptyRowCount) * cellStride
+      ? Math.max(
+          cells.length > 0 ? Math.ceil(cells.length / piecesPerRow) : emptyRowCount,
+          isMiniView ? emptyRowCount : 1,
+        )
       : 0
-  /** Reserve mini shell height before ResizeObserver so Overview actions don't jump when the snake mounts. */
+  // Detailed view: never taller than the sheet pane — no internal scrollbar.
+  const maxFitRows =
+    !isMiniView && containerHeight > 0 && cellStride > 0
+      ? Math.max(1, Math.floor(containerHeight / cellStride))
+      : naturalRowCount
+  const rowCount = !isMiniView && maxFitRows > 0 ? Math.min(naturalRowCount, maxFitRows) : naturalRowCount
+  const canvasHeight = rowCount > 0 ? rowCount * cellStride : 0
+  /** Reserve mini shell height before ResizeObserver so parent layout doesn't jump when the snake mounts. */
   const miniShellMinHeight = isMiniView ? emptyRowCount * cellStride + 16 : undefined
 
   const startingX = piecesPerRow > 0 ? Math.ceil((canvasWidth - cellStride * piecesPerRow) / 2) : 0
 
-  const drawCells = useMemo(
-    () => (cells.length > 0 ? cells : Array.from({ length: Math.max(piecesPerRow, 1) * emptyRowCount }, emptyCell)),
-    [cells, piecesPerRow, emptyRowCount],
-  )
+  const drawCells = useMemo(() => {
+    const source =
+      cells.length > 0 ? cells : Array.from({ length: Math.max(piecesPerRow, 1) * emptyRowCount }, emptyCell)
+    if (isMiniView || piecesPerRow <= 0 || rowCount <= 0) return source
+    const cap = piecesPerRow * rowCount
+    return source.length > cap ? source.slice(0, cap) : source
+  }, [cells, piecesPerRow, emptyRowCount, isMiniView, rowCount])
 
   const cacheAriaLabel = useMemo(() => {
     const { Filled, Capacity } = cache
@@ -178,59 +181,6 @@ function TorrentCache({ cache, mode = 'detailed', isSnakeDebugMode }: TorrentCac
     palette,
     isSnakeDebugMode,
   ])
-
-  useEffect(() => {
-    /** The mini preview never scrolls internally (see render below), so there's nothing to follow. */
-    if (isMiniView) return
-    if (!scrollWrapperRef.current || !piecesPerRow || cellStride <= 0) return
-    if (!isFollowingPlayhead.current) return
-    if (!hasActiveReaders) return
-    const focusWindow = resolveFocusWindow(cache, visibleCellBudget, {
-      lastWindowStart: lastWindowStartRef.current,
-    })
-    if (!focusWindow || focusWindow.readerPiece == null || focusModel.windowStart == null) return
-    const localIndex = focusWindow.readerPiece - focusModel.windowStart
-    if (localIndex < 0) return
-    const row = Math.floor(localIndex / piecesPerRow)
-    const rowTop = row * cellStride
-    const el = scrollWrapperRef.current
-    const viewTop = el.scrollTop
-    const viewBottom = viewTop + el.clientHeight
-    if (rowTop < viewTop || rowTop + cellStride > viewBottom) {
-      el.scrollTop = Math.max(0, rowTop - el.clientHeight / 3)
-    }
-  }, [
-    cache,
-    visibleCellBudget,
-    focusModel.windowStart,
-    piecesPerRow,
-    cellStride,
-    drawCells,
-    isMiniView,
-    hasActiveReaders,
-  ])
-
-  useEffect(() => {
-    if (isMiniView) return
-    const el = scrollWrapperRef.current
-    if (!el) return
-    const pauseFollowing = () => {
-      isFollowingPlayhead.current = false
-      window.clearTimeout(resumeFollowTimer.current)
-      resumeFollowTimer.current = window.setTimeout(() => {
-        isFollowingPlayhead.current = true
-      }, FOLLOW_RESUME_DELAY_MS)
-    }
-    el.addEventListener('wheel', pauseFollowing, { passive: true })
-    el.addEventListener('touchstart', pauseFollowing, { passive: true })
-    el.addEventListener('pointerdown', pauseFollowing)
-    return () => {
-      window.clearTimeout(resumeFollowTimer.current)
-      el.removeEventListener('wheel', pauseFollowing)
-      el.removeEventListener('touchstart', pauseFollowing)
-      el.removeEventListener('pointerdown', pauseFollowing)
-    }
-  }, [containerWidth, isMiniView])
 
   const formatTooltipText = useCallback(
     (cell: CacheMapItem) => {
@@ -305,17 +255,9 @@ function TorrentCache({ cache, mode = 'detailed', isSnakeDebugMode }: TorrentCac
       <div
         ref={scrollWrapperRef}
         className={`relative w-full min-w-0 rounded-lg border border-border bg-surface-secondary p-2 ${
-          isMiniView
-            ? 'grid max-h-[420px] justify-center overflow-hidden'
-            : 'min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain'
+          isMiniView ? 'grid max-h-[420px] justify-center overflow-hidden' : 'min-h-0 min-w-0 flex-1 overflow-hidden'
         }`}
-        style={
-          isMiniView
-            ? miniShellMinHeight != null
-              ? { minHeight: miniShellMinHeight }
-              : undefined
-            : { WebkitOverflowScrolling: 'touch' }
-        }
+        style={isMiniView ? (miniShellMinHeight != null ? { minHeight: miniShellMinHeight } : undefined) : undefined}
       >
         {piecesPerRow > 0 && canvasHeight > 0 ? (
           <canvas

@@ -101,7 +101,7 @@
   "OpenLink": "Open link",
   "OpenIn": "Open in…",
   "Other": "Other",
-  "Overview": "Overview",
+  "Stats": "Stats",
   "Status": "Status",
   "CacheViewCompact": "Compact",
   "SnakeDebug": "Debug pieces",
@@ -590,5 +590,16 @@
   "ServerStatusLoaded": "Loaded",
   "ServerStatusRaw": "Raw /stat",
   "Refresh": "Refresh",
-  "PwaUpdateFailed": "Could not update the offline cache. Hard-reload or clear site data if the UI looks stuck."
+  "PwaUpdateFailed": "Could not update the offline cache. Hard-reload or clear site data if the UI looks stuck.",
+  "UsefulRead": "Useful read",
+  "ChunksWasted": "Wasted chunks",
+  "BitRate": "Bitrate",
+  "ActivePeers": "Active",
+  "ConnectedSeeders": "Seeders",
+  "TotalPeers": "Total peers",
+  "BytesReadData": "Read data",
+  "ChunksRead": "Chunks read",
+  "ChunksWritten": "Chunks written",
+  "ChunksUseful": "Useful chunks",
+  "CacheReaders": "Readers"
 }

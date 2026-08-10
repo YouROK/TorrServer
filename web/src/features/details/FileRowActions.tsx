@@ -44,8 +44,8 @@ const moreBtn = `${iconBtn} text-muted hover-fine:text-foreground`
  * - Play is always primary and reachable (doctrine).
  * - External players stay on-screen (not only in a menu).
  * - Open / Copy / Preload / MediaInfo: one ghost ButtonGroup on desktop; `⋯` on mobile.
- * - Mobile: one compact row (Play icon + external chips + More) — never a full-width
- *   stacked Play that doubles row height.
+ * - Mobile: Play icon + More only — EpisodeRow wraps external chips under the meta line
+ *   so titles keep horizontal room.
  */
 export default function FileRowActions({
   preloadLabel,
@@ -216,19 +216,6 @@ export default function FileRowActions({
     return (
       <div className='flex shrink-0 items-center gap-1'>
         {playButton(iconBtn, true)}
-        {externalPlayers.map(player => (
-          <Button
-            key={player.label}
-            variant='secondary'
-            size='sm'
-            className='min-h-11 max-w-[4.5rem] shrink-0 px-1.5 text-[11px] font-medium'
-            onPress={() => {
-              window.location.href = player.href
-            }}
-          >
-            <span className='truncate'>{player.label}</span>
-          </Button>
-        ))}
         {secondaryMobile}
       </div>
     )
@@ -251,7 +238,7 @@ export default function FileRowActions({
   return (
     <div className='flex flex-nowrap items-center gap-1.5'>
       {playButton('min-h-11 shrink-0 px-3')}
-      {externalPlayers.length > 1 ? <ButtonGroup className='shrink-0'>{externalButtons}</ButtonGroup> : externalButtons}
+      {externalButtons}
       {secondaryDesktop}
     </div>
   )

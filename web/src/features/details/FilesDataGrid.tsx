@@ -1,6 +1,7 @@
 import { CheckCircle2 } from 'lucide-react'
 import { memo, useCallback, useMemo, useState, type ReactNode } from 'react'
 import ptt from 'parse-torrent-title'
+import { Button, useMediaQuery } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { streamHost } from 'shared/api/hosts'
@@ -8,8 +9,9 @@ import { authFetch } from 'shared/api/authCredentials'
 import type { PlayableFile, TorrentFileStat } from 'shared/api/types'
 import { remViewedFile, VIEWED_QUERY_KEY } from 'shared/api/viewed'
 import { shouldUseGStreamerPlayer, useGStreamerRuntime } from 'shared/lib/gstreamer'
-import { useExternalPlayers } from 'shared/lib/externalPlayers'
+import { useExternalPlayers, type ExternalPlayerLink } from 'shared/lib/externalPlayers'
 import { humanizeSize } from 'shared/lib/format'
+import { queryMax } from 'shared/theme/breakpoints'
 import { useOptionalAppToast } from 'shared/ui/Toast'
 import { usePlayLauncher } from 'features/player/usePlayLauncher'
 
@@ -59,59 +61,95 @@ function episodeBadge(episode?: number): string | null {
 
 /**
  * Compact episode/file card used in the details Files list.
- * Mobile: single horizontal row (badge + title | Play + …) — no stacked full-width Play.
- * Desktop (`sm+`): title row and action strip sit side-by-side with roomier padding.
+ * Mobile: badge + title | Play + …; Clear under subtitle; external players wrap below.
+ * Desktop (`sm+`): denser inline viewed chip beside the title; players stay in actions.
  */
 function EpisodeRow({
   row,
   actions,
+  externalPlayers,
   onUnmarkViewed,
 }: {
   row: FileRow
   actions: ReactNode
+  externalPlayers?: ExternalPlayerLink[]
   onUnmarkViewed?: () => void
 }) {
   const { t } = useTranslation()
+  const isMobile = useMediaQuery(queryMax('mobile'))
   const badge = episodeBadge(row.episode)
   const title = row.episode != null ? row.name.replace(/^E\d+\s*[·.-]\s*/i, '').trim() || row.name : row.name
+  const showMobilePlayers = isMobile && (externalPlayers?.length ?? 0) > 0
 
   return (
     <div
-      className={`flex items-center gap-2 rounded-lg border border-border bg-surface px-2.5 py-2 sm:gap-3 sm:rounded-xl sm:px-3 sm:py-2 ${
-        row.viewed ? 'opacity-80' : 'border-l-[3px] border-l-accent'
+      className={`flex flex-col gap-1.5 rounded-lg border border-border border-l-[3px] bg-surface px-2.5 py-2 sm:gap-0 sm:rounded-xl sm:px-3 sm:py-2 ${
+        row.viewed ? 'border-l-border opacity-80' : 'border-l-accent'
       }`}
     >
-      <div className='flex min-w-0 flex-1 items-center gap-2 sm:gap-3'>
-        {badge ? (
-          <span className='inline-flex h-8 min-w-9 shrink-0 items-center justify-center rounded-md bg-accent-soft px-1.5 text-xs font-bold tabular-nums text-accent sm:h-8 sm:min-w-9 sm:rounded-lg sm:px-2 sm:text-sm'>
-            {badge}
-          </span>
-        ) : null}
-        <div className='min-w-0 flex-1'>
-          <div className='flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5'>
-            <p className='min-w-0 truncate text-sm font-semibold text-foreground' title={row.path}>
-              {title}
+      <div className='flex items-start gap-2 sm:items-center sm:gap-3'>
+        <div className='flex min-w-0 flex-1 items-center gap-2 sm:gap-3'>
+          {badge ? (
+            <span className='inline-flex h-8 min-w-9 shrink-0 items-center justify-center rounded-md bg-accent-soft px-1.5 text-xs font-bold tabular-nums text-accent sm:rounded-lg sm:px-2 sm:text-sm'>
+              {badge}
+            </span>
+          ) : null}
+          <div className='min-w-0 flex-1'>
+            <div className='flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5'>
+              <p className='min-w-0 truncate text-sm font-semibold text-foreground' title={row.path}>
+                {title}
+              </p>
+              {row.viewed && !isMobile ? (
+                <button
+                  type='button'
+                  className='inline-flex shrink-0 items-center gap-1 rounded-md text-xs font-medium text-accent hover-fine:underline'
+                  onClick={onUnmarkViewed}
+                >
+                  <CheckCircle2 size={14} strokeWidth={1.75} aria-hidden />
+                  {t('Viewed')}
+                  <span className='text-accent'>· {t('Clear')}</span>
+                </button>
+              ) : null}
+            </div>
+            <p className='mt-0.5 truncate text-[11px] leading-tight text-muted sm:text-xs'>
+              {[row.season != null ? `${t('Season')} ${row.season}` : null, row.resolution, humanizeSize(row.size)]
+                .filter(Boolean)
+                .join(' · ')}
             </p>
-            {row.viewed ? (
+            {row.viewed && isMobile && onUnmarkViewed ? (
               <button
                 type='button'
-                className='inline-flex shrink-0 items-center gap-1 rounded-md text-xs text-accent hover-fine:underline'
+                className='mt-0.5 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-accent hover-fine:underline'
                 onClick={onUnmarkViewed}
               >
                 <CheckCircle2 size={14} strokeWidth={1.75} aria-hidden />
                 {t('Viewed')}
-                <span className='text-muted'>· {t('Clear')}</span>
+                <span aria-hidden>·</span>
+                {t('Clear')}
               </button>
             ) : null}
           </div>
-          <p className='mt-0.5 truncate text-[11px] leading-tight text-muted sm:text-xs'>
-            {[row.season != null ? `${t('Season')} ${row.season}` : null, row.resolution, humanizeSize(row.size)]
-              .filter(Boolean)
-              .join(' · ')}
-          </p>
         </div>
+        <div className='shrink-0 self-start sm:self-center'>{actions}</div>
       </div>
-      <div className='shrink-0'>{actions}</div>
+
+      {showMobilePlayers ? (
+        <div className='flex w-full items-center gap-1.5'>
+          {externalPlayers!.map(player => (
+            <Button
+              key={player.label}
+              variant='secondary'
+              size='sm'
+              className='min-h-11 min-w-0 flex-1 px-1.5 text-[11px] font-medium'
+              onPress={() => {
+                window.location.href = player.href
+              }}
+            >
+              <span className='truncate'>{player.label}</span>
+            </Button>
+          ))}
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -232,27 +270,31 @@ const FilesDataGrid = memo(
 
     return (
       <div className='space-y-1.5'>
-        {rows.map(row => (
-          <EpisodeRow
-            key={row.id}
-            row={row}
-            onUnmarkViewed={row.viewed ? () => void unmarkViewed(row.id) : undefined}
-            actions={
-              <FileRowActions
-                preloadLabel={t('Preload')}
-                onPreload={() => preloadBuffer(row.id)}
-                playerSupported={!unsupportedPlayerKeys[row.playerKey]}
-                onPlay={() => playFile(row.playable)}
-                isPlayPending={isResolving && resolvingFileId === row.id}
-                openLinkHref={row.link}
-                showOpenLink={shouldShowOpenLink}
-                copyText={row.fullLink}
-                externalPlayers={buildExternalPlayers(row.fullLink)}
-                onProbeMedia={() => setMediaInfo({ fileId: row.id, fileName: row.name })}
-              />
-            }
-          />
-        ))}
+        {rows.map(row => {
+          const externalPlayers = buildExternalPlayers(row.fullLink)
+          return (
+            <EpisodeRow
+              key={row.id}
+              row={row}
+              externalPlayers={externalPlayers}
+              onUnmarkViewed={row.viewed ? () => void unmarkViewed(row.id) : undefined}
+              actions={
+                <FileRowActions
+                  preloadLabel={t('Preload')}
+                  onPreload={() => preloadBuffer(row.id)}
+                  playerSupported={!unsupportedPlayerKeys[row.playerKey]}
+                  onPlay={() => playFile(row.playable)}
+                  isPlayPending={isResolving && resolvingFileId === row.id}
+                  openLinkHref={row.link}
+                  showOpenLink={shouldShowOpenLink}
+                  copyText={row.fullLink}
+                  externalPlayers={externalPlayers}
+                  onProbeMedia={() => setMediaInfo({ fileId: row.id, fileName: row.name })}
+                />
+              }
+            />
+          )
+        })}
 
         {playerModals}
 

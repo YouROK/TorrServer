@@ -101,7 +101,7 @@
   "OpenLink": "Открыть",
   "OpenIn": "Открыть в…",
   "Other": "Другое",
-  "Overview": "Обзор",
+  "Stats": "Статистика",
   "Status": "Статус",
   "CacheViewCompact": "Компактно",
   "SnakeDebug": "Отладка кусков",
@@ -590,5 +590,16 @@
   "ServerStatusLoaded": "Загружено",
   "ServerStatusRaw": "Сырой /stat",
   "Refresh": "Обновить",
-  "PwaUpdateFailed": "Не удалось обновить офлайн-кэш. Сделайте hard-reload или очистите данные сайта, если интерфейс «залип»."
+  "PwaUpdateFailed": "Не удалось обновить офлайн-кэш. Сделайте hard-reload или очистите данные сайта, если интерфейс «залип».",
+  "UsefulRead": "Полезное чтение",
+  "ChunksWasted": "Лишние чанки",
+  "BitRate": "Битрейт",
+  "ActivePeers": "Активные",
+  "ConnectedSeeders": "Сиды",
+  "TotalPeers": "Всего пиров",
+  "BytesReadData": "Данные чтения",
+  "ChunksRead": "Чанки чтения",
+  "ChunksWritten": "Чанки записи",
+  "ChunksUseful": "Полезные чанки",
+  "CacheReaders": "Читатели"
 }

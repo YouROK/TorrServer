@@ -101,7 +101,7 @@
   "OpenLink": "Отвори линк",
   "OpenIn": "Отвори в…",
   "Other": "Други",
-  "Overview": "Общ преглед",
+  "Stats": "Статистика",
   "Status": "Статус",
   "CacheViewCompact": "Компактно",
   "SnakeDebug": "Дебъг на частите",
@@ -590,5 +590,16 @@
   "ServerStatusLoaded": "Loaded",
   "ServerStatusRaw": "Raw /stat",
   "Refresh": "Refresh",
-  "PwaUpdateFailed": "Офлайн кешът не можа да се обнови. Направете hard-reload или изчистете данните на сайта, ако UI е заседнал."
+  "PwaUpdateFailed": "Офлайн кешът не можа да се обнови. Направете hard-reload или изчистете данните на сайта, ако UI е заседнал.",
+  "UsefulRead": "Полезно четене",
+  "ChunksWasted": "Излишни чанкове",
+  "BitRate": "Битрейт",
+  "ActivePeers": "Активни",
+  "ConnectedSeeders": "Сийдъри",
+  "TotalPeers": "Общо пиъри",
+  "BytesReadData": "Данни четене",
+  "ChunksRead": "Чанкове четене",
+  "ChunksWritten": "Чанкове запис",
+  "ChunksUseful": "Полезни чанкове",
+  "CacheReaders": "Четци"
 }
