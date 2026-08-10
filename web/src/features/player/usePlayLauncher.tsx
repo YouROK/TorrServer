@@ -23,8 +23,8 @@ import { useSyncModalOpen } from 'shared/ui/ModalOpenContext'
 import { useOptionalAppToast } from 'shared/ui/Toast'
 
 import { extractAudioTracks, formatAudioTrackDisplay, type ProbeTrack } from './audioTrackLabel'
+import { findCaptionSrc } from './findCaptionSrc'
 import { waitForPlayableFiles } from './waitForPlayableFiles'
-import { toPlayableFile } from 'shared/torrent/toPlayableFile'
 
 /** Lazy: keeps hls.js out of the initial bundle — only fetched once a file is actually played. */
 const VideoPlayer = lazy(() => import('features/player/VideoPlayer'))
@@ -48,22 +48,6 @@ const fileBaseName = (path: string): string => path.split('\\').pop()?.split('/'
 
 const fileStreamUrl = (hash: string, file: Pick<PlayableFile, 'id' | 'path'>): string =>
   `${streamHost()}/${encodeURIComponent(fileBaseName(file.path))}?link=${hash}&index=${file.id}&play`
-
-/**
- * Sidecar caption URL: same basename as the video plus `.srt` / `.vtt` elsewhere in the torrent.
- * Empty string when none found.
- */
-export const findCaptionSrc = (file: PlayableFile, allFiles: TorrentFileStat[], hash: string): string => {
-  const base = file.path.replace(/\.[^/.]+$/, '')
-  const caption = allFiles.find(candidate => {
-    const path = candidate.path ?? candidate.Path ?? ''
-    const id = candidate.id ?? candidate.Id ?? -1
-    return id !== file.id && path.startsWith(base) && /\.(srt|vtt)$/i.test(path)
-  })
-  if (!caption) return ''
-  const captionFile = toPlayableFile(caption)
-  return fileStreamUrl(hash, captionFile)
-}
 
 /** Parses a file's episode code ("S01E03") and title from its path, falling back to the raw name. */
 const fileEpisodeInfo = (path: string, index: number): { code: string; title: string } => {

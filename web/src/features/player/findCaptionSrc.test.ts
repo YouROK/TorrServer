@@ -1,9 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('shared/i18n', () => ({
-  default: { t: (key: string) => key },
-}))
-
 import type { TorrentFileStat } from 'shared/api/types'
 
 describe('findCaptionSrc', () => {
@@ -19,7 +15,7 @@ describe('findCaptionSrc', () => {
   })
 
   it('returns a stream URL for a matching sidecar subtitle', async () => {
-    const { findCaptionSrc } = await import('./usePlayLauncher')
+    const { findCaptionSrc } = await import('./findCaptionSrc')
     const video = { id: 0, path: 'Season 1/episode.mkv', length: 100 }
     const files: TorrentFileStat[] = [video, { id: 1, path: 'Season 1/episode.en.srt', length: 1 }]
 
@@ -29,7 +25,7 @@ describe('findCaptionSrc', () => {
   })
 
   it('returns empty string when no caption file matches', async () => {
-    const { findCaptionSrc } = await import('./usePlayLauncher')
+    const { findCaptionSrc } = await import('./findCaptionSrc')
     const video = { id: 0, path: 'movie.mkv', length: 100 }
     const files: TorrentFileStat[] = [video, { id: 1, path: 'readme.txt', length: 1 }]
 
@@ -37,7 +33,7 @@ describe('findCaptionSrc', () => {
   })
 
   it('accepts Path/Id field casing on torrent files', async () => {
-    const { findCaptionSrc } = await import('./usePlayLauncher')
+    const { findCaptionSrc } = await import('./findCaptionSrc')
     const video = { Id: 2, Path: 'film.mp4', Length: 100 }
     const files: TorrentFileStat[] = [video, { Id: 3, Path: 'film.vtt', Length: 1 }]
 
