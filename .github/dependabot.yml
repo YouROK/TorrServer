@@ -1,19 +1,26 @@
+---
 version: 2
 updates:
-  - package-ecosystem: github-actions
-    directory: /
+  - package-ecosystem: "npm"
+    directory: "/web"
     schedule:
-      interval: weekly
+      interval: "weekly"
+    # Stay on TypeScript 6 until the toolchain (typescript-eslint, vue-tsc, …) supports 7.
+    ignore:
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
     groups:
-      github-actions:
-        patterns:
-          - "*"
+      web-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    commit-message:
+      prefix: "deps(web)"
 
-  - package-ecosystem: npm
-    directory: /web
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
-      interval: weekly
-    groups:
-      web-deps:
-        patterns:
-          - "*"
+      interval: "weekly"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
