@@ -3044,10 +3044,10 @@ file-entry-cache@^8.0.0:
   dependencies:
     flat-cache "^4.0.0"
 
-file-selector@^4.0.1:
-  version "4.0.2"
-  resolved "https://registry.yarnpkg.com/file-selector/-/file-selector-4.0.2.tgz#d188478c2a91ca359b257728068f39783947d8c7"
-  integrity sha512-gG5a3fIH+jVZY3AZeupJBjYnRd65YUTCO26gKhfE24LvmGPmBAx0peyxrjUkX6PhKfTUl9UPi7UYwvDS6RI2Jg==
+file-selector@^4.1.0:
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/file-selector/-/file-selector-4.1.0.tgz#8759e5b0ef030c5cee36ea6f4b66cd9b23a40d86"
+  integrity sha512-Io1mP8CI3zec5Bxy3P3TxdrKnt35Cm8vNIHnZsvyj43l4YFjD4NRInBp240S5bDJQ0EP1jnh7nCAwXsO818OCg==
 
 filelist@^1.0.4:
   version "1.0.6"
@@ -4433,13 +4433,13 @@ react-dom@^19.0.0:
   dependencies:
     scheduler "^0.27.0"
 
-react-dropzone@^19.1.1:
-  version "19.1.1"
-  resolved "https://registry.yarnpkg.com/react-dropzone/-/react-dropzone-19.1.1.tgz#3e0abe85a657efc08555d2456a9cb2fcf160d002"
-  integrity sha512-zxuTwbyvP+FSdesiHafT/0UMTX/Ne1ri8XPTn7KM97ZinHKFy3N6KiKEGRiG28ibYV+nG6sHxoJlkVoDxIMHxQ==
+react-dropzone@^20.0.0:
+  version "20.0.0"
+  resolved "https://registry.yarnpkg.com/react-dropzone/-/react-dropzone-20.0.0.tgz#75eade48bede945796aac3a25cba5488d5d640a9"
+  integrity sha512-Xw8tvvVPJQzj8ir5wivUMzA+G6R+aGhdU5KQzUMvVBlJNb26AW/0137VoYVmb5UgZcbhM9OCpjE4KOqqSL9QuQ==
   dependencies:
     attr-accept "^2.2.5"
-    file-selector "^4.0.1"
+    file-selector "^4.1.0"
 
 react-i18next@^17.0.10:
   version "17.0.10"

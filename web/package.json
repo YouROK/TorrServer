@@ -22,7 +22,7 @@
     "parse-torrent-title": "^3.0.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-dropzone": "^19.1.1",
+    "react-dropzone": "^20.0.0",
     "react-i18next": "^17.0.10",
     "sonner": "^2.0.7"
   },
