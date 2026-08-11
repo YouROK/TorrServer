@@ -1,5 +1,6 @@
 import i18n from 'shared/i18n'
-import type { TorrentStat } from 'shared/api/types'
+import type { CachePiece, TorrentCache, TorrentStat } from 'shared/api/types'
+import { forEachPiece, isReaderActive } from 'shared/cache/buildCacheMap'
 
 /** Human file/cache size using binary 1024 steps and localized unit labels. */
 export function humanizeSize(size?: number | null): string {
@@ -36,8 +37,8 @@ export function getPeerString(torrent?: TorrentStat | null): string | null {
 
 /**
  * Cache fill label — same shape as Details «Кеш» widget.
- * `percent: 'whenOver'` → sizes only until filled exceeds capacity, then `· N%` (can exceed 100).
- * `percent: 'always'` → always append `· N%` (card progress).
+ * Shows raw `filled` (may exceed capacity until cleanPieces). Percent is capped
+ * at 100 so a brief overfill never reads as "103% capacity".
  */
 export function formatCacheFilledLabel(
   filled?: number | null,
@@ -45,13 +46,97 @@ export function formatCacheFilledLabel(
   opts?: { percent?: 'whenOver' | 'always' },
 ): string | null {
   if (filled == null || capacity == null || capacity <= 0 || filled < 0) return null
-  const shown = Math.min(filled, capacity)
-  const pct = Math.round((filled / capacity) * 100)
+  const pct = Math.min(100, Math.round((filled / capacity) * 100))
   const over = filled > capacity
-  const sizes = `${humanizeSize(shown)} / ${humanizeSize(capacity)}`
+  const sizes = `${humanizeSize(filled)} / ${humanizeSize(capacity)}`
   const mode = opts?.percent ?? 'whenOver'
   if (mode === 'always' || over) return `${sizes} · ${pct}%`
   return sizes
+}
+
+/** Preload target: CacheSize × PreloadCache% — matches server `Preload()` in apihelper.go. */
+export function resolveBufferTargetBytes(capacity?: number | null, preloadCachePercent?: number | null): number | null {
+  if (capacity == null || capacity <= 0) return null
+  const pct = preloadCachePercent == null || Number.isNaN(preloadCachePercent) ? 50 : preloadCachePercent
+  const preloadSize = (capacity / 100) * Math.max(0, pct)
+  if (preloadSize <= 0) return null
+  // Never exceed Cache Size — same clamp as the server.
+  return Math.min(preloadSize, capacity)
+}
+
+/**
+ * Preload progress: live Filled toward the Preload target (not Cache Size capacity).
+ * Label order is `Filled / preloadTarget`. Percent is capped at 100.
+ * Use only for idle/preload — while streaming prefer {@link formatBufferAheadLabel}.
+ */
+export function formatBufferFilledLabel(
+  filled?: number | null,
+  bufferTarget?: number | null,
+  opts?: { percent?: 'whenOver' | 'always' },
+): string | null {
+  if (filled == null || bufferTarget == null || bufferTarget <= 0 || filled < 0) return null
+  const rawPct = Math.round((filled / bufferTarget) * 100)
+  const pct = Math.min(100, rawPct)
+  const over = filled > bufferTarget
+  const sizes = `${humanizeSize(filled)} / ${humanizeSize(bufferTarget)}`
+  const mode = opts?.percent ?? 'whenOver'
+  if (mode === 'always' || over) return `${sizes} · ${pct}%`
+  return sizes
+}
+
+/**
+ * Playable contiguous bytes ahead of the playhead — never `ahead / target`, which
+ * reads as if the preload target were a capacity that overflowed.
+ * Pass `0` for the empty-ahead label (`BufferAheadEmpty`).
+ */
+export function formatBufferAheadLabel(aheadBytes?: number | null): string | null {
+  if (aheadBytes == null || aheadBytes < 0 || Number.isNaN(aheadBytes)) return null
+  if (aheadBytes === 0) return i18n.t('BufferAheadEmpty')
+  return i18n.t('BufferAheadLabel', { size: humanizeSize(aheadBytes) })
+}
+
+export function bufferFillPercent(filled?: number | null, bufferTarget?: number | null): number {
+  if (filled == null || bufferTarget == null || bufferTarget <= 0 || filled < 0) return 0
+  return Math.min(100, Math.max(0, (filled / bufferTarget) * 100))
+}
+
+/**
+ * Contiguous ready bytes from the active playhead forward — how much can be
+ * played before the stream stalls. Total `Filled` pins at 100% during playback
+ * and stops being informative; this does not.
+ * Returns null when no active reader exists (preload or idle) so callers can
+ * fall back to `Filled`.
+ */
+export function bufferAheadBytes(cache?: TorrentCache | null): number | null {
+  const piecesCount = cache?.PiecesCount ?? 0
+  if (!cache || piecesCount <= 0) return null
+
+  let head = -1
+  for (const reader of cache.Readers ?? []) {
+    if (!isReaderActive(reader)) continue
+    const piece = reader.Reader
+    if (piece != null && piece >= 0 && piece < piecesCount && piece > head) head = piece
+  }
+  if (head < 0) return null
+
+  const pieceById = new Map<number, CachePiece>()
+  forEachPiece(cache.Pieces, (id, piece) => {
+    if (id >= head) pieceById.set(id, piece)
+  })
+
+  const defaultLength = cache.PiecesLength || 0
+  let total = 0
+  for (let id = head; id < piecesCount; id++) {
+    const piece = pieceById.get(id)
+    if (!piece) break
+    const length = piece.Length || defaultLength || 0
+    if (length <= 0) break
+    const size = Math.min(piece.Size || 0, length)
+    // Count the partial head/hole piece, then stop — bytes past a hole are not playable.
+    total += size
+    if (size < length) break
+  }
+  return total
 }
 
 /**

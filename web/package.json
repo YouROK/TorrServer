@@ -40,7 +40,8 @@
     "test": "vitest run",
     "preview": "vite preview",
     "lint": "eslint src --color",
-    "fix": "eslint src --fix --color"
+    "fix": "eslint src --fix --color",
+    "screenshots:iphone": "node scripts/screenshots-iphone.mjs"
   },
   "browserslist": {
     "production": [
@@ -70,6 +71,7 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.9.0",
+    "playwright": "^1.62.1",
     "prettier": "^3.9.6",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.3",

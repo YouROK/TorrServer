@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next'
 
 import { shutdownHost } from 'shared/api/hosts'
 import { authFetch } from 'shared/api/authCredentials'
-import { useDialogFullScreen } from 'shared/hooks/useDialogFullScreen'
 import AppDialog from 'shared/ui/AppDialog'
 import UnsafeButton from 'shared/ui/UnsafeButton'
 
@@ -17,11 +16,10 @@ export interface CloseServerDialogProps {
 /** Destructive confirm dialog for shutting down the TorrServer process. */
 export default function CloseServerDialog({ open, onClose }: CloseServerDialogProps) {
   const { t } = useTranslation()
-  const isFullScreenBreakpoint = useDialogFullScreen()
 
   return (
-    <AppDialog open={open} onClose={onClose} size='sm' fullScreen={isFullScreenBreakpoint}>
-      <Modal.Header>
+    <AppDialog open={open} onClose={onClose} size='sm' compact>
+      <Modal.Header className='shrink-0'>
         <Modal.Icon className='bg-danger/15 text-danger'>
           <Power {...iconAction} aria-hidden />
         </Modal.Icon>
@@ -29,7 +27,7 @@ export default function CloseServerDialog({ open, onClose }: CloseServerDialogPr
         <Modal.CloseTrigger aria-label={t('Close')} />
       </Modal.Header>
       <Modal.Body>{t('ConfirmCloseServer')}</Modal.Body>
-      <Modal.Footer>
+      <Modal.Footer className='shrink-0'>
         <Button variant='secondary' onPress={onClose} autoFocus>
           {t('Cancel')}
         </Button>

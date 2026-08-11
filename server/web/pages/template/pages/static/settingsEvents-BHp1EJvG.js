@@ -1,0 +1,1 @@
+var e=()=>{try{window.dispatchEvent(new Event(`torrserver:settings-changed`))}catch{}},t=`torrserver:open-settings`,n=e=>{try{window.dispatchEvent(new CustomEvent(t,{detail:e}))}catch{}};export{e as n,n as r,t};

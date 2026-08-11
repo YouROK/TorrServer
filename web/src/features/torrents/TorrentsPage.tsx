@@ -7,7 +7,7 @@ import { CheckSquare, CloudOff, FolderPlus, Import, ListMusic, Search, SearchX, 
 import { useTranslation } from 'react-i18next'
 import type { TorrentStat, ViewedFileEntry } from 'shared/api/types'
 import { filteredPlaylistAllUrl } from 'shared/api/extras'
-import { dropTorrent, removeTorrent, TORRENTS_QUERY_KEY } from 'shared/api/torrents'
+import { dropTorrent, markTorrentsDroppedInList, removeTorrent, TORRENTS_QUERY_KEY } from 'shared/api/torrents'
 import { useLocalJsonPref } from 'shared/hooks/useLocalPref'
 import { useTorrentsQuery } from 'shared/hooks/useTorrentsQuery'
 import { ALL_VIEWED_QUERY_KEY, clearViewedFiles, listAllViewedEntries, VIEWED_QUERY_KEY } from 'shared/api/viewed'
@@ -189,11 +189,15 @@ export default function TorrentsPage({ sortABC, sortCategory, onAdd, onClearCate
     const mutate = action === 'drop' ? dropTorrent : removeTorrent
     const previous = queryClient.getQueryData<TorrentStat[]>(TORRENTS_QUERY_KEY)
     const remove = new Set(hashes)
-    queryClient.setQueryData<TorrentStat[]>(TORRENTS_QUERY_KEY, prev => prev?.filter(item => !remove.has(item.hash)))
+    if (action === 'drop') {
+      markTorrentsDroppedInList(queryClient, hashes)
+    } else {
+      queryClient.setQueryData<TorrentStat[]>(TORRENTS_QUERY_KEY, prev => prev?.filter(item => !remove.has(item.hash)))
+    }
     exitSelection()
     try {
       await Promise.all(hashes.map(hash => mutate(hash)))
-      await queryClient.invalidateQueries({ queryKey: TORRENTS_QUERY_KEY })
+      void queryClient.invalidateQueries({ queryKey: TORRENTS_QUERY_KEY })
       toast?.showToast({
         message: action === 'drop' ? t('DropTorrent') : t('Delete'),
         severity: 'success',

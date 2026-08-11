@@ -3,6 +3,8 @@ import type { ReactNode } from 'react'
 export interface MetricRowItem {
   label: string
   value: string
+  /** Optional tooltip clarifying metric semantics (e.g. Cache vs Loaded). */
+  hint?: string
 }
 
 export interface MetricRowsProps {
@@ -37,8 +39,9 @@ export default function MetricRows({
         <div
           key={item.label}
           className={`flex min-w-0 items-baseline justify-between gap-2 text-sm ${dense ? 'py-0.5' : 'py-1'}`}
+          title={item.hint}
         >
-          <span className='min-w-0 truncate text-muted' title={item.label}>
+          <span className='min-w-0 truncate text-muted' title={item.hint || item.label}>
             {item.label}
           </span>
           <span

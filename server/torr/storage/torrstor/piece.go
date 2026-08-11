@@ -59,6 +59,9 @@ func (p *Piece) MarkComplete() error {
 
 func (p *Piece) MarkNotComplete() error {
 	p.Complete = false
+	// Hash check failed — the piece is re-downloaded from scratch, so the
+	// accumulated Size must not be counted twice.
+	p.Size = 0
 	return nil
 }
 

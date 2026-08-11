@@ -2329,33 +2329,340 @@ body[data-immersive='true'] .ts-bottom-nav {
 }
 
 /**
+ * Narrow viewports (BP.dialog = 960px): force every modal edge-to-edge.
+ *
+ * Must NOT depend only on `.modal__dialog--full`. If JS `useDialogFullScreen` /
+ * HeroUI `size` stays on `lg`, inline `DIALOG_*` (e.g. Details `80dvh` / `92vw`)
+ * produces a floating rounded card with side gutters — the phone bug in screenshots.
+ * `!important` beats those inline width/height values.
+ */
+@media (max-width: 960px) {
+  .modal__backdrop {
+    --visual-viewport-height: var(--app-height, 100vh);
+    width: 100%;
+    max-width: 100%;
+    min-width: 100%;
+    height: var(--app-height, 100vh);
+    max-height: var(--app-height, 100vh);
+    min-height: var(--app-height, 100vh);
+  }
+
+  /*
+   * HeroUI enter uses zoom-in-105 — getBoundingClientRect stays ~5% oversized and
+   * shifts off-screen on iPhone. Fullscreen sheets and bottom sheets must not scale.
+   */
+  .modal__container:not(:has(.ts-sheet-modal)):not(:has(.ts-compact-modal))[data-entering='true'],
+  .modal__container:not(:has(.ts-sheet-modal)):not(:has(.ts-compact-modal))[data-exiting='true'],
+  .modal__container:has(.ts-sheet-modal)[data-entering='true'],
+  .modal__container:has(.ts-sheet-modal)[data-exiting='true'],
+  .modal__container:has(.ts-compact-modal)[data-entering='true'],
+  .modal__container:has(.ts-compact-modal)[data-exiting='true'] {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  /* Drawers share the short visualViewport bug — remap like modals. */
+  .drawer__backdrop,
+  .drawer__content {
+    --visual-viewport-height: var(--app-height, 100vh);
+  }
+
+  .modal__container:not(:has(.ts-sheet-modal)):not(:has(.ts-compact-modal)) {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    height: var(--app-height, 100vh) !important;
+    max-height: var(--app-height, 100vh) !important;
+    min-height: var(--app-height, 100vh) !important;
+    padding: 0 !important;
+    transform: none !important;
+  }
+
+  .modal__dialog:not(.ts-sheet-modal):not(.ts-compact-modal) {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 100% !important;
+    border-radius: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    transform: none !important;
+  }
+
+  /* BottomNav More stays a bottom-docked modal sheet (not force-fullscreen). */
+  .modal__container:has(.ts-sheet-modal) {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    height: var(--app-height, 100vh) !important;
+    max-height: var(--app-height, 100vh) !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    align-items: stretch !important;
+    justify-content: flex-end !important;
+  }
+
+  .modal__dialog.ts-sheet-modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    height: auto !important;
+    max-height: min(85dvh, var(--app-height, 100vh)) !important;
+    min-height: 0 !important;
+    border-radius: 1rem 1rem 0 0 !important;
+    margin-top: auto !important;
+    margin-bottom: 0 !important;
+  }
+
+  /*
+   * Compact confirms / short sheets — centered cards on phones too (avoid a
+   * one-line message floating above a full-viewport empty body).
+   */
+  .modal__container:has(.ts-compact-modal) {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    height: var(--app-height, 100vh) !important;
+    max-height: var(--app-height, 100vh) !important;
+    padding: max(1rem, env(safe-area-inset-top, 0px)) 1rem
+      max(1rem, env(safe-area-inset-bottom, 0px)) !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .modal__dialog.ts-compact-modal {
+    width: min(100%, 28rem) !important;
+    max-width: min(100%, 28rem) !important;
+    min-width: 0 !important;
+    height: auto !important;
+    max-height: min(85dvh, calc(var(--app-height, 100vh) - 2rem)) !important;
+    min-height: 0 !important;
+    border-radius: 1rem !important;
+    margin: 0 !important;
+  }
+
+  .modal__dialog > .modal__close-trigger,
+  .modal__dialog > .modal__header .modal__close-trigger {
+    top: max(0.5rem, env(safe-area-inset-top, 0px));
+    right: max(0.5rem, env(safe-area-inset-right, 0px));
+    z-index: 20;
+    display: grid;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    place-items: center;
+  }
+
+  /* Edit sits left of absolute Close — clear both 44px targets + gap. */
+  .modal__dialog.ts-details-modal .ts-details-edit-trigger {
+    position: absolute;
+    top: max(0.5rem, env(safe-area-inset-top, 0px));
+    right: max(3.5rem, calc(3rem + env(safe-area-inset-right, 0px)));
+  }
+
+  .modal__dialog > .modal__body.modal__body--scroll-inside,
+  .modal__dialog > .modal__body [role='tabpanel'] {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Details: flush hero + safe-area even when size class is still `lg`. */
+  .modal__dialog.ts-details-modal > .modal__header {
+    padding: 0;
+  }
+
+  .modal__dialog.ts-details-modal > .modal__body {
+    padding-top: 0;
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  .modal__dialog.ts-details-modal .ts-details-hero {
+    border-radius: 0;
+    /* 1rem floor helps Safari-tab (safe-area-inset-top ≈ 0 under the URL bar). */
+    padding-top: max(1rem, env(safe-area-inset-top, 0px));
+    /* Close + edit cluster (~44+44+gap) must not sit on the title. */
+    padding-right: max(6.75rem, calc(5.75rem + env(safe-area-inset-right, 0px)));
+    padding-bottom: 0.5rem;
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+  }
+
+  .modal__dialog.ts-details-modal .ts-details-tabs {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0%;
+    min-height: 0;
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
+  }
+
+  /*
+   * HeroUI tab panels are not flex columns — without this the Cache snake's
+   * flex-1 / ResizeObserver height chain collapses to ~1 row.
+   */
+  .modal__dialog.ts-details-modal .ts-details-tabs [role='tabpanel'] {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0%;
+    min-height: 0;
+    margin-top: 0;
+    /* Safe-area lives on sticky CTAs / scroll content — not every panel. */
+    padding-bottom: 0;
+  }
+
+  .modal__dialog.ts-details-modal > .modal__body.modal__body--scroll-inside {
+    overflow: hidden !important;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  /* Cache snake: less inset on phone so the map reads full-bleed. */
+  .modal__dialog.ts-details-modal .ts-details-cache-snake {
+    padding: 0.25rem;
+  }
+
+  /* Details ⋯ Drawer — flush bottom sheet, denser than default p-6. */
+  .drawer__dialog.ts-sheet-drawer[data-placement='bottom'] {
+    width: 100%;
+    max-width: 100%;
+    max-height: min(85dvh, var(--app-height, 100vh));
+    padding: 0.75rem 0.25rem max(0.75rem, env(safe-area-inset-bottom, 0px));
+    border-start-start-radius: 1rem;
+    border-start-end-radius: 1rem;
+  }
+
+  .drawer__dialog.ts-sheet-drawer .drawer__header {
+    padding-inline: 0.75rem;
+    padding-bottom: 0.25rem;
+  }
+
+  .drawer__dialog.ts-sheet-drawer .drawer__body {
+    /* Dialog already owns bottom safe-area — avoid double inset. */
+    padding-bottom: 0.25rem;
+  }
+}
+
+/**
  * Fullscreen dialogs on iOS PWA (`viewport-fit=cover` + `black-translucent`):
  *
- * 1) HeroUI/RAC sets `--visual-viewport-height` from `window.visualViewport.height`.
- *    On installed iOS PWAs that value is often shorter than the real screen, so the
- *    modal ends above the home-indicator and leaves a dead white strip (looks like
- *    BottomNav padding). Force fullscreen surfaces to `100dvh` instead.
+ * 1) HeroUI/RAC sets `--visual-viewport-height` from `useViewportSize()` on the backdrop.
+ *    On iOS Safari/PWA that value is often short, so backdrop/container (which use
+ *    `height: var(--visual-viewport-height)`) leave a dead strip. Remap the variable to
+ *    measured `--app-height` so dialog `h-full` fills the real screen — do NOT put an
+ *    absolute taller height on the dialog (overflow-clip crops it).
  *
  * 2) HeroUI's `.modal__close-trigger` is `position: absolute; top: 1rem` — dialog
  *    padding does NOT move it. Safe-area must be applied to the close button itself.
  *
  * 3) Keep bottom safe-area as scroll padding inside the body, not as chrome that
  *    permanently shrinks the dialog.
+ *
+ * 4) Base `.modal__container` gets `width: fit-content` at ≥40rem; `container--full`
+ *    only zeros padding — override width in that same breakpoint.
+ *
+ * 5) Also covers tablet-landscape / pref-forced `size="full"` above 960px (narrow
+ *    media query above does not apply there).
+ */
+.modal__backdrop:has(.modal__dialog--full) {
+  --visual-viewport-height: var(--app-height, 100vh);
+}
+
+/*
+ * Force-fullscreen above 960px (Appearance pref / tablet landscape).
+ * HeroUI `.modal__container` uses `sm:w-fit` — beat it with !important so wide
+ * monitors actually go edge-to-edge when `size="full"`.
  */
 .modal__backdrop:has(.modal__dialog--full),
 .modal__container--full {
-  height: 100dvh;
-  max-height: 100dvh;
-  min-height: 100dvh;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 100% !important;
+  height: var(--app-height, 100vh) !important;
+  max-height: var(--app-height, 100vh) !important;
+  min-height: var(--app-height, 100vh) !important;
+  padding: 0 !important;
+  transform: none !important;
+}
+
+@media (width >= 40rem) {
+  .modal__container--full {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    padding: 0 !important;
+  }
 }
 
 .modal__dialog--full {
   padding: 0;
   padding-left: env(safe-area-inset-left, 0px);
   padding-right: env(safe-area-inset-right, 0px);
-  height: 100%;
-  max-height: 100%;
-  min-height: 100%;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 100% !important;
+  border-radius: 0 !important;
+  /* HeroUI placement=auto uses mt-auto on small screens — pin full sheets edge-to-edge. */
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  transform: none !important;
+}
+
+.modal__container--full[data-entering='true'],
+.modal__container--full[data-exiting='true'] {
+  animation: none !important;
+  transform: none !important;
+}
+
+/*
+ * Compact cards under Appearance force-fullscreen / size=full path — keep a
+ * centered dialog instead of stretching one-line confirms across the monitor.
+ */
+.modal__container--full:has(.ts-compact-modal) {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: max(1rem, env(safe-area-inset-top, 0px)) 1rem max(1rem, env(safe-area-inset-bottom, 0px)) !important;
+  height: var(--app-height, 100vh) !important;
+  max-height: var(--app-height, 100vh) !important;
+}
+
+.modal__dialog--full.ts-compact-modal,
+.modal__dialog.ts-compact-modal {
+  width: min(100%, 28rem) !important;
+  max-width: min(100%, 28rem) !important;
+  min-width: 0 !important;
+  height: auto !important;
+  max-height: min(85dvh, calc(var(--app-height, 100vh) - 2rem)) !important;
+  min-height: 0 !important;
+  border-radius: 1rem !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+.modal__dialog--full.ts-compact-modal > .modal__header,
+.modal__dialog.ts-compact-modal > .modal__header {
+  padding-top: 0.75rem;
+}
+
+.modal__dialog--full.ts-compact-modal > .modal__body,
+.modal__dialog.ts-compact-modal > .modal__body {
+  flex: 0 1 auto;
+}
+
+.modal__dialog--full.ts-compact-modal > .modal__footer,
+.modal__dialog.ts-compact-modal > .modal__footer {
+  padding-bottom: 0.75rem;
 }
 
 .modal__dialog--full > .modal__header {
@@ -2395,6 +2702,170 @@ body[data-immersive='true'] .ts-bottom-nav {
   place-items: center;
 }
 
+/*
+ * Details fullscreen: zero-height header (sr-only title + absolute close) — body owns
+ * top safe-area. Flush hero (no inset card); keep modest side padding on tab content only.
+ */
+.modal__dialog--full.ts-details-modal {
+  padding: 0;
+}
+
+.modal__dialog--full.ts-details-modal > .modal__header {
+  padding: 0;
+}
+
+.modal__dialog--full.ts-details-modal > .modal__body {
+  padding-top: 0;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.modal__dialog--full.ts-details-modal .ts-details-hero {
+  border-radius: 0;
+  padding-top: max(1rem, env(safe-area-inset-top, 0px));
+  padding-right: max(6.75rem, calc(5.75rem + env(safe-area-inset-right, 0px)));
+  padding-bottom: 0.5rem;
+  padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+}
+
+.modal__dialog--full.ts-details-modal .ts-details-edit-trigger {
+  position: absolute;
+  top: max(0.5rem, env(safe-area-inset-top, 0px));
+  right: max(3.5rem, calc(3rem + env(safe-area-inset-right, 0px)));
+}
+
+.modal__dialog--full.ts-details-modal .ts-details-tabs {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0%;
+  min-height: 0;
+  padding-right: 0.75rem;
+  padding-left: 0.75rem;
+}
+
+.modal__dialog--full.ts-details-modal .ts-details-tabs [role='tabpanel'] {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0%;
+  min-height: 0;
+  margin-top: 0;
+  padding-bottom: 0;
+}
+
+.modal__dialog--full.ts-details-modal > .modal__body.modal__body--scroll-inside {
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.modal__dialog--full.ts-details-modal .ts-details-cache-snake {
+  padding: 0.25rem;
+}
+
+/*
+ * Policy fullscreen above 960px (`html[data-dialogs-fullscreen]` from useDialogFullScreen).
+ * Belt-and-suspenders when HeroUI `size="full"` classes are missing — keeps Details
+ * edge-to-edge under Appearance force. Compact confirms + bottom sheets excluded.
+ */
+html[data-dialogs-fullscreen] .modal__backdrop:has(.modal__dialog:not(.ts-sheet-modal):not(.ts-compact-modal)) {
+  --visual-viewport-height: var(--app-height, 100vh);
+}
+
+html[data-dialogs-fullscreen]
+  .modal__backdrop:has(.modal__dialog:not(.ts-sheet-modal):not(.ts-compact-modal)),
+html[data-dialogs-fullscreen]
+  .modal__container:has(.modal__dialog:not(.ts-sheet-modal):not(.ts-compact-modal)) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 100% !important;
+  height: var(--app-height, 100vh) !important;
+  max-height: var(--app-height, 100vh) !important;
+  min-height: var(--app-height, 100vh) !important;
+  padding: 0 !important;
+  transform: none !important;
+}
+
+html[data-dialogs-fullscreen] .modal__dialog:not(.ts-sheet-modal):not(.ts-compact-modal) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 100% !important;
+  border-radius: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  transform: none !important;
+}
+
+html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal {
+  padding: 0;
+}
+
+html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal > .modal__header {
+  padding: 0;
+}
+
+html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal > .modal__body {
+  padding-top: 0;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal .ts-details-hero {
+  border-radius: 0;
+  padding-top: max(1rem, env(safe-area-inset-top, 0px));
+  padding-right: max(6.75rem, calc(5.75rem + env(safe-area-inset-right, 0px)));
+  padding-bottom: 0.5rem;
+  padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+}
+
+html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal .ts-details-edit-trigger {
+  position: absolute;
+  top: max(0.5rem, env(safe-area-inset-top, 0px));
+  right: max(3.5rem, calc(3rem + env(safe-area-inset-right, 0px)));
+}
+
+html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal .ts-details-tabs {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0%;
+  min-height: 0;
+  padding-right: 0.75rem;
+  padding-left: 0.75rem;
+}
+
+html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal .ts-details-tabs [role='tabpanel'] {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0%;
+  min-height: 0;
+  margin-top: 0;
+  padding-bottom: 0;
+}
+
+html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal > .modal__body.modal__body--scroll-inside {
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Cache Details View — same height chain as Details Cache tab. */
+.modal__dialog.ts-cache-map-modal > .modal__body.modal__body--scroll-inside,
+.modal__dialog--full.ts-cache-map-modal > .modal__body.modal__body--scroll-inside {
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.modal__backdrop:has(.modal__dialog.ts-cache-map-modal),
+.modal__backdrop:has(.modal__dialog--full.ts-cache-map-modal) {
+  --visual-viewport-height: var(--app-height, 100vh);
+}
+
 /* Video player owns its own safe-area chrome — kill HeroUI full-dialog padding. */
 .ts-player-modal-full .modal__dialog--full,
 .modal__dialog--full:has(.ts-player) {
@@ -2414,9 +2885,12 @@ body[data-immersive='true'] .ts-bottom-nav {
 .modal__backdrop:has(.modal__dialog--full:has(.ts-player)),
 .ts-player-modal-full .modal__container--full,
 .modal__container--full:has(.ts-player) {
-  height: 100dvh;
-  max-height: 100dvh;
-  min-height: 100dvh;
+  width: 100%;
+  max-width: 100%;
+  min-width: 100%;
+  height: var(--app-height, 100vh);
+  max-height: var(--app-height, 100vh);
+  min-height: var(--app-height, 100vh);
 }
 
 /* —— TorrServer cinema player (Media Chrome) —— */
@@ -2483,7 +2957,7 @@ body[data-immersive='true'] .ts-bottom-nav {
 
 .ts-player--mobile {
   height: 100%;
-  max-height: 100dvh;
+  max-height: var(--app-height, 100vh);
 }
 
 .ts-player-video {

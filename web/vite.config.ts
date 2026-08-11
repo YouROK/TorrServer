@@ -67,6 +67,9 @@ export default defineConfig(({ mode }) => {
           cleanupOutdatedCaches: true,
           clientsClaim: true,
           skipWaiting: true,
+          // production mode minifies via terser; under Node 22+/26 that can hang
+          // ("Unfinished hook action(s): (terser) renderChunk") and block yarn build / gen_web.
+          mode: 'development',
         },
       }),
     ],

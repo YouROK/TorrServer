@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Button, Input, Modal, TextField } from '@heroui/react'
 import { useTranslation } from 'react-i18next'
+import { useDialogFullScreen } from 'shared/hooks/useDialogFullScreen'
 import AppDialog from 'shared/ui/AppDialog'
 import { requestOpenSettings, type SettingsDeepLinkTab } from 'shared/lib/settingsEvents'
 
@@ -33,6 +34,7 @@ export default function CommandPalette({
   onToggleTheme,
 }: CommandPaletteProps) {
   const { t } = useTranslation()
+  const isFullScreen = useDialogFullScreen()
   const [query, setQuery] = useState('')
 
   const commands = useMemo<CommandItem[]>(() => {
@@ -101,16 +103,28 @@ export default function CommandPalette({
   }, [commands, query])
 
   return (
-    <AppDialog open={open} onClose={onClose} size='sm'>
-      <Modal.Header>
+    <AppDialog
+      open={open}
+      onClose={onClose}
+      size='sm'
+      fullScreen={isFullScreen}
+      dialogClassName='flex flex-col overflow-hidden'
+    >
+      <Modal.Header className='shrink-0'>
         <Modal.Heading>{t('CommandPalette')}</Modal.Heading>
         <Modal.CloseTrigger aria-label={t('Close')} />
       </Modal.Header>
-      <Modal.Body className='space-y-3'>
-        <TextField value={query} onChange={setQuery} autoFocus>
+      <Modal.Body className='flex min-h-0 flex-1 flex-col gap-3 overflow-hidden'>
+        <TextField value={query} onChange={setQuery} autoFocus className='shrink-0'>
           <Input placeholder={t('CommandPaletteHint')} className='min-h-11' />
         </TextField>
-        <div className='flex max-h-72 flex-col gap-1 overflow-y-auto'>
+        <div
+          className={
+            isFullScreen
+              ? 'flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain'
+              : 'flex max-h-72 flex-col gap-1 overflow-y-auto'
+          }
+        >
           {filtered.map(cmd => (
             <Button key={cmd.id} variant='ghost' className='min-h-11 w-full justify-start' onPress={cmd.run}>
               {cmd.label}

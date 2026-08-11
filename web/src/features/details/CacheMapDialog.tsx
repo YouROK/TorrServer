@@ -13,6 +13,7 @@ export interface CacheMapDialogProps {
   cache: TorrentCacheData
   isSnakeDebugMode: boolean
   onSnakeDebugModeChange: (value: boolean) => void
+  hash?: string
 }
 
 /** Large cache-map workspace stacked above torrent Details. */
@@ -22,6 +23,7 @@ export default function CacheMapDialog({
   cache,
   isSnakeDebugMode,
   onSnakeDebugModeChange,
+  hash,
 }: CacheMapDialogProps) {
   const { t } = useTranslation()
   const isFullScreen = useDialogFullScreen()
@@ -32,10 +34,10 @@ export default function CacheMapDialog({
       onClose={onClose}
       size='lg'
       fullScreen={isFullScreen}
-      dialogClassName='flex flex-col overflow-hidden'
+      dialogClassName='ts-cache-map-modal flex flex-col overflow-hidden'
       dialogStyle={isFullScreen ? undefined : DIALOG_CACHE}
     >
-      <Modal.Header className='flex shrink-0 items-center gap-2'>
+      <Modal.Header className='flex shrink-0 items-center gap-2 px-3 sm:px-0'>
         <Modal.Heading className='min-w-0 flex-1 truncate'>{t('DetailedCacheView.header')}</Modal.Heading>
         <Checkbox isSelected={isSnakeDebugMode} onChange={onSnakeDebugModeChange}>
           <Checkbox.Content>
@@ -50,7 +52,7 @@ export default function CacheMapDialog({
 
       <Modal.Body className='flex min-h-0 flex-1 flex-col overflow-hidden'>
         <div className='flex min-h-0 min-w-0 flex-1 flex-col'>
-          <TorrentCache cache={cache} mode='detailed' isSnakeDebugMode={isSnakeDebugMode} />
+          <TorrentCache cache={cache} mode='detailed' isSnakeDebugMode={isSnakeDebugMode} hash={hash} />
         </div>
       </Modal.Body>
     </AppDialog>

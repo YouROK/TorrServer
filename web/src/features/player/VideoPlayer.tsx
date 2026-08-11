@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import axios from 'axios'
 import Hls from 'hls.js'
-import { Alert, Button, Modal, Popover, Spinner, useMediaQuery, useOverlayState } from '@heroui/react'
+import { Alert, Button, Modal, Popover, Spinner, useOverlayState } from '@heroui/react'
 import { ArrowDown, Database, Maximize2, Minimize2, Music2, Play, Users, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { authFetch, withAuthMediaUrl } from 'shared/api/authCredentials'
@@ -9,8 +9,8 @@ import { useUpdateCache } from 'shared/cache/useUpdateCache'
 import { useTorrentDetail } from 'shared/hooks/useTorrentDetail'
 import { formatCacheFilledLabel, humanizeSpeed } from 'shared/lib/format'
 import { gstreamerMasterUrl, gstreamerProbeUrl } from 'shared/lib/gstreamer'
+import { useDialogFullScreen } from 'shared/hooks/useDialogFullScreen'
 import { setNowPlaying } from 'shared/lib/nowPlaying'
-import { queryMax } from 'shared/theme/breakpoints'
 import { iconBtn } from 'shared/ui/controlClasses'
 import { PLAYER_DIALOG_EXPANDED, PLAYER_DIALOG_MOBILE, PLAYER_DIALOG_NORMAL } from 'shared/ui/dialogSizes'
 import { iconMenu, iconPlayerCompact } from 'shared/ui/iconProps'
@@ -100,7 +100,8 @@ export default function VideoPlayer({
   onAudioIndexChange,
 }: VideoPlayerProps) {
   const { t } = useTranslation()
-  const isMobile = useMediaQuery(queryMax('dialog'))
+  /** Same fullscreen policy as AppDialog sheets (≤960 / tablet landscape / Appearance force). */
+  const isMobile = useDialogFullScreen()
   const { setImmersive } = useModalOpen()
 
   const videoRef = useRef<HTMLVideoElement | null>(null)
@@ -324,7 +325,7 @@ export default function VideoPlayer({
           <span className='tabular-nums'>{peersLabel}</span>
           <span className='tabular-nums text-white/70'>{seedersLabel}</span>
         </PlayerStat>
-        <PlayerStat tip={t('CacheFilled')}>
+        <PlayerStat tip={t('CacheHint')}>
           <Database className='size-3 shrink-0' strokeWidth={2} aria-hidden />
           <span className='min-w-0 truncate tabular-nums'>{cacheFilledLabel}</span>
         </PlayerStat>
@@ -408,12 +409,13 @@ export default function VideoPlayer({
           <Modal.Container
             size={isMobile ? 'full' : 'lg'}
             scroll='inside'
-            className={isMobile ? 'ts-player-modal-full h-dvh p-0' : 'p-4 sm:p-5'}
+            placement={isMobile ? 'center' : 'auto'}
+            className={isMobile ? 'ts-player-modal-full p-0' : 'p-4 sm:p-5'}
           >
             <Modal.Dialog
               className={
                 isMobile
-                  ? 'h-dvh max-h-dvh overflow-hidden rounded-none border-0 bg-black text-white shadow-none'
+                  ? 'overflow-hidden rounded-none border-0 bg-black text-white shadow-none'
                   : 'overflow-hidden border border-white/10 bg-[#0a0e0c] text-white shadow-2xl shadow-black/50'
               }
               style={dialogStyle}

@@ -1,5 +1,5 @@
 import { useMemo, memo, useState, type ReactNode } from 'react'
-import { Button, ButtonGroup, Dropdown, Modal, Separator, Spinner, useMediaQuery, useOverlayState } from '@heroui/react'
+import { Button, ButtonGroup, Drawer, Modal, Separator, useMediaQuery, useOverlayState } from '@heroui/react'
 import {
   EyeOff,
   Hash,
@@ -7,29 +7,25 @@ import {
   ListMusic,
   Magnet,
   MoreHorizontal,
-  Play,
   Settings,
   Share2,
   SquareArrowOutUpRight,
   Trash2,
-  ChevronRight,
 } from 'lucide-react'
 import ptt from 'parse-torrent-title'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import type { PlayableFile } from 'shared/api/types'
+import type { PlayableFile, TorrentStat } from 'shared/api/types'
 import { playlistAllUrl, torrsShareUrl } from 'shared/api/extras'
 import { playlistTorrHost, streamHost } from 'shared/api/hosts'
-import { dropTorrent, removeTorrent, TORRENTS_QUERY_KEY } from 'shared/api/torrents'
+import { dropTorrent, markTorrentsDroppedInList, removeTorrent, TORRENTS_QUERY_KEY } from 'shared/api/torrents'
 import { clearViewedFiles } from 'shared/api/viewed'
 import { useExternalPlayers } from 'shared/lib/externalPlayers'
 import { copyToClipboard } from 'shared/lib/clipboard'
 import { requestOpenSettings } from 'shared/lib/settingsEvents'
 import { queryMax } from 'shared/theme/breakpoints'
-import { iconBtn } from 'shared/ui/controlClasses'
 import { iconMenu } from 'shared/ui/iconProps'
 import { useOptionalAppToast } from 'shared/ui/Toast'
-import { useConfiguredPlayAction } from 'features/player/useConfiguredPlayAction'
 import { usePlayLauncher } from 'features/player/usePlayLauncher'
 
 export interface TorrentActionsProps {
@@ -44,14 +40,10 @@ export interface TorrentActionsProps {
   onDropped?: () => void
   /** After permanent delete — close details. */
   onDeleted?: () => void
-  /** Switch details sheet to the Files tab (multi-file "Play" entry point). */
-  onShowFiles?: () => void
-  /** Switch details sheet to the Cache tab. */
-  onOpenCache?: () => void
   /** Continue Watching: auto-play this file when the list is ready. */
   autoPlayFileId?: number
   autoPlayTimecode?: number
-  /** Phone/fullscreen Details — denser Play row + secondary actions in a menu. */
+  /** Phone/fullscreen Details — secondary actions in a bottom sheet. */
   compact?: boolean
 }
 
@@ -95,8 +87,8 @@ function ExternalPlayersGroup({
 }
 
 /**
- * Stats-tab action block: Play / playlist / magnet / hash / drop / clear viewed.
- * Copy helpers go through {@link copyToClipboard} so LAN HTTP phones do not error.
+ * Stats-tab action block: playlist / magnet / hash / drop / clear viewed.
+ * Play + Cache live on their own tabs; copy helpers use {@link copyToClipboard}.
  */
 function TorrentActions({
   hash,
@@ -109,8 +101,6 @@ function TorrentActions({
   onViewedChange,
   onDropped,
   onDeleted,
-  onShowFiles,
-  onOpenCache,
   autoPlayFileId,
   autoPlayTimecode,
   compact: compactProp = false,
@@ -121,6 +111,7 @@ function TorrentActions({
   const isPhone = useMediaQuery(queryMax('mobile'))
   const compact = compactProp || isPhone
   const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm>(null)
+  const moreState = useOverlayState()
   const confirmState = useOverlayState({
     isOpen: pendingConfirm != null,
     onOpenChange: open => {
@@ -138,7 +129,8 @@ function TorrentActions({
   const fromLatestPlaylistLink = `${fullPlaylistLink}&fromlast`
   const magnetLink = `magnet:?xt=urn:btih:${hash}&dn=${encodeURIComponent(name || title || '')}`
 
-  const { handlePlay, resolvePlayableFile, isResolving, playerModals } = usePlayLauncher({
+  /** Keep launcher mounted for Continue Watching autoplay + player modals. */
+  const { playerModals } = usePlayLauncher({
     hash,
     displayName,
     knownPlayableFiles: playableFileList || [],
@@ -147,9 +139,7 @@ function TorrentActions({
     autoPlayTimecode,
   })
 
-  const { runConfiguredPlay } = useConfiguredPlayAction()
-
-  /** Only offer app deep links when there's exactly one obvious file to hand off — otherwise Play's file picker covers it. */
+  /** Only offer app deep links when there's exactly one obvious file to hand off. */
   const { buildExternalPlayers, hasAnyExternalPlayer } = useExternalPlayers()
   const singleFileStream = useMemo(() => {
     if (playableFileList?.length !== 1) return null
@@ -162,22 +152,26 @@ function TorrentActions({
   const externalPlayers = singleFileStream?.externalPlayers ?? []
 
   const runPendingConfirm = () => {
-    if (pendingConfirm === 'drop') {
-      void dropTorrent(hash)
-        .then(async () => {
-          toast?.showToast({ message: t('DropTorrent'), severity: 'success' })
-          await queryClient.invalidateQueries({ queryKey: TORRENTS_QUERY_KEY })
-          onDropped?.()
+    if (pendingConfirm === 'drop' || pendingConfirm === 'delete') {
+      const previous = queryClient.getQueryData<TorrentStat[]>(TORRENTS_QUERY_KEY)
+      if (pendingConfirm === 'drop') {
+        markTorrentsDroppedInList(queryClient, hash)
+      } else {
+        queryClient.setQueryData<TorrentStat[]>(TORRENTS_QUERY_KEY, prev => prev?.filter(item => item.hash !== hash))
+      }
+      const mutate = pendingConfirm === 'drop' ? dropTorrent : removeTorrent
+      const successMessage = pendingConfirm === 'drop' ? t('DropTorrent') : t('Delete')
+      const afterSuccess = pendingConfirm === 'drop' ? onDropped : onDeleted
+      void mutate(hash)
+        .then(() => {
+          toast?.showToast({ message: successMessage, severity: 'success' })
+          void queryClient.invalidateQueries({ queryKey: TORRENTS_QUERY_KEY })
+          afterSuccess?.()
         })
-        .catch(() => toast?.showToast({ message: t('Error'), severity: 'error' }))
-    } else if (pendingConfirm === 'delete') {
-      void removeTorrent(hash)
-        .then(async () => {
-          toast?.showToast({ message: t('Delete'), severity: 'success' })
-          await queryClient.invalidateQueries({ queryKey: TORRENTS_QUERY_KEY })
-          onDeleted?.()
+        .catch(() => {
+          if (previous) queryClient.setQueryData(TORRENTS_QUERY_KEY, previous)
+          toast?.showToast({ message: t('Error'), severity: 'error' })
         })
-        .catch(() => toast?.showToast({ message: t('Error'), severity: 'error' }))
     } else if (pendingConfirm === 'clearViews') {
       void clearViewedFiles(hash)
         .then(() => {
@@ -236,39 +230,17 @@ function TorrentActions({
   }
 
   const hasPartialProgress = !isSingleFileTorrent && !!viewedFileList?.length
-  const playLabel: ReactNode =
-    !isSingleFileTorrent && (playableFileList?.length ?? 0) > 1
-      ? compact
-        ? `${t('TorrentFiles')} (${playableFileList!.length})`
-        : `${t('TorrentContent')} (${playableFileList!.length})`
-      : t('Play')
-  const cacheLabel = compact ? t('Cache') : t('DetailedCacheView.button')
-
-  const onPlayPress = () => {
-    runConfiguredPlay({
-      hash,
-      displayName,
-      knownPlayableFiles: playableFileList || [],
-      handlePlay,
-      resolvePlayableFile,
-      copyText: text =>
-        copyToClipboard(text)
-          .then(() => toast?.showToast({ message: t('Copied'), severity: 'success' }))
-          .catch(() => toast?.showToast({ message: t('Error'), severity: 'error' })),
-      onBuiltinMultiFile: onShowFiles,
-    })
-  }
 
   const confirmModal = (
     <Modal.Root state={confirmState}>
       <Modal.Backdrop>
-        <Modal.Container size='sm'>
-          <Modal.Dialog>
-            <Modal.Header>
+        <Modal.Container size='sm' placement='center'>
+          <Modal.Dialog className='ts-compact-modal'>
+            <Modal.Header className='shrink-0'>
               <Modal.Heading>{confirmHeading}</Modal.Heading>
             </Modal.Header>
             <Modal.Body>{confirmBody}</Modal.Body>
-            <Modal.Footer>
+            <Modal.Footer className='shrink-0'>
               <Button variant='secondary' onPress={() => setPendingConfirm(null)} autoFocus>
                 {t('Cancel')}
               </Button>
@@ -286,84 +258,29 @@ function TorrentActions({
   )
 
   if (compact) {
+    const closeMore = () => moreState.close()
+    const sheetAction = (label: string, icon: ReactNode, onPress: () => void, danger = false) => (
+      <Button
+        key={label}
+        variant='ghost'
+        onPress={() => {
+          closeMore()
+          onPress()
+        }}
+        className={`h-auto w-full justify-start gap-3 px-4 py-3 min-h-11 ${danger ? 'text-danger' : ''}`}
+      >
+        {icon}
+        {label}
+      </Button>
+    )
+
     return (
-      <div className='space-y-2.5'>
-        <div className='flex items-center gap-1.5'>
-          {onOpenCache ? (
-            <Button variant='primary' size='md' className='min-h-11 min-w-0 flex-1 gap-2' onPress={onOpenCache}>
-              <span className='truncate text-sm'>{cacheLabel}</span>
-              <ChevronRight size={16} strokeWidth={1.75} className='shrink-0' aria-hidden />
-            </Button>
-          ) : null}
-          <Button
-            variant='primary'
-            size='md'
-            className='min-h-11 min-w-0 flex-1 gap-2'
-            isPending={isResolving}
-            onPress={onPlayPress}
-          >
-            {({ isPending }) => (
-              <>
-                {isPending ? (
-                  <Spinner size='sm' color='current' />
-                ) : (
-                  <Play {...iconMenu} fill='currentColor' aria-hidden />
-                )}
-                <span className='truncate text-sm'>{playLabel}</span>
-              </>
-            )}
+      <div className='space-y-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]'>
+        <div className='flex items-center justify-end gap-2'>
+          <Button variant='secondary' size='md' className='min-h-11 min-w-0 flex-1 gap-2' onPress={moreState.open}>
+            <MoreHorizontal {...iconMenu} aria-hidden />
+            <span className='truncate text-sm'>{t('Actions')}</span>
           </Button>
-          <Dropdown>
-            <Dropdown.Trigger>
-              <Button variant='ghost' isIconOnly className={`${iconBtn} shrink-0 text-muted`} aria-label={t('Info')}>
-                <MoreHorizontal {...iconMenu} aria-hidden />
-              </Button>
-            </Dropdown.Trigger>
-            <Dropdown.Popover placement='bottom end' className='min-w-[14rem]'>
-              <Dropdown.Menu aria-label={t('Info')}>
-                {singleFileStream ? (
-                  <Dropdown.Item onPress={() => void copyStreamLink()}>
-                    <Link2 {...iconMenu} />
-                    {t('CopyLink')}
-                  </Dropdown.Item>
-                ) : null}
-                {isSingleFileTorrent || !viewedFileList?.length ? (
-                  <Dropdown.Item onPress={() => window.open(fullPlaylistLink, '_blank')}>
-                    <ListMusic {...iconMenu} />
-                    {t('DownloadPlaylist')}
-                  </Dropdown.Item>
-                ) : null}
-                <Dropdown.Item onPress={() => void copyMagnetLink()}>
-                  <Magnet {...iconMenu} />
-                  {t('CopyMagnet')}
-                </Dropdown.Item>
-                <Dropdown.Item onPress={() => void copyInfoHash()}>
-                  <Hash {...iconMenu} />
-                  {t('CopyHash')}
-                </Dropdown.Item>
-                <Dropdown.Item onPress={() => void copyTorrsLink()}>
-                  <Share2 {...iconMenu} />
-                  {t('CopyTorrs')}
-                </Dropdown.Item>
-                <Dropdown.Item onPress={() => window.open(playlistAllUrl({ category: undefined }), '_blank')}>
-                  <ListMusic {...iconMenu} />
-                  {t('DownloadAllPlaylists')}
-                </Dropdown.Item>
-                <Dropdown.Item onPress={() => setPendingConfirm('clearViews')}>
-                  <EyeOff {...iconMenu} />
-                  {t('RemoveViews')}
-                </Dropdown.Item>
-                <Dropdown.Item onPress={() => setPendingConfirm('drop')}>
-                  <Trash2 {...iconMenu} />
-                  {t('DropTorrent')}
-                </Dropdown.Item>
-                <Dropdown.Item onPress={() => setPendingConfirm('delete')}>
-                  <Trash2 {...iconMenu} />
-                  {t('Delete')}
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown.Popover>
-          </Dropdown>
         </div>
 
         {externalPlayers.length > 0 ? (
@@ -418,6 +335,50 @@ function TorrentActions({
           </div>
         ) : null}
 
+        <Drawer.Root state={moreState}>
+          <Drawer.Backdrop isDismissable>
+            <Drawer.Content placement='bottom'>
+              <Drawer.Dialog className='ts-sheet-drawer' aria-label={t('Info')}>
+                <Drawer.Header>
+                  <Drawer.Heading>{t('Info')}</Drawer.Heading>
+                  <Drawer.CloseTrigger className='min-h-11 min-w-11' aria-label={t('Close')} />
+                </Drawer.Header>
+                <Drawer.Body className='flex flex-col gap-0.5 px-0 pt-1'>
+                  {singleFileStream
+                    ? sheetAction(t('CopyLink'), <Link2 {...iconMenu} aria-hidden />, () => void copyStreamLink())
+                    : null}
+                  {isSingleFileTorrent || !viewedFileList?.length
+                    ? sheetAction(t('DownloadPlaylist'), <ListMusic {...iconMenu} aria-hidden />, () =>
+                        window.open(fullPlaylistLink, '_blank'),
+                      )
+                    : null}
+                  {sheetAction(t('CopyMagnet'), <Magnet {...iconMenu} aria-hidden />, () => void copyMagnetLink())}
+                  {sheetAction(t('CopyHash'), <Hash {...iconMenu} aria-hidden />, () => void copyInfoHash())}
+                  {sheetAction(t('CopyTorrs'), <Share2 {...iconMenu} aria-hidden />, () => void copyTorrsLink())}
+                  {sheetAction(t('DownloadAllPlaylists'), <ListMusic {...iconMenu} aria-hidden />, () =>
+                    window.open(playlistAllUrl({ category: undefined }), '_blank'),
+                  )}
+                  {sheetAction(t('RemoveViews'), <EyeOff {...iconMenu} aria-hidden />, () =>
+                    setPendingConfirm('clearViews'),
+                  )}
+                  {sheetAction(
+                    t('DropTorrent'),
+                    <Trash2 {...iconMenu} aria-hidden />,
+                    () => setPendingConfirm('drop'),
+                    true,
+                  )}
+                  {sheetAction(
+                    t('Delete'),
+                    <Trash2 {...iconMenu} aria-hidden />,
+                    () => setPendingConfirm('delete'),
+                    true,
+                  )}
+                </Drawer.Body>
+              </Drawer.Dialog>
+            </Drawer.Content>
+          </Drawer.Backdrop>
+        </Drawer.Root>
+
         {playerModals}
         {confirmModal}
       </div>
@@ -426,32 +387,6 @@ function TorrentActions({
 
   return (
     <div className='space-y-4'>
-      <div className='flex w-full items-stretch gap-2'>
-        {onOpenCache ? (
-          <Button variant='primary' size='lg' className='min-h-11 min-w-0 flex-1 gap-2' onPress={onOpenCache}>
-            <span className='truncate'>{t('DetailedCacheView.button')}</span>
-            <ChevronRight size={16} strokeWidth={1.75} className='shrink-0' aria-hidden />
-          </Button>
-        ) : null}
-        <Button
-          variant='primary'
-          size='lg'
-          className='min-h-11 min-w-0 flex-1 gap-2'
-          isPending={isResolving}
-          onPress={onPlayPress}
-        >
-          {({ isPending }) => (
-            <>
-              {isPending ? (
-                <Spinner size='sm' color='current' />
-              ) : (
-                <Play {...iconMenu} fill='currentColor' aria-hidden />
-              )}
-              <span className='truncate'>{playLabel}</span>
-            </>
-          )}
-        </Button>
-      </div>
       {externalPlayers.length > 0 || singleFileStream ? (
         <div className='flex w-full items-center gap-2'>
           <ExternalPlayersGroup players={externalPlayers} stretch />

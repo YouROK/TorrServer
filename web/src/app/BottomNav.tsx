@@ -93,7 +93,7 @@ export default function BottomNav({
       <Modal state={moreState}>
         <Modal.Backdrop isDismissable onClick={closeMore}>
           <Modal.Container placement='bottom' size='md'>
-            <Modal.Dialog aria-label={t('nav.More')}>
+            <Modal.Dialog className='ts-sheet-modal' aria-label={t('nav.More')}>
               <Modal.Body className='flex flex-col gap-1 pb-[env(safe-area-inset-bottom,0px)] pt-2'>
                 {sheetAction(t('RemoveAll'), <Trash2 {...iconNav} />, onRemoveAll, disabled)}
                 {sheetAction(t('ServerStatus'), <Activity {...iconNav} />, onServerStatus, disabled)}

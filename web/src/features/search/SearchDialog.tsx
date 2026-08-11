@@ -20,7 +20,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import type { SearchResultItem, TorznabCapsCategory, TorznabUrl } from 'shared/api/types'
 import { fetchTorznabCaps, searchRutor, searchTorznab } from 'shared/api/search'
 import { getSettings } from 'shared/api/settings'
-import { addTorrent, TORRENTS_QUERY_KEY } from 'shared/api/torrents'
+import { addTorrent, refreshTorrentsList } from 'shared/api/torrents'
 import { useDialogFullScreen } from 'shared/hooks/useDialogFullScreen'
 import { queryMax } from 'shared/theme/breakpoints'
 import { formatSizeToClassicUnits, parseSizeToBytes } from 'shared/lib/format'
@@ -322,8 +322,8 @@ export default function SearchDialog({ open, onClose }: SearchDialogProps) {
         const urls = await getMoviePosters(posterQuery, i18n.language?.startsWith('ru') ? 'ru' : 'en')
         poster = urls?.[0] || ''
       }
-      await addTorrent({ link, title: item.Title, poster })
-      await queryClient.invalidateQueries({ queryKey: TORRENTS_QUERY_KEY })
+      const added = await addTorrent({ link, title: item.Title, poster })
+      await refreshTorrentsList(queryClient, { torrents: added })
       toast?.showToast({ message: t('Search.TorrentAdded'), severity: 'success' })
     } catch {
       toast?.showToast({ message: t('Error'), severity: 'error' })

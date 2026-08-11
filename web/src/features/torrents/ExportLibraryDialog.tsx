@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import type { TorrentStat } from 'shared/api/types'
 import { torrsShareUrl } from 'shared/api/extras'
 import { copyToClipboard } from 'shared/lib/clipboard'
-import { useDialogFullScreen } from 'shared/hooks/useDialogFullScreen'
 import AppDialog from 'shared/ui/AppDialog'
 import { useOptionalAppToast } from 'shared/ui/Toast'
 
@@ -33,7 +32,6 @@ function downloadText(filename: string, text: string, mime: string) {
 export default function ExportLibraryDialog({ open, onClose, torrents }: ExportLibraryDialogProps) {
   const { t } = useTranslation()
   const toast = useOptionalAppToast()
-  const isFullScreen = useDialogFullScreen()
   const [copiedKind, setCopiedKind] = useState<ExportKind | null>(null)
   const [manualText, setManualText] = useState<string | null>(null)
 
@@ -95,12 +93,12 @@ export default function ExportLibraryDialog({ open, onClose, torrents }: ExportL
   const copyLabel = (kind: ExportKind, idle: string) => (copiedKind === kind ? t('Copied') : idle)
 
   return (
-    <AppDialog open={open} onClose={onClose} size='sm' fullScreen={isFullScreen}>
-      <Modal.Header>
+    <AppDialog open={open} onClose={onClose} size='sm' compact>
+      <Modal.Header className='shrink-0'>
         <Modal.Heading>{t('ExportLibrary')}</Modal.Heading>
         <Modal.CloseTrigger aria-label={t('Close')} />
       </Modal.Header>
-      <Modal.Body className='space-y-3'>
+      <Modal.Body className='min-h-0 max-h-[min(70dvh,32rem)] space-y-3 overflow-y-auto overscroll-contain'>
         <p className='text-sm text-muted'>{t('ExportLibraryCount', { count: torrents.length })}</p>
         <div className='flex flex-col gap-2'>
           <Button
@@ -167,7 +165,7 @@ export default function ExportLibraryDialog({ open, onClose, torrents }: ExportL
           </div>
         ) : null}
       </Modal.Body>
-      <Modal.Footer>
+      <Modal.Footer className='shrink-0'>
         <Button variant='secondary' onPress={onClose}>
           {t('Close')}
         </Button>

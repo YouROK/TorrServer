@@ -26,9 +26,12 @@ func (p *MemPiece) WriteAt(b []byte, off int64) (n int, err error) {
 		p.buffer = make([]byte, p.piece.cache.pieceLength)
 	}
 	n = copy(p.buffer[off:], b[:])
+	// Accumulate: chunks arrive out of order, so a high-water mark would count
+	// gaps as filled. MarkNotComplete resets Size on retransmit.
 	p.piece.Size += int64(n)
-	if p.piece.Size > p.piece.cache.pieceLength {
-		p.piece.Size = p.piece.cache.pieceLength
+	plen := p.piece.cache.pieceByteLength(p.piece.Id)
+	if plen > 0 && p.piece.Size > plen {
+		p.piece.Size = plen
 	}
 	if p.piece.Size > 0 {
 		p.piece.cache.notePieceFilled(p.piece.Id)

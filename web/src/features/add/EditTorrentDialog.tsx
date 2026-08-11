@@ -148,8 +148,14 @@ export default function EditTorrentDialog({ torrent, open, onClose }: EditTorren
           </TextField>
         </div>
 
-        {/* Always mounted — reserved height so TMDB results never resize the dialog. */}
-        <div className='flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface-secondary p-3'>
+        {/* Poster panel — flex-1 only when there are results to scroll under fullscreen. */}
+        <div
+          className={
+            postersLoading || posterOptions.length > 0
+              ? 'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface-secondary p-3'
+              : 'flex shrink-0 flex-col overflow-hidden rounded-xl border border-border bg-surface-secondary p-3'
+          }
+        >
           <p className='mb-2 flex shrink-0 items-center gap-1.5 text-xs text-muted'>
             <Film size={14} strokeWidth={1.75} aria-hidden />
             {t('AddDialog.AddPosterLinkInput')}

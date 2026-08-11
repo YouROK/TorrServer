@@ -2,7 +2,6 @@ import { Button, Link, Modal } from '@heroui/react'
 import { Heart, SquareArrowOutUpRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { useDialogFullScreen } from 'shared/hooks/useDialogFullScreen'
 import AppDialog from 'shared/ui/AppDialog'
 import { iconAction } from 'shared/ui/iconProps'
 
@@ -16,11 +15,10 @@ export interface DonateDialogProps {
 /** Support dialog: Boosty / YooMoney / TBank. */
 export default function DonateDialog({ open, onClose }: DonateDialogProps) {
   const { t } = useTranslation()
-  const isFullScreenBreakpoint = useDialogFullScreen()
 
   return (
-    <AppDialog open={open} onClose={onClose} size='sm' fullScreen={isFullScreenBreakpoint}>
-      <Modal.Header>
+    <AppDialog open={open} onClose={onClose} size='sm' compact>
+      <Modal.Header className='shrink-0'>
         <Modal.Icon className='bg-accent/15 text-accent'>
           <Heart {...iconAction} aria-hidden />
         </Modal.Icon>
@@ -44,7 +42,7 @@ export default function DonateDialog({ open, onClose }: DonateDialogProps) {
           ))}
         </ul>
       </Modal.Body>
-      <Modal.Footer>
+      <Modal.Footer className='shrink-0'>
         <Button variant='secondary' onPress={onClose} autoFocus>
           {t('Close')}
         </Button>

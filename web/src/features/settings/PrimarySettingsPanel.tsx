@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { Database, Gauge, HardDrive } from 'lucide-react'
 import { Input, Label, Slider, TextField } from '@heroui/react'
 import { useTranslation } from 'react-i18next'
@@ -6,6 +7,54 @@ import type { BTSets } from 'shared/api/types'
 
 import { SettingSwitch } from './SettingSwitch'
 import SettingsSection from './SettingsSection'
+
+const CACHE_SIZE_MIN_MB = 16
+/** Slider ceiling only — the number field may go higher (e.g. 10240 = 10 GB). */
+const CACHE_SIZE_SLIDER_MAX_MB = 2048
+
+function clampCacheSizeMb(value: number): number {
+  if (!Number.isFinite(value)) return CACHE_SIZE_MIN_MB
+  return Math.max(CACHE_SIZE_MIN_MB, Math.round(value))
+}
+
+function CacheSizeField({ value, onChange }: { value: number; onChange: (mb: number) => void }) {
+  const [text, setText] = useState(String(value))
+  const editingRef = useRef(false)
+
+  useEffect(() => {
+    if (!editingRef.current) setText(String(value))
+  }, [value])
+
+  const commit = (raw: string) => {
+    const next = clampCacheSizeMb(raw.trim() === '' ? Number.NaN : Number(raw))
+    onChange(next)
+    setText(String(next))
+  }
+
+  return (
+    <TextField
+      value={text}
+      onChange={next => {
+        setText(next)
+        if (next.trim() === '') return
+        const parsed = Number(next)
+        if (Number.isFinite(parsed) && parsed >= CACHE_SIZE_MIN_MB) {
+          onChange(Math.round(parsed))
+        }
+      }}
+      onFocus={() => {
+        editingRef.current = true
+      }}
+      onBlur={() => {
+        editingRef.current = false
+        commit(text)
+      }}
+      className='mt-2 max-w-[140px]'
+    >
+      <Input type='number' min={CACHE_SIZE_MIN_MB} step={16} />
+    </TextField>
+  )
+}
 
 export interface PrimarySettingsPanelProps {
   settings: BTSets
@@ -24,6 +73,8 @@ export default function PrimarySettingsPanel({
   onBoolSwitch,
 }: PrimarySettingsPanelProps) {
   const { t } = useTranslation()
+  const preloadPct = settings.PreloadCache ?? 50
+  const preloadSizeMb = Math.round((cacheSizeMb * Math.max(0, preloadPct)) / 100)
 
   return (
     <div className='space-y-6'>
@@ -34,9 +85,9 @@ export default function PrimarySettingsPanel({
             {t('MB')}
           </p>
           <Slider
-            value={cacheSizeMb}
-            minValue={16}
-            maxValue={2048}
+            value={Math.min(cacheSizeMb, CACHE_SIZE_SLIDER_MAX_MB)}
+            minValue={CACHE_SIZE_MIN_MB}
+            maxValue={CACHE_SIZE_SLIDER_MAX_MB}
             step={16}
             onChange={value => onCacheSizeMb(Number(value))}
           >
@@ -45,13 +96,7 @@ export default function PrimarySettingsPanel({
               <Slider.Thumb />
             </Slider.Track>
           </Slider>
-          <TextField
-            value={String(cacheSizeMb)}
-            onChange={value => onCacheSizeMb(Math.max(16, Number(value) || 16))}
-            className='mt-2 max-w-[140px]'
-          >
-            <Input type='number' min={16} step={16} />
-          </TextField>
+          <CacheSizeField value={cacheSizeMb} onChange={onCacheSizeMb} />
         </div>
       </SettingsSection>
 
@@ -77,10 +122,12 @@ export default function PrimarySettingsPanel({
         <div>
           <p className='mb-2 text-sm text-muted'>
             {t('SettingsDialog.PreloadCache')}:{' '}
-            <span className='font-medium text-foreground'>{settings.PreloadCache ?? 50}%</span>
+            <span className='font-medium text-foreground'>
+              {preloadPct}% ({preloadSizeMb} {t('MB')})
+            </span>
           </p>
           <Slider
-            value={settings.PreloadCache ?? 50}
+            value={preloadPct}
             minValue={0}
             maxValue={100}
             onChange={value => onUpdate('PreloadCache', Number(value))}

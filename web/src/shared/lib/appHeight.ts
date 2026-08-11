@@ -3,6 +3,20 @@ import { detectApplePlatform, detectStandaloneApp } from './platform'
 const APP_HEIGHT_VAR = '--app-height'
 
 /**
+ * Pick a height that matches the *visible* browser viewport (between Safari chrome).
+ *
+ * On iOS Safari (non-standalone), `documentElement.clientHeight` is often the
+ * large layout viewport (≈ `100vh`) while `visualViewport.height` / `innerHeight`
+ * match what is actually on screen. Preferring `max(inner, client)` makes
+ * `--app-height` too tall so fullscreen modals extend under the toolbar.
+ */
+export function preferVisibleViewportHeight(inner: number, client: number, visual: number): number {
+  if (visual > 0) return Math.round(visual)
+  if (inner > 0) return Math.round(inner)
+  return Math.round(client) || 0
+}
+
+/**
  * Measure the physical viewport height for layout.
  *
  * On iOS installed PWAs (iOS 17–26), `100dvh` and often `window.innerHeight`
@@ -25,7 +39,7 @@ function readViewportHeightPx(): number {
   const visual = Math.round(window.visualViewport?.height || 0)
 
   if (!detectStandaloneApp()) {
-    return Math.round(Math.max(inner, client) || inner)
+    return preferVisibleViewportHeight(inner, client, visual) || Math.round(inner)
   }
 
   // Windowed desktop PWA — track the app window, never the display.

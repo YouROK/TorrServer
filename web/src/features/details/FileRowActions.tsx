@@ -165,10 +165,18 @@ export default function FileRowActions({
           <MoreHorizontal {...actionIcon} />
         </Button>
       </Dropdown.Trigger>
-      <Dropdown.Popover placement='bottom end'>
+      <Dropdown.Popover
+        placement='bottom end'
+        shouldFlip
+        offset={6}
+        containerPadding={12}
+        UNSTABLE_portalContainer={typeof document !== 'undefined' ? document.body : undefined}
+        className='max-h-[min(70dvh,24rem)] min-w-[12rem] overflow-y-auto'
+      >
         <Dropdown.Menu aria-label={t('Actions')}>
           {showOpenIcon ? (
             <Dropdown.Item
+              className='min-h-11'
               onPress={() => {
                 moreMenu.close()
                 openExternal()
@@ -179,6 +187,7 @@ export default function FileRowActions({
             </Dropdown.Item>
           ) : null}
           <Dropdown.Item
+            className='min-h-11'
             onPress={() => {
               moreMenu.close()
               void copyDirectLink()
@@ -188,6 +197,7 @@ export default function FileRowActions({
             {t('CopyLink')}
           </Dropdown.Item>
           <Dropdown.Item
+            className='min-h-11'
             onPress={() => {
               moreMenu.close()
               onPreload()
@@ -198,6 +208,7 @@ export default function FileRowActions({
           </Dropdown.Item>
           {onProbeMedia ? (
             <Dropdown.Item
+              className='min-h-11'
               onPress={() => {
                 moreMenu.close()
                 onProbeMedia()
@@ -214,7 +225,7 @@ export default function FileRowActions({
 
   if (isMobile) {
     return (
-      <div className='flex shrink-0 items-center gap-1'>
+      <div className='flex shrink-0 items-center gap-2'>
         {playButton(iconBtn, true)}
         {secondaryMobile}
       </div>

@@ -19,7 +19,7 @@ import { useDropzone } from 'react-dropzone'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
-import { addTorrent, TORRENTS_QUERY_KEY } from 'shared/api/torrents'
+import { addTorrent, refreshTorrentsList } from 'shared/api/torrents'
 import { useDialogFullScreen } from 'shared/hooks/useDialogFullScreen'
 import { useTorrentsQuery } from 'shared/hooks/useTorrentsQuery'
 import { detectApplePlatform } from 'shared/lib/platform'
@@ -204,14 +204,14 @@ export default function AddDialog({ open, onClose, initialSource }: AddDialogPro
 
     setSaving(true)
     try {
-      await addTorrent({
+      const added = await addTorrent({
         link: isTorrsLink(trimmed) ? toApiTorrsLink(trimmed) : trimmed,
         title: title || undefined,
         category: category.trim() || undefined,
         poster: poster || '',
         save_to_db: saveToDb,
       })
-      await queryClient.invalidateQueries({ queryKey: TORRENTS_QUERY_KEY })
+      await refreshTorrentsList(queryClient, { torrents: added })
       toast?.showToast({ message: t('Search.TorrentAdded'), severity: 'success' })
       resetForm()
       onClose()

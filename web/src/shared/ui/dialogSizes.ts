@@ -34,16 +34,18 @@ export const PLAYER_DIALOG_EXPANDED: CSSProperties = {
 
 /**
  * Phone / narrow tablet fullscreen surface.
- * Prefer `100dvh` so iOS PWA fills the real screen; HeroUI's `--visual-viewport-height`
- * is often short on installed PWAs and leaves a dead strip above the home indicator.
+ * Fill the HeroUI full container (`h-full`) — do not set absolute `100dvh`/`--app-height`
+ * on the dialog. Backdrop remaps `--visual-viewport-height` → `--app-height` in index.css
+ * so the container is the real screen; absolute dialog height taller than a short
+ * visual-viewport container gets clipped by scroll-inside overflow.
  */
 export const DIALOG_FULLSCREEN: CSSProperties = {
   width: '100%',
   maxWidth: '100%',
   minWidth: '100%',
-  height: '100dvh',
-  maxHeight: '100dvh',
-  minHeight: '100dvh',
+  height: '100%',
+  maxHeight: '100%',
+  minHeight: '100%',
   borderRadius: 0,
 }
 

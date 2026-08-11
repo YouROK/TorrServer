@@ -100,13 +100,14 @@ export default function AboutDialog({ open, onClose, onOpenServerStatus, onOpenD
       onClose={onClose}
       size='md'
       fullScreen={isFullScreenBreakpoint}
+      dialogClassName='flex flex-col overflow-hidden'
       dialogStyle={isFullScreenBreakpoint ? undefined : DIALOG_SHEET_M}
     >
-      <Modal.Header>
+      <Modal.Header className='shrink-0'>
         <Modal.Heading>{t('About')}</Modal.Heading>
         <Modal.CloseTrigger aria-label={t('Close')} />
       </Modal.Header>
-      <Modal.Body>
+      <Modal.Body className='min-h-0 flex-1 overflow-y-auto overscroll-contain'>
         <div className='flex flex-col items-center gap-3 pb-2 pt-1 text-center'>
           <img src={publicUrl('icon.png')} alt='TorrServer' className='size-[72px] rounded-2xl shadow-lg' />
           <h2 className='text-lg font-semibold text-foreground'>
@@ -235,7 +236,7 @@ export default function AboutDialog({ open, onClose, onOpenServerStatus, onOpenD
           </ul>
         </div>
       </Modal.Body>
-      <Modal.Footer>
+      <Modal.Footer className='shrink-0'>
         <Button variant='secondary' onPress={onClose} autoFocus>
           {t('Close')}
         </Button>

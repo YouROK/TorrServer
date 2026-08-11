@@ -16,6 +16,7 @@ describe('breakpoints', () => {
     expect(MEDIA_TABLET_LANDSCAPE).toContain('max-width: 1366px')
     expect(MEDIA_TABLET_LANDSCAPE).toContain('max-height: 1024px')
     expect(MEDIA_TABLET_LANDSCAPE).toContain('min-width: 701px')
+    expect(MEDIA_TABLET_LANDSCAPE).toContain('hover: none')
   })
 
   it('exports short viewport media', () => {

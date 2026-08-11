@@ -34,6 +34,8 @@ func newReader(file *torrent.File, cache *Cache) *Reader {
 	r.SetReadahead(0)
 	r.cache = cache
 	r.isUse = true
+	// Without this a fresh reader looks idle since epoch and is switched off at once.
+	r.lastAccess = time.Now().Unix()
 
 	cache.muReaders.Lock()
 	cache.readers[r] = struct{}{}
@@ -160,8 +162,24 @@ func (r *Reader) getOffsetRange() (int64, int64) {
 	return beginOffset, endOffset
 }
 
+// minReaderIdleTimeout keeps a paused player from dropping its cache window immediately.
+const minReaderIdleTimeout = 60
+
+func (r *Reader) idleTimeout() int64 {
+	timeout := int64(0)
+	if settings.BTsets != nil {
+		timeout = int64(settings.BTsets.TorrentDisconnectTimeout)
+	}
+	if timeout < minReaderIdleTimeout {
+		timeout = minReaderIdleTimeout
+	}
+	return timeout
+}
+
+// checkReader flips the reader between active and idle. A lone reader must be
+// able to go idle too, otherwise a stopped player keeps driving the playhead.
 func (r *Reader) checkReader() {
-	if time.Now().Unix() > r.lastAccess+60 && len(r.cache.readers) > 1 {
+	if time.Now().Unix() > r.lastAccess+r.idleTimeout() {
 		r.readerOff()
 	} else {
 		r.readerOn()

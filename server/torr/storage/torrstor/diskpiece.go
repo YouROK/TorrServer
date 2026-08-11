@@ -25,7 +25,8 @@ func NewDiskPiece(p *Piece) *DiskPiece {
 	ff, err := os.Stat(name)
 	if err == nil {
 		p.Size = ff.Size()
-		p.Complete = ff.Size() == p.cache.pieceLength
+		plen := p.cache.pieceByteLength(p.Id)
+		p.Complete = plen > 0 && ff.Size() >= plen
 		p.Accessed = ff.ModTime().Unix()
 		if p.Size > 0 {
 			p.cache.notePieceFilled(p.Id)
@@ -46,9 +47,12 @@ func (p *DiskPiece) WriteAt(b []byte, off int64) (n int, err error) {
 	defer func() { _ = ff.Close() }()
 	n, err = ff.WriteAt(b, off)
 
+	// Accumulate: chunks arrive out of order, so a high-water mark would count
+	// gaps as filled. MarkNotComplete resets Size on retransmit.
 	p.piece.Size += int64(n)
-	if p.piece.Size > p.piece.cache.pieceLength {
-		p.piece.Size = p.piece.cache.pieceLength
+	plen := p.piece.cache.pieceByteLength(p.piece.Id)
+	if plen > 0 && p.piece.Size > plen {
+		p.piece.Size = plen
 	}
 	if p.piece.Size > 0 {
 		p.piece.cache.notePieceFilled(p.piece.Id)

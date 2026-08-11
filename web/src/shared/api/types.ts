@@ -130,6 +130,8 @@ export interface CacheReader {
   Reader?: number
   Start?: number
   End?: number
+  /** False once the server marks the reader idle — playhead is frozen, not moving. */
+  Active?: boolean
   ReaderPieces?: number[]
   [key: string]: unknown
 }
@@ -150,6 +152,8 @@ export interface CacheMapItem {
   priority: number
   completed?: boolean
   isReader?: boolean
+  /** Playhead belongs to an idle reader — drawn dimmed to signal "frozen". */
+  isReaderIdle?: boolean
   isReaderRange?: boolean
   /** Inclusive piece index range represented by this cell (LOD or 1:1). */
   pieceStart?: number

@@ -25,4 +25,7 @@ yarn-error.log*
 # eslint
 .eslintcache
 
+# local smoke artifacts
+/tmp
+
 .env

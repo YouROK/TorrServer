@@ -28,10 +28,10 @@ describe('dialogSizes', () => {
     expect(PLAYER_DIALOG_EXPANDED.width).toBe('min(96vw, 80rem)')
   })
 
-  it('exports fullscreen mobile surface with 100dvh (shared with player)', () => {
-    expect(DIALOG_FULLSCREEN.height).toBe('100dvh')
-    expect(DIALOG_FULLSCREEN.maxHeight).toBe('100dvh')
-    expect(DIALOG_FULLSCREEN.minHeight).toBe('100dvh')
+  it('exports fullscreen mobile surface that fills the container (shared with player)', () => {
+    expect(DIALOG_FULLSCREEN.height).toBe('100%')
+    expect(DIALOG_FULLSCREEN.maxHeight).toBe('100%')
+    expect(DIALOG_FULLSCREEN.minHeight).toBe('100%')
     expect(DIALOG_FULLSCREEN.width).toBe('100%')
     expect(PLAYER_DIALOG_MOBILE).toBe(DIALOG_FULLSCREEN)
   })

@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
-import type { TorrentStat } from 'shared/api/types'
-import { formatCacheFilledLabel, getPeerString } from './format'
+import type { TorrentCache, TorrentStat } from 'shared/api/types'
+import {
+  bufferAheadBytes,
+  bufferFillPercent,
+  formatBufferAheadLabel,
+  formatBufferFilledLabel,
+  formatCacheFilledLabel,
+  getPeerString,
+  resolveBufferTargetBytes,
+} from './format'
 
 const torrent = (overrides: Partial<TorrentStat> = {}): TorrentStat => ({ hash: 'abc', ...overrides })
 
@@ -36,13 +44,143 @@ describe('formatCacheFilledLabel', () => {
     expect(label).not.toMatch(/%/)
   })
 
-  it('appends percent when over capacity', () => {
+  it('shows raw filled when over capacity but caps percent at 100', () => {
     const label = formatCacheFilledLabel(274, 256)
-    expect(label).toMatch(/107%/)
+    expect(label).toMatch(/100%/)
+    expect(label).not.toMatch(/107%/)
+    expect(label).toContain('/')
   })
 
   it('always appends percent when requested', () => {
     const label = formatCacheFilledLabel(50, 100, { percent: 'always' })
     expect(label).toMatch(/50%/)
+  })
+})
+
+describe('resolveBufferTargetBytes', () => {
+  it('matches server Preload size: Capacity × PreloadCache% with no 32 MiB floor', () => {
+    const capacity = 64 * 1024 * 1024
+    // 64 MB × 25% = 16 MB — what the server actually preloads.
+    expect(resolveBufferTargetBytes(capacity, 25)).toBe(capacity * 0.25)
+  })
+
+  it('uses Capacity × PreloadCache%', () => {
+    const capacity = 256 * 1024 * 1024
+    expect(resolveBufferTargetBytes(capacity, 50)).toBe(capacity * 0.5)
+  })
+
+  it('never exceeds Cache Size', () => {
+    const capacity = 64 * 1024 * 1024
+    expect(resolveBufferTargetBytes(capacity, 100)).toBe(capacity)
+  })
+
+  it('returns null when preload percent is zero', () => {
+    expect(resolveBufferTargetBytes(64 * 1024 * 1024, 0)).toBeNull()
+  })
+})
+
+describe('formatBufferFilledLabel', () => {
+  it('orders filled before target', () => {
+    const label = formatBufferFilledLabel(10 * 1024 * 1024, 32 * 1024 * 1024, { percent: 'always' })
+    expect(label).toMatch(/31%/)
+    expect(label).toContain('/')
+  })
+
+  it('caps percent at 100 when filled exceeds target', () => {
+    const label = formatBufferFilledLabel(267 * 1024 * 1024, 64 * 1024 * 1024, { percent: 'always' })
+    expect(label).toMatch(/100%/)
+    expect(label).not.toMatch(/418%/)
+  })
+
+  it('computes capped percent', () => {
+    expect(bufferFillPercent(40, 32)).toBe(100)
+    expect(bufferFillPercent(16, 32)).toBe(50)
+  })
+})
+
+describe('formatBufferAheadLabel', () => {
+  it('returns a size-ahead label without a / target fraction', () => {
+    const label = formatBufferAheadLabel(242 * 1024 * 1024)
+    expect(label).toBeTruthy()
+    expect(label).not.toContain('/')
+    expect(label).toMatch(/242/)
+  })
+
+  it('uses the empty-ahead label when there is no contiguous reserve', () => {
+    const label = formatBufferAheadLabel(0)
+    expect(label).toBeTruthy()
+    expect(label).not.toMatch(/0 /)
+  })
+
+  it('returns null for missing input', () => {
+    expect(formatBufferAheadLabel(null)).toBeNull()
+    expect(formatBufferAheadLabel(undefined)).toBeNull()
+  })
+})
+
+describe('bufferAheadBytes', () => {
+  const cache = (pieces: TorrentCache['Pieces'], readers: TorrentCache['Readers']): TorrentCache => ({
+    PiecesCount: 10,
+    PiecesLength: 100,
+    Pieces: pieces,
+    Readers: readers,
+  })
+
+  it('sums contiguous ready pieces from the playhead', () => {
+    const model = cache(
+      {
+        3: { Size: 100, Length: 100 },
+        4: { Size: 100, Length: 100 },
+        5: { Size: 100, Length: 100 },
+      },
+      [{ Reader: 3, Start: 3, End: 9, Active: true }],
+    )
+    expect(bufferAheadBytes(model)).toBe(300)
+  })
+
+  it('stops at the first hole rather than counting the whole cache', () => {
+    const model = cache(
+      {
+        3: { Size: 100, Length: 100 },
+        4: { Size: 40, Length: 100 },
+        // Piece 5 is ready but unreachable — a stall happens at 4.
+        5: { Size: 100, Length: 100 },
+      },
+      [{ Reader: 3, Start: 3, End: 9, Active: true }],
+    )
+    // Full head + partial next piece (counted), then stop.
+    expect(bufferAheadBytes(model)).toBe(140)
+  })
+
+  it('counts a partial playhead piece instead of reporting zero', () => {
+    const model = cache({ 3: { Size: 40, Length: 100 } }, [{ Reader: 3, Start: 3, End: 9, Active: true }])
+    expect(bufferAheadBytes(model)).toBe(40)
+  })
+
+  it('returns zero when the playhead piece is missing', () => {
+    const model = cache({ 5: { Size: 100, Length: 100 } }, [{ Reader: 3, Start: 3, End: 9, Active: true }])
+    expect(bufferAheadBytes(model)).toBe(0)
+  })
+
+  it('stops at a missing piece', () => {
+    const model = cache({ 3: { Size: 100, Length: 100 }, 5: { Size: 100, Length: 100 } }, [
+      { Reader: 3, Start: 3, End: 9, Active: true },
+    ])
+    expect(bufferAheadBytes(model)).toBe(100)
+  })
+
+  it('ignores pieces behind the playhead', () => {
+    const model = cache({ 0: { Size: 100, Length: 100 }, 3: { Size: 100, Length: 100 } }, [
+      { Reader: 3, Start: 0, End: 9, Active: true },
+    ])
+    expect(bufferAheadBytes(model)).toBe(100)
+  })
+
+  it('returns null without an active reader so callers fall back to Filled', () => {
+    expect(bufferAheadBytes(cache({ 3: { Size: 100, Length: 100 } }, []))).toBeNull()
+    expect(
+      bufferAheadBytes(cache({ 3: { Size: 100, Length: 100 } }, [{ Reader: 3, Start: 3, End: 9, Active: false }])),
+    ).toBeNull()
+    expect(bufferAheadBytes(undefined)).toBeNull()
   })
 })

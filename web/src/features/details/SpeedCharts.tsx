@@ -77,8 +77,17 @@ export default function SpeedCharts({ downloadSpeed, uploadSpeed, compact = fals
   const peak = useMemo(() => Math.max(...downloadHistory, ...uploadHistory, 1), [downloadHistory, uploadHistory])
   const downloadPath = useMemo(() => buildAreaPath(downloadHistory, peak), [downloadHistory, peak])
   const uploadPath = useMemo(() => buildAreaPath(uploadHistory, peak), [uploadHistory, peak])
+  const hasTraffic = useMemo(
+    () =>
+      downloadHistory.some(v => v > 0) ||
+      uploadHistory.some(v => v > 0) ||
+      (downloadSpeed ?? 0) > 0 ||
+      (uploadSpeed ?? 0) > 0,
+    [downloadHistory, uploadHistory, downloadSpeed, uploadSpeed],
+  )
 
   const showInlineLive = fill || !compact
+  const chartClass = fill ? 'h-full min-h-[11rem] w-full flex-1' : `w-full ${compact ? 'h-16' : 'h-[110px]'}`
 
   return (
     <div
@@ -105,12 +114,16 @@ export default function SpeedCharts({ downloadSpeed, uploadSpeed, compact = fals
         Avoid absolute + flex-1 height chains inside HeroUI Tabs — they often collapse to ~0
         and clip the sparkline to a bottom tip. Explicit min-height (fill) is reliable.
       */}
-      <ChartSvg
-        gradientId={gradientId}
-        downloadPath={downloadPath}
-        uploadPath={uploadPath}
-        className={fill ? 'h-full min-h-[11rem] w-full flex-1' : `w-full ${compact ? 'h-16' : 'h-[110px]'}`}
-      />
+      {hasTraffic ? (
+        <ChartSvg gradientId={gradientId} downloadPath={downloadPath} uploadPath={uploadPath} className={chartClass} />
+      ) : (
+        <div
+          className={`grid place-items-center rounded-lg border border-dashed border-border bg-surface/60 text-center text-xs text-muted ${chartClass}`}
+          role='status'
+        >
+          {t('NoSpeedData')}
+        </div>
+      )}
     </div>
   )
 }

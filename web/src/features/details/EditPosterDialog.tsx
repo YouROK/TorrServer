@@ -5,10 +5,8 @@ import { useTranslation } from 'react-i18next'
 
 import type { TorrentStat } from 'shared/api/types'
 import { TORRENTS_QUERY_KEY, updateTorrent } from 'shared/api/torrents'
-import { useDialogFullScreen } from 'shared/hooks/useDialogFullScreen'
 import { queryMax } from 'shared/theme/breakpoints'
 import AppDialog from 'shared/ui/AppDialog'
-import { DIALOG_SHEET_M } from 'shared/ui/dialogSizes'
 import { useOptionalAppToast } from 'shared/ui/Toast'
 
 export interface EditPosterDialogProps {
@@ -23,7 +21,6 @@ export default function EditPosterDialog({ torrent, open, onClose }: EditPosterD
   const queryClient = useQueryClient()
   const toast = useOptionalAppToast()
   const isMobile = useMediaQuery(queryMax('mobile'))
-  const isFullScreenBreakpoint = useDialogFullScreen()
 
   const [url, setUrl] = useState('')
   const [saving, setSaving] = useState(false)
@@ -60,14 +57,8 @@ export default function EditPosterDialog({ torrent, open, onClose }: EditPosterD
   const footerButtonClassName = isMobile ? 'min-h-11 px-4' : undefined
 
   return (
-    <AppDialog
-      open={open}
-      onClose={onClose}
-      size='md'
-      fullScreen={isFullScreenBreakpoint}
-      dialogStyle={isFullScreenBreakpoint ? undefined : DIALOG_SHEET_M}
-    >
-      <Modal.Header>
+    <AppDialog open={open} onClose={onClose} size='md' compact>
+      <Modal.Header className='shrink-0'>
         <Modal.Heading>{t('AddDialog.AddPosterLinkInput')}</Modal.Heading>
         <Modal.CloseTrigger aria-label={t('Close')} />
       </Modal.Header>
@@ -77,7 +68,7 @@ export default function EditPosterDialog({ torrent, open, onClose }: EditPosterD
           <Input placeholder='https://…' />
         </TextField>
       </Modal.Body>
-      <Modal.Footer>
+      <Modal.Footer className='shrink-0'>
         <Button onPress={onClose} isDisabled={saving} variant='secondary' className={footerButtonClassName}>
           {t('Cancel')}
         </Button>

@@ -1840,6 +1840,10 @@ const docTemplate = `{
         "state.ReaderState": {
             "type": "object",
             "properties": {
+                "active": {
+                    "description": "Active is false once the reader goes idle: the playhead is frozen, not moving.",
+                    "type": "boolean"
+                },
                 "end": {
                     "type": "integer"
                 },

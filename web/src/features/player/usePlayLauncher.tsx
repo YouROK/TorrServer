@@ -19,6 +19,7 @@ import {
   shouldUseGStreamerPlayer,
   useGStreamerRuntime,
 } from 'shared/lib/gstreamer'
+import { useDialogFullLayout } from 'shared/hooks/useDialogFullScreen'
 import { useSyncModalOpen } from 'shared/ui/ModalOpenContext'
 import { useOptionalAppToast } from 'shared/ui/Toast'
 
@@ -116,6 +117,8 @@ export function usePlayLauncher({
 
   const filePickerState = useOverlayState()
   const audioPickerState = useOverlayState()
+  const filePickerLayout = useDialogFullLayout({ size: 'md' })
+  const audioPickerLayout = useDialogFullLayout({ size: 'sm' })
 
   useSyncModalOpen(filePickerState.isOpen || audioPickerState.isOpen)
 
@@ -344,12 +347,27 @@ export function usePlayLauncher({
       <>
         <Modal state={filePickerState}>
           <Modal.Backdrop isDismissable>
-            <Modal.Container size='md'>
-              <Modal.Dialog aria-label={t('Play')} className='sm:min-w-[28rem]'>
-                <Modal.Header>
+            <Modal.Container size={filePickerLayout.size} placement={filePickerLayout.placement}>
+              <Modal.Dialog
+                aria-label={t('Play')}
+                className={
+                  filePickerLayout.full
+                    ? 'flex flex-col overflow-hidden'
+                    : 'flex flex-col overflow-hidden sm:min-w-[28rem]'
+                }
+                style={filePickerLayout.dialogStyle}
+              >
+                <Modal.Header className='shrink-0'>
                   <Modal.Heading>{t('Play')}</Modal.Heading>
+                  <Modal.CloseTrigger aria-label={t('Close')} />
                 </Modal.Header>
-                <Modal.Body className='flex max-h-[60vh] flex-col gap-1.5 overflow-y-auto'>
+                <Modal.Body
+                  className={
+                    filePickerLayout.full
+                      ? 'flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto overscroll-contain'
+                      : 'flex max-h-[60vh] flex-col gap-1.5 overflow-y-auto'
+                  }
+                >
                   {playableFiles.map((file, index) => {
                     const { code, title } = fileEpisodeInfo(file.path, index)
                     const pending = isResolving && resolvingFileId === file.id
@@ -384,12 +402,23 @@ export function usePlayLauncher({
 
         <Modal state={audioPickerState}>
           <Modal.Backdrop isDismissable>
-            <Modal.Container size='sm'>
-              <Modal.Dialog aria-label={t('SelectAudioTrack')}>
-                <Modal.Header>
+            <Modal.Container size={audioPickerLayout.size} placement={audioPickerLayout.placement}>
+              <Modal.Dialog
+                aria-label={t('SelectAudioTrack')}
+                className='flex flex-col overflow-hidden'
+                style={audioPickerLayout.dialogStyle}
+              >
+                <Modal.Header className='shrink-0'>
                   <Modal.Heading>{t('SelectAudioTrack')}</Modal.Heading>
+                  <Modal.CloseTrigger aria-label={t('Close')} />
                 </Modal.Header>
-                <Modal.Body className='flex max-h-[60vh] flex-col gap-1.5 overflow-y-auto'>
+                <Modal.Body
+                  className={
+                    audioPickerLayout.full
+                      ? 'flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto overscroll-contain'
+                      : 'flex max-h-[60vh] flex-col gap-1.5 overflow-y-auto'
+                  }
+                >
                   {audioTracks.map((track, index) => {
                     const { title, meta } = formatAudioTrackDisplay(track, index)
                     return (
@@ -464,6 +493,8 @@ export function usePlayLauncher({
     [
       filePickerState,
       audioPickerState,
+      filePickerLayout,
+      audioPickerLayout,
       playableFiles,
       audioTracks,
       pendingAudioFile,

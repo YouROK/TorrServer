@@ -1,5 +1,12 @@
-import { humanizeSize } from 'shared/lib/format'
-import type { TorrentStat } from 'shared/api/types'
+import {
+  bufferAheadBytes,
+  bufferFillPercent,
+  formatBufferAheadLabel,
+  formatBufferFilledLabel,
+  humanizeSize,
+  resolveBufferTargetBytes,
+} from 'shared/lib/format'
+import type { TorrentCache, TorrentStat } from 'shared/api/types'
 import { useTranslation } from 'react-i18next'
 
 import MetricRows, { type MetricRowItem } from './MetricRows'
@@ -18,11 +25,15 @@ export interface SwarmStatsPanelProps {
    */
   stretch?: boolean
   /**
-   * `summary` — Stats side card: transfer IO + Loaded|Preload (hero owns Peers/Cache).
-   * `full` — Swarm tab: PeerMixBar + chunks + Loaded|Preload (no Peers·Seeds / Cache echo).
+   * `summary` — Stats side card: transfer IO + Loaded|Buffer (hero owns Peers/Cache).
+   * `full` — Swarm tab: PeerMixBar + chunks + Loaded|Buffer (no Peers·Seeds / Cache echo).
    */
   variant?: 'summary' | 'full'
   cacheReaders?: number | null
+  /** Live `/cache` snapshot — Preload meter uses Filled vs Preload target; Cache line uses Filled vs Capacity. */
+  cache?: TorrentCache | null
+  /** Settings PreloadCache % for buffer target. Defaults to 50. */
+  preloadCachePercent?: number | null
 }
 
 function formatDuration(seconds?: number): string | null {
@@ -45,20 +56,22 @@ function ProgressMeter({
   valueLabel,
   ratio,
   compact = false,
+  title,
 }: {
   label: string
   valueLabel: string
   ratio: number
   compact?: boolean
+  title?: string
 }) {
   const width = Number.isFinite(ratio) ? Math.min(100, Math.max(0, ratio)) : 0
   return (
-    <div className='min-w-0'>
+    <div className='min-w-0' title={title}>
       <div className={`flex items-baseline justify-between gap-2 text-xs ${compact ? 'mb-0.5' : 'mb-1'}`}>
         <span className='truncate text-muted'>{label}</span>
         <span className='shrink-0 font-bold tabular-nums text-foreground'>{valueLabel}</span>
       </div>
-      <div className={`overflow-hidden rounded-full bg-surface ${compact ? 'h-1.5' : 'h-2'}`}>
+      <div className={`overflow-hidden rounded-full bg-surface ${compact ? 'h-2' : 'h-2.5'}`}>
         <div className='h-full rounded-full bg-accent transition-[width] duration-300' style={{ width: `${width}%` }} />
       </div>
     </div>
@@ -123,6 +136,8 @@ function LoadedPreloadMeters({
   preloadPct,
   loadedTitle,
   preloadTitle,
+  loadedHint,
+  preloadHint,
   compact = false,
 }: {
   loadedLabel: string
@@ -131,12 +146,26 @@ function LoadedPreloadMeters({
   preloadPct: number
   loadedTitle: string
   preloadTitle: string
+  loadedHint?: string
+  preloadHint?: string
   compact?: boolean
 }) {
   return (
     <div className={`grid grid-cols-2 ${compact ? 'gap-1.5' : 'gap-2'}`}>
-      <ProgressMeter label={loadedTitle} valueLabel={loadedLabel} ratio={loadedPct} compact={compact} />
-      <ProgressMeter label={preloadTitle} valueLabel={preloadLabel} ratio={preloadPct} compact={compact} />
+      <ProgressMeter
+        label={loadedTitle}
+        valueLabel={loadedLabel}
+        ratio={loadedPct}
+        compact={compact}
+        title={loadedHint}
+      />
+      <ProgressMeter
+        label={preloadTitle}
+        valueLabel={preloadLabel}
+        ratio={preloadPct}
+        compact={compact}
+        title={preloadHint}
+      />
     </div>
   )
 }
@@ -151,6 +180,8 @@ export default function SwarmStatsPanel({
   stretch = false,
   variant = 'summary',
   cacheReaders,
+  cache,
+  preloadCachePercent,
 }: SwarmStatsPanelProps) {
   const { t } = useTranslation()
   const isFull = variant === 'full'
@@ -162,17 +193,26 @@ export default function SwarmStatsPanel({
   const loaded = torrent.loaded_size ?? 0
   const totalSize = torrent.torrent_size ?? 0
   const loadedPct = pct(loaded, totalSize)
-  const preloadDone = torrent.preloaded_bytes ?? 0
-  const preloadNeed = torrent.preload_size ?? 0
-  const preloadPct = preloadNeed > 0 ? pct(preloadDone, preloadNeed) : 0
+  const bufferTarget = resolveBufferTargetBytes(cache?.Capacity, preloadCachePercent)
+  // Streaming → playable ahead; idle → preload progress toward Cache Size × Preload %.
+  const bufferAhead = bufferAheadBytes(cache)
+  const isStreamingBuffer = bufferAhead != null
+  const bufferFilled = isStreamingBuffer ? bufferAhead : (cache?.Filled ?? 0)
+  const preloadHint = isStreamingBuffer
+    ? bufferAhead === 0
+      ? t('BufferAheadEmptyHint')
+      : t('BufferAheadHint')
+    : t('BufferHint')
+  const preloadTitle = isStreamingBuffer ? t('BufferAhead') : t('Buffer')
+  const preloadPct = bufferFillPercent(bufferFilled, bufferTarget)
   const durationLabel = formatDuration(torrent.duration_seconds)
   const loadedLabel = totalSize > 0 ? `${humanizeSize(loaded)} · ${Math.round(loadedPct)}%` : humanizeSize(loaded)
-  const preloadLabel =
-    preloadNeed > 0 || preloadDone > 0
-      ? `${humanizeSize(preloadDone)} / ${humanizeSize(preloadNeed || undefined)}`
-      : '—'
+  const preloadLabel = isStreamingBuffer
+    ? (formatBufferAheadLabel(bufferAhead) ?? '—')
+    : (formatBufferFilledLabel(bufferFilled, bufferTarget, { percent: 'always' }) ??
+      (bufferFilled > 0 ? humanizeSize(bufferFilled) : '—'))
 
-  /** Stats: Half-open + transfer IO. Preload is meter-only; Peers/Cache stay in hero. */
+  /** Stats: Half-open + transfer IO. Buffer is meter-only; Peers/Cache stay in hero. */
   const summaryItems: MetricRowItem[] = [
     { label: t('HalfOpenPeers'), value: torrent.half_open_peers != null ? String(torrent.half_open_peers) : '—' },
     { label: t('BytesRead'), value: torrent.bytes_read != null ? humanizeSize(torrent.bytes_read) : '—' },
@@ -230,9 +270,11 @@ export default function SwarmStatsPanel({
       loadedTitle={t('ServerStatusLoaded')}
       loadedLabel={loadedLabel}
       loadedPct={loadedPct}
-      preloadTitle={t('Preloaded')}
+      loadedHint={t('LoadedHint')}
+      preloadTitle={preloadTitle}
       preloadLabel={preloadLabel}
       preloadPct={preloadPct}
+      preloadHint={preloadHint}
       compact={isFull}
     />
   )

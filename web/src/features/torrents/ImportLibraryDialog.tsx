@@ -2,7 +2,7 @@ import { Button, Modal, Spinner, Switch, TextArea, TextField } from '@heroui/rea
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { addTorrent, TORRENTS_QUERY_KEY } from 'shared/api/torrents'
+import { addTorrent, refreshTorrentsList, upsertTorrentsInList } from 'shared/api/torrents'
 import { useDialogFullScreen } from 'shared/hooks/useDialogFullScreen'
 import { useTorrentsQuery } from 'shared/hooks/useTorrentsQuery'
 import { parseLibraryImportText, type LibraryImportItem } from 'shared/lib/libraryImport'
@@ -98,18 +98,21 @@ export default function ImportLibraryDialog({ open, onClose }: ImportLibraryDial
       return known.has(item.hashHint.toLowerCase())
     }
 
+    const added: Awaited<ReturnType<typeof addTorrent>>[] = []
     await mapPool(items, ADD_CONCURRENCY, async item => {
       if (shouldSkip(item)) {
         stats.skipped += 1
       } else {
         try {
-          await addTorrent({
+          const torrent = await addTorrent({
             link: item.link,
             title: item.title,
             category: item.category,
             poster: item.poster,
             save_to_db: saveToDb,
           })
+          added.push(torrent)
+          upsertTorrentsInList(queryClient, torrent)
           if (item.hashHint) known.add(item.hashHint.toLowerCase())
           stats.ok += 1
         } catch {
@@ -120,7 +123,7 @@ export default function ImportLibraryDialog({ open, onClose }: ImportLibraryDial
       setProgress({ ...stats })
     })
 
-    await queryClient.invalidateQueries({ queryKey: TORRENTS_QUERY_KEY })
+    await refreshTorrentsList(queryClient, { torrents: added })
     setRunning(false)
 
     toast?.showToast({
@@ -134,17 +137,28 @@ export default function ImportLibraryDialog({ open, onClose }: ImportLibraryDial
   }
 
   return (
-    <AppDialog open={open} onClose={handleClose} size='md' fullScreen={isFullScreen} dialogStyle={DIALOG_SHEET_M}>
-      <Modal.Header>
+    <AppDialog
+      open={open}
+      onClose={handleClose}
+      size='md'
+      fullScreen={isFullScreen}
+      dialogClassName='flex flex-col overflow-hidden'
+      dialogStyle={isFullScreen ? undefined : DIALOG_SHEET_M}
+    >
+      <Modal.Header className='shrink-0'>
         <Modal.Heading>{t('ImportLibrary')}</Modal.Heading>
         <Modal.CloseTrigger aria-label={t('Close')} />
       </Modal.Header>
-      <Modal.Body className='space-y-4'>
-        <p className='text-sm text-muted'>{t('ImportLibraryHint')}</p>
-        <TextField value={raw} onChange={setRaw} isDisabled={running}>
-          <TextArea className='min-h-40 font-mono text-xs' rows={10} placeholder={t('ImportLibraryPlaceholder')} />
+      <Modal.Body className='flex min-h-0 flex-1 flex-col gap-4 overflow-hidden'>
+        <p className='shrink-0 text-sm text-muted'>{t('ImportLibraryHint')}</p>
+        <TextField value={raw} onChange={setRaw} isDisabled={running} className='flex min-h-0 flex-1 flex-col'>
+          <TextArea
+            className={isFullScreen ? 'min-h-0 flex-1 font-mono text-xs' : 'min-h-40 font-mono text-xs'}
+            rows={isFullScreen ? undefined : 10}
+            placeholder={t('ImportLibraryPlaceholder')}
+          />
         </TextField>
-        <div className='flex flex-wrap gap-2'>
+        <div className='flex shrink-0 flex-wrap gap-2'>
           <input
             ref={fileInputRef}
             type='file'
@@ -168,8 +182,8 @@ export default function ImportLibraryDialog({ open, onClose }: ImportLibraryDial
             {t('Clear')}
           </Button>
         </div>
-        <p className='text-sm text-muted'>{t('ImportLibraryParsed', { count: parsed.length })}</p>
-        <div className='flex min-h-11 items-start justify-between gap-4'>
+        <p className='shrink-0 text-sm text-muted'>{t('ImportLibraryParsed', { count: parsed.length })}</p>
+        <div className='flex min-h-11 shrink-0 items-start justify-between gap-4'>
           <div className='min-w-0 flex-1'>
             <p className='text-sm font-medium text-foreground'>{t('AddDialog.SaveToDb')}</p>
           </div>
@@ -187,7 +201,7 @@ export default function ImportLibraryDialog({ open, onClose }: ImportLibraryDial
             </Switch.Content>
           </Switch>
         </div>
-        <div className='flex min-h-11 items-start justify-between gap-4'>
+        <div className='flex min-h-11 shrink-0 items-start justify-between gap-4'>
           <div className='min-w-0 flex-1'>
             <p className='text-sm font-medium text-foreground'>{t('ImportLibrarySkipExisting')}</p>
           </div>
@@ -206,13 +220,13 @@ export default function ImportLibraryDialog({ open, onClose }: ImportLibraryDial
           </Switch>
         </div>
         {progress ? (
-          <p className='flex items-center gap-2 text-sm text-muted'>
+          <p className='flex shrink-0 items-center gap-2 text-sm text-muted'>
             {running ? <Spinner size='sm' /> : null}
             {t('ImportLibraryProgress', progress)}
           </p>
         ) : null}
       </Modal.Body>
-      <Modal.Footer className='gap-2'>
+      <Modal.Footer className='shrink-0 gap-2'>
         <Button variant='secondary' onPress={handleClose} isDisabled={running}>
           {t('Close')}
         </Button>

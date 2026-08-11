@@ -1,9 +1,17 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CacheMapItem, TorrentCache as TorrentCacheData } from 'shared/api/types'
-import { priorityDebugLabel, resolveFocusVisibleCells } from 'shared/cache/buildCacheMap'
+import {
+  isReaderActive,
+  priorityDebugLabel,
+  resolveFocusVisibleCells,
+  SNAKE_FOCUS_TARGET_ROWS,
+  SNAKE_FOCUS_TARGET_ROWS_MINI,
+} from 'shared/cache/buildCacheMap'
+import { cheapPiecesFingerprint, cheapReadersFingerprint } from 'shared/cache/cacheFingerprint'
 import { drawSnake, hitTestSnakeCell, setupHiDpiCanvas } from 'shared/cache/drawSnake'
 import { resolvePieceMetrics, resolveSnakeSettings, type SnakeThemeMode } from 'shared/cache/snakeSettings'
+import { snakeCameraKey } from 'shared/cache/snakeSession'
 import { useCreateFocusMap } from 'shared/cache/useUpdateCache'
 import { humanizeSize } from 'shared/lib/format'
 import { useThemePreference } from 'shared/theme/useThemePreference'
@@ -12,9 +20,24 @@ export type SnakeViewMode = 'detailed' | 'mini'
 
 export interface TorrentCacheProps {
   cache: TorrentCacheData
-  /** detailed/mini — both use a 1:1 reader window (no LOD merge). */
+  /** detailed — 1:1 reader window sized to the drawable grid. */
   mode?: SnakeViewMode
   isSnakeDebugMode?: boolean
+  /** Torrent hash — restores the focus window after the dialog or tab is remounted. */
+  hash?: string
+}
+
+/**
+ * ResizeObserver reports the content box, so the first synchronous read must
+ * subtract padding too — otherwise the grid is laid out for a pane ~18px wider
+ * than reality and reflows right after mount. `clientWidth` is used instead of
+ * `getBoundingClientRect` because the modal enter animation scales the subtree.
+ */
+const measureContentBox = (el: HTMLElement) => {
+  const style = getComputedStyle(el)
+  const width = el.clientWidth - (parseFloat(style.paddingLeft) || 0) - (parseFloat(style.paddingRight) || 0)
+  const height = el.clientHeight - (parseFloat(style.paddingTop) || 0) - (parseFloat(style.paddingBottom) || 0)
+  return { width: Math.max(0, width), height: Math.max(0, height) }
 }
 
 const emptyCell = (): CacheMapItem => ({
@@ -24,32 +47,8 @@ const emptyCell = (): CacheMapItem => ({
   isReaderRange: false,
 })
 
-const piecesFingerprint = (pieces: TorrentCacheData['Pieces']) => {
-  if (!pieces) return ''
-  if (Array.isArray(pieces)) {
-    let acc = ''
-    for (let i = 0; i < pieces.length; i++) {
-      const p = pieces[i]
-      if (!p) continue
-      acc += `${i}:${p.Size ?? 0}:${p.Priority ?? 0}:${p.Completed ? 1 : 0};`
-    }
-    return acc
-  }
-  let acc = ''
-  for (const [key, p] of Object.entries(pieces)) {
-    if (!p) continue
-    acc += `${key}:${p.Size ?? 0}:${p.Priority ?? 0}:${p.Completed ? 1 : 0};`
-  }
-  return acc
-}
-
-const readersFingerprint = (readers: TorrentCacheData['Readers']) => {
-  if (!readers?.length) return ''
-  return readers.map(r => `${r.Reader ?? ''}:${r.Start ?? ''}-${r.End ?? ''}`).join('|')
-}
-
 /** Canvas-based piece map ("snake") showing cache fill, playhead and priorities. */
-function TorrentCache({ cache, mode = 'detailed', isSnakeDebugMode }: TorrentCacheProps) {
+function TorrentCache({ cache, mode = 'detailed', isSnakeDebugMode, hash }: TorrentCacheProps) {
   const { t } = useTranslation()
   const { isDark, palette } = useThemePreference()
   const theme: SnakeThemeMode = isDark ? 'dark' : 'light'
@@ -61,75 +60,97 @@ function TorrentCache({ cache, mode = 'detailed', isSnakeDebugMode }: TorrentCac
   const scrollWrapperRef = useRef<HTMLDivElement | null>(null)
   const rootRef = useRef<HTMLDivElement | null>(null)
   const drawFrame = useRef(0)
+  const lastDrawKey = useRef('')
   const [tooltip, setTooltip] = useState<{ index: number; x: number; y: number; text: string } | null>(null)
 
-  useEffect(() => {
+  // Layout effect: measuring after paint showed an empty pane for one frame on
+  // every mount (dialog open, tab switch) before the snake appeared.
+  // ResizeObserver updates are applied synchronously — rAF delayed the second
+  // measure by a paint and flashed a wrong-sized grid.
+  useLayoutEffect(() => {
     const el = isMiniView ? rootRef.current : scrollWrapperRef.current
     if (!el || typeof ResizeObserver === 'undefined') return
+    const apply = (width: number, height: number) => {
+      setContainerWidth(width)
+      if (!isMiniView) setContainerHeight(height)
+    }
     const observer = new ResizeObserver(entries => {
       const box = entries[0]?.contentRect
-      setContainerWidth(box?.width ?? 0)
-      if (!isMiniView) setContainerHeight(box?.height ?? 0)
+      apply(box?.width ?? 0, box?.height ?? 0)
     })
     observer.observe(el)
-    const rect = el.getBoundingClientRect()
-    setContainerWidth(rect.width)
-    if (!isMiniView) setContainerHeight(rect.height)
+    const box = measureContentBox(el)
+    apply(box.width, box.height)
     return () => observer.disconnect()
   }, [isMiniView])
 
-  const visibleCellBudget = useMemo(
-    () => resolveFocusVisibleCells(containerWidth, isMiniView, isMiniView ? 0 : containerHeight),
-    [containerWidth, containerHeight, isMiniView],
-  )
-  const focusModel = useCreateFocusMap(cache, visibleCellBudget)
-  const cells = focusModel.cells
-  const hasActiveReaders = (cache.Readers?.length ?? 0) > 0
-
   const variant = isMiniView ? 'mini' : 'default'
-  // Re-resolve when palette changes so canvas accents track CSS `--accent`.
   const baseSettings = useMemo(() => {
     void palette
     return resolveSnakeSettings(theme, variant)
   }, [theme, variant, palette])
 
+  // Detailed: fixed ~20px piece cells. The pane is filled by showing more pieces
+  // (full cols×rows budget), not by growing individual squares.
   const { pieceSize, gap } = useMemo(
-    () => resolvePieceMetrics(baseSettings, containerWidth, isMiniView, cells.length),
-    [baseSettings, containerWidth, isMiniView, cells.length],
+    () => resolvePieceMetrics(baseSettings, containerWidth, isMiniView, 0),
+    [baseSettings, containerWidth, isMiniView],
   )
 
   const canvasWidth =
     containerWidth > 0 ? (isMiniView ? Math.max(containerWidth - 8, containerWidth * 0.96) : containerWidth) : 0
+
+  const emptyRowCount = isMiniView ? 4 : 6
+  const targetRows = isMiniView ? SNAKE_FOCUS_TARGET_ROWS_MINI : SNAKE_FOCUS_TARGET_ROWS
+
   const cellStride = pieceSize + gap
   const piecesPerRow = canvasWidth > 0 ? Math.max(1, Math.floor(canvasWidth / cellStride)) : 0
 
-  const emptyRowCount = isMiniView ? 4 : 6
-  const naturalRowCount =
+  // Detailed: fit rows to pane once RO reports real height (≥2 footprints).
+  // Until then use targetRows so a Getting-Info placeholder still paints a full
+  // grid instead of a short strip with empty space below.
+  const heightReady = !isMiniView && cellStride > 0 && containerHeight >= cellStride * 2
+  const maxFitRows = heightReady
+    ? Math.max(2, Math.floor(containerHeight / cellStride))
+    : isMiniView
+      ? emptyRowCount
+      : targetRows
+
+  // Drawable budget first — focus window must match cols × rows (no silent slice).
+  const visibleCellBudget =
+    piecesPerRow > 0
+      ? piecesPerRow * maxFitRows
+      : resolveFocusVisibleCells(containerWidth, isMiniView, isMiniView ? 0 : containerHeight)
+
+  // Persist camera only after the pane height is real — placeholder row counts
+  // must not overwrite the saved window. Still paint as soon as width is known.
+  const cameraReady = isMiniView ? containerWidth > 0 : heightReady
+  const focusModel = useCreateFocusMap(cache, visibleCellBudget, cameraReady ? snakeCameraKey(hash, mode) : undefined)
+  const cells = focusModel.cells
+  // Idle heads stay on screen but stop moving — only then show "frozen".
+  const hasIdleHead = (cache.Readers ?? []).some(r => r.Reader != null && !isReaderActive(r))
+
+  // No PiecesCount yet (Getting Info): fill the drawable pane with empty cells
+  // so the Cache tab never shows a half-empty gray box.
+  const placeholderRows = isMiniView ? emptyRowCount : maxFitRows
+  const placeholderCount = Math.max(piecesPerRow, 1) * placeholderRows
+
+  const rowCount =
     piecesPerRow > 0
       ? Math.max(
-          cells.length > 0 ? Math.ceil(cells.length / piecesPerRow) : emptyRowCount,
+          cells.length > 0 ? Math.ceil(cells.length / piecesPerRow) : placeholderRows,
           isMiniView ? emptyRowCount : 1,
         )
       : 0
-  // Detailed view: never taller than the sheet pane — no internal scrollbar.
-  const maxFitRows =
-    !isMiniView && containerHeight > 0 && cellStride > 0
-      ? Math.max(1, Math.floor(containerHeight / cellStride))
-      : naturalRowCount
-  const rowCount = !isMiniView && maxFitRows > 0 ? Math.min(naturalRowCount, maxFitRows) : naturalRowCount
-  const canvasHeight = rowCount > 0 ? rowCount * cellStride : 0
-  /** Reserve mini shell height before ResizeObserver so parent layout doesn't jump when the snake mounts. */
-  const miniShellMinHeight = isMiniView ? emptyRowCount * cellStride + 16 : undefined
+  const fittedRows = Math.min(rowCount, maxFitRows)
+  const canvasHeight = fittedRows > 0 ? fittedRows * cellStride : 0
 
   const startingX = piecesPerRow > 0 ? Math.ceil((canvasWidth - cellStride * piecesPerRow) / 2) : 0
 
   const drawCells = useMemo(() => {
-    const source =
-      cells.length > 0 ? cells : Array.from({ length: Math.max(piecesPerRow, 1) * emptyRowCount }, emptyCell)
-    if (isMiniView || piecesPerRow <= 0 || rowCount <= 0) return source
-    const cap = piecesPerRow * rowCount
-    return source.length > cap ? source.slice(0, cap) : source
-  }, [cells, piecesPerRow, emptyRowCount, isMiniView, rowCount])
+    if (cells.length > 0) return cells
+    return Array.from({ length: placeholderCount }, emptyCell)
+  }, [cells, placeholderCount])
 
   const cacheAriaLabel = useMemo(() => {
     const { Filled, Capacity } = cache
@@ -142,9 +163,35 @@ function TorrentCache({ cache, mode = 'detailed', isSnakeDebugMode }: TorrentCac
     return t('Cache')
   }, [cache, t])
 
+  // Footer range matches drawn cells (window is sized to the grid).
+  const footerStart = focusModel.windowStart
+  const footerEnd =
+    focusModel.windowStart != null && drawCells.length > 0 && drawCells[0]?.pieceStart != null
+      ? (drawCells[drawCells.length - 1]?.pieceEnd ??
+        drawCells[drawCells.length - 1]?.pieceStart ??
+        focusModel.windowEnd)
+      : focusModel.windowEnd
+
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas || !canvasWidth || !canvasHeight || !piecesPerRow) return
+
+    const drawKey = [
+      canvasWidth,
+      canvasHeight,
+      piecesPerRow,
+      pieceSize,
+      gap,
+      isSnakeDebugMode ? 1 : 0,
+      theme,
+      palette,
+      cheapPiecesFingerprint(cache.Pieces),
+      cheapReadersFingerprint(cache.Readers),
+      drawCells.length,
+      footerStart ?? -1,
+    ].join('|')
+    if (drawKey === lastDrawKey.current) return
+    lastDrawKey.current = drawKey
 
     cancelAnimationFrame(drawFrame.current)
     drawFrame.current = requestAnimationFrame(() => {
@@ -180,6 +227,9 @@ function TorrentCache({ cache, mode = 'detailed', isSnakeDebugMode }: TorrentCac
     theme,
     palette,
     isSnakeDebugMode,
+    cache.Pieces,
+    cache.Readers,
+    footerStart,
   ])
 
   const formatTooltipText = useCallback(
@@ -230,7 +280,6 @@ function TorrentCache({ cache, mode = 'detailed', isSnakeDebugMode }: TorrentCac
     [cellAtPoint],
   )
 
-  /** Touch has no hover — tap a piece to pin its tooltip, tap it again (or elsewhere) to dismiss. */
   const handleCanvasTap = useCallback(
     (event: React.MouseEvent<HTMLCanvasElement>) => {
       const next = cellAtPoint(event.clientX, event.clientY)
@@ -250,16 +299,21 @@ function TorrentCache({ cache, mode = 'detailed', isSnakeDebugMode }: TorrentCac
     return () => document.removeEventListener('pointerdown', dismissIfOutside)
   }, [tooltip])
 
+  // Paint as soon as width is known — Getting Info still gets a full empty grid.
+  // Footer (piece range) only when the focus model has real piece ids.
+  const showCanvas = containerWidth > 0 && piecesPerRow > 0 && canvasHeight > 0
+  const showFooter =
+    showCanvas && cells.length > 0 && footerStart != null && footerEnd != null && footerEnd >= footerStart
+
   return (
     <div ref={rootRef} className={`relative flex w-full min-w-0 flex-col ${isMiniView ? '' : 'min-h-0 flex-1'}`}>
       <div
         ref={scrollWrapperRef}
-        className={`relative w-full min-w-0 rounded-lg border border-border bg-surface-secondary p-2 ${
+        className={`ts-details-cache-snake relative w-full min-w-0 rounded-lg border border-border bg-surface-secondary p-2 ${
           isMiniView ? 'grid max-h-[420px] justify-center overflow-hidden' : 'min-h-0 min-w-0 flex-1 overflow-hidden'
         }`}
-        style={isMiniView ? (miniShellMinHeight != null ? { minHeight: miniShellMinHeight } : undefined) : undefined}
       >
-        {piecesPerRow > 0 && canvasHeight > 0 ? (
+        {showCanvas ? (
           <canvas
             ref={canvasRef}
             role='img'
@@ -272,10 +326,6 @@ function TorrentCache({ cache, mode = 'detailed', isSnakeDebugMode }: TorrentCac
         ) : null}
       </div>
 
-      {isMiniView ? (
-        <p className='mt-1.5 text-center text-[10px] uppercase tracking-wider text-muted/70'>{t('ScrollDown')}</p>
-      ) : null}
-
       {tooltip ? (
         <div
           className='pointer-events-none absolute z-20 whitespace-nowrap rounded-md border border-border bg-surface-tertiary px-2 py-1 text-xs leading-snug text-foreground shadow-lg'
@@ -285,13 +335,30 @@ function TorrentCache({ cache, mode = 'detailed', isSnakeDebugMode }: TorrentCac
         </div>
       ) : null}
 
-      {focusModel.windowStart != null &&
-      focusModel.windowEnd != null &&
-      focusModel.windowEnd >= focusModel.windowStart ? (
-        <p className='mt-2 shrink-0 self-center text-xs uppercase tracking-wide text-muted'>
-          {t('SnakeFocusRange', { start: focusModel.windowStart, end: focusModel.windowEnd })}
-          {!hasActiveReaders ? ` · ${t('SnakeIdleFrozen')}` : null}
-        </p>
+      {showFooter ? (
+        <div className='mt-2 flex shrink-0 flex-col items-center gap-1'>
+          <p className='text-xs uppercase tracking-wide text-muted'>
+            {t('SnakeFocusRange', { start: footerStart, end: footerEnd })}
+            {hasIdleHead ? ` · ${t('SnakeIdleFrozen')}` : null}
+          </p>
+          <p className='flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 text-[10px] text-muted'>
+            <span className='inline-flex items-center gap-1'>
+              <span className='size-2 rounded-[2px] bg-accent' aria-hidden />
+              {t('SnakeLegendCached')}
+            </span>
+            <span className='inline-flex items-center gap-1'>
+              <span className='size-2 rounded-[2px] border-2 border-foreground bg-transparent' aria-hidden />
+              {t('SnakeLegendHead')}
+            </span>
+            <span className='inline-flex items-center gap-1'>
+              <span
+                className='size-2 rounded-[2px] border border-[#c4a882] bg-[#c4a882]/30 dark:border-[#c4a882]'
+                aria-hidden
+              />
+              {t('SnakeLegendRange')}
+            </span>
+          </p>
+        </div>
       ) : null}
     </div>
   )
@@ -300,6 +367,7 @@ function TorrentCache({ cache, mode = 'detailed', isSnakeDebugMode }: TorrentCac
 export default memo(TorrentCache, (prev, next) => {
   if (prev.mode !== next.mode) return false
   if (prev.isSnakeDebugMode !== next.isSnakeDebugMode) return false
+  if (prev.hash !== next.hash) return false
   const a = prev.cache
   const b = next.cache
   return (
@@ -307,7 +375,7 @@ export default memo(TorrentCache, (prev, next) => {
     a.PiecesLength === b.PiecesLength &&
     a.Capacity === b.Capacity &&
     a.Filled === b.Filled &&
-    piecesFingerprint(a.Pieces) === piecesFingerprint(b.Pieces) &&
-    readersFingerprint(a.Readers) === readersFingerprint(b.Readers)
+    cheapPiecesFingerprint(a.Pieces) === cheapPiecesFingerprint(b.Pieces) &&
+    cheapReadersFingerprint(a.Readers) === cheapReadersFingerprint(b.Readers)
   )
 })
