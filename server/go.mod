@@ -7,7 +7,8 @@ replace github.com/anacrolix/upnp v0.1.4 => github.com/tsynik/upnp v0.1.5
 require (
 	github.com/agnivade/levenshtein v1.2.1
 	github.com/alexflint/go-arg v1.6.0
-	github.com/anacrolix/dms v1.8.0
+	github.com/anacrolix/dms v1.7.2
+	github.com/anacrolix/log v0.17.1-0.20251118025802-918f1157b7bb
 	github.com/anacrolix/missinggo/v2 v2.11.0
 	github.com/anacrolix/publicip v0.3.1
 	github.com/anacrolix/torrent v1.61.1-0.20260813054952-ec1d01e8b701
@@ -49,7 +50,6 @@ require (
 	github.com/anacrolix/ffprobe v1.1.0 // indirect
 	github.com/anacrolix/generics v0.2.0 // indirect
 	github.com/anacrolix/go-libutp v1.5.0 // indirect
-	github.com/anacrolix/log v0.17.1-0.20251118025802-918f1157b7bb // indirect
 	github.com/anacrolix/missinggo v1.3.0 // indirect
 	github.com/anacrolix/missinggo/perf v1.0.0 // indirect
 	github.com/anacrolix/mmsg v1.1.1 // indirect

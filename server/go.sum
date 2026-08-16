@@ -95,8 +95,8 @@ github.com/anacrolix/chansync v0.8.0 h1:Z/YLVXRDMTy3jFfHKSwzCRVD88ldnFoM4THdWqLj
 github.com/anacrolix/chansync v0.8.0/go.mod h1:RT3KIkmAanMPsiKC/HTBOrSlgB4TQ8DW8dxgDOnQGsg=
 github.com/anacrolix/dht/v2 v2.24.0 h1:qKIZKmJjW0y/LoqeMPPQ99JBy3Op15voFZrR7OpeOh8=
 github.com/anacrolix/dht/v2 v2.24.0/go.mod h1:0IpTSbqYnFcjmexGvnINUGq/kbx93S5cKIryH4oJL8U=
-github.com/anacrolix/dms v1.8.0 h1:sc7D0CVJfxlpZRuOru2r/UrMO46aVWWi8rllIJ4CAXc=
-github.com/anacrolix/dms v1.8.0/go.mod h1:IPIMiq39yoRG0Gr3CFn+gVroWSYJ6ME/VVbh0uMFG+0=
+github.com/anacrolix/dms v1.7.2 h1:JAAJJIlXp+jT2yEah1EbR1AFpGALHL238uSKFXec2qw=
+github.com/anacrolix/dms v1.7.2/go.mod h1:excFJW5MKBhn5yt5ZMyeE9iFVqnO6tEGQl7YG/2tUoQ=
 github.com/anacrolix/envpprof v0.0.0-20180404065416-323002cec2fa/go.mod h1:KgHhUaQMc8cC0+cEflSgCFNFbKwi5h54gqtVn8yhP7c=
 github.com/anacrolix/envpprof v1.0.0/go.mod h1:KgHhUaQMc8cC0+cEflSgCFNFbKwi5h54gqtVn8yhP7c=
 github.com/anacrolix/envpprof v1.1.0/go.mod h1:My7T5oSqVfEn4MD4Meczkw/f5lSIndGAKu/0SM/rkf4=
