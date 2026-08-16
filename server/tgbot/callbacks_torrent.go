@@ -70,6 +70,14 @@ func handleCallbackTorrent(c tele.Context, args []string) error {
 		if len(args) > 1 {
 			return callbackListRefresh(c, args[1])
 		}
+	case "\ffitems":
+		if len(args) >= 3 {
+			return callbackFileListPage(c, args[1], args[2])
+		}
+	case "\ffifresh":
+		if len(args) >= 3 {
+			return callbackFileListRefresh(c, args[1], args[2])
+		}
 	case "\ffnop":
 		return c.Respond(&tele.CallbackResponse{})
 	case "\ffpreload":

@@ -10,6 +10,13 @@ export function PWAInstallationGuide() {
   const pwaNotificationIsClosed = JSON.parse(localStorage.getItem('pwaNotificationIsClosed'))
   const [isOpen, setIsOpen] = useState(!pwaNotificationIsClosed)
   const [shouldBeOpened, setShouldBeOpened] = useState(!pwaNotificationIsClosed)
+  const getBasePath = () => {
+    if (typeof window !== 'undefined') {
+      return window.location.pathname.split('/')[1] || ''
+    }
+    return ''
+  }
+  const basePath = getBasePath()
 
   const { t } = useTranslation()
 
@@ -18,7 +25,7 @@ export function PWAInstallationGuide() {
   return (
     <StyledWrapper isOpen={shouldBeOpened}>
       <StyledHeader>
-        <img src='/icon.png' width={50} alt='ts-icon' />
+        <img src={`${basePath}/icon.png`} width={50} alt='ts-icon' />
 
         {t('PWAGuide.Header')}
 

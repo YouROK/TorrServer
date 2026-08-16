@@ -127,39 +127,6 @@ export const LeftSideBottomSectionNoFile = styled.div`
   }
 `
 
-export const LeftSideBottomSectionFileSelected = styled.div`
-  ${LeftSideBottomSectionBasicStyles}
-  place-items: center;
-
-  @media (max-width: 930px) {
-    height: 400px;
-  }
-
-  @media (max-width: 500px) {
-    height: 170px;
-  }
-`
-
-export const TorrentIconWrapper = styled.div`
-  position: relative;
-`
-
-export const CancelIconWrapper = styled.div`
-  position: absolute;
-  top: -9px;
-  left: 10px;
-  cursor: pointer;
-
-  > svg {
-    transition: all 0.3s;
-    fill: rgba(0, 0, 0, 0.7);
-
-    :hover {
-      fill: rgba(0, 0, 0, 0.6);
-    }
-  }
-`
-
 export const IconWrapper = styled.div`
   display: grid;
   justify-items: center;
@@ -347,6 +314,74 @@ export const PosterLanguageSwitch = styled.div`
       filter: brightness(1.1);
     }
   `}
+`
+
+export const MultiFileRow = styled.div`
+  padding: 12px 16px;
+  margin: 8px 12px;
+  border-radius: 5px;
+  box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.12), 0px 1px 2px rgba(0, 0, 0, 0.08);
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  gap: 12px;
+  align-items: start;
+  transition: box-shadow 0.2s;
+
+  :hover {
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.16), 0px 1px 4px rgba(0, 0, 0, 0.12);
+  }
+`
+
+export const MultiFilePoster = styled.div`
+  ${({
+    theme: {
+      addDialog: { posterBGColor },
+    },
+  }) => css`
+    width: 80px;
+    height: 110px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: ${posterBGColor};
+    display: grid;
+    place-items: center;
+    position: relative;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .file-index {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.5);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      display: grid;
+      place-items: center;
+    }
+  `}
+`
+
+export const MultiFileInfo = styled.div`
+  .file-name {
+    font-size: 13px;
+    opacity: 0.6;
+    margin-bottom: 4px;
+  }
+`
+
+export const MultiFileList = styled.div`
+  max-height: 500px;
+  overflow: auto;
+  padding: 4px 0;
 `
 
 export const StyledPWAAddButton = styled.div`

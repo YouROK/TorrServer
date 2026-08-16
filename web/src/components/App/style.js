@@ -7,6 +7,7 @@ import { pwaFooterHeight } from './PWAFooter/style'
 
 export const AppWrapper = styled.div`
   ${({
+    isDrawerOpen,
     theme: {
       app: { appSecondaryColor },
     },
@@ -14,11 +15,16 @@ export const AppWrapper = styled.div`
     height: 100%;
     background: ${rgba(appSecondaryColor, 0.8)};
     display: grid;
-    grid-template-columns: 60px 1fr;
+    grid-template-columns: ${isDrawerOpen ? '240px' : '60px'} 1fr;
     grid-template-rows: 60px 1fr;
     grid-template-areas:
       'head head'
       'side content';
+    transition: grid-template-columns 195ms cubic-bezier(0.4, 0, 0.6, 1) 0ms;
+
+    @media (max-width: 700px) {
+      grid-template-columns: 0 1fr;
+    }
 
     ${standaloneMedia(css`
       grid-template-columns: 0 1fr;
@@ -69,10 +75,8 @@ export const AppSidebarStyle = styled.div`
     },
   }) => css`
     grid-area: side;
-    width: ${isDrawerOpen ? '400%' : '100%'};
     z-index: 2;
     overflow-x: hidden;
-    transition: width 195ms cubic-bezier(0.4, 0, 0.6, 1) 0ms;
     border-right: 1px solid ${rgba(appSecondaryColor, 0.12)};
     background: ${sidebarBGColor};
     color: ${sidebarFillColor};
@@ -91,6 +95,17 @@ export const AppSidebarStyle = styled.div`
       fill: ${sidebarFillColor};
     }
 
+    @media (max-width: 700px) {
+      position: fixed;
+      top: 60px;
+      left: 0;
+      bottom: 0;
+      width: 240px;
+      transform: translateX(${isDrawerOpen ? '0' : '-100%'});
+      transition: transform 195ms cubic-bezier(0.4, 0, 0.6, 1) 0ms;
+      box-shadow: ${isDrawerOpen ? '2px 0 8px rgba(0,0,0,0.3)' : 'none'};
+    }
+
     ${standaloneMedia(css`
       display: none;
     `)}
@@ -103,7 +118,7 @@ export const TorrentListWrapper = styled.div`
 
   display: grid;
   place-content: start;
-  grid-template-columns: repeat(auto-fit, minmax(max-content, 570px));
+  grid-template-columns: repeat(auto-fit, minmax(450px, 570px));
   gap: 20px;
 
   @media (max-width: 1260px), (max-height: 500px) {
@@ -157,6 +172,21 @@ export const HeaderToggle = styled.div`
       }
     }
   `}
+`
+
+export const SidebarOverlay = styled.div`
+  display: none;
+
+  @media (max-width: 700px) {
+    display: ${({ isDrawerOpen }) => (isDrawerOpen ? 'block' : 'none')};
+    position: fixed;
+    top: 60px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1;
+  }
 `
 
 export const StyledIconButton = styled(IconButton)`

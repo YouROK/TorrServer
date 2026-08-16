@@ -4,7 +4,8 @@ import { FormControlLabel, Switch } from '@material-ui/core'
 import TextField from '@material-ui/core/TextField'
 
 import {
-  PreloadCacheValue,
+  CacheLegendGrid,
+  CacheLegendDot,
   MainSettingsContent,
   StorageButton,
   StorageIconWrapper,
@@ -54,21 +55,19 @@ export default function PrimarySettingsComponent({
           preloadCachePercentage={preloadCachePercentage}
         />
 
-        <PreloadCacheValue color={cacheBeforeReaderColor}>
-          <div>
+        <CacheLegendGrid>
+          <CacheLegendDot color={cacheBeforeReaderColor} aria-hidden />
+          <div className='cache-legend-value'>
             {100 - cachePercentage}% ({Math.round((cacheSize / 100) * (100 - cachePercentage))} {t('MB')})
           </div>
+          <div className='cache-legend-desc'>{t('SettingsDialog.CacheBeforeReaderDesc')}</div>
 
-          <div>{t('SettingsDialog.CacheBeforeReaderDesc')}</div>
-        </PreloadCacheValue>
-
-        <PreloadCacheValue color={cacheAfterReaderColor}>
-          <div>
+          <CacheLegendDot color={cacheAfterReaderColor} aria-hidden />
+          <div className='cache-legend-value'>
             {cachePercentage}% ({Math.round((cacheSize / 100) * cachePercentage)} {t('MB')})
           </div>
-
-          <div>{t('SettingsDialog.CacheAfterReaderDesc')}</div>
-        </PreloadCacheValue>
+          <div className='cache-legend-desc'>{t('SettingsDialog.CacheAfterReaderDesc')}</div>
+        </CacheLegendGrid>
 
         <br />
 

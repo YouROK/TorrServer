@@ -42,7 +42,7 @@ func newReader(file *torrent.File, cache *Cache) *Reader {
 }
 
 func (r *Reader) Seek(offset int64, whence int) (n int64, err error) {
-	if r.isClosed || r.cache.isClosed {
+	if r.isClosed {
 		return 0, io.EOF
 	}
 	switch whence {
@@ -62,7 +62,7 @@ func (r *Reader) Seek(offset int64, whence int) (n int64, err error) {
 
 func (r *Reader) Read(p []byte) (n int, err error) {
 	err = io.EOF
-	if r.isClosed || r.cache.isClosed {
+	if r.isClosed {
 		return
 	}
 	if r.file.Torrent() != nil && r.file.Torrent().Info() != nil {
@@ -161,7 +161,7 @@ func (r *Reader) getOffsetRange() (int64, int64) {
 }
 
 func (r *Reader) checkReader() {
-	if time.Now().Unix() > r.lastAccess+15 && len(r.cache.readers) > 1 { // +60(s) -> +15(s)
+	if time.Now().Unix() > r.lastAccess+15 && len(r.cache.readers) > 1 { // +60(s) -> +15(s) !!!
 		r.readerOff()
 	} else {
 		r.readerOn()
@@ -193,13 +193,5 @@ func (r *Reader) readerOff() {
 }
 
 func (r *Reader) getUseReaders() int {
-	readers := 0
-	if r.cache != nil {
-		for reader := range r.cache.readers {
-			if reader.isUse {
-				readers++
-			}
-		}
-	}
-	return readers
+	return r.cache.GetUseReaders()
 }

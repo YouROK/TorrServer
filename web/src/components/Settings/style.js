@@ -114,42 +114,45 @@ export const Content = styled.div`
   `}
 `
 
-export const PreloadCacheValue = styled.div`
-  ${({ color }) => css`
-    display: grid;
-    grid-template-columns: max-content 100px 1fr;
-    gap: 10px;
-    align-items: flex-start;
+export const CacheLegendGrid = styled.div`
+  display: grid;
+  grid-template-columns: auto max-content minmax(0, 1fr);
+  column-gap: 14px;
+  row-gap: 12px;
+  align-items: start;
+  margin-bottom: 4px;
 
-    :not(:last-child) {
-      margin-bottom: 5px;
-    }
+  .cache-legend-value {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.35;
+  }
 
-    :before {
-      content: '';
-      background: ${color};
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      margin-top: 2px;
-    }
+  .cache-legend-desc {
+    min-width: 0;
+    line-height: 1.45;
+  }
 
-    @media (max-width: 600px) {
-      grid-template-columns: max-content 80px 1fr;
-      gap: 8px;
-      font-size: 13px;
+  @media (max-width: 600px) {
+    column-gap: 10px;
+    row-gap: 10px;
+    font-size: 13px;
+  }
+`
 
-      :before {
-        width: 12px;
-        height: 12px;
-      }
-    }
+export const CacheLegendDot = styled.span`
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: ${({ color }) => color};
+  margin-top: 2px;
 
-    @media (max-width: 400px) {
-      grid-template-columns: max-content 1fr;
-      font-size: 12px;
-    }
-  `}
+  @media (max-width: 600px) {
+    width: 12px;
+    height: 12px;
+    margin-top: 3px;
+  }
 `
 
 export const MainSettingsContent = styled.div`
@@ -242,6 +245,26 @@ export const SecondarySettingsContent = styled.div`
     }
   }
 `
+
+export const GstSettingsContent = styled(SecondarySettingsContent)`
+  .MuiTextField-root {
+    margin-top: 16px;
+    margin-bottom: 4px;
+  }
+
+  .MuiFormGroup-root {
+    margin-top: 16px;
+    margin-bottom: 8px;
+  }
+
+  .MuiFormControlLabel-root {
+    margin-top: 8px;
+  }
+
+  .MuiSelect-outlined {
+    background: #fff;
+  }
+`
 export const StorageButton = styled.div`
   ${({ small, selected }) => css`
     transition: 0.2s;
@@ -326,6 +349,81 @@ export const SettingSectionLabel = styled.div`
       font-size: 10px;
     }
   }
+`
+
+export const SettingsStatusMessage = styled.div`
+  ${({ severity }) => css`
+    padding: 12px 16px;
+    margin-top: 8px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #fff;
+    background-color: ${severity === 'error'
+      ? '#c82e3f'
+      : severity === 'success'
+      ? '#00a572'
+      : severity === 'info'
+      ? '#545a5e'
+      : '#cda184'};
+
+    button {
+      color: #fff;
+      min-width: auto;
+      padding: 4px 8px;
+      margin-left: 8px;
+    }
+  `}
+`
+
+export const GstRuntimeStatusList = styled.div`
+  display: grid;
+  gap: 12px;
+  margin: 4px 0 24px;
+`
+
+export const GstRuntimeStatusItem = styled.div`
+  ${({ ok, warn }) => css`
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 16px;
+    border-radius: 5px;
+    border: 1px solid ${ok ? '#88cdaa' : warn ? '#cda184' : '#dee3e5'};
+    background: ${ok ? 'rgba(136, 205, 170, 0.2)' : warn ? 'rgba(205, 161, 132, 0.2)' : 'rgba(222, 227, 229, 0.35)'};
+    font-size: 14px;
+    line-height: 1.4;
+
+    .gst-status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .gst-status-label {
+      font-weight: 500;
+    }
+
+    .gst-status-value {
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .gst-status-error {
+      font-size: 12px;
+      color: #545a5e;
+      word-break: break-word;
+    }
+  `}
+`
+
+export const GstSubsectionLabel = styled(SettingSectionLabel)`
+  font-size: 20px;
+  padding-bottom: 12px;
+  margin-top: 20px;
 `
 
 export const PreloadCachePercentage = styled.div.attrs(({ value }) => ({

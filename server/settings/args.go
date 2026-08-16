@@ -2,7 +2,7 @@ package settings
 
 type ExecArgs struct {
 	Port        string
-	IP          string
+	IPs         []string
 	Ssl         bool
 	SslPort     string
 	SslCert     string
@@ -25,6 +25,7 @@ type ExecArgs struct {
 	WebDAV      bool
 	ProxyURL    string
 	ProxyMode   string
+	ForceHTTPS  bool
 }
 
 var Args *ExecArgs

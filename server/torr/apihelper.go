@@ -164,19 +164,43 @@ func RemTorrent(hashHex string) {
 		return
 	}
 	hash := metainfo.NewHashFromHex(hashHex)
-	if bts.RemoveTorrent(hash) {
+
+	// Download the torrent before deleting it to get the "closed" status
+	torr := bts.GetTorrent(hash)
+	if torr == nil {
+		// If the torrent isn't in memory, just delete it from the database and the files
+		RemTorrentDB(hash)
 		if sets.BTsets.UseDisk && hashHex != "" && hashHex != "/" {
 			name := filepath.Join(sets.BTsets.TorrentsSavePath, hashHex)
-			ff, _ := os.ReadDir(name)
-			for _, f := range ff {
-				os.Remove(filepath.Join(name, f.Name()))
-			}
-			err := os.Remove(name)
-			if err != nil {
-				log.TLogln("Error remove cache:", err)
+			os.RemoveAll(name)
+		}
+		return
+	}
+
+	closedChan := torr.closed
+
+	// Clear from memory
+	if bts.RemoveTorrent(hash) {
+		// Waiting for confirmation from the library via the closed channel
+		select {
+		case <-closedChan:
+			// The library has confirmed the closure
+			log.TLogln("Torrent closed by library:", hashHex)
+		case <-time.After(5 * time.Second):
+			log.TLogln("Warning: timeout waiting for torrent close:", hashHex)
+		}
+
+		// Now we can safely delete the files from the disk
+		if sets.BTsets.UseDisk && hashHex != "" && hashHex != "/" {
+			name := filepath.Join(sets.BTsets.TorrentsSavePath, hashHex)
+			if _, err := os.Stat(name); err == nil {
+				log.TLogln("Removing cache files for:", hashHex)
+				os.RemoveAll(name)
 			}
 		}
 	}
+
+	// Delete from the database
 	RemTorrentDB(hash)
 }
 
@@ -204,32 +228,6 @@ func ListTorrent() []*Torrent {
 	})
 
 	return ret
-}
-
-func ListTorrentFiltered(filter string) []*Torrent {
-	switch filter {
-	case "last":
-		all := ListTorrent()
-		if len(all) > 0 {
-			return all[:1]
-		}
-		return nil
-	case "active":
-		btlist := bts.ListTorrents()
-		var ret []*Torrent
-		for _, t := range btlist {
-			ret = append(ret, t)
-		}
-		sort.Slice(ret, func(i, j int) bool {
-			if ret[i].Timestamp != ret[j].Timestamp {
-				return ret[i].Timestamp > ret[j].Timestamp
-			}
-			return ret[i].Title > ret[j].Title
-		})
-		return ret
-	default:
-		return ListTorrent()
-	}
 }
 
 func DropTorrent(hashHex string) {
@@ -272,7 +270,7 @@ func SetDefSettings() {
 }
 
 func dropAllTorrent() {
-	for _, torr := range bts.torrents {
+	for _, torr := range bts.ListTorrents() {
 		torr.drop()
 		<-torr.closed
 	}

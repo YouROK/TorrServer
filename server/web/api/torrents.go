@@ -2,12 +2,12 @@ package api
 
 import (
 	"net/http"
-	"server/torrshash"
 	"strings"
-	"sync"
-	"time"
+
+	"server/torrshash"
 
 	"server/dlna"
+	gstreamer "server/gstreamer/bridge"
 	"server/log"
 	set "server/settings"
 	"server/torr"
@@ -29,15 +29,7 @@ type torrReqJS struct {
 	Poster   string `json:"poster,omitempty"`
 	Data     string `json:"data,omitempty"`
 	SaveToDB bool   `json:"save_to_db,omitempty"`
-	Filter   string `json:"filter,omitempty"`
 }
-
-var (
-	listCache     []*state.TorrentStatus
-	listCacheTime time.Time
-	listCacheMu   sync.Mutex
-	listCacheTTL  = 2 * time.Second
-)
 
 // torrents godoc
 //
@@ -50,6 +42,7 @@ var (
 //
 //	@Accept			json
 //	@Produce		json
+//	@Security		BasicAuth
 //	@Success		200
 //	@Router			/torrents [post]
 func torrents(c *gin.Context) {
@@ -79,7 +72,7 @@ func torrents(c *gin.Context) {
 		}
 	case "list":
 		{
-			listTorrents(c, req.Filter)
+			listTorrents(c)
 		}
 	case "drop":
 		{
@@ -195,6 +188,7 @@ func remTorrent(req torrReqJS, c *gin.Context) {
 		return
 	}
 	torr.RemTorrent(req.Hash)
+	gstreamer.Remove(req.Hash)
 	// TODO: remove
 	if set.BTsets.EnableDLNA {
 		dlna.Stop()
@@ -203,41 +197,16 @@ func remTorrent(req torrReqJS, c *gin.Context) {
 	c.Status(200)
 }
 
-func listTorrents(c *gin.Context, filter string) {
-	if filter == "" {
-		filter = "all"
-	}
-
-	// Return cached response for "all" filter if fresh enough
-	if filter == "all" {
-		listCacheMu.Lock()
-		if listCache != nil && time.Since(listCacheTime) < listCacheTTL {
-			cached := listCache
-			listCacheMu.Unlock()
-			c.JSON(200, cached)
-			return
-		}
-		listCacheMu.Unlock()
-	}
-
-	list := torr.ListTorrentFiltered(filter)
+func listTorrents(c *gin.Context) {
+	list := torr.ListTorrent()
 	if len(list) == 0 {
 		c.JSON(200, []*state.TorrentStatus{})
 		return
 	}
 	var stats []*state.TorrentStatus
 	for _, tr := range list {
-		stats = append(stats, tr.StatusLight())
+		stats = append(stats, tr.Status())
 	}
-
-	// Cache "all" results
-	if filter == "all" {
-		listCacheMu.Lock()
-		listCache = stats
-		listCacheTime = time.Now()
-		listCacheMu.Unlock()
-	}
-
 	c.JSON(200, stats)
 }
 
@@ -247,13 +216,16 @@ func dropTorrent(req torrReqJS, c *gin.Context) {
 		return
 	}
 	torr.DropTorrent(req.Hash)
+	gstreamer.Remove(req.Hash)
 	c.Status(200)
 }
 
 func wipeTorrents(c *gin.Context) {
 	torrents := torr.ListTorrent()
 	for _, t := range torrents {
-		torr.RemTorrent(t.TorrentSpec.InfoHash.HexString())
+		hash := t.TorrentSpec.InfoHash.HexString()
+		torr.RemTorrent(hash)
+		gstreamer.Remove(hash)
 	}
 	// TODO: remove (copied todo from remTorrent())
 	if set.BTsets.EnableDLNA {

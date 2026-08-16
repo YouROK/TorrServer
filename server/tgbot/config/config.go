@@ -13,6 +13,7 @@ import (
 type Config struct {
 	HostTG   string
 	HostWeb  string
+	Socks5   string
 	WhiteIds []int64
 	BlackIds []int64
 }

@@ -2,11 +2,12 @@ package torr
 
 import (
 	"errors"
-	"server/torrshash"
 	"sort"
 	"strconv"
 	"sync"
 	"time"
+
+	"server/torrshash"
 
 	utils2 "server/utils"
 
@@ -228,6 +229,9 @@ func (t *Torrent) updateRA() {
 }
 
 func (t *Torrent) expired() bool {
+	if t.cache == nil {
+		return false
+	}
 	return t.cache.Readers() == 0 && t.expiredTime.Before(time.Now()) && (t.Stat == state.TorrentWorking || t.Stat == state.TorrentClosed)
 }
 
@@ -286,6 +290,9 @@ func (t *Torrent) Close() bool {
 	if t == nil {
 		return false
 	}
+	if t.Stat == state.TorrentClosed {
+		return true
+	}
 	if settings.ReadOnly && t.cache != nil && t.cache.GetUseReaders() > 0 {
 		return false
 	}
@@ -293,7 +300,9 @@ func (t *Torrent) Close() bool {
 
 	if t.bt != nil {
 		t.bt.mu.Lock()
-		delete(t.bt.torrents, t.Hash())
+		if _, ok := t.bt.torrents[t.Hash()]; ok {
+			delete(t.bt.torrents, t.Hash())
+		}
 		t.bt.mu.Unlock()
 	}
 
@@ -381,45 +390,6 @@ func (t *Torrent) Status() *state.TorrentStatus {
 			if err == nil {
 				st.TorrsHash = token
 			}
-		}
-	}
-
-	return st
-}
-
-func (t *Torrent) StatusLight() *state.TorrentStatus {
-	t.muTorrent.Lock()
-	defer t.muTorrent.Unlock()
-
-	st := new(state.TorrentStatus)
-
-	st.Stat = t.Stat
-	st.StatString = t.Stat.String()
-	st.Title = t.Title
-	st.Category = t.Category
-	st.Poster = t.Poster
-	st.Data = t.Data
-	st.Timestamp = t.Timestamp
-	st.TorrentSize = t.Size
-	st.BitRate = t.BitRate
-	st.DurationSeconds = t.DurationSeconds
-
-	if t.TorrentSpec != nil {
-		st.Hash = t.TorrentSpec.InfoHash.HexString()
-	}
-	if t.Torrent != nil {
-		st.Name = t.Torrent.Name()
-		st.Hash = t.Torrent.InfoHash().HexString()
-		st.DownloadSpeed = t.DownloadSpeed
-		st.UploadSpeed = t.UploadSpeed
-
-		tst := t.Torrent.Stats()
-		st.TotalPeers = tst.TotalPeers
-		st.ActivePeers = tst.ActivePeers
-		st.ConnectedSeeders = tst.ConnectedSeeders
-
-		if t.Torrent.Info() != nil {
-			st.TorrentSize = t.Torrent.Length()
 		}
 	}
 

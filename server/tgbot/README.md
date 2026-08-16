@@ -46,6 +46,7 @@ Config file `tg.cfg` (JSON) in the TorrServer data directory:
 |------------|-------------|
 | `HostTG`   | Telegram API URL (default: `https://api.telegram.org`) |
 | `HostWeb`  | Base URL for stream links (auto-detected if empty) |
+| `Socks5`   | Optional SOCKS5 for reaching Telegram (e.g. `127.0.0.1:1080`, `socks5://user:pass@host:port`) if direct access to `api.telegram.org` is blocked or times out |
 | `WhiteIds` | Allowed user IDs (empty = allow all) |
 | `BlackIds` | Blocked user IDs |
 
@@ -55,10 +56,13 @@ Example:
 {
   "HostTG": "https://api.telegram.org",
   "HostWeb": "http://192.168.1.100:8090",
+  "Socks5": "127.0.0.1:1080",
   "WhiteIds": [123456789],
   "BlackIds": []
 }
 ```
+
+If your network cannot connect to Telegram’s API directly, run a local SOCKS5 proxy (for example [sing-box](https://github.com/SagerNet/sing-box), v2ray, or `ssh -D`) and set `Socks5` to its address.
 
 ## Commands
 

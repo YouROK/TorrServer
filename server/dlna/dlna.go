@@ -2,6 +2,7 @@ package dlna
 
 import (
 	"fmt"
+	"log/slog"
 	"net"
 	"os"
 	"os/user"
@@ -9,12 +10,13 @@ import (
 	"runtime"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/anacrolix/dms/dlna/dms"
-	"github.com/anacrolix/log"
 	"github.com/wlynxg/anet"
 
+	"server/netbind"
 	"server/settings"
 	"server/web/pages/template"
 )
@@ -22,14 +24,14 @@ import (
 var dmsServer *dms.Server
 
 func Start() {
-	logger := log.Default.WithNames("dlna")
+	logger := slog.Default().With("component", "dlna")
 	dmsServer = &dms.Server{
-		Logger: logger.WithNames("dms", "server"),
+		Logger: logger.With("dms", "server"),
 		Interfaces: func() (ifs []net.Interface) {
 			var err error
 			ifaces, err := anet.Interfaces()
 			if err != nil {
-				logger.Levelf(log.Error, "%v", err)
+				logger.Error("Failed to get network interfaces", "error", err)
 				return
 				// os.Exit(1) // avoid start on Android 13+
 			}
@@ -45,20 +47,16 @@ func Start() {
 		HTTPConn: func() net.Listener {
 			port := 9080
 			for {
-				logger.Levelf(log.Info, "Check dlna port %d", port)
-				m, err := net.Listen("tcp", settings.IP+":"+strconv.Itoa(port))
-				if m != nil {
-					m.Close()
-				}
-				if err == nil {
+				logger.Info("Checking dlna port", "port", port)
+				if err := netbind.CheckPort(settings.IPs, strconv.Itoa(port)); err == nil {
 					break
 				}
 				port++
 			}
-			logger.Levelf(log.Info, "Set dlna port %d", port)
-			conn, err := net.Listen("tcp", settings.IP+":"+strconv.Itoa(port))
+			logger.Info("Setting dlna port", "port", port)
+			conn, err := netbind.Listen(settings.IPs, strconv.Itoa(port))
 			if err != nil {
-				logger.Levelf(log.Error, "%v", err)
+				logger.Error("Failed to listen on bind port", "error", err)
 				os.Exit(1)
 			}
 			return conn
@@ -98,12 +96,12 @@ func Start() {
 	}
 
 	if err := dmsServer.Init(); err != nil {
-		logger.Levelf(log.Error, "error initing dms server: %v", err)
+		logger.Error("Error initializing dms server", "error", err)
 		os.Exit(1)
 	}
 	go func() {
 		if err := dmsServer.Run(); err != nil {
-			logger.Levelf(log.Error, "%v", err)
+			logger.Error("DMS server run crash", "error", err)
 			os.Exit(1)
 		}
 	}()
@@ -121,7 +119,10 @@ func onBrowse(path, rootObjectPath, host, userAgent string) (ret []interface{}, 
 		ret = getRoot()
 		return
 	} else if path == "/TR" {
-		ret = getTorrents()
+		ret = getTorrentCategories()
+		return
+	} else if strings.HasPrefix(path, "/TR/") {
+		ret = getTorrentsByCategory(path)
 		return
 	} else if isHashPath(path) {
 		ret = getTorrent(path, host)
@@ -141,7 +142,7 @@ func onBrowseMeta(path string, rootObjectPath string, host, userAgent string) (r
 }
 
 func getDefaultFriendlyName() string {
-	logger := log.Default.WithNames("dlna")
+	logger := slog.Default().With("component", "dlna")
 
 	if settings.BTsets.FriendlyName != "" {
 		return settings.BTsets.FriendlyName
@@ -151,13 +152,13 @@ func getDefaultFriendlyName() string {
 	userName := ""
 	user, err := user.Current()
 	if err != nil {
-		logger.Printf("getDefaultFriendlyName could not get username: %s", err)
+		logger.Warn("getDefaultFriendlyName could not get username", "error", err)
 	} else {
 		userName = user.Name
 	}
 	host, err := os.Hostname()
 	if err != nil {
-		logger.Printf("getDefaultFriendlyName could not get hostname: %s", err)
+		logger.Warn("getDefaultFriendlyName could not get hostname", "error", err)
 	}
 
 	if userName == "" && host == "" {

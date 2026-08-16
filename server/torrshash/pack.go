@@ -71,7 +71,7 @@ func unpack(data []byte) (*TorrsHash, error) {
 	for {
 		field, err := ReadField(zr)
 		if err == nil && field == nil {
-			//End on read
+			// End on read
 			return th, nil
 		}
 		if err != nil {

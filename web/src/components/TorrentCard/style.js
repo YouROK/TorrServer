@@ -224,6 +224,11 @@ export const StyledButton = styled.button`
       background: ${accentCardColor};
     }
 
+    :disabled {
+      cursor: wait;
+      opacity: 0.75;
+    }
+
     > :first-child {
       margin-right: 10px;
     }

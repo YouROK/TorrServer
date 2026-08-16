@@ -24,7 +24,7 @@ func IsDebug() bool {
 var (
 	tdb      TorrServerDB
 	Path     string
-	IP       string
+	IPs      []string
 	Port     string
 	Ssl      bool
 	SslPort  string

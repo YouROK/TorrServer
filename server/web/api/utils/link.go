@@ -8,11 +8,11 @@ import (
 	"net/http"
 	"net/url"
 	"runtime"
-	"server/torrshash"
 	"strings"
 	"time"
 
 	"server/log"
+	"server/torrshash"
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"

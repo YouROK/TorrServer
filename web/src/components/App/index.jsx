@@ -21,14 +21,13 @@ import useChangeLanguage from 'utils/useChangeLanguage'
 import { ThemeProvider as MuiThemeProvider } from '@material-ui/core/styles'
 import { ThemeProvider as StyledComponentsThemeProvider } from 'styled-components'
 import { useQuery } from 'react-query'
-import { getTorrents, isStandaloneApp } from 'utils/Utils'
+import { detectApplePlatform, getTorrents, isStandaloneApp } from 'utils/Utils'
 import GlobalStyle from 'style/GlobalStyle'
 import { /* lightTheme, */ THEME_MODES, useMaterialUITheme } from 'style/materialUISetup'
 import getStyledComponentsTheme from 'style/getStyledComponentsTheme'
-import checkIsIOS from 'utils/checkIsIOS'
 import SearchDialog from 'components/Search/SearchDialog'
 
-import { AppWrapper, AppHeader, HeaderToggle, StyledIconButton } from './style'
+import { AppWrapper, AppHeader, HeaderToggle, StyledIconButton, SidebarOverlay } from './style'
 import Sidebar from './Sidebar'
 import PWAFooter from './PWAFooter'
 import { PWAInstallationGuide } from './PWAInstallationGuide'
@@ -74,7 +73,7 @@ export default function App() {
 
             {/* Div100vh - iOS WebKit fix  */}
             <Div100vh>
-              <AppWrapper>
+              <AppWrapper isDrawerOpen={isDrawerOpen}>
                 <AppHeader>
                   <StyledIconButton edge='start' color='inherit' onClick={() => setIsDrawerOpen(!isDrawerOpen)}>
                     {isDrawerOpen ? <CloseIcon /> : <MenuIcon />}
@@ -140,6 +139,8 @@ export default function App() {
                   </div>
                 </AppHeader>
 
+                <SidebarOverlay isDrawerOpen={isDrawerOpen} onClick={() => setIsDrawerOpen(false)} />
+
                 <Sidebar
                   isOffline={isOffline}
                   isLoading={isLoading}
@@ -168,7 +169,11 @@ export default function App() {
 
                 {isSearchDialogOpen && <SearchDialog handleClose={() => setIsSearchDialogOpen(false)} />}
 
-                {snackbarIsClosed ? checkIsIOS() && !isStandaloneApp && <PWAInstallationGuide /> : <DonateSnackbar />}
+                {snackbarIsClosed ? (
+                  detectApplePlatform().isIOS && !isStandaloneApp && <PWAInstallationGuide />
+                ) : (
+                  <DonateSnackbar />
+                )}
               </AppWrapper>
             </Div100vh>
           </StyledComponentsThemeProvider>

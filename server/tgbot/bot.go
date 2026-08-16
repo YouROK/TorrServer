@@ -1,12 +1,16 @@
 package tgbot
 
 import (
+	"context"
 	"errors"
+	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
+	"golang.org/x/net/proxy"
 	tele "gopkg.in/telebot.v4"
 	"gopkg.in/telebot.v4/middleware"
 
@@ -14,6 +18,51 @@ import (
 	"server/tgbot/config"
 	up "server/tgbot/upload"
 )
+
+func newTelegramHTTPClient() *http.Client {
+	const timeout = 5 * time.Minute
+	trimmed := strings.TrimSpace(config.Cfg.Socks5)
+	if trimmed == "" {
+		return &http.Client{Timeout: timeout}
+	}
+	raw := trimmed
+	if !strings.Contains(raw, "://") {
+		raw = "socks5://" + raw
+	}
+	u, err := url.Parse(raw)
+	if err != nil {
+		log.TLogln("tg cfg Socks5 parse err, using direct", err)
+		return &http.Client{Timeout: timeout}
+	}
+	if u.Scheme != "socks5" {
+		log.TLogln("tg cfg Socks5: only socks5 is supported, got", u.Scheme)
+		return &http.Client{Timeout: timeout}
+	}
+	proxyHost := u.Host
+	if proxyHost == "" {
+		log.TLogln("tg cfg Socks5: empty host, using direct")
+		return &http.Client{Timeout: timeout}
+	}
+	var auth *proxy.Auth
+	if u.User != nil {
+		pw, _ := u.User.Password()
+		auth = &proxy.Auth{User: u.User.Username(), Password: pw}
+	}
+	socksDial, err := proxy.SOCKS5("tcp", proxyHost, auth, proxy.Direct)
+	if err != nil {
+		log.TLogln("tg socks5 dialer err, using direct", err)
+		return &http.Client{Timeout: timeout}
+	}
+	log.TLogln("tg using SOCKS5 proxy", proxyHost)
+	transport := &http.Transport{
+		Proxy: nil, // respect explicit socks only, not HTTP_PROXY, for this client
+		DialContext: func(ctx context.Context, network, address string) (net.Conn, error) {
+			_ = ctx
+			return socksDial.Dial(network, address)
+		},
+	}
+	return &http.Client{Transport: transport, Timeout: timeout}
+}
 
 func Start(token string) error {
 	config.LoadConfig()
@@ -24,7 +73,7 @@ func Start(token string) error {
 		Token:     token,
 		Poller:    &tele.LongPoller{Timeout: 5 * time.Minute},
 		ParseMode: tele.ModeHTML,
-		Client:    &http.Client{Timeout: 5 * time.Minute},
+		Client:    newTelegramHTTPClient(),
 	}
 
 	log.TLogln("tg bot starting")

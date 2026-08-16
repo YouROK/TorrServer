@@ -22,6 +22,9 @@ scriptname=$(basename "$(test -L "$0" && readlink "$0" || echo "$0")")
 SILENT_MODE=0
 USE_ROOT_USER=0
 ROOT_PROMPTED=0
+USE_GST_BINARY=0
+GST_BINARY_EXPLICIT=0
+DETECTED_GST_VARIANT=-1
 
 # Command-line state
 parsedCommand=""
@@ -43,8 +46,10 @@ readonly REPO_URL="https://github.com/YouROK/TorrServer"
 readonly REPO_API_URL="https://api.github.com/repos/YouROK/TorrServer"
 readonly VERSION_PREFIX="MatriX"
 readonly BINARY_NAME_PREFIX="TorrServer-linux"
+readonly BINARY_PLATFORM="linux"
 readonly MIN_GLIBC_VERSION="2.32"
 readonly MIN_VERSION_REQUIRING_GLIBC=136
+readonly MIN_VERSION_WITH_GST="141.10"
 readonly SYSCTL_BBR_FILE="/etc/sysctl.d/90-torrserver.conf"
 
 # Color support
@@ -79,7 +84,8 @@ declare -A MSG_EN=(
   # Checks
   [need_root]="Script must run as root or user with sudo privileges. Example: sudo $scriptname"
   [unsupported_arch]="Unsupported Arch. Can't continue."
-  [unsupported_os]="It looks like you are running this installer on a system other than Debian, Ubuntu, Fedora, CentOS, Amazon Linux, Oracle Linux or Arch Linux."
+  [unsupported_os]="It looks like you are running this installer on a system other than Debian, Ubuntu, Fedora, CentOS, Amazon Linux, Oracle Linux, ALT Linux or Arch Linux."
+  [pkg_manager_missing]="ERROR: Neither dnf nor yum is available. Cannot install RPM packages."
 
   # User management
   [user_exists]="User %s exists!"
@@ -103,6 +109,10 @@ declare -A MSG_EN=(
 
   # Installation
   [installing_packages]="Installing missing packages…"
+  [pkg_running]="Running: %s"
+  [pkg_install_failed]="ERROR: Failed to install system packages"
+  [pkg_install_log]="Full log saved to: %s"
+  [pkg_install_output]="Package manager output:"
   [install_configure]="Install and configure TorrServer…"
   [starting_service]="Starting TorrServer…"
   [install_complete]="TorrServer %s installed to %s"
@@ -190,6 +200,12 @@ declare -A MSG_EN=(
   [installing_specific_version]="Installing specific version: %s"
   [service_reconfigured_user]="Service reconfigured for user: %s"
   [install_first_required]="Please install TorrServer first using: %s --install"
+  [enable_gst]="Install GStreamer (gst) build with transcoding support? (available from version %s+)"
+  [gst_not_available]="ERROR: GStreamer build is not available for version %s (requires %s+)"
+  [gst_not_available_arch]="ERROR: GStreamer build is not available for architecture %s (requires amd64 or arm64)"
+  [gst_fallback_standard]="Target version %s has no GStreamer build; using standard binary"
+  [using_gst_build]="Using GStreamer (gst) build"
+  [using_standard_build]="Using standard build"
 )
 
 declare -A MSG_RU=(
@@ -206,7 +222,8 @@ declare -A MSG_RU=(
   # Checks
   [need_root]="Вам нужно запустить скрипт от root или пользователя с правами sudo. Пример: sudo $scriptname"
   [unsupported_arch]="Не поддерживаемая архитектура. Продолжение невозможно."
-  [unsupported_os]="Похоже, что вы запускаете этот установщик в системе отличной от Debian, Ubuntu, Fedora, CentOS, Amazon Linux, Oracle Linux или Arch Linux."
+  [unsupported_os]="Похоже, что вы запускаете этот установщик в системе отличной от Debian, Ubuntu, Fedora, CentOS, Amazon Linux, Oracle Linux, ALT Linux или Arch Linux."
+  [pkg_manager_missing]="ОШИБКА: Не найдены dnf или yum. Невозможно установить RPM-пакеты."
 
   # User management
   [user_exists]="пользователь %s найден!"
@@ -230,6 +247,10 @@ declare -A MSG_RU=(
 
   # Installation
   [installing_packages]="Устанавливаем недостающие пакеты…"
+  [pkg_running]="Выполняется: %s"
+  [pkg_install_failed]="ОШИБКА: Не удалось установить системные пакеты"
+  [pkg_install_log]="Полный журнал сохранён в: %s"
+  [pkg_install_output]="Вывод менеджера пакетов:"
   [install_configure]="Устанавливаем и настраиваем TorrServer…"
   [starting_service]="Запускаем службу TorrServer…"
   [install_complete]="TorrServer %s установлен в директории %s"
@@ -317,6 +338,12 @@ declare -A MSG_RU=(
   [installing_specific_version]="Установка конкретной версии: %s"
   [service_reconfigured_user]="Служба перенастроена для пользователя: %s"
   [install_first_required]="Пожалуйста, сначала установите TorrServer используя: %s --install"
+  [enable_gst]="Установить сборку GStreamer (gst) с поддержкой транскодирования? (доступна с версии %s+)"
+  [gst_not_available]="ОШИБКА: Сборка GStreamer недоступна для версии %s (требуется %s+)"
+  [gst_not_available_arch]="ОШИБКА: Сборка GStreamer недоступна для архитектуры %s (требуется amd64 или arm64)"
+  [gst_fallback_standard]="Для версии %s нет сборки GStreamer; используется стандартная сборка"
+  [using_gst_build]="Используется сборка GStreamer (gst)"
+  [using_standard_build]="Используется стандартная сборка"
 )
 
 # Translation function
@@ -352,13 +379,49 @@ colorize() {
   fi
 }
 
-# Highlight first letter of a word with specified color
+# Highlight first letter of a word with specified color (UTF-8 safe)
 highlightFirstLetter() {
   local color="$1"
   local word="$2"
   local first_char="${word:0:1}"
   local rest="${word:1}"
-  printf "%s%s" "$(colorize "$color" "$first_char")" "$rest"
+
+  # Under C/POSIX locales ${word:0:1} splits UTF-8 Cyrillic mid-sequence.
+  # That produces an invalid prompt for `read -p` and can hang (seen on Ubuntu).
+  # Only highlight a single ASCII letter; otherwise color the whole word.
+  case "$first_char" in
+    [A-Za-z])
+      printf "%s%s" "$(colorize "$color" "$first_char")" "$rest"
+      ;;
+    *)
+      printf "%s" "$(colorize "$color" "$word")"
+      ;;
+  esac
+}
+
+ensureUtf8Locale() {
+  local charmap
+  charmap=$(locale charmap 2>/dev/null || true)
+  if [[ "$charmap" == "UTF-8" ]]; then
+    return 0
+  fi
+
+  local candidate
+  for candidate in C.UTF-8 C.utf8 en_US.UTF-8 en_US.utf8; do
+    if LC_ALL="$candidate" locale charmap 2>/dev/null | grep -qx 'UTF-8'; then
+      export LC_ALL="$candidate"
+      export LANG="$candidate"
+      return 0
+    fi
+  done
+}
+
+trimInput() {
+  local value="$1"
+  # Trim leading/trailing whitespace without xargs (can fail in restricted envs)
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  printf '%s' "$value"
 }
 
 isRoot() {
@@ -366,7 +429,126 @@ isRoot() {
 }
 
 getBinaryName() {
-  echo "${BINARY_NAME_PREFIX}-${architecture}"
+  if [[ $USE_GST_BINARY -eq 1 ]]; then
+    echo "TorrServer-gst-${BINARY_PLATFORM}-${architecture}"
+  else
+    echo "${BINARY_NAME_PREFIX}-${architecture}"
+  fi
+}
+
+getAlternateBinaryName() {
+  if [[ $USE_GST_BINARY -eq 1 ]]; then
+    echo "${BINARY_NAME_PREFIX}-${architecture}"
+  else
+    echo "TorrServer-gst-${BINARY_PLATFORM}-${architecture}"
+  fi
+}
+
+getReleaseVersionNumber() {
+  local target_version="$1"
+  echo "${target_version#"${VERSION_PREFIX}".}"
+}
+
+supportsGstArch() {
+  [[ "$architecture" == "amd64" || "$architecture" == "arm64" ]]
+}
+
+supportsGstBinary() {
+  local target_version="$1"
+  local ver
+
+  supportsGstArch || return 1
+  ver=$(getReleaseVersionNumber "$target_version")
+  [[ -n "$ver" ]] && compareVersions "$ver" "$MIN_VERSION_WITH_GST"
+}
+
+reportGstUnavailableError() {
+  local target_version="$1"
+
+  if ! supportsGstArch; then
+    echo " - $(colorize red "$(msg gst_not_available_arch "$architecture")")"
+  else
+    echo " - $(colorize red "$(msg gst_not_available "$target_version" "$MIN_VERSION_WITH_GST")")"
+  fi
+  exit 1
+}
+
+detectInstalledBinaryVariant() {
+  if [[ $GST_BINARY_EXPLICIT -eq 1 ]]; then
+    return
+  fi
+
+  local gst_bin="TorrServer-gst-${BINARY_PLATFORM}-${architecture}"
+  local std_bin="${BINARY_NAME_PREFIX}-${architecture}"
+
+  if [[ -f "$dirInstall/$gst_bin" ]] && [[ $(stat -c%s "$dirInstall/$gst_bin" 2>/dev/null) -ne 0 ]]; then
+    DETECTED_GST_VARIANT=1
+    USE_GST_BINARY=1
+  elif [[ -f "$dirInstall/$std_bin" ]] && [[ $(stat -c%s "$dirInstall/$std_bin" 2>/dev/null) -ne 0 ]]; then
+    DETECTED_GST_VARIANT=0
+    USE_GST_BINARY=0
+  fi
+}
+
+removeAlternateBinary() {
+  local alt_bin
+  alt_bin=$(getAlternateBinaryName)
+  if [[ -f "$dirInstall/$alt_bin" ]]; then
+    rm -f "$dirInstall/$alt_bin"
+  fi
+}
+
+configureGstBinary() {
+  local target_version="$1"
+
+  if [[ $GST_BINARY_EXPLICIT -eq 1 ]]; then
+    if ! supportsGstBinary "$target_version"; then
+      reportGstUnavailableError "$target_version"
+    fi
+    USE_GST_BINARY=1
+    if [[ $SILENT_MODE -eq 0 ]]; then
+      echo " - $(msg using_gst_build)"
+    fi
+    return
+  fi
+
+  if ! supportsGstBinary "$target_version"; then
+    if [[ $USE_GST_BINARY -eq 1 ]]; then
+      USE_GST_BINARY=0
+      if [[ $SILENT_MODE -eq 0 ]]; then
+        echo " - $(msg gst_fallback_standard "$target_version")"
+      fi
+    else
+      USE_GST_BINARY=0
+    fi
+    return
+  fi
+
+  if [[ $SILENT_MODE -eq 1 ]]; then
+    if [[ $DETECTED_GST_VARIANT -eq 1 ]]; then
+      USE_GST_BINARY=1
+    else
+      USE_GST_BINARY=0
+    fi
+    return
+  fi
+
+  local recommended="n"
+  if [[ $DETECTED_GST_VARIANT -eq 1 ]]; then
+    recommended="y"
+  fi
+
+  if promptYesNo "$(msg enable_gst "$MIN_VERSION_WITH_GST")" "$recommended" "y"; then
+    USE_GST_BINARY=1
+  else
+    USE_GST_BINARY=0
+  fi
+
+  if [[ $USE_GST_BINARY -eq 1 ]]; then
+    echo " - $(msg using_gst_build)"
+  else
+    echo " - $(msg using_standard_build)"
+  fi
 }
 
 getVersionTag() {
@@ -386,8 +568,11 @@ buildDownloadUrl() {
 }
 
 getLang() {
-  lang=$(locale | grep LANG | cut -d= -f2 | tr -d '"' | cut -d_ -f1)
-  if [[ $lang != "ru" ]]; then
+  local locale_lang=""
+  locale_lang=$(locale 2>/dev/null | grep -E '^LANG=' | head -n1 | cut -d= -f2 | tr -d '"' | cut -d_ -f1 || true)
+  if [[ "$locale_lang" == "ru" ]]; then
+    lang="ru"
+  else
     lang="en"
   fi
 }
@@ -396,13 +581,13 @@ getIP() {
   local ip="localhost"
 
   if command -v dig >/dev/null 2>&1; then
-    ip=$(dig +short myip.opendns.com @resolver1.opendns.com 2>/dev/null || echo "")
+    ip=$(dig +time=2 +tries=1 +short myip.opendns.com @resolver1.opendns.com 2>/dev/null || echo "")
     if [[ -z "$ip" ]]; then
       ip="localhost"
     fi
   elif command -v host >/dev/null 2>&1; then
     local host_output=""
-    host_output=$(host myip.opendns.com resolver1.opendns.com 2>/dev/null || true)
+    host_output=$(host -W 2 myip.opendns.com resolver1.opendns.com 2>/dev/null || true)
     ip=$(printf "%s\n" "$host_output" | tail -n1 | awk '{print $NF}')
     if [[ -z "$ip" ]]; then
       ip="localhost"
@@ -452,7 +637,9 @@ promptYesNo() {
   no_text="$(highlightFirstLetter "$no_color" "$no_word")"
 
   local answer
-  IFS= read -r -p " $prompt ($yes_text/$no_text) " answer </dev/tty
+  # Print prompt to stderr so it stays visible when the caller uses $(...)
+  printf ' %s (%s/%s) ' "$prompt" "$yes_text" "$no_text" >&2
+  IFS= read -r answer </dev/tty
 
   # Support both English (Yy) and Russian (Дд) for Yes
   if [[ "$answer" =~ ^[YyДд] ]]; then
@@ -503,8 +690,11 @@ promptYesNoDelete() {
   no_text="$(highlightFirstLetter "$no_color" "$no_word")"
 
   local answer
-  IFS= read -r -p " $prompt ($yes_text/$no_text) " answer </dev/tty
-  answer=$(echo "$answer" | tr '[:upper:]' '[:lower:]' | xargs)
+  # Print prompt to stderr so it stays visible when the caller uses $(...)
+  printf ' %s (%s/%s) ' "$prompt" "$yes_text" "$no_text" >&2
+  IFS= read -r answer </dev/tty
+  answer=$(printf '%s' "$answer" | tr '[:upper:]' '[:lower:]')
+  answer=$(trimInput "$answer")
 
   # Check for Delete (case-insensitive, supports both English and Russian)
   if [[ "$answer" == "delete" ]] || [[ "$answer" == "удалить" ]] || [[ "$answer" == "удаление" ]]; then
@@ -526,7 +716,8 @@ promptInput() {
   fi
 
   local answer
-  IFS= read -r -p " $prompt " answer </dev/tty
+  printf ' %s ' "$prompt" >&2
+  IFS= read -r answer </dev/tty
   echo "${answer:-$default}"
 }
 
@@ -562,7 +753,7 @@ systemctlCmd() {
 #############################################
 
 getLatestRelease() {
-  curl -s "${REPO_API_URL}/releases/latest" |
+  curl -s --connect-timeout 10 --max-time 30 "${REPO_API_URL}/releases/latest" |
   grep -iE '"tag_name":|"version":' |
   sed -E 's/.*"([^"]+)".*/\1/' |
   head -n1
@@ -573,7 +764,7 @@ getSpecificRelease() {
   local tag_name
   tag_name=$(getVersionTag "$version")
   local response
-  response=$(curl -s "${REPO_API_URL}/releases/tags/$tag_name")
+  response=$(curl -s --connect-timeout 10 --max-time 30 "${REPO_API_URL}/releases/tags/$tag_name")
 
   if echo "$response" | grep -q '"tag_name"'; then
     echo "$tag_name"
@@ -602,7 +793,7 @@ downloadBinary() {
   local destination="$2"
   local version_info="$3"
 
-  local curl_args=(-L)
+  local curl_args=(-L --connect-timeout 10 --max-time 600)
 
   if [[ $SILENT_MODE -eq 0 ]]; then
     echo " - $(msg downloading) $version_info..."
@@ -789,10 +980,58 @@ delUser() {
 #     OS DETECTION & PACKAGES
 #############################################
 
+reportPackageInstallFailure() {
+  local cmd_display="$1"
+  local log_file="$2"
+
+  echo ""
+  echo " $(colorize red "$(msg pkg_install_failed)")"
+  echo " - $(msg pkg_running "$cmd_display")"
+  printf ' - %s\n' "$(msg pkg_install_log "$log_file")"
+  echo ""
+  echo " $(msg pkg_install_output)"
+  echo " -------------------------------------------------------------"
+  if [[ -s "$log_file" ]]; then
+    cat "$log_file" >&2
+  else
+    echo " (empty log)" >&2
+  fi
+  echo " -------------------------------------------------------------"
+  echo ""
+}
+
+runPackageManagerCommand() {
+  local log_file="$1"
+  local cmd_display="$2"
+  shift 2
+  local rc=0
+
+  if [[ $SILENT_MODE -eq 0 ]]; then
+    echo " - $(msg pkg_running "$cmd_display")"
+  fi
+
+  set +e
+  if [[ $SILENT_MODE -eq 0 ]]; then
+    "$@" 2>&1 | tee -a "$log_file"
+    rc=${PIPESTATUS[0]}
+  else
+    "$@" >>"$log_file" 2>&1
+    rc=$?
+  fi
+  set -e
+
+  if [[ $rc -ne 0 ]]; then
+    reportPackageInstallFailure "$cmd_display" "$log_file"
+    exit 1
+  fi
+}
+
 installPackages() {
   local pkg_type="$1"
   shift
   local packages=("$@")
+  local log_file
+  log_file=$(mktemp /tmp/torrserver-pkg-install.XXXXXX.log)
 
   case "$pkg_type" in
     deb)
@@ -806,8 +1045,23 @@ installPackages() {
         if [[ $SILENT_MODE -eq 0 ]]; then
           echo " $(msg installing_packages)"
         fi
-        apt update >/dev/null 2>&1
-        apt -y install "${missing[@]}"
+        runPackageManagerCommand "$log_file" "apt update" apt update
+        runPackageManagerCommand "$log_file" "apt install ${missing[*]}" apt -y install "${missing[@]}"
+      fi
+      ;;
+    apt-rpm)
+      local missing=()
+      for pkg in "${packages[@]}"; do
+        if ! rpm -q "$pkg" >/dev/null 2>&1; then
+          missing+=("$pkg")
+        fi
+      done
+      if [[ ${#missing[@]} -gt 0 ]]; then
+        if [[ $SILENT_MODE -eq 0 ]]; then
+          echo " $(msg installing_packages)"
+        fi
+        runPackageManagerCommand "$log_file" "apt-get update" apt-get update
+        runPackageManagerCommand "$log_file" "apt-get install ${missing[*]}" apt-get -y install "${missing[@]}"
       fi
       ;;
     rpm)
@@ -822,14 +1076,17 @@ installPackages() {
         fi
       done
       if [[ $needs_update -eq 1 ]]; then
+        if [[ $SILENT_MODE -eq 0 ]]; then
+          echo " $(msg installing_packages)"
+        fi
         if [[ "$pkg_manager" == "dnf" ]]; then
-          dnf makecache -q >/dev/null 2>&1 || true
+          runPackageManagerCommand "$log_file" "dnf makecache" dnf makecache -q
         elif [[ "$pkg_manager" == "yum" ]]; then
-          yum makecache fast -q >/dev/null 2>&1 || true
+          runPackageManagerCommand "$log_file" "yum makecache fast" yum makecache fast -q
         fi
         for pkg in "${packages[@]}"; do
           if [[ -z "$(rpm -qa "$pkg" 2>/dev/null)" ]]; then
-            $pkg_manager -y install "$pkg"
+            runPackageManagerCommand "$log_file" "$pkg_manager install $pkg" "$pkg_manager" -y install "$pkg"
           fi
         done
       fi
@@ -842,22 +1099,110 @@ installPackages() {
         fi
       done
       if [[ ${#missing[@]} -gt 0 ]]; then
-        pacman -Sy --noconfirm >/dev/null 2>&1
-        pacman -S --noconfirm "${missing[@]}"
+        if [[ $SILENT_MODE -eq 0 ]]; then
+          echo " $(msg installing_packages)"
+        fi
+        runPackageManagerCommand "$log_file" "pacman -Sy" pacman -Sy --noconfirm
+        runPackageManagerCommand "$log_file" "pacman -S ${missing[*]}" pacman -S --noconfirm "${missing[@]}"
       fi
       ;;
   esac
+
+  rm -f "$log_file"
+}
+
+isAltLinux() {
+  if [[ -e /etc/altlinux-release ]]; then
+    return 0
+  fi
+  if [[ -r /etc/os-release ]] && grep -qE '^ID=["'\'']?altlinux["'\'']?$' /etc/os-release 2>/dev/null; then
+    return 0
+  fi
+  return 1
 }
 
 getRpmPackageManager() {
-  local version_id="$1"
-
-  if [[ "$version_id" =~ ^[0-9]+$ ]] && [[ $version_id -ge 8 ]] && command -v dnf >/dev/null 2>&1; then
+  if command -v dnf >/dev/null 2>&1; then
     echo "dnf"
-  elif command -v dnf >/dev/null 2>&1; then
-    echo "dnf"
-  else
+  elif command -v yum >/dev/null 2>&1; then
     echo "yum"
+  else
+    echo " $(msg pkg_manager_missing)" >&2
+    exit 1
+  fi
+}
+
+installGStreamerPackages() {
+  if [[ $USE_GST_BINARY -ne 1 ]]; then
+    return
+  fi
+
+  if [[ -e /etc/debian_version ]]; then
+    installPackages deb \
+      libgstreamer1.0-0 \
+      libgstreamer-plugins-base1.0-0 \
+      gstreamer1.0-plugins-base \
+      gstreamer1.0-plugins-good \
+      gstreamer1.0-plugins-bad \
+      gstreamer1.0-plugins-base-apps \
+      gstreamer1.0-plugins-ugly \
+      gstreamer1.0-libav \
+      gstreamer1.0-tools \
+      ocl-icd-libopencl1 \
+      ca-certificates
+    return
+  fi
+
+  if isAltLinux; then
+    installPackages apt-rpm \
+      libgstreamer1.0 \
+      gst-plugins-base1.0 \
+      gst-plugins-good1.0 \
+      gst-plugins-bad1.0 \
+      gst-plugins-ugly1.0 \
+      gst-libav \
+      ocl-icd \
+      ca-certificates
+    return
+  fi
+
+  if [[ -e /etc/system-release ]]; then
+    # shellcheck source=/dev/null
+    source /etc/os-release
+    local pkg_manager
+    if [[ ${ID:-} == "amzn" ]]; then
+      if ! command -v yum >/dev/null 2>&1; then
+        echo " $(msg pkg_manager_missing)" >&2
+        exit 1
+      fi
+      pkg_manager="yum"
+    else
+      pkg_manager=$(getRpmPackageManager)
+    fi
+
+    installPackages rpm "$pkg_manager" \
+      gstreamer1 \
+      gstreamer1-plugins-base \
+      gstreamer1-plugins-base-tools \
+      gstreamer1-plugins-good \
+      gstreamer1-plugins-bad-free \
+      gstreamer1-plugins-ugly-free \
+      gstreamer1-plugin-libav \
+      ocl-icd \
+      ca-certificates
+    return
+  fi
+
+  if [[ -e /etc/arch-release ]]; then
+    installPackages arch \
+      gstreamer \
+      gst-plugins-base \
+      gst-plugins-good \
+      gst-plugins-bad \
+      gst-plugins-ugly \
+      gst-libav \
+      ocl-icd \
+      ca-certificates
   fi
 }
 
@@ -902,6 +1247,9 @@ checkOS() {
 
     installPackages deb curl iputils-ping dnsutils
 
+  elif isAltLinux; then
+    installPackages apt-rpm curl iputils bind-utils
+
   elif [[ -e /etc/system-release ]]; then
     # shellcheck source=/dev/null
     source /etc/os-release
@@ -909,32 +1257,36 @@ checkOS() {
 
     case "$ID" in
       fedora)
-        pkg_manager=$(getRpmPackageManager "${VERSION_ID%%.*}")
+        pkg_manager=$(getRpmPackageManager)
         installPackages rpm "$pkg_manager" curl iputils bind-utils
         ;;
       centos|redhat)
         validateOSVersion "CentOS/RedHat" "7|8|9|10" "$VERSION_ID"
-        pkg_manager=$(getRpmPackageManager "${VERSION_ID%%.*}")
+        pkg_manager=$(getRpmPackageManager)
         installPackages rpm "$pkg_manager" curl iputils bind-utils
         ;;
       rocky)
         validateOSVersion "RockyLinux" "8|9|10" "$VERSION_ID"
-        pkg_manager=$(getRpmPackageManager "${VERSION_ID%%.*}")
+        pkg_manager=$(getRpmPackageManager)
         installPackages rpm "$pkg_manager" curl iputils bind-utils
         ;;
       almalinux)
         validateOSVersion "AlmaLinux" "8|9|10" "$VERSION_ID"
-        pkg_manager=$(getRpmPackageManager "${VERSION_ID%%.*}")
+        pkg_manager=$(getRpmPackageManager)
         installPackages rpm "$pkg_manager" curl iputils bind-utils
         ;;
       ol)
         validateOSVersion "Oracle Linux" "8|9|10" "$VERSION_ID"
-        pkg_manager=$(getRpmPackageManager "${VERSION_ID%%.*}")
+        pkg_manager=$(getRpmPackageManager)
         installPackages rpm "$pkg_manager" curl iputils bind-utils
         ;;
       amzn)
         if [[ $VERSION_ID != "2" ]]; then
           validateOSVersion "Amazon Linux" "2" "$VERSION_ID"
+        fi
+        if ! command -v yum >/dev/null 2>&1; then
+          echo " $(msg pkg_manager_missing)" >&2
+          exit 1
         fi
         installPackages rpm yum curl iputils bind-utils
         ;;
@@ -987,6 +1339,8 @@ checkInstalled() {
       username="root"
     fi
   fi
+
+  detectInstalledBinaryVariant
 
   local binName
   binName=$(getBinaryName)
@@ -1516,6 +1870,10 @@ installTorrServer() {
     exit 1
   fi
 
+  detectInstalledBinaryVariant
+  configureGstBinary "$target_version"
+  installGStreamerPackages
+
   # Check if already installed and up to date
   if checkInstalled; then
       if ! checkInstalledVersion; then
@@ -1578,6 +1936,7 @@ installTorrServer() {
     fi
     downloadBinary "$urlBin" "$dirInstall/$binName" "$target_version"
   fi
+  removeAlternateBinary
 
   # Create service and config files
   createServiceFile
@@ -1659,6 +2018,10 @@ updateTorrServerVersion() {
     return 1
   fi
 
+  detectInstalledBinaryVariant
+  configureGstBinary "$target_version"
+  installGStreamerPackages
+
   if ! systemctlCmd stop "$serviceName.service"; then
     :
   fi
@@ -1673,6 +2036,7 @@ updateTorrServerVersion() {
   fi
 
   downloadBinary "$urlBin" "$dirInstall/$binName" "$target_version"
+  removeAlternateBinary
 
   # Update service file to reflect user change
   if [[ -f "$dirInstall/$serviceName.service" ]]; then
@@ -1849,6 +2213,7 @@ Commands:
     help
 
 Options:
+  --gst                             Install GStreamer build (141.10+, amd64/arm64 only)
   --root                            Run service as root user
   --silent                          Non-interactive mode with defaults
 
@@ -1858,6 +2223,9 @@ Examples:
 
   # Install specific version as root user silently
   sudo $scriptname --install 135 --root --silent
+
+  # Install GStreamer build
+  sudo $scriptname --install --gst
 
   # Update with silent mode
   sudo $scriptname --update --silent
@@ -1960,6 +2328,11 @@ parseArguments() {
         USE_ROOT_USER=1
         shift
         ;;
+      --gst)
+        USE_GST_BINARY=1
+        GST_BINARY_EXPLICIT=1
+        shift
+        ;;
       --silent)
         SILENT_MODE=1
         shift
@@ -1978,6 +2351,7 @@ parseArguments() {
 #############################################
 
 main() {
+  ensureUtf8Locale
   getLang
 
   parseArguments "$@"

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	tele "gopkg.in/telebot.v4"
+	"server/bonjour"
 	"server/dlna"
 	"server/rutor"
 	"server/settings"
@@ -124,6 +125,7 @@ func presetConfirm(c tele.Context, confirm string) error {
 	if p.IsDef {
 		torr.SetDefSettings()
 		dlna.Stop()
+		bonjour.Stop()
 		rutor.Stop()
 		rutor.Start()
 		return c.Send(tr(uid, "settings_reset_done"))
@@ -135,6 +137,10 @@ func presetConfirm(c tele.Context, confirm string) error {
 	dlna.Stop()
 	if p.Sets.EnableDLNA {
 		dlna.Start()
+	}
+	bonjour.Stop()
+	if p.Sets.EnableBonjour {
+		bonjour.Start()
 	}
 	rutor.Stop()
 	rutor.Start()

@@ -3,10 +3,11 @@ package api
 import (
 	"net/http"
 	"net/url"
-	"server/log"
-	"server/torrshash"
 	"strconv"
 	"strings"
+
+	"server/log"
+	"server/torrshash"
 
 	"server/torr"
 	"server/torr/state"

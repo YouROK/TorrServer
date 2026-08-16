@@ -5,6 +5,12 @@ import ptt from 'parse-torrent-title'
 import { Button } from '@material-ui/core'
 import CopyToClipboard from 'react-copy-to-clipboard'
 import { useTranslation } from 'react-i18next'
+import {
+  gstreamerHeartbeatUrl,
+  gstreamerMasterUrl,
+  shouldUseGStreamerPlayer,
+  useGStreamerRuntime,
+} from 'utils/GStreamer'
 
 import VideoPlayer from '../../VideoPlayer'
 import { TableStyle, ShortTableWrapper, ShortTable } from './style'
@@ -12,17 +18,36 @@ import { TableStyle, ShortTableWrapper, ShortTable } from './style'
 const { memo, useState } = require('react')
 
 // russian episode detection support
-ptt.addHandler('episode', /(\d{1,4})[- |. ]серия|серия[- |. ](\d{1,4})/i, { type: 'integer' })
-ptt.addHandler('season', /sezon[- |. ](\d{1,3})|(\d{1,3})[- |. ]sezon/i, { type: 'integer' })
-ptt.addHandler('season', /сезон[- |. ](\d{1,3})|(\d{1,3})[- |. ]сезон/i, { type: 'integer' })
+ptt.addHandler('episode', /(\d{1,4})[- |. ]серия|серия[- |. ](\d{1,4})/i, {
+  type: 'integer',
+})
+ptt.addHandler('season', /sezon[- |. ](\d{1,3})|(\d{1,3})[- |. ]sezon/i, {
+  type: 'integer',
+})
+ptt.addHandler('season', /сезон[- |. ](\d{1,3})|(\d{1,3})[- |. ]сезон/i, {
+  type: 'integer',
+})
 
 const Table = memo(
   ({ playableFileList, viewedFileList, selectedSeason, seasonAmount, hash }) => {
     const { t } = useTranslation()
-    const [isSupported, setIsSupported] = useState(true)
+    const [unsupportedPlayers, setUnsupportedPlayers] = useState({})
+    const gstRuntime = useGStreamerRuntime()
     const preloadBuffer = fileId => fetch(`${streamHost()}?link=${hash}&index=${fileId}&preload`)
     const getFileLink = (path, id) =>
       `${streamHost()}/${encodeURIComponent(path.split('\\').pop().split('/').pop())}?link=${hash}&index=${id}&play`
+    const getPlayer = (path, id) => {
+      const hls = shouldUseGStreamerPlayer(path, gstRuntime)
+      return {
+        key: `${id}:${hls ? 'gst' : 'stream'}`,
+        src: hls ? gstreamerMasterUrl(hash, id) : getFileLink(path, id),
+        hls,
+        heartbeatSrc: hls ? gstreamerHeartbeatUrl(hash) : '',
+      }
+    }
+    const markPlayerUnsupported = key => {
+      setUnsupportedPlayers(current => ({ ...current, [key]: true }))
+    }
     const fileHasEpisodeText = !!playableFileList?.find(({ path }) => ptt.parse(path).episode)
     const fileHasSeasonText = !!playableFileList?.find(({ path }) => ptt.parse(path).season)
     const fileHasResolutionText = !!playableFileList?.find(({ path }) => ptt.parse(path).resolution)
@@ -32,11 +57,14 @@ const Table = memo(
 
     const isVlcUsed = JSON.parse(localStorage.getItem('isVlcUsed')) ?? false
     const isInfuseUsed = JSON.parse(localStorage.getItem('isInfuseUsed')) ?? false
+    const isSenPlayerUsed = JSON.parse(localStorage.getItem('isSenPlayerUsed')) ?? false
     const isIinaUsed = JSON.parse(localStorage.getItem('isIinaUsed')) ?? false
     const isStandalone = detectStandaloneApp()
     const isMac = isMacOS()
     const isApple = isAppleDevice()
-    const shouldShowOpenLink = !isStandalone || (!(isApple && isInfuseUsed) && !isVlcUsed && !(isMac && isIinaUsed))
+    const shouldShowOpenLink =
+      !isStandalone ||
+      (!(isApple && isInfuseUsed) && !(isApple && isSenPlayerUsed) && !isVlcUsed && !(isMac && isIinaUsed))
 
     return !playableFileList?.length ? (
       'No playable files in this torrent'
@@ -60,8 +88,11 @@ const Table = memo(
               const { title, resolution, episode, season } = ptt.parse(path)
               const isViewed = viewedFileList?.includes(id)
               const link = getFileLink(path, id)
+              const player = getPlayer(path, id)
+              const playerSupported = !unsupportedPlayers[player.key]
               const fullLink = new URL(link, window.location.href)
               const infuseLink = `infuse://x-callback-url/play?url=${encodeURIComponent(fullLink)}`
+              const senPlayerLink = `senplayer://x-callback-url/play?url=${encodeURIComponent(fullLink)}`
               const iinaLink = `iina://weblink?url=${encodeURIComponent(fullLink)}`
 
               return (
@@ -85,6 +116,13 @@ const Table = memo(
                             </Button>
                           </a>
                         )}
+                        {isApple && isSenPlayerUsed && (
+                          <a style={{ textDecoration: 'none' }} href={senPlayerLink}>
+                            <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
+                              {t('SenPlayer')}
+                            </Button>
+                          </a>
+                        )}
                         {isVlcUsed && (
                           <a style={{ textDecoration: 'none' }} href={`vlc://${fullLink}`}>
                             <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
@@ -99,8 +137,15 @@ const Table = memo(
                             </Button>
                           </a>
                         )}
-                        {isSupported ? (
-                          <VideoPlayer title={title} videoSrc={link} onNotSupported={() => setIsSupported(false)} />
+                        {playerSupported ? (
+                          <VideoPlayer
+                            title={title}
+                            videoSrc={player.src}
+                            downloadSrc={link}
+                            hls={player.hls}
+                            heartbeatSrc={player.heartbeatSrc}
+                            onNotSupported={() => markPlayerUnsupported(player.key)}
+                          />
                         ) : (
                           shouldShowOpenLink && (
                             <a style={{ textDecoration: 'none' }} href={link} target='_blank' rel='noreferrer'>
@@ -115,7 +160,7 @@ const Table = memo(
                             {t('CopyLink')}
                           </Button>
                         </CopyToClipboard>
-                        {isSupported && shouldShowOpenLink && (
+                        {playerSupported && shouldShowOpenLink && (
                           <a style={{ textDecoration: 'none' }} href={link} target='_blank' rel='noreferrer'>
                             <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
                               {t('OpenLink')}
@@ -136,8 +181,11 @@ const Table = memo(
             const { title, resolution, episode, season } = ptt.parse(path)
             const isViewed = viewedFileList?.includes(id)
             const link = getFileLink(path, id)
+            const player = getPlayer(path, id)
+            const playerSupported = !unsupportedPlayers[player.key]
             const fullLink = new URL(link, window.location.href)
             const infuseLink = `infuse://x-callback-url/play?url=${encodeURIComponent(fullLink)}`
+            const senPlayerLink = `senplayer://x-callback-url/play?url=${encodeURIComponent(fullLink)}`
             const iinaLink = `iina://weblink?url=${encodeURIComponent(fullLink)}`
 
             return (
@@ -189,6 +237,14 @@ const Table = memo(
                       </a>
                     )}
 
+                    {isApple && isSenPlayerUsed && (
+                      <a style={{ textDecoration: 'none' }} href={senPlayerLink}>
+                        <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
+                          {t('SenPlayer')}
+                        </Button>
+                      </a>
+                    )}
+
                     {isVlcUsed && (
                       <a style={{ textDecoration: 'none' }} href={`vlc://${fullLink}`}>
                         <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
@@ -203,6 +259,17 @@ const Table = memo(
                           IINA
                         </Button>
                       </a>
+                    )}
+
+                    {player.hls && playerSupported && (
+                      <VideoPlayer
+                        title={title}
+                        videoSrc={player.src}
+                        downloadSrc={link}
+                        hls
+                        heartbeatSrc={player.heartbeatSrc}
+                        onNotSupported={() => markPlayerUnsupported(player.key)}
+                      />
                     )}
 
                     {shouldShowOpenLink && (

@@ -7,8 +7,8 @@ import (
 
 	"github.com/anacrolix/torrent"
 
-	sets "server/settings"
 	"server/log"
+	sets "server/settings"
 	"server/tgbot/config"
 	"server/torr"
 	"server/torr/state"

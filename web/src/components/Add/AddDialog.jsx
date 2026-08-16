@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Button from '@material-ui/core/Button'
-import { torrentsHost, torrentUploadHost } from 'utils/Hosts'
+import { torrentsHost } from 'utils/Hosts'
 import axios from 'axios'
 import { useTranslation } from 'react-i18next'
 import debounce from 'lodash/debounce'
@@ -26,6 +26,7 @@ import {
 import { Content } from './style'
 import RightSideComponent from './RightSideComponent'
 import LeftSideComponent from './LeftSideComponent'
+import MultiAddDialog from './MultiAddDialog'
 
 export default function AddDialog({
   handleClose,
@@ -49,7 +50,6 @@ export default function AddDialog({
   const [posterList, setPosterList] = useState()
   const [isUserInteractedWithPoster, setIsUserInteractedWithPoster] = useState(isEditMode)
   const [currentLang] = useChangeLanguage()
-  const [selectedFile, setSelectedFile] = useState()
   const [posterSearchLanguage, setPosterSearchLanguage] = useState(currentLang === 'ru' ? 'ru' : 'en')
   const [isSaving, setIsSaving] = useState(false)
   const [skipDebounce, setSkipDebounce] = useState(false)
@@ -57,30 +57,29 @@ export default function AddDialog({
   const [currentSourceHash, setCurrentSourceHash] = useState()
   const editModePosterSearchedRef = useRef(false)
 
+  // When files are dropped/selected, switch to MultiAddDialog
+  const [multiFiles, setMultiFiles] = useState(null)
+
   const ref = useOnStandaloneAppOutsideClick(handleClose)
 
   const { data: torrents } = useQuery('torrents', getTorrents, { retry: 1, refetchInterval: 1000 })
 
   useEffect(() => {
-    // getting hash from added torrent source
-    parseTorrent.remote(selectedFile || torrentSource, (_, { infoHash } = {}) => setCurrentSourceHash(infoHash))
-  }, [selectedFile, torrentSource])
+    parseTorrent.remote(torrentSource, (_, { infoHash } = {}) => setCurrentSourceHash(infoHash))
+  }, [torrentSource])
 
   useEffect(() => {
-    // checking if torrent already exists in DB
-    if (!setCurrentSourceHash) return
+    if (!currentSourceHash || !torrents) return
 
     const allHashes = torrents.map(({ hash }) => hash)
     setIsHashAlreadyExists(allHashes.includes(currentSourceHash))
   }, [currentSourceHash, torrents])
 
   useEffect(() => {
-    // closing dialog when torrent successfully added in DB
-    if (!isSaving) return
+    if (!isSaving || !torrents) return
 
     const allHashes = torrents.map(({ hash }) => hash)
     allHashes.includes(currentSourceHash) && handleClose()
-    // FIXME! check api reply on add links
     const linkRegex = /^(http(s?)):\/\/.*/i
     torrentSource.match(linkRegex) !== null && handleClose()
   }, [isSaving, torrents, torrentSource, currentSourceHash, handleClose])
@@ -88,7 +87,7 @@ export default function AddDialog({
   const fullScreen = useMediaQuery('@media (max-width:930px)')
 
   const updateTitleFromSource = useCallback(() => {
-    parseTorrentTitle(selectedFile || torrentSource, ({ parsedTitle, originalName }) => {
+    parseTorrentTitle(torrentSource, ({ parsedTitle, originalName }) => {
       if (!originalName) return
 
       setSkipDebounce(true)
@@ -97,10 +96,10 @@ export default function AddDialog({
       setOriginalTorrentTitle(originalName)
       setParsedTitle(parsedTitle)
     })
-  }, [selectedFile, torrentSource])
+  }, [torrentSource])
 
   useEffect(() => {
-    if (!selectedFile && !torrentSource) {
+    if (!torrentSource) {
       setTitle('')
       setOriginalTorrentTitle('')
       setParsedTitle('')
@@ -109,7 +108,7 @@ export default function AddDialog({
       removePoster()
       setIsUserInteractedWithPoster(false)
     }
-  }, [selectedFile, torrentSource])
+  }, [torrentSource])
 
   const removePoster = () => {
     setIsPosterUrlCorrect(false)
@@ -136,7 +135,6 @@ export default function AddDialog({
         correctImage ? setIsPosterUrlCorrect(true) : removePoster()
       })
     }
-    // This is needed only on mount. Do not remove line below
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -183,12 +181,11 @@ export default function AddDialog({
 
     setIsTorrentSourceCorrect(true)
 
-    // if torrentSource is updated then we are getting title from the source
     const torrentSourceChanged = torrentSource !== prevTorrentSourceState
     if (!torrentSourceChanged) return
 
     updateTitleFromSource()
-  }, [prevTorrentSourceState, selectedFile, torrentSource, updateTitleFromSource])
+  }, [prevTorrentSourceState, torrentSource, updateTitleFromSource])
 
   // Edit mode: auto-search poster once when we have title and no poster
   useEffect(() => {
@@ -209,7 +206,6 @@ export default function AddDialog({
   const prevTitleState = usePreviousState(title)
 
   useEffect(() => {
-    // if title exists and title was changed then search poster.
     const titleChanged = title !== prevTitleState
     if (!titleChanged && !parsedTitle) return
 
@@ -238,6 +234,11 @@ export default function AddDialog({
     isUserInteractedWithPoster,
   ])
 
+  const handleSetSelectedFile = useCallback(fileOrFiles => {
+    const files = Array.isArray(fileOrFiles) ? fileOrFiles : [fileOrFiles]
+    setMultiFiles(files)
+  }, [])
+
   const handleSave = () => {
     setIsSaving(true)
 
@@ -251,15 +252,6 @@ export default function AddDialog({
           category,
         })
         .finally(handleClose)
-    } else if (selectedFile) {
-      // file save
-      const data = new FormData()
-      data.append('save', 'true')
-      data.append('file', selectedFile)
-      title && data.append('title', title)
-      category && data.append('category', category)
-      posterUrl && data.append('poster', posterUrl)
-      axios.post(torrentUploadHost(), data).catch(handleClose)
     } else {
       // link save
       axios
@@ -275,6 +267,10 @@ export default function AddDialog({
     }
   }
 
+  if (multiFiles) {
+    return <MultiAddDialog files={multiFiles} handleClose={handleClose} />
+  }
+
   return (
     <StyledDialog open onClose={handleClose} fullScreen={fullScreen} fullWidth maxWidth='md' ref={ref}>
       <StyledHeader>{t(isEditMode ? 'EditTorrent' : 'AddNewTorrent')}</StyledHeader>
@@ -283,8 +279,7 @@ export default function AddDialog({
         {!isEditMode && (
           <LeftSideComponent
             setIsUserInteractedWithPoster={setIsUserInteractedWithPoster}
-            selectedFile={selectedFile}
-            setSelectedFile={setSelectedFile}
+            setSelectedFile={handleSetSelectedFile}
             torrentSource={torrentSource}
             setTorrentSource={setTorrentSource}
           />

@@ -41,7 +41,10 @@ type BTSets struct {
 	EnableDebug              bool // debug logs
 
 	// DLNA
-	EnableDLNA   bool
+	EnableDLNA bool
+	// Bonjour/mDNS LAN discovery (_torrserver, _http, _https)
+	EnableBonjour bool
+	// Shared name for DLNA and Bonjour
 	FriendlyName string
 
 	// Rutor
@@ -67,6 +70,10 @@ type BTSets struct {
 	ConnectionsLimit  int
 	PeersListenPort   int
 
+	// LPD
+	EnableLPD bool
+	LPDIPv6   bool
+
 	// HTTPS
 	SslPort int
 	SslCert string
@@ -82,9 +89,8 @@ type BTSets struct {
 	StoreSettingsInJson bool
 	StoreViewedInJson   bool
 
-	// P2P Proxy
-	EnableProxy bool
-	ProxyHosts  []string
+	// Viewed timecodes
+	TrackTimecode bool // store playback position (timecode) in viewed data
 }
 
 func (v *BTSets) String() string {
@@ -164,6 +170,9 @@ func SetDefaultConfig() {
 	sets.ResponsiveMode = true
 	sets.ShowFSActiveTorr = true
 	sets.StoreSettingsInJson = true
+	sets.EnableLPD = true
+	sets.LPDIPv6 = false
+	sets.EnableBonjour = true
 	// Set default TMDB settings
 	sets.TMDBSettings = TMDBConfig{
 		APIKey:     "",
@@ -180,9 +189,6 @@ func SetDefaultConfig() {
 		}
 		tdb.Set("Settings", "BitTorr", buf)
 	}
-	//Proxy
-	sets.EnableProxy = false
-	sets.ProxyHosts = []string{"*themoviedb.org", "*tmdb.org", "rutor.info"}
 }
 
 func loadBTSets() {
@@ -200,6 +206,13 @@ func loadBTSets() {
 					APIURL:     "https://api.themoviedb.org",
 					ImageURL:   "https://image.tmdb.org",
 					ImageURLRu: "https://imagetmdb.com",
+				}
+			}
+			// Default Bonjour on for configs that predate the setting.
+			var raw map[string]json.RawMessage
+			if json.Unmarshal(buf, &raw) == nil {
+				if _, ok := raw["EnableBonjour"]; !ok {
+					BTsets.EnableBonjour = true
 				}
 			}
 			return

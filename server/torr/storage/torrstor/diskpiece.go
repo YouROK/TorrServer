@@ -71,7 +71,7 @@ func (p *DiskPiece) ReadAt(b []byte, off int64) (n int, err error) {
 	if int64(len(b))+off >= p.piece.Size {
 		go p.piece.cache.cleanPieces()
 	}
-	return n, nil
+	return n, err
 }
 
 func (p *DiskPiece) Release() {

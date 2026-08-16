@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	tele "gopkg.in/telebot.v4"
+	"server/bonjour"
 	"server/dlna"
 	"server/rutor"
 	"server/settings"
@@ -38,8 +39,8 @@ func sendSettingsMenuText(c tele.Context, uid int64, page string) string {
 	case "1":
 		msg += "\n\n"
 		msg += fmt.Sprintf("🔍 %s: RuTor %s · Torznab %s\n", tr(uid, "settings_section_search"), boolIcon(s.EnableRutorSearch), boolIcon(s.EnableTorznabSearch))
-		msg += fmt.Sprintf("📺 %s: DLNA %s · IPv6 %s · DHT %s · PEX %s · TCP %s · UTP %s\n", tr(uid, "settings_section_network"), boolIcon(s.EnableDLNA), boolIcon(s.EnableIPv6), boolIcon(!s.DisableDHT), boolIcon(!s.DisablePEX), boolIcon(!s.DisableTCP), boolIcon(!s.DisableUTP))
-		msg += fmt.Sprintf("📦 %s: CacheDrop %s · Proxy %s · UseDisk %s\n", tr(uid, "settings_section_other"), boolIcon(s.RemoveCacheOnDrop), boolIcon(s.EnableProxy), boolIcon(s.UseDisk))
+		msg += fmt.Sprintf("📺 %s: DLNA %s · Bonjour %s · IPv6 %s · DHT %s · PEX %s · TCP %s · UTP %s\n", tr(uid, "settings_section_network"), boolIcon(s.EnableDLNA), boolIcon(s.EnableBonjour), boolIcon(s.EnableIPv6), boolIcon(!s.DisableDHT), boolIcon(!s.DisablePEX), boolIcon(!s.DisableTCP), boolIcon(!s.DisableUTP))
+		msg += fmt.Sprintf("📦 %s: CacheDrop %s · UseDisk %s\n", tr(uid, "settings_section_other"), boolIcon(s.RemoveCacheOnDrop), boolIcon(s.UseDisk))
 	case "1a":
 		msg += " — " + tr(uid, "settings_section_search")
 		msg += "\n\n"
@@ -47,12 +48,12 @@ func sendSettingsMenuText(c tele.Context, uid int64, page string) string {
 	case "1b":
 		msg += " — " + tr(uid, "settings_section_network")
 		msg += "\n\n"
-		msg += fmt.Sprintf("DLNA %s · IPv6 %s · Upload %s · DHT %s · PEX %s\n", boolIcon(s.EnableDLNA), boolIcon(s.EnableIPv6), boolIcon(!s.DisableUpload), boolIcon(!s.DisableDHT), boolIcon(!s.DisablePEX))
+		msg += fmt.Sprintf("DLNA %s · Bonjour %s · IPv6 %s · Upload %s · DHT %s · PEX %s\n", boolIcon(s.EnableDLNA), boolIcon(s.EnableBonjour), boolIcon(s.EnableIPv6), boolIcon(!s.DisableUpload), boolIcon(!s.DisableDHT), boolIcon(!s.DisablePEX))
 		msg += fmt.Sprintf("TCP %s · UTP %s · UPNP %s · Encrypt %s · Debug %s", boolIcon(!s.DisableTCP), boolIcon(!s.DisableUTP), boolIcon(!s.DisableUPNP), boolIcon(s.ForceEncrypt), boolIcon(s.EnableDebug))
 	case "1c":
 		msg += " — " + tr(uid, "settings_section_other")
 		msg += "\n\n"
-		msg += fmt.Sprintf("CacheDrop %s · Responsive %s · Proxy %s · UseDisk %s · FSActive %s", boolIcon(s.RemoveCacheOnDrop), boolIcon(s.ResponsiveMode), boolIcon(s.EnableProxy), boolIcon(s.UseDisk), boolIcon(s.ShowFSActiveTorr))
+		msg += fmt.Sprintf("CacheDrop %s · Responsive %s · UseDisk %s · FSActive %s", boolIcon(s.RemoveCacheOnDrop), boolIcon(s.ResponsiveMode), boolIcon(s.UseDisk), boolIcon(s.ShowFSActiveTorr))
 	case "2":
 		msg += " — " + tr(uid, "settings_page2")
 		msg += "\n\n"
@@ -76,7 +77,6 @@ func sendSettingsMenuText(c tele.Context, uid int64, page string) string {
 		msg += "\n\n"
 		msg += fmt.Sprintf("📺 DLNA: %s · 💾 Path: %s\n", maskStr(s.FriendlyName, 25), maskVal(s.TorrentsSavePath))
 		msg += fmt.Sprintf("🔐 SSL: %s · 🔑 TMDB: %s · Torznab: %d\n", maskVal(s.SslCert), maskVal(s.TMDBSettings.APIKey), len(s.TorznabUrls))
-		msg += fmt.Sprintf("🌐 Proxy: %s", maskStr(strings.Join(s.ProxyHosts, ", "), 35))
 	case "4":
 		msg += " — " + tr(uid, "settings_page4")
 		msg += "\n\n"
@@ -175,6 +175,7 @@ func sendSettingsMenuKbd(uid int64, page string) *tele.ReplyMarkup {
 			},
 			{
 				{Text: toggleBtn("DLNA", s.EnableDLNA), Unique: "fset", Data: "dlna|1b"},
+				{Text: toggleBtn("Bonjour", s.EnableBonjour), Unique: "fset", Data: "bonjour|1b"},
 				{Text: toggleBtn("IPv6", s.EnableIPv6), Unique: "fset", Data: "ipv6|1b"},
 				{Text: toggleBtn("Upload", !s.DisableUpload), Unique: "fset", Data: "upload|1b"},
 			},
@@ -198,7 +199,6 @@ func sendSettingsMenuKbd(uid int64, page string) *tele.ReplyMarkup {
 			{
 				{Text: toggleBtn("CacheDrop", s.RemoveCacheOnDrop), Unique: "fset", Data: "cachedrop|1c"},
 				{Text: toggleBtn("Responsive", s.ResponsiveMode), Unique: "fset", Data: "responsive|1c"},
-				{Text: toggleBtn("Proxy", s.EnableProxy), Unique: "fset", Data: "proxy|1c"},
 			},
 			{
 				{Text: toggleBtn("UseDisk", s.UseDisk), Unique: "fset", Data: "usedisk|1c"},
@@ -313,9 +313,6 @@ func sendSettingsMenuKbd(uid int64, page string) *tele.ReplyMarkup {
 				{Text: "🔍 " + tr(uid, "settings_torznab_test"), Unique: "fset", Data: "ask|torznab_test"},
 				{Text: "➕ " + tr(uid, "settings_add_torznab"), Unique: "fset", Data: "ask|torznab_add"},
 				{Text: "🗑 " + tr(uid, "settings_clear_torznab"), Unique: "fset", Data: "torznab_clear"},
-			},
-			{
-				{Text: "✏️ " + tr(uid, "settings_set_proxyhosts"), Unique: "fset", Data: "ask|proxyhosts"},
 			},
 		}
 	case "4":
@@ -473,8 +470,6 @@ func settingsCallback(c tele.Context, action string) error {
 			hint = tr(uid, "settings_hint_sslkey")
 		case "tmdbkey":
 			hint = tr(uid, "settings_hint_tmdbkey")
-		case "proxyhosts":
-			hint = tr(uid, "settings_hint_proxyhosts")
 		case "torznab_add":
 			hint = tr(uid, "settings_hint_torznab")
 		case "torznab_test":
@@ -519,6 +514,8 @@ func settingsCallback(c tele.Context, action string) error {
 		sets.EnableTorznabSearch = !sets.EnableTorznabSearch
 	case "dlna":
 		sets.EnableDLNA = !sets.EnableDLNA
+	case "bonjour":
+		sets.EnableBonjour = !sets.EnableBonjour
 	case "ipv6":
 		sets.EnableIPv6 = !sets.EnableIPv6
 	case "upload":
@@ -541,8 +538,6 @@ func settingsCallback(c tele.Context, action string) error {
 		sets.RemoveCacheOnDrop = !sets.RemoveCacheOnDrop
 	case "responsive":
 		sets.ResponsiveMode = !sets.ResponsiveMode
-	case "proxy":
-		sets.EnableProxy = !sets.EnableProxy
 	case "usedisk":
 		sets.UseDisk = !sets.UseDisk
 	case "fsactive":
@@ -622,6 +617,10 @@ func settingsCallback(c tele.Context, action string) error {
 	dlna.Stop()
 	if sets.EnableDLNA {
 		dlna.Start()
+	}
+	bonjour.Stop()
+	if sets.EnableBonjour {
+		bonjour.Start()
 	}
 	rutor.Stop()
 	rutor.Start()

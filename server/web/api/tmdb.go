@@ -16,6 +16,7 @@ import (
 //	@Tags			API
 //
 //	@Produce		json
+//	@Security		BasicAuth
 //	@Success		200	{object}	sets.TMDBConfig	"TMDB settings"
 //	@Router			/tmdb/settings [get]
 func tmdbSettings(c *gin.Context) {

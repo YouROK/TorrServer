@@ -2,7 +2,7 @@ import axios from 'axios'
 import Button from '@material-ui/core/Button'
 import Switch from '@material-ui/core/Switch'
 import { FormControlLabel, useMediaQuery, useTheme } from '@material-ui/core'
-import { settingsHost } from 'utils/Hosts'
+import { settingsHost, gstSettingsHost } from 'utils/Hosts'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { clearTMDBCache } from 'components/Add/helpers'
@@ -20,6 +20,7 @@ import SecondarySettingsComponent from './SecondarySettingsComponent'
 import MobileAppSettings from './MobileAppSettings'
 import TorznabSettings from './TorznabSettings'
 import TMDBSettings from './TMDBSettings'
+import GStreamerSettings from './GStreamerSettings'
 
 export default function SettingsDialog({ handleClose }) {
   const { t } = useTranslation()
@@ -34,7 +35,23 @@ export default function SettingsDialog({ handleClose }) {
   const [isProMode, setIsProMode] = useState(JSON.parse(localStorage.getItem('isProMode')) || false)
   const [isVlcUsed, setIsVlcUsed] = useState(JSON.parse(localStorage.getItem('isVlcUsed')) ?? false)
   const [isInfuseUsed, setIsInfuseUsed] = useState(JSON.parse(localStorage.getItem('isInfuseUsed')) ?? false)
+  const [isSenPlayerUsed, setIsSenPlayerUsed] = useState(JSON.parse(localStorage.getItem('isSenPlayerUsed')) ?? false)
   const [isIinaUsed, setIsIinaUsed] = useState(JSON.parse(localStorage.getItem('isIinaUsed')) ?? false)
+  const [gstAvailable, setGstAvailable] = useState(false)
+
+  const tabMain = 0
+  const tabAdditional = 1
+  const tabSearch = 2
+  const tabApp = 3
+  const tabGStreamer = 4
+  const maxTab = gstAvailable ? tabGStreamer : tabApp
+
+  useEffect(() => {
+    fetch(gstSettingsHost())
+      .then(response => (response.ok ? response.json() : { built_in: false }))
+      .then(data => setGstAvailable(Boolean(data.built_in)))
+      .catch(() => setGstAvailable(false))
+  }, [])
 
   useEffect(() => {
     axios.post(settingsHost(), { action: 'get' }).then(({ data }) => {
@@ -55,6 +72,7 @@ export default function SettingsDialog({ handleClose }) {
     clearTMDBCache()
     localStorage.setItem('isVlcUsed', isVlcUsed)
     localStorage.setItem('isInfuseUsed', isInfuseUsed)
+    localStorage.setItem('isSenPlayerUsed', isSenPlayerUsed)
     localStorage.setItem('isIinaUsed', isIinaUsed)
   }
 
@@ -77,11 +95,17 @@ export default function SettingsDialog({ handleClose }) {
     } else if (type === 'url' || type === 'text') {
       sets[id] = value
     } else if (!type && value !== undefined) {
-      // Fallback for custom handlers that don't provide type (e.g., ProxyHosts array)
+      // Fallback for custom handlers that don't provide type
       sets[id] = value
     }
     setSettings(sets)
   }
+
+  useEffect(() => {
+    if (selectedTab > maxTab) {
+      setSelectedTab(0)
+    }
+  }, [gstAvailable, selectedTab, maxTab])
 
   const { CacheSize, ReaderReadAHead, PreloadCache } = settings || {}
 
@@ -140,9 +164,22 @@ export default function SettingsDialog({ handleClose }) {
             {...a11yProps(1)}
           />
 
-          <StyledTab label={t('Search')} {...a11yProps(2)} />
+          <StyledTab label={t('Search')} {...a11yProps(tabSearch)} />
 
-          <StyledTab label={t('SettingsDialog.Tabs.App')} {...a11yProps(3)} />
+          <StyledTab label={t('SettingsDialog.Tabs.App')} {...a11yProps(tabApp)} />
+
+          {gstAvailable && (
+            <StyledTab
+              disabled={!isProMode}
+              label={
+                <>
+                  <span>{t('GStreamer.Tab')}</span>
+                  {!isProMode && <span className='disabled-hint'>{t('SettingsDialog.Tabs.AdditionalDisabled')}</span>}
+                </>
+              }
+              {...a11yProps(tabGStreamer)}
+            />
+          )}
         </StyledTabs>
       </AppBar>
 
@@ -154,7 +191,7 @@ export default function SettingsDialog({ handleClose }) {
               index={selectedTab}
               onChangeIndex={handleChangeIndex}
             >
-              <TabPanel value={selectedTab} index={0} dir={direction}>
+              <TabPanel value={selectedTab} index={tabMain} dir={direction}>
                 <PrimarySettingsComponent
                   settings={settings}
                   inputForm={inputForm}
@@ -169,25 +206,33 @@ export default function SettingsDialog({ handleClose }) {
                 />
               </TabPanel>
 
-              <TabPanel value={selectedTab} index={1} dir={direction}>
+              <TabPanel value={selectedTab} index={tabAdditional} dir={direction}>
                 <SecondarySettingsComponent settings={settings} inputForm={inputForm} updateSettings={updateSettings} />
               </TabPanel>
 
-              <TabPanel value={selectedTab} index={2} dir={direction}>
+              <TabPanel value={selectedTab} index={tabSearch} dir={direction}>
                 <TorznabSettings settings={settings} inputForm={inputForm} updateSettings={updateSettings} />
               </TabPanel>
 
-              <TabPanel value={selectedTab} index={3} dir={direction}>
+              <TabPanel value={selectedTab} index={tabApp} dir={direction}>
                 <TMDBSettings settings={settings} updateSettings={updateSettings} />
                 <MobileAppSettings
                   isVlcUsed={isVlcUsed}
                   setIsVlcUsed={setIsVlcUsed}
                   isInfuseUsed={isInfuseUsed}
                   setIsInfuseUsed={setIsInfuseUsed}
+                  isSenPlayerUsed={isSenPlayerUsed}
+                  setIsSenPlayerUsed={setIsSenPlayerUsed}
                   isIinaUsed={isIinaUsed}
                   setIsIinaUsed={setIsIinaUsed}
                 />
               </TabPanel>
+
+              {gstAvailable && (
+                <TabPanel value={selectedTab} index={tabGStreamer} dir={direction}>
+                  <GStreamerSettings />
+                </TabPanel>
+              )}
             </SwipeableViews>
           </>
         ) : (
