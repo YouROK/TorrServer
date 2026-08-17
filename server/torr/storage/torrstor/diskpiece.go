@@ -1,7 +1,6 @@
 package torrstor
 
 import (
-	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -67,7 +66,7 @@ func (p *DiskPiece) ReadAt(b []byte, off int64) (n int, err error) {
 
 	ff, err := os.OpenFile(p.name, os.O_RDONLY, 0o666)
 	if os.IsNotExist(err) {
-		return 0, io.EOF
+		return 0, err
 	}
 	if err != nil {
 		log.TLogln("Error open file:", err)
@@ -78,7 +77,7 @@ func (p *DiskPiece) ReadAt(b []byte, off int64) (n int, err error) {
 	n, err = ff.ReadAt(b, off)
 
 	p.piece.Accessed = time.Now().Unix()
-	if int64(len(b))+off >= p.piece.Size {
+	if p.piece.Complete && int64(len(b))+off >= p.piece.Size {
 		go p.piece.cache.cleanPieces()
 	}
 	return n, err

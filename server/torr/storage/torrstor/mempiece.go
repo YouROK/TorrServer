@@ -2,6 +2,7 @@ package torrstor
 
 import (
 	"io"
+	"os"
 	"sync"
 	"time"
 )
@@ -44,6 +45,12 @@ func (p *MemPiece) ReadAt(b []byte, off int64) (n int, err error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
+	if p.buffer == nil {
+		// Released while hashing: os.IsNotExist is the expected anacrolix path
+		// (io.Copy turns io.EOF into err=nil and logs "unexpected error hashing").
+		return 0, os.ErrNotExist
+	}
+
 	size := len(b)
 	if size+int(off) > len(p.buffer) {
 		size = len(p.buffer) - int(off)
@@ -54,9 +61,10 @@ func (p *MemPiece) ReadAt(b []byte, off int64) (n int, err error) {
 	if len(p.buffer) < int(off) || len(p.buffer) < int(off)+size {
 		return 0, io.EOF
 	}
-	n = copy(b, p.buffer[int(off) : int(off)+size][:])
+	n = copy(b, p.buffer[int(off):int(off)+size])
 	p.piece.Accessed = time.Now().Unix()
-	if int64(len(b))+off >= p.piece.Size {
+	// Do not evict while anacrolix is hashing (Complete is still false).
+	if p.piece.Complete && int64(len(b))+off >= p.piece.Size {
 		go p.piece.cache.cleanPieces()
 	}
 	if n == 0 {
