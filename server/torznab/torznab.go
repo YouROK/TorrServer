@@ -215,13 +215,16 @@ func searchOne(ctx context.Context, host, key, query, label, cat string, offset,
 
 	var results []*models.TorrentDetails
 	for _, item := range torznabResp.Channel.Items {
+		tracker := item.Indexer
+		if tracker == "" {
+			tracker = label
+		}
 		detail := &models.TorrentDetails{
 			Title:      item.Title,
 			Name:       item.Title,
 			Link:       item.Link,
-			Tracker:    item.Indexer,
+			Tracker:    tracker,
 			CreateDate: parseDate(item.PubDate),
-			Tracker:    label,
 		}
 
 		if len(item.Enclosure) > 0 {

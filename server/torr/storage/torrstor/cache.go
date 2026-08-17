@@ -101,7 +101,7 @@ func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
 func (c *Cache) priorityWatchdog() {
 	for {
 		time.Sleep(5 * time.Second)
-		if c.isClosed.Load() {
+		if c.isClosed {
 			return
 		}
 		if c.torrent == nil {
