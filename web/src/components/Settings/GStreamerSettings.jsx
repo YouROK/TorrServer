@@ -291,8 +291,8 @@ export default function GStreamerSettings() {
           variant='outlined'
           margin='dense'
         >
-          <MenuItem value='stream'>{t('GStreamer.SourceStream')}</MenuItem>
-          <MenuItem value='play'>{t('GStreamer.SourcePlay')}</MenuItem>
+          <option value='stream'>{t('GStreamer.SourceStream')}</option>
+          <option value='play'>{t('GStreamer.SourcePlay')}</option>
         </Select>
         <FormHelperText style={{ marginTop: 8 }}>{t('GStreamer.SourceHint')}</FormHelperText>
       </FormGroup>
