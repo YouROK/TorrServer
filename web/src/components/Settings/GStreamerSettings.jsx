@@ -289,7 +289,6 @@ export default function GStreamerSettings() {
           value={gstreamerSettings.Source || 'stream'}
           onChange={e => updateField('Source', e.target.value)}
           variant='outlined'
-          margin='dense'
         >
           <option value='stream'>{t('GStreamer.SourceStream')}</option>
           <option value='play'>{t('GStreamer.SourcePlay')}</option>
@@ -609,8 +608,15 @@ export default function GStreamerSettings() {
             aria-label={t('Close')}
             onClick={() => setStatus({ message: '', type: '' })}
             size='small'
+            style={{
+              minWidth: 'auto',
+              width: '40px',
+              height: '40px',
+              flexShrink: 0,
+              padding: '0',
+            }}
           >
-            <CloseIcon fontSize='small' />
+            <CloseIcon style={{ fontSize: '0.75rem' }} />
           </IconButton>
         </SettingsStatusMessage>
       )}

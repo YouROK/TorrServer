@@ -261,9 +261,9 @@ export const GstSettingsContent = styled(SecondarySettingsContent)`
     margin-top: 8px;
   }
 
-  .MuiSelect-outlined {
-    background: #fff;
-  }
+  // .MuiSelect-outlined {
+  //   background: #fff;
+  // }
 `
 export const StorageButton = styled.div`
   ${({ small, selected }) => css`
