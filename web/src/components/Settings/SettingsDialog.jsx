@@ -11,6 +11,7 @@ import SwipeableViews from 'react-swipeable-views'
 import CircularProgress from '@material-ui/core/CircularProgress'
 import { StyledDialog } from 'style/CustomMaterialUiStyles'
 import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
+import { notifyPlayerSettingsChanged } from 'utils/PlayerPreferences'
 
 import { SettingsHeader, FooterSection, Content, StyledTabs, StyledTab } from './style'
 import defaultSettings from './defaultSettings'
@@ -21,6 +22,7 @@ import MobileAppSettings from './MobileAppSettings'
 import TorznabSettings from './TorznabSettings'
 import TMDBSettings from './TMDBSettings'
 import GStreamerSettings from './GStreamerSettings'
+import PlaybackSettings from './PlaybackSettings'
 
 export default function SettingsDialog({ handleClose }) {
   const { t } = useTranslation()
@@ -34,6 +36,9 @@ export default function SettingsDialog({ handleClose }) {
   const [preloadCachePercentage, setPreloadCachePercentage] = useState(0)
   const [isProMode, setIsProMode] = useState(JSON.parse(localStorage.getItem('isProMode')) || false)
   const [isVlcUsed, setIsVlcUsed] = useState(JSON.parse(localStorage.getItem('isVlcUsed')) ?? false)
+  const [showQuickVlcButton, setShowQuickVlcButton] = useState(
+    JSON.parse(localStorage.getItem('showQuickVlcButton')) ?? false,
+  )
   const [isInfuseUsed, setIsInfuseUsed] = useState(JSON.parse(localStorage.getItem('isInfuseUsed')) ?? false)
   const [isSenPlayerUsed, setIsSenPlayerUsed] = useState(JSON.parse(localStorage.getItem('isSenPlayerUsed')) ?? false)
   const [isIinaUsed, setIsIinaUsed] = useState(JSON.parse(localStorage.getItem('isIinaUsed')) ?? false)
@@ -71,9 +76,11 @@ export default function SettingsDialog({ handleClose }) {
     // Clear TMDB cache so fresh settings are fetched on next poster search
     clearTMDBCache()
     localStorage.setItem('isVlcUsed', isVlcUsed)
+    localStorage.setItem('showQuickVlcButton', showQuickVlcButton)
     localStorage.setItem('isInfuseUsed', isInfuseUsed)
     localStorage.setItem('isSenPlayerUsed', isSenPlayerUsed)
     localStorage.setItem('isIinaUsed', isIinaUsed)
+    notifyPlayerSettingsChanged()
   }
 
   const inputForm = ({ target: { type, value, checked, id } }) => {
@@ -219,6 +226,8 @@ export default function SettingsDialog({ handleClose }) {
                 <MobileAppSettings
                   isVlcUsed={isVlcUsed}
                   setIsVlcUsed={setIsVlcUsed}
+                  showQuickVlcButton={showQuickVlcButton}
+                  setShowQuickVlcButton={setShowQuickVlcButton}
                   isInfuseUsed={isInfuseUsed}
                   setIsInfuseUsed={setIsInfuseUsed}
                   isSenPlayerUsed={isSenPlayerUsed}
@@ -226,6 +235,7 @@ export default function SettingsDialog({ handleClose }) {
                   isIinaUsed={isIinaUsed}
                   setIsIinaUsed={setIsIinaUsed}
                 />
+                <PlaybackSettings />
               </TabPanel>
 
               {gstAvailable && (
