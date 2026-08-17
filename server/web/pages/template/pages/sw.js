@@ -84,7 +84,7 @@ define(['./workbox-7e5eb42b'], (function (workbox) { 'use strict';
     "revision": "f5db7f222c6f454cdf40c0793ef529f3"
   }, {
     "url": "index.html",
-    "revision": "f144fb2f1d6aea3a94f51a46b6d31fa2"
+    "revision": "3e371b562bdc47a075f42d8a8167c244"
   }, {
     "url": "icon.png",
     "revision": "4425f6f2b52d2deaf2374ff63c682bcc"
@@ -107,154 +107,154 @@ define(['./workbox-7e5eb42b'], (function (workbox) { 'use strict';
     "url": "static/workbox-window.prod.es5-Bd17z0YL.js",
     "revision": null
   }, {
-    "url": "static/vendor-BZf9Mo6H.js",
+    "url": "static/vendor-C2JyqrqZ.js",
     "revision": null
   }, {
-    "url": "static/useTranslation-C5oH9X_x.js",
+    "url": "static/useTranslation-Bb3TMUoo.js",
     "revision": null
   }, {
-    "url": "static/useTorrentDetail-DqerFpV6.js",
+    "url": "static/useTorrentDetail-CSjGRwT4.js",
     "revision": null
   }, {
-    "url": "static/useLocalPref-Drmh7DQx.js",
+    "url": "static/useLocalPref-A58SNG0S.js",
     "revision": null
   }, {
     "url": "static/torrsLink-Dv5wuOWf.js",
     "revision": null
   }, {
-    "url": "static/torrents-CbtuZqnK.js",
+    "url": "static/torrents-lth4re03.js",
     "revision": null
   }, {
-    "url": "static/torrentHelpers-OG9wtUH1.js",
+    "url": "static/torrentHelpers-BrMkM2q-.js",
     "revision": null
   }, {
     "url": "static/settingsEvents-BHp1EJvG.js",
     "revision": null
   }, {
-    "url": "static/settings-jOyfh11j.js",
+    "url": "static/settings-ClTrc7MC.js",
     "revision": null
   }, {
-    "url": "static/runtime-B7ULw9YP.js",
+    "url": "static/runtime-DwNUKsIf.js",
     "revision": null
   }, {
     "url": "static/rolldown-runtime-8BhlS34s.js",
     "revision": null
   }, {
-    "url": "static/maximize-2-CQXxI3L3.js",
+    "url": "static/maximize-2-DkfedEZJ.js",
     "revision": null
   }, {
     "url": "static/localPrefs-bn9onfF_.js",
     "revision": null
   }, {
-    "url": "static/index-Dw9VwgYO.css",
+    "url": "static/index-CqmGtyX-.js",
     "revision": null
   }, {
-    "url": "static/index-D0OE7juj.js",
+    "url": "static/index-BPXClGhi.css",
     "revision": null
   }, {
     "url": "static/hosts-DnQLd-FX.js",
     "revision": null
   }, {
-    "url": "static/hls-CNyyJuiZ.js",
+    "url": "static/hls-CO31Rdyx.js",
     "revision": null
   }, {
-    "url": "static/heroui-cAUqM6vg.js",
+    "url": "static/heroui-D1M9PDQJ.js",
     "revision": null
   }, {
-    "url": "static/heart-BU9g4grQ.js",
+    "url": "static/heart-BQDGfcus.js",
     "revision": null
   }, {
-    "url": "static/gauge-0irpaSiY.js",
+    "url": "static/gauge-CLHqP8Dl.js",
     "revision": null
   }, {
-    "url": "static/format-Dy-yx70X.js",
+    "url": "static/format-BT25WNWh.js",
     "revision": null
   }, {
-    "url": "static/film-YIHsYP9-.js",
+    "url": "static/film-hmCNXkUj.js",
     "revision": null
   }, {
-    "url": "static/ellipsis-dKnQyVdX.js",
+    "url": "static/ellipsis-BHKU-GRs.js",
     "revision": null
   }, {
-    "url": "static/createLucideIcon-Jw_TXnHh.js",
+    "url": "static/createLucideIcon-DrUCZSM9.js",
     "revision": null
   }, {
-    "url": "static/clapperboard-DVhigDaH.js",
+    "url": "static/clapperboard-BcFCYMAz.js",
     "revision": null
   }, {
-    "url": "static/circle-alert-ClTCLGj9.js",
+    "url": "static/circle-alert-Bi391bJo.js",
     "revision": null
   }, {
-    "url": "static/authCredentials-CpUpOGSq.js",
+    "url": "static/authCredentials-DKzwRhoN.js",
     "revision": null
   }, {
-    "url": "static/VideoPlayer-S-LbwqZQ.js",
+    "url": "static/VideoPlayer-D-BuTTzc.js",
     "revision": null
   }, {
-    "url": "static/UnsafeButton-EFSguzZY.js",
+    "url": "static/UnsafeButton-DBThzTKa.js",
     "revision": null
   }, {
-    "url": "static/Toast-BcWDeYd9.js",
+    "url": "static/Toast-BJGbQirI.js",
     "revision": null
   }, {
-    "url": "static/SettingsDialog-DXsWJwT9.js",
+    "url": "static/SettingsDialog-CDl0sKfM.js",
     "revision": null
   }, {
-    "url": "static/ServerStatusDialog-R8HuCO8C.js",
+    "url": "static/ServerStatusDialog-lV6TlL3O.js",
     "revision": null
   }, {
-    "url": "static/SearchDialog-C4vo8mca.js",
+    "url": "static/SearchDialog-DOQ-W3JH.js",
     "revision": null
   }, {
-    "url": "static/RemoveAllDialog-DytznkyS.js",
+    "url": "static/RemoveAllDialog-B5jeSynJ.js",
     "revision": null
   }, {
-    "url": "static/PosterPicker-Ct9dEeBS.js",
+    "url": "static/PosterPicker-C0mMb7ns.js",
     "revision": null
   }, {
-    "url": "static/PWAInstallationGuide-QC4N0dm1.js",
+    "url": "static/PWAInstallationGuide-B3NGV0tp.js",
     "revision": null
   }, {
-    "url": "static/MultiAddDialog-BaW1rbsg.js",
+    "url": "static/MultiAddDialog-BYv9toK4.js",
     "revision": null
   }, {
-    "url": "static/ImportLibraryDialog-B0Fi70GB.js",
+    "url": "static/ImportLibraryDialog-2iuy4OPS.js",
     "revision": null
   }, {
-    "url": "static/ExportLibraryDialog-ufXCnG4U.js",
+    "url": "static/ExportLibraryDialog-Ld8-OHu8.js",
     "revision": null
   }, {
-    "url": "static/EditTorrentDialog-DZ6utPpN.js",
+    "url": "static/EditTorrentDialog-C0IbOzof.js",
     "revision": null
   }, {
-    "url": "static/DonateSnackbar-Bgpv2O8_.js",
+    "url": "static/DonateSnackbar-DQtg9X7s.js",
     "revision": null
   }, {
-    "url": "static/DonateDialog-DIug6EgB.js",
+    "url": "static/DonateDialog-mA9l2qw_.js",
     "revision": null
   }, {
-    "url": "static/DetailsDialog-BvWhngOX.js",
+    "url": "static/DetailsDialog-BfKh1-Vv.js",
     "revision": null
   }, {
-    "url": "static/CommandPalette-C8KMAGpc.js",
+    "url": "static/CommandPalette-DhF3igZi.js",
     "revision": null
   }, {
-    "url": "static/CloseServerDialog-Cy56JbRF.js",
+    "url": "static/CloseServerDialog-DQFGihQf.js",
     "revision": null
   }, {
-    "url": "static/CategoriesDrawer-BsETMFzf.js",
+    "url": "static/CategoriesDrawer-DICQ6MRb.js",
     "revision": null
   }, {
-    "url": "static/AppDialog-C5evtE9r.js",
+    "url": "static/AppDialog-DAXT99nQ.js",
     "revision": null
   }, {
-    "url": "static/AndroidInstallBanner-DtywE-em.js",
+    "url": "static/AndroidInstallBanner-B1AdPHv4.js",
     "revision": null
   }, {
-    "url": "static/AddDialog-CJsZ-mrp.js",
+    "url": "static/AddDialog-CwEXh9k-.js",
     "revision": null
   }, {
-    "url": "static/AboutDialog-Djwa7Uji.js",
+    "url": "static/AboutDialog-BvKD-lxe.js",
     "revision": null
   }], {});
   workbox.cleanupOutdatedCaches();
