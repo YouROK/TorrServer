@@ -65,10 +65,26 @@ Run `TorrServer-windows-amd64.exe`.
 
 #### Linux
 
-Run in console
+**Interactive install** (download first — preferred):
 
 ```bash
-curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh -o installTorrServerLinux.sh && chmod 755 installTorrServerLinux.sh && sudo bash ./installTorrServerLinux.sh
+```
+
+Other interactive one-liners (avoid `curl | sudo bash`, which hangs on modern `sudo` with `use_pty`):
+
+```bash
+sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh)"
+```
+
+```bash
+sudo bash <(curl -fsSL https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh)
+```
+
+**Non-interactive** pipe is fine when there are no prompts:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh | sudo bash -s -- --install --silent
 ```
 
 The script supports interactive and non-interactive installation, configuration, updates, and removal. When running the script interactively, you can:
@@ -77,12 +93,6 @@ The script supports interactive and non-interactive installation, configuration,
 - **GStreamer build**: For releases 141.10+ on amd64/arm64, choose the gst build with transcoding support (or pass `--gst`)
 - **Reconfigure**: If TorrServer is already installed, you'll be prompted to reconfigure settings (port, auth, read-only mode, logging, BBR)
 - **Uninstall**: Type `Delete` (or `Удалить` in Russian) to uninstall TorrServer
-
-**Download first and set execute permissions:**
-
-```bash
-curl -s https://raw.githubusercontent.com/YouROK/TorrServer/master/installTorrServerLinux.sh -o installTorrServerLinux.sh && chmod 755 installTorrServerLinux.sh
-```
 
 **Command-line examples:**
 
