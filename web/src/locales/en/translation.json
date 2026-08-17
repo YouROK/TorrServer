@@ -211,7 +211,9 @@
     "UseIINA": "Prompt to open video in IINA",
     "UseIINAHint": "Add IINA player button to torrent content list (macOS only)",
     "ViewedHistoryStorage": "Viewed History Storage:",
-    "ViewedStorageHint": "Choose where to store viewed history"
+    "ViewedStorageHint": "Choose where to store viewed history",
+    "ShowQuickVLCButton": "Show VLC button on torrent cards",
+    "ShowQuickVLCButtonHint": "Optional shortcut for single-video torrents. VLC must also be enabled."
   },
   "Size": "Size",
   "SpecialThanks": "Special Thanks",
