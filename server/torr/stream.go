@@ -109,7 +109,7 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 		if v.FileIndex == fileID {
 			timecode = v.TimeCode
 			break
-	    }
+		}
 	}
 	sets.SetViewed(&sets.Viewed{
 		Hash:      t.Hash().HexString(),
