@@ -31,6 +31,7 @@ type TorznabItem struct {
 	Description string             `xml:"description"`
 	PubDate     string             `xml:"pubDate"`
 	Size        int64              `xml:"size"`
+	Indexer     string             `xml:"jackettindexer"`
 	Enclosure   []TorznabEnclosure `xml:"enclosure"`
 	Attributes  []TorznabAttribute `xml:"attr"`
 }
@@ -111,6 +112,7 @@ func searchOne(host, key, query string) []*models.TorrentDetails {
 			Title:      item.Title,
 			Name:       item.Title, // Use Title as Name for now
 			Link:       item.Link,
+			Tracker:    item.Indexer,
 			CreateDate: parseDate(item.PubDate),
 		}
 
