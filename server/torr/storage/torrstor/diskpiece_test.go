@@ -97,10 +97,13 @@ func TestDiskPiece_ReadMissingReturnsEOF(t *testing.T) {
 //
 // We detect this by writing 4 bytes and asking for 8: the underlying read
 // returns (4, io.EOF), but DiskPiece returns (4, nil). After the bug is
-// fixed (returning the real err, possibly nil-ing it only when n>0 and
-// err==io.EOF for a partial read at end-of-file is still acceptable for
-// io.ReaderAt callers), this test should be updated.
-func TestDiskPiece_ReadAt_SwallowsError_DocumentsBug(t *testing.T) {
+// TestDiskPiece_ReadAt_PropagatesShortReadError gates the fix ported
+// from upstream 71d05617: DiskPiece.ReadAt must propagate the underlying
+// os.File.ReadAt error, not swallow it. Returning (n, nil) on a short
+// read makes the anacrolix/torrent storage wrapper panic with "io.Copy
+// will get stuck" (same class as anacrolix/torrent#430). MemPiece.ReadAt
+// already returned io.EOF here; only DiskPiece was broken.
+func TestDiskPiece_ReadAt_PropagatesShortReadError(t *testing.T) {
 	c := newDiskTestCache(t, 64)
 	p := newTestPiece(c, 0)
 	dp := NewDiskPiece(p)
@@ -109,23 +112,17 @@ func TestDiskPiece_ReadAt_SwallowsError_DocumentsBug(t *testing.T) {
 		t.Fatalf("WriteAt: %v", err)
 	}
 
-	// Read more than was written: the os.File.ReadAt would return EOF.
+	// Read more than was written: os.File.ReadAt returns io.EOF.
 	buf := make([]byte, 8)
 	n, err := dp.ReadAt(buf, 0)
 
-	// The bug: err is nil even though we read fewer bytes than requested.
-	// io.ReaderAt contract says: "If some data is available but not len(p)
-	// bytes, ReadAt blocks until either all the data is available or an
-	// error occurs. ... ReadAt returns a non-nil error explaining why more
-	// bytes were not returned." TorrServer violates this contract.
-	if n == 4 && err == nil {
-		t.Logf("BUG REPRODUCED: DiskPiece.ReadAt returned (4, nil) for short read; "+
-			"should return io.ErrUnexpectedEOF or io.EOF. (n=%d err=%v)", n, err)
-		// We assert the buggy behavior so the test stays green; flip the
-		// assertion when fixing.
-		return
+	if err == nil {
+		t.Fatalf("REGRESSION: DiskPiece.ReadAt swallowed the short-read "+
+			"error; got (%d, nil), want (%d, io.EOF-or-similar). "+
+			"anacrolix/torrent storage wrapper will panic 'io.Copy will "+
+			"get stuck' on the (n, nil) response.", n, n)
 	}
-	t.Logf("BEHAVIOR CHANGED: n=%d err=%v — fix landed; update this test", n, err)
+	t.Logf("OK: DiskPiece.ReadAt returned (n=%d, err=%v) for short read", n, err)
 }
 
 func TestDiskPiece_Release_RemovesFile(t *testing.T) {
