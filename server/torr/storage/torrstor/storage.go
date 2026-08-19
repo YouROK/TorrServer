@@ -42,24 +42,42 @@ func (s *Storage) OpenTorrent(info *metainfo.Info, infoHash metainfo.Hash) (ts.T
 }
 
 func (s *Storage) CloseHash(hash metainfo.Hash) {
-	if s.caches == nil {
-		return
-	}
 	s.mu.Lock()
-	defer s.mu.Unlock()
-	if ch, ok := s.caches[hash]; ok {
-		ch.Close()
+	ch, ok := s.caches[hash]
+	if ok {
 		delete(s.caches, hash)
+	}
+	s.mu.Unlock()
+	// Cache.Close must be called without s.mu held: it calls removeCache
+	// itself (via delete-from-storage.caches path) and blocks on disk /
+	// anacrolix operations. Holding s.mu across it deadlocks any concurrent
+	// GetCache / OpenTorrent.
+	if ok {
+		ch.Close()
 	}
 }
 
 func (s *Storage) Close() error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
+	caches := make([]*Cache, 0, len(s.caches))
 	for _, ch := range s.caches {
+		caches = append(caches, ch)
+	}
+	s.caches = make(map[metainfo.Hash]*Cache)
+	s.mu.Unlock()
+	for _, ch := range caches {
 		ch.Close()
 	}
 	return nil
+}
+
+// removeCache deletes a cache from the map under s.mu; callable from
+// Cache.Close so it can drop itself from the storage without racing
+// concurrent GetCache / OpenTorrent readers of s.caches.
+func (s *Storage) removeCache(hash metainfo.Hash) {
+	s.mu.Lock()
+	delete(s.caches, hash)
+	s.mu.Unlock()
 }
 
 func (s *Storage) GetCache(hash metainfo.Hash) *Cache {

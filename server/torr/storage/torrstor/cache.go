@@ -103,7 +103,7 @@ func (c *Cache) Close() error {
 	}
 	c.isClosed.Store(true)
 
-	delete(c.storage.caches, c.hash)
+	c.storage.removeCache(c.hash)
 
 	if settings.BTsets.RemoveCacheOnDrop {
 		name := filepath.Join(settings.BTsets.TorrentsSavePath, c.hash.HexString())
