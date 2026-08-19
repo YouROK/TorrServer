@@ -139,6 +139,9 @@ func (c *Cache) removePiece(piece *Piece) {
 }
 
 func (c *Cache) AdjustRA(readahead int64) {
+	if c == nil {
+		return
+	}
 	if settings.BTsets.CacheSize == 0 {
 		c.capacity = readahead * 3
 	}
