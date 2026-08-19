@@ -79,9 +79,11 @@ func (v *DBReadCache) Set(xPath, name string, value []byte) {
 	}
 	v.dataCacheMutex.Unlock()
 
+	v.listCacheMutex.Lock()
 	if v.listCache != nil {
 		delete(v.listCache, xPath)
 	}
+	v.listCacheMutex.Unlock()
 
 	v.db.Set(xPath, name, value)
 }
@@ -135,9 +137,11 @@ func (v *DBReadCache) Rem(xPath, name string) {
 	}
 	v.dataCacheMutex.Unlock()
 
+	v.listCacheMutex.Lock()
 	if v.listCache != nil {
 		delete(v.listCache, xPath)
 	}
+	v.listCacheMutex.Unlock()
 
 	v.db.Rem(xPath, name)
 }
