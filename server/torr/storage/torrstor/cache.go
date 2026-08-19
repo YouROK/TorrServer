@@ -6,6 +6,7 @@ import (
 	"sort"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/anacrolix/torrent"
 
@@ -81,6 +82,32 @@ func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
 
 	for i := 0; i < c.pieceCount; i++ {
 		c.pieces[i] = NewPiece(i, c)
+	}
+
+	go c.priorityWatchdog()
+}
+
+// priorityWatchdog re-arms piece priorities while readers are active.
+//
+// setLoadPriority is only reached through the cache cleanup path, which is
+// driven by piece reads and writes (see mempiece.go and diskpiece.go). Should
+// priorities ever end up cleared while a reader still needs data, nothing is
+// downloaded, so no piece I/O happens, so cleanup never runs and the
+// priorities are never restored — the torrent stalls indefinitely with peers
+// connected. Re-arming them periodically breaks that cycle regardless of how
+// the priorities were lost.
+func (c *Cache) priorityWatchdog() {
+	for {
+		time.Sleep(5 * time.Second)
+		if c.isClosed.Load() {
+			return
+		}
+		if c.torrent == nil {
+			continue
+		}
+		if c.GetUseReaders() > 0 {
+			c.getRemPieces()
+		}
 	}
 }
 
