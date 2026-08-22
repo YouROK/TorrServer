@@ -44,6 +44,24 @@ var hardwareCandidates = []hardwareCandidate{
 		},
 	},
 	{
+		name: "VA-API H.264 Low Power",
+		build: func(bitrate int, keyIntMax int) string {
+			return fmt.Sprintf(
+				"videoconvert ! video/x-raw,format=NV12 ! vah264lpenc name=video_encoder bitrate=%d key-int-max=%d b-frames=0 target-usage=7 ! ",
+				bitrate, keyIntMax,
+			)
+		},
+	},
+	{
+		name: "VA-API H.264",
+		build: func(bitrate int, keyIntMax int) string {
+			return fmt.Sprintf(
+				"videoconvert ! video/x-raw,format=NV12 ! vah264enc name=video_encoder bitrate=%d key-int-max=%d b-frames=0 target-usage=7 rate-control=cbr ! ",
+				bitrate, keyIntMax,
+			)
+		},
+	},
+	{
 		name: "AMD AMF",
 		build: func(bitrate int, keyIntMax int) string {
 			return fmt.Sprintf("videoconvert ! video/x-raw,format=NV12 ! amfh264enc name=video_encoder bitrate=%d gop-size=%d b-frames=0 usage=low-latency preset=speed rate-control=cbr ! ", bitrate, keyIntMax)
