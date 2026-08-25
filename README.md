@@ -50,6 +50,7 @@ allowing the cache size to be adjusted according to the system parameters and th
 - Cross-browser modern web interface
 - Optional DLNA server
 - Optional GStreamer HLS remuxing and transcoding (`-gst` builds from release 141.10)
+- Native [MCP](server/mcp/README.md) server for AI agents (OpenClaw, Hermes, and other MCP clients)
 
 ## Getting Started
 
@@ -252,7 +253,7 @@ docker run --rm -d --name torrserver -v ~/ts:/opt/ts -p 8090:8090 ghcr.io/yourok
 
 #### Environment Variables
 
-- `TS_HTTPAUTH` – Set to `1` to enable basic authentication. The authentication file must be placed in the `~/ts/config` directory.
+- `TS_HTTPAUTH` – Set to `1` to enable basic authentication. The authentication file must be placed in the `~/ts/config` directory. This also protects the MCP endpoint at `/mcp`.
 - `TS_RDB` – If set to `1`, enables the `--rdb` command-line flag.
 - `TS_DONTKILL` – If set to `1`, enables the `--dontkill` command-line flag.
 - `TS_IP` – Specifies the bind address for the web server using the `--ip` flag.
@@ -380,6 +381,43 @@ Standard binaries serve a filtered Swagger spec at runtime (only `/gst/settings`
 ### API Docs
 
 API documentation is hosted as Swagger format available at path `/swagger/index.html`.
+
+### MCP (AI agents)
+
+TorrServer exposes a native [Model Context Protocol](https://modelcontextprotocol.io/) server at **`/mcp`** on the same HTTP(S) port as the web UI (default `8090`). OpenClaw, Hermes, and other MCP clients can list, add, and manage torrents, and get a play URL for the next unwatched TV episode. The REST API is unchanged.
+
+Endpoint: `http://<host>:8090/mcp` (or `https://` when `--ssl` is enabled).
+
+When HTTP auth is on (`-a` / `TS_HTTPAUTH=1`), MCP uses the same Basic credentials as the rest of the API (`accs.db`). Play links returned by tools are ordinary HTTP URLs for VLC, mpv, or a browser.
+
+**OpenClaw** (`openclaw.json`):
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "torrserver": {
+        "url": "http://127.0.0.1:8090/mcp",
+        "transport": "streamable-http"
+      }
+    }
+  }
+}
+```
+
+With auth, add `"headers": { "Authorization": "Basic <base64-user-pass>" }`.
+
+**Hermes** (`~/.hermes/config.yaml`):
+
+```yaml
+mcp_servers:
+  torrserver:
+    url: "http://127.0.0.1:8090/mcp"
+    headers:
+      Authorization: "Basic <base64-user-pass>"
+```
+
+See [server/mcp/README.md](server/mcp/README.md) for the tool list and next-unwatched behavior.
 
 ## Authentication
 
