@@ -11,9 +11,10 @@ import (
 )
 
 type TorznabConfig struct {
-	Host string
-	Key  string
-	Name string
+	Host       string
+	Key        string
+	Name       string
+	Categories string
 }
 
 type TMDBConfig struct {

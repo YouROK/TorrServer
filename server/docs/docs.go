@@ -1701,6 +1701,9 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "categories": {
+                    "type": "string"
                 }
             }
         },

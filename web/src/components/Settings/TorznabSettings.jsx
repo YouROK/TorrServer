@@ -26,6 +26,7 @@ export default function TorznabSettings({ settings, inputForm, updateSettings })
   const { EnableRutorSearch, EnableTorznabSearch, TorznabUrls } = settings || {}
   const [newHost, setNewHost] = useState('')
   const [newKey, setNewKey] = useState('')
+  const [newCategories, setNewCategories] = useState('')
   const [newName, setNewName] = useState('')
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState(null)
@@ -33,10 +34,11 @@ export default function TorznabSettings({ settings, inputForm, updateSettings })
   const handleAdd = () => {
     if (newHost && newKey) {
       const currentUrls = TorznabUrls || []
-      updateSettings({ TorznabUrls: [...currentUrls, { Host: newHost, Key: newKey, Name: newName }] })
+      updateSettings({ TorznabUrls: [...currentUrls, { Host: newHost, Key: newKey, Name: newName, Categories: newCategories }] })
       setNewHost('')
       setNewKey('')
       setNewName('')
+      setNewCategories('')
     }
   }
 
@@ -157,6 +159,15 @@ export default function TorznabSettings({ settings, inputForm, updateSettings })
             label={t('Torznab.APIKey')}
             value={newKey}
             onChange={e => setNewKey(e.target.value)}
+            variant='outlined'
+            size='small'
+            fullWidth
+          />
+          <TextField
+            label={t('Torznab.Category')}
+            value={newKey}
+            onChange={e => setNewKey(e.target.value)}
+            placeholder='5000,2000'
             variant='outlined'
             size='small'
             fullWidth
