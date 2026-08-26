@@ -282,6 +282,8 @@ definitions:
     properties:
       categories:
         type: string
+      cattype:
+        type: string
       host:
         type: string
       key:

@@ -1696,6 +1696,9 @@ const docTemplate = `{
                 "categories": {
                     "type": "string"
                 },
+                "cattype": {
+                    "type": "string"
+                },
                 "host": {
                     "type": "string"
                 },
