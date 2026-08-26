@@ -151,7 +151,7 @@ func applySettingsInput(c tele.Context, setting, value string) {
 			_ = c.Send(tr(uid, "settings_input_torznab_usage"))
 			return
 		}
-		parts := strings.SplitN(value, "|", 4)
+		parts := strings.Split(value, "|")
 		cfg := settings.TorznabConfig{Host: strings.TrimSpace(parts[0])}
 		if len(parts) > 1 {
 			cfg.Key = strings.TrimSpace(parts[1])
@@ -161,6 +161,12 @@ func applySettingsInput(c tele.Context, setting, value string) {
 		}
 		if len(parts) > 3 {
 			cfg.Categories = strings.TrimSpace(parts[3])
+		}
+		if len(parts) > 4 {
+			cfg.CatType = settings.CategoryType(strings.TrimSpace(parts[4]))
+		}
+		if cfg.CatType == "" {
+			cfg.CatType = settings.CategoryDefault
 		}
 		if !strings.HasPrefix(cfg.Host, "http") {
 			cfg.Host = "https://" + cfg.Host

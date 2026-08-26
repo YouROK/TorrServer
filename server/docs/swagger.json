@@ -1686,6 +1686,9 @@
         "settings.TorznabConfig": {
             "type": "object",
             "properties": {
+                "categories": {
+                    "type": "string"
+                },
                 "host": {
                     "type": "string"
                 },
@@ -1693,9 +1696,6 @@
                     "type": "string"
                 },
                 "name": {
-                    "type": "string"
-                },
-                "categories": {
                     "type": "string"
                 }
             }

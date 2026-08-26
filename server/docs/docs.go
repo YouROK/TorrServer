@@ -1693,6 +1693,9 @@ const docTemplate = `{
         "settings.TorznabConfig": {
             "type": "object",
             "properties": {
+                "categories": {
+                    "type": "string"
+                },
                 "host": {
                     "type": "string"
                 },
@@ -1700,9 +1703,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name": {
-                    "type": "string"
-                },
-                "categories": {
                     "type": "string"
                 }
             }

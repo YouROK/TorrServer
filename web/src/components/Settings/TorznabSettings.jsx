@@ -4,7 +4,11 @@ import {
   FormControlLabel,
   FormGroup,
   FormHelperText,
+  FormControl,
+  MenuItem,
+  InputLabel,
   Switch,
+  Select,
   TextField,
   Button,
   List,
@@ -27,6 +31,7 @@ export default function TorznabSettings({ settings, inputForm, updateSettings })
   const [newHost, setNewHost] = useState('')
   const [newKey, setNewKey] = useState('')
   const [newCategories, setNewCategories] = useState('')
+  const [catType, setCategoryType] = useState('default')
   const [newName, setNewName] = useState('')
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState(null)
@@ -34,11 +39,19 @@ export default function TorznabSettings({ settings, inputForm, updateSettings })
   const handleAdd = () => {
     if (newHost && newKey) {
       const currentUrls = TorznabUrls || []
-      updateSettings({ TorznabUrls: [...currentUrls, { Host: newHost, Key: newKey, Name: newName, Categories: newCategories }] })
+      updateSettings({ TorznabUrls: [...currentUrls, 
+        { 
+          Host: newHost, 
+          Key: newKey, 
+          Name: newName, 
+          Categories: newCategories,
+          CatType: catType,
+        }] })
       setNewHost('')
       setNewKey('')
       setNewName('')
       setNewCategories('')
+      setCategoryType('default')
     }
   }
 
@@ -163,15 +176,40 @@ export default function TorznabSettings({ settings, inputForm, updateSettings })
             size='small'
             fullWidth
           />
-          <TextField
-            label={t('Torznab.Category')}
-            value={newKey}
-            onChange={e => setNewKey(e.target.value)}
-            placeholder='5000,2000'
-            variant='outlined'
-            size='small'
+          <FormControl
+            variant="outlined"
+            size="small"
             fullWidth
-          />
+          >
+            <InputLabel id="category-type-select-label">
+              {t('Torznab.SelectCategoryType')}
+            </InputLabel>
+            <Select
+              labelId="category-type-select-label"
+              id="category-type-select"
+              value={catType}
+              onChange={e => setCategoryType(e.target.value)}
+              label={t('Torznab.SelectCategoryType')}
+            >
+              <MenuItem value="default">По умолчанию</MenuItem>
+              <MenuItem value="manual">Вручную</MenuItem>
+              <MenuItem value="all">Все</MenuItem>
+            </Select>
+          </FormControl>
+
+          {catType === 'manual' && (
+            <TextField
+              label={t('Torznab.Category')}
+              value={newCategories}
+              onChange={e => setNewCategories(e.target.value)}
+              placeholder="5000,2000"
+              variant="outlined"
+              size="small"
+              fullWidth
+              style={{ marginTop: '10px' }}
+            />
+          )}
+
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
             <Button
               variant='outlined'
