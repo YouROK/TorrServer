@@ -9,6 +9,7 @@ import {
   InputLabel,
   Switch,
   Select,
+  Chip,
   TextField,
   Button,
   List,
@@ -39,14 +40,16 @@ export default function TorznabSettings({ settings, inputForm, updateSettings })
   const handleAdd = () => {
     if (newHost && newKey) {
       const currentUrls = TorznabUrls || []
-      updateSettings({ TorznabUrls: [...currentUrls, 
-        { 
-          Host: newHost, 
-          Key: newKey, 
-          Name: newName, 
+      updateSettings({
+        TorznabUrls: [...currentUrls,
+        {
+          Host: newHost,
+          Key: newKey,
+          Name: newName,
           Categories: newCategories,
           CatType: catType,
-        }] })
+        }]
+      })
       setNewHost('')
       setNewKey('')
       setNewName('')
@@ -127,6 +130,19 @@ export default function TorznabSettings({ settings, inputForm, updateSettings })
                         {url.Host}
                       </Typography>
                     )}
+                    <span style={{ display: 'block', margin: '4px 0' }}>
+                      {`Categories: `}
+                      {(url.CatType === "default" || url.CatType === "") ? (
+                        <>
+                          <Chip size="small" label="Default" />
+                          <Chip size="small" label="5000,2000" />
+                        </>
+                      ) : url.CatType === "all" ? (
+                        <Chip size="small" label="All" />
+                      ) : url.CatType === "manual" ? (
+                        <Chip size="small" label={url.Categories} />
+                      ) : null}
+                    </span>
                     {`Key: ${url.Key.substring(0, 5)}...`}
                   </>
                 }
