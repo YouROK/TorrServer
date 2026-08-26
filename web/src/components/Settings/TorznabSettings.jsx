@@ -26,7 +26,7 @@ import { torznabTestHost } from 'utils/Hosts'
 
 import { SecondarySettingsContent, SettingSectionLabel } from './style'
 
-export default function TorznabSettings({ settings, inputForm, updateSettings }) {
+export default function TorznabSettings({ settings, inputForm, updateSettings, isProMode }) {
   const { t } = useTranslation()
   const { EnableRutorSearch, EnableTorznabSearch, TorznabUrls } = settings || {}
   const [newHost, setNewHost] = useState('')
@@ -134,11 +134,11 @@ export default function TorznabSettings({ settings, inputForm, updateSettings })
                       {`Categories: `}
                       {(url.CatType === "default" || url.CatType === "") ? (
                         <>
-                          <Chip size="small" label="Default" />
+                          <Chip size="small" label={t("Torznab.LabelDefault")} />
                           <Chip size="small" label="5000,2000" />
                         </>
                       ) : url.CatType === "all" ? (
-                        <Chip size="small" label="All" />
+                        <Chip size="small" label={t("Torznab.LabelAll")} />
                       ) : url.CatType === "manual" ? (
                         <Chip size="small" label={url.Categories} />
                       ) : null}
@@ -192,39 +192,45 @@ export default function TorznabSettings({ settings, inputForm, updateSettings })
             size='small'
             fullWidth
           />
-          <FormControl
-            variant="outlined"
-            size="small"
-            fullWidth
-          >
-            <InputLabel id="category-type-select-label">
-              {t('Torznab.SelectCategoryType')}
-            </InputLabel>
-            <Select
-              labelId="category-type-select-label"
-              id="category-type-select"
-              value={catType}
-              onChange={e => setCategoryType(e.target.value)}
-              label={t('Torznab.SelectCategoryType')}
-            >
-              <MenuItem value="default">По умолчанию</MenuItem>
-              <MenuItem value="manual">Вручную</MenuItem>
-              <MenuItem value="all">Все</MenuItem>
-            </Select>
-          </FormControl>
+          {
+            isProMode && (
+              <>
+                <FormControl
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                >
+                  <InputLabel id="category-type-select-label">
+                    {t('Torznab.SelectCategoryType')}
+                  </InputLabel>
+                  <Select
+                    labelId="category-type-select-label"
+                    id="category-type-select"
+                    value={catType}
+                    onChange={e => setCategoryType(e.target.value)}
+                    label={t('Torznab.SelectCategoryType')}
+                  >
+                    <MenuItem value="default">{t("Torznab.LabelDefault")}</MenuItem>
+                    <MenuItem value="manual">{t("Torznab.LabelManual")}</MenuItem>
+                    <MenuItem value="all">{t("Torznab.LabelAll")}</MenuItem>
+                  </Select>
+                </FormControl>
 
-          {catType === 'manual' && (
-            <TextField
-              label={t('Torznab.Category')}
-              value={newCategories}
-              onChange={e => setNewCategories(e.target.value)}
-              placeholder="5000,2000"
-              variant="outlined"
-              size="small"
-              fullWidth
-              style={{ marginTop: '10px' }}
-            />
-          )}
+                {catType === 'manual' && (
+                  <TextField
+                    label={t('Torznab.Category')}
+                    value={newCategories}
+                    onChange={e => setNewCategories(e.target.value)}
+                    placeholder="5000,2000"
+                    variant="outlined"
+                    size="small"
+                    fullWidth
+                    style={{ marginTop: '10px' }}
+                  />
+                )}
+              </>
+            )
+          }
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
             <Button

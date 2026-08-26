@@ -255,7 +255,11 @@
     "Test": "Test",
     "TorrentAddedSuccessfully": "Torrent added successfully",
     "TorznabHostURL": "Torznab Host URL",
-    "Category": "Categories to search"
+    "Category": "Categories to search",
+    "SelectCategoryType": "Categories to search",
+    "LabelDefault": "Default",
+    "LabelManual": "Manual",
+    "LabelAll": "All"
   },
   "GStreamer": {
     "Tab": "GStreamer",

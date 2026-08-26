@@ -211,7 +211,7 @@ export default function SettingsDialog({ handleClose }) {
               </TabPanel>
 
               <TabPanel value={selectedTab} index={tabSearch} dir={direction}>
-                <TorznabSettings settings={settings} inputForm={inputForm} updateSettings={updateSettings} />
+                <TorznabSettings settings={settings} inputForm={inputForm} updateSettings={updateSettings} isProMode={isProMode} />
               </TabPanel>
 
               <TabPanel value={selectedTab} index={tabApp} dir={direction}>

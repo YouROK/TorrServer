@@ -255,7 +255,11 @@
     "Test": "Тест",
     "TorrentAddedSuccessfully": "Торрент успешно добавлен",
     "TorznabHostURL": "URL хоста Torznab",
-    "Category": "Список категорий для поиска"
+    "Category": "Список категорий для поиска",
+    "SelectCategoryType": "Список категорий для поиска",
+    "LabelDefault": "По умолчанию",
+    "LabelManual": "Вручную",
+    "LabelAll": "Все"
   },
   "GStreamer": {
     "Tab": "GStreamer",
