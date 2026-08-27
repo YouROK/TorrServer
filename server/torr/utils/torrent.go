@@ -23,34 +23,24 @@ import (
 const trackersFetchTimeout = 5 * time.Second
 
 var (
-	defTrackers = []string{
-		"http://retracker.local/announce",
-		"http://bt4.t-ru.org/ann?magnet",
-		"http://retracker.mgts.by:80/announce",
-		"http://tracker.city9x.com:2710/announce",
-		"http://tracker.electro-torrent.pl:80/announce",
-		"http://tracker.internetwarriors.net:1337/announce",
-		"http://tracker2.itzmx.com:6961/announce",
-		"udp://opentor.org:2710",
-		"udp://public.popcorn-tracker.org:6969/announce",
-		"udp://tracker.opentrackr.org:1337/announce",
-		"http://bt.svao-ix.ru/announce",
-		"udp://explodie.org:6969/announce",
-		"wss://tracker.btorrent.xyz",
-		"wss://tracker.openwebtorrent.com",
-	}
-	defTrackersMu sync.RWMutex
+	// fallbackTrackers is used when BTsets is nil or DefaultTrackers is empty (JNI/tests).
+	fallbackTrackers = parseTrackerLines(settings.DefaultTrackersText)
+	fallbackTrackersMu sync.RWMutex
 
 	loadedTrackers   []string
 	loadTrackersOnce sync.Once
-	// overridable in tests
-	trackersListURL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best_ip.txt"
+	loadedTrackersMu sync.Mutex
 )
 
 func SetDefTrackers(trackers []string) {
-	defTrackersMu.Lock()
-	defer defTrackersMu.Unlock()
-	defTrackers = trackers
+	fallbackTrackersMu.Lock()
+	fallbackTrackers = append([]string(nil), trackers...)
+	fallbackTrackersMu.Unlock()
+
+	if settings.BTsets != nil {
+		settings.BTsets.DefaultTrackers = strings.Join(trackers, "\n")
+	}
+	InvalidateTrackersCache()
 }
 
 func GetTrackerFromFile() []string {
@@ -72,60 +62,108 @@ func GetTrackerFromFile() []string {
 
 func GetDefTrackers() []string {
 	loadNewTracker()
-	return loadedTrackers
-}
-
-func copyDefTrackers() []string {
-	defTrackersMu.RLock()
-	defer defTrackersMu.RUnlock()
-	out := make([]string, len(defTrackers))
-	copy(out, defTrackers)
+	loadedTrackersMu.Lock()
+	defer loadedTrackersMu.Unlock()
+	out := make([]string, len(loadedTrackers))
+	copy(out, loadedTrackers)
 	return out
 }
 
-func useDefTrackersFallback(reason string) {
-	loadedTrackers = copyDefTrackers()
-	log.TLogln("trackerslist fetch failed, using built-in trackers:", reason)
+// InvalidateTrackersCache clears the one-shot remote list cache so the next
+// GetDefTrackers() reloads from current BTSets.
+func InvalidateTrackersCache() {
+	loadedTrackersMu.Lock()
+	defer loadedTrackersMu.Unlock()
+	loadTrackersOnce = sync.Once{}
+	loadedTrackers = nil
+}
+
+func parseTrackerLines(text string) []string {
+	var ret []string
+	for _, s := range strings.Split(text, "\n") {
+		s = strings.TrimSpace(s)
+		if s == "" || strings.HasPrefix(s, "#") {
+			continue
+		}
+		if strings.HasPrefix(s, "udp") || strings.HasPrefix(s, "http") || strings.HasPrefix(s, "wss") {
+			ret = append(ret, s)
+		}
+	}
+	return ret
+}
+
+func configuredDefaultTrackers() []string {
+	if settings.BTsets != nil && strings.TrimSpace(settings.BTsets.DefaultTrackers) != "" {
+		parsed := parseTrackerLines(settings.BTsets.DefaultTrackers)
+		if len(parsed) > 0 {
+			return parsed
+		}
+	}
+	fallbackTrackersMu.RLock()
+	defer fallbackTrackersMu.RUnlock()
+	out := make([]string, len(fallbackTrackers))
+	copy(out, fallbackTrackers)
+	return out
+}
+
+func configuredTrackersListURL() string {
+	if settings.BTsets != nil {
+		return strings.TrimSpace(settings.BTsets.TrackersListURL)
+	}
+	return settings.DefaultTrackersListURL
+}
+
+func useDefaultTrackersFallback(reason string) {
+	loadedTrackers = configuredDefaultTrackers()
+	if reason != "" {
+		log.TLogln("trackerslist fetch failed, using DefaultTrackers:", reason)
+	}
 }
 
 func loadNewTracker() {
 	loadTrackersOnce.Do(func() {
+		local := configuredDefaultTrackers()
+		url := configuredTrackersListURL()
+		if url == "" {
+			loadedTrackers = local
+			return
+		}
+
 		client := &http.Client{Timeout: trackersFetchTimeout}
-		resp, err := client.Get(trackersListURL)
+		resp, err := client.Get(url)
 		if err != nil {
-			useDefTrackersFallback(err.Error())
+			useDefaultTrackersFallback(err.Error())
 			return
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != http.StatusOK {
-			useDefTrackersFallback(fmt.Sprintf("status %d", resp.StatusCode))
+			useDefaultTrackersFallback(fmt.Sprintf("status %d", resp.StatusCode))
 			return
 		}
 		buf, err := io.ReadAll(resp.Body)
 		if err != nil {
-			useDefTrackersFallback(err.Error())
+			useDefaultTrackersFallback(err.Error())
 			return
 		}
-		arr := strings.Split(string(buf), "\n")
-		var ret []string
-		for _, s := range arr {
+		var remote []string
+		for _, s := range strings.Split(string(buf), "\n") {
 			s = strings.TrimSpace(s)
-			if len(s) > 0 {
-				ret = append(ret, s)
+			if s == "" || strings.HasPrefix(s, "#") {
+				continue
 			}
+			remote = append(remote, s)
 		}
-		if len(ret) == 0 {
-			useDefTrackersFallback("empty list")
+		if len(remote) == 0 {
+			useDefaultTrackersFallback("empty list")
 			return
 		}
-		loadedTrackers = append(ret, copyDefTrackers()...)
+		loadedTrackers = append(remote, local...)
 	})
 }
 
 // resetLoadedTrackersForTest clears cached trackers so tests can re-run loadNewTracker.
 func resetLoadedTrackersForTest() {
-	loadTrackersOnce = sync.Once{}
-	loadedTrackers = nil
+	InvalidateTrackersCache()
 }
 
 func PeerIDRandom(peer string) string {
