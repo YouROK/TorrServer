@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/base32"
+	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
@@ -9,13 +10,17 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
+	"server/log"
 	"server/settings"
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 	"golang.org/x/time/rate"
 )
+
+const trackersFetchTimeout = 5 * time.Second
 
 var (
 	defTrackers = []string{
@@ -35,9 +40,12 @@ var (
 		"wss://tracker.openwebtorrent.com",
 	}
 	defTrackersMu sync.RWMutex
-)
 
-var loadedTrackers []string
+	loadedTrackers   []string
+	loadTrackersOnce sync.Once
+	// overridable in tests
+	trackersListURL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best_ip.txt"
+)
 
 func SetDefTrackers(trackers []string) {
 	defTrackersMu.Lock()
@@ -64,34 +72,60 @@ func GetTrackerFromFile() []string {
 
 func GetDefTrackers() []string {
 	loadNewTracker()
-	if len(loadedTrackers) == 0 {
-		defTrackersMu.RLock()
-		defer defTrackersMu.RUnlock()
-		return defTrackers
-	}
 	return loadedTrackers
 }
 
+func copyDefTrackers() []string {
+	defTrackersMu.RLock()
+	defer defTrackersMu.RUnlock()
+	out := make([]string, len(defTrackers))
+	copy(out, defTrackers)
+	return out
+}
+
+func useDefTrackersFallback(reason string) {
+	loadedTrackers = copyDefTrackers()
+	log.TLogln("trackerslist fetch failed, using built-in trackers:", reason)
+}
+
 func loadNewTracker() {
-	if len(loadedTrackers) > 0 {
-		return
-	}
-	resp, err := http.Get("https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best_ip.txt")
-	if err == nil {
-		defer resp.Body.Close()
-		buf, err := io.ReadAll(resp.Body)
-		if err == nil {
-			arr := strings.Split(string(buf), "\n")
-			var ret []string
-			for _, s := range arr {
-				s = strings.TrimSpace(s)
-				if len(s) > 0 {
-					ret = append(ret, s)
-				}
-			}
-			loadedTrackers = append(ret, defTrackers...)
+	loadTrackersOnce.Do(func() {
+		client := &http.Client{Timeout: trackersFetchTimeout}
+		resp, err := client.Get(trackersListURL)
+		if err != nil {
+			useDefTrackersFallback(err.Error())
+			return
 		}
-	}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			useDefTrackersFallback(fmt.Sprintf("status %d", resp.StatusCode))
+			return
+		}
+		buf, err := io.ReadAll(resp.Body)
+		if err != nil {
+			useDefTrackersFallback(err.Error())
+			return
+		}
+		arr := strings.Split(string(buf), "\n")
+		var ret []string
+		for _, s := range arr {
+			s = strings.TrimSpace(s)
+			if len(s) > 0 {
+				ret = append(ret, s)
+			}
+		}
+		if len(ret) == 0 {
+			useDefTrackersFallback("empty list")
+			return
+		}
+		loadedTrackers = append(ret, copyDefTrackers()...)
+	})
+}
+
+// resetLoadedTrackersForTest clears cached trackers so tests can re-run loadNewTracker.
+func resetLoadedTrackersForTest() {
+	loadTrackersOnce = sync.Once{}
+	loadedTrackers = nil
 }
 
 func PeerIDRandom(peer string) string {
