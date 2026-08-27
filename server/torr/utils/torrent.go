@@ -24,7 +24,7 @@ const trackersFetchTimeout = 5 * time.Second
 
 var (
 	// fallbackTrackers is used when BTsets is nil or DefaultTrackers is empty (JNI/tests).
-	fallbackTrackers = parseTrackerLines(settings.DefaultTrackersText)
+	fallbackTrackers   = parseTrackerLines(settings.DefaultTrackersText)
 	fallbackTrackersMu sync.RWMutex
 
 	loadedTrackers   []string
@@ -135,7 +135,7 @@ func loadNewTracker() {
 			useDefaultTrackersFallback(err.Error())
 			return
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		if resp.StatusCode != http.StatusOK {
 			useDefaultTrackersFallback(fmt.Sprintf("status %d", resp.StatusCode))
 			return
@@ -159,11 +159,6 @@ func loadNewTracker() {
 		}
 		loadedTrackers = append(remote, local...)
 	})
-}
-
-// resetLoadedTrackersForTest clears cached trackers so tests can re-run loadNewTracker.
-func resetLoadedTrackersForTest() {
-	InvalidateTrackersCache()
 }
 
 func PeerIDRandom(peer string) string {

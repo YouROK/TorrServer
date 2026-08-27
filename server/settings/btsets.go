@@ -36,7 +36,7 @@ type BTSets struct {
 
 	// Torrent
 	ForceEncrypt             bool
-	RetrackersMode           int  // 0 - don`t add, 1 - add retrackers (def), 2 - remove retrackers 3 - replace retrackers
+	RetrackersMode           int    // 0 - don`t add, 1 - add retrackers (def), 2 - remove retrackers 3 - replace retrackers
 	TrackersListURL          string // remote trackers list URL; empty = skip remote fetch
 	DefaultTrackers          string // newline-separated announce URLs used as local/fallback list
 	TorrentDisconnectTimeout int    // in seconds
