@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"server/log"
@@ -22,14 +23,21 @@ import (
 
 const trackersFetchTimeout = 5 * time.Second
 
+// trackersRefreshInterval controls how often the remote trackers list is
+// re-fetched in the background. On refresh failure the existing cache is kept.
+var trackersRefreshInterval = 12 * time.Hour
+
 var (
 	// fallbackTrackers is used when BTsets is nil or DefaultTrackers is empty (JNI/tests).
 	fallbackTrackers   = parseTrackerLines(settings.DefaultTrackersText)
 	fallbackTrackersMu sync.RWMutex
 
-	loadedTrackers   []string
-	loadTrackersOnce sync.Once
-	loadedTrackersMu sync.Mutex
+	trackersMu         sync.RWMutex
+	loadedTrackers     []string // nil until first prefetch completes; GetDefTrackers uses local meanwhile
+	trackersFetchGen   atomic.Uint64
+	prefetchMu         sync.Mutex
+	prefetchStartedGen uint64 = ^uint64(0)
+	refreshLoopOnce    sync.Once
 )
 
 func SetDefTrackers(trackers []string) {
@@ -60,22 +68,38 @@ func GetTrackerFromFile() []string {
 	return nil
 }
 
+// GetDefTrackers returns cached trackers when available, otherwise local
+// DefaultTrackers immediately without blocking on network I/O.
 func GetDefTrackers() []string {
-	loadNewTracker()
-	loadedTrackersMu.Lock()
-	defer loadedTrackersMu.Unlock()
-	out := make([]string, len(loadedTrackers))
-	copy(out, loadedTrackers)
-	return out
+	trackersMu.RLock()
+	if loadedTrackers != nil {
+		out := make([]string, len(loadedTrackers))
+		copy(out, loadedTrackers)
+		trackersMu.RUnlock()
+		return out
+	}
+	trackersMu.RUnlock()
+	return configuredDefaultTrackers()
 }
 
-// InvalidateTrackersCache clears the one-shot remote list cache so the next
-// GetDefTrackers() reloads from current BTSets.
+// PrefetchTrackers loads the remote trackers list in the background when
+// configured. Safe to call multiple times; duplicate fetches for the same
+// generation are deduplicated. Also starts the periodic refresh loop once.
+func PrefetchTrackers() {
+	startPrefetch()
+	refreshLoopOnce.Do(func() {
+		go trackersRefreshLoop()
+	})
+}
+
+// InvalidateTrackersCache clears the remote list cache and starts a new
+// background fetch from current BTSets.
 func InvalidateTrackersCache() {
-	loadedTrackersMu.Lock()
-	defer loadedTrackersMu.Unlock()
-	loadTrackersOnce = sync.Once{}
+	trackersMu.Lock()
 	loadedTrackers = nil
+	trackersMu.Unlock()
+	trackersFetchGen.Add(1)
+	startPrefetch()
 }
 
 func parseTrackerLines(text string) []string {
@@ -113,52 +137,114 @@ func configuredTrackersListURL() string {
 	return settings.DefaultTrackersListURL
 }
 
-func useDefaultTrackersFallback(reason string) {
-	loadedTrackers = configuredDefaultTrackers()
-	if reason != "" {
-		log.TLogln("trackerslist fetch failed, using DefaultTrackers:", reason)
+func startPrefetch() {
+	gen := trackersFetchGen.Load()
+
+	prefetchMu.Lock()
+	if prefetchStartedGen == gen {
+		prefetchMu.Unlock()
+		return
+	}
+	prefetchStartedGen = gen
+	prefetchMu.Unlock()
+
+	local := configuredDefaultTrackers()
+	url := configuredTrackersListURL()
+	if url == "" {
+		setLoadedTrackers(gen, local, "")
+		return
+	}
+
+	go fetchTrackersAsync(gen, url, local)
+}
+
+func setLoadedTrackers(gen uint64, trackers []string, logMsg string) {
+	if trackersFetchGen.Load() != gen {
+		return
+	}
+	trackersMu.Lock()
+	if trackersFetchGen.Load() != gen {
+		trackersMu.Unlock()
+		return
+	}
+	loadedTrackers = append([]string(nil), trackers...)
+	trackersMu.Unlock()
+	if logMsg != "" {
+		log.TLogln(logMsg)
 	}
 }
 
-func loadNewTracker() {
-	loadTrackersOnce.Do(func() {
-		local := configuredDefaultTrackers()
+func fetchTrackersAsync(gen uint64, url string, local []string) {
+	merged, err := fetchTrackersFromURL(url, local)
+	if err != nil {
+		setLoadedTrackers(gen, local, "trackerslist fetch failed, using DefaultTrackers: "+err.Error())
+		return
+	}
+	remoteCount := len(merged) - len(local)
+	setLoadedTrackers(gen, merged, fmt.Sprintf("trackerslist loaded: %d remote + %d local", remoteCount, len(local)))
+}
+
+func fetchTrackersFromURL(url string, local []string) ([]string, error) {
+	client := &http.Client{Timeout: trackersFetchTimeout}
+	resp, err := client.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status %d", resp.StatusCode)
+	}
+	buf, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	var remote []string
+	for _, s := range strings.Split(string(buf), "\n") {
+		s = strings.TrimSpace(s)
+		if s == "" || strings.HasPrefix(s, "#") {
+			continue
+		}
+		remote = append(remote, s)
+	}
+	if len(remote) == 0 {
+		return nil, fmt.Errorf("empty list")
+	}
+	return append(remote, local...), nil
+}
+
+func trackersRefreshLoop() {
+	for {
+		time.Sleep(trackersRefreshInterval)
 		url := configuredTrackersListURL()
 		if url == "" {
-			loadedTrackers = local
-			return
+			continue
 		}
+		gen := trackersFetchGen.Load()
+		local := configuredDefaultTrackers()
+		merged, err := fetchTrackersFromURL(url, local)
+		if err != nil {
+			log.TLogln("trackerslist refresh failed:", err.Error())
+			continue
+		}
+		if !updateLoadedTrackersIfCurrent(gen, merged) {
+			continue
+		}
+		remoteCount := len(merged) - len(local)
+		log.TLogln(fmt.Sprintf("trackerslist refreshed: %d remote + %d local", remoteCount, len(local)))
+	}
+}
 
-		client := &http.Client{Timeout: trackersFetchTimeout}
-		resp, err := client.Get(url)
-		if err != nil {
-			useDefaultTrackersFallback(err.Error())
-			return
-		}
-		defer func() { _ = resp.Body.Close() }()
-		if resp.StatusCode != http.StatusOK {
-			useDefaultTrackersFallback(fmt.Sprintf("status %d", resp.StatusCode))
-			return
-		}
-		buf, err := io.ReadAll(resp.Body)
-		if err != nil {
-			useDefaultTrackersFallback(err.Error())
-			return
-		}
-		var remote []string
-		for _, s := range strings.Split(string(buf), "\n") {
-			s = strings.TrimSpace(s)
-			if s == "" || strings.HasPrefix(s, "#") {
-				continue
-			}
-			remote = append(remote, s)
-		}
-		if len(remote) == 0 {
-			useDefaultTrackersFallback("empty list")
-			return
-		}
-		loadedTrackers = append(remote, local...)
-	})
+func updateLoadedTrackersIfCurrent(gen uint64, trackers []string) bool {
+	if trackersFetchGen.Load() != gen {
+		return false
+	}
+	trackersMu.Lock()
+	defer trackersMu.Unlock()
+	if trackersFetchGen.Load() != gen {
+		return false
+	}
+	loadedTrackers = append([]string(nil), trackers...)
+	return true
 }
 
 func PeerIDRandom(peer string) string {
