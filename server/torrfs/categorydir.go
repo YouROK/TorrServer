@@ -14,9 +14,7 @@ type CategoryDir struct {
 }
 
 func NewCategoryDir(category string) *CategoryDir {
-	if category == "" {
-		category = "other"
-	}
+	category = categoryName(category)
 	d := &CategoryDir{
 		info: info{
 			name:  category,
@@ -29,6 +27,22 @@ func NewCategoryDir(category string) *CategoryDir {
 	return d
 }
 
+func categoryName(category string) string {
+	category = SanitizeName(category)
+	if category == "" {
+		return "other"
+	}
+	return category
+}
+
+func torrentName(t *torr.Torrent) string {
+	name := SanitizeName(t.Title)
+	if name == "" {
+		name = t.Hash().String()
+	}
+	return name
+}
+
 func (d *CategoryDir) Stat() (fs.FileInfo, error) {
 	return d.info, nil
 }
@@ -37,16 +51,14 @@ func (d *CategoryDir) ReadDir(n int) ([]fs.DirEntry, error) {
 	nodes := []fs.DirEntry{}
 	torrs := torr.ListTorrent()
 	for _, t := range torrs {
-		if t.Category == "" {
-			t.Category = "other"
+		if categoryName(t.Category) != d.Name() {
+			continue
 		}
-		if t.Category == d.Name() {
-			if settings.BTsets.ShowFSActiveTorr && !t.GotInfo() {
-				continue
-			}
-			td := NewTorrDir(nil, t.Title, t)
-			nodes = append(nodes, td)
+		if settings.BTsets.ShowFSActiveTorr && !t.GotInfo() {
+			continue
 		}
+		td := NewTorrDir(nil, torrentName(t), t)
+		nodes = append(nodes, td)
 	}
 
 	return nodes, nil
