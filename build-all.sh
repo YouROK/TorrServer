@@ -88,6 +88,61 @@ for PLATFORM in "${PLATFORMS[@]}"; do
 #  eval "$CMD"
 done
 
+echo "Build AppImages"
+
+APPIMAGE_TOOL="${ROOT}/appimagetool"
+
+if [[ ! -x "${APPIMAGE_TOOL}" ]]; then
+  curl -L -o "${APPIMAGE_TOOL}" \
+    "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
+  chmod +x "${APPIMAGE_TOOL}"
+fi
+
+build_appimage() {
+  local ARCH_NAME="$1"
+  local BINARY="$2"
+  local APPIMAGE_ARCH="$3"
+  local APPDIR="${ROOT}/TorrServer.AppDir"
+
+  rm -rf "${APPDIR}"
+  mkdir -p "${APPDIR}/usr/bin"
+
+  cp "${OUTPUT}-${BINARY}" "${APPDIR}/usr/bin/torrserver"
+  chmod +x "${APPDIR}/usr/bin/torrserver"
+
+  cat > "${APPDIR}/torrserver.desktop" <<'EOF'
+[Desktop Entry]
+Name=TorrServer
+Comment=Torrent streaming server
+Exec=torrserver
+Icon=torrserver
+Type=Application
+Categories=Network;FileTransfer;
+Terminal=true
+EOF
+
+  cp "${ROOT}/web/public/icon.png" "${APPDIR}/torrserver.png"
+
+  cat > "${APPDIR}/AppRun" <<'EOF'
+#!/bin/bash
+HERE="$(dirname "$(readlink -f "${0}")")"
+exec "${HERE}/usr/bin/torrserver" "$@"
+EOF
+
+  chmod +x "${APPDIR}/AppRun"
+
+  ARCH="${APPIMAGE_ARCH}" \
+    "${APPIMAGE_TOOL}" \
+    "${APPDIR}" \
+    "${OUTPUT}-linux-${ARCH_NAME}.AppImage"
+
+  rm -rf "${APPDIR}"
+}
+
+build_appimage "amd64" "linux-amd64" "x86_64"
+build_appimage "arm64" "linux-arm64" "aarch64"
+build_appimage "arm7" "linux-arm7" "armhf"
+
 #####################################
 ### GStreamer build section
 #####
