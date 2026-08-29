@@ -258,7 +258,11 @@
     "SortDescending": "Сортиране по низходящ ред",
     "Test": "Тест",
     "TorrentAddedSuccessfully": "Торентът е добавен успешно",
-    "TorznabHostURL": "URL адрес на Torznab сървъра"
+    "TorznabHostURL": "URL адрес на Torznab сървъра",
+    "SelectCategoryType": "Categories to search",
+    "LabelDefault": "Default",
+    "LabelManual": "Manual",
+    "LabelAll": "All"
   },
   "GStreamer": {
     "Tab": "GStreamer",

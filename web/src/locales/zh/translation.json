@@ -258,7 +258,11 @@
     "SortDescending": "降序排序",
     "Test": "测试",
     "TorrentAddedSuccessfully": "种子添加成功",
-    "TorznabHostURL": "Torznab主机URL"
+    "TorznabHostURL": "Torznab主机URL",
+    "SelectCategoryType": "Categories to search",
+    "LabelDefault": "Default",
+    "LabelManual": "Manual",
+    "LabelAll": "All"
   },
   "GStreamer": {
     "Tab": "GStreamer",
