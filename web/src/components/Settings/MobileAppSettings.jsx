@@ -7,6 +7,8 @@ import { SecondarySettingsContent, SettingSectionLabel } from './style'
 export default function MobileAppSettings({
   isVlcUsed,
   setIsVlcUsed,
+  showQuickVlcButton,
+  setShowQuickVlcButton,
   isInfuseUsed,
   setIsInfuseUsed,
   isSenPlayerUsed,
@@ -29,6 +31,19 @@ export default function MobileAppSettings({
           labelPlacement='start'
         />
         <FormHelperText margin='none'>{t('SettingsDialog.UseVLCHint')}</FormHelperText>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={showQuickVlcButton}
+              disabled={!isVlcUsed}
+              onChange={() => setShowQuickVlcButton(prev => !prev)}
+              color='secondary'
+            />
+          }
+          label={t('SettingsDialog.ShowQuickVLCButton')}
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('SettingsDialog.ShowQuickVLCButtonHint')}</FormHelperText>
         {isDesktopPlatform && (
           <FormHelperText margin='none'>
             {t('SettingsDialog.UseVLCDesktopHintPrefix')}{' '}

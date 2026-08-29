@@ -396,6 +396,24 @@ The users data file should be located near to the settings. Basic auth, read mor
 
 Note: You should enable authentication with -a (--httpauth) TorrServer startup option.
 
+## Retrackers
+
+When adding a torrent, TorrServer can modify announce trackers according to **Settings → Additional → Retrackers**:
+
+| Mode | Behavior |
+|------|----------|
+| Don't add | Leave magnet/file trackers unchanged |
+| Add (default) | Append the configured default/remote list |
+| Remove | Clear trackers from the torrent |
+| Replace | Replace with the configured default/remote list |
+
+Related settings (same Web UI section, also via `POST /settings`):
+
+- **`TrackersListURL`** — remote list URL (default: ngosang `trackers_best_ip.txt` on GitHub). Leave **empty** to skip the remote fetch (useful if GitHub is blocked). Failed/timed-out fetches fall back to `DefaultTrackers` (5s timeout, one attempt per process until settings are saved again).
+- **`DefaultTrackers`** — local announce URLs, one per line (`udp`/`http`/`https`/`wss`; `#` comments allowed). Used alone when the URL is empty, or merged after a successful remote fetch.
+
+Optional file overlay (always appended when present): put `trackers.txt` in the config directory (`--path` / `-d`), next to `config.db`. Only lines starting with `udp` or `http` are read from that file.
+
 ## Whitelist/Blacklist IP
 
 The lists file should be located in the same directory with config.db.

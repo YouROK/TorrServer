@@ -3,6 +3,7 @@ package template
 import (
 	"crypto/md5"
 	"fmt"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -308,18 +309,18 @@ func RouteWebPages(route gin.IRouter) {
 		c.Data(200, "application/json", Staticjs2155ece35chunkjsmap)
 	})
 
-	route.GET("/static/js/main.069edc60.chunk.js", func(c *gin.Context) {
-		etag := fmt.Sprintf("%x", md5.Sum(Staticjsmain069edc60chunkjs))
+	route.GET("/static/js/main.c4612288.chunk.js", func(c *gin.Context) {
+		etag := fmt.Sprintf("%x", md5.Sum(Staticjsmainc4612288chunkjs))
 		c.Header("Cache-Control", "public, max-age=31536000")
 		c.Header("ETag", etag)
-		c.Data(200, "application/javascript; charset=utf-8", Staticjsmain069edc60chunkjs)
+		c.Data(200, "application/javascript; charset=utf-8", Staticjsmainc4612288chunkjs)
 	})
 
-	route.GET("/static/js/main.069edc60.chunk.js.map", func(c *gin.Context) {
-		etag := fmt.Sprintf("%x", md5.Sum(Staticjsmain069edc60chunkjsmap))
+	route.GET("/static/js/main.c4612288.chunk.js.map", func(c *gin.Context) {
+		etag := fmt.Sprintf("%x", md5.Sum(Staticjsmainc4612288chunkjsmap))
 		c.Header("Cache-Control", "public, max-age=31536000")
 		c.Header("ETag", etag)
-		c.Data(200, "application/json", Staticjsmain069edc60chunkjsmap)
+		c.Data(200, "application/json", Staticjsmainc4612288chunkjsmap)
 	})
 
 	route.GET("/static/js/runtime-main.5ed86a79.js", func(c *gin.Context) {

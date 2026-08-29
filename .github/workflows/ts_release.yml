@@ -164,10 +164,91 @@ jobs:
           name: binaries-gst
           path: ${{ github.workspace }}/dist/TorrServer-gst-windows-amd64.exe
 
+  # Builds AppImages for amd64, arm64, armv7 from the binaries
+  build-appimage:
+    needs: build
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        include:
+          - arch_name: amd64
+            binary: TorrServer-linux-amd64
+            appimage_arch: x86_64
+          - arch_name: arm64
+            binary: TorrServer-linux-arm64
+            appimage_arch: aarch64
+          - arch_name: arm7
+            binary: TorrServer-linux-arm7
+            appimage_arch: armhf
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set version from tag
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Install AppImage dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget fuse libfuse2
+
+      - name: Download standard binaries artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries-standard
+          path: ./dist
+
+      - name: Build AppDir
+        run: |
+          APPDIR="${{ github.workspace }}/TorrServer.AppDir"
+          mkdir -p "$APPDIR/usr/bin"
+
+          cp "./dist/${{ matrix.binary }}" "$APPDIR/usr/bin/torrserver"
+          chmod +x "$APPDIR/usr/bin/torrserver"
+
+          cat > "$APPDIR/torrserver.desktop" <<EOF
+          [Desktop Entry]
+          Name=TorrServer
+          Comment=Torrent streaming server
+          Exec=torrserver
+          Icon=torrserver
+          Type=Application
+          Categories=Network;FileTransfer;
+          Terminal=true
+          EOF
+
+          # repo icon
+          cp web/public/icon.png "$APPDIR/torrserver.png"
+
+          cat > "$APPDIR/AppRun" <<'EOF'
+          #!/bin/bash
+          HERE="$(dirname "$(readlink -f "${0}")")"
+          exec "${HERE}/usr/bin/torrserver" "$@"
+          EOF
+          chmod +x "$APPDIR/AppRun"
+
+      - name: Download appimagetool
+        run: |
+          wget -q -O appimagetool "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
+          chmod +x appimagetool
+
+      - name: Build AppImage
+        run: |
+          mkdir -p "${{ github.workspace }}/dist-appimage"
+          ARCH=${{ matrix.appimage_arch }} ./appimagetool "${{ github.workspace }}/TorrServer.AppDir" \
+            "${{ github.workspace }}/dist-appimage/TorrServer-linux-${{ matrix.arch_name }}.AppImage"
+
+      - name: Upload AppImage Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-appimage-${{ matrix.arch_name }}
+          path: ${{ github.workspace }}/dist-appimage/*.AppImage
+
   release:
     needs:
       - build
       - build-gst
+      - build-appimage
     runs-on: ubuntu-latest
     permissions:
       contents: write
