@@ -647,8 +647,8 @@ github.com/swaggo/swag v1.16.6/go.mod h1:ngP2etMK5a0P3QBizic5MEwpRmluJZPHjXcMoj4
 github.com/tinylib/msgp v1.0.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tinylib/msgp v1.1.0/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tinylib/msgp v1.1.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
-github.com/tsynik/torrent v1.2.28 h1:qfM9EBlcZDEv0D0W8n+oIBhNeYpnSMp3bKq4VtTuZhk=
-github.com/tsynik/torrent v1.2.28/go.mod h1:yz3J10YJmUfiFfylHgIzr9cuhmXHHmf5xsHDgsqEnFg=
+github.com/tsynik/torrent v1.2.29 h1:tLvVKJolcxYW4POj/UqrTqIXAE9X0ZdSMYd9wNGJBnM=
+github.com/tsynik/torrent v1.2.29/go.mod h1:yz3J10YJmUfiFfylHgIzr9cuhmXHHmf5xsHDgsqEnFg=
 github.com/tsynik/upnp v0.1.5 h1:2KXGBtY6MZHxq17p/N372Kr/0MJX3ADAimfvPcTpap8=
 github.com/tsynik/upnp v0.1.5/go.mod h1:NiwP/o2sXNehx/4DbRT78Itii9F13d7NUrdHcVlpPPs=
 github.com/tv42/httpunix v0.0.0-20150427012821-b75d8614f926/go.mod h1:9ESjWnEqriFuLhtthL60Sar/7RFoluCcXsuvEwTV5KM=
