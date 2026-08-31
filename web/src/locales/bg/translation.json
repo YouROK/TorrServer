@@ -194,6 +194,7 @@
     "StorageConfiguration": "Настройки за съхранение",
     "StorageSettingsSaved": "Настройките за съхранение са запазени",
     "Tabs": {
+      "Access": "WAF",
       "Additional": "Допълнителен",
       "AdditionalDisabled": "(разрешете ПРО режим)",
       "App": "Приложение",
@@ -325,5 +326,42 @@
   "Uncategorized": "Некатегоризиран",
   "UploadFile": "Качи файл",
   "UploadSpeed": "Скорост на качване",
-  "Viewed": "Гледан"
+  "Viewed": "Гледан",
+  "WAF": {
+    "Title": "WAF",
+    "Subtitle": "Бял/черен списък с IP и блокирани referer (прилага се веднага, без рестарт)",
+    "StorageHint": "Списъците се съхраняват в обекта waf на горно ниво в settings.json, а не като текстови файлове.",
+    "SeparateSaveHint": "Списъците за достъп се запазват отделно с бутона по-долу.",
+    "ReadOnlyHint": "Конфигурацията на сървъра е само за четене. Списъците не могат да се променят.",
+    "Retry": "Опитай отново",
+    "UnsavedConfirm": "Да се отхвърлят ли незапазените промени в списъците за достъп?",
+    "WarningMessage": "{{list}}, ред {{line}}: {{reason}}",
+    "WarningMessageNoLine": "{{list}}: {{reason}}",
+    "Lists": {
+      "whitelist": "Бял списък",
+      "blacklist": "Черен списък",
+      "referers": "Referer",
+      "storage": "Хранилище"
+    },
+    "WarningCodes": {
+      "invalid_ip_range": "невалиден IP адрес, диапазон или CIDR",
+      "invalid_referer": "невалидно име на referer хост",
+      "line_too_long": "редът е твърде дълъг",
+      "read_failed": "конфигурацията не може да бъде прочетена"
+    },
+    "IPRulesHint": "Ако белият списък не е празен, IP адресът трябва да е в него. Съвпадение с черния списък все пак блокира. Поддържат се IP, диапазони (a-b), CIDR и префикс description:. Редове с # са коментари.",
+    "Whitelist": "Бял списък IP",
+    "WhitelistHint": "Празен списък изключва whitelist. Пример: local:127.0.0.1 или 10.0.0.0/8",
+    "Blacklist": "Черен списък IP",
+    "BlacklistHint": "Празен списък изключва blacklist. Пример: 203.0.113.0-203.0.113.255",
+    "ReferersSection": "Блокирани referer",
+    "ReferersHint": "Домейните по-долу се блокират. Заявки без Referer и Origin са разрешени.",
+    "Referers": "Допълнителни домейни",
+    "ReferersFieldHint": "Един домейн на ред, напр. example.com",
+    "Warnings": "Предупреждения при анализ:",
+    "SaveLists": "Запази списъците за достъп",
+    "Saved": "Списъците са запазени и презаредени",
+    "LoadFailed": "Неуспешно зареждане на списъците",
+    "SaveFailed": "Неуспешно запазване на списъците"
+  }
 }

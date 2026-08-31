@@ -194,6 +194,7 @@
     "StorageConfiguration": "Конфигурация хранилища",
     "StorageSettingsSaved": "Настройки сохранены! Перезапустите приложение для применения изменений.",
     "Tabs": {
+      "Access": "WAF",
       "Additional": "Расширенные",
       "AdditionalDisabled": "(включите ПРО-режим)",
       "App": "Приложение",
@@ -342,5 +343,42 @@
   "Uncategorized": "Без категории",
   "UploadFile": "Загрузить файл",
   "UploadSpeed": "Скорость отдачи",
-  "Viewed": "Просм."
+  "Viewed": "Просм.",
+  "WAF": {
+    "Title": "WAF",
+    "Subtitle": "Белый/чёрный список IP и блокировка Referer (применяется сразу, без перезапуска)",
+    "StorageHint": "Списки хранятся в объекте waf верхнего уровня в settings.json, а не в текстовых файлах.",
+    "SeparateSaveHint": "Списки доступа сохраняются отдельно кнопкой ниже.",
+    "ReadOnlyHint": "Конфигурация сервера доступна только для чтения. Списки нельзя изменить.",
+    "Retry": "Повторить",
+    "UnsavedConfirm": "Отменить несохранённые изменения списков доступа?",
+    "WarningMessage": "{{list}}, строка {{line}}: {{reason}}",
+    "WarningMessageNoLine": "{{list}}: {{reason}}",
+    "Lists": {
+      "whitelist": "Белый список",
+      "blacklist": "Чёрный список",
+      "referers": "Referer",
+      "storage": "Хранилище"
+    },
+    "WarningCodes": {
+      "invalid_ip_range": "неверный IP-адрес, диапазон или CIDR",
+      "invalid_referer": "неверное имя хоста referer",
+      "line_too_long": "строка слишком длинная",
+      "read_failed": "не удалось прочитать конфигурацию"
+    },
+    "IPRulesHint": "Если белый список не пуст, IP клиента должен в него входить. Совпадение с чёрным списком всё равно блокирует. Поддерживаются IP, диапазоны (a-b), CIDR и префикс description:. Строки с # — комментарии.",
+    "Whitelist": "Белый список IP",
+    "WhitelistHint": "Пустой список отключает whitelist. Пример: local:127.0.0.1 или 10.0.0.0/8",
+    "Blacklist": "Чёрный список IP",
+    "BlacklistHint": "Пустой список отключает blacklist. Пример: 203.0.113.0-203.0.113.255",
+    "ReferersSection": "Заблокированные referer",
+    "ReferersHint": "Домены ниже блокируются. Запросы без Referer и Origin разрешены.",
+    "Referers": "Дополнительные домены",
+    "ReferersFieldHint": "Один домен на строку, например example.com",
+    "Warnings": "Предупреждения разбора:",
+    "SaveLists": "Сохранить списки доступа",
+    "Saved": "Списки сохранены и перезагружены",
+    "LoadFailed": "Не удалось загрузить списки доступа",
+    "SaveFailed": "Не удалось сохранить списки доступа"
+  }
 }

@@ -194,6 +194,7 @@
     "StorageConfiguration": "Configuration du stockage",
     "StorageSettingsSaved": "Paramètres enregistrés ! Redémarrez l'application pour que les modifications prennent effet.",
     "Tabs": {
+      "Access": "WAF",
       "Additional": "Supplémentaire",
       "AdditionalDisabled": "(activer le mode PRO)",
       "App": "Application",
@@ -325,5 +326,42 @@
   "Uncategorized": "Non catégorisé",
   "UploadFile": "Téléverser un fichier",
   "UploadSpeed": "Vitesse de téléversement",
-  "Viewed": "Vu"
+  "Viewed": "Vu",
+  "WAF": {
+    "Title": "WAF",
+    "Subtitle": "Listes blanche/noire d'IP et referers bloqués (appliqué immédiatement, sans redémarrage)",
+    "StorageHint": "Les listes sont stockées dans l’objet waf de premier niveau de settings.json, et non dans des fichiers texte.",
+    "SeparateSaveHint": "Les listes d'accès sont enregistrées séparément avec le bouton ci-dessous.",
+    "ReadOnlyHint": "La configuration du serveur est en lecture seule. Les listes ne peuvent pas être modifiées.",
+    "Retry": "Réessayer",
+    "UnsavedConfirm": "Abandonner les modifications non enregistrées des listes d'accès ?",
+    "WarningMessage": "{{list}}, ligne {{line}} : {{reason}}",
+    "WarningMessageNoLine": "{{list}} : {{reason}}",
+    "Lists": {
+      "whitelist": "Liste blanche",
+      "blacklist": "Liste noire",
+      "referers": "Referers",
+      "storage": "Stockage"
+    },
+    "WarningCodes": {
+      "invalid_ip_range": "adresse IP, plage ou CIDR invalide",
+      "invalid_referer": "nom d'hôte referer invalide",
+      "line_too_long": "ligne trop longue",
+      "read_failed": "impossible de lire la configuration"
+    },
+    "IPRulesHint": "Si la liste blanche n'est pas vide, l'IP client doit y figurer. Une correspondance sur la liste noire bannit quand même. IP seules, plages (a-b), CIDR et préfixe description: sont pris en charge. Les lignes # sont des commentaires.",
+    "Whitelist": "Liste blanche IP",
+    "WhitelistHint": "Laisser vide pour désactiver. Exemple : local:127.0.0.1 ou 10.0.0.0/8",
+    "Blacklist": "Liste noire IP",
+    "BlacklistHint": "Laisser vide pour désactiver. Exemple : 203.0.113.0-203.0.113.255",
+    "ReferersSection": "Referers bloqués",
+    "ReferersHint": "Les domaines ci-dessous sont bloqués. Les requêtes sans Referer ni Origin sont autorisées.",
+    "Referers": "Domaines supplémentaires",
+    "ReferersFieldHint": "Un domaine par ligne, p.ex. example.com",
+    "Warnings": "Avertissements d'analyse :",
+    "SaveLists": "Enregistrer les listes d'accès",
+    "Saved": "Listes enregistrées et rechargées",
+    "LoadFailed": "Échec du chargement des listes d'accès",
+    "SaveFailed": "Échec de l'enregistrement des listes d'accès"
+  }
 }

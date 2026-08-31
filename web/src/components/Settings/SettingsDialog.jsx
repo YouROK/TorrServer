@@ -22,6 +22,7 @@ import MobileAppSettings from './MobileAppSettings'
 import TorznabSettings from './TorznabSettings'
 import TMDBSettings from './TMDBSettings'
 import GStreamerSettings from './GStreamerSettings'
+import WAFSettings from './WAFSettings'
 
 export default function SettingsDialog({ handleClose }) {
   const { t } = useTranslation()
@@ -42,13 +43,15 @@ export default function SettingsDialog({ handleClose }) {
   const [isSenPlayerUsed, setIsSenPlayerUsed] = useState(JSON.parse(localStorage.getItem('isSenPlayerUsed')) ?? false)
   const [isIinaUsed, setIsIinaUsed] = useState(JSON.parse(localStorage.getItem('isIinaUsed')) ?? false)
   const [gstAvailable, setGstAvailable] = useState(false)
+  const [wafDirty, setWAFDirty] = useState(false)
 
   const tabMain = 0
   const tabAdditional = 1
   const tabSearch = 2
   const tabApp = 3
-  const tabGStreamer = 4
-  const maxTab = gstAvailable ? tabGStreamer : tabApp
+  const tabAccess = 4
+  const tabGStreamer = 5
+  const maxTab = gstAvailable ? tabGStreamer : tabAccess
 
   useEffect(() => {
     fetch(gstSettingsHost())
@@ -63,10 +66,18 @@ export default function SettingsDialog({ handleClose }) {
     })
   }, [])
 
-  const ref = useOnStandaloneAppOutsideClick(handleClose)
+  // eslint-disable-next-line no-alert
+  const confirmWAFDiscard = () => !wafDirty || window.confirm(t('WAF.UnsavedConfirm'))
+  const requestClose = () => {
+    if (!confirmWAFDiscard()) return false
+    handleClose()
+    return true
+  }
+
+  const ref = useOnStandaloneAppOutsideClick(requestClose)
 
   const handleSave = () => {
-    handleClose()
+    if (!requestClose()) return
     const sets = JSON.parse(JSON.stringify(settings))
     sets.CacheSize = cacheSize * 1024 * 1024
     sets.ReaderReadAHead = cachePercentage
@@ -124,11 +135,15 @@ export default function SettingsDialog({ handleClose }) {
   }, [CacheSize, ReaderReadAHead, PreloadCache])
 
   const updateSettings = newProps => setSettings({ ...settings, ...newProps })
-  const handleChange = (_, newValue) => setSelectedTab(newValue)
-  const handleChangeIndex = index => setSelectedTab(index)
+  const changeTab = index => {
+    if (selectedTab === tabAccess && index !== tabAccess && !confirmWAFDiscard()) return
+    setSelectedTab(index)
+  }
+  const handleChange = (_, newValue) => changeTab(newValue)
+  const handleChangeIndex = index => changeTab(index)
 
   return (
-    <StyledDialog open onClose={handleClose} fullScreen={fullScreen} fullWidth maxWidth='md' ref={ref}>
+    <StyledDialog open onClose={requestClose} fullScreen={fullScreen} fullWidth maxWidth='md' ref={ref}>
       <SettingsHeader>
         <div>{t('SettingsDialog.Settings')}</div>
         <FormControlLabel
@@ -174,6 +189,8 @@ export default function SettingsDialog({ handleClose }) {
 
           <StyledTab label={t('SettingsDialog.Tabs.App')} {...a11yProps(tabApp)} />
 
+          <StyledTab label={t('SettingsDialog.Tabs.Access')} {...a11yProps(tabAccess)} />
+
           {gstAvailable && (
             <StyledTab
               disabled={!isProMode}
@@ -217,7 +234,12 @@ export default function SettingsDialog({ handleClose }) {
               </TabPanel>
 
               <TabPanel value={selectedTab} index={tabSearch} dir={direction}>
-                <TorznabSettings settings={settings} inputForm={inputForm} updateSettings={updateSettings} isProMode={isProMode} />
+                <TorznabSettings
+                  settings={settings}
+                  inputForm={inputForm}
+                  updateSettings={updateSettings}
+                  isProMode={isProMode}
+                />
               </TabPanel>
 
               <TabPanel value={selectedTab} index={tabApp} dir={direction}>
@@ -236,6 +258,10 @@ export default function SettingsDialog({ handleClose }) {
                 />
               </TabPanel>
 
+              <TabPanel value={selectedTab} index={tabAccess} dir={direction}>
+                <WAFSettings onDirtyChange={setWAFDirty} />
+              </TabPanel>
+
               {gstAvailable && (
                 <TabPanel value={selectedTab} index={tabGStreamer} dir={direction}>
                   <GStreamerSettings />
@@ -249,7 +275,7 @@ export default function SettingsDialog({ handleClose }) {
       </Content>
 
       <FooterSection>
-        <Button onClick={handleClose} color='secondary' variant='outlined'>
+        <Button onClick={requestClose} color='secondary' variant='outlined'>
           {t('Cancel')}
         </Button>
 
@@ -268,7 +294,13 @@ export default function SettingsDialog({ handleClose }) {
           {t('SettingsDialog.ResetToDefault')}
         </Button>
 
-        <Button variant='contained' onClick={handleSave} color='secondary'>
+        <Button
+          variant='contained'
+          onClick={handleSave}
+          color='secondary'
+          disabled={selectedTab === tabAccess && wafDirty}
+          title={selectedTab === tabAccess && wafDirty ? t('WAF.SeparateSaveHint') : undefined}
+        >
           {t('Save')}
         </Button>
       </FooterSection>

@@ -367,7 +367,7 @@ To build an Android server you will need the Android Toolchain.
 ```bash
 go install github.com/swaggo/swag/cmd/swag@latest
 cd server
-swag init -g web/server.go --parseDependency --parseInternal --parseDepth 5
+swag init -g web/server.go --parseInternal --parseDepth 5
 
 # Documentation can be linted using
 swag fmt
@@ -414,24 +414,99 @@ Related settings (same Web UI section, also via `POST /settings`):
 
 Optional file overlay (always appended when present): put `trackers.txt` in the config directory (`--path` / `-d`), next to `config.db`. Only lines starting with `udp` or `http` are read from that file.
 
-## Whitelist/Blacklist IP
+## Web Application Firewall (WAF)
 
-The lists file should be located in the same directory with config.db.
+TorrServer includes an HTTP access WAF that filters clients by IP address and by the `Referer` and `Origin` request headers. Configure it from **Settings → WAF** or through the authenticated `/waf` API.
 
-- Whitelist file name: `wip.txt`
-- Blacklist file name: `bip.txt`
+### Configuration
 
-Whitelist has priority over everything else.
+WAF configuration is stored in the top-level **`waf`** object in **`settings.json`**. Each rule is a separate array entry:
 
-Example:
-
-```text
-local:127.0.0.0-127.0.0.255
-127.0.0.0-127.0.0.255
-local:127.0.0.1
-127.0.0.1
-# at the beginning of the line, comment
+```json
+{
+  "waf": {
+    "version": 1,
+    "whitelist": [
+      "127.0.0.1",
+      "::1",
+      "10.0.0.0/8"
+    ],
+    "blacklist": [
+      "203.0.113.0/24"
+    ],
+    "referers": [
+      "example.com"
+    ]
+  }
+}
 ```
+
+The WAF does not import legacy HTTP access-control text files or `config.db` records. Changes saved through the web UI or API are applied immediately. After editing `settings.json` manually, restart TorrServer to load the changes.
+
+### IP rules
+
+Rules:
+
+- If the whitelist is **not empty**, the client IP must match it.
+- If the blacklist is **not empty**, a matching client IP is banned even when it is also on the whitelist.
+- An empty whitelist or blacklist disables that IP check.
+- Invalid entries are skipped and reported as warnings; valid entries remain active.
+- Banned responses use HTTP **403** with body `Banned`.
+- Client IP is taken from the TCP peer address (`RemoteAddr`). Reverse-proxy headers are not trusted by default.
+
+Supported array-entry formats include IPv4, IPv6, ranges, CIDR blocks, comments, and optional descriptions:
+
+```json
+[
+  "# comment",
+  "127.0.0.1",
+  "local:127.0.0.1",
+  "127.0.0.0-127.0.0.255",
+  "local:127.0.0.0-127.0.0.255",
+  "10.0.0.0/8",
+  "lan:10.0.0.0/8",
+  "2001:db8::1",
+  "local:2001:db8::1",
+  "2001:db8::/32"
+]
+```
+
+### Referer and Origin rules
+
+Block HTTP requests that come from unwanted sites (for example mirror pages that embed your TorrServer streams).
+
+- Each entry is a hostname. URLs with only an HTTP/HTTPS scheme and host are also accepted.
+- A rule blocks the hostname and all its subdomains.
+- Both `Referer` and `Origin` are checked before the IP allowlist, so an IP whitelist match cannot bypass a referer rule.
+- Requests without either header are allowed.
+- Protected internal rules remain active and are not displayed in the web UI.
+
+```json
+{
+  "referers": [
+    "example.com",
+    "evil.example.org",
+    "# comment"
+  ]
+}
+```
+
+### API
+
+`GET /waf` returns the active editable lists, status flags, and parse warnings. `POST /waf` atomically replaces all three editable lists and hot-reloads the WAF. The API uses newline-delimited strings for compatibility with the web text editors; all fields are required and an empty string clears a list.
+
+```shell
+curl -u USER:PASSWORD http://127.0.0.1:8090/waf
+
+curl -u USER:PASSWORD \
+  -H 'Content-Type: application/json' \
+  -d '{"whitelist":"127.0.0.1\n::1\n10.0.0.0/8","blacklist":"","referers":"example.com"}' \
+  http://127.0.0.1:8090/waf
+```
+
+In read-only mode, `GET /waf` remains available but `POST /waf` returns HTTP **403**.
+
+> **Note:** BitTorrent peer IP filtering uses a separate PeerGuardian-style file named `blocklist` in the config directory. That list is not managed by Settings → WAF / `/waf`.
 
 ## Torznab
 

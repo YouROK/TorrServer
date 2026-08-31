@@ -119,6 +119,38 @@ definitions:
       timecode:
         type: number
     type: object
+  api.wafResponse:
+    properties:
+      blacklist:
+        type: string
+      ip_enabled:
+        type: boolean
+      read_only:
+        type: boolean
+      referer_enabled:
+        type: boolean
+      referers:
+        type: string
+      warnings:
+        items:
+          $ref: '#/definitions/waf.Warning'
+        type: array
+      whitelist:
+        type: string
+    type: object
+  api.wafUpdateReq:
+    properties:
+      blacklist:
+        type: string
+      referers:
+        type: string
+      whitelist:
+        type: string
+    required:
+    - blacklist
+    - referers
+    - whitelist
+    type: object
   models.TorrentDetails:
     properties:
       audioQuality:
@@ -269,6 +301,16 @@ definitions:
         description: Disk
         type: boolean
     type: object
+  settings.CategoryType:
+    enum:
+    - default
+    - manual
+    - all
+    type: string
+    x-enum-varnames:
+    - CategoryDefault
+    - CategoryManual
+    - CategoryAll
   settings.TMDBConfig:
     properties:
       apikey:
@@ -286,9 +328,9 @@ definitions:
     type: object
   settings.TorznabConfig:
     properties:
+      catType:
+        $ref: '#/definitions/settings.CategoryType'
       categories:
-        type: string
-      cattype:
         type: string
       host:
         type: string
@@ -455,6 +497,15 @@ definitions:
         type: integer
       upload_speed:
         type: number
+    type: object
+  waf.Warning:
+    properties:
+      code:
+        type: string
+      line:
+        type: integer
+      list:
+        type: string
     type: object
 externalDocs:
   description: OpenAPI
@@ -1288,6 +1339,77 @@ paths:
       security:
       - BasicAuth: []
       summary: Set / List / Remove viewed torrents
+      tags:
+      - API
+  /waf:
+    get:
+      description: Returns whitelist/blacklist IP and blocked referer lists stored
+        in settings.json.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.wafResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BasicAuth: []
+      summary: Get HTTP WAF lists
+      tags:
+      - API
+    post:
+      consumes:
+      - application/json
+      description: Fully replaces whitelist/blacklist IP and blocked referer lists
+        in settings.json and hot-reloads the WAF. All three fields are required; explicit
+        empty strings clear a list.
+      parameters:
+      - description: Complete WAF configuration
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.wafUpdateReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.wafResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BasicAuth: []
+      summary: Update HTTP WAF lists
       tags:
       - API
 securityDefinitions:
