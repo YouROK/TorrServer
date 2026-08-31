@@ -1701,6 +1701,12 @@ const docTemplate = `{
         "settings.TorznabConfig": {
             "type": "object",
             "properties": {
+                "categories": {
+                    "type": "string"
+                },
+                "cattype": {
+                    "type": "string"
+                },
                 "host": {
                     "type": "string"
                 },

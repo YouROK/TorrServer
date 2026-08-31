@@ -258,7 +258,11 @@
     "SortDescending": "Trier par ordre décroissant",
     "Test": "Tester",
     "TorrentAddedSuccessfully": "Torrent ajouté avec succès",
-    "TorznabHostURL": "URL de l'hôte Torznab"
+    "TorznabHostURL": "URL de l'hôte Torznab",
+    "SelectCategoryType": "Categories to search",
+    "LabelDefault": "Default",
+    "LabelManual": "Manual",
+    "LabelAll": "All"
   },
   "GStreamer": {
     "Tab": "GStreamer",

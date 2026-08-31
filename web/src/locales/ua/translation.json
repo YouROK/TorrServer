@@ -258,7 +258,11 @@
     "SortDescending": "За спаданням",
     "Test": "Тест",
     "TorrentAddedSuccessfully": "Торрент успішно додано",
-    "TorznabHostURL": "URL хосту Torznab"
+    "TorznabHostURL": "URL хосту Torznab",
+    "SelectCategoryType": "Categories to search",
+    "LabelDefault": "Default",
+    "LabelManual": "Manual",
+    "LabelAll": "All"
   },
   "GStreamer": {
     "Tab": "GStreamer",

@@ -10,10 +10,20 @@ import (
 	"server/log"
 )
 
+type CategoryType string
+
+const (
+	CategoryDefault CategoryType = "default"
+	CategoryManual  CategoryType = "manual"
+	CategoryAll     CategoryType = "all"
+)
+
 type TorznabConfig struct {
-	Host string
-	Key  string
-	Name string
+	Host       string
+	Key        string
+	Name       string
+	Categories string
+	CatType    CategoryType
 }
 
 type TMDBConfig struct {

@@ -258,7 +258,11 @@
     "SortDescending": "Sortare descrescătoare",
     "Test": "Test",
     "TorrentAddedSuccessfully": "Torrent adăugat cu succes",
-    "TorznabHostURL": "URL-ul gazdei Torznab"
+    "TorznabHostURL": "URL-ul gazdei Torznab",
+    "SelectCategoryType": "Categories to search",
+    "LabelDefault": "Default",
+    "LabelManual": "Manual",
+    "LabelAll": "All"
   },
   "GStreamer": {
     "X264Ultrafast": "Use x264 ultrafast preset",
