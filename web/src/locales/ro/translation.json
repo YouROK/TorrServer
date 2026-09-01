@@ -173,6 +173,10 @@
     "ResponsiveModeHint": "Citiți datele torrent cât mai curând posibil pentru o experiență de streaming mai bună",
     "RetrackersMode": "Modul Retrackers",
     "RetrackersModeHint": "Modul de modificare a trackerelor la adăugarea unui torrent nou",
+    "TrackersListURL": "URL listă trackere de la distanță",
+    "TrackersListURLHint": "URL listă trackere de la distanță (câte un anunț pe linie). Lasă necompletat pentru a omite descărcarea de la distanță (de exemplu, când GitHub este blocat).",
+    "DefaultTrackers": "Trackere implicite",
+    "DefaultTrackersHint": "URL-uri de anunțare locale, câte unul pe linie. Sunt folosite singure când URL-ul de la distanță este necompletat sau sunt adăugate după o descărcare reușită de la distanță.",
     "SaveError": "Eroare: ",
     "SaveStorageSettings": "Salvați setările de stocare",
     "Saving": "Salvare...",
@@ -254,7 +258,11 @@
     "SortDescending": "Sortare descrescătoare",
     "Test": "Test",
     "TorrentAddedSuccessfully": "Torrent adăugat cu succes",
-    "TorznabHostURL": "URL-ul gazdei Torznab"
+    "TorznabHostURL": "URL-ul serverului Torznab",
+    "SelectCategoryType": "Lista categoriilor pentru căutare",
+    "LabelDefault": "Implicit",
+    "LabelManual": "Manual",
+    "LabelAll": "Toate"
   },
   "GStreamer": {
     "X264Ultrafast": "Use x264 ultrafast preset",

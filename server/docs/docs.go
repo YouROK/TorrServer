@@ -1530,6 +1530,10 @@ const docTemplate = `{
                 "connectionsLimit": {
                     "type": "integer"
                 },
+                "defaultTrackers": {
+                    "description": "newline-separated announce URLs used as local/fallback list",
+                    "type": "string"
+                },
                 "disableDHT": {
                     "type": "boolean"
                 },
@@ -1659,6 +1663,10 @@ const docTemplate = `{
                     "description": "Viewed timecodes",
                     "type": "boolean"
                 },
+                "trackersListURL": {
+                    "description": "remote trackers list URL; empty = skip remote fetch",
+                    "type": "string"
+                },
                 "uploadRateLimit": {
                     "description": "in kb, 0 - inf",
                     "type": "integer"
@@ -1693,6 +1701,12 @@ const docTemplate = `{
         "settings.TorznabConfig": {
             "type": "object",
             "properties": {
+                "categories": {
+                    "type": "string"
+                },
+                "cattype": {
+                    "type": "string"
+                },
                 "host": {
                     "type": "string"
                 },

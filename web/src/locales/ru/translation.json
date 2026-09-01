@@ -173,6 +173,10 @@
     "ResponsiveModeHint": "Получать данные торрента как можно быстрее для лучшего потокового воспроизведения",
     "RetrackersMode": "Ретрекеры",
     "RetrackersModeHint": "Режим модификации трекеров при добавлении нового торрента",
+    "TrackersListURL": "URL удалённого списка трекеров",
+    "TrackersListURLHint": "Ссылка на публичный список трекеров (по одному announce на строку). Оставьте пустым, чтобы не качать удалённый список (например, при блокировке GitHub).",
+    "DefaultTrackers": "Трекеры по умолчанию",
+    "DefaultTrackersHint": "Локальные announce URL, по одному на строку. Используются сами по себе, если URL пустой, или добавляются после успешной загрузки удалённого списка.",
     "SaveError": "Ошибка: ",
     "SaveStorageSettings": "Сохранить настройки хранилища",
     "Saving": "Сохранение…",
@@ -211,7 +215,9 @@
     "UseIINA": "Предлагать открыть видео в IINA",
     "UseIINAHint": "Добавить кнопку проигрывателя IINA в список торрент-контента (только macOS)",
     "ViewedHistoryStorage": "Хранилище истории просмотров:",
-    "ViewedStorageHint": "Выберите, где хранить историю просмотренного."
+    "ViewedStorageHint": "Выберите, где хранить историю просмотренного.",
+    "ShowQuickVLCButton": "Показывать кнопку VLC на карточках",
+    "ShowQuickVLCButtonHint": "Необязательная быстрая кнопка для раздач с одним видеофайлом. VLC также должен быть включён."
   },
   "Size": "Размер",
   "SpecialThanks": "Отдельное спасибо",
@@ -254,7 +260,12 @@
     "SortDescending": "По убыванию",
     "Test": "Тест",
     "TorrentAddedSuccessfully": "Торрент успешно добавлен",
-    "TorznabHostURL": "URL хоста Torznab"
+    "TorznabHostURL": "URL хоста Torznab",
+    "Category": "Список категорий для поиска",
+    "SelectCategoryType": "Список категорий для поиска",
+    "LabelDefault": "По умолчанию",
+    "LabelManual": "Вручную",
+    "LabelAll": "Все"
   },
   "GStreamer": {
     "Tab": "GStreamer",

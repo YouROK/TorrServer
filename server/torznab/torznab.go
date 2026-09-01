@@ -53,7 +53,13 @@ func Search(query string, index int) []*models.TorrentDetails {
 	if index >= 0 && index < len(settings.BTsets.TorznabUrls) {
 		config := settings.BTsets.TorznabUrls[index]
 		if config.Host != "" && config.Key != "" {
-			return searchOne(config.Host, config.Key, query)
+			return searchOne(
+				config.Host,
+				config.Key,
+				config.Categories,
+				config.CatType,
+				query,
+			)
 		}
 		return nil
 	}
@@ -62,7 +68,13 @@ func Search(query string, index int) []*models.TorrentDetails {
 		if config.Host == "" || config.Key == "" {
 			continue
 		}
-		results := searchOne(config.Host, config.Key, query)
+		results := searchOne(
+			config.Host,
+			config.Key,
+			config.Categories,
+			config.CatType,
+			query,
+		)
 		if results != nil {
 			allResults = append(allResults, results...)
 		}
@@ -70,7 +82,7 @@ func Search(query string, index int) []*models.TorrentDetails {
 	return allResults
 }
 
-func searchOne(host, key, query string) []*models.TorrentDetails {
+func searchOne(host, key, categories string, categoryType settings.CategoryType, query string) []*models.TorrentDetails {
 	if !strings.HasSuffix(host, "/") {
 		host += "/"
 	}
@@ -85,7 +97,17 @@ func searchOne(host, key, query string) []*models.TorrentDetails {
 	q.Set("apikey", key)
 	q.Set("t", "search")
 	q.Set("q", query)
-	q.Set("cat", "5000,2000") // Movies and TV
+
+	switch categoryType {
+	case settings.CategoryAll:
+	case settings.CategoryManual:
+		if categories != "" {
+			q.Set("cat", categories)
+		}
+	default:
+		q.Set("cat", "5000,2000") // Movies, TV
+	}
+
 	u.RawQuery = q.Encode()
 
 	resp, err := http.Get(u.String())

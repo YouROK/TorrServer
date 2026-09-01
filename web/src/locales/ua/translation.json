@@ -173,6 +173,10 @@
     "ResponsiveModeHint": "Читати дані торрента якомога швидше для кращого досвіду потокового відтворення",
     "RetrackersMode": "Ретрекери",
     "RetrackersModeHint": "Режим модифікації трекерів при додаванні нового торента",
+    "TrackersListURL": "URL віддаленого списку трекерів",
+    "TrackersListURLHint": "Посилання на публічний список трекерів (по одному announce на рядок). Залиште порожнім, щоб не завантажувати віддалений список.",
+    "DefaultTrackers": "Трекери за замовчуванням",
+    "DefaultTrackersHint": "Локальні announce URL, по одному на рядок. Використовуються самі, якщо URL порожній, або додаються після успішного завантаження віддаленого списку.",
     "SaveError": "Помилка: ",
     "SaveStorageSettings": "Збереження налаштувань збереження",
     "Saving": "Збереження...",
@@ -254,7 +258,11 @@
     "SortDescending": "За спаданням",
     "Test": "Тест",
     "TorrentAddedSuccessfully": "Торрент успішно додано",
-    "TorznabHostURL": "URL хосту Torznab"
+    "TorznabHostURL": "URL хосту Torznab",
+    "SelectCategoryType": "Categories to search",
+    "LabelDefault": "Default",
+    "LabelManual": "Manual",
+    "LabelAll": "All"
   },
   "GStreamer": {
     "Tab": "GStreamer",

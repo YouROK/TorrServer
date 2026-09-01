@@ -173,6 +173,10 @@
     "ResponsiveModeHint": "尽快读取种子数据以获得更好的流媒体体验",
     "RetrackersMode": "Retrackers模式",
     "RetrackersModeHint": "添加新种子时的Tracker修改模式",
+    "TrackersListURL": "Remote trackers list URL",
+    "TrackersListURLHint": "URL of a public trackers list (one announce per line). Leave empty to skip remote fetch (e.g. when GitHub is blocked).",
+    "DefaultTrackers": "Default trackers",
+    "DefaultTrackersHint": "Local announce URLs, one per line. Used alone when the remote URL is empty, or merged after a successful remote fetch.",
     "SaveError": "错误：",
     "SaveStorageSettings": "保存存储设置",
     "Saving": "保存中...",
@@ -254,7 +258,11 @@
     "SortDescending": "降序排序",
     "Test": "测试",
     "TorrentAddedSuccessfully": "种子添加成功",
-    "TorznabHostURL": "Torznab主机URL"
+    "TorznabHostURL": "Torznab主机URL",
+    "SelectCategoryType": "Categories to search",
+    "LabelDefault": "Default",
+    "LabelManual": "Manual",
+    "LabelAll": "All"
   },
   "GStreamer": {
     "Tab": "GStreamer",

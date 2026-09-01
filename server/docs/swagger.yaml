@@ -164,6 +164,9 @@ definitions:
         type: integer
       connectionsLimit:
         type: integer
+      defaultTrackers:
+        description: newline-separated announce URLs used as local/fallback list
+        type: string
       disableDHT:
         type: boolean
       disablePEX:
@@ -256,6 +259,9 @@ definitions:
       trackTimecode:
         description: Viewed timecodes
         type: boolean
+      trackersListURL:
+        description: remote trackers list URL; empty = skip remote fetch
+        type: string
       uploadRateLimit:
         description: in kb, 0 - inf
         type: integer
@@ -280,6 +286,10 @@ definitions:
     type: object
   settings.TorznabConfig:
     properties:
+      categories:
+        type: string
+      cattype:
+        type: string
       host:
         type: string
       key:

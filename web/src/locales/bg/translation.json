@@ -173,6 +173,10 @@
     "ResponsiveModeHint": "Четене на данни от торента възможно най-скоро за по-добро изживяване при стрийминг",
     "RetrackersMode": "Режим за ретракери",
     "RetrackersModeHint": "Режим на модификация на тракерите при добавяне на нов торент",
+    "TrackersListURL": "Remote trackers list URL",
+    "TrackersListURLHint": "URL of a public trackers list (one announce per line). Leave empty to skip remote fetch (e.g. when GitHub is blocked).",
+    "DefaultTrackers": "Default trackers",
+    "DefaultTrackersHint": "Local announce URLs, one per line. Used alone when the remote URL is empty, or merged after a successful remote fetch.",
     "SaveError": "Грешка: ",
     "SaveStorageSettings": "Запазване на настройките за съхранение",
     "Saving": "Запазване...",
@@ -254,7 +258,11 @@
     "SortDescending": "Сортиране по низходящ ред",
     "Test": "Тест",
     "TorrentAddedSuccessfully": "Торентът е добавен успешно",
-    "TorznabHostURL": "URL адрес на Torznab сървъра"
+    "TorznabHostURL": "URL адрес на Torznab сървъра",
+    "SelectCategoryType": "Categories to search",
+    "LabelDefault": "Default",
+    "LabelManual": "Manual",
+    "LabelAll": "All"
   },
   "GStreamer": {
     "Tab": "GStreamer",
