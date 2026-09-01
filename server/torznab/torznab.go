@@ -32,6 +32,7 @@ type TorznabItem struct {
 	PubDate     string             `xml:"pubDate"`
 	Size        int64              `xml:"size"`
 	Indexer     string             `xml:"jackettindexer"`
+	Prowlarr    string             `xml:"prowlarrindexer"`
 	Enclosure   []TorznabEnclosure `xml:"enclosure"`
 	Attributes  []TorznabAttribute `xml:"attr"`
 }
@@ -130,6 +131,9 @@ func searchOne(host, key, categories string, categoryType settings.CategoryType,
 
 	var results []*models.TorrentDetails
 	for _, item := range torznabResp.Channel.Items {
+		if item.Indexer == "" {
+			item.Indexer = item.Prowlarr
+		}
 		detail := &models.TorrentDetails{
 			Title:      item.Title,
 			Name:       item.Title, // Use Title as Name for now
