@@ -3,13 +3,14 @@
  *
  *   LIVE=1 TORRSERVER_URL=http://127.0.0.1:18091 TS_USER=ts TS_PASS=ts yarn test:e2e:live
  *
- * Optional: LIVE_TORRENT_HASH (default e5a5bdb8…), TORZNAB_QUERY.
- * Indexer hosts are taken from the running server settings, or TORZNAB_HOST + TORZNAB_KEY.
+ * JacRed in tests: https://jacred.stream (Jackett path, apikey pp).
  */
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
 import { chromium } from 'playwright'
+
+import { JAC_RED_HOST, JAC_RED_KEY, JAC_RED_NAME, POPULAR_SEARCH_QUERIES } from './indexers.mjs'
 
 const BASE = process.env.TORRSERVER_URL || ''
 const USER = process.env.TS_USER || 'ts'
@@ -96,32 +97,29 @@ test('live torrent get/add + stream stat + play range + ffp', { timeout: 180_000
   }
 })
 
-test('live torznab search (server settings or TORZNAB_HOST)', { timeout: 60_000 }, async t => {
+test('live torznab popular searches (jacred.stream key pp)', { timeout: 180_000 }, async t => {
   skipIfNotLive(t)
   const setsRes = await api('/settings', { method: 'POST', json: { action: 'get' } })
   assert.equal(setsRes.status, 200)
-  const sets = await setsRes.json()
-  const fromEnv = process.env.TORZNAB_HOST
-  const enabled = Boolean(fromEnv) || Boolean(sets.EnableTorznabSearch && (sets.TorznabUrls || []).length)
-  if (!enabled) {
-    t.skip('no Torznab indexers on server; set TORZNAB_HOST or enable in data/settings.json')
-    return
-  }
-  const q = encodeURIComponent(process.env.TORZNAB_QUERY || 'matrix')
-  const search = await api(`/torznab/search/?query=${q}`)
-  const searchStatus = search.status
-  const xml = await search.text()
-  assert.ok(searchStatus === 200, `torznab search ${searchStatus} ${xml.slice(0, 200)}`)
-  let parsed = null
-  try {
-    parsed = JSON.parse(xml)
-  } catch {
-    /* xml */
-  }
-  if (Array.isArray(parsed)) {
-    t.diagnostic(`torznab results: ${parsed.length}`)
-  } else {
-    assert.match(xml, /rss|error|item|channel/i)
+  const prev = await setsRes.json()
+
+  const urls = [{ Host: JAC_RED_HOST, Key: JAC_RED_KEY, Name: JAC_RED_NAME, CatType: 'all' }]
+  const setRes = await api('/settings', {
+    method: 'POST',
+    json: { action: 'set', sets: { ...prev, EnableTorznabSearch: true, TorznabUrls: urls } },
+  })
+  assert.equal(setRes.status, 200, await setRes.text())
+
+  for (const q of POPULAR_SEARCH_QUERIES) {
+    const search = await api(`/torznab/search/?query=${encodeURIComponent(q)}`)
+    const searchStatus = search.status
+    const body = await search.text()
+    assert.equal(searchStatus, 200, `${q}: ${searchStatus} ${body.slice(0, 200)}`)
+    const parsed = JSON.parse(body)
+    assert.ok(Array.isArray(parsed), `${q}: not a JSON array`)
+    assert.ok(parsed.length > 0, `${q}: expected hits, got 0`)
+    t.diagnostic(`${q}: ${parsed.length} hits`)
+    await new Promise(r => setTimeout(r, 400))
   }
 })
 

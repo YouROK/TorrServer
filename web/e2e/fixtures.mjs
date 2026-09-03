@@ -1,4 +1,4 @@
-/** Shared fixtures for mocked Playwright e2e (no live TorrServer). */
+import { JAC_RED_HOST, JAC_RED_KEY, JAC_RED_NAME } from './indexers.mjs'
 
 export const HASH = '0123456789abcdef0123456789abcdef01234567'
 
@@ -26,9 +26,9 @@ export const fixtureSettings = {
   DefaultTrackers: 'udp://audit.example:1337/announce',
   TorznabUrls: [
     {
-      Host: 'http://127.0.0.1:9696/1',
-      Key: 'mockkey',
-      Name: 'mock-indexer',
+      Host: JAC_RED_HOST,
+      Key: JAC_RED_KEY,
+      Name: JAC_RED_NAME,
       Categories: '2000',
       CatType: 'manual',
     },

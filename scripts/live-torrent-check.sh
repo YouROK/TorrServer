@@ -14,6 +14,7 @@ export TS_PASS="${TS_PASS:-ts}"
 export LIVE_TORRENT_HASH="$HASH"
 export LIVE=1
 export LIVE_TORRENT=1
+export LIVE_INDEXER=1
 
 if [[ ! -f "$DATADIR/accs.db" ]]; then
   echo "missing $DATADIR/accs.db" >&2
@@ -39,10 +40,16 @@ else
   curl -sf "$TORRSERVER_URL/echo" >/dev/null
 fi
 
-echo "=== Go live test ==="
+echo "=== Go live torrent ==="
 (
   cd "$ROOT/server"
   go test ./web/api -run TestLiveTorrentStreamStatPlayFFP -count=1 -timeout 3m
+)
+
+echo "=== Go JacRed (jacred.stream) indexer searches ==="
+(
+  cd "$ROOT/server"
+  go test ./torznab -count=1 -timeout 4m
 )
 
 echo "=== Playwright live tests ==="

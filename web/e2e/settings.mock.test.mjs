@@ -82,7 +82,8 @@ test('mocked Settings Access / Network / MCP / Torznab', { timeout: 60_000 }, as
     assert.equal(trackersUrl.includes('example.test'), true)
 
     await clickTab('Torznab')
-    await page.getByText('mock-indexer').waitFor({ timeout: 10_000 })
+    await page.getByText('JacRed').first().waitFor({ timeout: 10_000 })
+    await page.getByText('https://jacred.stream', { exact: false }).waitFor()
     await page.getByText('2000').first().waitFor()
 
     await clickTab('Advanced')
