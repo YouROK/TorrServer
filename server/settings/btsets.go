@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"io/fs"
+	"math"
 	"path/filepath"
 	"strings"
 
@@ -35,9 +36,9 @@ type TMDBConfig struct {
 
 type BTSets struct {
 	// Cache
-	CacheSize       int64 // in byte, def 64 MB
-	ReaderReadAHead int   // in percent, 5%-100%, [...S__X__E...] [S-E] not clean
-	PreloadCache    int   // in percent
+	CacheSize       int64   // in byte, def 64 MB
+	ReaderReadAHead int     // in percent, 5%-100%, [...S__X__E...] [S-E] not clean
+	PreloadCache    float64 // in percent, rounded to hundredths
 
 	// Disk
 	UseDisk           bool
@@ -163,6 +164,7 @@ func SetBTSets(sets *BTSets) {
 	if sets.PreloadCache > 100 {
 		sets.PreloadCache = 100
 	}
+	sets.PreloadCache = math.Round(sets.PreloadCache*100) / 100
 
 	if sets.TorrentsSavePath == "" {
 		sets.UseDisk = false

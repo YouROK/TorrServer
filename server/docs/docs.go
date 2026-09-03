@@ -1599,8 +1599,8 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "preloadCache": {
-                    "description": "in percent",
-                    "type": "integer"
+                    "description": "in percent, rounded to hundredths",
+                    "type": "number"
                 },
                 "readerReadAHead": {
                     "description": "in percent, 5%-100%, [...S__X__E...] [S-E] not clean",
