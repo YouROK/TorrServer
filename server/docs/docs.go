@@ -1664,7 +1664,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "trackersListURL": {
-                    "description": "remote trackers list URL; empty = skip remote fetch",
+                    "description": "optional custom remote trackers list URL; empty = use built-in mirrors; tried first, then mirrors",
                     "type": "string"
                 },
                 "uploadRateLimit": {

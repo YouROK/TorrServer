@@ -7,7 +7,7 @@ export default {
   RemoveCacheOnDrop: false,
   ForceEncrypt: false,
   RetrackersMode: 1,
-  TrackersListURL: 'https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best_ip.txt',
+  TrackersListURL: '',
   DefaultTrackers: `http://retracker.local/announce
 http://bt4.t-ru.org/ann?magnet
 http://retracker.mgts.by:80/announce
