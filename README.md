@@ -479,7 +479,9 @@ WAF configuration is stored in the top-level **`waf`** object in **`settings.jso
 }
 ```
 
-The WAF does not import legacy HTTP access-control text files or `config.db` records. Changes saved through the web UI or API are applied immediately. After editing `settings.json` manually, restart TorrServer to load the changes.
+On first start, if `settings.json` has **no** `waf` key yet and legacy ACL files **`wip.txt`** (whitelist) / **`bip.txt`** (blacklist) exist in the config directory (same place as `config.db`), TorrServer imports them into `waf` arrays and renames the sources to **`wip.txt.bak`** / **`bip.txt.bak`**. Those backups are not read again. If a `waf` key already exists (even with empty lists), legacy files are left untouched.
+
+Changes saved through the web UI or API are applied immediately. After editing `settings.json` manually, restart TorrServer to load the changes.
 
 ### IP rules
 
