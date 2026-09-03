@@ -20,10 +20,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go_version }}
           cache: true
@@ -111,7 +111,7 @@ jobs:
           CC=$NDK_TOOLCHAIN/bin/x86_64-linux-android21-clang CGO_ENABLED=1 GOOS=android GOARCH=amd64 go build -ldflags="$LDFLAGS" -tags=nosqlite -trimpath -o "${{ github.workspace }}/dist/TorrServer-android-amd64" ./cmd
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: binaries-${{ matrix.group }}
           path: ${{ github.workspace }}/dist/*
@@ -122,16 +122,16 @@ jobs:
       NODE_OPTIONS: --openssl-legacy-provider
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: stable
           cache: true
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 20
 
@@ -159,7 +159,7 @@ jobs:
         run: powershell -NoProfile -ExecutionPolicy Bypass -File .\.github\scripts\build-gst-windows.ps1
 
       - name: Upload GST Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: binaries-gst
           path: ${{ github.workspace }}/dist/TorrServer-gst-windows-amd64.exe
@@ -182,7 +182,7 @@ jobs:
             appimage_arch: armhf
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set version from tag
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
@@ -193,7 +193,7 @@ jobs:
           sudo apt-get install -y wget fuse libfuse2
 
       - name: Download standard binaries artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: binaries-standard
           path: ./dist
@@ -239,22 +239,65 @@ jobs:
             "${{ github.workspace }}/dist-appimage/TorrServer-linux-${{ matrix.arch_name }}.AppImage"
 
       - name: Upload AppImage Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: binaries-appimage-${{ matrix.arch_name }}
           path: ${{ github.workspace }}/dist-appimage/*.AppImage
+
+  build-ios:
+    name: Build iOS XCFramework
+    runs-on: macos-26
+    env:
+      NODE_OPTIONS: --openssl-legacy-provider
+      XCODE_VERSION: "26.6"
+      IOS_VERSION_MIN: "18.0"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Select Xcode Version (${{ env.XCODE_VERSION }})
+        uses: maxim-lobanov/setup-xcode@v1.7.0
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: stable
+          cache: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 20
+
+      - name: Set version from tag
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Build TorrServerKit.xcframework
+        run: |
+          chmod +x build-ios.sh
+          ./build-ios.sh
+
+      - name: Upload iOS XCFramework Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: binaries-ios
+          path: ${{ github.workspace }}/dist/TorrServer-ios-TorrServerKit.xcframework.zip
+          if-no-files-found: error
 
   release:
     needs:
       - build
       - build-gst
       - build-appimage
+      - build-ios
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: ./all-dist
           merge-multiple: true
@@ -265,7 +308,7 @@ jobs:
           ls -R ./all-dist
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: ./all-dist/*
