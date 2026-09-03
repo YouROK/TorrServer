@@ -117,6 +117,15 @@ jobs:
       - name: Test
         run: yarn test
 
+      - name: i18n
+        run: yarn i18n:check
+
+      - name: Install Playwright Chromium
+        run: yarn playwright install chromium --with-deps
+
+      - name: E2E (mocked)
+        run: yarn test:e2e
+
       - name: Build
         run: yarn build
         env:
