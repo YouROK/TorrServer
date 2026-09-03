@@ -1677,6 +1677,19 @@ const docTemplate = `{
                 }
             }
         },
+        "settings.CategoryType": {
+            "type": "string",
+            "enum": [
+                "default",
+                "manual",
+                "all"
+            ],
+            "x-enum-varnames": [
+                "CategoryDefault",
+                "CategoryManual",
+                "CategoryAll"
+            ]
+        },
         "settings.TMDBConfig": {
             "type": "object",
             "properties": {
@@ -1701,10 +1714,10 @@ const docTemplate = `{
         "settings.TorznabConfig": {
             "type": "object",
             "properties": {
-                "categories": {
-                    "type": "string"
+                "catType": {
+                    "$ref": "#/definitions/settings.CategoryType"
                 },
-                "cattype": {
+                "categories": {
                     "type": "string"
                 },
                 "host": {
