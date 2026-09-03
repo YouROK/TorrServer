@@ -14,6 +14,7 @@ import (
 	"server/log"
 	"server/rutor/models"
 	"server/settings"
+	"server/version"
 )
 
 const httpTimeout = 30 * time.Second
@@ -200,7 +201,7 @@ func searchOne(ctx context.Context, host, key, query, label, cat string, offset,
 		log.TLogln("Error creating Torznab request:", err)
 		return nil
 	}
-	req.Header.Set("User-Agent", "TorrServer")
+	version.SetRequest(req)
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
@@ -314,7 +315,7 @@ func FetchCaps(ctx context.Context, host, key string) (*Caps, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "TorrServer")
+	version.SetRequest(req)
 
 	resp, err := httpClient.Do(req)
 	if err != nil {

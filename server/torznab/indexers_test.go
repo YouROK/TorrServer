@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"server/settings"
+	"server/version"
 )
 
 // JacRed Torznab endpoint stored in tests (Jackett-compatible path).
@@ -63,6 +64,10 @@ func TestSearchJacRedJackettAndProwlarrMock(t *testing.T) {
 		}
 		if r.URL.Query().Get("t") != "search" {
 			http.Error(w, "bad t", http.StatusBadRequest)
+			return
+		}
+		if ua := r.Header.Get("User-Agent"); ua != version.UserAgent() {
+			http.Error(w, "bad ua "+ua, http.StatusForbidden)
 			return
 		}
 		w.Header().Set("Content-Type", "application/rss+xml")

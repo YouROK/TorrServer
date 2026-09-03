@@ -17,6 +17,7 @@ import (
 	"server/log"
 	"server/tgbot/config"
 	up "server/tgbot/upload"
+	"server/version"
 )
 
 func newTelegramHTTPClient() *http.Client {
@@ -61,7 +62,7 @@ func newTelegramHTTPClient() *http.Client {
 			return socksDial.Dial(network, address)
 		},
 	}
-	return &http.Client{Transport: transport, Timeout: timeout}
+	return &http.Client{Transport: version.WithUserAgent(transport), Timeout: timeout}
 }
 
 func Start(token string) error {
