@@ -19,7 +19,7 @@
     "hls.js": "1.7.1",
     "i18next": "^26.4.0",
     "i18next-browser-languagedetector": "^8.0.4",
-    "lucide-react": "^1.35.0",
+    "lucide-react": "^1.38.0",
     "media-chrome": "^4.19.2",
     "parse-torrent": "^11.0.24",
     "parse-torrent-title": "^3.0.1",
