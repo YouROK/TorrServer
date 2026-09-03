@@ -59,6 +59,8 @@ func NewBTS() *BTServer {
 }
 
 func (bt *BTServer) Connect() error {
+	utils.PrefetchTrackers()
+
 	bt.mu.Lock()
 	defer bt.mu.Unlock()
 	var err error

@@ -236,7 +236,8 @@
       "Network": "Сеть",
       "AdvancedShort": "Расширенные",
       "StorageShort": "Хранилище",
-      "Appearance": "Оформление"
+      "Appearance": "Оформление",
+      "Access": "Доступ"
     },
     "TorrentDisconnectTimeout": "Тайм-аут отключения торрента",
     "TorrentsSavePath": "Путь хранения кеша",
@@ -282,7 +283,11 @@
     "SectionDialogs": "Диалоги",
     "DialogsInstantHint": "Эти параметры применяются сразу в этом браузере — «Сохранить» не нужно.",
     "DialogsFullScreen": "Открывать диалоги на весь экран",
-    "DialogsFullScreenHint": "По умолчанию на телефонах и планшетах в landscape. Включите, чтобы принудительно открывать окна на весь экран и на широком мониторе."
+    "DialogsFullScreenHint": "По умолчанию на телефонах и планшетах в landscape. Включите, чтобы принудительно открывать окна на весь экран и на широком мониторе.",
+    "TrackersListURL": "Свой URL списка трекеров",
+    "TrackersListURLHint": "Необязательный URL списка. Пустое значение — встроенные зеркала ngosang. Если задан, пробуется первым, затем зеркала. Если все запросы не удались, используются локальные Default Trackers.",
+    "DefaultTrackers": "Трекеры по умолчанию",
+    "DefaultTrackersHint": "Локальные announce URL, по одному на строку. Используются сами по себе, если все удалённые запросы не удались, или объединяются после успешной загрузки."
   },
   "Size": "Размер",
   "SpecialThanks": "Отдельное спасибо",
@@ -332,7 +337,11 @@
     "TorznabHostURL": "URL хоста Torznab",
     "Tab": "Torznab",
     "AddServer": "Add server",
-    "Settings": "Torznab settings"
+    "Settings": "Torznab settings",
+    "SelectCategoryType": "Список категорий для поиска",
+    "LabelDefault": "По умолчанию",
+    "LabelManual": "Вручную",
+    "LabelAll": "Все"
   },
   "GStreamer": {
     "Tab": "GStreamer",
@@ -616,5 +625,45 @@
   "CacheReaders": "Читатели",
   "ShowMore": "Ещё",
   "ShowLess": "Свернуть",
-  "NoSpeedData": "Нет данных о скорости"
+  "NoSpeedData": "Нет данных о скорости",
+  "WAF": {
+    "Title": "WAF",
+    "Subtitle": "Белый/чёрный список IP и блокировка Referer (применяется сразу, без перезапуска)",
+    "StorageHint": "Списки хранятся в объекте waf верхнего уровня в settings.json, а не в текстовых файлах.",
+    "SeparateSaveHint": "Списки доступа сохраняются отдельно кнопкой ниже.",
+    "ReadOnlyHint": "Конфигурация сервера доступна только для чтения. Списки нельзя изменить.",
+    "Retry": "Повторить",
+    "UnsavedConfirm": "Отменить несохранённые изменения списков доступа?",
+    "WarningMessage": "{{list}}, строка {{line}}: {{reason}}",
+    "WarningMessageNoLine": "{{list}}: {{reason}}",
+    "Lists": {
+      "whitelist": "Белый список",
+      "blacklist": "Чёрный список",
+      "referers": "Referer",
+      "storage": "Хранилище"
+    },
+    "WarningCodes": {
+      "invalid_ip_range": "неверный IP-адрес, диапазон или CIDR",
+      "invalid_referer": "неверное имя хоста referer",
+      "line_too_long": "строка слишком длинная",
+      "read_failed": "не удалось прочитать конфигурацию"
+    },
+    "IPRulesHint": "Если белый список не пуст, IP клиента должен в него входить. Совпадение с чёрным списком всё равно блокирует. Поддерживаются IP, диапазоны (a-b), CIDR и префикс description:. Строки с # — комментарии.",
+    "Whitelist": "Белый список IP",
+    "WhitelistHint": "Пустой список отключает whitelist. Пример: local:127.0.0.1 или 10.0.0.0/8",
+    "Blacklist": "Чёрный список IP",
+    "BlacklistHint": "Пустой список отключает blacklist. Пример: 203.0.113.0-203.0.113.255",
+    "ReferersSection": "Заблокированные referer",
+    "ReferersHint": "Домены ниже блокируются. Запросы без Referer и Origin разрешены.",
+    "Referers": "Дополнительные домены",
+    "ReferersFieldHint": "Один домен на строку, например example.com",
+    "Warnings": "Предупреждения разбора:",
+    "SaveLists": "Сохранить списки доступа",
+    "Saved": "Списки сохранены и перезагружены",
+    "LoadFailed": "Не удалось загрузить списки доступа",
+    "SaveFailed": "Не удалось сохранить списки доступа"
+  },
+  "MCPStatus": "MCP",
+  "CopyMcpUrl": "Копировать URL MCP",
+  "MCPHint": "AI-агенты подключаются к /mcp на том же HTTP-порту, что и веб-интерфейс."
 }

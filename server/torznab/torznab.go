@@ -14,6 +14,7 @@ import (
 	"server/log"
 	"server/rutor/models"
 	"server/settings"
+	"server/version"
 )
 
 const httpTimeout = 30 * time.Second
@@ -38,6 +39,7 @@ type TorznabItem struct {
 	PubDate     string             `xml:"pubDate"`
 	Size        int64              `xml:"size"`
 	Indexer     string             `xml:"jackettindexer"`
+	Prowlarr    string             `xml:"prowlarrindexer"`
 	Enclosure   []TorznabEnclosure `xml:"enclosure"`
 	Attributes  []TorznabAttribute `xml:"attr"`
 }
@@ -126,7 +128,7 @@ func Search(ctx context.Context, query string, index int, cat string, offset, li
 	if index >= 0 && index < len(settings.BTsets.TorznabUrls) {
 		config := settings.BTsets.TorznabUrls[index]
 		if config.Host != "" && config.Key != "" {
-			return searchOne(ctx, config.Host, config.Key, query, indexerLabel(config), cat, searchOffset, limit)
+			return searchOne(ctx, config.Host, config.Key, query, indexerLabel(config), effectiveCat(cat, config.Categories, config.CatType), searchOffset, limit)
 		}
 		return nil
 	}
@@ -135,12 +137,28 @@ func Search(ctx context.Context, query string, index int, cat string, offset, li
 		if config.Host == "" || config.Key == "" {
 			continue
 		}
-		results := searchOne(ctx, config.Host, config.Key, query, indexerLabel(config), cat, searchOffset, limit)
+		results := searchOne(ctx, config.Host, config.Key, query, indexerLabel(config), effectiveCat(cat, config.Categories, config.CatType), searchOffset, limit)
 		if results != nil {
 			allResults = append(allResults, results...)
 		}
 	}
 	return allResults
+}
+
+// effectiveCat applies the request category when the UI/Telegram/MCP sent one;
+// otherwise it uses the indexer's CatType policy (default movies+TV, manual list, or all).
+func effectiveCat(requestCat, categories string, catType settings.CategoryType) string {
+	if strings.TrimSpace(requestCat) != "" {
+		return requestCat
+	}
+	switch catType {
+	case settings.CategoryAll:
+		return ""
+	case settings.CategoryManual:
+		return categories
+	default:
+		return "5000,2000"
+	}
 }
 
 // indexerLabel picks a short, human-readable source name for a configured indexer — the
@@ -183,6 +201,7 @@ func searchOne(ctx context.Context, host, key, query, label, cat string, offset,
 		log.TLogln("Error creating Torznab request:", err)
 		return nil
 	}
+	version.SetRequest(req)
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
@@ -216,6 +235,9 @@ func searchOne(ctx context.Context, host, key, query, label, cat string, offset,
 	var results []*models.TorrentDetails
 	for _, item := range torznabResp.Channel.Items {
 		tracker := item.Indexer
+		if tracker == "" {
+			tracker = item.Prowlarr
+		}
 		if tracker == "" {
 			tracker = label
 		}
@@ -293,6 +315,7 @@ func FetchCaps(ctx context.Context, host, key string) (*Caps, error) {
 	if err != nil {
 		return nil, err
 	}
+	version.SetRequest(req)
 
 	resp, err := httpClient.Do(req)
 	if err != nil {

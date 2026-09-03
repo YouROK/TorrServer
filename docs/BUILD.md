@@ -210,6 +210,7 @@ Local config targets (fast):
 Full release config adds Windows, FreeBSD, MIPS, RISC-V, Android, linux/arm/v7 docker, etc.
 
 - Flat binary names in `dist/` (e.g. `TorrServer-linux-amd64`) — no `flatten` step
+- Linux AppImages for **amd64**, **arm64**, and **arm7** (`dist/TorrServer-linux-{amd64,arm64,arm7}.AppImage`) via a GoReleaser `binary` post-hook. The hook is a no-op on macOS and when `appimagetool`/FUSE is missing, so `make dist` stays green without Linux. CI installs `libfuse2` (or set `APPIMAGE_EXTRACT_AND_RUN=1`). Icon: `web/public/icon.png`. Not built for `binary-gst`.
 - UPX compression via goreleaser (optional; off for binary/release/dist, on for docker)
 - Multi-arch Docker images published to `ghcr.io/<owner>/<repo>`
 

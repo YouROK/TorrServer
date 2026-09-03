@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"server/torrshash"
+	"server/version"
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
@@ -123,7 +124,7 @@ func fromHttp(link string) (*torrent.TorrentSpec, error) {
 
 	client := new(http.Client)
 	client.Timeout = time.Duration(time.Second * 60)
-	req.Header.Set("User-Agent", "DWL/1.1.1 (Torrent)")
+	version.SetRequest(req)
 
 	resp, err := client.Do(req)
 	if er, ok := err.(*url.Error); ok {

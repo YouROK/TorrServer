@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=TorrServer
+Comment=Torrent streaming server
+Exec=torrserver
+Icon=torrserver
+Type=Application
+Categories=Network;FileTransfer;
+Terminal=true

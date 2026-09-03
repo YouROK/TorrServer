@@ -1,5 +1,5 @@
 import { Lock, Plug, Radio, ShieldCheck } from 'lucide-react'
-import { Description, Input, Label, ListBox, Select, TextField } from '@heroui/react'
+import { Description, Input, Label, ListBox, Select, TextArea, TextField } from '@heroui/react'
 import { useTranslation } from 'react-i18next'
 
 import type { BTSets } from 'shared/api/types'
@@ -175,6 +175,16 @@ export default function NetworkSettingsPanel({
           </Select.Popover>
         </Select>
         <p className='text-sm text-muted'>{t('SettingsDialog.RetrackersModeHint')}</p>
+        <TextField value={settings.TrackersListURL || ''} onChange={value => onUpdate('TrackersListURL', value)}>
+          <Label>{t('SettingsDialog.TrackersListURL')}</Label>
+          <Input placeholder='https://…' />
+          <Description>{t('SettingsDialog.TrackersListURLHint')}</Description>
+        </TextField>
+        <TextField value={settings.DefaultTrackers || ''} onChange={value => onUpdate('DefaultTrackers', value)}>
+          <Label>{t('SettingsDialog.DefaultTrackers')}</Label>
+          <TextArea rows={6} className='font-mono text-xs' />
+          <Description>{t('SettingsDialog.DefaultTrackersHint')}</Description>
+        </TextField>
       </SettingsSection>
 
       <SettingsSection icon={<Plug />} title={t('SettingsDialog.SectionConnection')}>

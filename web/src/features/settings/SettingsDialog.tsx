@@ -4,7 +4,7 @@ import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { Cog, Film, HardDrive, Palette, Rss, SlidersHorizontal, Smartphone, Wifi } from 'lucide-react'
+import { Cog, Film, HardDrive, Palette, Rss, Shield, SlidersHorizontal, Smartphone, Wifi } from 'lucide-react'
 
 import type { BTSets } from 'shared/api/types'
 import { getSettings, setSettings, resetSettings, SETTINGS_QUERY_KEY } from 'shared/api/settings'
@@ -35,6 +35,7 @@ import { DISABLE_SWITCH_IDS } from './SettingSwitch'
 import StorageSettingsPanel from './StorageSettingsPanel'
 import TMDBSettingsSection from './TMDBSettingsSection'
 import TorznabSettingsPanel from './TorznabSettingsPanel'
+import WAFSettingsPanel from './WAFSettingsPanel'
 
 export interface SettingsDialogProps {
   open: boolean
@@ -43,7 +44,8 @@ export interface SettingsDialogProps {
   initialTab?: SettingsTab
 }
 
-type SettingsTab = 'primary' | 'network' | 'features' | 'storage' | 'appearance' | 'app' | 'gstreamer' | 'torznab'
+type SettingsTab =
+  'primary' | 'network' | 'access' | 'features' | 'storage' | 'appearance' | 'app' | 'gstreamer' | 'torznab'
 
 /** Fades + slides in freshly-mounted tab content — `Tabs.Panel` only mounts the selected tab, so this
  *  re-runs on every switch without any extra wiring. */
@@ -75,6 +77,7 @@ export default function SettingsDialog({ open, onClose, initialTab }: SettingsDi
   const gstRuntime = useGStreamerRuntime()
 
   const [tab, setTab] = useState<SettingsTab>('primary')
+  const [wafDirty, setWafDirty] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [settings, setLocalSettings] = useState<BTSets>({ ...defaultSettings })
@@ -99,6 +102,12 @@ export default function SettingsDialog({ open, onClose, initialTab }: SettingsDi
         label: t('SettingsDialog.Tabs.Network'),
         shortLabel: t('SettingsDialog.Tabs.Network'),
         icon: <Wifi size={17} strokeWidth={1.75} />,
+      },
+      {
+        id: 'access',
+        label: t('SettingsDialog.Tabs.Access'),
+        shortLabel: t('SettingsDialog.Tabs.Access'),
+        icon: <Shield size={17} strokeWidth={1.75} />,
       },
       {
         id: 'features',
@@ -196,6 +205,7 @@ export default function SettingsDialog({ open, onClose, initialTab }: SettingsDi
     // eslint-disable-next-line react-hooks/set-state-in-effect -- load settings when dialog opens
     setLoading(true)
     setStorageLoadedOk(false)
+    setWafDirty(false)
     Promise.all([loadSettings(ac.signal), loadGstConfig(ac.signal), loadStorageBackends(ac.signal)])
       .catch(err => {
         if ((err as Error).name === 'AbortError') return
@@ -233,8 +243,31 @@ export default function SettingsDialog({ open, onClose, initialTab }: SettingsDi
     [settings],
   )
 
+  const confirmDiscardWaf = useCallback(() => {
+    if (!wafDirty) return true
+    return window.confirm(t('WAF.UnsavedConfirm'))
+  }, [t, wafDirty])
+
+  const requestClose = useCallback(() => {
+    if (!confirmDiscardWaf()) return
+    setWafDirty(false)
+    onClose()
+  }, [confirmDiscardWaf, onClose])
+
+  const selectTab = useCallback(
+    (next: SettingsTab) => {
+      if (next === tab) return
+      if (tab === 'access' && !confirmDiscardWaf()) return
+      if (tab === 'access') setWafDirty(false)
+      setTab(next)
+    },
+    [confirmDiscardWaf, tab],
+  )
+
   const handleSave = async () => {
     if (saving) return
+    if (wafDirty && !confirmDiscardWaf()) return
+    setWafDirty(false)
     setSaving(true)
     try {
       const sets: BTSets = {
@@ -315,6 +348,8 @@ export default function SettingsDialog({ open, onClose, initialTab }: SettingsDi
             onBoolSwitch={handleBoolSwitch}
           />
         )
+      case 'access':
+        return <WAFSettingsPanel onDirtyChange={setWafDirty} footerButtonClassName={footerButtonClassName} />
       case 'features':
         return (
           <FeaturesSettingsPanel
@@ -381,7 +416,7 @@ export default function SettingsDialog({ open, onClose, initialTab }: SettingsDi
   return (
     <AppDialog
       open={open}
-      onClose={onClose}
+      onClose={requestClose}
       size='lg'
       fullScreen={isFullScreenBreakpoint}
       dialogClassName='flex flex-col overflow-hidden'
@@ -403,7 +438,7 @@ export default function SettingsDialog({ open, onClose, initialTab }: SettingsDi
               <Select
                 selectedKey={tab}
                 onSelectionChange={key => {
-                  if (key != null) setTab(String(key) as SettingsTab)
+                  if (key != null) selectTab(String(key) as SettingsTab)
                 }}
                 className='w-full'
                 aria-label={t('SettingsDialog.SectionPicker')}
@@ -434,7 +469,7 @@ export default function SettingsDialog({ open, onClose, initialTab }: SettingsDi
           <Tabs.Root
             orientation='vertical'
             selectedKey={tab}
-            onSelectionChange={key => setTab(String(key) as SettingsTab)}
+            onSelectionChange={key => selectTab(String(key) as SettingsTab)}
             className={tabsRootClassName}
           >
             <Tabs.List aria-label={t('SettingsDialog.Settings')} className={tabsListClassName}>
@@ -489,7 +524,7 @@ export default function SettingsDialog({ open, onClose, initialTab }: SettingsDi
               {t('SettingsDialog.ResetToDefault')}
             </Button>
             <Button
-              onPress={onClose}
+              onPress={requestClose}
               isDisabled={saving}
               variant='secondary'
               className={footerButtonClassName}

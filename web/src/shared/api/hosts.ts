@@ -36,6 +36,8 @@ export const gstSettingsHost = () => `${torrserverHost}/gst/settings`
 export const gstEchoHost = () => `${torrserverHost}/gst/echo`
 export const storageSettingsHost = () => `${torrserverHost}/storage/settings`
 export const runtimeStatusHost = () => `${torrserverHost}/runtime/status`
+export const wafHost = () => `${torrserverHost}/waf`
+export const mcpHost = () => `${torrserverHost}/mcp`
 
 /** Resolved API origin (no trailing path). Useful for building ad-hoc GST URLs. */
 export const getTorrServerHost = () => torrserverHost
