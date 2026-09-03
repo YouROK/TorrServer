@@ -10,7 +10,8 @@ describe('mediaInfoFormat', () => {
 
   it('formats bitrate and size', () => {
     expect(formatFfpBitrate('8000000')).toBe('8 Mbps')
-    expect(formatFfpBytes(String(180 * 1024 ** 3))).toMatch(/GB/)
+    expect(formatFfpBytes(String(180 * 1024 ** 3))).toBe('180 GB')
+    expect(formatFfpBytes(String(1.5 * 1024 ** 2))).toBe('2 MB')
   })
 
   it('parses fps and groups streams', () => {

@@ -101,7 +101,7 @@ export default function ServerStatusDialog({ open, onClose }: ServerStatusDialog
                 <StatCard label={t('Size')} value={humanizeSize(bt?.total_size)} />
                 <StatCard
                   label={t('ServerStatusLoaded')}
-                  value={`${humanizeSize(bt?.loaded_size)} · ${loadedPct.toFixed(1)}%`}
+                  value={`${humanizeSize(bt?.loaded_size)} · ${Math.round(loadedPct)}%`}
                 />
               </div>
               {bt?.peer_id ? (
@@ -150,7 +150,7 @@ export default function ServerStatusDialog({ open, onClose }: ServerStatusDialog
                           {tr.title || tr.name || tr.hash}
                         </p>
                         <p className='mt-0.5 truncate text-xs text-muted'>
-                          {tr.stat_string || '—'} · {pct.toFixed(1)}% · {humanizeSize(tr.loaded_size)} /{' '}
+                          {tr.stat_string || '—'} · {Math.round(pct)}% · {humanizeSize(tr.loaded_size)} /{' '}
                           {humanizeSize(tr.torrent_size)}
                         </p>
                         <p className='mt-0.5 text-xs tabular-nums text-muted'>

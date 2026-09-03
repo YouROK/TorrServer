@@ -30,8 +30,8 @@ export function formatFfpBytes(raw?: string | null): string | null {
   if (!raw) return null
   const bytes = Number(raw)
   if (!Number.isFinite(bytes) || bytes < 0) return raw
-  if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(2)} GB`
-  if (bytes >= 1024 ** 2) return `${(bytes / 1024 ** 2).toFixed(1)} MB`
+  if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(0)} GB`
+  if (bytes >= 1024 ** 2) return `${(bytes / 1024 ** 2).toFixed(0)} MB`
   if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)} KB`
   return `${bytes} B`
 }

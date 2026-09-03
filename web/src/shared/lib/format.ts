@@ -7,7 +7,7 @@ export function humanizeSize(size?: number | null): string {
   if (size == null || Number.isNaN(size) || size < 0) return '—'
   if (size === 0) return `0 ${i18n.t('B')}`
   const i = Math.floor(Math.log(size) / Math.log(1024))
-  return `${Number((size / Math.pow(1024, i)).toFixed(2))} ${
+  return `${Number((size / Math.pow(1024, i)).toFixed(0))} ${
     [i18n.t('B'), i18n.t('KB'), i18n.t('MB'), i18n.t('GB'), i18n.t('TB')][i]
   }`
 }
@@ -175,7 +175,7 @@ export function formatSizeToClassicUnits(bytes?: number | null): string {
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
   const i = Math.floor(Math.log(bytes) / Math.log(1024))
   const value = bytes / Math.pow(1024, i)
-  return `${value.toFixed(i === 0 ? 0 : 2)} ${sizes[i]}`
+  return `${value.toFixed(0)} ${sizes[i]}`
 }
 
 /**

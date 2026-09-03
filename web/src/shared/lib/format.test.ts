@@ -7,11 +7,34 @@ import {
   formatBufferAheadLabel,
   formatBufferFilledLabel,
   formatCacheFilledLabel,
+  formatSizeToClassicUnits,
   getPeerString,
+  humanizeSize,
   resolveBufferTargetBytes,
 } from './format'
 
 const torrent = (overrides: Partial<TorrentStat> = {}): TorrentStat => ({ hash: 'abc', ...overrides })
+
+describe('humanizeSize', () => {
+  it('rounds to whole units', () => {
+    expect(humanizeSize(64 * 1024 * 1024)).toMatch(/^64 /)
+    expect(humanizeSize(1.5 * 1024 * 1024)).toMatch(/^2 /)
+    expect(humanizeSize(512)).toMatch(/^512 /)
+    expect(humanizeSize(64 * 1024 * 1024)).not.toMatch(/\./)
+  })
+
+  it('returns an em dash for missing values', () => {
+    expect(humanizeSize(null)).toBe('—')
+    expect(humanizeSize(undefined)).toBe('—')
+  })
+})
+
+describe('formatSizeToClassicUnits', () => {
+  it('rounds to whole units', () => {
+    expect(formatSizeToClassicUnits(64 * 1024 * 1024)).toBe('64 MB')
+    expect(formatSizeToClassicUnits(1.5 * 1024 * 1024)).toBe('2 MB')
+  })
+})
 
 describe('getPeerString', () => {
   it('returns null when torrent is missing', () => {
