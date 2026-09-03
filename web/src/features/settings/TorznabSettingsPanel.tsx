@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Plus, Rss, Trash2 } from 'lucide-react'
-import { Button, Description, Input, Label, Spinner, TextField } from '@heroui/react'
+import { Button, Chip, Description, Input, Label, ListBox, Select, Spinner, TextField } from '@heroui/react'
 import axios from 'axios'
 import { useTranslation } from 'react-i18next'
 
@@ -23,6 +23,8 @@ export default function TorznabSettingsPanel({ settings, onUpdate, footerButtonC
   const [newHost, setNewHost] = useState('')
   const [newKey, setNewKey] = useState('')
   const [newName, setNewName] = useState('')
+  const [newCategories, setNewCategories] = useState('')
+  const [catType, setCatType] = useState<NonNullable<TorznabUrl['CatType']>>('default')
   const [draftTesting, setDraftTesting] = useState(false)
   const [draftTestMsg, setDraftTestMsg] = useState<TestMessage | null>(null)
   const [rowTestingIndex, setRowTestingIndex] = useState<number | null>(null)
@@ -32,11 +34,19 @@ export default function TorznabSettingsPanel({ settings, onUpdate, footerButtonC
 
   const handleAdd = () => {
     if (!newHost.trim() || !newKey.trim()) return
-    const next: TorznabUrl = { Host: newHost.trim(), Key: newKey.trim(), Name: newName.trim() || undefined }
+    const next: TorznabUrl = {
+      Host: newHost.trim(),
+      Key: newKey.trim(),
+      Name: newName.trim() || undefined,
+      CatType: catType,
+      Categories: catType === 'manual' ? newCategories.trim() : undefined,
+    }
     onUpdate('TorznabUrls', [...urls, next])
     setNewHost('')
     setNewKey('')
     setNewName('')
+    setNewCategories('')
+    setCatType('default')
     setDraftTestMsg(null)
   }
 
@@ -108,6 +118,26 @@ export default function TorznabSettingsPanel({ settings, onUpdate, footerButtonC
                       <p className='truncate text-sm text-muted'>
                         {url.Host} &middot; {t('Torznab.APIKey')}: {url.Key.slice(0, 5)}&hellip;
                       </p>
+                      <div className='mt-1.5 flex flex-wrap gap-1.5'>
+                        {(url.CatType || 'default') === 'all' ? (
+                          <Chip size='sm' variant='soft'>
+                            <Chip.Label>{t('Torznab.LabelAll')}</Chip.Label>
+                          </Chip>
+                        ) : (url.CatType || 'default') === 'manual' ? (
+                          <Chip size='sm' variant='soft'>
+                            <Chip.Label>{url.Categories || t('Torznab.LabelManual')}</Chip.Label>
+                          </Chip>
+                        ) : (
+                          <>
+                            <Chip size='sm' variant='soft'>
+                              <Chip.Label>{t('Torznab.LabelDefault')}</Chip.Label>
+                            </Chip>
+                            <Chip size='sm' variant='soft'>
+                              <Chip.Label>5000,2000</Chip.Label>
+                            </Chip>
+                          </>
+                        )}
+                      </div>
                     </div>
                     <Button
                       variant='outline'
@@ -152,6 +182,31 @@ export default function TorznabSettingsPanel({ settings, onUpdate, footerButtonC
           <Label>{t('Torznab.APIKey')}</Label>
           <Input />
         </TextField>
+        <Select
+          selectedKey={catType}
+          onSelectionChange={key => {
+            if (key === 'default' || key === 'manual' || key === 'all') setCatType(key)
+          }}
+        >
+          <Label>{t('Torznab.SelectCategoryType')}</Label>
+          <Select.Trigger>
+            <Select.Value />
+            <Select.Indicator />
+          </Select.Trigger>
+          <Select.Popover>
+            <ListBox>
+              <ListBox.Item id='default'>{t('Torznab.LabelDefault')}</ListBox.Item>
+              <ListBox.Item id='manual'>{t('Torznab.LabelManual')}</ListBox.Item>
+              <ListBox.Item id='all'>{t('Torznab.LabelAll')}</ListBox.Item>
+            </ListBox>
+          </Select.Popover>
+        </Select>
+        {catType === 'manual' ? (
+          <TextField value={newCategories} onChange={setNewCategories}>
+            <Label>{t('Torznab.Category')}</Label>
+            <Input placeholder='5000,2000' />
+          </TextField>
+        ) : null}
 
         {draftTestMsg ? (
           <p className={`text-sm ${draftTestMsg.ok ? 'text-accent' : 'text-danger'}`}>{draftTestMsg.text}</p>

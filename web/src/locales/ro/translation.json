@@ -236,7 +236,8 @@
       "Network": "Rețea",
       "AdvancedShort": "Avansat",
       "StorageShort": "Stocare",
-      "Appearance": "Aspect"
+      "Appearance": "Aspect",
+      "Access": "Acces"
     },
     "TorrentDisconnectTimeout": "Timp de expirare pentru deconectarea torrentului",
     "TorrentsSavePath": "Calea de salvare a torrentelor",
@@ -282,7 +283,11 @@
     "SectionDialogs": "Dialoguri",
     "DialogsInstantHint": "Aceste opțiuni se aplică imediat în acest browser — Salvare nu este necesară.",
     "DialogsFullScreen": "Deschide dialogurile pe ecran complet",
-    "DialogsFullScreenHint": "Implicit pe telefoane și tablete în landscape. Activați pentru ecran complet și pe monitoare late."
+    "DialogsFullScreenHint": "Implicit pe telefoane și tablete în landscape. Activați pentru ecran complet și pe monitoare late.",
+    "TrackersListURL": "URL personalizat listă trackere",
+    "TrackersListURLHint": "URL opțional pentru listă. Lăsați gol pentru oglinzile ngosang incluse. Dacă este setat, este încercat primul, apoi oglinzile. Dacă toate descărcările eșuează, se folosesc Default Trackers locale.",
+    "DefaultTrackers": "Trackere implicite",
+    "DefaultTrackersHint": "URL-uri announce locale, câte unul pe linie. Folosite singure dacă toate descărcările remote eșuează, sau combinate după o descărcare reușită."
   },
   "Size": "Mărime",
   "SpecialThanks": "Mulțumiri speciale",
@@ -332,7 +337,11 @@
     "AllCategories": "Toate categoriile",
     "Category": "Categorie",
     "LoadMore": "Încarcă mai mult",
-    "Settings": "Torznab settings"
+    "Settings": "Torznab settings",
+    "SelectCategoryType": "Lista categoriilor pentru căutare",
+    "LabelDefault": "Implicit",
+    "LabelManual": "Manual",
+    "LabelAll": "Toate"
   },
   "GStreamer": {
     "X264Ultrafast": "Folosește presetul x264 ultrafast",
@@ -616,5 +625,42 @@
   "CacheReaders": "Cititori",
   "ShowMore": "Mai mult",
   "ShowLess": "Restrânge",
-  "NoSpeedData": "Încă nu există date de viteză"
+  "NoSpeedData": "Încă nu există date de viteză",
+  "WAF": {
+    "Title": "WAF",
+    "Subtitle": "Liste albă/neagră IP și refereri blocate (aplicat imediat, fără restart)",
+    "StorageHint": "Listele sunt stocate în obiectul waf de nivel superior din settings.json, nu ca fișiere text.",
+    "SeparateSaveHint": "Listele de acces sunt salvate separat folosind butonul de mai jos.",
+    "ReadOnlyHint": "Configurația serverului este doar pentru citire. Listele nu pot fi modificate.",
+    "Retry": "Reîncearcă",
+    "UnsavedConfirm": "Renunțați la modificările nesalvate ale listelor de acces?",
+    "WarningMessage": "{{list}}, linia {{line}}: {{reason}}",
+    "WarningMessageNoLine": "{{list}}: {{reason}}",
+    "Lists": {
+      "whitelist": "Listă albă",
+      "blacklist": "Listă neagră",
+      "referers": "Refereri",
+      "storage": "Stocare"
+    },
+    "WarningCodes": {
+      "invalid_ip_range": "adresă IP, interval sau CIDR nevalid",
+      "invalid_referer": "nume de gazdă referer nevalid",
+      "line_too_long": "linia este prea lungă",
+      "read_failed": "configurația nu a putut fi citită"
+    },
+    "IPRulesHint": "Dacă lista albă nu e goală, IP-ul clientului trebuie să se potrivească. Potrivirea pe lista neagră blochează oricum. Sunt acceptate IP-uri, intervale (a-b), CIDR și prefix description:. Liniile cu # sunt comentarii.",
+    "Whitelist": "Listă albă IP",
+    "WhitelistHint": "Lasă gol pentru dezactivare. Exemplu: local:127.0.0.1 sau 10.0.0.0/8",
+    "Blacklist": "Listă neagră IP",
+    "BlacklistHint": "Lasă gol pentru dezactivare. Exemplu: 203.0.113.0-203.0.113.255",
+    "ReferersSection": "Refereri blocate",
+    "ReferersHint": "Domeniile de mai jos sunt blocate. Cererile fără Referer și Origin sunt permise.",
+    "Referers": "Domenii suplimentare",
+    "ReferersFieldHint": "Un domeniu pe linie, ex. example.com",
+    "Warnings": "Avertismente de parsare:",
+    "SaveLists": "Salvează listele de acces",
+    "Saved": "Listele au fost salvate și reîncărcate",
+    "LoadFailed": "Nu s-au putut încărca listele de acces",
+    "SaveFailed": "Nu s-au putut salva listele de acces"
+  }
 }

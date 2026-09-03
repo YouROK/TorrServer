@@ -236,7 +236,8 @@
       "Network": "Réseau",
       "AdvancedShort": "Avancé",
       "StorageShort": "Stockage",
-      "Appearance": "Apparence"
+      "Appearance": "Apparence",
+      "Access": "Accès"
     },
     "TorrentDisconnectTimeout": "Délai de déconnexion du torrent",
     "TorrentsSavePath": "Chemin de sauvegarde des torrents",
@@ -282,7 +283,11 @@
     "SectionDialogs": "Dialogues",
     "DialogsInstantHint": "Ces options s’appliquent immédiatement dans ce navigateur — Enregistrer n’est pas nécessaire.",
     "DialogsFullScreen": "Ouvrir les dialogues en plein écran",
-    "DialogsFullScreenHint": "Par défaut sur téléphones et tablettes en paysage. Activez pour forcer le plein écran aussi sur grand moniteur."
+    "DialogsFullScreenHint": "Par défaut sur téléphones et tablettes en paysage. Activez pour forcer le plein écran aussi sur grand moniteur.",
+    "TrackersListURL": "URL personnalisée de la liste de trackers",
+    "TrackersListURLHint": "URL de liste facultative. Laissez vide pour les miroirs ngosang intégrés. Si renseignée, elle est essayée en premier, puis les miroirs. Si tous les téléchargements échouent, les Default Trackers locaux sont utilisés.",
+    "DefaultTrackers": "Trackers par défaut",
+    "DefaultTrackersHint": "URL d’announce locales, une par ligne. Utilisées seules si tous les téléchargements distants échouent, ou fusionnées après un téléchargement réussi."
   },
   "Size": "Taille",
   "SpecialThanks": "Remerciements spéciaux",
@@ -332,7 +337,11 @@
     "AllCategories": "Toutes les catégories",
     "Category": "Catégorie",
     "LoadMore": "Charger plus",
-    "Settings": "Torznab settings"
+    "Settings": "Torznab settings",
+    "SelectCategoryType": "Catégories à rechercher",
+    "LabelDefault": "Par défaut",
+    "LabelManual": "Manuel",
+    "LabelAll": "Toutes"
   },
   "GStreamer": {
     "Tab": "GStreamer",
@@ -616,5 +625,42 @@
   "CacheReaders": "Lecteurs",
   "ShowMore": "Afficher plus",
   "ShowLess": "Réduire",
-  "NoSpeedData": "Pas encore de données de débit"
+  "NoSpeedData": "Pas encore de données de débit",
+  "WAF": {
+    "Title": "WAF",
+    "Subtitle": "Listes blanche/noire d'IP et referers bloqués (appliqué immédiatement, sans redémarrage)",
+    "StorageHint": "Les listes sont stockées dans l’objet waf de premier niveau de settings.json, et non dans des fichiers texte.",
+    "SeparateSaveHint": "Les listes d'accès sont enregistrées séparément avec le bouton ci-dessous.",
+    "ReadOnlyHint": "La configuration du serveur est en lecture seule. Les listes ne peuvent pas être modifiées.",
+    "Retry": "Réessayer",
+    "UnsavedConfirm": "Abandonner les modifications non enregistrées des listes d'accès ?",
+    "WarningMessage": "{{list}}, ligne {{line}} : {{reason}}",
+    "WarningMessageNoLine": "{{list}} : {{reason}}",
+    "Lists": {
+      "whitelist": "Liste blanche",
+      "blacklist": "Liste noire",
+      "referers": "Referers",
+      "storage": "Stockage"
+    },
+    "WarningCodes": {
+      "invalid_ip_range": "adresse IP, plage ou CIDR invalide",
+      "invalid_referer": "nom d'hôte referer invalide",
+      "line_too_long": "ligne trop longue",
+      "read_failed": "impossible de lire la configuration"
+    },
+    "IPRulesHint": "Si la liste blanche n'est pas vide, l'IP client doit y figurer. Une correspondance sur la liste noire bannit quand même. IP seules, plages (a-b), CIDR et préfixe description: sont pris en charge. Les lignes # sont des commentaires.",
+    "Whitelist": "Liste blanche IP",
+    "WhitelistHint": "Laisser vide pour désactiver. Exemple : local:127.0.0.1 ou 10.0.0.0/8",
+    "Blacklist": "Liste noire IP",
+    "BlacklistHint": "Laisser vide pour désactiver. Exemple : 203.0.113.0-203.0.113.255",
+    "ReferersSection": "Referers bloqués",
+    "ReferersHint": "Les domaines ci-dessous sont bloqués. Les requêtes sans Referer ni Origin sont autorisées.",
+    "Referers": "Domaines supplémentaires",
+    "ReferersFieldHint": "Un domaine par ligne, p.ex. example.com",
+    "Warnings": "Avertissements d'analyse :",
+    "SaveLists": "Enregistrer les listes d'accès",
+    "Saved": "Listes enregistrées et rechargées",
+    "LoadFailed": "Échec du chargement des listes d'accès",
+    "SaveFailed": "Échec de l'enregistrement des listes d'accès"
+  }
 }

@@ -40,6 +40,9 @@ builds:
       - -s -w -checklinkname=0 -X server/version.Version={{.Version}}
     env:
       - CGO_ENABLED=0
+    hooks:
+      post:
+        - cmd: bash packaging/appimage/build.sh "{{ .Path }}" "{{ .Os }}" "{{ .Arch }}" "{{ .Arm }}"
     targets:
       - linux_amd64
       - linux_arm64
@@ -171,11 +174,15 @@ source:
 
 checksum:
   name_template: checksums.txt
+  extra_files:
+    - glob: dist/*.AppImage
 
 release:
   mode: append
   replace_existing_artifacts: true
   make_latest: true
+  extra_files:
+    - glob: dist/*.AppImage
 
 changelog:
   use: git

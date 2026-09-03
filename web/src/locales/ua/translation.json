@@ -236,7 +236,8 @@
       "Network": "Мережа",
       "AdvancedShort": "Розширені",
       "StorageShort": "Сховище",
-      "Appearance": "Оформлення"
+      "Appearance": "Оформлення",
+      "Access": "Доступ"
     },
     "TorrentDisconnectTimeout": "Час очікування відключення торрента",
     "TorrentsSavePath": "Шлях для збереження кешу",
@@ -282,7 +283,11 @@
     "SectionDialogs": "Діалоги",
     "DialogsInstantHint": "Ці параметри застосовуються одразу в цьому браузері — «Зберегти» не потрібно.",
     "DialogsFullScreen": "Відкривати діалоги на весь екран",
-    "DialogsFullScreenHint": "За замовчуванням на телефонах і планшетах у landscape. Увімкніть, щоб примусово відкривати вікна на весь екран і на широкому моніторі."
+    "DialogsFullScreenHint": "За замовчуванням на телефонах і планшетах у landscape. Увімкніть, щоб примусово відкривати вікна на весь екран і на широкому моніторі.",
+    "TrackersListURL": "Власний URL списку трекерів",
+    "TrackersListURLHint": "Необов’язковий URL списку. Залиште порожнім для вбудованих дзеркал ngosang. Якщо задано, пробується першим, потім дзеркала. Якщо всі запити не вдались, використовуються локальні Default Trackers.",
+    "DefaultTrackers": "Трекери за замовчуванням",
+    "DefaultTrackersHint": "Локальні announce URL, по одному на рядок. Використовуються самі, якщо всі віддалені запити не вдались, або об’єднуються після успішного завантаження."
   },
   "Size": "Розмір",
   "SpecialThanks": "Окрема подяка",
@@ -332,7 +337,11 @@
     "AllCategories": "Всі категорії",
     "Category": "Категорія",
     "LoadMore": "Завантажити ще",
-    "Settings": "Torznab settings"
+    "Settings": "Torznab settings",
+    "SelectCategoryType": "Категорії для пошуку",
+    "LabelDefault": "Типово",
+    "LabelManual": "Вручну",
+    "LabelAll": "Усі"
   },
   "GStreamer": {
     "Tab": "GStreamer",
@@ -616,5 +625,42 @@
   "CacheReaders": "Читачі",
   "ShowMore": "Ще",
   "ShowLess": "Згорнути",
-  "NoSpeedData": "Немає даних про швидкість"
+  "NoSpeedData": "Немає даних про швидкість",
+  "WAF": {
+    "Title": "WAF",
+    "Subtitle": "Білий/чорний список IP та блокування Referer (застосовується одразу, без перезапуску)",
+    "StorageHint": "Списки зберігаються в об’єкті waf верхнього рівня у settings.json, а не в текстових файлах.",
+    "SeparateSaveHint": "Списки доступу зберігаються окремо кнопкою нижче.",
+    "ReadOnlyHint": "Конфігурація сервера доступна лише для читання. Списки не можна змінити.",
+    "Retry": "Повторити",
+    "UnsavedConfirm": "Відхилити незбережені зміни списків доступу?",
+    "WarningMessage": "{{list}}, рядок {{line}}: {{reason}}",
+    "WarningMessageNoLine": "{{list}}: {{reason}}",
+    "Lists": {
+      "whitelist": "Білий список",
+      "blacklist": "Чорний список",
+      "referers": "Referer",
+      "storage": "Сховище"
+    },
+    "WarningCodes": {
+      "invalid_ip_range": "неправильна IP-адреса, діапазон або CIDR",
+      "invalid_referer": "неправильне ім'я хоста referer",
+      "line_too_long": "рядок надто довгий",
+      "read_failed": "не вдалося прочитати конфігурацію"
+    },
+    "IPRulesHint": "Якщо білий список не порожній, IP клієнта має до нього входити. Збіг із чорним списком все одно блокує. Підтримуються IP, діапазони (a-b), CIDR і префікс description:. Рядки з # — коментарі.",
+    "Whitelist": "Білий список IP",
+    "WhitelistHint": "Порожній список вимикає whitelist. Приклад: local:127.0.0.1 або 10.0.0.0/8",
+    "Blacklist": "Чорний список IP",
+    "BlacklistHint": "Порожній список вимикає blacklist. Приклад: 203.0.113.0-203.0.113.255",
+    "ReferersSection": "Заблоковані referer",
+    "ReferersHint": "Домени нижче блокуються. Запити без Referer і Origin дозволені.",
+    "Referers": "Додаткові домени",
+    "ReferersFieldHint": "Один домен на рядок, наприклад example.com",
+    "Warnings": "Попередження розбору:",
+    "SaveLists": "Зберегти списки доступу",
+    "Saved": "Списки збережено й перезавантажено",
+    "LoadFailed": "Не вдалося завантажити списки доступу",
+    "SaveFailed": "Не вдалося зберегти списки доступу"
+  }
 }

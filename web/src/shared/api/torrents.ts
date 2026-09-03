@@ -7,6 +7,22 @@ import { IN_DB } from 'shared/torrent/states'
 
 export const TORRENTS_QUERY_KEY = ['torrents'] as const
 
+const torrentApiError = (err: unknown, fallback: string): Error & { response?: { status?: number } } => {
+  let message = fallback
+  let status: number | undefined
+  if (axios.isAxiosError(err)) {
+    status = err.response?.status
+    const data = err.response?.data as { error?: string } | undefined
+    if (data?.error) message = String(data.error)
+    else if (err.message) message = err.message
+  } else if (err instanceof Error && err.message) {
+    message = err.message
+  }
+  const error = new Error(message) as Error & { response?: { status?: number } }
+  if (status != null) error.response = { status }
+  return error
+}
+
 /** Drop keeps the DB row — never remove the card; flip to idle so the grid doesn't vanish→GSAP-reappear. */
 export const markTorrentsDroppedInList = (queryClient: QueryClient, hashes: string | string[]): void => {
   const list = Array.isArray(hashes) ? hashes : [hashes]
@@ -77,16 +93,17 @@ export const getTorrents = async (): Promise<TorrentStat[]> => {
     const { data } = await axios.post<TorrentStat[]>(torrentsHost(), { action: 'list' })
     return data
   } catch (err) {
-    const status = axios.isAxiosError(err) ? err.response?.status : undefined
-    const error = new Error('Failed to load torrents') as Error & { response?: { status?: number } }
-    if (status != null) error.response = { status }
-    throw error
+    throw torrentApiError(err, 'Failed to load torrents')
   }
 }
 
 export const getTorrent = async (hash: string): Promise<TorrentStat> => {
-  const { data } = await axios.post<TorrentStat>(torrentsHost(), { action: 'get', hash })
-  return data
+  try {
+    const { data } = await axios.post<TorrentStat>(torrentsHost(), { action: 'get', hash })
+    return data
+  } catch (err) {
+    throw torrentApiError(err, 'Failed to get torrent')
+  }
 }
 
 export interface AddTorrentInput {
@@ -98,15 +115,19 @@ export interface AddTorrentInput {
 }
 
 export const addTorrent = async (input: AddTorrentInput): Promise<TorrentStat> => {
-  const { data } = await axios.post<TorrentStat>(torrentsHost(), {
-    action: 'add',
-    link: input.link,
-    title: input.title || undefined,
-    category: input.category || undefined,
-    poster: input.poster ?? '',
-    save_to_db: input.save_to_db ?? true,
-  })
-  return data
+  try {
+    const { data } = await axios.post<TorrentStat>(torrentsHost(), {
+      action: 'add',
+      link: input.link,
+      title: input.title || undefined,
+      category: input.category || undefined,
+      poster: input.poster ?? '',
+      save_to_db: input.save_to_db ?? true,
+    })
+    return data
+  } catch (err) {
+    throw torrentApiError(err, 'Failed to add torrent')
+  }
 }
 
 export interface UpdateTorrentInput {
@@ -117,27 +138,43 @@ export interface UpdateTorrentInput {
 }
 
 export const updateTorrent = async (input: UpdateTorrentInput): Promise<void> => {
-  await axios.post(torrentsHost(), {
-    action: 'set',
-    hash: input.hash,
-    title: input.title || undefined,
-    category: input.category || undefined,
-    poster: input.poster ?? '',
-  })
+  try {
+    await axios.post(torrentsHost(), {
+      action: 'set',
+      hash: input.hash,
+      title: input.title || undefined,
+      category: input.category || undefined,
+      poster: input.poster ?? '',
+    })
+  } catch (err) {
+    throw torrentApiError(err, 'Failed to update torrent')
+  }
 }
 
 /** Stop swarm activity but keep the torrent in the DB (`action: drop`). */
 export const dropTorrent = async (hash: string): Promise<void> => {
-  await axios.post(torrentsHost(), { action: 'drop', hash })
+  try {
+    await axios.post(torrentsHost(), { action: 'drop', hash })
+  } catch (err) {
+    throw torrentApiError(err, 'Failed to drop torrent')
+  }
 }
 
 /** Permanently delete the torrent from the DB (`action: rem`). */
 export const removeTorrent = async (hash: string): Promise<void> => {
-  await axios.post(torrentsHost(), { action: 'rem', hash })
+  try {
+    await axios.post(torrentsHost(), { action: 'rem', hash })
+  } catch (err) {
+    throw torrentApiError(err, 'Failed to remove torrent')
+  }
 }
 
 export const wipeTorrents = async (): Promise<void> => {
-  await axios.post(torrentsHost(), { action: 'wipe' })
+  try {
+    await axios.post(torrentsHost(), { action: 'wipe' })
+  } catch (err) {
+    throw torrentApiError(err, 'Failed to wipe torrents')
+  }
 }
 
 export interface UploadTorrentMeta {
@@ -155,6 +192,10 @@ export const uploadTorrent = async (file: File, meta: UploadTorrentMeta = {}): P
   if (meta.title) data.append('title', meta.title)
   if (meta.category) data.append('category', meta.category)
   if (meta.poster) data.append('poster', meta.poster)
-  const { data: status } = await axios.post<TorrentStat | TorrentStat[]>(torrentUploadHost(), data)
-  return status
+  try {
+    const { data: status } = await axios.post<TorrentStat | TorrentStat[]>(torrentUploadHost(), data)
+    return status
+  } catch (err) {
+    throw torrentApiError(err, 'Failed to upload torrent')
+  }
 }

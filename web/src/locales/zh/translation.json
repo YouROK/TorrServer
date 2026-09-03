@@ -236,7 +236,8 @@
       "Network": "网络",
       "AdvancedShort": "高级",
       "StorageShort": "存储",
-      "Appearance": "外观"
+      "Appearance": "外观",
+      "Access": "访问控制"
     },
     "TorrentDisconnectTimeout": "种子断开超时",
     "TorrentsSavePath": "种子缓存保存路径",
@@ -282,7 +283,11 @@
     "SectionDialogs": "对话框",
     "DialogsInstantHint": "这些选项会立即在本浏览器中生效，无需点保存。",
     "DialogsFullScreen": "全屏打开对话框",
-    "DialogsFullScreenHint": "手机与平板横屏默认全屏。开启后宽屏显示器也会强制全屏打开面板。"
+    "DialogsFullScreenHint": "手机与平板横屏默认全屏。开启后宽屏显示器也会强制全屏打开面板。",
+    "TrackersListURL": "自定义远程 Tracker 列表 URL",
+    "TrackersListURLHint": "可选的远程列表 URL。留空则使用内置 ngosang 镜像。若填写则先尝试该 URL，再尝试镜像。全部失败时使用本地 Default Trackers。",
+    "DefaultTrackers": "默认 Tracker",
+    "DefaultTrackersHint": "本地 announce URL，每行一个。远程列表全部失败时单独使用，或在远程成功后与之合并。"
   },
   "Size": "大小",
   "SpecialThanks": "特别感谢",
@@ -332,7 +337,11 @@
     "AllCategories": "所有分类",
     "Category": "分类",
     "LoadMore": "加载更多",
-    "Settings": "Torznab settings"
+    "Settings": "Torznab settings",
+    "SelectCategoryType": "要搜索的分类",
+    "LabelDefault": "默认",
+    "LabelManual": "手动",
+    "LabelAll": "全部"
   },
   "GStreamer": {
     "Tab": "GStreamer",
@@ -616,5 +625,42 @@
   "CacheReaders": "读取器",
   "ShowMore": "展开",
   "ShowLess": "收起",
-  "NoSpeedData": "暂无速度数据"
+  "NoSpeedData": "暂无速度数据",
+  "WAF": {
+    "Title": "WAF",
+    "Subtitle": "IP 白/黑名单与 Referer 拦截（立即生效，无需重启）",
+    "StorageHint": "列表存储在 settings.json 顶层的 waf 对象中，而不是文本文件。",
+    "SeparateSaveHint": "访问列表使用下方按钮单独保存。",
+    "ReadOnlyHint": "服务器配置为只读，无法修改访问列表。",
+    "Retry": "重试",
+    "UnsavedConfirm": "放弃尚未保存的访问列表更改？",
+    "WarningMessage": "{{list}}，第 {{line}} 行：{{reason}}",
+    "WarningMessageNoLine": "{{list}}：{{reason}}",
+    "Lists": {
+      "whitelist": "白名单",
+      "blacklist": "黑名单",
+      "referers": "Referer",
+      "storage": "存储"
+    },
+    "WarningCodes": {
+      "invalid_ip_range": "无效的 IP 地址、范围或 CIDR",
+      "invalid_referer": "无效的 Referer 主机名",
+      "line_too_long": "行内容过长",
+      "read_failed": "无法读取配置"
+    },
+    "IPRulesHint": "白名单非空时，客户端 IP 必须匹配。匹配黑名单仍会禁止。支持单个 IP、范围 (a-b)、CIDR 以及 description: 前缀。以 # 开头的行为注释。",
+    "Whitelist": "IP 白名单",
+    "WhitelistHint": "留空以禁用白名单。例如：local:127.0.0.1 或 10.0.0.0/8",
+    "Blacklist": "IP 黑名单",
+    "BlacklistHint": "留空以禁用黑名单。例如：203.0.113.0-203.0.113.255",
+    "ReferersSection": "拦截的 Referer",
+    "ReferersHint": "下方域名会被拦截。既无 Referer 也无 Origin 的请求允许通过。",
+    "Referers": "额外拦截域名",
+    "ReferersFieldHint": "每行一个域名，例如 example.com",
+    "Warnings": "解析警告：",
+    "SaveLists": "保存访问列表",
+    "Saved": "访问列表已保存并重新加载",
+    "LoadFailed": "加载访问列表失败",
+    "SaveFailed": "保存访问列表失败"
+  }
 }

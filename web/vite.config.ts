@@ -57,6 +57,8 @@ export default defineConfig(({ mode }) => {
             /^\/tmdb/,
             /^\/torznab/,
             /^\/storage/,
+            /^\/waf/,
+            /^\/mcp/,
             /^\/shutdown/,
             /^\/playlistall/,
             // API docs must hit gin-swagger, not SPA navigateFallback (else ./static → /swagger/static 404).
@@ -100,6 +102,8 @@ export default defineConfig(({ mode }) => {
         '/ffp': proxyTarget,
         '/download': proxyTarget,
         '/storage': proxyTarget,
+        '/waf': proxyTarget,
+        '/mcp': proxyTarget,
         '/playlistall': proxyTarget,
       },
     },

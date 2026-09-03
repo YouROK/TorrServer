@@ -52,6 +52,8 @@ export interface TorznabUrl {
   Host: string
   Key: string
   Name?: string
+  Categories?: string
+  CatType?: 'default' | 'manual' | 'all'
 }
 
 export interface TMDBSettingsConfig {
@@ -74,6 +76,8 @@ export interface BTSets {
   TorznabUrls?: TorznabUrl[]
   TMDBSettings?: TMDBSettingsConfig
   RetrackersMode?: number | string
+  TrackersListURL?: string
+  DefaultTrackers?: string
   TorrentDisconnectTimeout?: number
   EnableDebug?: boolean
   EnableDLNA?: boolean
