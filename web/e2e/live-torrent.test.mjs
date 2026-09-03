@@ -10,7 +10,7 @@ import { test } from 'node:test'
 
 import { chromium } from 'playwright'
 
-import { JAC_RED_HOST, JAC_RED_KEY, JAC_RED_NAME, POPULAR_SEARCH_QUERIES } from './indexers.mjs'
+import { JAC_RED_HOST, JAC_RED_KEY, JAC_RED_NAME, SEARCH_QUERIES } from './indexers.mjs'
 
 const BASE = process.env.TORRSERVER_URL || ''
 const USER = process.env.TS_USER || 'ts'
@@ -97,7 +97,7 @@ test('live torrent get/add + stream stat + play range + ffp', { timeout: 180_000
   }
 })
 
-test('live torznab popular searches (jacred.stream key pp)', { timeout: 180_000 }, async t => {
+test('live torznab searches (матрица 1999 / matrix 1999)', { timeout: 180_000 }, async t => {
   skipIfNotLive(t)
   const setsRes = await api('/settings', { method: 'POST', json: { action: 'get' } })
   assert.equal(setsRes.status, 200)
@@ -110,7 +110,7 @@ test('live torznab popular searches (jacred.stream key pp)', { timeout: 180_000 
   })
   assert.equal(setRes.status, 200, await setRes.text())
 
-  for (const q of POPULAR_SEARCH_QUERIES) {
+  for (const q of SEARCH_QUERIES) {
     const search = await api(`/torznab/search/?query=${encodeURIComponent(q)}`)
     const searchStatus = search.status
     const body = await search.text()

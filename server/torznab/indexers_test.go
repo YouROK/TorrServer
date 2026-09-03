@@ -84,7 +84,7 @@ func TestSearchJacRedJackettAndProwlarrMock(t *testing.T) {
 	}
 	t.Cleanup(func() { settings.BTsets = prev })
 
-	got := Search(context.Background(), "matrix", -1, "", 0, 50)
+	got := Search(context.Background(), "matrix 1999", -1, "", 0, 50)
 	if len(got) != 2 {
 		t.Fatalf("len=%d want 2", len(got))
 	}

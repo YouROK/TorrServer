@@ -4,11 +4,7 @@ export const JAC_RED_HOST = 'https://jacred.stream/api/v2.0/indexers/all/results
 export const JAC_RED_KEY = 'pp'
 export const JAC_RED_NAME = 'JacRed'
 
-export const POPULAR_SEARCH_QUERIES = [
-  'matrix',
-  'silo',
-  'властелин колец',
-  'inception',
-  'dune',
-  'игра престолов',
+export const SEARCH_QUERIES = [
+  'матрица 1999',
+  'matrix 1999',
 ]

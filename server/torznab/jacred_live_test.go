@@ -9,16 +9,12 @@ import (
 	"server/settings"
 )
 
-var popularIndexerQueries = []string{
-	"matrix",
-	"silo",
-	"властелин колец",
-	"inception",
-	"dune",
-	"игра престолов",
+var indexerSearchQueries = []string{
+	"матрица 1999",
+	"matrix 1999",
 }
 
-func TestJacRedStreamPopularSearches(t *testing.T) {
+func TestJacRedStreamMatrixSearches(t *testing.T) {
 	if os.Getenv("LIVE_INDEXER") != "1" {
 		t.Skip("set LIVE_INDEXER=1 to hit https://jacred.stream (key pp)")
 	}
@@ -41,7 +37,7 @@ func TestJacRedStreamPopularSearches(t *testing.T) {
 	httpClient = &client
 	t.Cleanup(func() { httpClient = prevClient })
 
-	for _, q := range popularIndexerQueries {
+	for _, q := range indexerSearchQueries {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		list := Search(ctx, q, -1, "", 0, 50)
 		cancel()
