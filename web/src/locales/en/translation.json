@@ -2,6 +2,43 @@
   "About": "About",
   "Actions": "Actions",
   "Add": "Add",
+  "WAF": {
+    "Title": "WAF",
+    "Subtitle": "IP whitelist/blacklist and blocked referers (applied immediately, no restart)",
+    "StorageHint": "Lists are stored in the top-level waf object in settings.json, not as text files.",
+    "SeparateSaveHint": "Access lists are saved separately using the button below.",
+    "ReadOnlyHint": "Server configuration is read-only. Access lists cannot be changed.",
+    "Retry": "Retry",
+    "UnsavedConfirm": "Discard unsaved access-list changes?",
+    "WarningMessage": "{{list}}, line {{line}}: {{reason}}",
+    "WarningMessageNoLine": "{{list}}: {{reason}}",
+    "Lists": {
+      "whitelist": "Whitelist",
+      "blacklist": "Blacklist",
+      "referers": "Referers",
+      "storage": "Storage"
+    },
+    "WarningCodes": {
+      "invalid_ip_range": "invalid IP address, range, or CIDR",
+      "invalid_referer": "invalid referer hostname",
+      "line_too_long": "line is too long",
+      "read_failed": "configuration could not be read"
+    },
+    "IPRulesHint": "If the whitelist is not empty, the client IP must match it. Matching the blacklist still bans the client. Supports single IPs, ranges (a-b), CIDR, and optional description: prefix. Lines starting with # are comments.",
+    "Whitelist": "IP whitelist",
+    "WhitelistHint": "Leave empty to disable whitelist. Example: local:127.0.0.1 or 10.0.0.0/8",
+    "Blacklist": "IP blacklist",
+    "BlacklistHint": "Leave empty to disable blacklist. Example: 203.0.113.0-203.0.113.255",
+    "ReferersSection": "Blocked referers",
+    "ReferersHint": "Domains listed below are blocked. Requests with neither Referer nor Origin are allowed.",
+    "Referers": "Extra blocked domains",
+    "ReferersFieldHint": "One domain per line, e.g. example.com",
+    "Warnings": "Parse warnings:",
+    "SaveLists": "Save access lists",
+    "Saved": "Access lists saved and reloaded",
+    "LoadFailed": "Failed to load access lists",
+    "SaveFailed": "Failed to save access lists"
+  },
   "AddDialog": {
     "AddPosterLinkInput": "Poster link",
     "AddTorrentSourceNotification": "First add your torrent source",
@@ -194,6 +231,7 @@
     "StorageConfiguration": "Storage Configuration",
     "StorageSettingsSaved": "Settings saved! Restart application for changes to take effect.",
     "Tabs": {
+      "Access": "WAF",
       "Additional": "Additional",
       "AdditionalDisabled": "(enable PRO mode)",
       "App": "Application",

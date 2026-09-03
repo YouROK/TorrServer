@@ -29,9 +29,9 @@ import (
 	"server/version"
 	"server/web/api"
 	"server/web/auth"
-	"server/web/blocker"
 	"server/web/pages"
 	"server/web/sslcerts"
+	"server/web/waf"
 )
 
 var (
@@ -80,7 +80,7 @@ func Start() {
 	}
 
 	route := gin.New()
-	route.Use(log.WebLogger(), blocker.Blocker(), gin.Recovery(), cors.New(corsCfg), location.Default())
+	route.Use(log.WebLogger(), waf.WAF(), gin.Recovery(), cors.New(corsCfg), location.Default())
 	auth.SetupAuth(route)
 
 	route.GET("/echo", echo)

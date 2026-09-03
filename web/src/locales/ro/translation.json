@@ -194,6 +194,7 @@
     "StorageConfiguration": "Configurația spațiului de stocare",
     "StorageSettingsSaved": "Setările au fost salvate! Reporniți aplicația pentru ca modificările să aibă efect.",
     "Tabs": {
+      "Access": "WAF",
       "Additional": "Suplimentar",
       "AdditionalDisabled": "(activează modul PRO)",
       "App": "Aplicație",
@@ -331,5 +332,42 @@
   "Uncategorized": "Necategorizat",
   "UploadFile": "Upload fișier",
   "UploadSpeed": "Viteza de Upload",
-  "Viewed": "Vizualizat"
+  "Viewed": "Vizualizat",
+  "WAF": {
+    "Title": "WAF",
+    "Subtitle": "Liste albă/neagră IP și refereri blocate (aplicat imediat, fără restart)",
+    "StorageHint": "Listele sunt stocate în obiectul waf de nivel superior din settings.json, nu ca fișiere text.",
+    "SeparateSaveHint": "Listele de acces sunt salvate separat folosind butonul de mai jos.",
+    "ReadOnlyHint": "Configurația serverului este doar pentru citire. Listele nu pot fi modificate.",
+    "Retry": "Reîncearcă",
+    "UnsavedConfirm": "Renunțați la modificările nesalvate ale listelor de acces?",
+    "WarningMessage": "{{list}}, linia {{line}}: {{reason}}",
+    "WarningMessageNoLine": "{{list}}: {{reason}}",
+    "Lists": {
+      "whitelist": "Listă albă",
+      "blacklist": "Listă neagră",
+      "referers": "Refereri",
+      "storage": "Stocare"
+    },
+    "WarningCodes": {
+      "invalid_ip_range": "adresă IP, interval sau CIDR nevalid",
+      "invalid_referer": "nume de gazdă referer nevalid",
+      "line_too_long": "linia este prea lungă",
+      "read_failed": "configurația nu a putut fi citită"
+    },
+    "IPRulesHint": "Dacă lista albă nu e goală, IP-ul clientului trebuie să se potrivească. Potrivirea pe lista neagră blochează oricum. Sunt acceptate IP-uri, intervale (a-b), CIDR și prefix description:. Liniile cu # sunt comentarii.",
+    "Whitelist": "Listă albă IP",
+    "WhitelistHint": "Lasă gol pentru dezactivare. Exemplu: local:127.0.0.1 sau 10.0.0.0/8",
+    "Blacklist": "Listă neagră IP",
+    "BlacklistHint": "Lasă gol pentru dezactivare. Exemplu: 203.0.113.0-203.0.113.255",
+    "ReferersSection": "Refereri blocate",
+    "ReferersHint": "Domeniile de mai jos sunt blocate. Cererile fără Referer și Origin sunt permise.",
+    "Referers": "Domenii suplimentare",
+    "ReferersFieldHint": "Un domeniu pe linie, ex. example.com",
+    "Warnings": "Avertismente de parsare:",
+    "SaveLists": "Salvează listele de acces",
+    "Saved": "Listele au fost salvate și reîncărcate",
+    "LoadFailed": "Nu s-au putut încărca listele de acces",
+    "SaveFailed": "Nu s-au putut salva listele de acces"
+  }
 }
