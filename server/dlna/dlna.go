@@ -57,6 +57,9 @@ func Start() {
 			conn, err := netbind.Listen(settings.IPs, strconv.Itoa(port))
 			if err != nil {
 				logger.Levelf(log.Error, "%v", err)
+				if settings.Embedded {
+					return nil
+				}
 				os.Exit(1)
 			}
 			return conn
@@ -95,13 +98,26 @@ func Start() {
 		OnBrowseMetadata:       onBrowseMeta,
 	}
 
+	if dmsServer.HTTPConn == nil {
+		logger.Levelf(log.Error, "dlna listen failed")
+		dmsServer = nil
+		return
+	}
+
 	if err := dmsServer.Init(); err != nil {
 		logger.Levelf(log.Error, "error initing dms server: %v", err)
+		dmsServer = nil
+		if settings.Embedded {
+			return
+		}
 		os.Exit(1)
 	}
 	go func() {
 		if err := dmsServer.Run(); err != nil {
 			logger.Levelf(log.Error, "%v", err)
+			if settings.Embedded {
+				return
+			}
 			os.Exit(1)
 		}
 	}()

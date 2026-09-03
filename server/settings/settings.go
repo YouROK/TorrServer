@@ -35,22 +35,29 @@ var (
 	PubIPv6  string
 	TorAddr  string
 	MaxSize  int64
+	// Embedded is true when TorrServer runs in-process (iOS XCFramework).
+	// Failures must return errors instead of os.Exit so the host app stays alive.
+	Embedded bool
+	// EmbeddedStop is set by server.Start to stop the engine without os.Exit.
+	EmbeddedStop func()
 )
 
-func InitSets(readOnly, searchWA bool) {
+func InitSets(readOnly, searchWA bool) error {
 	ReadOnly = readOnly
 	SearchWA = searchWA
 
 	bboltDB := NewTDB()
 	if bboltDB == nil {
-		log.TLogln("Error open bboltDB:", filepath.Join(Path, "config.db"))
-		os.Exit(1)
+		err := fmt.Errorf("error open bboltDB: %s", filepath.Join(Path, "config.db"))
+		log.TLogln(err.Error())
+		return err
 	}
 
 	jsonDB := NewJsonDB()
 	if jsonDB == nil {
-		log.TLogln("Error open jsonDB")
-		os.Exit(1)
+		err := errors.New("error open jsonDB")
+		log.TLogln(err.Error())
+		return err
 	}
 
 	// Optional forced migration (for manual control)
@@ -86,6 +93,7 @@ func InitSets(readOnly, searchWA bool) {
 	MigrateWAFLists()
 
 	logConfiguration(settingsStoragePref, viewedStoragePref)
+	return nil
 }
 
 func determineStoragePreferences(bboltDB, jsonDB TorrServerDB) (settingsInJson, viewedInJson bool) {
