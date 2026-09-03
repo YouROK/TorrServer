@@ -260,7 +260,8 @@ definitions:
         description: Viewed timecodes
         type: boolean
       trackersListURL:
-        description: remote trackers list URL; empty = skip remote fetch
+        description: optional custom remote trackers list URL; empty = use built-in
+          mirrors; tried first, then mirrors
         type: string
       uploadRateLimit:
         description: in kb, 0 - inf
@@ -269,6 +270,16 @@ definitions:
         description: Disk
         type: boolean
     type: object
+  settings.CategoryType:
+    enum:
+    - default
+    - manual
+    - all
+    type: string
+    x-enum-varnames:
+    - CategoryDefault
+    - CategoryManual
+    - CategoryAll
   settings.TMDBConfig:
     properties:
       apikey:
@@ -286,9 +297,9 @@ definitions:
     type: object
   settings.TorznabConfig:
     properties:
+      catType:
+        $ref: '#/definitions/settings.CategoryType'
       categories:
-        type: string
-      cattype:
         type: string
       host:
         type: string
