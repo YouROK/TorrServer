@@ -84,6 +84,8 @@ func InitSets(readOnly, searchWA, streamWA bool) {
 
 	// Migrate old torrents
 	MigrateTorrents()
+	// Migrate legacy wip.txt / bip.txt into settings.json waf (one-shot)
+	MigrateWAFLists()
 
 	logConfiguration(settingsStoragePref, viewedStoragePref)
 }

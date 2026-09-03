@@ -2,7 +2,33 @@ package torznab
 
 import (
 	"testing"
+
+	"server/settings"
 )
+
+func TestEffectiveCat(t *testing.T) {
+	tests := []struct {
+		name       string
+		requestCat string
+		categories string
+		catType    settings.CategoryType
+		want       string
+	}{
+		{name: "ui cat wins", requestCat: "3000", categories: "2000", catType: settings.CategoryManual, want: "3000"},
+		{name: "default movies tv", requestCat: "", categories: "", catType: settings.CategoryDefault, want: "5000,2000"},
+		{name: "empty type is default", requestCat: "", categories: "", catType: "", want: "5000,2000"},
+		{name: "manual categories", requestCat: "", categories: "1000,7000", catType: settings.CategoryManual, want: "1000,7000"},
+		{name: "all omits cat", requestCat: "", categories: "1000", catType: settings.CategoryAll, want: ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := effectiveCat(tt.requestCat, tt.categories, tt.catType)
+			if got != tt.want {
+				t.Fatalf("effectiveCat() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
 
 func TestNormalizeHost(t *testing.T) {
 	tests := []struct {

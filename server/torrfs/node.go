@@ -28,7 +28,7 @@ func Open(d INode, name string) (fs.File, error) {
 	}
 	arr := strings.Split(trimPath, "/")
 	if len(arr) == 0 {
-		return nil, fs.ErrNotExist
+		return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrNotExist}
 	}
 
 	dirs, _ := d.ReadDir(-1)
@@ -39,5 +39,5 @@ func Open(d INode, name string) (fs.File, error) {
 		}
 	}
 
-	return nil, fs.ErrNotExist
+	return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrNotExist}
 }
