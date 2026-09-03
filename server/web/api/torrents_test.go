@@ -7,6 +7,9 @@ import (
 	"strings"
 	"testing"
 
+	set "server/settings"
+	"server/torr"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -54,5 +57,29 @@ func TestTorrentsRejectionsCarryJSONBody(t *testing.T) {
 				t.Errorf("no error message in body: %q", w.Body.String())
 			}
 		})
+	}
+}
+
+func TestWipeEmptyListOK(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	prevSets := set.BTsets
+	set.BTsets = &set.BTSets{}
+	torr.InitApiHelper(torr.NewBTS())
+	t.Cleanup(func() {
+		set.BTsets = prevSets
+		torr.InitApiHelper(torr.NewBTS())
+	})
+
+	router := gin.New()
+	router.POST("/torrents", torrents)
+
+	req := httptest.NewRequest(http.MethodPost, "/torrents", strings.NewReader(`{"action":"wipe"}`))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d body=%q", w.Code, http.StatusOK, w.Body.String())
 	}
 }

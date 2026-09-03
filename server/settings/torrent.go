@@ -54,6 +54,9 @@ func AddTorrent(torr *TorrentDB) {
 }
 
 func ListTorrent() []*TorrentDB {
+	if tdb == nil {
+		return nil
+	}
 	// Use read lock to prevent migration during read
 	dbMigrationLock.RLock()
 	defer dbMigrationLock.RUnlock()

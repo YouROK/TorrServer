@@ -662,5 +662,8 @@
     "Saved": "Listele au fost salvate și reîncărcate",
     "LoadFailed": "Nu s-au putut încărca listele de acces",
     "SaveFailed": "Nu s-au putut salva listele de acces"
-  }
+  },
+  "MCPStatus": "MCP",
+  "CopyMcpUrl": "Copiază URL MCP",
+  "MCPHint": "Agenții AI se conectează la /mcp pe același port HTTP ca interfața web."
 }

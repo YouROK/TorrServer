@@ -144,9 +144,6 @@ func Search(ctx context.Context, query string, index int, cat string, offset, li
 	return allResults
 }
 
-// indexerLabel picks a short, human-readable source name for a configured indexer — the
-// custom Name if the user set one, otherwise the host's bare domain (searching several
-// indexers at once via index=-1 merges results, so the UI needs a way to tell them apart).
 // effectiveCat applies the request category when the UI/Telegram/MCP sent one;
 // otherwise it uses the indexer's CatType policy (default movies+TV, manual list, or all).
 func effectiveCat(requestCat, categories string, catType settings.CategoryType) string {
@@ -163,6 +160,9 @@ func effectiveCat(requestCat, categories string, catType settings.CategoryType) 
 	}
 }
 
+// indexerLabel picks a short, human-readable source name for a configured indexer — the
+// custom Name if the user set one, otherwise the host's bare domain (searching several
+// indexers at once via index=-1 merges results, so the UI needs a way to tell them apart).
 func indexerLabel(config settings.TorznabConfig) string {
 	if strings.TrimSpace(config.Name) != "" {
 		return config.Name

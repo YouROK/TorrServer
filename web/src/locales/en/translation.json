@@ -662,5 +662,8 @@
     "Saved": "Access lists saved and reloaded",
     "LoadFailed": "Failed to load access lists",
     "SaveFailed": "Failed to save access lists"
-  }
+  },
+  "MCPStatus": "MCP",
+  "CopyMcpUrl": "Copy MCP URL",
+  "MCPHint": "AI agents connect at /mcp on the same HTTP port as the web UI."
 }

@@ -662,5 +662,8 @@
     "Saved": "访问列表已保存并重新加载",
     "LoadFailed": "加载访问列表失败",
     "SaveFailed": "保存访问列表失败"
-  }
+  },
+  "MCPStatus": "MCP",
+  "CopyMcpUrl": "复制 MCP URL",
+  "MCPHint": "AI 代理通过与 Web 界面相同的 HTTP 端口上的 /mcp 连接。"
 }

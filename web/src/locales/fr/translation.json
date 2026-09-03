@@ -662,5 +662,8 @@
     "Saved": "Listes enregistrées et rechargées",
     "LoadFailed": "Échec du chargement des listes d'accès",
     "SaveFailed": "Échec de l'enregistrement des listes d'accès"
-  }
+  },
+  "MCPStatus": "MCP",
+  "CopyMcpUrl": "Copier l’URL MCP",
+  "MCPHint": "Les agents IA se connectent à /mcp sur le même port HTTP que l’interface web."
 }

@@ -1,6 +1,7 @@
 package torznab
 
 import (
+	"encoding/xml"
 	"testing"
 
 	"server/settings"
@@ -27,6 +28,46 @@ func TestEffectiveCat(t *testing.T) {
 				t.Fatalf("effectiveCat() = %q, want %q", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestProwlarrIndexerFallback(t *testing.T) {
+	const body = `<?xml version="1.0"?><rss version="2.0"><channel>
+<item>
+  <title>Prowlarr Only</title>
+  <prowlarrindexer>MyProwlarr</prowlarrindexer>
+</item>
+<item>
+  <title>Jackett Wins</title>
+  <jackettindexer>JackettName</jackettindexer>
+  <prowlarrindexer>ShouldIgnore</prowlarrindexer>
+</item>
+</channel></rss>`
+
+	var resp TorznabResponse
+	if err := xml.Unmarshal([]byte(body), &resp); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if len(resp.Channel.Items) != 2 {
+		t.Fatalf("items = %d, want 2", len(resp.Channel.Items))
+	}
+
+	trackerFor := func(item TorznabItem, label string) string {
+		tracker := item.Indexer
+		if tracker == "" {
+			tracker = item.Prowlarr
+		}
+		if tracker == "" {
+			tracker = label
+		}
+		return tracker
+	}
+
+	if got := trackerFor(resp.Channel.Items[0], "fallback.example"); got != "MyProwlarr" {
+		t.Fatalf("prowlarr-only tracker = %q, want MyProwlarr", got)
+	}
+	if got := trackerFor(resp.Channel.Items[1], "fallback.example"); got != "JackettName" {
+		t.Fatalf("jackett tracker = %q, want JackettName", got)
 	}
 }
 
