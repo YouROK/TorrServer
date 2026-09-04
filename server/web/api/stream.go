@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"server/log"
-	sets "server/settings"
 	"server/torrshash"
 
 	"server/torr"
@@ -252,16 +251,9 @@ func streamNoAuth(c *gin.Context) {
 
 	tor := torr.GetTorrent(spec.InfoHash.HexString())
 	if tor == nil {
-		if !sets.StreamWA {
-			c.Header("WWW-Authenticate", "Basic realm=Authorization Required")
-			c.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
-		tor, err = torr.AddTorrent(spec, title, poster, "", category)
-		if err != nil {
-			_ = c.AbortWithError(http.StatusInternalServerError, err)
-			return
-		}
+		c.Header("WWW-Authenticate", "Basic realm=Authorization Required")
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
 	}
 
 	if title == "" {

@@ -45,7 +45,6 @@ type args struct {
 	PubIPv4     string   `arg:"-4" help:"set public IPv4 addr"`
 	PubIPv6     string   `arg:"-6" help:"set public IPv6 addr"`
 	SearchWA    bool     `arg:"-s" help:"search without auth"`
-	StreamWA    bool     `arg:"--streamwa" help:"stream play and m3u without auth (auto-add torrents for external players)"`
 	MaxSize     string   `arg:"-m" help:"max allowed stream size (in Bytes)"`
 	TGToken     string   `arg:"-T" help:"telegram bot token"`
 	FusePath    string   `arg:"-f" help:"fuse mount path"`
@@ -82,9 +81,6 @@ func main() {
 	log.TLogln("TorrServer", version.Version+",", runtime.Version()+",", "CPU Num:", runtime.NumCPU())
 	if params.HttpAuth {
 		log.TLogln("Use HTTP Auth file", settings.Path+"/accs.db")
-	}
-	if params.StreamWA {
-		log.TLogln("Stream play/m3u allowed without auth (streamwa)")
 	}
 	if params.RDB {
 		log.TLogln("Running in Read-only DB mode!")
@@ -171,7 +167,6 @@ func main() {
 		PubIPv4:     params.PubIPv4,
 		PubIPv6:     params.PubIPv6,
 		SearchWA:    params.SearchWA,
-		StreamWA:    params.StreamWA,
 		MaxSize:     params.MaxSize,
 		TGToken:     params.TGToken,
 		FusePath:    params.FusePath,

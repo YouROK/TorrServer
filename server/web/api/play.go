@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	sets "server/settings"
 	"server/torr"
 	"server/torr/state"
 	"server/web/api/utils"
@@ -44,16 +43,9 @@ func play(c *gin.Context) {
 
 	tor := torr.GetTorrent(spec.InfoHash.HexString())
 	if tor == nil && notAuth {
-		if !sets.StreamWA {
-			c.Header("WWW-Authenticate", "Basic realm=Authorization Required")
-			c.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
-		tor, err = torr.AddTorrent(spec, "", "", "", "")
-		if err != nil {
-			_ = c.AbortWithError(http.StatusInternalServerError, err)
-			return
-		}
+		c.Header("WWW-Authenticate", "Basic realm=Authorization Required")
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
 	}
 
 	if tor == nil {

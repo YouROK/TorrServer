@@ -27,7 +27,7 @@ else
   echo "starting TorrServer on $PORT with -d $DATADIR"
   (
     cd "$ROOT/server"
-    CGO_ENABLED=0 go run -tags nosqlite ./cmd -p "$PORT" -d "$DATADIR" -a --streamwa -i 127.0.0.1
+    CGO_ENABLED=0 go run -tags nosqlite ./cmd -p "$PORT" -d "$DATADIR" -a -i 127.0.0.1
   ) > /tmp/ts-live-check.log 2>&1 &
   SERVER_PID=$!
   trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT

@@ -19,7 +19,6 @@ type ExecArgs struct {
 	PubIPv4     string
 	PubIPv6     string
 	SearchWA    bool
-	StreamWA    bool
 	MaxSize     string
 	TGToken     string
 	FusePath    string

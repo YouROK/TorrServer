@@ -16,7 +16,7 @@ import (
 )
 
 func Start() {
-	settings.InitSets(settings.Args.RDB, settings.Args.SearchWA, settings.Args.StreamWA)
+	settings.InitSets(settings.Args.RDB, settings.Args.SearchWA)
 	// https checks
 	if settings.Args.Ssl {
 		// set settings ssl enabled

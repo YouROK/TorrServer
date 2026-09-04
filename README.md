@@ -222,12 +222,11 @@ On FreeBSD (TrueNAS/FreeNAS) you can use this plugin: <https://github.com/filka9
 - `--pubipv4 PUBIPV4`, `-4 PUBIPV4` - set public IPv4 addr
 - `--pubipv6 PUBIPV6`, `-6 PUBIPV6` - set public IPv6 addr
 - `--searchwa`, `-s` - allow search without authentication
-- `--streamwa` - stream play and m3u without authentication (auto-add torrents for external players)
 - `--maxsize MAXSIZE`, `-m MAXSIZE` - max allowed stream size (in Bytes)
 - `--tg TGTOKEN`, `-T TGTOKEN` - [Telegram bot](server/tgbot/README.md) token
 - `--fuse FUSEPATH`, `-f FUSEPATH` - FUSE mount path
 - `--webdav` - enable WebDAV
-- `--proxyurl PROXYURL` - set proxy URL for BitTorrent traffic (HTTP, SOCKS4, SOCKS5, SOCKS5H), example: socks5h://user:password@example.com:2080
+- `--proxyurl PROXYURL` - set proxy URL for BitTorrent traffic (HTTP, SOCKS4, SOCKS5, SOCKS5H), example: socks5h://user:<password@example.com>:2080
 - `--proxymode PROXYMODE` - set proxy mode: "tracker" (only HTTP trackers, default), "peers" (only peer connections), or "full" (all traffic)
 - `--help`, `-h` - display this help and exit
 - `--version` - display version and exit
@@ -235,7 +234,7 @@ On FreeBSD (TrueNAS/FreeNAS) you can use this plugin: <https://github.com/filka9
 Example:
 
 ```bash
-TorrServer-darwin-arm64 [--port PORT] [--ip IP ...] [--path PATH] [--logpath LOGPATH] [--weblogpath WEBLOGPATH] [--rdb] [--httpauth] [--dontkill] [--ui] [--torrentsdir TORRENTSDIR] [--torrentaddr TORRENTADDR] [--pubipv4 PUBIPV4] [--pubipv6 PUBIPV6] [--searchwa] [--streamwa] [--maxsize MAXSIZE] [--tg TGTOKEN] [--fuse FUSEPATH] [--webdav] [--ssl] [--sslport PORT] [--sslcert PATH] [--sslkey PATH] [--force-https]
+TorrServer-darwin-arm64 [--port PORT] [--ip IP ...] [--path PATH] [--logpath LOGPATH] [--weblogpath WEBLOGPATH] [--rdb] [--httpauth] [--dontkill] [--ui] [--torrentsdir TORRENTSDIR] [--torrentaddr TORRENTADDR] [--pubipv4 PUBIPV4] [--pubipv6 PUBIPV6] [--searchwa] [--maxsize MAXSIZE] [--tg TGTOKEN] [--fuse FUSEPATH] [--webdav] [--ssl] [--sslport PORT] [--sslcert PATH] [--sslkey PATH] [--force-https]
 ```
 
 ### Running in Docker & Docker Compose
@@ -275,7 +274,6 @@ docker run --rm -d --name torrserver \
   - `peers` – Proxy only peer connections.
   - `full` – Proxy all BitTorrent traffic.
 - `TS_SEARCH_WA_ENABLE` – If set to `1`, enables the `--searchwa` flag.
-- `TS_STREAMWA` – If set to `1`, enables the `--streamwa` flag (stream play and m3u without auth).
 - `TS_SSL_ENABLE` – If set to `1`, enables the `--ssl` flag.
 - `TS_SSL_PORT` – If set to `1`, enables the `--sslport` flag.
 - `TS_SSL_CERT_PATH` – Specifies the path to the SSL certificate file via the `--sslcert` flag.
@@ -290,6 +288,7 @@ docker run --rm -d --name torrserver \
 - `TS_WEBDAV_ENABLE` – If set to `1`, enables WebDAV support via the `--webdav` flag.
 
 Example with full override command (on default values):
+
 ```bash
 docker run --rm -d --name torrserver \
   -v ./ts:/opt/ts \
@@ -496,7 +495,7 @@ Note: You should enable authentication with -a (--httpauth) TorrServer startup o
 When adding a torrent, TorrServer can modify announce trackers according to **Settings → Additional → Retrackers**:
 
 | Mode | Behavior |
-|------|----------|
+| ------ | ---------- |
 | Don't add | Leave magnet/file trackers unchanged |
 | Add (default) | Append the configured default/remote list |
 | Remove | Clear trackers from the torrent |

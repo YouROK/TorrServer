@@ -31,17 +31,15 @@ var (
 	ReadOnly bool
 	HttpAuth bool
 	SearchWA bool
-	StreamWA bool
 	PubIPv4  string
 	PubIPv6  string
 	TorAddr  string
 	MaxSize  int64
 )
 
-func InitSets(readOnly, searchWA, streamWA bool) {
+func InitSets(readOnly, searchWA bool) {
 	ReadOnly = readOnly
 	SearchWA = searchWA
-	StreamWA = streamWA
 
 	bboltDB := NewTDB()
 	if bboltDB == nil {
