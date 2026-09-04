@@ -27,4 +27,6 @@ type ReaderState struct {
 	Start  int
 	End    int
 	Reader int
+	// Active is false once the reader goes idle: the playhead is frozen, not moving.
+	Active bool
 }

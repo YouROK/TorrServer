@@ -45,6 +45,9 @@ func (s *Storage) OpenTorrent(info *metainfo.Info, infoHash metainfo.Hash) (ts.T
 }
 
 func (s *Storage) CloseHash(hash metainfo.Hash) {
+	if s.caches == nil {
+		return
+	}
 	s.mu.Lock()
 	ch, ok := s.caches[hash]
 	if ok {
@@ -52,9 +55,9 @@ func (s *Storage) CloseHash(hash metainfo.Hash) {
 	}
 	s.mu.Unlock()
 	// Cache.Close must be called without s.mu held: it calls removeCache
-	// and blocks on disk/anacrolix operations
+	// and blocks on disk/anacrolix operations.
 	if ok {
-		ch.Close()
+		_ = ch.Close()
 	}
 }
 
@@ -67,7 +70,7 @@ func (s *Storage) Close() error {
 	s.caches = make(map[metainfo.Hash]*Cache)
 	s.mu.Unlock()
 	for _, ch := range caches {
-		ch.Close()
+		_ = ch.Close()
 	}
 	return nil
 }

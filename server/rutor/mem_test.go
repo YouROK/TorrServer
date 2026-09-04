@@ -12,7 +12,7 @@ import (
 )
 
 func TestParseChannel(t *testing.T) {
-	channel := make(chan *models.TorrentDetails, 0)
+	channel := make(chan *models.TorrentDetails)
 	var ftors []*models.TorrentDetails
 	go func() {
 		for torr := range channel {
@@ -23,9 +23,9 @@ func TestParseChannel(t *testing.T) {
 	path, _ := os.Getwd()
 	ff, err := os.Open(filepath.Join(path, "rutor.ls"))
 	if err == nil {
-		defer ff.Close()
+		defer func() { _ = ff.Close() }()
 		r := flate.NewReader(ff)
-		defer r.Close()
+		defer func() { _ = r.Close() }()
 		dec := json.NewDecoder(r)
 
 		_, err := dec.Token()
@@ -52,9 +52,9 @@ func TestParseArr(t *testing.T) {
 	path, _ := os.Getwd()
 	ff, err := os.Open(filepath.Join(path, "rutor.ls"))
 	if err == nil {
-		defer ff.Close()
+		defer func() { _ = ff.Close() }()
 		r := flate.NewReader(ff)
-		defer r.Close()
+		defer func() { _ = r.Close() }()
 		dec := json.NewDecoder(r)
 
 		_, err := dec.Token()

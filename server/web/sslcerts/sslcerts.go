@@ -82,14 +82,14 @@ func MakeCertKeyFiles(ips []string) (string, string) {
 		log.TLogln("Error creating certificate file:", err)
 		os.Exit(1)
 	}
-	defer certFile.Close()
+	defer func() { _ = certFile.Close() }()
 
 	privFile, err := os.Create(filepath.Join(settings.Path, "server.key"))
 	if err != nil {
 		log.TLogln("Error creating private key file:", err)
 		os.Exit(1)
 	}
-	defer privFile.Close()
+	defer func() { _ = privFile.Close() }()
 
 	_, err = certFile.Write(certPEM)
 	if err != nil {
@@ -140,7 +140,7 @@ func VerifyCertKeyFiles(certFile, keyFile, port string) error {
 	if err != nil {
 		return err
 	}
-	defer ln.Close()
+	defer func() { _ = ln.Close() }()
 	log.TLogln("Certificate and key are valid.")
 	return nil
 }

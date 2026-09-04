@@ -10,10 +10,20 @@ import (
 	"server/log"
 )
 
+type CategoryType string
+
+const (
+	CategoryDefault CategoryType = "default"
+	CategoryManual  CategoryType = "manual"
+	CategoryAll     CategoryType = "all"
+)
+
 type TorznabConfig struct {
-	Host string
-	Key  string
-	Name string
+	Host       string
+	Key        string
+	Name       string
+	Categories string
+	CatType    CategoryType
 }
 
 type TMDBConfig struct {
@@ -37,7 +47,7 @@ type BTSets struct {
 	// Torrent
 	ForceEncrypt             bool
 	RetrackersMode           int    // 0 - don`t add, 1 - add retrackers (def), 2 - remove retrackers 3 - replace retrackers
-	TrackersListURL          string // remote trackers list URL; empty = skip remote fetch
+	TrackersListURL          string // optional custom remote trackers list URL; empty = use built-in mirrors; tried first, then mirrors
 	DefaultTrackers          string // newline-separated announce URLs used as local/fallback list
 	TorrentDisconnectTimeout int    // in seconds
 	EnableDebug              bool   // debug logs
@@ -100,8 +110,13 @@ func (v *BTSets) String() string {
 	return string(buf)
 }
 
-// Default remote trackers list and built-in announce URLs (also used by Web UI defaults).
-const DefaultTrackersListURL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best_ip.txt"
+// DefaultTrackersListURLs is the built-in remote trackers list mirrors, tried in order.
+var DefaultTrackersListURLs = []string{
+	"https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best_ip.txt",
+	"https://ngosang.github.io/trackerslist/trackers_best_ip.txt",
+	"https://cdn.jsdelivr.net/gh/ngosang/trackerslist@master/trackers_best_ip.txt",
+	"https://raw.githack.com/ngosang/trackerslist/master/trackers_best_ip.txt",
+}
 
 const DefaultTrackersText = `http://retracker.local/announce
 http://bt4.t-ru.org/ann?magnet
@@ -154,20 +169,22 @@ func SetBTSets(sets *BTSets) {
 	} else if sets.UseDisk {
 		BTsets = sets
 
-		go filepath.WalkDir(sets.TorrentsSavePath, func(path string, d fs.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-			if d.IsDir() && strings.ToLower(d.Name()) == ".tsc" {
-				BTsets.TorrentsSavePath = path
-				log.TLogln("Find directory \"" + BTsets.TorrentsSavePath + "\", use as cache dir")
-				return io.EOF
-			}
-			if d.IsDir() && strings.HasPrefix(d.Name(), ".") {
-				return filepath.SkipDir
-			}
-			return nil
-		})
+		go func() {
+			_ = filepath.WalkDir(sets.TorrentsSavePath, func(path string, d fs.DirEntry, err error) error {
+				if err != nil {
+					return err
+				}
+				if d.IsDir() && strings.ToLower(d.Name()) == ".tsc" {
+					BTsets.TorrentsSavePath = path
+					log.TLogln("Find directory \"" + BTsets.TorrentsSavePath + "\", use as cache dir")
+					return io.EOF
+				}
+				if d.IsDir() && strings.HasPrefix(d.Name(), ".") {
+					return filepath.SkipDir
+				}
+				return nil
+			})
+		}()
 	}
 
 	BTsets = sets
@@ -185,7 +202,7 @@ func SetDefaultConfig() {
 	sets.PreloadCache = 50
 	sets.ConnectionsLimit = 25
 	sets.RetrackersMode = 1
-	sets.TrackersListURL = DefaultTrackersListURL
+	sets.TrackersListURL = ""
 	sets.DefaultTrackers = DefaultTrackersText
 	sets.TorrentDisconnectTimeout = 30
 	sets.ReaderReadAHead = 95 // 95%
@@ -238,8 +255,8 @@ func loadBTSets() {
 				}
 			}
 			// Upgrade older configs that never had tracker list fields.
+			// Empty TrackersListURL now means "use built-in mirrors".
 			if BTsets.TrackersListURL == "" && BTsets.DefaultTrackers == "" {
-				BTsets.TrackersListURL = DefaultTrackersListURL
 				BTsets.DefaultTrackers = DefaultTrackersText
 			}
 			return

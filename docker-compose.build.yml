@@ -1,0 +1,14 @@
+# Local image build override.
+#
+# Requires a staged binary from GoReleaser/Makefile:
+#   make release-snapshot          # or: make docker-image
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+
+services:
+  torrserver:
+    image: ${TORRSERVER_IMAGE:-torrserver:local}
+    build:
+      context: ${TORRSERVER_BUILD_CONTEXT:-./dist/docker-context}
+      dockerfile: ${TORRSERVER_DOCKERFILE:-Dockerfile}

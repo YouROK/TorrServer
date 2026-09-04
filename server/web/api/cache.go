@@ -32,7 +32,7 @@ func cache(c *gin.Context) {
 	var req cacheReqJS
 	err := c.ShouldBindJSON(&req)
 	if err != nil {
-		c.AbortWithError(http.StatusBadRequest, err)
+		_ = c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 	c.Status(http.StatusBadRequest)
@@ -46,7 +46,7 @@ func cache(c *gin.Context) {
 
 func getCache(req cacheReqJS, c *gin.Context) {
 	if req.Hash == "" {
-		c.AbortWithError(http.StatusBadRequest, errors.New("hash is empty"))
+		_ = c.AbortWithError(http.StatusBadRequest, errors.New("hash is empty"))
 		return
 	}
 	tor := torr.GetTorrent(req.Hash)

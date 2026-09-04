@@ -4,8 +4,9 @@ import (
 	"strconv"
 	"strings"
 
-	tele "gopkg.in/telebot.v4"
 	up "server/tgbot/upload"
+
+	tele "gopkg.in/telebot.v4"
 )
 
 func upload(c tele.Context) error {

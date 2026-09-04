@@ -18,8 +18,8 @@
   <a href="https://github.com/YouROK/TorrServer/issues">
     <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" alt="CodeFactor" />
   </a>
-  <a href="https://github.com/YouROK/TorrServer/actions/workflows/docker_image.yml" rel="nofollow">
-    <img src="https://img.shields.io/github/actions/workflow/status/YouROK/TorrServer/docker_image.yml?logo=Github" alt="Build" />
+  <a href="https://github.com/YouROK/TorrServer/actions/workflows/ci.yml" rel="nofollow">
+    <img src="https://img.shields.io/github/actions/workflow/status/YouROK/TorrServer/ci.yml?logo=Github" alt="CI" />
   </a>
   <a href="https://github.com/YouROK/TorrServer/releases" rel="nofollow">
     <img alt="GitHub release (latest SemVer)" src="https://img.shields.io/github/v/release/YouROK/TorrServer?label=version"/>
@@ -50,6 +50,7 @@ allowing the cache size to be adjusted according to the system parameters and th
 - Cross-browser modern web interface
 - Optional DLNA server
 - Optional GStreamer HLS remuxing and transcoding (`-gst` builds from release 141.10)
+- Native [MCP](server/mcp/README.md) server for AI agents (OpenClaw, Hermes, and other MCP clients)
 
 ## Getting Started
 
@@ -225,7 +226,7 @@ On FreeBSD (TrueNAS/FreeNAS) you can use this plugin: <https://github.com/filka9
 - `--tg TGTOKEN`, `-T TGTOKEN` - [Telegram bot](server/tgbot/README.md) token
 - `--fuse FUSEPATH`, `-f FUSEPATH` - FUSE mount path
 - `--webdav` - enable WebDAV
-- `--proxyurl PROXYURL` - set proxy URL for BitTorrent traffic (HTTP, SOCKS4, SOCKS5, SOCKS5H), example: socks5h://user:password@example.com:2080
+- `--proxyurl PROXYURL` - set proxy URL for BitTorrent traffic (HTTP, SOCKS4, SOCKS5, SOCKS5H), example: socks5h://user:<password@example.com>:2080
 - `--proxymode PROXYMODE` - set proxy mode: "tracker" (only HTTP trackers, default), "peers" (only peer connections), or "full" (all traffic)
 - `--help`, `-h` - display this help and exit
 - `--version` - display version and exit
@@ -244,15 +245,21 @@ Run in console
 docker run --rm -d --name torrserver -p 8090:8090 ghcr.io/yourok/torrserver:latest
 ```
 
-For running in persistence mode, just mount volume to container by adding `-v ~/ts:/opt/ts`, where `~/ts` folder path is just example, but you could use it anyway... Result example command:
+For persistent data, mount a local directory and set paths explicitly:
 
 ```bash
-docker run --rm -d --name torrserver -v ~/ts:/opt/ts -p 8090:8090 ghcr.io/yourok/torrserver:latest
+docker run --rm -d --name torrserver \
+  -v ./ts:/opt/ts \
+  -e TS_CONF_PATH=/opt/ts \
+  -e TS_LOG_PATH=/opt/ts/torrserver.log \
+  -e TS_TORR_DIR=/opt/ts/torrents \
+  -p 8090:8090 \
+  ghcr.io/yourok/torrserver:latest
 ```
 
 #### Environment Variables
 
-- `TS_HTTPAUTH` – Set to `1` to enable basic authentication. The authentication file must be placed in the `~/ts/config` directory.
+- `TS_HTTPAUTH` – Set to `1` to enable basic authentication. The authentication file must be placed in the `~/ts/config` directory. This also protects the MCP endpoint at `/mcp`.
 - `TS_RDB` – If set to `1`, enables the `--rdb` command-line flag.
 - `TS_DONTKILL` – If set to `1`, enables the `--dontkill` command-line flag.
 - `TS_IP` – Specifies the bind address for the web server using the `--ip` flag.
@@ -283,7 +290,19 @@ docker run --rm -d --name torrserver -v ~/ts:/opt/ts -p 8090:8090 ghcr.io/yourok
 Example with full override command (on default values):
 
 ```bash
-docker run --rm -d -e TS_PORT=5665 -e TS_DONTKILL=1 -e TS_HTTPAUTH=1 -e TS_RDB=1 -e TS_CONF_PATH=/opt/ts/config -e TS_LOG_PATH=/opt/ts/log -e TS_TORR_DIR=/opt/ts/torrents -e TS_PROXYURL=socks5h://user:password@example.com:2080 -e TS_PROXYMODE=tracker --name torrserver -v ~/ts:/opt/ts -p 5665:5665 ghcr.io/yourok/torrserver:latest
+docker run --rm -d --name torrserver \
+  -v ./ts:/opt/ts \
+  -e TS_PORT=5665 \
+  -e TS_DONTKILL=1 \
+  -e TS_HTTPAUTH=1 \
+  -e TS_RDB=1 \
+  -e TS_CONF_PATH=/opt/ts \
+  -e TS_LOG_PATH=/opt/ts/torrserver.log \
+  -e TS_TORR_DIR=/opt/ts/torrents \
+  -e TS_PROXYURL=socks5h://user:password@example.com:2080 \
+  -e TS_PROXYMODE=tracker \
+  -p 5665:5665 \
+  ghcr.io/yourok/torrserver:latest
 ```
 
 #### Docker Compose
@@ -323,53 +342,91 @@ services:
 
 ## Development
 
+See **[docs/BUILD.md](docs/BUILD.md)** for Makefile commands, CI, tagged releases, GHCR images, and fork setup.
+
 ### Go server
 
-To run the Go server locally, just run
+Run from source:
 
 ```bash
-cd server
-go run ./cmd
+make run
+# or
+cd server && go run ./cmd
 ```
 
 ### Web development
 
-To run the web server locally, just run
+React 19 + Vite 8 + HeroUI v3 UI. See **[web/README.md](web/README.md)** for stack, scripts, and env setup.
 
 ```bash
-yarn start
+cd web && yarn && yarn start
+# ship into binary:
+cd web && yarn build && cd .. && make webgen-clean
 ```
-
-More info at <https://github.com/YouROK/TorrServer/tree/master/web#readme>
 
 ### Build
 
+Use the **Makefile** (wraps [GoReleaser](https://goreleaser.com/)):
+
+- **Local dev:** `.goreleaser.local.yaml` — linux/darwin amd64+arm64 (`make binary`, `make build`, `make dist`)
+- **CI / release:** `.goreleaser.yaml` — full matrix (`make dist-full`, `make release`)
+
+```bash
+make help              # command overview
+make install-tools     # goreleaser v2 + swag
+make start-build       # build host binary, install to data/, run
+make binary            # build host platform → dist/TorrServer-<os>-<arch>
+make binary-gst         # GStreamer build for host platform
+make dist              # local snapshot (4 platforms, no publish)
+make dist-full         # full snapshot (all platforms)
+make update            # web embed + swagger
+```
+
+Install Go toolchain wrappers used by GoReleaser:
+
+```bash
+go install golang.org/dl/go1.26.4@latest && go1.26.4 download
+go install golang.org/dl/go1.25.7@latest && go1.25.7 download   # Android (release only)
+```
+
+**Tagged releases** (`.goreleaser.yaml`, workflow `.github/workflows/release.yml`) use the `MatriX.*` tag scheme and publish to `ghcr.io/<owner>/<repo>` where `<owner>/<repo>` is the GitHub repository lowercased. Override locally with `REGISTRY_IMAGE=owner/repo make …`.
+
+Direct GoReleaser (without Make):
+
+```bash
+goreleaser build --snapshot --clean --single-target --id binary
+GOOS=linux GOARCH=amd64 goreleaser build --snapshot --clean --single-target --id binary
+```
+
+Web UI build inside `gen_web.go` needs **Node.js 22+** (see `web/.nvmrc`).
+
+`binary` builds use **Go 1.26.4**; `android` uses **Go 1.25.7**.
+
+See [docs/BUILD.md](docs/BUILD.md) for cross-compilation, Docker builder mode (`USE_DOCKER_BUILDER=1`), and Android NDK setup.
+
 #### Server
 
-- Install [Golang](https://golang.org/doc/install) 1.20+
+- Install [Golang](https://golang.org/doc/install) 1.26+ (1.25.7 additionally for Android via GoReleaser)
 - Go to the TorrServer source directory
-- Run build script under linux or macOS `build-all.sh`
+- Run `make binary` or GoReleaser as above
 
 #### Web
 
-- Install **npm** and **yarn**
-- Go to the web directory
-- Run `NODE_OPTIONS=--openssl-legacy-provider yarn build`
+- Install **Node.js 22+** and **yarn**
+- Go to the web directory, run `yarn build`
+- From the repo root, embed with `make webgen-clean` (or `go run gen_web.go --clean`)
 
 #### Android
 
-To build an Android server you will need the Android Toolchain.
+To build an Android server you will need the Android Toolchain (release workflow / full `.goreleaser.yaml`).
 
 #### Swagger
 
-`swag` must be installed on the system to [re]build Swagger documentation.
-
 ```bash
-go install github.com/swaggo/swag/cmd/swag@latest
-cd server
-swag init -g web/server.go --parseDependency --parseInternal --parseDepth 5
-
-# Documentation can be linted using
+make install-swag
+make update-swag
+# or manually:
+cd server && swag init -g web/server.go
 swag fmt
 ```
 
@@ -380,6 +437,43 @@ Standard binaries serve a filtered Swagger spec at runtime (only `/gst/settings`
 ### API Docs
 
 API documentation is hosted as Swagger format available at path `/swagger/index.html`.
+
+### MCP (AI agents)
+
+TorrServer exposes a native [Model Context Protocol](https://modelcontextprotocol.io/) server at **`/mcp`** on the same HTTP(S) port as the web UI (default `8090`). OpenClaw, Hermes, and other MCP clients can list, add, and manage torrents, and get a play URL for the next unwatched TV episode. The REST API is unchanged.
+
+Endpoint: `http://<host>:8090/mcp` (or `https://` when `--ssl` is enabled).
+
+When HTTP auth is on (`-a` / `TS_HTTPAUTH=1`), MCP uses the same Basic credentials as the rest of the API (`accs.db`). Play links returned by tools are ordinary HTTP URLs for VLC, mpv, or a browser.
+
+**OpenClaw** (`openclaw.json`):
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "torrserver": {
+        "url": "http://127.0.0.1:8090/mcp",
+        "transport": "streamable-http"
+      }
+    }
+  }
+}
+```
+
+With auth, add `"headers": { "Authorization": "Basic <base64-user-pass>" }`.
+
+**Hermes** (`~/.hermes/config.yaml`):
+
+```yaml
+mcp_servers:
+  torrserver:
+    url: "http://127.0.0.1:8090/mcp"
+    headers:
+      Authorization: "Basic <base64-user-pass>"
+```
+
+See [server/mcp/README.md](server/mcp/README.md) for the tool list and next-unwatched behavior.
 
 ## Authentication
 
@@ -401,7 +495,7 @@ Note: You should enable authentication with -a (--httpauth) TorrServer startup o
 When adding a torrent, TorrServer can modify announce trackers according to **Settings → Additional → Retrackers**:
 
 | Mode | Behavior |
-|------|----------|
+| ------ | ---------- |
 | Don't add | Leave magnet/file trackers unchanged |
 | Add (default) | Append the configured default/remote list |
 | Remove | Clear trackers from the torrent |
@@ -409,63 +503,152 @@ When adding a torrent, TorrServer can modify announce trackers according to **Se
 
 Related settings (same Web UI section, also via `POST /settings`):
 
-- **`TrackersListURL`** — remote list URL (default: ngosang `trackers_best_ip.txt` on GitHub). Leave **empty** to skip the remote fetch (useful if GitHub is blocked). Failed/timed-out fetches fall back to `DefaultTrackers` (5s timeout, one attempt per process until settings are saved again).
-- **`DefaultTrackers`** — local announce URLs, one per line (`udp`/`http`/`https`/`wss`; `#` comments allowed). Used alone when the URL is empty, or merged after a successful remote fetch.
+- **`TrackersListURL`** — optional custom remote list URL. Leave **empty** to use the built-in ngosang `trackers_best_ip.txt` mirrors (tried in order):
+  1. `https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best_ip.txt`
+  2. `https://ngosang.github.io/trackerslist/trackers_best_ip.txt`
+  3. `https://cdn.jsdelivr.net/gh/ngosang/trackerslist@master/trackers_best_ip.txt`
+  4. `https://raw.githack.com/ngosang/trackerslist/master/trackers_best_ip.txt`
+  
+  If set, the custom URL is tried **first**, then the mirrors (duplicates are skipped). Failed/timed-out fetches fall back to the next URL, then to `DefaultTrackers` if all fail (5s timeout per URL).
+- **`DefaultTrackers`** — local announce URLs, one per line (`udp`/`http`/`https`/`wss`; `#` comments allowed). Used alone when all remote fetches fail, or merged after a successful remote fetch.
 
 Optional file overlay (always appended when present): put `trackers.txt` in the config directory (`--path` / `-d`), next to `config.db`. Only lines starting with `udp` or `http` are read from that file.
 
-## Whitelist/Blacklist IP
+## Web Application Firewall (WAF)
 
-The lists file should be located in the same directory with config.db.
+TorrServer includes an HTTP access WAF that filters clients by IP address and by the `Referer` and `Origin` request headers. Configure it from **Settings → Access** or through the authenticated `/waf` API.
 
-- Whitelist file name: `wip.txt`
-- Blacklist file name: `bip.txt`
+### Configuration
 
-Whitelist has priority over everything else.
+WAF configuration is stored in the top-level **`waf`** object in **`settings.json`**. Each rule is a separate array entry:
 
-Example:
-
-```text
-local:127.0.0.0-127.0.0.255
-127.0.0.0-127.0.0.255
-local:127.0.0.1
-127.0.0.1
-# at the beginning of the line, comment
+```json
+{
+  "waf": {
+    "version": 1,
+    "whitelist": [
+      "127.0.0.1",
+      "::1",
+      "10.0.0.0/8"
+    ],
+    "blacklist": [
+      "203.0.113.0/24"
+    ],
+    "referers": [
+      "example.com"
+    ]
+  }
+}
 ```
+
+On first start, if `settings.json` has **no** `waf` key yet and legacy ACL files **`wip.txt`** (whitelist) / **`bip.txt`** (blacklist) exist in the config directory (same place as `config.db`), TorrServer imports them into `waf` arrays and renames the sources to **`wip.txt.bak`** / **`bip.txt.bak`**. Those backups are not read again. If a `waf` key already exists (even with empty lists), legacy files are left untouched.
+
+Changes saved through the web UI or API are applied immediately. After editing `settings.json` manually, restart TorrServer to load the changes.
+
+### IP rules
+
+Rules:
+
+- If the whitelist is **not empty**, the client IP must match it.
+- If the blacklist is **not empty**, a matching client IP is banned even when it is also on the whitelist.
+- An empty whitelist or blacklist disables that IP check.
+- Invalid entries are skipped and reported as warnings; valid entries remain active.
+- Banned responses use HTTP **403** with body `Banned`.
+- Client IP is taken from the TCP peer address (`RemoteAddr`). Reverse-proxy headers are not trusted by default.
+
+Supported array-entry formats include IPv4, IPv6, ranges, CIDR blocks, comments, and optional descriptions:
+
+```json
+[
+  "# comment",
+  "127.0.0.1",
+  "local:127.0.0.1",
+  "127.0.0.0-127.0.0.255",
+  "local:127.0.0.0-127.0.0.255",
+  "10.0.0.0/8",
+  "lan:10.0.0.0/8",
+  "2001:db8::1",
+  "local:2001:db8::1",
+  "2001:db8::/32"
+]
+```
+
+### Referer and Origin rules
+
+Block HTTP requests that come from unwanted sites (for example mirror pages that embed your TorrServer streams).
+
+- Each entry is a hostname. URLs with only an HTTP/HTTPS scheme and host are also accepted.
+- A rule blocks the hostname and all its subdomains.
+- Both `Referer` and `Origin` are checked before the IP allowlist, so an IP whitelist match cannot bypass a referer rule.
+- Requests without either header are allowed.
+- Protected internal rules remain active and are not displayed in the web UI.
+
+```json
+{
+  "referers": [
+    "example.com",
+    "evil.example.org",
+    "# comment"
+  ]
+}
+```
+
+### API
+
+`GET /waf` returns the active editable lists, status flags, and parse warnings. `POST /waf` atomically replaces all three editable lists and hot-reloads the WAF. The API uses newline-delimited strings for compatibility with the web text editors; all fields are required and an empty string clears a list.
+
+```shell
+curl -u USER:PASSWORD http://127.0.0.1:8090/waf
+
+curl -u USER:PASSWORD \
+  -H 'Content-Type: application/json' \
+  -d '{"whitelist":"127.0.0.1\n::1\n10.0.0.0/8","blacklist":"","referers":"example.com"}' \
+  http://127.0.0.1:8090/waf
+```
+
+In read-only mode, `GET /waf` remains available but `POST /waf` returns HTTP **403**.
+
+> **Note:** BitTorrent peer IP filtering uses a separate PeerGuardian-style file named `blocklist` in the config directory. That list is not managed by Settings → Access / `/waf`.
 
 ## Torznab
 
 TorrServer can talk to **Torznab** indexers so you can search for torrents from tools like **Jackett** and **Prowlarr**, including searching several configured indexers at once.
 
-Configure it in the web UI: **Settings → Torznab**.
+Configure it in the web UI: **Settings → Search**.
 
 ### Indexer parameters
 
 Each Torznab indexer needs:
 
-- **Host URL**: full URL to the Torznab API endpoint.
+- **Host URL**: full URL to the Torznab API endpoint (or indexer base that TorrServer can turn into `/api`).
   - Jackett example:
 
   ```shell
   http://192.168.1.10:9117/api/v2.0/indexers/all/results/torznab/
   ```
 
+  TorrServer normalizes this to `…/torznab/api` when the path does not already end with `/api`.
+
   - Prowlarr example:
-  
+
   ```shell
   http://localhost:9696/1
   ```
-  
-  - Make sure to include the correct trailing slash (`/`) in your indexer's URL,
-  as required by your Torznab provider. TorrServer will try to properly format the path,
-  but matching your indexer's expected format is best to avoid connection issues.
-  
+
+  That becomes `http://localhost:9696/1/api`.
+
+  - Matching your indexer's expected format is best to avoid connection issues. A missing `http://` / `https://` scheme is added automatically.
+
 - **API Key**: the key from your Torznab indexer manager.
+
+Search requests are not limited to Movies/TV categories; results come from all categories the indexer returns.
+
+In the web **Search** dialog, **All Trackers** queries every configured Torznab indexer and, when RuTor search is also enabled, merges RuTor results into the same list.
 
 ### Enabling Torznab search
 
 1. Open **Settings**.
-2. Open the **Torznab** tab.
+2. Open the **Search** tab.
 3. Turn on **Enable Torznab Search**.
 4. Enter **Host URL** and **API Key**, then **Add Server** for each indexer.
 5. **Save** settings.

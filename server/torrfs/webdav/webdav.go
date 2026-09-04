@@ -8,7 +8,6 @@ import (
 	"os"
 	"path"
 	"sync"
-	"time"
 
 	"server/log"
 
@@ -222,11 +221,4 @@ func cleanWebDAVPath(name string) string {
 		return "."
 	}
 	return name
-}
-
-func nonZeroTime(t time.Time) time.Time {
-	if t.IsZero() {
-		return time.Unix(0, 0)
-	}
-	return t
 }

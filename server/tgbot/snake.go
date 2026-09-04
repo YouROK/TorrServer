@@ -7,11 +7,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dustin/go-humanize"
-	tele "gopkg.in/telebot.v4"
 	"server/log"
 	"server/torr"
 	cacheSt "server/torr/storage/state"
+
+	"github.com/dustin/go-humanize"
+	tele "gopkg.in/telebot.v4"
 )
 
 var (
@@ -107,7 +108,8 @@ func formatSnake(uid int64, st *cacheSt.CacheState, hash string, cols, rows int)
 	readerRanges := make(map[int]bool)
 	for _, r := range st.Readers {
 		readerPositions[r.Reader] = true
-		for p := r.Start; p < r.End && p < st.PiecesCount; p++ {
+		// End is inclusive (matches torrstor.inRanges).
+		for p := r.Start; p <= r.End && p < st.PiecesCount; p++ {
 			readerRanges[p] = true
 		}
 	}

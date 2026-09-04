@@ -4,9 +4,10 @@ import (
 	"strconv"
 	"strings"
 
-	tele "gopkg.in/telebot.v4"
 	"server/log"
 	"server/torr"
+
+	tele "gopkg.in/telebot.v4"
 )
 
 // resolveHash returns hash from: 1) full hash string, 2) numeric index from list, 3) reply-to message

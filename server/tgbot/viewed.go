@@ -5,8 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	tele "gopkg.in/telebot.v4"
 	sets "server/settings"
+
+	tele "gopkg.in/telebot.v4"
 )
 
 func cmdViewed(c tele.Context) error {

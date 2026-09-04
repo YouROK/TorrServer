@@ -1,3 +1,4 @@
+//nolint:unused // swagger model stubs for swag
 package api
 
 type gstreamerSettingsDocResponse struct {

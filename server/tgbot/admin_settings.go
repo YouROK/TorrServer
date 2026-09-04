@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"strings"
 
-	tele "gopkg.in/telebot.v4"
 	"server/bonjour"
 	"server/dlna"
 	"server/rutor"
 	"server/settings"
 	"server/torr"
+
+	tele "gopkg.in/telebot.v4"
 )
 
 func cmdSettings(c tele.Context) error {

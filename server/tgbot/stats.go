@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"strings"
 
+	"server/torr"
+
 	"github.com/dustin/go-humanize"
 	tele "gopkg.in/telebot.v4"
-	"server/torr"
 )
 
 func cmdStats(c tele.Context) error {

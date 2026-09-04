@@ -3,9 +3,10 @@ package tgbot
 import (
 	"fmt"
 
+	"server/torr"
+
 	"github.com/dustin/go-humanize"
 	tele "gopkg.in/telebot.v4"
-	"server/torr"
 )
 
 func cmdCache(c tele.Context) error {

@@ -110,9 +110,9 @@ func main() {
 		go func() {
 			time.Sleep(time.Second)
 			if params.Ssl {
-				browser.OpenURL("https://127.0.0.1:" + params.SslPort)
+				_ = browser.OpenURL("https://127.0.0.1:" + params.SslPort)
 			} else {
-				browser.OpenURL("http://127.0.0.1:" + params.Port)
+				_ = browser.OpenURL("http://127.0.0.1:" + params.Port)
 			}
 		}()
 	}
@@ -203,7 +203,7 @@ func watchTDir(dir string) {
 		log.TLogln("Error creating watcher:", err)
 		return
 	}
-	defer watcher.Close()
+	defer func() { _ = watcher.Close() }()
 
 	err = watcher.Add(path) // Add target directory to watcher to receive filesystem events.
 	if err != nil {

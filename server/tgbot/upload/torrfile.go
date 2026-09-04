@@ -15,7 +15,7 @@ import (
 	"server/torr/storage/torrstor"
 )
 
-var ERR_STOPPED = errors.New("stopped")
+var ErrStopped = errors.New("stopped")
 
 type TorrFile struct {
 	hash   string
@@ -23,7 +23,6 @@ type TorrFile struct {
 	wrk    *Worker
 	offset int64
 	size   int64
-	id     int
 
 	reader *torrstor.Reader
 }
@@ -79,7 +78,7 @@ func NewTorrFile(wrk *Worker, stFile *state.TorrentFileStat) (*TorrFile, error) 
 
 func (t *TorrFile) Read(p []byte) (n int, err error) {
 	if t.wrk.isCancelled {
-		return 0, ERR_STOPPED
+		return 0, ErrStopped
 	}
 	n, err = t.reader.Read(p)
 	t.offset += int64(n)

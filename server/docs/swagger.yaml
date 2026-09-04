@@ -1,5 +1,26 @@
 basePath: /
 definitions:
+  api.RuntimeStatus:
+    properties:
+      bonjour_enabled:
+        type: boolean
+      bt:
+        allOf:
+        - $ref: '#/definitions/torr.ClientStatusSnapshot'
+        description: BitTorrent client (structured alternative to plaintext GET /stat).
+      dlna_enabled:
+        type: boolean
+      friendly_name:
+        type: string
+      fuse_enabled:
+        type: boolean
+      fuse_path:
+        type: string
+      webdav_enabled:
+        type: boolean
+      webdav_path:
+        type: string
+    type: object
   api.cacheReqJS:
     properties:
       action:
@@ -118,6 +139,38 @@ definitions:
         type: string
       timecode:
         type: number
+    type: object
+  api.wafResponse:
+    properties:
+      blacklist:
+        type: string
+      ip_enabled:
+        type: boolean
+      read_only:
+        type: boolean
+      referer_enabled:
+        type: boolean
+      referers:
+        type: string
+      warnings:
+        items:
+          $ref: '#/definitions/waf.Warning'
+        type: array
+      whitelist:
+        type: string
+    type: object
+  api.wafUpdateReq:
+    properties:
+      blacklist:
+        type: string
+      referers:
+        type: string
+      whitelist:
+        type: string
+    required:
+    - blacklist
+    - referers
+    - whitelist
     type: object
   models.TorrentDetails:
     properties:
@@ -260,7 +313,8 @@ definitions:
         description: Viewed timecodes
         type: boolean
       trackersListURL:
-        description: remote trackers list URL; empty = skip remote fetch
+        description: optional custom remote trackers list URL; empty = use built-in
+          mirrors; tried first, then mirrors
         type: string
       uploadRateLimit:
         description: in kb, 0 - inf
@@ -269,6 +323,16 @@ definitions:
         description: Disk
         type: boolean
     type: object
+  settings.CategoryType:
+    enum:
+    - default
+    - manual
+    - all
+    type: string
+    x-enum-varnames:
+    - CategoryDefault
+    - CategoryManual
+    - CategoryAll
   settings.TMDBConfig:
     properties:
       apikey:
@@ -286,6 +350,10 @@ definitions:
     type: object
   settings.TorznabConfig:
     properties:
+      catType:
+        $ref: '#/definitions/settings.CategoryType'
+      categories:
+        type: string
       host:
         type: string
       key:
@@ -345,6 +413,10 @@ definitions:
     type: object
   state.ReaderState:
     properties:
+      active:
+        description: 'Active is false once the reader goes idle: the playhead is frozen,
+          not moving.'
+        type: boolean
       end:
         type: integer
       reader:
@@ -451,6 +523,83 @@ definitions:
         type: integer
       upload_speed:
         type: number
+    type: object
+  torr.ClientStatusSnapshot:
+    properties:
+      active_peers:
+        type: integer
+      active_streams:
+        type: integer
+      banned_ips:
+        type: integer
+      bytes_read:
+        type: integer
+      bytes_written:
+        type: integer
+      connected_seeders:
+        type: integer
+      download_speed:
+        type: number
+      listen_port:
+        type: integer
+      loaded_size:
+        type: integer
+      peer_id:
+        type: string
+      raw_stat:
+        type: string
+      torrent_count:
+        type: integer
+      torrents:
+        items:
+          $ref: '#/definitions/torr.TorrentStatusBrief'
+        type: array
+      total_peers:
+        type: integer
+      total_size:
+        type: integer
+      upload_speed:
+        type: number
+    type: object
+  torr.TorrentStatusBrief:
+    properties:
+      active_peers:
+        type: integer
+      connected_seeders:
+        type: integer
+      download_speed:
+        type: number
+      hash:
+        type: string
+      loaded_size:
+        type: integer
+      name:
+        type: string
+      preload_size:
+        type: integer
+      preloaded_bytes:
+        type: integer
+      stat:
+        type: integer
+      stat_string:
+        type: string
+      title:
+        type: string
+      torrent_size:
+        type: integer
+      total_peers:
+        type: integer
+      upload_speed:
+        type: number
+    type: object
+  waf.Warning:
+    properties:
+      code:
+        type: string
+      line:
+        type: integer
+      list:
+        type: string
     type: object
 externalDocs:
   description: OpenAPI
@@ -930,6 +1079,22 @@ paths:
       summary: Get a M3U playlist with all torrents
       tags:
       - API
+  /runtime/status:
+    get:
+      description: Read-only flags for DLNA/Bonjour/WebDAV/FUSE plus structured BT
+        stats (and raw /stat text).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.RuntimeStatus'
+      security:
+      - BasicAuth: []
+      summary: Runtime integration + BitTorrent status
+      tags:
+      - API
   /search:
     get:
       description: Makes a rutor search.
@@ -1284,6 +1449,77 @@ paths:
       security:
       - BasicAuth: []
       summary: Set / List / Remove viewed torrents
+      tags:
+      - API
+  /waf:
+    get:
+      description: Returns whitelist/blacklist IP and blocked referer lists stored
+        in settings.json.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.wafResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BasicAuth: []
+      summary: Get HTTP WAF lists
+      tags:
+      - API
+    post:
+      consumes:
+      - application/json
+      description: Fully replaces whitelist/blacklist IP and blocked referer lists
+        in settings.json and hot-reloads the WAF. All three fields are required; explicit
+        empty strings clear a list.
+      parameters:
+      - description: Complete WAF configuration
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.wafUpdateReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.wafResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BasicAuth: []
+      summary: Update HTTP WAF lists
       tags:
       - API
 securityDefinitions:

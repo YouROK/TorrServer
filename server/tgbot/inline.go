@@ -1,16 +1,18 @@
 package tgbot
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
 
-	tele "gopkg.in/telebot.v4"
 	"server/rutor"
 	"server/rutor/models"
 	sets "server/settings"
 	"server/torr"
 	"server/torznab"
+
+	tele "gopkg.in/telebot.v4"
 )
 
 const inlineMaxResults = 20
@@ -55,7 +57,7 @@ func handleInlineQuery(c tele.Context) error {
 			list = append(list, rutor.Search(query)...)
 		}
 		if sets.BTsets.EnableTorznabSearch {
-			list = append(list, torznab.Search(query, -1)...)
+			list = append(list, torznab.Search(context.Background(), query, -1, "", 0, 0)...)
 		}
 		for _, item := range list {
 			if id >= inlineMaxResults {

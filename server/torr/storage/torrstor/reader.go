@@ -16,6 +16,8 @@ type Reader struct {
 	offset    int64
 	readahead int64
 	file      *torrent.File
+	// overrideLen is used by tests when file is nil (file.Length is unexported).
+	overrideLen int64
 
 	cache    *Cache
 	isClosed bool
@@ -34,11 +36,27 @@ func newReader(file *torrent.File, cache *Cache) *Reader {
 	r.SetReadahead(0)
 	r.cache = cache
 	r.isUse = true
+	// Without this a fresh reader looks idle since epoch and is switched off at once.
+	r.lastAccess = time.Now().Unix()
 
 	cache.muReaders.Lock()
 	cache.readers[r] = struct{}{}
 	cache.muReaders.Unlock()
 	return r
+}
+
+func (r *Reader) fileLen() int64 {
+	if r.file != nil {
+		return r.file.Length()
+	}
+	return r.overrideLen
+}
+
+func (r *Reader) fileOffset() int64 {
+	if r.file != nil {
+		return r.file.Offset()
+	}
+	return 0
 }
 
 func (r *Reader) Seek(offset int64, whence int) (n int64, err error) {
@@ -51,11 +69,22 @@ func (r *Reader) Seek(offset int64, whence int) (n int64, err error) {
 	case io.SeekCurrent:
 		r.offset += offset
 	case io.SeekEnd:
-		r.offset = r.file.Length() + offset
+		r.offset = r.fileLen() + offset
+		// ServeContent probes size with Seek(0, SeekEnd). Do not move the
+		// torrent download head to EOF on a 100GB+ file.
+		if offset == 0 {
+			r.readerOn()
+			r.lastAccess = time.Now().Unix()
+			return r.offset, nil
+		}
 	}
 	r.readerOn()
-	n, err = r.Reader.Seek(offset, whence)
-	r.offset = n
+	if r.Reader != nil {
+		n, err = r.Reader.Seek(offset, whence)
+		r.offset = n
+	} else {
+		n = r.offset
+	}
 	r.lastAccess = time.Now().Unix()
 	return
 }
@@ -99,7 +128,7 @@ func (r *Reader) SetReadahead(length int64) {
 	if r.cache != nil && length > r.cache.capacity {
 		length = r.cache.capacity
 	}
-	if r.isUse {
+	if r.isUse && r.Reader != nil {
 		r.Reader.SetReadahead(length)
 	}
 	r.readahead = length
@@ -117,10 +146,12 @@ func (r *Reader) Close() {
 	// file reader close in gotorrent
 	// this struct close in cache
 	r.isClosed = true
-	if len(r.file.Torrent().Files()) > 0 {
-		r.Reader.Close()
+	if r.Reader != nil && r.file != nil && r.file.Torrent() != nil && len(r.file.Torrent().Files()) > 0 {
+		_ = r.Reader.Close()
 	}
-	go r.cache.getRemPieces()
+	if r.cache != nil {
+		go r.cache.getRemPieces()
+	}
 }
 
 func (r *Reader) getPiecesRange() Range {
@@ -137,11 +168,14 @@ func (r *Reader) getReaderRAHPiece() int {
 }
 
 func (r *Reader) getPieceNum(offset int64) int {
-	return int((offset + r.file.Offset()) / r.cache.pieceLength)
+	return int((offset + r.fileOffset()) / r.cache.pieceLength)
 }
 
 func (r *Reader) getOffsetRange() (int64, int64) {
-	prc := int64(settings.BTsets.ReaderReadAHead)
+	prc := int64(95)
+	if settings.BTsets != nil {
+		prc = int64(settings.BTsets.ReaderReadAHead)
+	}
 	readers := int64(r.getUseReaders())
 	if readers == 0 {
 		readers = 1
@@ -154,14 +188,30 @@ func (r *Reader) getOffsetRange() (int64, int64) {
 		beginOffset = 0
 	}
 
-	if endOffset > r.file.Length() {
-		endOffset = r.file.Length()
+	if endOffset > r.fileLen() {
+		endOffset = r.fileLen()
 	}
 	return beginOffset, endOffset
 }
 
+// minReaderIdleTimeout keeps a paused player from dropping its cache window immediately.
+const minReaderIdleTimeout = 60
+
+func (r *Reader) idleTimeout() int64 {
+	timeout := int64(0)
+	if settings.BTsets != nil {
+		timeout = int64(settings.BTsets.TorrentDisconnectTimeout)
+	}
+	if timeout < minReaderIdleTimeout {
+		timeout = minReaderIdleTimeout
+	}
+	return timeout
+}
+
+// checkReader flips the reader between active and idle. A lone reader must be
+// able to go idle too, otherwise a stopped player keeps driving the playhead.
 func (r *Reader) checkReader() {
-	if time.Now().Unix() > r.lastAccess+60 && r.cache.Readers() > 1 {
+	if time.Now().Unix() > r.lastAccess+r.idleTimeout() {
 		r.readerOff()
 	} else {
 		r.readerOn()
@@ -172,8 +222,10 @@ func (r *Reader) readerOn() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if !r.isUse {
-		if pos, err := r.Reader.Seek(0, io.SeekCurrent); err == nil && pos == 0 {
-			r.Reader.Seek(r.offset, io.SeekStart)
+		if r.Reader != nil {
+			if pos, err := r.Reader.Seek(0, io.SeekCurrent); err == nil && pos == 0 {
+				_, _ = r.Reader.Seek(r.offset, io.SeekStart)
+			}
 		}
 		r.SetReadahead(r.readahead)
 		r.isUse = true
@@ -186,12 +238,15 @@ func (r *Reader) readerOff() {
 	if r.isUse {
 		r.SetReadahead(0)
 		r.isUse = false
-		if r.offset > 0 {
-			r.Reader.Seek(0, io.SeekStart)
+		if r.offset > 0 && r.Reader != nil {
+			_, _ = r.Reader.Seek(0, io.SeekStart)
 		}
 	}
 }
 
 func (r *Reader) getUseReaders() int {
+	if r.cache == nil {
+		return 0
+	}
 	return r.cache.GetUseReaders()
 }

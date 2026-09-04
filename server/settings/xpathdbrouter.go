@@ -31,16 +31,16 @@ func NewXPathDBRouter() *XPathDBRouter {
 func (v *XPathDBRouter) RegisterRoute(db TorrServerDB, xPath string) error {
 	newRoute := v.xPathToRoute(xPath)
 
-	if slices.Contains(v.routes, newRoute) {
+	if slices.Contains(v.routes, newRoute) { //nolint:govet
 		return fmt.Errorf("route \"%s\" already in routing table", newRoute)
 	}
 
 	// First DB becomes Default DB with default route
 	if len(v.dbs) == 0 && len(newRoute) != 0 {
-		v.RegisterRoute(db, "")
+		_ = v.RegisterRoute(db, "")
 	}
 
-	if !slices.Contains(v.dbs, db) {
+	if !slices.Contains(v.dbs, db) { //nolint:govet
 		v.dbs = append(v.dbs, db)
 		v.dbNames[db] = reflect.TypeOf(db).Elem().Name()
 		v.log(fmt.Sprintf("Registered new DB \"%s\", total %d DBs registered", v.getDBName(db), len(v.dbs)))

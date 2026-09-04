@@ -106,9 +106,6 @@ func (t *Torrent) Preload(index int, size int64) {
 
 	if ffprobe.Exists() {
 		link := "http://127.0.0.1:" + settings.Port + "/play/" + t.Hash().HexString() + "/" + strconv.Itoa(index)
-		if settings.Ssl {
-			link = "https://127.0.0.1:" + settings.SslPort + "/play/" + t.Hash().HexString() + "/" + strconv.Itoa(index)
-		}
 		if data, err := ffprobe.ProbeUrl(link); err == nil {
 			t.BitRate = data.Format.BitRate
 			t.DurationSeconds = data.Format.DurationSeconds
@@ -132,11 +129,7 @@ func (t *Torrent) Preload(index int, size int64) {
 	}
 
 	readerStart := file.NewReader()
-	if readerStart == nil {
-		log.TLogln("End preload: null reader")
-		return
-	}
-	defer readerStart.Close()
+	defer func() { _ = readerStart.Close() }()
 
 	readerStart.SetResponsive()
 	readerStart.SetReadahead(0)
@@ -173,12 +166,7 @@ func (t *Torrent) Preload(index int, size int64) {
 			}
 
 			readerEnd := file.NewReader()
-			if readerEnd == nil {
-				log.TLogln("Err preload: null reader")
-				preloadErr = fmt.Errorf("null reader for end range")
-				return
-			}
-			defer readerEnd.Close() // Ensure reader is always closed
+			defer func() { _ = readerEnd.Close() }() // Ensure reader is always closed
 
 			readerEnd.SetResponsive()
 			readerEnd.SetReadahead(0)

@@ -13,9 +13,14 @@ import (
 )
 
 func setupTrackersTest(t *testing.T, url, defaults string) {
+	setupTrackersTestWithURLs(t, url, nil, defaults)
+}
+
+func setupTrackersTestWithURLs(t *testing.T, custom string, mirrors []string, defaults string) {
 	t.Helper()
+	defaultTrackersListURLs = append([]string(nil), mirrors...)
 	settings.BTsets = &settings.BTSets{
-		TrackersListURL: url,
+		TrackersListURL: custom,
 		DefaultTrackers: defaults,
 	}
 	InvalidateTrackersCache()
@@ -32,6 +37,7 @@ func resetTrackersTestState() {
 	prefetchStartedGen = ^uint64(0)
 	prefetchMu.Unlock()
 	refreshLoopOnce = sync.Once{}
+	defaultTrackersListURLs = append([]string(nil), settings.DefaultTrackersListURLs...)
 }
 
 func waitForTrackersFetch(t *testing.T, timeout time.Duration) {
@@ -74,26 +80,162 @@ func TestGetDefTrackersSuccess(t *testing.T) {
 	}
 }
 
-func TestGetDefTrackersEmptyURLSkipsFetch(t *testing.T) {
+func TestConfiguredTrackersListURLsEmptyUsesDefaults(t *testing.T) {
+	defaults := []string{"https://a.example/list.txt", "https://b.example/list.txt"}
+	defaultTrackersListURLs = append([]string(nil), defaults...)
+	t.Cleanup(resetTrackersTestState)
+
+	settings.BTsets = &settings.BTSets{TrackersListURL: ""}
+	got := configuredTrackersListURLs()
+	if !reflect.DeepEqual(got, defaults) {
+		t.Fatalf("got %#v, want %#v", got, defaults)
+	}
+
+	settings.BTsets = nil
+	got = configuredTrackersListURLs()
+	if !reflect.DeepEqual(got, defaults) {
+		t.Fatalf("nil BTsets got %#v, want %#v", got, defaults)
+	}
+}
+
+func TestConfiguredTrackersListURLsCustomPrepended(t *testing.T) {
+	defaultTrackersListURLs = []string{"https://a.example/list.txt", "https://b.example/list.txt"}
+	t.Cleanup(resetTrackersTestState)
+
+	settings.BTsets = &settings.BTSets{TrackersListURL: " https://custom.example/list.txt "}
+	got := configuredTrackersListURLs()
+	want := []string{"https://custom.example/list.txt", "https://a.example/list.txt", "https://b.example/list.txt"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %#v, want %#v", got, want)
+	}
+}
+
+func TestConfiguredTrackersListURLsDedupe(t *testing.T) {
+	defaultTrackersListURLs = []string{"https://a.example/list.txt", "https://b.example/list.txt"}
+	t.Cleanup(resetTrackersTestState)
+
+	settings.BTsets = &settings.BTSets{TrackersListURL: "https://a.example/list.txt"}
+	got := configuredTrackersListURLs()
+	want := []string{"https://a.example/list.txt", "https://b.example/list.txt"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %#v, want %#v", got, want)
+	}
+}
+
+func TestGetDefTrackersEmptyURLUsesMirrors(t *testing.T) {
 	var hits atomic.Int32
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		hits.Add(1)
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("udp://should-not-appear:1/announce\n"))
+		_, _ = w.Write([]byte("udp://remote.example:1/announce\n"))
 	}))
 	defer srv.Close()
 
 	local := "udp://only-local:1337/announce"
-	setupTrackersTest(t, "", local)
-	_ = srv
+	setupTrackersTestWithURLs(t, "", []string{srv.URL}, local)
+	waitForTrackersFetch(t, 2*time.Second)
 
 	got := GetDefTrackers()
-	want := []string{"udp://only-local:1337/announce"}
+	want := []string{"udp://remote.example:1/announce", "udp://only-local:1337/announce"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("got %#v, want %#v", got, want)
 	}
-	if hits.Load() != 0 {
-		t.Fatalf("remote hits = %d, want 0 when URL is empty", hits.Load())
+	if hits.Load() != 1 {
+		t.Fatalf("mirror hits = %d, want 1 when custom URL is empty", hits.Load())
+	}
+}
+
+func TestGetDefTrackersFallsBackToNextURL(t *testing.T) {
+	failSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "blocked", http.StatusForbidden)
+	}))
+	defer failSrv.Close()
+
+	okSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("udp://mirror.example:1/announce\n"))
+	}))
+	defer okSrv.Close()
+
+	local := "udp://local.example:80/announce"
+	setupTrackersTestWithURLs(t, "", []string{failSrv.URL, okSrv.URL}, local)
+	waitForTrackersFetch(t, 2*time.Second)
+
+	got := GetDefTrackers()
+	want := []string{"udp://mirror.example:1/announce", "udp://local.example:80/announce"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %#v, want %#v", got, want)
+	}
+}
+
+func TestGetDefTrackersAllURLsFailUsesLocal(t *testing.T) {
+	fail1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "blocked", http.StatusForbidden)
+	}))
+	defer fail1.Close()
+	fail2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "blocked", http.StatusForbidden)
+	}))
+	defer fail2.Close()
+
+	local := "udp://fallback.example:80/announce"
+	setupTrackersTestWithURLs(t, "", []string{fail1.URL, fail2.URL}, local)
+	waitForTrackersFetch(t, 2*time.Second)
+
+	got := GetDefTrackers()
+	want := []string{"udp://fallback.example:80/announce"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %#v, want %#v", got, want)
+	}
+}
+
+func TestGetDefTrackersCustomTriedBeforeMirrors(t *testing.T) {
+	var mirrorHits atomic.Int32
+	customSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("udp://custom.example:1/announce\n"))
+	}))
+	defer customSrv.Close()
+	mirrorSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mirrorHits.Add(1)
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("udp://mirror.example:1/announce\n"))
+	}))
+	defer mirrorSrv.Close()
+
+	local := "udp://local.example:80/announce"
+	setupTrackersTestWithURLs(t, customSrv.URL, []string{mirrorSrv.URL}, local)
+	waitForTrackersFetch(t, 2*time.Second)
+
+	got := GetDefTrackers()
+	want := []string{"udp://custom.example:1/announce", "udp://local.example:80/announce"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %#v, want %#v", got, want)
+	}
+	if mirrorHits.Load() != 0 {
+		t.Fatalf("mirror hits = %d, want 0 when custom URL succeeds", mirrorHits.Load())
+	}
+}
+
+func TestGetDefTrackersCustomFailsThenMirror(t *testing.T) {
+	customSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "blocked", http.StatusForbidden)
+	}))
+	defer customSrv.Close()
+	mirrorSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("udp://mirror.example:1/announce\n"))
+	}))
+	defer mirrorSrv.Close()
+
+	local := "udp://local.example:80/announce"
+	setupTrackersTestWithURLs(t, customSrv.URL, []string{mirrorSrv.URL}, local)
+	waitForTrackersFetch(t, 2*time.Second)
+
+	got := GetDefTrackers()
+	want := []string{"udp://mirror.example:1/announce", "udp://local.example:80/announce"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %#v, want %#v", got, want)
 	}
 }
 
@@ -362,12 +504,107 @@ func TestTrackersRefreshKeepsCacheOnFailure(t *testing.T) {
 
 	failRefresh.Store(true)
 	local := configuredDefaultTrackers()
-	_, err := fetchTrackersFromURL(srv.URL, local)
+	_, _, err := fetchTrackersFromURLs([]string{srv.URL}, local)
 	if err == nil {
 		t.Fatal("expected refresh fetch to fail")
 	}
 
 	if got := GetDefTrackers(); !reflect.DeepEqual(got, want) {
 		t.Fatalf("after failed refresh got %#v, want cached %#v", got, want)
+	}
+}
+
+func TestTrackersRefreshFallsBackToNextURL(t *testing.T) {
+	oldInterval := trackersRefreshInterval
+	trackersRefreshInterval = 40 * time.Millisecond
+	t.Cleanup(func() { trackersRefreshInterval = oldInterval })
+
+	var failFirst atomic.Bool
+	srv1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if failFirst.Load() {
+			http.Error(w, "blocked", http.StatusForbidden)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("udp://remote-v1.example:1/announce\n"))
+	}))
+	defer srv1.Close()
+
+	srv2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("udp://remote-v2.example:2/announce\n"))
+	}))
+	defer srv2.Close()
+
+	setupTrackersTestWithURLs(t, "", []string{srv1.URL, srv2.URL}, "udp://local.example:80/announce")
+	refreshLoopOnce = sync.Once{}
+	PrefetchTrackers()
+
+	waitForTrackersFetch(t, 2*time.Second)
+	got := GetDefTrackers()
+	wantV1 := []string{"udp://remote-v1.example:1/announce", "udp://local.example:80/announce"}
+	if !reflect.DeepEqual(got, wantV1) {
+		t.Fatalf("initial got %#v, want %#v", got, wantV1)
+	}
+
+	failFirst.Store(true)
+	deadline := time.Now().Add(2 * time.Second)
+	wantV2 := []string{"udp://remote-v2.example:2/announce", "udp://local.example:80/announce"}
+	for time.Now().Before(deadline) {
+		got = GetDefTrackers()
+		if reflect.DeepEqual(got, wantV2) {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatalf("after refresh fallback got %#v, want %#v", got, wantV2)
+}
+
+func TestTrackersRefreshAllFailKeepsCache(t *testing.T) {
+	oldInterval := trackersRefreshInterval
+	trackersRefreshInterval = 40 * time.Millisecond
+	t.Cleanup(func() { trackersRefreshInterval = oldInterval })
+
+	var failAll atomic.Bool
+	srv1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if failAll.Load() {
+			http.Error(w, "blocked", http.StatusForbidden)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("udp://remote.example:1/announce\n"))
+	}))
+	defer srv1.Close()
+	srv2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "blocked", http.StatusForbidden)
+	}))
+	defer srv2.Close()
+
+	setupTrackersTestWithURLs(t, "", []string{srv1.URL, srv2.URL}, "udp://local.example:80/announce")
+	refreshLoopOnce = sync.Once{}
+	PrefetchTrackers()
+	waitForTrackersFetch(t, 2*time.Second)
+
+	want := []string{"udp://remote.example:1/announce", "udp://local.example:80/announce"}
+	if got := GetDefTrackers(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("before failed refresh got %#v, want %#v", got, want)
+	}
+
+	failAll.Store(true)
+	time.Sleep(200 * time.Millisecond)
+
+	if got := GetDefTrackers(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("after all-URL refresh failure got %#v, want cached %#v", got, want)
+	}
+}
+
+func TestGetDefTrackersEmptyURLNoMirrorsSkipsFetch(t *testing.T) {
+	local := "udp://only-local:1337/announce"
+	setupTrackersTest(t, "", local)
+
+	got := GetDefTrackers()
+	want := []string{"udp://only-local:1337/announce"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %#v, want %#v", got, want)
 	}
 }

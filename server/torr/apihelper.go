@@ -52,7 +52,7 @@ func AddTorrent(spec *torrent.TorrentSpec, title, poster string, data string, ca
 		if title == "" && torDB != nil {
 			torr.Title = torDB.Title
 		}
-		if torr.Title == "" && torr.Torrent != nil && torr.Torrent.Info() != nil {
+		if torr.Title == "" && torr.Torrent != nil && torr.Info() != nil {
 			torr.Title = torr.Info().Name
 		}
 	}
@@ -126,13 +126,13 @@ func SetTorrent(hashHex, title, poster, category string, data string) *Torrent {
 	if title == "" && torr == nil && torrDb != nil {
 		torr = GetTorrent(hashHex)
 		torr.GotInfo()
-		if torr.Torrent != nil && torr.Torrent.Info() != nil {
+		if torr.Torrent != nil && torr.Info() != nil {
 			title = torr.Info().Name
 		}
 	}
 
 	if torr != nil {
-		if title == "" && torr.Torrent != nil && torr.Torrent.Info() != nil {
+		if title == "" && torr.Torrent != nil && torr.Info() != nil {
 			title = torr.Info().Name
 		}
 		torr.Title = title
@@ -173,7 +173,7 @@ func RemTorrent(hashHex string) {
 		RemTorrentDB(hash)
 		if sets.BTsets.UseDisk && hashHex != "" && hashHex != "/" {
 			name := filepath.Join(sets.BTsets.TorrentsSavePath, hashHex)
-			os.RemoveAll(name)
+			_ = os.RemoveAll(name)
 		}
 		return
 	}
@@ -196,7 +196,7 @@ func RemTorrent(hashHex string) {
 			name := filepath.Join(sets.BTsets.TorrentsSavePath, hashHex)
 			if _, err := os.Stat(name); err == nil {
 				log.TLogln("Removing cache files for:", hashHex)
-				os.RemoveAll(name)
+				_ = os.RemoveAll(name)
 			}
 		}
 	}
@@ -249,7 +249,7 @@ func SetSettings(set *sets.BTSets) {
 	log.TLogln("disconect")
 	bts.Disconnect()
 	log.TLogln("connect")
-	bts.Connect()
+	_ = bts.Connect()
 	time.Sleep(time.Second * 1)
 	log.TLogln("end set settings")
 }
@@ -267,7 +267,7 @@ func SetDefSettings() {
 	log.TLogln("disconect")
 	bts.Disconnect()
 	log.TLogln("connect")
-	bts.Connect()
+	_ = bts.Connect()
 	time.Sleep(time.Second * 1)
 	log.TLogln("end set default settings")
 }

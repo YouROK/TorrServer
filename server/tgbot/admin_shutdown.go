@@ -1,8 +1,9 @@
 package tgbot
 
 import (
-	tele "gopkg.in/telebot.v4"
 	"server/torr"
+
+	tele "gopkg.in/telebot.v4"
 )
 
 func cmdShutdown(c tele.Context) error {

@@ -1,0 +1,46 @@
+# golangci-lint v2 — https://golangci-lint.run/docs/configuration/file/
+version: "2"
+
+run:
+  timeout: 5m
+  relative-path-mode: gomod
+  modules-download-mode: readonly
+  # Match server/go.mod; keep in sync when bumping the module Go version.
+  go: "1.25.7"
+
+linters:
+  default: standard
+  # Standard set already includes errcheck, govet, ineffassign, staticcheck, unused, etc.
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+      - web/pages/template/pages$
+    rules:
+      # Swagger model stubs referenced only from godoc comments.
+      - path: web/api/gstreamer_doc\.go
+        linters:
+          - unused
+      # govet inline analyzer does not support type-parameter inference yet.
+      - path: settings/xpathdbrouter\.go
+        linters:
+          - govet
+        text: "inline:"
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    gofmt:
+      simplify: true
+  exclusions:
+    generated: lax
+    paths:
+      - web/pages/template/pages$
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

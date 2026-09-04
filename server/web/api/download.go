@@ -57,7 +57,7 @@ func download(c *gin.Context) {
 	szStr := c.Param("size")
 	sz, err := strconv.Atoi(szStr)
 	if err != nil {
-		c.Error(err)
+		_ = c.Error(err)
 		return
 	}
 

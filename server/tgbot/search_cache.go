@@ -6,8 +6,9 @@ import (
 	"sync"
 	"time"
 
-	tele "gopkg.in/telebot.v4"
 	"server/rutor/models"
+
+	tele "gopkg.in/telebot.v4"
 )
 
 type searchCacheEntry struct {

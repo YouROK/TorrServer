@@ -1,0 +1,225 @@
+---
+version: 2
+
+project_name: TorrServer
+
+report_sizes: false
+
+env:
+  - CLEAN_ENV=env GOOS= GOARCH= GOARM=
+  - Metadata_Description=Torrent stream server
+  - Metadata_License=GPL-3.0
+
+# MatriX.* tags: sort versions correctly for changelog "previous tag".
+git:
+  tag_sort: -version:refname
+
+snapshot:
+  version_template: "{{ .Tag }}-{{ .ShortCommit }}"
+
+before:
+  hooks:
+    - '{{ .Env.CLEAN_ENV }} {{ envOrDefault "GO_BINARY" "go" }} run gen_web.go --clean'
+    - '{{ .Env.CLEAN_ENV }} {{ envOrDefault "GO_BINARY" "go" }} install github.com/swaggo/swag/cmd/swag@latest'
+    - bash -c 'cd server && {{ .Env.CLEAN_ENV }} swag init -g web/server.go'
+    # Windows gst embed: zip gst-libs for //go:embed (binary-gst + embed_gstlib)
+    - bash -c 'cd server/gstreamer && rm -f embedded_gstlib_windows_amd64.zip && python3 -c "import shutil; shutil.make_archive(\"embedded_gstlib_windows_amd64\", \"zip\", \"gst-libs/win-x86_64\")"'
+
+builds:
+  - id: binary
+    tool: '{{ envOrDefault "GO_BINARY" "go" }}'
+    dir: server
+    main: ./cmd
+    binary: '{{ .ProjectName }}-{{ .Os }}-{{ if eq .Arch "arm" }}arm{{ .Arm }}{{ else }}{{ .Arch }}{{ end }}'
+    no_unique_dist_dir: true
+    flags:
+      - -trimpath
+    tags:
+      - nosqlite
+    ldflags:
+      - -s -w -checklinkname=0 -X server/version.Version={{.Version}}
+    env:
+      - CGO_ENABLED=0
+    hooks:
+      post:
+        - cmd: bash packaging/appimage/build.sh "{{ .Path }}" "{{ .Os }}" "{{ .Arch }}" "{{ .Arm }}"
+    targets:
+      - linux_amd64
+      - linux_arm64
+      - linux_arm_5
+      - linux_arm_7
+      - linux_386
+      - windows_amd64
+      - windows_386
+      - darwin_amd64
+      - darwin_arm64
+      - freebsd_amd64
+      - freebsd_arm_7
+      - linux_mips_softfloat
+      - linux_mipsle_softfloat
+      - linux_mips64_softfloat
+      - linux_mips64le_softfloat
+      - linux_riscv64
+
+  - id: binary-gst
+    tool: '{{ envOrDefault "GO_BINARY" "go" }}'
+    dir: server
+    main: ./cmd
+    binary: '{{ .ProjectName }}-gst-{{ .Os }}-{{ if eq .Arch "arm" }}arm{{ .Arm }}{{ else }}{{ .Arch }}{{ end }}'
+    no_unique_dist_dir: true
+    # CGO_ENABLED=0: static Go ELF; loads libgstreamer at runtime via purego/dlopen (not for Docker)
+    flags:
+      - -trimpath
+    tags:
+      - nosqlite
+      - gst
+    ldflags:
+      - -s -w -checklinkname=0 -X server/version.Version={{.Version}}
+    env:
+      - CGO_ENABLED=0
+    targets:
+      - linux_amd64
+      - linux_arm64
+      - darwin_amd64
+      - darwin_arm64
+      - windows_amd64
+    overrides:
+      # Single-file Windows build with embedded GStreamer runtime
+      - goos: windows
+        goarch: amd64
+        tags:
+          - nosqlite
+          - gst
+          - embed_gstlib
+
+  - id: android
+    dir: server
+    main: ./cmd
+    binary: '{{ .ProjectName }}-{{ .Os }}-{{ if eq .Arch "arm" }}arm{{ .Arm }}{{ else }}{{ .Arch }}{{ end }}'
+    no_unique_dist_dir: true
+    builder: go
+    tool: '{{ envOrDefault "GO_ANDROID_BINARY" (envOrDefault "GO_BINARY" "go") }}'
+    flags:
+      - -trimpath
+    tags:
+      - nosqlite
+    ldflags:
+      - -s -w -checklinkname=0 -X server/version.Version={{.Version}}
+    targets:
+      - android_arm_7
+      - android_arm64
+      - android_386
+      - android_amd64
+    overrides:
+      - goos: android
+        goarch: arm
+        goarm: "7"
+        env:
+          - CGO_ENABLED=1
+          - CC={{ envOrDefault "NDK_TOOLCHAIN" "$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64" }}/bin/armv7a-linux-androideabi21-clang
+      - goos: android
+        goarch: arm64
+        env:
+          - CGO_ENABLED=1
+          - CC={{ envOrDefault "NDK_TOOLCHAIN" "$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64" }}/bin/aarch64-linux-android21-clang
+      - goos: android
+        goarch: "386"
+        env:
+          - CGO_ENABLED=1
+          - CC={{ envOrDefault "NDK_TOOLCHAIN" "$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64" }}/bin/i686-linux-android21-clang
+      - goos: android
+        goarch: amd64
+        env:
+          - CGO_ENABLED=1
+          - CC={{ envOrDefault "NDK_TOOLCHAIN" "$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64" }}/bin/x86_64-linux-android21-clang
+
+upx:
+  - enabled: '{{ envOrDefault "UPX_ENABLED" "false" }}'
+    ids:
+      - binary
+      - binary-gst
+      - android
+    goos:
+      - linux
+      - windows
+      - android
+    goarch:
+      - arm
+      - arm64
+      - amd64
+      - '386'
+      - mips
+      - mipsle
+    compress: best
+    lzma: true
+
+archives:
+  - id: releases
+    ids:
+      - binary
+      - android
+    formats:
+      - binary
+    name_template: "TorrServer-{{ .Os }}-{{ .Arch }}{{ if .Arm }}{{ .Arm }}{{ end }}"
+
+  - id: releases-gst
+    ids:
+      - binary-gst
+    formats:
+      - binary
+    name_template: "TorrServer-gst-{{ .Os }}-{{ .Arch }}{{ if .Arm }}{{ .Arm }}{{ end }}"
+
+source:
+  enabled: false
+
+checksum:
+  name_template: checksums.txt
+  extra_files:
+    - glob: dist/*.AppImage
+
+release:
+  mode: append
+  replace_existing_artifacts: true
+  make_latest: true
+  extra_files:
+    - glob: dist/*.AppImage
+
+changelog:
+  use: git
+  sort: asc
+
+dockers_v2:
+  - id: docker
+    ids:
+      - binary
+    dockerfile: Dockerfile
+    images:
+      - '{{ envOrDefault "DOCKER_IMAGE_ID" (printf "ghcr.io/%s" (envOrDefault "REGISTRY_IMAGE" "yourok/torrserver")) }}'
+    tags:
+      - '{{ .Tag }}'
+      - latest
+    platforms:
+      - linux/amd64
+      - linux/arm64
+      - linux/arm/v7
+    extra_files:
+      - docker-entrypoint.sh
+    labels:
+      "org.opencontainers.image.title": "{{.ProjectName}}"
+      "org.opencontainers.image.description": "{{.Env.Metadata_Description}}"
+      "org.opencontainers.image.url": "{{.GitURL}}"
+      "org.opencontainers.image.source": "{{.GitURL}}"
+      "org.opencontainers.image.version": "{{.Tag}}"
+      "org.opencontainers.image.revision": "{{.FullCommit}}"
+      "org.opencontainers.image.created": "{{.Date}}"
+      "org.opencontainers.image.licenses": "{{.Env.Metadata_License}}"
+    annotations:
+      "org.opencontainers.image.title": "{{.ProjectName}}"
+      "org.opencontainers.image.description": "{{.Env.Metadata_Description}}"
+      "org.opencontainers.image.url": "{{.GitURL}}"
+      "org.opencontainers.image.source": "{{.GitURL}}"
+      "org.opencontainers.image.version": "{{.Tag}}"
+      "org.opencontainers.image.revision": "{{.FullCommit}}"
+      "org.opencontainers.image.created": "{{.Date}}"
+      "org.opencontainers.image.licenses": "{{.Env.Metadata_License}}"
+    sbom: "{{ not .IsSnapshot }}"

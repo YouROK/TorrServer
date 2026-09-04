@@ -31,7 +31,7 @@ func (s *Service) SetupRoute(route gin.IRouter) {
 func (s *Service) remove(c *gin.Context) {
 	id := firstNonEmpty(c.Query("hash"), c.Query("id"))
 	if id == "" {
-		c.AbortWithError(http.StatusBadRequest, ErrInvalidIdentifier)
+		_ = c.AbortWithError(http.StatusBadRequest, ErrInvalidIdentifier)
 		return
 	}
 
@@ -60,7 +60,7 @@ func (s *Service) probe(c *gin.Context) {
 	hash := c.Param("hash")
 	fileID := firstNonEmpty(c.Query("index"), c.Query("id"), c.Query("fileID"))
 	if fileID == "" {
-		c.AbortWithError(http.StatusBadRequest, ErrBadSource)
+		_ = c.AbortWithError(http.StatusBadRequest, ErrBadSource)
 		return
 	}
 
@@ -358,7 +358,7 @@ func (s *Service) segment(c *gin.Context) {
 
 	index, err := parseSegmentIndex(c.Param("segment"))
 	if err != nil {
-		c.AbortWithError(http.StatusBadRequest, err)
+		_ = c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 

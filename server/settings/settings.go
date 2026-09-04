@@ -82,6 +82,8 @@ func InitSets(readOnly, searchWA bool) {
 
 	// Migrate old torrents
 	MigrateTorrents()
+	// Migrate legacy wip.txt / bip.txt into settings.json waf (one-shot)
+	MigrateWAFLists()
 
 	logConfiguration(settingsStoragePref, viewedStoragePref)
 }
@@ -243,18 +245,28 @@ func setupDatabaseRouting(bboltDB, jsonDB TorrServerDB, settingsInJson, viewedIn
 	dbRouter := NewXPathDBRouter()
 
 	if settingsInJson {
-		dbRouter.RegisterRoute(jsonDB, "Settings")
+		if err := dbRouter.RegisterRoute(jsonDB, "Settings"); err != nil {
+			log.TLogln("Error register Settings route:", err)
+		}
 	} else {
-		dbRouter.RegisterRoute(bboltDB, "Settings")
+		if err := dbRouter.RegisterRoute(bboltDB, "Settings"); err != nil {
+			log.TLogln("Error register Settings route:", err)
+		}
 	}
 
 	if viewedInJson {
-		dbRouter.RegisterRoute(jsonDB, "Viewed")
+		if err := dbRouter.RegisterRoute(jsonDB, "Viewed"); err != nil {
+			log.TLogln("Error register Viewed route:", err)
+		}
 	} else {
-		dbRouter.RegisterRoute(bboltDB, "Viewed")
+		if err := dbRouter.RegisterRoute(bboltDB, "Viewed"); err != nil {
+			log.TLogln("Error register Viewed route:", err)
+		}
 	}
 
-	dbRouter.RegisterRoute(bboltDB, "Torrents")
+	if err := dbRouter.RegisterRoute(bboltDB, "Torrents"); err != nil {
+		log.TLogln("Error register Torrents route:", err)
+	}
 	tdb = NewDBReadCache(dbRouter)
 }
 

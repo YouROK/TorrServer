@@ -30,18 +30,15 @@ func ffp(c *gin.Context) {
 	indexStr := c.Param("id")
 
 	if hash == "" || indexStr == "" {
-		c.AbortWithError(http.StatusNotFound, errors.New("link should not be empty"))
+		_ = c.AbortWithError(http.StatusNotFound, errors.New("link should not be empty"))
 		return
 	}
 
 	link := "http://127.0.0.1:" + sets.Port + "/play/" + hash + "/" + indexStr
-	if sets.Ssl {
-		link = "https://127.0.0.1:" + sets.SslPort + "/play/" + hash + "/" + indexStr
-	}
 
 	data, err := ffprobe.ProbeUrl(link)
 	if err != nil {
-		c.AbortWithError(http.StatusBadRequest, fmt.Errorf("error getting data: %v", err))
+		_ = c.AbortWithError(http.StatusBadRequest, fmt.Errorf("error getting data: %v", err))
 		return
 	}
 

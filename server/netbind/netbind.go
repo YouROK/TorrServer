@@ -39,7 +39,7 @@ func CheckPort(hosts []string, port string) error {
 		if err != nil {
 			return fmt.Errorf("%s: %w", addr, err)
 		}
-		l.Close()
+		_ = l.Close()
 	}
 	return nil
 }
@@ -58,7 +58,7 @@ func Listen(hosts []string, port string) (net.Listener, error) {
 	for _, host := range hosts {
 		l, err := net.Listen("tcp", Addr(host, port))
 		if err != nil {
-			ml.Close()
+			_ = ml.Close()
 			return nil, err
 		}
 		ml.listeners = append(ml.listeners, l)

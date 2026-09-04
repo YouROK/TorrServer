@@ -36,10 +36,10 @@ import (
 func torrentUpload(c *gin.Context) {
 	form, err := c.MultipartForm()
 	if err != nil {
-		c.AbortWithError(http.StatusBadRequest, err)
+		_ = c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	defer form.RemoveAll()
+	defer func() { _ = form.RemoveAll() }()
 
 	save := len(form.Value["save"]) > 0
 	title := ""
@@ -75,7 +75,7 @@ func torrentUpload(c *gin.Context) {
 		}
 
 		spec, err := utils.ParseFile(torrFile)
-		torrFile.Close()
+		_ = torrFile.Close()
 		if err != nil {
 			log.TLogln("error upload torrent:", err)
 			continue

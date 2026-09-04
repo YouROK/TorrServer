@@ -40,11 +40,11 @@ func TestStorageCachesConcurrentOpenClose(t *testing.T) {
 		for i := 0; i < iters; i++ {
 			var h metainfo.Hash
 			h[0] = byte(i)
-			stor.OpenTorrent(testInfo(), h)
+			_, _ = stor.OpenTorrent(testInfo(), h)
 			cache := stor.GetCache(h)
 			if cache != nil {
 				// anacrolix calls TorrentImpl.Close from its own goroutine
-				cache.Close()
+				_ = cache.Close()
 			}
 		}
 	}()
@@ -57,7 +57,7 @@ func TestStorageCachesConcurrentOpenClose(t *testing.T) {
 			var h2 metainfo.Hash
 			h2[0] = byte(i)
 			h2[1] = 1
-			stor.OpenTorrent(testInfo(), h2)
+			_, _ = stor.OpenTorrent(testInfo(), h2)
 			stor.CloseHash(h2)
 		}
 	}()
@@ -75,7 +75,7 @@ func TestCachePiecesConcurrentStateClose(t *testing.T) {
 		stor := NewStorage(1 << 20)
 		var h metainfo.Hash
 		h[0] = byte(i)
-		stor.OpenTorrent(testInfo(), h)
+		_, _ = stor.OpenTorrent(testInfo(), h)
 		cache := stor.GetCache(h)
 
 		wg.Add(2)
@@ -86,7 +86,7 @@ func TestCachePiecesConcurrentStateClose(t *testing.T) {
 		}()
 		go func() {
 			defer wg.Done()
-			cache.Close()
+			_ = cache.Close()
 		}()
 		wg.Wait()
 	}

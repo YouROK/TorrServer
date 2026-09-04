@@ -41,9 +41,9 @@ func trn(h string) (st, sc string) {
 
 func rsp(c *gin.Context, r *http.Response, e error) {
 	if e != nil {
-		c.AbortWithError(http.StatusInternalServerError, e)
+		_ = c.AbortWithError(http.StatusInternalServerError, e)
 	} else {
-		defer r.Body.Close()
+		defer func() { _ = r.Body.Close() }()
 		c.DataFromReader(r.StatusCode, r.ContentLength, r.Header.Get("Content-Type"), r.Body, nil)
 	}
 }
@@ -68,7 +68,7 @@ func SetupRoute(r gin.IRouter) {
 	})
 	authorized.POST("/msx/start.json", func(c *gin.Context) {
 		if e := c.BindJSON(&param); e != nil {
-			c.AbortWithError(http.StatusBadRequest, e)
+			_ = c.AbortWithError(http.StatusBadRequest, e)
 		}
 	})
 	authorized.GET("/msx/trn", func(c *gin.Context) {
@@ -120,7 +120,7 @@ func SetupRoute(r gin.IRouter) {
 		if u := c.Query("url"); u == "" {
 			c.AbortWithStatus(http.StatusBadRequest)
 		} else if q, e := http.NewRequest(c.Request.Method, u, c.Request.Body); e != nil {
-			c.AbortWithError(http.StatusInternalServerError, e)
+			_ = c.AbortWithError(http.StatusInternalServerError, e)
 		} else {
 			for _, v := range c.QueryArray("header") {
 				if v := strings.SplitN(v, ":", 2); len(v) == 2 {
@@ -143,7 +143,7 @@ func SetupRoute(r gin.IRouter) {
 				D []struct{ I struct{ ImageUrl string } }
 			}
 			if e = json.NewDecoder(r.Body).Decode(&j); e != nil {
-				c.AbortWithError(http.StatusInternalServerError, e)
+				_ = c.AbortWithError(http.StatusInternalServerError, e)
 			} else if len(j.D) == 0 || j.D[0].I.ImageUrl == "" {
 				c.Status(http.StatusNotFound)
 			} else {
@@ -163,16 +163,16 @@ func SetupRoute(r gin.IRouter) {
 	authorized.POST("/files", func(c *gin.Context) {
 		var l string
 		if e := c.BindJSON(&l); e != nil {
-			c.AbortWithError(http.StatusBadRequest, e)
+			_ = c.AbortWithError(http.StatusBadRequest, e)
 		} else if e = os.Remove(filepath.Join(settings.Path, files)); e != nil && !os.IsNotExist(e) {
-			c.AbortWithError(http.StatusInternalServerError, e)
+			_ = c.AbortWithError(http.StatusInternalServerError, e)
 		} else if l != "" {
 			if f, e := os.Stat(l); e != nil {
-				c.AbortWithError(http.StatusBadRequest, e)
+				_ = c.AbortWithError(http.StatusBadRequest, e)
 			} else if !f.IsDir() {
-				c.AbortWithError(http.StatusBadRequest, errors.New(l+" is not a directory"))
+				_ = c.AbortWithError(http.StatusBadRequest, errors.New(l+" is not a directory"))
 			} else if e = os.Symlink(l, filepath.Join(settings.Path, files)); e != nil {
-				c.AbortWithError(http.StatusInternalServerError, e)
+				_ = c.AbortWithError(http.StatusInternalServerError, e)
 			}
 		}
 	})

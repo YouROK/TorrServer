@@ -12,6 +12,7 @@ type Range struct {
 }
 
 func inRanges(ranges []Range, ind int) bool {
+	// End is inclusive (Start..End closed interval).
 	for _, r := range ranges {
 		if ind >= r.Start && ind <= r.End {
 			return true

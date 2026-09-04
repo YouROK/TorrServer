@@ -59,7 +59,6 @@ pkgs.stdenv.mkDerivation rec {
     export GOCACHE=$TMPDIR/go-build
     export GOMODCACHE=$TMPDIR/go-mod
     export HOME=$(mktemp -d)
-    export NODE_OPTIONS=--openssl-legacy-provider
     export PATH=$PATH:$(go env GOPATH)/bin
 
     cd web
@@ -72,7 +71,7 @@ pkgs.stdenv.mkDerivation rec {
     cd ..
 
     cd server
-    swag init -g web/server.go --parseDependency --parseInternal --parseDepth 5
+    swag init -g web/server.go
     cd ..
 
     mkdir -p server/vendor

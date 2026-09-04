@@ -58,7 +58,7 @@ func unpack(data []byte) (*TorrsHash, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer zr.Close()
+	defer func() { _ = zr.Close() }()
 
 	hashBuf := make([]byte, 20)
 	if _, err = io.ReadFull(zr, hashBuf); err != nil {

@@ -5,8 +5,9 @@ import (
 	"sort"
 	"strings"
 
-	tele "gopkg.in/telebot.v4"
 	"server/torr"
+
+	tele "gopkg.in/telebot.v4"
 )
 
 func cmdCategories(c tele.Context) error {

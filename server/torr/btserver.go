@@ -13,7 +13,6 @@ import (
 	"github.com/anacrolix/publicip"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
-	"github.com/wlynxg/anet"
 
 	"server/settings"
 	"server/torr/storage/torrstor"
@@ -225,7 +224,8 @@ func (bt *BTServer) configureProxy() error {
 		return fmt.Errorf("unsupported proxy protocol: %s (supported: http, https, socks4, socks4a, socks5, socks5h)", scheme)
 	}
 
-	if proxyMode == "full" {
+	switch proxyMode {
+	case "full":
 		log.Printf("Configuring proxy for all BitTorrent traffic: %s://%s", scheme, parsedURL.Host)
 
 		// Set ProxyURL - this will be used by anacrolix/torrent for all BitTorrent traffic
@@ -237,7 +237,7 @@ func (bt *BTServer) configureProxy() error {
 		}
 
 		log.Println("Proxy configured successfully for all BitTorrent connections (tracker, DHT, peers)")
-	} else if proxyMode == "peers" {
+	case "peers":
 		log.Printf("Configuring proxy for peer connections only: %s://%s", scheme, parsedURL.Host)
 
 		// Set ProxyURL for peer connections, but don't set HTTPProxy
@@ -245,7 +245,7 @@ func (bt *BTServer) configureProxy() error {
 		bt.config.ProxyURL = proxyURL
 
 		log.Println("Proxy configured successfully for peer and DHT connections only")
-	} else {
+	default:
 		log.Printf("Configuring proxy for HTTP tracker requests only: %s://%s", scheme, parsedURL.Host)
 
 		// Only set HTTPProxy for tracker requests, don't set ProxyURL
@@ -293,56 +293,4 @@ func isPrivateIP(ip net.IP) bool {
 		}
 	}
 	return false
-}
-
-func getPublicIp4() net.IP {
-	ifaces, err := anet.Interfaces()
-	if err != nil {
-		log.Println("Error get public IPv4")
-		return nil
-	}
-	for _, i := range ifaces {
-		addrs, _ := anet.InterfaceAddrsByInterface(&i)
-		if i.Flags&net.FlagUp == net.FlagUp {
-			for _, addr := range addrs {
-				var ip net.IP
-				switch v := addr.(type) {
-				case *net.IPNet:
-					ip = v.IP
-				case *net.IPAddr:
-					ip = v.IP
-				}
-				if !isPrivateIP(ip) && ip.To4() != nil {
-					return ip
-				}
-			}
-		}
-	}
-	return nil
-}
-
-func getPublicIp6() net.IP {
-	ifaces, err := anet.Interfaces()
-	if err != nil {
-		log.Println("Error get public IPv6")
-		return nil
-	}
-	for _, i := range ifaces {
-		addrs, _ := anet.InterfaceAddrsByInterface(&i)
-		if i.Flags&net.FlagUp == net.FlagUp {
-			for _, addr := range addrs {
-				var ip net.IP
-				switch v := addr.(type) {
-				case *net.IPNet:
-					ip = v.IP
-				case *net.IPAddr:
-					ip = v.IP
-				}
-				if !isPrivateIP(ip) && ip.To16() != nil && ip.To4() == nil {
-					return ip
-				}
-			}
-		}
-	}
-	return nil
 }

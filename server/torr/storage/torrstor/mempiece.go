@@ -2,6 +2,7 @@ package torrstor
 
 import (
 	"io"
+	"os"
 	"sync"
 	"time"
 )
@@ -23,12 +24,18 @@ func (p *MemPiece) WriteAt(b []byte, off int64) (n int, err error) {
 
 	if p.buffer == nil {
 		go p.piece.cache.cleanPieces()
-		p.buffer = make([]byte, p.piece.cache.pieceLength, p.piece.cache.pieceLength)
+		p.buffer = make([]byte, p.piece.cache.pieceLength)
 	}
 	n = copy(p.buffer[off:], b[:])
+	// Accumulate: chunks arrive out of order, so a high-water mark would count
+	// gaps as filled. MarkNotComplete resets Size on retransmit.
 	p.piece.Size += int64(n)
-	if p.piece.Size > p.piece.cache.pieceLength {
-		p.piece.Size = p.piece.cache.pieceLength
+	plen := p.piece.cache.pieceByteLength(p.piece.Id)
+	if plen > 0 && p.piece.Size > plen {
+		p.piece.Size = plen
+	}
+	if p.piece.Size > 0 {
+		p.piece.cache.notePieceFilled(p.piece.Id)
 	}
 	p.piece.Accessed = time.Now().Unix()
 	return
@@ -37,6 +44,12 @@ func (p *MemPiece) WriteAt(b []byte, off int64) (n int, err error) {
 func (p *MemPiece) ReadAt(b []byte, off int64) (n int, err error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
+
+	if p.buffer == nil {
+		// Released while hashing: os.IsNotExist is the expected anacrolix path
+		// (io.Copy turns io.EOF into err=nil and logs "unexpected error hashing").
+		return 0, os.ErrNotExist
+	}
 
 	size := len(b)
 	if size+int(off) > len(p.buffer) {
@@ -48,9 +61,10 @@ func (p *MemPiece) ReadAt(b []byte, off int64) (n int, err error) {
 	if len(p.buffer) < int(off) || len(p.buffer) < int(off)+size {
 		return 0, io.EOF
 	}
-	n = copy(b, p.buffer[int(off) : int(off)+size][:])
+	n = copy(b, p.buffer[int(off):int(off)+size])
 	p.piece.Accessed = time.Now().Unix()
-	if int64(len(b))+off >= p.piece.Size {
+	// Do not evict while anacrolix is hashing (Complete is still false).
+	if p.piece.Complete && int64(len(b))+off >= p.piece.Size {
 		go p.piece.cache.cleanPieces()
 	}
 	if n == 0 {
@@ -67,4 +81,5 @@ func (p *MemPiece) Release() {
 	}
 	p.piece.Size = 0
 	p.piece.Complete = false
+	p.piece.cache.notePieceEmpty(p.piece.Id)
 }

@@ -121,9 +121,9 @@ func removeAllFiles(path string) {
 	}
 	for _, f := range files {
 		name := filepath.Join(path, f.Name())
-		os.Remove(name)
+		_ = os.Remove(name)
 	}
-	os.Remove(path)
+	_ = os.Remove(path)
 }
 
 func WaitServer() string {

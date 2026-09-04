@@ -3,8 +3,9 @@ package tgbot
 import (
 	"fmt"
 
-	tele "gopkg.in/telebot.v4"
 	"server/torr"
+
+	tele "gopkg.in/telebot.v4"
 )
 
 func callbackDrop(c tele.Context, hash string) error {

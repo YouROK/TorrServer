@@ -38,14 +38,15 @@ func settings(c *gin.Context) {
 	var req setsReqJS
 	err := c.ShouldBindJSON(&req)
 	if err != nil {
-		c.AbortWithError(http.StatusBadRequest, err)
+		_ = c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
-	if req.Action == "get" {
+	switch req.Action {
+	case "get":
 		c.JSON(200, sets.BTsets)
 		return
-	} else if req.Action == "set" {
+	case "set":
 		torr.SetSettings(req.Sets)
 		dlna.Stop()
 		if req.Sets.EnableDLNA {
@@ -59,7 +60,7 @@ func settings(c *gin.Context) {
 		rutor.Start()
 		c.Status(200)
 		return
-	} else if req.Action == "def" {
+	case "def":
 		torr.SetDefSettings()
 		dlna.Stop()
 		bonjour.Stop()
@@ -67,5 +68,5 @@ func settings(c *gin.Context) {
 		c.Status(200)
 		return
 	}
-	c.AbortWithError(http.StatusBadRequest, errors.New("action is empty"))
+	_ = c.AbortWithError(http.StatusBadRequest, errors.New("action is empty"))
 }

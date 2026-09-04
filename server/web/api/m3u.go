@@ -96,7 +96,7 @@ func playList(c *gin.Context) {
 	_, fromlast := c.GetQuery("fromlast")
 	index := c.Query("index")
 	if hash == "" {
-		c.AbortWithError(http.StatusBadRequest, errors.New("hash is empty"))
+		_ = c.AbortWithError(http.StatusBadRequest, errors.New("hash is empty"))
 		return
 	}
 
@@ -109,7 +109,7 @@ func playList(c *gin.Context) {
 	if tor.Stat == state.TorrentInDB {
 		tor = torr.LoadTorrent(tor)
 		if tor == nil {
-			c.AbortWithError(http.StatusInternalServerError, errors.New("error get torrent info"))
+			_ = c.AbortWithError(http.StatusInternalServerError, errors.New("error get torrent info"))
 			return
 		}
 	}

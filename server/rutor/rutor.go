@@ -82,12 +82,12 @@ func updateDB() bool {
 	resp, err := http.Get("http://releases.yourok.ru/torr/rutor.ls")
 	if err != nil {
 		log.TLogln("Error connect to rutor db:", err)
-		out.Close()
+		_ = out.Close()
 		return false
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	_, err = io.Copy(out, resp.Body)
-	out.Close()
+	_ = out.Close()
 	if err != nil {
 		log.TLogln("Error download rutor db:", err)
 		return false
@@ -109,7 +109,7 @@ func updateDB() bool {
 		loadDB()
 		return true
 	} else {
-		os.Remove(fnTmp)
+		_ = os.Remove(fnTmp)
 	}
 	return false
 }
@@ -118,9 +118,9 @@ func loadDB() {
 	log.TLogln("Load rutor db")
 	ff, err := os.Open(filepath.Join(settings.Path, "rutor.ls"))
 	if err == nil {
-		defer ff.Close()
+		defer func() { _ = ff.Close() }()
 		r := flate.NewReader(ff)
-		defer r.Close()
+		defer func() { _ = r.Close() }()
 		var ftorrs []*models.TorrentDetails
 		dec := json.NewDecoder(r)
 

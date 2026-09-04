@@ -1,0 +1,12 @@
+# DLNA / UPnP override — host networking (Linux hosts only).
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.dlna.yml up -d
+#
+# With host networking, published ports are ignored; TorrServer listens on TS_PORT
+# on the host interface directly.
+
+services:
+  torrserver:
+    network_mode: host
+    ports: !reset []

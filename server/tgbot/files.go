@@ -162,6 +162,7 @@ func buildFilesListView(t *torr.Torrent, host string, uid int64, page int) (stri
 	if n > 1 {
 		rows = append(rows, m.Row(m.Data(tr(uid, "files_download_all"), "fall", "all", ti.Hash)))
 	}
+	rows = append(rows, m.Row(m.Data(tr(uid, "btn_back_torrent"), "ftpick", ti.Hash, "0")))
 	m.Inline(rows...)
 	return txt, m
 }

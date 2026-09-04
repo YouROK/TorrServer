@@ -36,7 +36,7 @@ func NewTDB() TorrServerDB {
 
 func (v *TDB) CloseDB() {
 	if v.db != nil {
-		v.db.Close()
+		_ = v.db.Close()
 		v.db = nil
 	}
 }
@@ -129,7 +129,7 @@ func (v *TDB) List(xpath string) []string {
 			}
 		}
 
-		buckt.ForEach(func(k, _ []byte) error {
+		_ = buckt.ForEach(func(k, _ []byte) error {
 			if len(k) > 0 {
 				ret = append(ret, string(k))
 			}

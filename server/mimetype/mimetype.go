@@ -107,13 +107,12 @@ func MimeTypeByPath(filePath string) (ret mimeType, err error) {
 	}
 	// Custom DLNA-compat mime mappings
 	// TODO: make this depend on client headers / profile map
-	if ret == "video/mp2t" {
+	switch ret {
+	case "video/mp2t":
 		ret = "video/mpeg"
-		//	} else if ret == "video/x-matroska" {
-		//		ret = "video/mpeg"
-	} else if ret == "video/x-msvideo" {
+	case "video/x-msvideo":
 		ret = "video/avi"
-	} else if ret == "" {
+	case "":
 		ret = "application/octet-stream"
 	}
 	return
@@ -135,7 +134,7 @@ func mimeTypeByContent(path string) (ret mimeType, err error) {
 	if err != nil {
 		return
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	var data [512]byte
 	if n, err := file.Read(data[:]); err == nil {
 		ret = mimeType(http.DetectContentType(data[:n]))

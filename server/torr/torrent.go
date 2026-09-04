@@ -121,7 +121,9 @@ func (t *Torrent) WaitInfo() bool {
 	case <-t.Torrent.GotInfo():
 		if t.bt != nil && t.bt.storage != nil {
 			t.cache = t.bt.storage.GetCache(t.Hash())
-			t.cache.SetTorrent(t.Torrent)
+			if t.cache != nil {
+				t.cache.SetTorrent(t.Torrent)
+			}
 		}
 		return true
 	case <-t.closed:
@@ -183,8 +185,8 @@ func (t *Torrent) progressEvent() {
 	}
 
 	t.muTorrent.Lock()
-	if t.Torrent != nil && t.Torrent.Info() != nil {
-		st := t.Torrent.Stats()
+	if t.Torrent != nil && t.Info() != nil {
+		st := t.Stats()
 		deltaDlBytes := st.BytesRead.Int64() - t.BytesReadUsefulData
 		deltaUpBytes := st.BytesWritten.Int64() - t.BytesWrittenData
 		deltaTime := time.Since(t.lastTimeSpeed).Seconds()
@@ -234,7 +236,7 @@ func (t *Torrent) expired() bool {
 }
 
 func (t *Torrent) Files() []*torrent.File {
-	if t.Torrent != nil && t.Torrent.Info() != nil {
+	if t.Torrent != nil && t.Info() != nil {
 		files := t.Torrent.Files()
 		return files
 	}
@@ -279,7 +281,7 @@ func (t *Torrent) drop() {
 	t.muTorrent.Lock()
 	defer t.muTorrent.Unlock()
 	if t.Torrent != nil {
-		t.Torrent.Drop()
+		t.Drop()
 		t.Torrent = nil
 	}
 }
@@ -298,9 +300,7 @@ func (t *Torrent) Close() bool {
 
 	if t.bt != nil {
 		t.bt.mu.Lock()
-		if _, ok := t.bt.torrents[t.Hash()]; ok {
-			delete(t.bt.torrents, t.Hash())
-		}
+		delete(t.bt.torrents, t.Hash())
 		t.bt.mu.Unlock()
 	}
 
@@ -329,16 +329,16 @@ func (t *Torrent) Status() *state.TorrentStatus {
 		st.Hash = t.TorrentSpec.InfoHash.HexString()
 	}
 	if t.Torrent != nil {
-		st.Name = t.Torrent.Name()
+		st.Name = t.Name()
 		st.Hash = t.Torrent.InfoHash().HexString()
-		st.LoadedSize = t.Torrent.BytesCompleted()
+		st.LoadedSize = t.BytesCompleted()
 
 		st.PreloadedBytes = t.PreloadedBytes
 		st.PreloadSize = t.PreloadSize
 		st.DownloadSpeed = t.DownloadSpeed
 		st.UploadSpeed = t.UploadSpeed
 
-		tst := t.Torrent.Stats()
+		tst := t.Stats()
 		st.BytesWritten = tst.BytesWritten.Int64()
 		st.BytesWrittenData = tst.BytesWrittenData.Int64()
 		st.BytesRead = tst.BytesRead.Int64()
@@ -356,7 +356,7 @@ func (t *Torrent) Status() *state.TorrentStatus {
 		st.ConnectedSeeders = tst.ConnectedSeeders
 		st.HalfOpenPeers = tst.HalfOpenPeers
 
-		if t.Torrent.Info() != nil {
+		if t.Info() != nil {
 			st.TorrentSize = t.Torrent.Length()
 
 			files := t.Files()
@@ -378,8 +378,8 @@ func (t *Torrent) Status() *state.TorrentStatus {
 			th.AddField(torrshash.TagSize, strconv.FormatInt(st.TorrentSize, 10))
 
 			if t.TorrentSpec != nil {
-				if len(t.TorrentSpec.Trackers) > 0 && len(t.TorrentSpec.Trackers[0]) > 0 {
-					for _, tr := range t.TorrentSpec.Trackers[0] {
+				if len(t.Trackers) > 0 && len(t.Trackers[0]) > 0 {
+					for _, tr := range t.Trackers[0] {
 						th.AddField(torrshash.TagTracker, tr)
 					}
 				}

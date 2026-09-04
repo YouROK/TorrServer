@@ -1,27 +1,39 @@
 package tgbot
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/dustin/go-humanize"
 	tele "gopkg.in/telebot.v4"
+
 	"server/log"
 	"server/torr"
 )
 
-const listPageSize = 5
+// Keep page small so reply_markup stays under Telegram limits with long titles.
+const listPageSize = 6
+
+// Max runes for a torrent title line in the hub message body (full title on card).
+const listTitleMaxRunes = 72
 
 func list(c tele.Context) error {
-	args := c.Args()
-	compact := len(args) > 0 && strings.ToLower(args[0]) == "compact"
-	return sendListPage(c, 0, compact)
+	return sendListHub(c, 0, false)
 }
 
-func sendListPage(c tele.Context, page int, compact bool) error {
+// sendListHub renders one message: short numbered rows + pick/nav/refresh buttons.
+// When edit is true, updates the callback message in place.
+// Do not pass mainMenuKeyboard here — telebot keeps only the last ReplyMarkup.
+func sendListHub(c tele.Context, page int, edit bool) error {
+	uid := c.Sender().ID
 	torrents := torr.ListTorrent()
 	if len(torrents) == 0 {
-		return c.Send(tr(c.Sender().ID, "no_torrents"))
+		if edit && c.Callback() != nil && c.Callback().Message != nil {
+			_, err := c.Bot().Edit(c.Callback().Message, tr(uid, "no_torrents"), &tele.ReplyMarkup{})
+			return err
+		}
+		return sendWithMenu(c, tr(uid, "no_torrents"))
 	}
 
 	totalPages := (len(torrents) + listPageSize - 1) / listPageSize
@@ -38,102 +50,159 @@ func sendListPage(c tele.Context, page int, compact bool) error {
 	}
 	pageTorrents := torrents[start:end]
 
-	uid := c.Sender().ID
-	for _, t := range pageTorrents {
-		hash := t.Hash().HexString()
-		var rows [][]tele.InlineButton
-		if compact {
-			rows = [][]tele.InlineButton{
-				{
-					tele.InlineButton{Text: tr(uid, "btn_files"), Unique: "files", Data: hash},
-					tele.InlineButton{Text: tr(uid, "btn_status"), Unique: "fstatus", Data: hash},
-					tele.InlineButton{Text: tr(uid, "btn_delete"), Unique: "delete", Data: hash},
-				},
-			}
-		} else {
-			rows = [][]tele.InlineButton{
-				{
-					tele.InlineButton{Text: tr(uid, "btn_files"), Unique: "files", Data: hash},
-					tele.InlineButton{Text: tr(uid, "btn_delete"), Unique: "delete", Data: hash},
-					tele.InlineButton{Text: tr(uid, "btn_status"), Unique: "fstatus", Data: hash},
-					tele.InlineButton{Text: tr(uid, "btn_m3u"), Unique: "fm3u", Data: hash},
-				},
-				{
-					tele.InlineButton{Text: tr(uid, "btn_link"), Unique: "flink", Data: hash},
-					tele.InlineButton{Text: tr(uid, "btn_drop"), Unique: "fdrop", Data: hash},
-				},
-			}
+	var b strings.Builder
+	// menu_library already includes 📚 — do not prefix another.
+	b.WriteString("<b>" + tr(uid, "menu_library") + "</b>")
+	fmt.Fprintf(&b, " — %s %d/%d\n\n", tr(uid, "page"), page+1, totalPages)
+	for i, t := range pageTorrents {
+		n := start + i + 1
+		title := t.Title
+		if title == "" {
+			title = t.Hash().HexString()
 		}
-		torrKbd := &tele.ReplyMarkup{InlineKeyboard: rows}
-		msg := "<b>" + escapeHtml(t.Title) + "</b>"
+		size := ""
 		if t.Size > 0 {
-			msg += " <i>" + humanize.IBytes(uint64(t.Size)) + "</i>"
+			size = " <i>" + humanize.IBytes(uint64(t.Size)) + "</i>"
 		}
-		msg += "\n<code>" + hash + "</code>"
-		if err := c.Send(msg, torrKbd); err != nil {
-			log.TLogln("tg list send err", err)
-			return err
-		}
+		fmt.Fprintf(&b, "<b>%d.</b> %s%s\n", n, escapeHtml(shortListTitle(title)), size)
 	}
 
-	compactStr := "0"
-	if compact {
-		compactStr = "1"
+	m := &tele.ReplyMarkup{}
+	var rows []tele.Row
+	for i, t := range pageTorrents {
+		n := start + i + 1
+		hash := t.Hash().HexString()
+		title := t.Title
+		if title == "" {
+			title = hash[:8] + "…"
+		}
+		label := numberedBtnLabel(n, title)
+		rows = append(rows, m.Row(m.Data(label, "ftpick", hash, strconv.Itoa(page))))
 	}
-	navRow := []tele.InlineButton{}
+
+	var nav []tele.Btn
 	if totalPages > 1 {
 		if page > 0 {
-			navRow = append(navRow, tele.InlineButton{Text: "◀️", Unique: "flist", Data: strconv.Itoa(page-1) + "|" + compactStr})
+			nav = append(nav, m.Data("◀️", "flist", strconv.Itoa(page-1)))
 		}
-		navRow = append(navRow, tele.InlineButton{Text: strconv.Itoa(page+1) + "/" + strconv.Itoa(totalPages), Unique: "fnop", Data: ""})
+		nav = append(nav, m.Data(strconv.Itoa(page+1)+"/"+strconv.Itoa(totalPages), "fnop"))
 		if page < totalPages-1 {
-			navRow = append(navRow, tele.InlineButton{Text: "▶️", Unique: "flist", Data: strconv.Itoa(page+1) + "|" + compactStr})
+			nav = append(nav, m.Data("▶️", "flist", strconv.Itoa(page+1)))
 		}
 	}
-	navRow = append(navRow, tele.InlineButton{Text: "🔄", Unique: "frefresh", Data: strconv.Itoa(page) + "|" + compactStr})
-	if len(navRow) > 1 || totalPages == 1 {
-		if err := c.Send(tr(uid, "page")+" "+strconv.Itoa(page+1)+"/"+strconv.Itoa(totalPages), &tele.ReplyMarkup{InlineKeyboard: [][]tele.InlineButton{navRow}}); err != nil {
-			log.TLogln("tg list nav err", err)
-			return err
+	nav = append(nav, m.Data("🔄", "frefresh", strconv.Itoa(page)))
+	rows = append(rows, m.Row(nav...))
+	m.Inline(rows...)
+
+	txt := b.String()
+	if edit && c.Callback() != nil && c.Callback().Message != nil {
+		_, err := c.Bot().Edit(c.Callback().Message, txt, m, tele.ModeHTML)
+		if err != nil {
+			log.TLogln("tg list hub edit err", err)
 		}
+		return err
+	}
+	if err := c.Send(txt, m, tele.ModeHTML); err != nil {
+		log.TLogln("tg list hub send err", err)
+		return err
 	}
 	return nil
 }
 
+func shortListTitle(s string) string {
+	r := []rune(s)
+	if len(r) <= listTitleMaxRunes {
+		return s
+	}
+	return string(r[:listTitleMaxRunes-1]) + "…"
+}
+
+func numberedBtnLabel(n int, title string) string {
+	prefix := strconv.Itoa(n) + ". "
+	if title == "" {
+		return truncateBtnText(prefix)
+	}
+	return truncateBtnText(prefix + title)
+}
+
+func showTorrentCard(c tele.Context, hash string, listPage int, edit bool) error {
+	uid := c.Sender().ID
+	t := torr.GetTorrent(hash)
+	if t == nil {
+		return c.Respond(&tele.CallbackResponse{Text: tr(uid, "torrent_not_found")})
+	}
+	title := escapeHtml(t.Title)
+	if title == "" {
+		title = hash
+	}
+	msg := "<b>" + title + "</b>"
+	if t.Size > 0 {
+		msg += " <i>" + humanize.IBytes(uint64(t.Size)) + "</i>"
+	}
+	msg += "\n<code>" + hash + "</code>"
+
+	pageStr := strconv.Itoa(listPage)
+	m := &tele.ReplyMarkup{}
+	m.Inline(
+		m.Row(
+			m.Data(tr(uid, "btn_files"), "files", hash),
+			m.Data(tr(uid, "btn_status"), "fstatus", hash),
+			m.Data(tr(uid, "btn_m3u"), "fm3u", hash),
+		),
+		m.Row(
+			m.Data(tr(uid, "btn_link"), "flink", hash),
+			m.Data(tr(uid, "btn_drop"), "fdrop", hash),
+			m.Data(tr(uid, "btn_delete"), "delete", hash),
+		),
+		m.Row(m.Data(tr(uid, "btn_back_list"), "fbacklist", pageStr)),
+	)
+
+	if edit && c.Callback() != nil && c.Callback().Message != nil {
+		_ = c.Respond(&tele.CallbackResponse{})
+		_, err := c.Bot().Edit(c.Callback().Message, msg, m, tele.ModeHTML)
+		return err
+	}
+	return c.Send(msg, m, tele.ModeHTML)
+}
+
 func callbackListPage(c tele.Context, data string) error {
-	parts := strings.Split(data, "|")
 	page := 0
-	compact := false
-	if len(parts) > 0 && parts[0] != "" {
-		if p, err := strconv.Atoi(parts[0]); err == nil {
+	if data != "" {
+		if p, err := strconv.Atoi(strings.Split(data, "|")[0]); err == nil {
 			page = p
 		}
 	}
-	if len(parts) > 1 && parts[1] == "1" {
-		compact = true
-	}
 	_ = c.Respond(&tele.CallbackResponse{})
-	if c.Callback().Message != nil {
-		_ = c.Bot().Delete(c.Callback().Message)
-	}
-	return sendListPage(c, page, compact)
+	return sendListHub(c, page, true)
 }
 
 func callbackListRefresh(c tele.Context, data string) error {
-	parts := strings.Split(data, "|")
 	page := 0
-	compact := false
-	if len(parts) > 0 && parts[0] != "" {
-		if p, err := strconv.Atoi(parts[0]); err == nil {
+	if data != "" {
+		if p, err := strconv.Atoi(strings.Split(data, "|")[0]); err == nil {
 			page = p
 		}
 	}
-	if len(parts) > 1 && parts[1] == "1" {
-		compact = true
-	}
 	_ = c.Respond(&tele.CallbackResponse{Text: "🔄"})
-	if c.Callback().Message != nil {
-		_ = c.Bot().Delete(c.Callback().Message)
+	return sendListHub(c, page, true)
+}
+
+func callbackTorrentPick(c tele.Context, hash, pageStr string) error {
+	if !isHash(hash) {
+		return c.Respond(&tele.CallbackResponse{Text: tr(c.Sender().ID, "callback_unknown")})
 	}
-	return sendListPage(c, page, compact)
+	page := 0
+	if p, err := strconv.Atoi(pageStr); err == nil {
+		page = p
+	}
+	return showTorrentCard(c, hash, page, true)
+}
+
+func callbackBackList(c tele.Context, pageStr string) error {
+	page := 0
+	if p, err := strconv.Atoi(pageStr); err == nil {
+		page = p
+	}
+	_ = c.Respond(&tele.CallbackResponse{})
+	return sendListHub(c, page, true)
 }

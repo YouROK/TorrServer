@@ -1,7 +1,6 @@
 package torrstor
 
 import (
-	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -25,8 +24,12 @@ func NewDiskPiece(p *Piece) *DiskPiece {
 	ff, err := os.Stat(name)
 	if err == nil {
 		p.Size = ff.Size()
-		p.Complete = ff.Size() == p.cache.pieceLength
+		plen := p.cache.pieceByteLength(p.Id)
+		p.Complete = plen > 0 && ff.Size() >= plen
 		p.Accessed = ff.ModTime().Unix()
+		if p.Size > 0 {
+			p.cache.notePieceFilled(p.Id)
+		}
 	}
 	return &DiskPiece{piece: p, name: name}
 }
@@ -40,12 +43,18 @@ func (p *DiskPiece) WriteAt(b []byte, off int64) (n int, err error) {
 		log.TLogln("Error open file:", err)
 		return 0, err
 	}
-	defer ff.Close()
+	defer func() { _ = ff.Close() }()
 	n, err = ff.WriteAt(b, off)
 
+	// Accumulate: chunks arrive out of order, so a high-water mark would count
+	// gaps as filled. MarkNotComplete resets Size on retransmit.
 	p.piece.Size += int64(n)
-	if p.piece.Size > p.piece.cache.pieceLength {
-		p.piece.Size = p.piece.cache.pieceLength
+	plen := p.piece.cache.pieceByteLength(p.piece.Id)
+	if plen > 0 && p.piece.Size > plen {
+		p.piece.Size = plen
+	}
+	if p.piece.Size > 0 {
+		p.piece.cache.notePieceFilled(p.piece.Id)
 	}
 	p.piece.Accessed = time.Now().Unix()
 	return
@@ -57,18 +66,18 @@ func (p *DiskPiece) ReadAt(b []byte, off int64) (n int, err error) {
 
 	ff, err := os.OpenFile(p.name, os.O_RDONLY, 0o666)
 	if os.IsNotExist(err) {
-		return 0, io.EOF
+		return 0, err
 	}
 	if err != nil {
 		log.TLogln("Error open file:", err)
 		return 0, err
 	}
-	defer ff.Close()
+	defer func() { _ = ff.Close() }()
 
 	n, err = ff.ReadAt(b, off)
 
 	p.piece.Accessed = time.Now().Unix()
-	if int64(len(b))+off >= p.piece.Size {
+	if p.piece.Complete && int64(len(b))+off >= p.piece.Size {
 		go p.piece.cache.cleanPieces()
 	}
 	return n, err
@@ -80,6 +89,7 @@ func (p *DiskPiece) Release() {
 
 	p.piece.Size = 0
 	p.piece.Complete = false
+	p.piece.cache.notePieceEmpty(p.piece.Id)
 
-	os.Remove(p.name)
+	_ = os.Remove(p.name)
 }

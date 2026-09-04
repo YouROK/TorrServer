@@ -37,7 +37,7 @@ func viewed(c *gin.Context) {
 	var req viewedReqJS
 	err := c.ShouldBindJSON(&req)
 	if err != nil {
-		c.AbortWithError(http.StatusBadRequest, err)
+		_ = c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
@@ -59,7 +59,7 @@ func viewed(c *gin.Context) {
 
 func setViewed(req viewedReqJS, c *gin.Context) {
 	if req.Hash == "" {
-		c.AbortWithError(http.StatusBadRequest, errors.New("hash is required"))
+		_ = c.AbortWithError(http.StatusBadRequest, errors.New("hash is required"))
 		return
 	}
 	sets.SetViewed(&req.Viewed)
@@ -68,7 +68,7 @@ func setViewed(req viewedReqJS, c *gin.Context) {
 
 func remViewed(req viewedReqJS, c *gin.Context) {
 	if req.Hash == "" {
-		c.AbortWithError(http.StatusBadRequest, errors.New("hash is required"))
+		_ = c.AbortWithError(http.StatusBadRequest, errors.New("hash is required"))
 		return
 	}
 	sets.RemViewed(&req.Viewed)

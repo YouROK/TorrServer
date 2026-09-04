@@ -729,6 +729,31 @@ const docTemplate = `{
                 }
             }
         },
+        "/runtime/status": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Read-only flags for DLNA/Bonjour/WebDAV/FUSE plus structured BT stats (and raw /stat text).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Runtime integration + BitTorrent status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.RuntimeStatus"
+                        }
+                    }
+                }
+            }
+        },
         "/search": {
             "get": {
                 "security": [
@@ -1278,9 +1303,150 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/waf": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Returns whitelist/blacklist IP and blocked referer lists stored in settings.json.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Get HTTP WAF lists",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.wafResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Fully replaces whitelist/blacklist IP and blocked referer lists in settings.json and hot-reloads the WAF. All three fields are required; explicit empty strings clear a list.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Update HTTP WAF lists",
+                "parameters": [
+                    {
+                        "description": "Complete WAF configuration",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.wafUpdateReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.wafResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "api.RuntimeStatus": {
+            "type": "object",
+            "properties": {
+                "bonjour_enabled": {
+                    "type": "boolean"
+                },
+                "bt": {
+                    "description": "BitTorrent client (structured alternative to plaintext GET /stat).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/torr.ClientStatusSnapshot"
+                        }
+                    ]
+                },
+                "dlna_enabled": {
+                    "type": "boolean"
+                },
+                "friendly_name": {
+                    "type": "string"
+                },
+                "fuse_enabled": {
+                    "type": "boolean"
+                },
+                "fuse_path": {
+                    "type": "string"
+                },
+                "webdav_enabled": {
+                    "type": "boolean"
+                },
+                "webdav_path": {
+                    "type": "string"
+                }
+            }
+        },
         "api.cacheReqJS": {
             "type": "object",
             "properties": {
@@ -1460,6 +1626,54 @@ const docTemplate = `{
                 },
                 "timecode": {
                     "type": "number"
+                }
+            }
+        },
+        "api.wafResponse": {
+            "type": "object",
+            "properties": {
+                "blacklist": {
+                    "type": "string"
+                },
+                "ip_enabled": {
+                    "type": "boolean"
+                },
+                "read_only": {
+                    "type": "boolean"
+                },
+                "referer_enabled": {
+                    "type": "boolean"
+                },
+                "referers": {
+                    "type": "string"
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/waf.Warning"
+                    }
+                },
+                "whitelist": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.wafUpdateReq": {
+            "type": "object",
+            "required": [
+                "blacklist",
+                "referers",
+                "whitelist"
+            ],
+            "properties": {
+                "blacklist": {
+                    "type": "string"
+                },
+                "referers": {
+                    "type": "string"
+                },
+                "whitelist": {
+                    "type": "string"
                 }
             }
         },
@@ -1664,7 +1878,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "trackersListURL": {
-                    "description": "remote trackers list URL; empty = skip remote fetch",
+                    "description": "optional custom remote trackers list URL; empty = use built-in mirrors; tried first, then mirrors",
                     "type": "string"
                 },
                 "uploadRateLimit": {
@@ -1676,6 +1890,19 @@ const docTemplate = `{
                     "type": "boolean"
                 }
             }
+        },
+        "settings.CategoryType": {
+            "type": "string",
+            "enum": [
+                "default",
+                "manual",
+                "all"
+            ],
+            "x-enum-varnames": [
+                "CategoryDefault",
+                "CategoryManual",
+                "CategoryAll"
+            ]
         },
         "settings.TMDBConfig": {
             "type": "object",
@@ -1701,6 +1928,12 @@ const docTemplate = `{
         "settings.TorznabConfig": {
             "type": "object",
             "properties": {
+                "catType": {
+                    "$ref": "#/definitions/settings.CategoryType"
+                },
+                "categories": {
+                    "type": "string"
+                },
                 "host": {
                     "type": "string"
                 },
@@ -1789,6 +2022,10 @@ const docTemplate = `{
         "state.ReaderState": {
             "type": "object",
             "properties": {
+                "active": {
+                    "description": "Active is false once the reader goes idle: the playhead is frozen, not moving.",
+                    "type": "boolean"
+                },
                 "end": {
                     "type": "integer"
                 },
@@ -1943,6 +2180,123 @@ const docTemplate = `{
                 },
                 "upload_speed": {
                     "type": "number"
+                }
+            }
+        },
+        "torr.ClientStatusSnapshot": {
+            "type": "object",
+            "properties": {
+                "active_peers": {
+                    "type": "integer"
+                },
+                "active_streams": {
+                    "type": "integer"
+                },
+                "banned_ips": {
+                    "type": "integer"
+                },
+                "bytes_read": {
+                    "type": "integer"
+                },
+                "bytes_written": {
+                    "type": "integer"
+                },
+                "connected_seeders": {
+                    "type": "integer"
+                },
+                "download_speed": {
+                    "type": "number"
+                },
+                "listen_port": {
+                    "type": "integer"
+                },
+                "loaded_size": {
+                    "type": "integer"
+                },
+                "peer_id": {
+                    "type": "string"
+                },
+                "raw_stat": {
+                    "type": "string"
+                },
+                "torrent_count": {
+                    "type": "integer"
+                },
+                "torrents": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/torr.TorrentStatusBrief"
+                    }
+                },
+                "total_peers": {
+                    "type": "integer"
+                },
+                "total_size": {
+                    "type": "integer"
+                },
+                "upload_speed": {
+                    "type": "number"
+                }
+            }
+        },
+        "torr.TorrentStatusBrief": {
+            "type": "object",
+            "properties": {
+                "active_peers": {
+                    "type": "integer"
+                },
+                "connected_seeders": {
+                    "type": "integer"
+                },
+                "download_speed": {
+                    "type": "number"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "loaded_size": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "preload_size": {
+                    "type": "integer"
+                },
+                "preloaded_bytes": {
+                    "type": "integer"
+                },
+                "stat": {
+                    "type": "integer"
+                },
+                "stat_string": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "torrent_size": {
+                    "type": "integer"
+                },
+                "total_peers": {
+                    "type": "integer"
+                },
+                "upload_speed": {
+                    "type": "number"
+                }
+            }
+        },
+        "waf.Warning": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "line": {
+                    "type": "integer"
+                },
+                "list": {
+                    "type": "string"
                 }
             }
         }
