@@ -434,6 +434,43 @@ The users data file should be located near to the settings. Basic auth, read mor
 
 Note: You should enable authentication with -a (--httpauth) TorrServer startup option.
 
+## Playback devices
+
+TorrServer can send a selected video to a playback agent running on another computer, TV box, or media server. This is useful when the Web UI is opened on a phone but VLC should start on the device connected to the TV.
+
+The feature is **disabled by default**. Until it is explicitly enabled, every browser opens VLC locally exactly as in previous TorrServer versions.
+
+Configure it in **Settings → Application → Remote playback**. Three routing modes are available:
+
+- **Each browser plays locally (legacy)** — preserves the previous behavior.
+- **Always use one primary device** — every browser sends playback to one configured TV/media device.
+- **Choose a device in each browser** — each browser remembers its own target. It may be marked **Control and playback** or **Control only**.
+
+Each remote device also has an independent **Open VLC in fullscreen** option. It is off by default, so adding a device does not change normal VLC window behavior unless the user asks for it.
+
+Device configuration is stored in the versioned `playback_devices.json` file next to the TorrServer settings. Agent URLs and bearer tokens stay on the server; the normal device list returned to browsers contains only device IDs and names. Enable TorrServer authentication when the Web UI is reachable by untrusted users.
+
+A playback agent implements two endpoints:
+
+```text
+GET  /health
+POST /play
+```
+
+TorrServer sends the optional bearer token and the following JSON to `/play`:
+
+```json
+{
+  "path": "Movie.mkv",
+  "hash": "0123456789abcdef0123456789abcdef01234567",
+  "index": 1,
+  "stream_url": "http://torrserver:8090/stream/Movie.mkv?link=...&index=1&play=",
+  "fullscreen": false
+}
+```
+
+Use **TorrServer URL for this device** when the agent reaches TorrServer through a different hostname or address than the browser. A reference [Linux/VLC playback agent](extras/vlc-agent/README.md) is included as an optional component.
+
 ## Retrackers
 
 When adding a torrent, TorrServer can modify announce trackers according to **Settings → Additional → Retrackers**:
