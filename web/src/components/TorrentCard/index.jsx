@@ -21,6 +21,7 @@ import {
   ListItemText,
   Menu,
   MenuItem,
+  Snackbar,
   useMediaQuery,
   useTheme,
 } from '@material-ui/core'
@@ -31,6 +32,7 @@ import AddDialog from 'components/Add/AddDialog'
 import { StyledDialog } from 'style/CustomMaterialUiStyles'
 import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
 import { useBooleanPlayerPreference } from 'utils/PlayerPreferences'
+import { usePlayback } from 'playback/PlaybackContext'
 import { GETTING_INFO, IN_DB, CLOSED, PRELOAD, WORKING } from 'torrentStates'
 import { TORRENT_CATEGORIES } from 'components/categories'
 import VideoPlayer from 'components/VideoPlayer'
@@ -159,8 +161,11 @@ const Torrent = ({ torrent }) => {
   const [audioMenuAnchor, setAudioMenuAnchor] = useState(null)
   const [audioMenuPlayer, setAudioMenuPlayer] = useState(null)
   const [isResolvingAudio, setIsResolvingAudio] = useState(false)
+  const [isLaunchingVlc, setIsLaunchingVlc] = useState(false)
+  const [vlcLaunchError, setVlcLaunchError] = useState(false)
   const isVlcUsed = useBooleanPlayerPreference('isVlcUsed')
   const showQuickVlcButton = useBooleanPlayerPreference('showQuickVlcButton')
+  const { launchVlc, selectedTarget } = usePlayback()
   const isMounted = useRef(true)
   const episodeButtonRef = useRef(null)
   const audioButtonRef = useRef(null)
@@ -257,10 +262,21 @@ const Torrent = ({ torrent }) => {
   const singlePlayer = players.length === 1 ? players[0] : null
   const audioMenuTracks = audioMenuPlayer ? audioTracksByFile[audioMenuPlayer.id] || [] : []
 
-  const openSingleFileInVlc = () => {
-    if (!singlePlayer) return
-    const streamUrl = new URL(singlePlayer.downloadSrc, window.location.href)
-    window.location.href = `vlc://${streamUrl}`
+  const openSingleFileInVlc = async () => {
+    if (!singlePlayer || !selectedTarget) return
+    setIsLaunchingVlc(true)
+    try {
+      await launchVlc({
+        path: singlePlayer.path,
+        hash,
+        index: singlePlayer.id,
+        streamUrl: singlePlayer.downloadSrc,
+      })
+    } catch (_) {
+      setVlcLaunchError(true)
+    } finally {
+      if (isMounted.current) setIsLaunchingVlc(false)
+    }
   }
 
   const playerWithAudio = (player, audio) => ({
@@ -386,8 +402,12 @@ const Torrent = ({ torrent }) => {
           </StyledButton>
 
           {isVlcUsed && showQuickVlcButton && singlePlayer && (
-            <StyledButton onClick={openSingleFileInVlc} title={t('SettingsDialog.UseVLC')}>
-              <PlayArrowIcon />
+            <StyledButton
+              disabled={isLaunchingVlc || !selectedTarget}
+              onClick={openSingleFileInVlc}
+              title={selectedTarget ? `${t('Playback.PlayOn')}: ${selectedTarget.name}` : t('Playback.NoDevice')}
+            >
+              {isLaunchingVlc ? <CircularProgress size={20} color='inherit' /> : <PlayArrowIcon />}
               <span>VLC</span>
             </StyledButton>
           )}
@@ -552,6 +572,13 @@ const Torrent = ({ torrent }) => {
           </div>
         </TorrentCardDescription>
       </TorrentCard>
+
+      <Snackbar
+        open={vlcLaunchError}
+        autoHideDuration={2500}
+        onClose={() => setVlcLaunchError(false)}
+        message={t('Playback.LaunchFailed')}
+      />
 
       <StyledDialog
         open={isDetailedInfoOpened}

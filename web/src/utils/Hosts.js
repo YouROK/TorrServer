@@ -17,6 +17,10 @@ export const torznabTestHost = () => `${torrserverHost}/torznab/test`
 export const tmdbSettingsHost = () => `${torrserverHost}/tmdb/settings`
 export const gstSettingsHost = () => `${torrserverHost}/gst/settings`
 export const wafHost = () => `${torrserverHost}/waf`
+export const playbackDevicesHost = () => `${torrserverHost}/playback/devices`
+export const playbackDeviceConfigsHost = () => `${torrserverHost}/playback/devices/config`
+export const playbackSettingsHost = () => `${torrserverHost}/playback/settings`
+export const playbackPlayHost = () => `${torrserverHost}/playback/play`
 
 export const getTorrServerHost = () => torrserverHost
 export const setTorrServerHost = host => {
