@@ -204,6 +204,15 @@ func (t *Torrent) progressEvent() {
 	}
 	t.muTorrent.Unlock()
 
+	// The position reckoning is turned over from here rather than from each stream. It has
+	// to keep looking after the reads have stopped: a client going quiet is the one thing
+	// worth noticing, and the one thing a tracker driven only by Read never sees.
+	if t.cache != nil && positionSavingEnabled() {
+		for _, r := range t.cache.ReaderList() {
+			r.Tick()
+		}
+	}
+
 	t.lastTimeSpeed = time.Now()
 	t.updateRA()
 }
@@ -295,6 +304,7 @@ func (t *Torrent) Close() bool {
 		return false
 	}
 	t.Stat = state.TorrentClosed
+	forgetTorrent(t.Hash().HexString())
 
 	if t.bt != nil {
 		t.bt.mu.Lock()
@@ -363,13 +373,30 @@ func (t *Torrent) Status() *state.TorrentStatus {
 			sort.Slice(files, func(i, j int) bool {
 				return utils2.CompareStrings(files[i].Path(), files[j].Path())
 			})
+			fileIDs := make(map[string]int, len(files))
 			for i, f := range files {
 				st.FileStats = append(st.FileStats, &state.TorrentFileStat{
 					Id:     i + 1, // in web id 0 is undefined
 					Path:   f.Path(),
 					Length: f.Length(),
 				})
+				fileIDs[f.Path()] = i + 1
 			}
+
+			// Where the clients streaming right now actually are, so the interface can show
+			// the same position the resume feature would store.
+			for _, r := range t.cache.ReaderList() {
+				f := r.File()
+				if f == nil {
+					continue
+				}
+				if pb := PlaybackState(st.Hash, fileIDs[f.Path()], r); pb != nil {
+					st.Playback = append(st.Playback, pb)
+				}
+			}
+			sort.Slice(st.Playback, func(i, j int) bool {
+				return st.Playback[i].FileIndex < st.Playback[j].FileIndex
+			})
 
 			th := torrshash.New(st.Hash)
 			th.AddField(torrshash.TagTitle, st.Title)

@@ -27,4 +27,6 @@ type ReaderState struct {
 	Start  int
 	End    int
 	Reader int
+	// Screen is the piece the picture is in — the read head less the client's buffer.
+	Screen int
 }

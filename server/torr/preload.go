@@ -3,7 +3,6 @@ package torr
 import (
 	"fmt"
 	"io"
-	"strconv"
 	"sync"
 	"time"
 
@@ -105,13 +104,11 @@ func (t *Torrent) Preload(index int, size int64) {
 	}(logStopChan)
 
 	if ffprobe.Exists() {
-		link := "http://127.0.0.1:" + settings.Port + "/play/" + t.Hash().HexString() + "/" + strconv.Itoa(index)
-		if settings.Ssl {
-			link = "https://127.0.0.1:" + settings.SslPort + "/play/" + t.Hash().HexString() + "/" + strconv.Itoa(index)
-		}
-		if data, err := ffprobe.ProbeUrl(link); err == nil {
+		if data, err := ffprobe.ProbeUrl(probeLink(t.Hash().HexString(), index)); err == nil {
 			t.BitRate = data.Format.BitRate
 			t.DurationSeconds = data.Format.DurationSeconds
+			// reuse it for saving playback position, so that never needs its own probe
+			setDuration(t.Hash().HexString(), index, data.Format.DurationSeconds)
 		}
 	}
 

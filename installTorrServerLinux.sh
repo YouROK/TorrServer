@@ -86,6 +86,9 @@ declare -A MSG_EN=(
   [unsupported_arch]="Unsupported Arch. Can't continue."
   [unsupported_os]="It looks like you are running this installer on a system other than Debian, Ubuntu, Fedora, CentOS, Amazon Linux, Oracle Linux, ALT Linux or Arch Linux."
   [pkg_manager_missing]="ERROR: Neither dnf nor yum is available. Cannot install RPM packages."
+  [install_ffprobe]="Install ffprobe? It is required to save the playback position so players can resume where you stopped"
+  [ffprobe_found]="ffprobe found, saving playback position is available"
+  [ffprobe_skipped]="Skipped. Saving playback position stays disabled until ffprobe is installed"
 
   # User management
   [user_exists]="User %s exists!"
@@ -224,6 +227,9 @@ declare -A MSG_RU=(
   [unsupported_arch]="Не поддерживаемая архитектура. Продолжение невозможно."
   [unsupported_os]="Похоже, что вы запускаете этот установщик в системе отличной от Debian, Ubuntu, Fedora, CentOS, Amazon Linux, Oracle Linux, ALT Linux или Arch Linux."
   [pkg_manager_missing]="ОШИБКА: Не найдены dnf или yum. Невозможно установить RPM-пакеты."
+  [install_ffprobe]="Установить ffprobe? Он нужен для сохранения позиции воспроизведения, чтобы плееры продолжали с места остановки"
+  [ffprobe_found]="ffprobe найден, сохранение позиции воспроизведения доступно"
+  [ffprobe_skipped]="Пропущено. Сохранение позиции воспроизведения будет недоступно, пока не установлен ffprobe"
 
   # User management
   [user_exists]="пользователь %s найден!"
@@ -1224,6 +1230,29 @@ validateOSVersion() {
   fi
 }
 
+# ffprobe provides the real media duration, which the playback position feature needs.
+installFfprobe() {
+  if command -v ffprobe >/dev/null 2>&1; then
+    echo " $(msg ffprobe_found)"
+    return
+  fi
+
+  if ! promptYesNo "$(msg install_ffprobe)" "y" "y"; then
+    echo " $(msg ffprobe_skipped)"
+    return
+  fi
+
+  if [[ -e /etc/debian_version ]]; then
+    installPackages deb ffmpeg
+  elif isAltLinux; then
+    installPackages apt-rpm ffmpeg
+  elif [[ -e /etc/arch-release ]]; then
+    installPackages arch ffmpeg
+  elif [[ -e /etc/system-release ]]; then
+    installPackages rpm "$(getRpmPackageManager)" ffmpeg
+  fi
+}
+
 checkOS() {
   if [[ -e /etc/debian_version ]]; then
     # shellcheck source=/dev/null
@@ -1322,6 +1351,7 @@ initialCheck() {
   fi
 
   checkOS
+  installFfprobe
   checkArch
 }
 

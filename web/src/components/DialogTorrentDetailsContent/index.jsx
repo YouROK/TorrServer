@@ -8,6 +8,7 @@ import { viewedHost } from 'utils/Hosts'
 import { GETTING_INFO, IN_DB } from 'torrentStates'
 import CircularProgress from '@material-ui/core/CircularProgress'
 import { useTranslation } from 'react-i18next'
+import PlaybackReadout from 'components/PlaybackReadout'
 
 import { useUpdateCache, useGetSettings } from './customHooks'
 import DialogHeader from './DialogHeader'
@@ -58,6 +59,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
     upload_speed: uploadSpeed,
     torrent_size: torrentSize,
     file_stats: torrentFileList,
+    playback,
   } = torrent
 
   const cache = useUpdateCache(hash)
@@ -211,6 +213,8 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                   fullAmount={bufferSize}
                   label={`${humanizeSize(bufferSize)} / ${humanizeSize(Filled) || `0 ${t('B')}`}`}
                 />
+
+                <PlaybackReadout playback={cache.Torrent?.playback || playback} />
               </SectionHeader>
 
               <TorrentCache isMini cache={cache} isSnakeDebugMode={isSnakeDebugMode} />

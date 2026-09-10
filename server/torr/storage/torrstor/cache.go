@@ -12,6 +12,7 @@ import (
 
 	"server/log"
 	"server/settings"
+	"server/timeindex"
 	"server/torr/storage/state"
 	"server/torr/utils"
 
@@ -39,6 +40,19 @@ type Cache struct {
 	readers   map[*Reader]struct{}
 	muReaders sync.RWMutex
 
+	// One time index per file, not per reader: a player opens a separate connection for the
+	// header and another for playback, and the header is where some formats keep the only
+	// copy of what their timestamps mean.
+	indexes   map[string]*timeindex.Index
+	muIndexes sync.Mutex
+
+	// What a client was holding when its connection ended, kept per file so the next one can
+	// pick it up. A player that pauses long enough loses the connection and opens another,
+	// and the new one would otherwise start from the only assumption available to it — that
+	// nothing is buffered — while the player still holds everything it had.
+	handovers  map[string]*handover
+	muHandover sync.Mutex
+
 	isRemove atomic.Bool
 	isClosed atomic.Bool
 	muRemove sync.Mutex
@@ -51,11 +65,13 @@ type Cache struct {
 
 func NewCache(capacity int64, storage *Storage) *Cache {
 	ret := &Cache{
-		capacity: capacity,
-		filled:   0,
-		pieces:   make(map[int]*Piece),
-		storage:  storage,
-		readers:  make(map[*Reader]struct{}),
+		capacity:  capacity,
+		filled:    0,
+		pieces:    make(map[int]*Piece),
+		storage:   storage,
+		readers:   make(map[*Reader]struct{}),
+		indexes:   make(map[string]*timeindex.Index),
+		handovers: make(map[string]*handover),
 	}
 
 	return ret
@@ -130,6 +146,191 @@ func (c *Cache) readersSnapshot() []*Reader {
 	return list
 }
 
+// TimeIndex is the shared time index for a file, created on first use. It is nil for
+// containers that carry no timestamps to read.
+func (c *Cache) TimeIndex(path string) *timeindex.Index {
+	if c == nil || !settings.BTsets.SmartTimecode {
+		return nil
+	}
+	c.muIndexes.Lock()
+	defer c.muIndexes.Unlock()
+	if c.indexes == nil {
+		return nil // the cache is closing; assigning here would panic on a nil map
+	}
+	ix, ok := c.indexes[path]
+	if !ok {
+		ix = timeindex.New(path)
+		c.indexes[path] = ix
+	}
+	return ix
+}
+
+// handover is where a file was last being read, and how much the client reading it was
+// holding at the time.
+type handover struct {
+	by      int64     // which connection these readings belong to
+	holding int64     // what the client had in hand there, in bytes
+	size    int64     // and the size of its buffer, which an interruption does not change
+	picture int64     // byte the picture was at, as last reported
+	sec     float64   // and the film time there, kept only for the moves-no-faster-than-the-clock bound
+	at      time.Time // when that was
+}
+
+// noteRead records where a connection has read to, what it was holding, and where the
+// picture was.
+func (c *Cache) noteRead(path string, by, holding, size, picture int64, sec float64) {
+	if c == nil {
+		return
+	}
+	c.muHandover.Lock()
+	defer c.muHandover.Unlock()
+	if c.handovers == nil {
+		return
+	}
+	h := c.handovers[path]
+	if h == nil {
+		h = &handover{}
+		c.handovers[path] = h
+	}
+	h.at = time.Now()
+	// The most it was seen holding, not what it holds at this instant. Handing over the
+	// instant value was tried and reverted: it left the next connection with nothing to
+	// inherit, and a connection that believes the client holds nothing puts the picture at
+	// the read head — a whole buffer past what is on screen. Overstating leaves the position
+	// behind instead, which is the side to be wrong on.
+	//
+	// The most within one connection, though, not for as long as the file stays open. Kept
+	// across connections it is a ratchet: the largest reading of all is the one taken during
+	// the opening fill, before anything has settled, and it then stands as the ceiling for
+	// every session that follows however long they run. Measured, the first session peaked at
+	// 47.7 seconds against a client holding 37, and two reconnections later the figure had
+	// climbed from 37 to 42 to 48 with the ceiling never once binding.
+	if h.by != by {
+		h.by, h.holding, h.picture, h.sec = by, holding, picture, sec
+		if size > h.size {
+			h.size = size // the box belongs to the device, not to the connection
+		}
+		return
+	}
+	if holding > h.holding {
+		h.holding = holding
+	}
+	if size > h.size {
+		h.size = size
+	}
+	// The picture as it stands, not the furthest it has ever been said to be. A picture only
+	// moves forward, so keeping the largest reading looks harmless — but it makes a ratchet of
+	// every excursion: one reading that ran ahead is kept for the rest of the file's life and
+	// handed to the next connection, which then holds its position there until the head
+	// catches up. Measured at seventeen seconds in front, decaying over fifteen.
+	h.picture, h.sec = picture, sec
+}
+
+// How far outside the stretch the previous connection was serving a new one may begin and
+// still be taken for the same client coming back. It only has to be wider than the slop
+// between where a player says it resumes and where it actually asks for; a seek is a jump of
+// minutes and lands nowhere near.
+const rejoinMargin = 256 << 20
+
+// takeOver reports how much the client watching this file was last seen holding, so a
+// connection opening now can start from that rather than from nothing. startOff is the byte
+// the new connection begins at.
+//
+// Whether the buffer belongs to whoever turned up is decided by where they turned up. A
+// player that lost its connection carries on from somewhere inside what it already had: at
+// its own picture at the earliest, at the byte the server had reached at the latest. Anything
+// outside that stretch is a seek or another device, and inherits nothing.
+//
+// Deciding it by how fast film then arrived was tried first and is gone. The reasoning was
+// sound — a client already full has nowhere to put a burst — but the measurement is not there
+// to support it. On eight minutes of undisturbed playback the fill rate ran from 0.46 to 1.69
+// with nothing whatsoever happening, and the rule meant to catch a client filling from empty
+// fired three times. Every reconnection was therefore refused, and the buffer remeasured from
+// a fill that counted the refilled pipe as the client's own: 37 seconds became 56.
+func (c *Cache) takeOver(path string, startOff int64) (held, size int64, ok bool) {
+	if c == nil {
+		return 0, 0, false
+	}
+	c.muHandover.Lock()
+	defer c.muHandover.Unlock()
+	h := c.handovers[path]
+	if h == nil || h.holding <= 0 {
+		return 0, 0, false
+	}
+	// No expiry. A buffer size is a property of the device, and an hour's pause does not
+	// change it — while letting the record lapse would have the next connection assume the
+	// client holds nothing, which puts the picture at the read head, a whole buffer past
+	// where it really is. The record lives as long as the torrent's cache, and goes when
+	// that does.
+	from, to := h.picture-rejoinMargin, h.picture+h.holding+rejoinMargin
+	if startOff < from || startOff > to {
+		log.TLogln("[Handover] starting at", startOff>>20, "MB, outside", max(from, 0)>>20, "..", to>>20,
+			"MB — not the same playback, nothing carried over")
+		return 0, 0, false
+	}
+	// Not what the last connection reckoned the client was holding — where it reckoned the
+	// picture was. What lies between there and the byte this connection opens on is what the
+	// client still has, and that is a different quantity.
+	//
+	// The difference is everything in transit when the line went down: what the server had
+	// read and written out but the player had not yet received. Measured on a 300MB player it
+	// was 368MB — as much again as the buffer itself, sitting in socket queues between the
+	// two. It is counted as held while the connection lives, correctly, since it is film that
+	// has left the head and not been shown. But it dies with the connection, and the player
+	// asks for it again. Carrying the old figure across therefore counted it twice: 37.9
+	// seconds became 61.5 the moment the line was restored, and stayed there.
+	//
+	// Where the player resumes says exactly how much survived, because that is where what it
+	// holds runs out. Never more than the connection before was holding — the same figure
+	// cannot grow by being handed on.
+	held = startOff - h.picture
+	if held > h.holding {
+		held = h.holding
+	}
+	if held <= 0 {
+		log.TLogln("[Handover] resumes at the picture itself — nothing was still in hand")
+		return 0, 0, false
+	}
+	// Two different quantities, and conflating them is a slow leak in the dangerous direction.
+	// What survived the line going down says where the picture is. The size of the box says
+	// how much the device holds, and a dropped connection does not shrink a device. Carrying
+	// only what survived and calling it the new size cost about seven percent per
+	// reconnection — 302MB, then 286, then 265 — and every megabyte lost that way moves the
+	// picture forward.
+	log.TLogln("[Handover] carried over:", held>>20, "MB still in hand of a", h.size>>20,
+		"MB buffer, last seen", int(time.Since(h.at).Seconds()), "s ago")
+	return held, h.size, true
+}
+
+// FurthestScreen is the furthest the picture can have reached by now, going by where the last
+// connection to this file left it and how much time has passed since.
+//
+// A connection that opens knows nothing of what came before it, and its own reckoning starts
+// from the assumption that the client holds nothing — so the moment a player drops its
+// connection and opens another, the picture appears to leap forward by a whole buffer. What
+// cannot happen, whatever the client is doing, is the picture moving faster than the clock.
+// That bound survives any reconnection, because it needs to know nothing about the client.
+func (c *Cache) FurthestScreen(path string) (float64, bool) {
+	if c == nil {
+		return 0, false
+	}
+	c.muHandover.Lock()
+	defer c.muHandover.Unlock()
+	h := c.handovers[path]
+	if h == nil || h.sec <= 0 {
+		return 0, false
+	}
+	return h.sec + time.Since(h.at).Seconds(), true
+}
+
+// ReaderList is a snapshot of the readers streaming from this cache.
+func (c *Cache) ReaderList() []*Reader {
+	if c == nil {
+		return nil
+	}
+	return c.readersSnapshot()
+}
+
 func (c *Cache) Piece(m metainfo.Piece) storage.PieceImpl {
 	if val, ok := c.getPieces()[m.Index()]; ok {
 		return val
@@ -162,6 +363,14 @@ func (c *Cache) Close() error {
 	c.muReaders.Lock()
 	c.readers = nil
 	c.muReaders.Unlock()
+
+	c.muIndexes.Lock()
+	c.indexes = nil
+	c.muIndexes.Unlock()
+
+	c.muHandover.Lock()
+	c.handovers = nil
+	c.muHandover.Unlock()
 
 	c.muPieces.Lock()
 	c.pieces = nil
@@ -217,6 +426,7 @@ func (c *Cache) GetState() *state.CacheState {
 			Start:  rng.Start,
 			End:    rng.End,
 			Reader: pc,
+			Screen: r.getScreenPiece(),
 		})
 	}
 

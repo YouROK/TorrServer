@@ -47,4 +47,7 @@ wss://tracker.openwebtorrent.com`,
   SslKey: '',
   ShowFSActiveTorr: true,
   StoreSettingsInJson: true,
+  SavePosition: false,
+  BufferSizeMB: 32,
+  SmartTimecode: true,
 }

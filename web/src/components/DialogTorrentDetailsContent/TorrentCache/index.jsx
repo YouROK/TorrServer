@@ -23,6 +23,7 @@ const TorrentCache = ({ cache, isMini, isSnakeDebugMode }) => {
 
   const {
     readerColor,
+    screenColor,
     rangeColor,
     borderWidth,
     pieceSize,
@@ -62,7 +63,7 @@ const TorrentCache = ({ cache, isMini, isSnakeDebugMode }) => {
 
     ctx.clearRect(0, 0, canvasWidth, height)
 
-    source.forEach(({ percentage, priority, isReader, isReaderRange }, i) => {
+    source.forEach(({ percentage, priority, isReader, isScreen, isReaderRange }, i) => {
       const inProgress = percentage > 0 && percentage < 100
       const isCompleted = percentage === 100
       const currentRow = i % piecesInOneRow
@@ -80,6 +81,8 @@ const TorrentCache = ({ cache, isMini, isSnakeDebugMode }) => {
         : backgroundColor
       ctx.strokeStyle = isReader
         ? readerColor
+        : isScreen
+        ? screenColor
         : inProgress || isCompleted
         ? completeColor
         : isReaderRange
@@ -120,6 +123,7 @@ const TorrentCache = ({ cache, isMini, isSnakeDebugMode }) => {
     settingsTarget,
     completeColor,
     readerColor,
+    screenColor,
     rangeColor,
     isMini,
     theme,

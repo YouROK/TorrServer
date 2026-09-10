@@ -11,6 +11,26 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type ffprobeStatusResponse struct {
+	Available bool `json:"available"`
+}
+
+// ffprobeStatus godoc
+//
+//	@Summary		ffprobe availability
+//	@Description	Reports whether the ffprobe binary is available. Features that need real
+//	@Description	media duration (e.g. saving playback position) are only usable when true.
+//
+//	@Tags			API
+//
+//	@Produce		json
+//	@Security		BasicAuth
+//	@Success		200	{object}	ffprobeStatusResponse
+//	@Router			/ffp/status [get]
+func ffprobeStatus(c *gin.Context) {
+	c.JSON(http.StatusOK, ffprobeStatusResponse{Available: ffprobe.Exists()})
+}
+
 // ffp godoc
 //
 //	@Summary		Gather informations using ffprobe

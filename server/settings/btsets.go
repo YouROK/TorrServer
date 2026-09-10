@@ -103,6 +103,12 @@ type BTSets struct {
 
 	// Viewed timecodes
 	TrackTimecode bool // store playback position (timecode) in viewed data
+
+	// Auto-save playback position (resume). While a stream runs and when it ends, the
+	// read head minus the client's buffer is stored in the viewed data, in seconds.
+	SavePosition  bool // enable auto-saving playback position (needs ffprobe)
+	SmartTimecode bool // read the time out of the container instead of the average bitrate
+	BufferSizeMB  int  // player buffer in MB, only for containers with no timestamps to read
 }
 
 func (v *BTSets) String() string {
@@ -148,6 +154,14 @@ func SetBTSets(sets *BTSets) {
 	}
 	if sets.TorrentDisconnectTimeout == 0 {
 		sets.TorrentDisconnectTimeout = 30
+	}
+
+	if sets.BufferSizeMB <= 0 {
+		sets.BufferSizeMB = 32 // only used when the buffer cannot be measured
+	}
+	// Saving the position means storing timecodes; one switch is enough to ask for.
+	if sets.SavePosition {
+		sets.TrackTimecode = true
 	}
 
 	if sets.ReaderReadAHead < 5 {
@@ -210,6 +224,7 @@ func SetDefaultConfig() {
 	sets.EnableLPD = true
 	sets.LPDIPv6 = false
 	sets.EnableBonjour = true
+	sets.SmartTimecode = true
 	// Set default TMDB settings
 	sets.TMDBSettings = TMDBConfig{
 		APIKey:     "",
@@ -251,6 +266,16 @@ func loadBTSets() {
 				if _, ok := raw["EnableBonjour"]; !ok {
 					BTsets.EnableBonjour = true
 				}
+				// Same for reading timecodes out of the container: on unless turned off.
+				if _, ok := raw["SmartTimecode"]; !ok {
+					BTsets.SmartTimecode = true
+				}
+			}
+			if BTsets.BufferSizeMB <= 0 {
+				BTsets.BufferSizeMB = 32
+			}
+			if BTsets.SavePosition {
+				BTsets.TrackTimecode = true
 			}
 			// Upgrade older configs that never had tracker list fields.
 			// Empty TrackersListURL now means "use built-in mirrors".

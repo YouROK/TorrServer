@@ -7,6 +7,7 @@ import {
   Delete as DeleteIcon,
 } from '@material-ui/icons'
 import { getPeerString, humanizeSize, humanizeSpeed, removeRedundantCharacters } from 'utils/Utils'
+import { activePlayback, bufferMark, playbackPosition } from 'components/PlaybackReadout'
 import { playlistTorrHost, streamHost, torrentsHost } from 'utils/Hosts'
 import { NoImageIcon } from 'icons'
 import DialogTorrentDetailsContent from 'components/DialogTorrentDetailsContent'
@@ -132,17 +133,21 @@ const audioCodecName = track => {
   }
 }
 
-const sameFileList = (left, right) => {
-  const leftFiles = left || []
-  const rightFiles = right || []
+// Two lists are the same when every entry agrees on the given keys, in order.
+const sameList = (left, right, keys) => {
+  const leftList = left || []
+  const rightList = right || []
   return (
-    leftFiles.length === rightFiles.length &&
-    leftFiles.every((file, index) => {
-      const other = rightFiles[index]
-      return file.id === other?.id && file.path === other.path && file.length === other.length
-    })
+    leftList.length === rightList.length &&
+    leftList.every((entry, index) => keys.every(key => entry[key] === rightList[index]?.[key]))
   )
 }
+
+// Only what the card shows: the read head moves on every read, and comparing it would
+// re-render the card on every poll while a file is streaming.
+const samePlayback = (left, right) =>
+  sameList(left, right, ['position', 'timecode', 'buffer', 'buffer_measured', 'viewing'])
+const sameFileList = (left, right) => sameList(left, right, ['id', 'path', 'length'])
 
 const Torrent = ({ torrent }) => {
   const { t } = useTranslation()
@@ -192,7 +197,10 @@ const Torrent = ({ torrent }) => {
     stat,
     data,
     file_stats: torrentFileList,
+    playback,
   } = torrent
+
+  const nowPlaying = activePlayback(playback)
 
   const dropTorrent = () => axios.post(torrentsHost(), { action: 'drop', hash })
   const deleteTorrent = () => axios.post(torrentsHost(), { action: 'rem', hash })
@@ -521,7 +529,7 @@ const Torrent = ({ torrent }) => {
           </StyledButton>
         </TorrentCardButtons>
 
-        <TorrentCardDescription>
+        <TorrentCardDescription hasPlayback={Boolean(nowPlaying)}>
           <div className='description-title-wrapper'>
             <div className='description-section-name'>
               {category ? (catIndex >= 0 ? t(catArray.name) : category) : t('Name')}
@@ -529,7 +537,7 @@ const Torrent = ({ torrent }) => {
             <div className='description-torrent-title'>{parsedTitle}</div>
           </div>
 
-          <div className='description-statistics-wrapper'>
+          <div className={`description-statistics-wrapper${nowPlaying ? ' has-playback' : ''}`}>
             <div className='description-statistics-element-wrapper'>
               <div className='description-section-name'>
                 <StatusIndicator stat={stat} />
@@ -549,6 +557,13 @@ const Torrent = ({ torrent }) => {
               <div className='description-section-name'>{t('Peers')}</div>
               <div className='description-statistics-element-value'>{getPeerString(torrent) || '---'}</div>
             </div>
+
+            {nowPlaying && (
+              <div className='description-playback'>
+                {t('OnScreen')}: {playbackPosition(nowPlaying)} · {humanizeSize(nowPlaying.buffer)}{' '}
+                {bufferMark(nowPlaying, t)}
+              </div>
+            )}
           </div>
         </TorrentCardDescription>
       </TorrentCard>
@@ -639,6 +654,7 @@ export default memo(Torrent, (prev, next) => {
     p.torrent_size === n.torrent_size &&
     p.download_speed === n.download_speed &&
     p.data === n.data &&
+    samePlayback(p.playback, n.playback) &&
     sameFileList(p.file_stats, n.file_stats)
   )
 })
