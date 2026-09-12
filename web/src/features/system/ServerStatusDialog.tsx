@@ -146,7 +146,7 @@ export default function ServerStatusDialog({ open, onClose }: ServerStatusDialog
               {torrents.length === 0 ? (
                 <p className='text-sm text-muted'>{t('NoTorrentsAdded')}</p>
               ) : openTorrents.length === 0 ? (
-                <p className='text-sm text-muted'>{t('ServerStatusNoOpenTorrents')}</p>
+                <p className='text-sm text-muted'>{t('NoTorrentsActive')}</p>
               ) : (
                 <div className='space-y-2'>
                   {openTorrents.map(tr => (
