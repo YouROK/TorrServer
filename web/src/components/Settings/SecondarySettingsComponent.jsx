@@ -69,6 +69,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
     ConnectionsLimit,
     PeersListenPort,
     ResponsiveMode,
+    MergeAllM3U,
     SslPort,
     SslCert,
     SslKey,
@@ -320,6 +321,14 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
           labelPlacement='start'
         />
         <FormHelperText margin='none'>{t('SettingsDialog.ResponsiveModeHint')}</FormHelperText>
+      </FormGroup>
+      <FormGroup>
+        <FormControlLabel
+          control={<Switch checked={MergeAllM3U} onChange={inputForm} id='MergeAllM3U' color='secondary' />}
+          label={t('SettingsDialog.MergeAllM3U')}
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('SettingsDialog.MergeAllM3UHint')}</FormHelperText>
       </FormGroup>
       <br />
       <FormGroup style={{ marginBottom: '20px' }}>
