@@ -1783,6 +1783,10 @@ const docTemplate = `{
                 "lpdipv6": {
                     "type": "boolean"
                 },
+                "mergeAllM3U": {
+                    "description": "M3U",
+                    "type": "boolean"
+                },
                 "peersListenPort": {
                     "type": "integer"
                 },
