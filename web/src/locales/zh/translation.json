@@ -171,6 +171,8 @@
     "ResetToDefault": "重置为默认值",
     "ResponsiveMode": "启用响应式阅读器模式",
     "ResponsiveModeHint": "尽快读取种子数据以获得更好的流媒体体验",
+    "MergeAllM3U": "合并 M3U 播放列表",
+    "MergeAllM3UHint": "所有文件都显示在一个播放列表中（http://host:port/playlistall/all.m3u），而不是每个种子单独一个播放列表。",
     "RetrackersMode": "Retrackers模式",
     "RetrackersModeHint": "添加新种子时的Tracker修改模式",
     "TrackersListURL": "自定义远程 Tracker 列表 URL",

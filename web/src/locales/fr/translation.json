@@ -171,6 +171,8 @@
     "ResetToDefault": "Réinitialiser par défaut",
     "ResponsiveMode": "Activer le mode lecteur adaptatif",
     "ResponsiveModeHint": "Lire les données du torrent dès que possible pour une meilleure expérience de streaming",
+    "MergeAllM3U": "Combiner les listes M3U",
+    "MergeAllM3UHint": "Tous les fichiers apparaissent dans une seule liste (http://host:port/playlistall/all.m3u), au lieu d'une liste distincte pour chaque torrent.",
     "RetrackersMode": "Mode retrackers",
     "RetrackersModeHint": "Mode de modification des trackers lors de l'ajout d'un nouveau torrent",
     "TrackersListURL": "URL personnalisée de la liste de trackers",

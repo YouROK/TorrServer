@@ -171,6 +171,8 @@
     "ResetToDefault": "Resetare la valorile implicite",
     "ResponsiveMode": "Activați modul de citire receptiv",
     "ResponsiveModeHint": "Citiți datele torrent cât mai curând posibil pentru o experiență de streaming mai bună",
+    "MergeAllM3U": "Combină playlisturile M3U",
+    "MergeAllM3UHint": "Toate fișierele apar într-un singur playlist (http://host:port/playlistall/all.m3u), în loc de playlist pentru fiecare torrent.",
     "RetrackersMode": "Modul Retrackers",
     "RetrackersModeHint": "Modul de modificare a trackerelor la adăugarea unui torrent nou",
     "TrackersListURL": "URL personalizat listă trackere",
