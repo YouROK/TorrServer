@@ -79,7 +79,7 @@ func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 
 	if len(spec.InfoBytes) == 0 {
 		if db := GetTorrentDB(spec.InfoHash); db != nil && db.TorrentSpec != nil {
-			spec.InfoBytes = db.TorrentSpec.InfoBytes
+			spec.InfoBytes = db.InfoBytes
 		}
 	}
 
@@ -125,8 +125,8 @@ func (t *Torrent) WaitInfo() bool {
 
 	select {
 	case <-t.Torrent.GotInfo():
-		if t.TorrentSpec != nil && len(t.TorrentSpec.InfoBytes) == 0 {
-			t.TorrentSpec.InfoBytes = t.Torrent.Metainfo().InfoBytes
+		if t.TorrentSpec != nil && len(t.InfoBytes) == 0 {
+			t.InfoBytes = t.Torrent.Metainfo().InfoBytes
 		}
 		if t.bt != nil && t.bt.storage != nil {
 			t.cache = t.bt.storage.GetCache(t.Hash())

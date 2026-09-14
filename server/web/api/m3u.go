@@ -89,12 +89,12 @@ func allPlayList(c *gin.Context) {
 // statusFromSpec builds a minimal *state.TorrentStatus from locally-available
 // metadata (TorrentSpec.InfoBytes), without starting/adding the torrent to the BT engine
 func statusFromSpec(tr *torr.Torrent) *state.TorrentStatus {
-	if tr == nil || tr.TorrentSpec == nil || len(tr.TorrentSpec.InfoBytes) == 0 {
+	if tr == nil || tr.TorrentSpec == nil || len(tr.InfoBytes) == 0 {
 		return nil
 	}
 
 	var info metainfo.Info
-	if err := bencode.Unmarshal(tr.TorrentSpec.InfoBytes, &info); err != nil {
+	if err := bencode.Unmarshal(tr.InfoBytes, &info); err != nil {
 		return nil
 	}
 
