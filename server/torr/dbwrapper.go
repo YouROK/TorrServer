@@ -16,6 +16,22 @@ type tsFiles struct {
 	} `json:"TorrServer"`
 }
 
+// FileStatsFromData parses the file list persisted in Torrent.Data by AddTorrentDB.
+// Empty or invalid JSON returns nil.
+func FileStatsFromData(data string) []*state.TorrentFileStat {
+	if data == "" {
+		return nil
+	}
+	var files tsFiles
+	if err := json.Unmarshal([]byte(data), &files); err != nil {
+		return nil
+	}
+	if len(files.TorrServer.Files) == 0 {
+		return nil
+	}
+	return files.TorrServer.Files
+}
+
 func AddTorrentDB(torr *Torrent) {
 	t := new(settings.TorrentDB)
 	t.TorrentSpec = torr.TorrentSpec

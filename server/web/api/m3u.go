@@ -67,23 +67,55 @@ func allPlayList(c *gin.Context) {
 	list := "#EXTM3U\n"
 	hash := ""
 	// fn=file.m3u fix forkplayer bug with end .m3u in link
+	merge := sets.BTsets != nil && sets.BTsets.MergeAllM3U
 	for _, tr := range torrs {
-		if sets.BTsets != nil && sets.BTsets.MergeAllM3U {
-			if st := statusFromSpec(tr); st != nil {
+		if merge {
+			if st := statusForMergedM3U(tr); st != nil {
 				list += getM3uList(st, host, false, "")
+			} else {
+				list += nestedPlaylistEntry(tr, host)
 			}
 		} else {
-			list += "#EXTINF:0"
-			if tr.Poster != "" {
-				list += " tvg-logo=\"" + tr.Poster + "\""
-			}
-			list += " type=\"playlist\"," + tr.Title + "\n"
-			list += host + "/stream/" + url.PathEscape(tr.Title) + ".m3u?link=" + tr.TorrentSpec.InfoHash.HexString() + "&m3u&fn=file.m3u\n"
+			list += nestedPlaylistEntry(tr, host)
 		}
 		hash += tr.Hash().HexString()
 	}
 
 	sendM3U(c, "all.m3u", hash, list)
+}
+
+func nestedPlaylistEntry(tr *torr.Torrent, host string) string {
+	list := "#EXTINF:0"
+	if tr.Poster != "" {
+		list += " tvg-logo=\"" + tr.Poster + "\""
+	}
+	list += " type=\"playlist\"," + tr.Title + "\n"
+	list += host + "/stream/" + url.PathEscape(tr.Title) + ".m3u?link=" + tr.TorrentSpec.InfoHash.HexString() + "&m3u&fn=file.m3u\n"
+	return list
+}
+
+func statusForMergedM3U(tr *torr.Torrent) *state.TorrentStatus {
+	if st := statusFromSpec(tr); st != nil && len(st.FileStats) > 0 {
+		return st
+	}
+	return statusFromData(tr)
+}
+
+func statusFromData(tr *torr.Torrent) *state.TorrentStatus {
+	if tr == nil {
+		return nil
+	}
+	files := torr.FileStatsFromData(tr.Data)
+	if len(files) == 0 {
+		return nil
+	}
+	st := new(state.TorrentStatus)
+	if tr.TorrentSpec != nil {
+		st.Hash = tr.TorrentSpec.InfoHash.HexString()
+	}
+	st.Title = tr.Title
+	st.FileStats = files
+	return st
 }
 
 // statusFromSpec builds a minimal *state.TorrentStatus from locally-available
