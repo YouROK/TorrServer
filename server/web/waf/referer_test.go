@@ -6,19 +6,17 @@ import (
 )
 
 func TestHostMatchesBlocked(t *testing.T) {
-	blocked := []string{"bylampa.online", "example.com"}
+	blocked := []string{"example.com"}
 
 	tests := []struct {
 		host string
 		want bool
 	}{
-		{"bylampa.online", true},
-		{"zerkalo.bylampa.online", true},
-		{"www.bylampa.online", true},
-		{"notbylampa.online", false},
-		{"bylampa.online.evil.com", false},
 		{"example.com", true},
 		{"sub.example.com", true},
+		{"www.example.com", true},
+		{"notexample.com", false},
+		{"example.evil.com", false},
 		{"localhost", false},
 		{"", false},
 	}
@@ -31,12 +29,12 @@ func TestHostMatchesBlocked(t *testing.T) {
 }
 
 func TestIsBlockedReferer(t *testing.T) {
-	blocked := []string{"bylampa.online"}
+	blocked := []string{"example.com"}
 
-	if host, ok := isBlockedReferer("https://zerkalo.bylampa.online/player", "", blocked); !ok || host != "zerkalo.bylampa.online" {
+	if host, ok := isBlockedReferer("https://sub.example.com/player", "", blocked); !ok || host != "sub.example.com" {
 		t.Fatalf("expected blocked referer, got host=%q ok=%v", host, ok)
 	}
-	if _, ok := isBlockedReferer("", "https://bylampa.online", blocked); !ok {
+	if _, ok := isBlockedReferer("", "https://example.com", blocked); !ok {
 		t.Fatal("expected blocked origin")
 	}
 	if _, ok := isBlockedReferer("", "", blocked); ok {
@@ -48,7 +46,7 @@ func TestIsBlockedReferer(t *testing.T) {
 }
 
 func TestBlockedReferersFromConfig(t *testing.T) {
-	got := blockedReferersFromConfig([]byte("example.com\nbylampa.online\n"))
+	got := blockedReferersFromConfig([]byte("example.com\nanotherexample.com\n"))
 	want := append(append([]string(nil), defaultBlockedReferers...), "example.com")
 	if len(got) != len(want) {
 		t.Fatalf("blockedReferersFromConfig() = %v, want %v", got, want)
@@ -71,8 +69,8 @@ func TestBlockedReferersFromConfig(t *testing.T) {
 }
 
 func TestScanRefererBuf(t *testing.T) {
-	got := scanRefererBuf([]byte("# comment\nbylampa.online\n\n# another\nexample.com\n"))
-	want := []string{"bylampa.online", "example.com"}
+	got := scanRefererBuf([]byte("# comment\nexample.com\n\n# another\nanotherexample.com\n"))
+	want := []string{"example.com", "anotherexample.com"}
 	if len(got) != len(want) {
 		t.Fatalf("scanRefererBuf() = %v, want %v", got, want)
 	}
