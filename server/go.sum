@@ -655,6 +655,8 @@ github.com/swaggo/swag v1.16.6/go.mod h1:ngP2etMK5a0P3QBizic5MEwpRmluJZPHjXcMoj4
 github.com/tinylib/msgp v1.0.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tinylib/msgp v1.1.0/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tinylib/msgp v1.1.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
+github.com/tsynik/go-ffprobe v1.0.1 h1:11DdkUT81C2ou1qBANVhn12JXt7XdxeOEko8LThcE5E=
+github.com/tsynik/go-ffprobe v1.0.1/go.mod h1:qF0AlAjk7Nqzqf3y333Ly+KxN3cKF2JqA3JT5ZheUGE=
 github.com/tsynik/torrent v1.2.31 h1:3MV8hzdi4xOD6nn8nExwYWHtxfEd9JES2HlSqx2JKdo=
 github.com/tsynik/torrent v1.2.31/go.mod h1:yz3J10YJmUfiFfylHgIzr9cuhmXHHmf5xsHDgsqEnFg=
 github.com/tsynik/upnp v0.1.5 h1:2KXGBtY6MZHxq17p/N372Kr/0MJX3ADAimfvPcTpap8=
@@ -1212,8 +1214,6 @@ gopkg.in/ini.v1 v1.67.0/go.mod h1:pNLf8WUiyNEtQjuu5G5vTm06TEv9tsIgeAvK8hOrP4k=
 gopkg.in/telebot.v4 v4.0.0-beta.10 h1:ygPTJJlLHeDiYd1A4E/5kufMRl6b8mft7YQxkFSkj7Q=
 gopkg.in/telebot.v4 v4.0.0-beta.10/go.mod h1:jhcQjM/176jZm/s9Up/MzV5VFGPjyI8oiJhWvCMxayI=
 gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7/go.mod h1:dt/ZhP58zS4L8KSrWDmTeBkI65Dw0HsyUHuEVlX15mw=
-gopkg.in/vansante/go-ffprobe.v2 v2.3.0 h1:YhEzASq5eN8m73j/WqhRbqzJrx5gaqRueHZ9ZC53o/o=
-gopkg.in/vansante/go-ffprobe.v2 v2.3.0/go.mod h1:qF0AlAjk7Nqzqf3y333Ly+KxN3cKF2JqA3JT5ZheUGE=
 gopkg.in/yaml.v2 v2.2.1/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 gopkg.in/yaml.v2 v2.2.2/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 gopkg.in/yaml.v2 v2.2.3/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
