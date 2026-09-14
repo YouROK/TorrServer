@@ -98,6 +98,7 @@ export interface BTSets {
   ConnectionsLimit?: number
   PeersListenPort?: number
   ResponsiveMode?: boolean
+  MergeAllM3U?: boolean
   SslPort?: number
   SslCert?: string
   SslKey?: string

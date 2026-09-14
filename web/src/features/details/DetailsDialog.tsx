@@ -366,7 +366,7 @@ export default function DetailsDialog({
         dense
         compact={useCompactDetails}
         tight={useCompactDetails && !showHeroSix}
-        label={t('Peers')+'·'+t('Seeders')}
+        label={t('Peers') + '·' + t('Seeders')}
         value={getPeerString(torrent) || '—'}
       />
       <StatWidget
