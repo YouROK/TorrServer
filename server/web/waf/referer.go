@@ -11,19 +11,6 @@ import (
 // defaultBlockedReferers is always enforced for Referer/Origin checks.
 // These hosts cannot be disabled via settings and are not bypassed by the IP whitelist.
 var defaultBlockedReferers = []string{
-	"abhq.ru",
-	"abmsx.tech",
-	"akter.black",
-	"bylampa.online",
-	"lampa.click",
-	"lampa.land",
-	"lampa1.ru",
-	"line.pm",
-	"nnmtv.pw",
-	"tvigl.info",
-	"uspeh.sbs",
-	"usph.xyz",
-	"xabb.ru",
 }
 
 func blockedReferersFromConfig(buf []byte) []string {
