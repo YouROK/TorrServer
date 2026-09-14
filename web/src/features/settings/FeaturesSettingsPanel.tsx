@@ -80,6 +80,13 @@ export default function FeaturesSettingsPanel({
           onChange={onBoolSwitch}
         />
         <SettingSwitch
+          id='MergeAllM3U'
+          label={t('SettingsDialog.MergeAllM3U')}
+          helper={t('SettingsDialog.MergeAllM3UHint')}
+          checked={boolChecked('MergeAllM3U')}
+          onChange={onBoolSwitch}
+        />
+        <SettingSwitch
           id='ShowFSActiveTorr'
           label={t('SettingsDialog.ShowFSActiveTorr')}
           helper={t('SettingsDialog.ShowFSActiveTorrHint')}

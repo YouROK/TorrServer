@@ -124,10 +124,18 @@ export default function AboutDialog({ open, onClose, onOpenServerStatus, onOpenD
         <div className='mt-2 rounded-lg border border-border bg-surface-secondary p-3'>
           <p className='mb-1 px-1 text-xs font-semibold uppercase tracking-wide text-muted'>{t('Links')}</p>
           <ul className='flex flex-wrap gap-2'>
-            <li><AboutLink name={t('ProjectSource')} href='https://github.com/YouROK/TorrServer' /></li>
-            <li><AboutLink name={t('Releases')} href='https://github.com/YouROK/TorrServer/releases' /></li>
-            <li><AboutLink name={t('NasReleases')} href='https://github.com/vladlenas' /></li>
-            <li><AboutLink name={t('ApiDocs')} href={publicUrl('swagger/index.html')} /></li>
+            <li>
+              <AboutLink name={t('ProjectSource')} href='https://github.com/YouROK/TorrServer' />
+            </li>
+            <li>
+              <AboutLink name={t('Releases')} href='https://github.com/YouROK/TorrServer/releases' />
+            </li>
+            <li>
+              <AboutLink name={t('NasReleases')} href='https://github.com/vladlenas' />
+            </li>
+            <li>
+              <AboutLink name={t('ApiDocs')} href={publicUrl('swagger/index.html')} />
+            </li>
           </ul>
         </div>
 

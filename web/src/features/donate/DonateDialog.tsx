@@ -28,7 +28,9 @@ export default function DonateDialog({ open, onClose }: DonateDialogProps) {
         <Modal.CloseTrigger aria-label={t('Close')} />
       </Modal.Header>
       <Modal.Body>
-        <h2 className='font-semibold mb-2' title='YouROK'>@YouROK</h2>
+        <h2 className='font-semibold mb-2' title='YouROK'>
+          @YouROK
+        </h2>
         <ul className='flex flex-col gap-2 sm:flex-row sm:flex-wrap'>
           {DONATE_LINKS.map(link => (
             <li key={link.id} className='w-full sm:min-w-[8.5rem] sm:flex-1'>
@@ -44,7 +46,9 @@ export default function DonateDialog({ open, onClose }: DonateDialogProps) {
             </li>
           ))}
         </ul>
-        <h2 className='font-semibold mt-3 mb-2' title='nikk'>@tsynik</h2>
+        <h2 className='font-semibold mt-3 mb-2' title='nikk'>
+          @tsynik
+        </h2>
         <ul className='flex flex-col gap-2 sm:flex-row sm:flex-wrap'>
           {DONATE_LINKS_NG.map(link => (
             <li key={link.id} className='w-full sm:min-w-[8.5rem] sm:flex-1'>
@@ -60,7 +64,9 @@ export default function DonateDialog({ open, onClose }: DonateDialogProps) {
             </li>
           ))}
         </ul>
-        <h2 className='font-semibold mt-3 mb-2' title='Pavel Pikta'>@pavelpikta</h2>
+        <h2 className='font-semibold mt-3 mb-2' title='Pavel Pikta'>
+          @pavelpikta
+        </h2>
         <ul className='flex flex-col gap-2 sm:flex-row sm:flex-wrap'>
           {DONATE_LINKS_PP.map(link => (
             <li key={link.id} className='w-full sm:min-w-[8.5rem] sm:flex-1'>
