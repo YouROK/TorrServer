@@ -1,0 +1,208 @@
+/* Стили темы default_ui */
+
+body {
+    margin: 0;
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+
+.layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 220px;
+    background: var(--silo-bg-raised);
+    border-right: 1px solid var(--silo-border);
+    display: flex;
+    flex-direction: column;
+    padding: 16px 12px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px 16px;
+    border-bottom: 1px solid var(--silo-border);
+    margin-bottom: 12px;
+}
+
+.logo-mini {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+}
+
+.brand-name {
+    color: var(--silo-steel-bright);
+    font-weight: 700;
+    letter-spacing: 0.25em;
+}
+
+nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex-grow: 1;
+}
+
+.nav-item {
+    display: block;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: var(--silo-text-muted);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    cursor: pointer;
+}
+
+.nav-item:hover {
+    background: var(--silo-surface);
+    color: var(--silo-text);
+}
+
+.nav-item.active {
+    background: var(--silo-surface);
+    color: var(--silo-amber);
+    border-left-color: var(--silo-amber);
+}
+
+.sidebar-footer {
+    border-top: 1px solid var(--silo-border);
+    padding-top: 12px;
+    color: var(--silo-text-faint);
+    font-size: 12px;
+}
+
+.content {
+    flex-grow: 1;
+    padding: 24px 32px;
+    max-width: 1200px;
+}
+
+.topbar {
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--silo-border);
+    padding-bottom: 12px;
+}
+
+.topbar h1 {
+    color: var(--silo-steel-bright);
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+}
+
+.card {
+    background: var(--silo-surface);
+    border: 1px solid var(--silo-border);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.poster {
+    width: 100%;
+    aspect-ratio: 2/3;
+    background: var(--silo-bg-raised);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.placeholder {
+    color: var(--silo-amber);
+    font-size: 14px;
+}
+
+.title {
+    padding: 12px;
+    color: var(--silo-text);
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Сообщение в сетке (загрузка / пусто) */
+.grid-msg {
+    grid-column: 1 / -1;
+    color: var(--silo-text-muted);
+    padding: 24px 0;
+}
+
+/* Имя пользователя в подвале сайдбара: всегда блочный элемент */
+.whoami {
+    display: block;
+}
+
+/* Сообщение об ошибке в сетке */
+.grid-msg.error {
+    color: var(--silo-danger, #cf5b3a);
+}
+
+.poster {
+    position: relative;
+}
+
+.card-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.stat-0 { background: var(--silo-border-strong); color: var(--silo-text); }
+.stat-1 { background: var(--silo-amber); color: #14171a; }
+.stat-2 { background: var(--silo-teal); color: var(--silo-steel-bright); }
+.stat-3 { background: var(--silo-teal-bright); color: #0d1210; }
+
+.title {
+    padding: 12px 12px 4px;
+}
+
+.meta {
+    display: flex;
+    gap: 12px;
+    padding: 4px 12px 12px;
+    color: var(--silo-text-muted);
+    font-size: 12px;
+}
+
+.meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.meta-item img {
+    width: 14px;
+    height: 14px;
+    opacity: 0.7;
+}
+
+.meta-item em {
+    font-style: normal;
+}

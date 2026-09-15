@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TorrServer</title>
+    <link rel="icon" type="image/x-icon" href="/img/favicon.ico">
+    <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
+    <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+    <link rel="manifest" href="/img/site.webmanifest">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="/i18n.js"></script>
+</head>
+<body>
+<!-- Обёртка .layout даёт display:flex: сайдбар слева, контент справа -->
+<div class="layout" id="app">
+    <aside class="sidebar">
+        <div class="brand">
+            <img src="/img/favicon-96x96.png" alt="" class="logo-mini">
+            <span class="brand-name">SILO</span>
+        </div>
+        <nav>
+            <a class="nav-item active" data-i18n="library">Library</a>
+        </nav>
+        <div class="sidebar-footer">
+            <span class="whoami" id="username">Loading...</span>
+        </div>
+    </aside>
+
+    <main class="content">
+        <header class="topbar">
+            <h1 data-i18n="library">Library</h1>
+        </header>
+        <section class="grid" id="grid">
+            <p class="grid-msg" data-i18n="loading">Loading...</p>
+        </section>
+    </main>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>

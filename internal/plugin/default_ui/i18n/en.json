@@ -1,0 +1,14 @@
+{
+  "library": "Library",
+  "loading": "Loading...",
+  "empty_library": "Your library is empty. Click Add to get started.",
+  "no_poster": "No Poster",
+  "guest": "Guest",
+  "stat_added": "Added",
+  "stat_getting_info": "Getting info",
+  "stat_preload": "Preload",
+  "stat_working": "Active",
+  "size": "Size",
+  "peers_seeds": "Peers/Seeds",
+  "download_speed": "Download speed"
+}

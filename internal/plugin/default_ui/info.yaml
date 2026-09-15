@@ -1,0 +1,24 @@
+id: "default-ui"
+name: "Default Web UI"
+version: "2.0.0"
+author: "Silo Core"
+description: "Media library with posters, streaming, and plugin menu"
+theme_ui: true
+entry: "service.js"
+icon: "/img/logo.png"
+
+events:
+  - "system:boot"
+  - "system:shutdown"
+  - "torrent:metadata"
+  - "user:torrent:added"
+  - "user:torrent:removed"
+  - "user:file:viewed"
+
+routes:
+  - "/"
+  - "/index.html"
+  - "/css/*"
+  - "/js/*"
+  - "/img/*"
+  - "/i18n/*"

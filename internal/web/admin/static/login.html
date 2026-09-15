@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TS Silo - Sign in</title>
+    <link rel="icon" type="image/x-icon" href="/img/favicon.ico">
+    <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
+    <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+    <link rel="manifest" href="/img/site.webmanifest">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/i18n.js"></script>
+</head>
+<body class="login-body">
+<form class="login-card" id="login-form">
+    <div class="login-brand">
+        <img src="/img/favicon-96x96.png" alt="">
+        <h1>SILO</h1>
+    </div>
+
+    <div class="login-notice" id="login-notice" style="display:none"></div>
+
+    <label class="field">
+        <span data-i18n="username">Username</span>
+        <input class="input" name="username" autocomplete="username" required>
+    </label>
+    <label class="field">
+        <span data-i18n="password">Password</span>
+        <input class="input" name="password" type="password" autocomplete="current-password" required>
+    </label>
+    <button class="btn" type="submit" data-i18n="sign_in">Sign in</button>
+
+    <button class="btn btn-secondary" id="signout" type="button" style="display:none; margin-top:8px" data-i18n="sign_out_switch">
+        Sign out &amp; switch account
+    </button>
+
+    <p class="login-error" id="login-error"></p>
+</form>
+
+<script>
+    // Проставляем переводы во все data-i18n элементы страницы
+    i18n.apply();
+
+    // Проверяем код ошибки в URL (например, ?error=forbidden при нехватке прав)
+    const params = new URLSearchParams(location.search);
+    if (params.get('error') === 'forbidden') {
+        const notice = document.getElementById('login-notice');
+        notice.style.display = 'block';
+        notice.textContent = i18n.t('forbidden_notice');
+        document.getElementById('signout').style.display = 'block';
+
+        history.replaceState(null, '', '/admin/login');
+    }
+
+    // Кнопка выхода: сбрасывает куку и даёт войти под другим пользователем
+    document.getElementById('signout').addEventListener('click', async () => {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        location.href = '/admin/login';
+    });
+
+    // Аварийный вход: работает напрямую с ядром, без плагинов
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: fd.get('username'),
+                password: fd.get('password'),
+            }),
+        });
+
+        if (!res.ok) {
+            let msg = 'login failed';
+            try { msg = (await res.json()).error || msg; } catch (err) {}
+            document.getElementById('login-error').textContent = msg;
+            return;
+        }
+
+        location.href = '/admin/';
+    });
+</script>
+</body>
+</html>

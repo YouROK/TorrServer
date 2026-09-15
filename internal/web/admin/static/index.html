@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TS Silo Admin</title>
+    <link rel="icon" type="image/x-icon" href="/img/favicon.ico">
+    <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
+    <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+    <link rel="manifest" href="/img/site.webmanifest">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/i18n.js"></script>
+</head>
+<body>
+<div class="layout">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="brand">
+            <img src="/img/favicon-96x96.png" alt="" class="logo-mini">
+            <span class="brand-name">SILO</span>
+        </div>
+        <nav id="nav"></nav>
+        <div class="sidebar-footer">
+            <!-- Переключатель языка: список приходит из i18n.langs() -->
+            <select class="lang-select" id="lang-select" title="Language"></select>
+            <span id="whoami"></span>
+            <button class="btn btn-secondary btn-sm" id="logout" type="button" data-i18n="logout">Logout</button>
+        </div>
+    </aside>
+
+    <main class="content">
+        <header class="topbar">
+            <button class="hamburger" id="hamburger" type="button" aria-label="Open menu">☰</button>
+            <h1 id="page-title">Dashboard</h1>
+        </header>
+        <section id="view"></section>
+    </main>
+</div>
+
+<div id="modal-root"></div>
+<div id="toast" class="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>

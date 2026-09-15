@@ -1,0 +1,420 @@
+package torrstor
+
+import (
+	"os"
+	"path/filepath"
+	"runtime"
+	"runtime/debug"
+	"sort"
+	"sync"
+	"time"
+
+	"silo/internal/log"
+
+	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/metainfo"
+	"github.com/anacrolix/torrent/storage"
+)
+
+var (
+	lastFreeMem time.Time
+	freeMemMu   sync.Mutex
+)
+
+// freeOSMemory возвращает свободную память операционной системе с троттлингом
+func FreeOSMemGC() {
+	runtime.GC()
+	debug.FreeOSMemory()
+}
+
+type Cache struct {
+	storage.TorrentImpl
+	storage *Storage
+
+	capacity int64
+	filled   int64
+	hash     metainfo.Hash
+
+	pieceLength int64
+	pieceCount  int
+
+	pieces map[int]*Piece
+
+	readers   map[*Reader]struct{}
+	muReaders sync.Mutex
+
+	isRemove bool
+	isClosed bool
+	muRemove sync.Mutex
+	torrent  *torrent.Torrent
+}
+
+func NewCache(capacity int64, s *Storage) *Cache {
+	return &Cache{
+		capacity: capacity,
+		filled:   0,
+		pieces:   make(map[int]*Piece),
+		storage:  s,
+		readers:  make(map[*Reader]struct{}),
+	}
+}
+
+func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
+	log.Debugf("[TorrStor] Create cache for: %s (%s)", info.Name, hash.HexString())
+
+	if c.capacity <= 0 {
+		c.capacity = info.PieceLength * 4
+	}
+
+	c.pieceLength = info.PieceLength
+	c.pieceCount = info.NumPieces()
+	c.hash = hash
+
+	cfg := c.storage.cfg
+	if cfg.UseDisk {
+		dir := filepath.Join(cfg.TorrentsSavePath, hash.HexString())
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			log.Errorf("[TorrStor] Error creating cache directory: %v", err)
+		}
+	}
+
+	for i := 0; i < c.pieceCount; i++ {
+		c.pieces[i] = NewPiece(i, c)
+	}
+}
+
+func (c *Cache) SetTorrent(torr *torrent.Torrent) {
+	c.torrent = torr
+}
+
+func (c *Cache) Piece(m metainfo.Piece) storage.PieceImpl {
+	if val, ok := c.pieces[m.Index()]; ok {
+		return val
+	}
+	return &PieceFake{}
+}
+
+func (c *Cache) Close() error {
+	if c.torrent != nil {
+		log.Debugf("[TorrStor] Close cache for: %s (%s)", c.torrent.Name(), c.hash.HexString())
+	} else {
+		log.Debugf("[TorrStor] Close cache for: %s", c.hash.HexString())
+	}
+	c.isClosed = true
+
+	delete(c.storage.caches, c.hash)
+
+	cfg := c.storage.cfg
+	if cfg.RemoveCacheOnDrop && cfg.UseDisk {
+		name := filepath.Join(cfg.TorrentsSavePath, c.hash.HexString())
+		if name != "" && name != "/" {
+			for _, v := range c.pieces {
+				if v.dPiece != nil {
+					_ = os.Remove(v.dPiece.name)
+				}
+			}
+			_ = os.Remove(name)
+		}
+	}
+
+	c.muReaders.Lock()
+	c.readers = nil
+	c.pieces = nil
+	c.muReaders.Unlock()
+
+	FreeOSMemGC()
+	return nil
+}
+
+func (c *Cache) removePiece(piece *Piece) {
+	if !c.isClosed {
+		piece.Release()
+	}
+}
+
+func (c *Cache) AdjustRA(readahead int64) {
+	if c.storage.cfg.Capacity == 0 {
+		c.capacity = readahead * 3
+	}
+	if c.Readers() > 0 {
+		c.muReaders.Lock()
+		for r := range c.readers {
+			r.SetReadahead(readahead)
+		}
+		c.muReaders.Unlock()
+	}
+}
+
+func (c *Cache) GetState() *CacheState {
+	cState := new(CacheState)
+
+	piecesState := make(map[int]ItemState)
+	var fill int64 = 0
+
+	if len(c.pieces) > 0 {
+		for _, p := range c.pieces {
+			if p.Size > 0 {
+				fill += p.Size
+				priority := 0
+				if c.torrent != nil {
+					priority = int(c.torrent.PieceState(p.Id).Priority)
+				}
+				piecesState[p.Id] = ItemState{
+					Id:        p.Id,
+					Size:      p.Size,
+					Length:    c.pieceLength,
+					Completed: p.Complete,
+					Priority:  priority,
+				}
+			}
+		}
+	}
+
+	readersState := make([]*ReaderState, 0)
+
+	if c.Readers() > 0 {
+		c.muReaders.Lock()
+		for r := range c.readers {
+			rng := r.getPiecesRange()
+			pc := r.getReaderPiece()
+			readersState = append(readersState, &ReaderState{
+				Start:  rng.Start,
+				End:    rng.End,
+				Reader: pc,
+			})
+		}
+		c.muReaders.Unlock()
+	}
+
+	c.filled = fill
+	cState.Capacity = c.capacity
+	cState.PiecesLength = c.pieceLength
+	cState.PiecesCount = c.pieceCount
+	cState.Hash = c.hash.HexString()
+	cState.Filled = fill
+	cState.Pieces = piecesState
+	cState.Readers = readersState
+	return cState
+}
+
+func (c *Cache) cleanPieces() {
+	if c.isRemove || c.isClosed {
+		return
+	}
+
+	if !c.muRemove.TryLock() {
+		return
+	}
+	defer c.muRemove.Unlock()
+
+	c.isRemove = true
+	defer func() { c.isRemove = false }()
+
+	remPieces := c.getRemPieces()
+	if c.filled > c.capacity {
+		rems := (c.filled-c.capacity)/c.pieceLength + 1
+		for _, p := range remPieces {
+			c.removePiece(p)
+			rems--
+			if rems <= 0 {
+				FreeOSMemGC()
+				return
+			}
+		}
+	}
+}
+
+func (c *Cache) getRemPieces() []*Piece {
+	c.muReaders.Lock()
+	readers := make([]*Reader, 0, len(c.readers))
+	for r := range c.readers {
+		readers = append(readers, r)
+	}
+	c.muReaders.Unlock()
+
+	ranges := make([]Range, 0)
+	for _, r := range readers {
+		r.checkReader()
+		if r.isUse {
+			ranges = append(ranges, r.getPiecesRange())
+		}
+	}
+	ranges = mergeRange(ranges)
+
+	piecesRemove := make([]*Piece, 0)
+	fill := int64(0)
+
+	for id, p := range c.pieces {
+		if p.Size > 0 {
+			fill += p.Size
+		}
+		if len(ranges) > 0 {
+			if !inRanges(ranges, id) {
+				if p.Size > 0 && !c.isIdInFileBE(ranges, id) {
+					piecesRemove = append(piecesRemove, p)
+				}
+			}
+		} else {
+			if p.Size > 0 && !c.isIdInFileBE(ranges, id) {
+				piecesRemove = append(piecesRemove, p)
+			}
+		}
+	}
+
+	c.clearPriority()
+	c.setLoadPriority(ranges)
+
+	sort.Slice(piecesRemove, func(i, j int) bool {
+		return piecesRemove[i].Accessed < piecesRemove[j].Accessed
+	})
+
+	c.filled = fill
+	return piecesRemove
+}
+
+func (c *Cache) setLoadPriority(ranges []Range) {
+	if c.torrent == nil {
+		return
+	}
+
+	c.muReaders.Lock()
+	connLimit := c.storage.cfg.ConnectionsLimit
+	if connLimit <= 0 {
+		connLimit = 25
+	}
+	numReaders := len(c.readers)
+	if numReaders == 0 {
+		numReaders = 1
+	}
+	count := connLimit / numReaders
+
+	for r := range c.readers {
+		if !r.isUse {
+			continue
+		}
+		if c.isIdInFileBE(ranges, r.getReaderPiece()) {
+			continue
+		}
+		readerPos := r.getReaderPiece()
+		readerRAHPos := r.getReaderRAHPiece()
+		end := r.getPiecesRange().End
+		limit := 0
+		for i := readerPos; i < end && limit < count; i++ {
+			if i < len(c.pieces) && !c.pieces[i].Complete {
+				if i == readerPos {
+					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNow)
+				} else if i == readerPos+1 {
+					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNext)
+				} else if i > readerPos && i <= readerRAHPos {
+					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityReadahead)
+				} else if i > readerRAHPos && i <= readerRAHPos+5 && c.torrent.PieceState(i).Priority != torrent.PiecePriorityHigh {
+					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityHigh)
+				} else if i > readerRAHPos+5 && c.torrent.PieceState(i).Priority != torrent.PiecePriorityNormal {
+					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNormal)
+				}
+				limit++
+			}
+		}
+	}
+	c.muReaders.Unlock()
+}
+
+func (c *Cache) isIdInFileBE(ranges []Range, id int) bool {
+	fileRangeNotDelete := int64(c.pieceLength)
+	if fileRangeNotDelete < 8<<20 {
+		fileRangeNotDelete = 8 << 20
+	}
+
+	for _, rng := range ranges {
+		if rng.File == nil {
+			continue
+		}
+		ss := int(rng.File.Offset() / c.pieceLength)
+		se := int((rng.File.Offset() + fileRangeNotDelete) / c.pieceLength)
+
+		es := int((rng.File.Offset() + rng.File.Length() - fileRangeNotDelete) / c.pieceLength)
+		ee := int((rng.File.Offset() + rng.File.Length()) / c.pieceLength)
+
+		if id >= ss && id < se || id > es && id <= ee {
+			return true
+		}
+	}
+	return false
+}
+
+func (c *Cache) NewReader(file *torrent.File) *Reader {
+	return newReader(file, c)
+}
+
+func (c *Cache) GetUseReaders() int {
+	if c == nil {
+		return 0
+	}
+	c.muReaders.Lock()
+	defer c.muReaders.Unlock()
+	readers := 0
+	for reader := range c.readers {
+		if reader.isUse {
+			readers++
+		}
+	}
+	return readers
+}
+
+func (c *Cache) Readers() int {
+	if c == nil {
+		return 0
+	}
+	c.muReaders.Lock()
+	defer c.muReaders.Unlock()
+	if c.readers == nil {
+		return 0
+	}
+	return len(c.readers)
+}
+
+func (c *Cache) CloseReader(r *Reader) {
+	r.cache.muReaders.Lock()
+	r.Close()
+	delete(r.cache.readers, r)
+	r.cache.muReaders.Unlock()
+	go c.clearPriority()
+}
+
+func (c *Cache) clearPriority() {
+	if c.torrent == nil {
+		return
+	}
+	time.Sleep(time.Second)
+	ranges := make([]Range, 0)
+	c.muReaders.Lock()
+	for r := range c.readers {
+		r.checkReader()
+		if r.isUse {
+			ranges = append(ranges, r.getPiecesRange())
+		}
+	}
+	c.muReaders.Unlock()
+	ranges = mergeRange(ranges)
+
+	for id := range c.pieces {
+		if len(ranges) > 0 {
+			if !inRanges(ranges, id) {
+				if c.torrent.PieceState(id).Priority != torrent.PiecePriorityNone {
+					c.torrent.Piece(id).SetPriority(torrent.PiecePriorityNone)
+				}
+			}
+		} else {
+			if c.torrent.PieceState(id).Priority != torrent.PiecePriorityNone {
+				c.torrent.Piece(id).SetPriority(torrent.PiecePriorityNone)
+			}
+		}
+	}
+}
+
+func (c *Cache) GetCapacity() int64 {
+	if c == nil {
+		return 0
+	}
+	return c.capacity
+}
