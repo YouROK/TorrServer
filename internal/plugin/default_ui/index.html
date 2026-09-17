@@ -13,13 +13,18 @@
     <script src="/i18n.js"></script>
 </head>
 <body>
-<!-- Обёртка .layout даёт display:flex: сайдбар слева, контент справа -->
 <div class="layout" id="app">
     <aside class="sidebar">
         <div class="brand">
             <img src="/img/favicon-96x96.png" alt="" class="logo-mini">
             <span class="brand-name">SILO</span>
         </div>
+
+        <button class="btn-add" id="btn-add" type="button">
+            <img src="img/ico-add.svg" alt="" onerror="this.style.display='none'">
+            <span data-i18n="add">Add</span>
+        </button>
+
         <nav>
             <a class="nav-item active" data-i18n="library">Library</a>
         </nav>
@@ -38,6 +43,124 @@
     </main>
 </div>
 
+<div class="modal-overlay" id="add-overlay" style="display:none;">
+    <div class="modal" role="dialog" aria-modal="true">
+        <div class="modal-header">
+            <h2 data-i18n="add_torrent">Add torrent</h2>
+            <button class="modal-close" id="add-close" type="button" aria-label="Close">×</button>
+        </div>
+        <form id="add-form" autocomplete="off">
+            <div class="modal-body">
+                <label class="field">
+                    <span data-i18n="link">Link (magnet / hash / torrs://)</span>
+                    <input class="input" name="link" required>
+                </label>
+                <label class="field">
+                    <span data-i18n="title">Title</span>
+                    <input class="input" name="title">
+                </label>
+                <label class="field">
+                    <span data-i18n="poster">Poster URL</span>
+                    <input class="input" name="poster" type="url">
+                </label>
+                <label class="field">
+                    <span data-i18n="category">Category</span>
+                    <input class="input" name="category">
+                </label>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" id="add-cancel" data-i18n="cancel">Cancel</button>
+                <button class="btn" type="submit" data-i18n="add">Add</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="edit-overlay" style="display:none;">
+    <div class="modal" role="dialog" aria-modal="true">
+        <div class="modal-header">
+            <h2 data-i18n="edit_torrent">Edit torrent</h2>
+            <button class="modal-close" id="edit-close" type="button" aria-label="Close">×</button>
+        </div>
+        <form id="edit-form" autocomplete="off">
+            <div class="modal-body">
+                <label class="field">
+                    <span data-i18n="hash">Hash</span>
+                    <div class="edit-hash" id="edit-hash"></div>
+                </label>
+                <label class="field">
+                    <span data-i18n="title">Title</span>
+                    <input class="input" name="title">
+                </label>
+                <label class="field">
+                    <span data-i18n="poster">Poster URL</span>
+                    <input class="input" name="poster" type="url">
+                </label>
+                <label class="field">
+                    <span data-i18n="category">Category</span>
+                    <input class="input" name="category">
+                </label>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" id="edit-cancel" data-i18n="cancel">Cancel</button>
+                <button class="btn" type="submit" data-i18n="save">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="info-overlay" style="display:none;">
+    <div class="modal modal-info" role="dialog" aria-modal="true">
+        <div class="info-header">
+            <img class="info-poster" id="info-poster" src="" alt="" style="display:none;">
+            <div class="info-head-right">
+                <div class="info-title-row">
+                    <h2 id="info-title"></h2>
+                    <button class="modal-close" id="info-edit" type="button" aria-label="Edit">
+                        <img src="img/ico-edit.svg" alt="" onerror="this.style.display='none'">
+                    </button>
+                    <button class="modal-close" id="info-close" type="button" aria-label="Close">×</button>
+                </div>
+                <div class="info-plaques" id="info-plaques"></div>
+            </div>
+        </div>
+        <div class="info-tabs">
+            <button class="info-tab active" type="button" data-i18n="tab_files">Files</button>
+        </div>
+        <div class="info-body">
+            <div class="info-folders" id="info-folders"></div>
+            <div class="info-files-wrap">
+                <label class="media-only">
+                    <input type="checkbox" id="info-media-only" checked>
+                    <span data-i18n="media_only">Media only</span>
+                </label>
+                <div class="info-files" id="info-files"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="confirm-overlay" style="display:none;">
+    <div class="modal modal-sm" role="dialog" aria-modal="true">
+        <div class="modal-header">
+            <h2 id="confirm-title"></h2>
+        </div>
+        <div class="modal-body">
+            <p class="confirm-text" id="confirm-text"></p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="confirm-cancel" type="button"></button>
+            <button class="btn btn-danger" id="confirm-ok" type="button"></button>
+        </div>
+    </div>
+</div>
+
+<div id="toast-root" class="toast-root"></div>
+
+<script src="js/utils.js"></script>
+<script src="js/cards.js"></script>
+<script src="js/modals.js"></script>
+<script src="js/info.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
