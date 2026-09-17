@@ -232,7 +232,7 @@ func (s *Server) handleSetFileViewed(c *gin.Context) {
 	val, _ := c.Get("user")
 	currentUser := val.(*user.User)
 	hashHex := c.Param("hash")
-	fileIdxStr := c.Param("fileIdx")
+	fileIdxStr := c.Param("idx")
 
 	fileIdx, err := strconv.Atoi(fileIdxStr)
 	if err != nil {
@@ -254,4 +254,40 @@ func (s *Server) handleSetFileViewed(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "updated"})
+}
+
+// handleWakeTorrent явно будит торрент в движок (только владелец карточки)
+func (s *Server) handleWakeTorrent(c *gin.Context) {
+	val, _ := c.Get("user")
+	currentUser := val.(*user.User)
+	hashHex := c.Param("hash")
+
+	err := s.torrentMgr.WakeTorrent(currentUser, hashHex)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "wakeup"})
+}
+
+// handlePreloadTorrent запускает предзагрузку файла раздачи
+func (s *Server) handlePreloadTorrent(c *gin.Context) {
+	val, _ := c.Get("user")
+	currentUser := val.(*user.User)
+	hashHex := c.Param("hash")
+
+	idx, err := strconv.Atoi(c.Param("idx"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid file index"})
+		return
+	}
+
+	err = s.torrentMgr.PreloadTorrent(currentUser, hashHex, idx)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "preloaded"})
 }
