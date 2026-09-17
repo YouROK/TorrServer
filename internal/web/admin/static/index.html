@@ -16,13 +16,12 @@
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
     <aside class="sidebar" id="sidebar">
-        <div class="brand">
+        <div class="brand" onclick="location.href='/'" style="cursor:pointer;">
             <img src="/img/favicon-96x96.png" alt="" class="logo-mini">
             <span class="brand-name">SILO</span>
         </div>
         <nav id="nav"></nav>
         <div class="sidebar-footer">
-            <!-- Переключатель языка: список приходит из i18n.langs() -->
             <select class="lang-select" id="lang-select" title="Language"></select>
             <span id="whoami"></span>
             <button class="btn btn-secondary btn-sm" id="logout" type="button" data-i18n="logout">Logout</button>

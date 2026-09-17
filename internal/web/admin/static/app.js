@@ -435,10 +435,10 @@ async function onUserAction(e) {
 
 async function showRankModal(id, currentRank) {
     const body = `
-        <p style="margin-bottom:12px">Select new rank for this user:</p>
+        <p style="margin-bottom:12px">${t('select_rank_for_user')}</p>
         <select class="input" id="rank-select">
-            <option value="10" ${currentRank < 50 ? 'selected' : ''}>User (10-49)</option>
-            <option value="50" ${currentRank >= 50 && currentRank < 100 ? 'selected' : ''}>Admin (50-99)</option>
+            <option value="10" ${currentRank < 50 ? 'selected' : ''}>${t('user_rank')}</option>
+            <option value="50" ${currentRank >= 50 && currentRank < 100 ? 'selected' : ''}>${t('admin_rank')}</option>
         </select>
     `;
 
@@ -599,7 +599,7 @@ async function loadPlugins() {
 
         const html = `
             <table class="table" id="plugins-table">
-                <tr><th></th><th>ID</th><th>Name</th><th>Version</th><th>${t('status')}</th><th>${t('theme')}</th><th>${t('page')}</th><th>${t('actions')}</th></tr>
+                <tr><th></th><th>${t('id')}</th><th>${t('name')}</th><th>${t('version')}</th><th>${t('status')}</th><th>${t('theme')}</th><th>${t('page')}</th><th>${t('actions')}</th></tr>
                 ${rows}
             </table>
         `;
@@ -751,35 +751,37 @@ async function renderSettings() {
 
             <fieldset class="subblock">
                 <legend>${t('engine')}</legend>
-                <label class="field"><span>Listen port (0 = random)</span>
+                <label class="field"><span>${t('listen_port')}</span>
                     <input class="input" id="te-port" type="number" value="${cfg.listen_port}"></label>
-                <label class="field"><span>Download rate (KB/s, 0 = unlimited)</span>
+                <label class="field"><span>${t('download_rate')}</span>
                     <input class="input" id="te-down" type="number" value="${cfg.download_rate_kb}"></label>
-                <label class="field"><span>Upload rate (KB/s, 0 = unlimited)</span>
+                <label class="field"><span>${t('upload_rate')}</span>
                     <input class="input" id="te-up" type="number" value="${cfg.upload_rate_kb}"></label>
+                <label class="field"><span>${t('preload_size')}</span>
+                    <input class="input" id="te-preload" type="number" value="${Math.round((cfg.preload_size || 0) / 1048576)}" min="0"></label>
                 <div class="checks">
-                    <label><input type="checkbox" id="te-dht" ${cfg.disable_dht ? 'checked' : ''}> Disable DHT</label>
-                    <label><input type="checkbox" id="te-pex" ${cfg.disable_pex ? 'checked' : ''}> Disable PEX</label>
-                    <label><input type="checkbox" id="te-upnp" ${cfg.disable_upnp ? 'checked' : ''}> Disable UPnP</label>
-                    <label><input type="checkbox" id="te-utp" ${cfg.disable_utp ? 'checked' : ''}> Disable uTP</label>
-                    <label><input type="checkbox" id="te-tcp" ${cfg.disable_tcp ? 'checked' : ''}> Disable TCP</label>
-                    <label><input type="checkbox" id="te-ipv6" ${cfg.enable_ipv6 ? 'checked' : ''}> Enable IPv6</label>
+                    <label><input type="checkbox" id="te-dht" ${cfg.disable_dht ? 'checked' : ''}> ${t('disable_dht')}</label>
+                    <label><input type="checkbox" id="te-pex" ${cfg.disable_pex ? 'checked' : ''}> ${t('disable_pex')}</label>
+                    <label><input type="checkbox" id="te-upnp" ${cfg.disable_upnp ? 'checked' : ''}> ${t('disable_upnp')}</label>
+                    <label><input type="checkbox" id="te-utp" ${cfg.disable_utp ? 'checked' : ''}> ${t('disable_utp')}</label>
+                    <label><input type="checkbox" id="te-tcp" ${cfg.disable_tcp ? 'checked' : ''}> ${t('disable_tcp')}</label>
+                    <label><input type="checkbox" id="te-ipv6" ${cfg.enable_ipv6 ? 'checked' : ''}> ${t('enable_ipv6')}</label>
                 </div>
             </fieldset>
 
             <fieldset class="subblock">
                 <legend>${t('cache')}</legend>
-                <label class="field"><span>Cache size (MiB, 0 = auto)</span>
+                <label class="field"><span>${t('cache_size')}</span>
                     <input class="input" id="te-cap" type="number" value="${Math.round((st.capacity || 0) / 1048576)}"></label>
-                <label class="field"><span>Connections limit</span>
+                <label class="field"><span>${t('connections_limit')}</span>
                     <input class="input" id="te-conn" type="number" value="${st.connections_limit || 0}"></label>
-                <label class="field"><span>Read-ahead (%)</span>
+                <label class="field"><span>${t('read_ahead')}</span>
                     <input class="input" id="te-ahead" type="number" value="${st.reader_read_ahead || 95}"></label>
-                <label class="field"><span>Disk cache path</span>
+                <label class="field"><span>${t('disk_cache_path')}</span>
                     <input class="input" id="te-path" value="${st.torrents_save_path || ''}"></label>
                 <div class="checks">
-                    <label><input type="checkbox" id="te-disk" ${st.use_disk ? 'checked' : ''}> Use disk instead of RAM</label>
-                    <label><input type="checkbox" id="te-rm" ${st.remove_cache_on_drop ? 'checked' : ''}> Remove cache on drop</label>
+                    <label><input type="checkbox" id="te-disk" ${st.use_disk ? 'checked' : ''}> ${t('use_disk_instead_of_ram')}</label>
+                    <label><input type="checkbox" id="te-rm" ${st.remove_cache_on_drop ? 'checked' : ''}> ${t('remove_cache_on_drop')}</label>
                 </div>
             </fieldset>
 
@@ -791,6 +793,7 @@ async function renderSettings() {
                 listen_port: parseInt(val('te-port'), 10) || 0,
                 download_rate_kb: parseInt(val('te-down'), 10) || 0,
                 upload_rate_kb: parseInt(val('te-up'), 10) || 0,
+                preload_size: (parseInt(val('te-preload'), 10) || 0) * 1048576,
                 disable_dht: chk('te-dht'),
                 disable_pex: chk('te-pex'),
                 disable_upnp: chk('te-upnp'),
