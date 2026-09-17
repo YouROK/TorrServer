@@ -9,6 +9,7 @@ type Config struct {
 	ListenPort     int              `json:"listen_port"`      // 0 = случайный порт
 	DownloadRateKB int              `json:"download_rate_kb"` // 0 = без ограничений
 	UploadRateKB   int              `json:"upload_rate_kb"`   // 0 = без ограничений
+	PreloadSize    int64            `json:"preload_size"`     // Предзагрузка в байтах
 	DisableDHT     bool             `json:"disable_dht"`      // Отключить DHT
 	DisablePEX     bool             `json:"disable_pex"`      // Отключить PEX
 	DisableUPNP    bool             `json:"disable_upnp"`     // Отключить UPnP
@@ -23,6 +24,7 @@ func DefaultConfig() *Config {
 		ListenPort:     0,
 		DownloadRateKB: 0,
 		UploadRateKB:   0,
+		PreloadSize:    16 * 1024 * 1024, //16 mb
 		DisableDHT:     false,
 		DisablePEX:     false,
 		DisableUPNP:    false,
