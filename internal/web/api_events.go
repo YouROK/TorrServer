@@ -50,9 +50,6 @@ func (s *Server) buildLibraryCards(u *user.User) ([]LibraryCard, error) {
 }
 
 // handleEventsStream — SSE-поток обновлений библиотеки.
-// handleEventsStream — SSE-поток обновлений библиотеки.
-// Раз в секунду сравнивает снимок с предыдущим и шлёт только изменения.
-// Раз в 10 секунд шлёт keepalive-комментарий, чтобы NAT не рвал соединение.
 func (s *Server) handleEventsStream(c *gin.Context) {
 	val, _ := c.Get("user")
 	u := val.(*user.User)
@@ -67,7 +64,6 @@ func (s *Server) handleEventsStream(c *gin.Context) {
 
 	prev := make(map[string]string)
 	first := true
-	lastSend := time.Now()
 
 	c.Stream(func(w io.Writer) bool {
 		select {
@@ -75,8 +71,6 @@ func (s *Server) handleEventsStream(c *gin.Context) {
 			return false
 		case <-ticker.C:
 		}
-
-		sent := false
 
 		cards, err := s.buildLibraryCards(u)
 		if err != nil {
@@ -97,30 +91,19 @@ func (s *Server) handleEventsStream(c *gin.Context) {
 			fmt.Fprintf(c.Writer, "event: sync\ndata: %s\n\n", all)
 			c.Writer.Flush()
 			first = false
-			sent = true
 		} else {
 			for hash, data := range cur {
 				if old, ok := prev[hash]; !ok || old != data {
 					fmt.Fprintf(c.Writer, "event: card\ndata: %s\n\n", data)
 					c.Writer.Flush()
-					sent = true
 				}
 			}
 			for hash := range prev {
 				if _, ok := cur[hash]; !ok {
 					fmt.Fprintf(c.Writer, "event: remove\ndata: {\"hash\":\"%s\"}\n\n", hash)
 					c.Writer.Flush()
-					sent = true
 				}
 			}
-		}
-
-		if sent {
-			lastSend = time.Now()
-		} else if time.Since(lastSend) > 10*time.Second {
-			fmt.Fprintf(c.Writer, ": keepalive\n\n")
-			c.Writer.Flush()
-			lastSend = time.Now()
 		}
 
 		prev = cur
