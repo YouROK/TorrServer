@@ -108,7 +108,9 @@ func (s *Server) registerRoutes() {
 		api.POST("/torrents", s.handleAddTorrent)
 		api.GET("/torrents/:hash", s.handleGetTorrent)
 		api.DELETE("/torrents/:hash", s.handleDropTorrent)
-		api.POST("/torrents/:hash/files/:fileIdx/viewed", s.handleSetFileViewed)
+		api.POST("/torrents/:hash/files/:idx/viewed", s.handleSetFileViewed)
+		api.POST("/torrents/:hash/files/:idx/preload", s.handlePreloadTorrent)
+		api.POST("/torrents/:hash/wake", s.handleWakeTorrent)
 
 		// Стриминг видео (поддерживает Range-запросы и ?token=...)
 		api.GET("/stream/:hash/:fileIdx", s.handleStream)
@@ -157,10 +159,10 @@ func (s *Server) registerRoutes() {
 func (s *Server) Start() error {
 	addr := fmt.Sprintf("%s:%d", s.cfg.Server.Host, s.cfg.Server.Port)
 	s.httpSrv = &http.Server{
-		Addr:         addr,
-		Handler:      s.router,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
+		Addr:              addr,
+		Handler:           s.router,
+		ReadHeaderTimeout: 15 * time.Second,
+		IdleTimeout:       5 * time.Minute,
 	}
 
 	log.Infof("[Web] Server listening on http://%s", addr)
