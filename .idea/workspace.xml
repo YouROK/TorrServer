@@ -5,23 +5,42 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="350ba494-018f-4a5c-9e7f-547b9f853697" name="Changes" comment="upd .idea">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/data/torrserver.db" beforeDir="false" afterPath="$PROJECT_DIR$/data/torrserver.db" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/plugin/default_ui/css/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/internal/plugin/default_ui/css/style.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/plugin/default_ui/i18n/en.json" beforeDir="false" afterPath="$PROJECT_DIR$/internal/plugin/default_ui/i18n/en.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/plugin/default_ui/i18n/ru.json" beforeDir="false" afterPath="$PROJECT_DIR$/internal/plugin/default_ui/i18n/ru.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/plugin/default_ui/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/internal/plugin/default_ui/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/plugin/default_ui/js/app.js" beforeDir="false" afterPath="$PROJECT_DIR$/internal/plugin/default_ui/js/app.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/torrent/config.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/torrent/config.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/torrent/manager.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/torrent/manager.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/web/admin/static/app.js" beforeDir="false" afterPath="$PROJECT_DIR$/internal/web/admin/static/app.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/web/admin/static/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/internal/web/admin/static/index.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/internal/web/api_events.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/web/api_events.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/web/api_torrents.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/web/api_torrents.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/internal/web/server.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/web/server.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/web/static/lang/en.json" beforeDir="false" afterPath="$PROJECT_DIR$/internal/web/static/lang/en.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/web/static/lang/ru.json" beforeDir="false" afterPath="$PROJECT_DIR$/internal/web/static/lang/ru.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="ChangesViewManager">
+    <option name="groupingKeys">
+      <option value="directory" />
+      <option value="repository" />
+    </option>
+  </component>
   <component name="GOROOT" url="file:///usr/local/go" />
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "customColor": "",
-  "associatedIndex": 1
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 1
+}</component>
   <component name="ProjectId" id="3JP5ut9xYnZ8BIAlIeRT9jCO2SM" />
   <component name="ProjectLevelVcsManager">
     <ConfirmationsSetting value="1" id="Add" />
@@ -33,11 +52,13 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "Go Build.TS.executor": "Debug",
     "Go Build.go build silo/cmd/server.executor": "Debug",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.GoLinterPluginOnboardingV2": "true",
     "RunOnceActivity.GoLinterPluginStorageMigration": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.go.analysis.ui.options.defaults": "true",
     "RunOnceActivity.go.formatter.settings.were.checked": "true",
@@ -46,12 +67,17 @@
     "git-widget-placeholder": "silo",
     "go.import.settings.migrated": "true",
     "go.sdk.automatically.set": "true",
-    "last_opened_file_path": "/home/yourok",
+    "last_opened_file_path": "/home/yourok/project/golang/Silo/imgs",
     "nodejs_package_manager_path": "npm",
     "settings.editor.selected.configurable": "preferences.pluginManager",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/imgs" />
+    </key>
+  </component>
   <component name="RunManager">
     <configuration name="TS" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true">
       <module name="Silo" />
@@ -90,6 +116,7 @@
     <option name="version" value="3" />
   </component>
   <component name="VcsManagerConfiguration">
+    <MESSAGE value="add gitignore" />
     <MESSAGE value="upd .idea" />
     <option name="LAST_COMMIT_MESSAGE" value="upd .idea" />
   </component>
