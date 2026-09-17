@@ -196,18 +196,71 @@ func (m *Manager) asyncFetchMetadata(sess *Session, rec *TorrentRecord) {
 	})
 }
 
+// WakeTorrent будит торрент из базы или продлевает его в движке
+func (m *Manager) WakeTorrent(u *user.User, hashHex string) error {
+	hash := metainfo.NewHashFromHex(hashHex)
+
+	if sess, ok := m.engine.Get(hash); ok {
+		sess.Touch()
+		return nil
+	}
+
+	rec, err := m.store.Get(hashHex)
+	if err != nil {
+		return fmt.Errorf("torrent not found in database: %w", err)
+	}
+
+	title := "Torrent " + hashHex[:8]
+	var poster, category string
+	if ut, err := m.userSvc.GetUserTorrent(u.ID, hashHex); err == nil {
+		title = ut.Title
+		poster = ut.Poster
+		category = ut.Category
+	}
+
+	spec := &torrent.TorrentSpec{
+		InfoHash:    hash,
+		DisplayName: title,
+		InfoBytes:   rec.InfoBytes,
+	}
+	if len(rec.InfoBytes) == 0 && len(rec.Trackers) > 0 {
+		spec.Trackers = tiersFromList(rec.Trackers)
+	}
+	m.applyTrackerPolicy(spec)
+
+	sess, err := m.engine.Start(spec)
+	if err != nil {
+		return fmt.Errorf("failed to wake up torrent: %w", err)
+	}
+
+	go m.asyncFetchMetadata(sess, rec)
+
+	sess.SetUserMeta(u.ID, title, poster, category)
+	return nil
+}
+
 // GetTorrentStatus отдает статус раздачи с учетом запрашивающего пользователя
 func (m *Manager) GetTorrentStatus(u *user.User, hashHex string) (*TorrentStatus, error) {
 	hash := metainfo.NewHashFromHex(hashHex)
 
-	// 1. Если активен в RAM — отдаем живую статистику (она сама подтянет личные данные юзера)
-	if sess, ok := m.engine.Get(hash); ok {
+	// Если активен в RAM — отдаем живую статистику (она сама подтянет личные данные юзера)
+	sess, ok := m.engine.Get(hash)
+	if ok {
 		st := sess.Status(u.ID)
+		// при добавлении торрента нет данных о нем и нужно брать из базы данные файлы
+		rec, recErr := m.store.Get(hashHex)
+
+		if len(st.FileStats) == 0 && recErr == nil && rec != nil {
+			st.FileStats = rec.Files
+		}
+		if st.TorrentSize == 0 && recErr == nil && rec != nil {
+			st.TorrentSize = rec.Size
+		}
 		st.Torrs = packTorrs(hashHex, st.Title, st.Poster, st.Category, st.TorrentSize, flattenTrackers(sess.Trackers()))
 		return st, nil
 	}
 
-	// 2. Если спит — достаем физику из базы
+	// Если спит — достаем физику из базы
 	rec, err := m.store.Get(hashHex)
 	if err != nil {
 		return nil, err
@@ -570,4 +623,37 @@ func (m *Manager) ImportLibrary(u *user.User, lines []string) (int, error) {
 	}
 
 	return imported, nil
+}
+
+// PreloadTorrent запускает предзагрузку файла раздачи
+// Доступно только владельцу карточки в библиотеке.
+func (m *Manager) PreloadTorrent(u *user.User, hashHex string, fileIdx int) error {
+	if _, err := m.userSvc.GetUserTorrent(u.ID, hashHex); err != nil {
+		return fmt.Errorf("torrent not found in your library")
+	}
+
+	cfg, err := m.store.GetConfig()
+	if err != nil {
+		return fmt.Errorf("dont open config: %v", err)
+	}
+	preloadSize := cfg.PreloadSize
+	if preloadSize == 0 {
+		//preloadSize = 16 * 1024 * 1024
+		return nil
+	}
+
+	hash := metainfo.NewHashFromHex(hashHex)
+	sess, ok := m.engine.Get(hash)
+	if !ok {
+		return fmt.Errorf("torrent not found in engine")
+	}
+
+	files := sess.Files()
+	if fileIdx < 0 || fileIdx >= len(files) {
+		return fmt.Errorf("file index out of bounds: %d", fileIdx)
+	}
+
+	go sess.Preload(fileIdx, preloadSize)
+
+	return nil
 }
