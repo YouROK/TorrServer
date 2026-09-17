@@ -34,9 +34,6 @@ func RegisterRoutes(r *gin.Engine, userSvc *user.Service) {
 		return
 	}
 
-	// Публична только страница входа
-	r.GET("/admin/login", serveFile(sub, "login.html"))
-
 	// Редирект с /admin на /admin/ для корректных относительных путей
 	r.GET("/admin", func(c *gin.Context) {
 		c.Redirect(http.StatusTemporaryRedirect, "/admin/")
@@ -53,7 +50,7 @@ func RegisterRoutes(r *gin.Engine, userSvc *user.Service) {
 	log.Info("[Admin] Protected admin interface registered at /admin")
 }
 
-// browserAuth извлекает токен и при неудаче редиректит на /admin/login
+// browserAuth извлекает токен и при неудаче редиректит на /login
 func browserAuth(userSvc *user.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := c.Query("token")
@@ -68,7 +65,7 @@ func browserAuth(userSvc *user.Service) gin.HandlerFunc {
 
 		u, err := userSvc.Authenticate(token)
 		if err != nil {
-			c.Redirect(http.StatusTemporaryRedirect, "/admin/login")
+			c.Redirect(http.StatusTemporaryRedirect, "/login")
 			c.Abort()
 			return
 		}
@@ -83,7 +80,7 @@ func RankMiddleware(minRank int) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		val, exists := c.Get(ContextKeyUser)
 		if !exists {
-			c.Redirect(http.StatusTemporaryRedirect, "/admin/login")
+			c.Redirect(http.StatusTemporaryRedirect, "/login")
 			c.Abort()
 			return
 		}
@@ -91,7 +88,7 @@ func RankMiddleware(minRank int) gin.HandlerFunc {
 		u, ok := val.(*user.User)
 		if !ok || int(u.Rank) < minRank {
 			// Недостаточно прав: редирект на логин с кодом ошибки
-			c.Redirect(http.StatusTemporaryRedirect, "/admin/login?error=forbidden")
+			c.Redirect(http.StatusTemporaryRedirect, "/login?error=forbidden")
 			c.Abort()
 			return
 		}

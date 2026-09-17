@@ -73,7 +73,7 @@ async function api(path, opts = {}) {
     }
 
     if (res.status === 401) {
-        location.href = '/admin/login';
+        location.href = '/login';
         throw new Error('unauthorized');
     }
 
@@ -234,7 +234,7 @@ async function boot() {
     document.getElementById('whoami').textContent = ME.username + ' · ' + rankName(ME.rank);
     document.getElementById('logout').addEventListener('click', async () => {
         await api('/auth/logout', { method: 'POST' });
-        location.href = '/admin/login';
+        location.href = '/login';
     });
 
     buildLangSelect();

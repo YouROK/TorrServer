@@ -32,5 +32,7 @@ func RegisterStaticRoutes(r *gin.Engine) {
 	r.StaticFS("/css", http.FS(cssFS))
 	r.StaticFS("/img", http.FS(imgFS))
 
+	r.StaticFileFS("/login", "static/login.html", http.FS(staticFS))
+
 	log.Info("[Web] Shared static routes '/css' and '/img' registered")
 }
