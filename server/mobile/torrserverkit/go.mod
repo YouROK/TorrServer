@@ -109,11 +109,11 @@ require (
 	golang.org/x/tools v0.49.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/telebot.v4 v4.0.0-beta.7 // indirect
-	gopkg.in/vansante/go-ffprobe.v2 v2.3.0 // indirect
+	gopkg.in/vansante/go-ffprobe.v2 v2.3.1 // indirect
 )
 
 replace (
-	github.com/anacrolix/torrent v1.59.1 => github.com/tsynik/torrent v1.2.29
+	github.com/anacrolix/torrent v1.59.1 => github.com/tsynik/torrent v1.2.31
 	github.com/anacrolix/upnp v0.1.4 => github.com/tsynik/upnp v0.1.5
 	server => ../..
 )
