@@ -7,13 +7,8 @@ storage:
     torrents_dir: torrents
 plugins:
     dir: plugins
-torrent:
-    cache_size_mb: 64
-    peers_limit: 64
-    download_rate_kb: 0
-    upload_rate_kb: 0
 logging:
     level: debug
     file: ""
 auth:
-    owner_password: ""
+    owner_password: "123"
