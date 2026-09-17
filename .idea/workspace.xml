@@ -4,8 +4,7 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="350ba494-018f-4a5c-9e7f-547b9f853697" name="Changes" comment="upd .idea">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    <list default="true" id="350ba494-018f-4a5c-9e7f-547b9f853697" name="Changes" comment="update .idea">
       <change beforePath="$PROJECT_DIR$/data/torrserver.db" beforeDir="false" afterPath="$PROJECT_DIR$/data/torrserver.db" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/internal/plugin/default_ui/css/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/internal/plugin/default_ui/css/style.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/internal/plugin/default_ui/i18n/en.json" beforeDir="false" afterPath="$PROJECT_DIR$/internal/plugin/default_ui/i18n/en.json" afterDir="false" />
@@ -118,6 +117,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="add gitignore" />
     <MESSAGE value="upd .idea" />
-    <option name="LAST_COMMIT_MESSAGE" value="upd .idea" />
+    <MESSAGE value="add torrs icon" />
+    <MESSAGE value="update .idea" />
+    <option name="LAST_COMMIT_MESSAGE" value="update .idea" />
   </component>
 </project>
