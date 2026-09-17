@@ -78,7 +78,9 @@ func (s *Server) SetPluginManager(pm *plugin.Manager) {
 func (s *Server) registerRoutes() {
 	// Публичные роуты
 	s.router.GET("/i18n.js", s.handleI18nJS)
+
 	RegisterStaticRoutes(s.router)
+
 	s.router.POST("/api/auth/login", s.handleLogin)
 	s.router.POST("/api/auth/logout", s.handleLogout)
 
