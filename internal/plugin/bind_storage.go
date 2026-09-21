@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"bytes"
 	"fmt"
 
 	"silo/internal/database"
@@ -45,6 +46,54 @@ func (rt *JSRuntime) createStorageModule(db *database.DB) *goja.Object {
 			return goja.Undefined()
 		}
 		return rt.vm.ToValue(result)
+	})
+
+	storeObj.Set("rem", func(call goja.FunctionCall) goja.Value {
+		key := call.Argument(0).String()
+
+		err := db.GetRawConn().Update(func(tx *bolt.Tx) error {
+			b := tx.Bucket(database.BucketPluginData)
+			if b == nil {
+				return nil
+			}
+			return b.Delete([]byte(prefix + key))
+		})
+
+		if err != nil {
+			panic(rt.vm.ToValue(fmt.Sprintf("failed to remove data: %v", err)))
+		}
+		return goja.Undefined()
+	})
+
+	storeObj.Set("clear", func(call goja.FunctionCall) goja.Value {
+		err := db.GetRawConn().Update(func(tx *bolt.Tx) error {
+			b := tx.Bucket(database.BucketPluginData)
+			if b == nil {
+				return nil
+			}
+
+			c := b.Cursor()
+			prefixBytes := []byte(prefix)
+
+			var keysToDelete [][]byte
+			for k, _ := c.Seek(prefixBytes); k != nil && bytes.HasPrefix(k, prefixBytes); k, _ = c.Next() {
+				keyCopy := make([]byte, len(k))
+				copy(keyCopy, k)
+				keysToDelete = append(keysToDelete, keyCopy)
+			}
+
+			for _, key := range keysToDelete {
+				if err := b.Delete(key); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+
+		if err != nil {
+			panic(rt.vm.ToValue(fmt.Sprintf("failed to clear data: %v", err)))
+		}
+		return goja.Undefined()
 	})
 
 	return storeObj
