@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"archive/zip"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -539,24 +540,48 @@ func (m *Manager) UninstallPlugin(pluginID string) error {
 	if pluginID == "default_ui" {
 		return fmt.Errorf("cannot uninstall built-in default UI")
 	}
+	if pluginID == "admin_ui" {
+		return fmt.Errorf("cannot uninstall built-in admin UI")
+	}
 
-	// Удаляем из базы
 	err := m.db.GetRawConn().Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket(database.BucketPlugins)
-		return b.Delete([]byte(pluginID))
-	})
+		pluginsBucket := tx.Bucket(database.BucketPlugins)
+		if err := pluginsBucket.Delete([]byte(pluginID)); err != nil {
+			return err
+		}
 
+		dataBucket := tx.Bucket(database.BucketPluginData)
+		if dataBucket == nil {
+			return nil
+		}
+
+		prefix := []byte(pluginID + ":")
+		c := dataBucket.Cursor()
+
+		var keysToDelete [][]byte
+		for k, _ := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, _ = c.Next() {
+			keyCopy := make([]byte, len(k))
+			copy(keyCopy, k)
+			keysToDelete = append(keysToDelete, keyCopy)
+		}
+
+		for _, key := range keysToDelete {
+			if err := dataBucket.Delete(key); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 	if err != nil {
 		return fmt.Errorf("failed to delete plugin from db: %w", err)
 	}
 
-	// Удаляем распакованную папку с диска
 	pluginDir := filepath.Join(m.pluginsDir, pluginID)
 	if err := os.RemoveAll(pluginDir); err != nil {
 		log.Warnf("[Plugin] Failed to remove plugin directory: %v", err)
 	}
 
-	// Удаляем zip-архив, если он остался
 	zipPath := filepath.Join(m.pluginsDir, pluginID+".zip")
 	_ = os.Remove(zipPath)
 
