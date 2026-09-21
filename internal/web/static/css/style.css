@@ -476,8 +476,20 @@ tr.drag-over td { border-top: 2px solid var(--silo-amber); }
 
 .login-error {
     color: var(--silo-danger);
-    font-size: 12px;
-    min-height: 16px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    min-height: 20px;
+    margin: 6px 0 4px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: transparent;
+    transition: background 0.15s ease;
+}
+
+.login-error:not(:empty) {
+    background: rgba(207, 91, 58, 0.08);
+    border: 1px solid rgba(207, 91, 58, 0.35);
 }
 
 .access-denied h1 { color: var(--silo-danger); }

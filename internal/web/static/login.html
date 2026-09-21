@@ -18,8 +18,6 @@
         <h1>SILO</h1>
     </div>
 
-    <div class="login-notice" id="login-notice" style="display:none"></div>
-
     <label class="field">
         <span data-i18n="username">Username</span>
         <input class="input" name="username" autocomplete="username" required>
@@ -28,57 +26,93 @@
         <span data-i18n="password">Password</span>
         <input class="input" name="password" type="password" autocomplete="current-password" required>
     </label>
+
+    <p class="login-error" id="login-error"></p>
+
     <button class="btn" type="submit" data-i18n="sign_in">Sign in</button>
 
     <button class="btn btn-secondary" id="signout" type="button" style="display:none; margin-top:8px" data-i18n="sign_out_switch">
         Sign out &amp; switch account
     </button>
 
-    <p class="login-error" id="login-error"></p>
+    <p class="login-notice" id="login-notice" style="display:none"></p>
 </form>
 
+<div class="toast" id="toast"></div>
+
 <script>
-    // Проставляем переводы во все data-i18n элементы страницы
+    const t = (key, def) => (typeof i18n !== 'undefined' && i18n.t) ? i18n.t(key, def) : key;
+
+    function showToast(msg) {
+        const el = document.getElementById('toast');
+        if (!el) return;
+        el.textContent = msg;
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 2500);
+    }
+
+    // safeFrom защищает от open redirect: только относительные пути на этом же хосте.
+    function safeFrom(raw) {
+        if (!raw) return '/';
+        if (raw[0] !== '/') return '/';
+        if (raw[1] === '/' || raw[1] === '\\') return '/';
+        return raw;
+    }
+
     i18n.apply();
 
-    // Проверяем код ошибки в URL (например, ?error=forbidden при нехватке прав)
     const params = new URLSearchParams(location.search);
+    const from = safeFrom(params.get('from'));
+
     if (params.get('error') === 'forbidden') {
         const notice = document.getElementById('login-notice');
         notice.style.display = 'block';
-        notice.textContent = i18n.t('forbidden_notice');
+        notice.textContent = t('forbidden_notice');
         document.getElementById('signout').style.display = 'block';
 
-        history.replaceState(null, '', '/admin/login');
+        const clean = '/login' + (from !== '/' ? '?from=' + encodeURIComponent(from) : '');
+        history.replaceState(null, '', clean);
     }
 
-    // Кнопка выхода: сбрасывает куку и даёт войти под другим пользователем
     document.getElementById('signout').addEventListener('click', async () => {
         await fetch('/api/auth/logout', { method: 'POST' });
-        location.href = '/admin/login';
+        location.href = '/login';
     });
 
-    // Аварийный вход: работает напрямую с ядром, без плагинов
     document.getElementById('login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const fd = new FormData(e.target);
-        const res = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                username: fd.get('username'),
-                password: fd.get('password'),
-            }),
-        });
+        const errorEl = document.getElementById('login-error');
+        errorEl.textContent = '';
 
-        if (!res.ok) {
-            let msg = 'login failed';
-            try { msg = (await res.json()).error || msg; } catch (err) {}
-            document.getElementById('login-error').textContent = msg;
+        const fd = new FormData(e.target);
+        let res;
+        try {
+            res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: fd.get('username'),
+                    password: fd.get('password'),
+                }),
+            });
+        } catch (err) {
+            errorEl.textContent = t('server_unreachable');
+            showToast(t('server_unreachable'));
             return;
         }
 
-        location.href = '/admin/';
+        if (!res.ok) {
+            let msg = t('invalid_credentials');
+            try {
+                const j = await res.json();
+                if (j && j.error) msg = j.error;
+            } catch (err) {}
+            errorEl.textContent = msg;
+            showToast(msg);
+            return;
+        }
+
+        location.href = from;
     });
 </script>
 </body>

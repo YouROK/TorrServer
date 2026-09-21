@@ -61,7 +61,6 @@
   "page": "Page",
   "sign_in": "Sign in",
   "sign_out_switch": "Sign out & switch account",
-  "forbidden_notice": "Your current account does not have permission to access the admin panel. Sign in as Admin (rank 50+) or Owner.",
   "listen_port": "Listen port (0 = random)",
   "download_rate": "Download rate (KB/s, 0 = unlimited)",
   "upload_rate": "Upload rate (KB/s, 0 = unlimited)",
@@ -83,5 +82,8 @@
   "name": "Name",
   "version": "Version",
   "user_rank": "User (10-49)",
-  "admin_rank": "Admin (50-99)"
+  "admin_rank": "Admin (50-99)",
+  "invalid_credentials": "Invalid username or password",
+  "server_unreachable": "Server unreachable",
+  "forbidden_notice": "Your current account does not have permission to access the admin panel"
 }
