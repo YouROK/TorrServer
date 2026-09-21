@@ -1,0 +1,27 @@
+id: "admin-ui"
+name: "Admin Web UI"
+version: "1.0.0"
+author: "Silo Core"
+description: "Web interface for server administration: users, plugins, settings, logs, and torrent engine configuration."
+builtin: true
+entry: "service.js"
+icon: "img/logo.png"
+
+routes:
+  - "/"
+  - "/index.html"
+  - "/css/*"
+  - "/js/*"
+  - "/i18n/*"
+  - "/img/*"
+
+events:
+  - "system:boot"
+  - "system:shutdown"
+
+menu:
+  - title: "Admin"
+    title_key: "admin_panel"
+    route: "/"
+    rank: 50
+    icon: "/img/ico-settings.svg"

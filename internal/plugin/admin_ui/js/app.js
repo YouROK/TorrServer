@@ -1,6 +1,3 @@
-/* ============================================================================
-   Silo Admin — SPA-логика (десктоп + мобильная адаптация)
-   ============================================================================ */
 'use strict';
 
 const t = (key, def) => i18n.t(key, def);
@@ -36,16 +33,11 @@ function buildLangSelect() {
     });
 }
 
-// refreshLangUI перерисовывает всё, что зависит от языка
 function refreshLangUI() {
-    i18n.apply(); // статические data-i18n элементы (кнопка Logout и т.п.)
-    buildNav();   // пункты меню
-    route();      // текущая секция
+    i18n.apply();
+    buildNav();
+    route();
 }
-
-// ----------------------------------------------------------------------------
-// Сайдбар-гамбургер (мобильная навигация)
-// ----------------------------------------------------------------------------
 
 function openSidebar() {
     document.getElementById('sidebar').classList.add('open');
@@ -56,10 +48,6 @@ function closeSidebar() {
     document.getElementById('sidebar').classList.remove('open');
     document.getElementById('sidebar-overlay').classList.remove('show');
 }
-
-// ----------------------------------------------------------------------------
-// Helpers
-// ----------------------------------------------------------------------------
 
 async function api(path, opts = {}) {
     let res;
@@ -155,7 +143,7 @@ function fmtUptime(sec) {
     const h = Math.floor((sec % 86400) / 3600);
     const m = Math.floor((sec % 3600) / 60);
     if (d > 0) return d + 'd ' + h + 'h';
-    if (h > 0) return h + 'h ' + m + 'm';
+    if (h > 0) return h + 'm'.replace('h', h + 'h ' + m + 'm');
     return m + 'm ' + (sec % 60) + 's';
 }
 
@@ -165,14 +153,9 @@ function badgeRank(rank) {
     return '<span class="badge badge-user">User</span>';
 }
 
-// wrapTable оборачивает таблицу в контейнер с горизонтальной прокруткой
 function wrapTable(tableHtml) {
     return '<div class="table-wrap">' + tableHtml + '</div>';
 }
-
-// ----------------------------------------------------------------------------
-// Модальные окна
-// ----------------------------------------------------------------------------
 
 function showModal(opts) {
     return new Promise((resolve) => {
@@ -186,7 +169,6 @@ function showModal(opts) {
                 <div class="modal-actions"></div>
             </div>`;
 
-        // Клик по overlay закрывает модалку со значением false
         box.addEventListener('click', (e) => {
             if (e.target === box) { box.remove(); resolve(false); }
         });
@@ -216,12 +198,7 @@ const modalConfirm = (title, message) => showModal({
 
 const modalAlert = (title, bodyHtml) => showModal({ title: title, body: bodyHtml });
 
-// ----------------------------------------------------------------------------
-// Boot и роутинг
-// ----------------------------------------------------------------------------
-
 async function boot() {
-    // Привязываем обработчики гамбургера
     document.getElementById('hamburger').addEventListener('click', openSidebar);
     document.getElementById('sidebar-overlay').addEventListener('click', closeSidebar);
 
@@ -262,7 +239,6 @@ function buildNav() {
         a.href = '#/' + sec.id;
         a.dataset.section = sec.id;
         a.textContent = t(sec.id);
-        // При клике на пункт меню на мобильном — закрываем сайдбар
         a.addEventListener('click', closeSidebar);
         nav.appendChild(a);
     }
@@ -293,10 +269,6 @@ function route() {
     renderers[id]();
 }
 
-// ----------------------------------------------------------------------------
-// Секция: Dashboard
-// ----------------------------------------------------------------------------
-
 async function renderDashboard() {
     const view = document.getElementById('view');
     view.innerHTML = '<div class="cards" id="cards"></div>';
@@ -325,10 +297,6 @@ async function renderDashboard() {
     await load();
     refreshTimer = setInterval(load, 5000);
 }
-
-// ----------------------------------------------------------------------------
-// Секция: Users
-// ----------------------------------------------------------------------------
 
 async function renderUsers() {
     const view = document.getElementById('view');
@@ -479,20 +447,20 @@ async function showUserTorrents(id, username) {
     }
 }
 
-// ----------------------------------------------------------------------------
-// Секция: Plugins (с кнопкой Open для темы UI)
-// ----------------------------------------------------------------------------
-
 async function renderPlugins() {
     const view = document.getElementById('view');
     view.innerHTML = `
         <div class="panel">
             <h2>${t('upload_plugin')}</h2>
             <div class="row">
-                <input class="input" id="pl-file" type="file" accept=".zip">
+                <label class="file-input">
+                    <input type="file" id="pl-file" accept=".zip">
+                    <span class="file-input-btn">${t('choose_file')}</span>
+                    <span class="file-input-name" id="pl-file-name">${t('no_file_selected')}</span>
+                </label>
                 <button class="btn" id="pl-upload" type="button">${t('upload_plugin')}</button>
             </div>
-            <p class="hint">${t('drag_hint')}</p>
+            <p class="hint">${t('upload_hint')}</p>
         </div>
         <div class="panel">
             <h2>${t('install_from_url')}</h2>
@@ -500,50 +468,60 @@ async function renderPlugins() {
                 <input class="input" id="pl-url" placeholder="${t('plugin_url_placeholder')}">
                 <button class="btn" id="pl-url-install" type="button">${t('install_from_url')}</button>
             </div>
-            <p class="hint">Supports any direct .zip link</p>
+            <p class="hint">${t('install_from_url_hint')}</p>
         </div>
+        <p class="hint">${t('drag_hint')}</p>
         <div id="plugins-table-wrap"></div>
     `;
 
+    const fileInput = document.getElementById('pl-file');
+    const fileName = document.getElementById('pl-file-name');
+
+    fileInput.addEventListener('change', () => {
+        const f = fileInput.files[0];
+        fileName.textContent = f ? f.name : t('no_file_selected');
+    });
+
     document.getElementById('pl-upload').addEventListener('click', async () => {
-        const fileInput = document.getElementById('pl-file');
-        if (!fileInput.files.length) return;
-
-        const fd = new FormData();
-        fd.append('plugin', fileInput.files[0]);
-
-        try {
-            const res = await fetch('/api/plugins/upload', { method: 'POST', body: fd });
-            if (!res.ok) throw new Error((await res.json()).error || 'upload failed');
-            const data = await res.json();
-            const count = (data.installed || []).length;
-            toast(t('plugins_installed') + ' (' + count + ')');
-            loadPlugins();
-        } catch (e) {
-            toast(e.message);
+        const file = fileInput.files[0];
+        if (!file) {
+            toast(t('select_file_first'));
+            return;
         }
+
+        await submitInstall(async (update) => {
+            const fd = new FormData();
+            fd.append('plugin', file);
+            const url = '/api/plugins/upload' + (update ? '?update' : '');
+            return fetch(url, { method: 'POST', body: fd });
+        });
+
+        fileInput.value = '';
+        fileName.textContent = t('no_file_selected');
     });
 
     document.getElementById('pl-url-install').addEventListener('click', async () => {
         const urlInput = document.getElementById('pl-url');
         const url = urlInput.value.trim();
-        if (!url) return;
+        if (!url) {
+            toast(t('enter_url_first'));
+            return;
+        }
 
         const btn = document.getElementById('pl-url-install');
         btn.disabled = true;
         btn.textContent = '...';
 
         try {
-            const data = await api('/plugins/install-url', {
-                method: 'POST',
-                body: JSON.stringify({ url: url }),
+            await submitInstall(async (update) => {
+                const endpoint = '/api/plugins/install-url' + (update ? '?update' : '');
+                return fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url }),
+                });
             });
-            const count = (data.installed || []).length;
-            toast(t('plugins_installed') + ' (' + count + ')');
             urlInput.value = '';
-            loadPlugins();
-        } catch (e) {
-            toast(e.message);
         } finally {
             btn.disabled = false;
             btn.textContent = t('install_from_url');
@@ -553,11 +531,62 @@ async function renderPlugins() {
     loadPlugins();
 }
 
+async function submitInstall(doRequest) {
+    let res;
+    try {
+        res = await doRequest(false);
+    } catch (e) {
+        toast(e.message);
+        return;
+    }
+
+    if (res.status === 401) {
+        location.href = '/login';
+        return;
+    }
+
+    if (res.status === 409) {
+        let body = {};
+        try { body = await res.json(); } catch (e) {}
+
+        if (body.is_builtin) {
+            toast(t('plugin_builtin_cannot_replace'));
+            return;
+        }
+
+        const ok = await showModal({
+            title: t('plugin_exists_title'),
+            body: '<p>' + t('plugin_exists_text')
+                .replace('{id}', body.id)
+                .replace('{version}', body.version) + '</p>',
+            buttons: [
+                { label: t('cancel'), value: false },
+                { label: t('update'), value: true, primary: true },
+            ],
+        });
+        if (!ok) return;
+
+        res = await doRequest(true);
+    }
+
+    if (!res.ok) {
+        let msg = 'request failed: ' + res.status;
+        try { msg = (await res.json()).error || msg; } catch (e) {}
+        toast(msg);
+        return;
+    }
+
+    const data = await res.json();
+    const count = (data.installed || []).length;
+    const base = data.updated ? t('plugin_updated') : t('plugin_installed');
+    toast(base + ' (' + count + ')');
+    loadPlugins();
+}
+
 async function loadPlugins() {
     try {
         const data = await api('/plugins');
         const rows = (data.plugins || []).map((p) => {
-            // Колонка Theme: бейдж текущей темы / кнопка установки / серый бейдж
             let themeCell;
             if (p.current_theme) {
                 themeCell = '<span class="badge badge-owner">' + t('current') + '</span>';
@@ -567,15 +596,17 @@ async function loadPlugins() {
                 themeCell = '<span class="badge badge-user">' + t('no_theme') + '</span>';
             }
 
-            // Кнопка Open только если плагин включён и зарегистрировал корневой роут
             const pageCell = (p.enabled && p.page)
                 ? `<a class="btn btn-secondary btn-sm" href="/plugins/${p.id}/" target="_blank">${t('open')}</a>`
                 : '';
 
-            // Статус всегда active/disabled по флагу включённости
             const statusBadge = p.enabled
                 ? '<span class="badge badge-admin">' + t('active') + '</span>'
                 : '<span class="badge badge-banned">' + t('disabled') + '</span>';
+
+            const deleteBtn = p.builtin
+                ? ''
+                : `<button class="btn btn-danger btn-sm" data-act="del" data-id="${p.id}" type="button">${t('delete')}</button>`;
 
             return `
                 <tr draggable="true" data-id="${p.id}">
@@ -591,7 +622,7 @@ async function loadPlugins() {
                         <button class="btn btn-secondary btn-sm" data-act="toggle" data-id="${p.id}" data-enabled="${p.enabled}" type="button">
                             ${p.enabled ? t('disable') : t('enable')}
                         </button>
-                        <button class="btn btn-danger btn-sm" data-act="del" data-id="${p.id}" type="button">${t('delete')}</button>
+                        ${deleteBtn}
                     </td>
                 </tr>
             `;
@@ -635,11 +666,7 @@ async function onPluginAction(e) {
             await setPluginAsTheme(id);
         }
     } catch (err) {
-        if (err.message.includes('cannot delete built-in')) {
-            toast(t('cannot_delete_builtin'));
-        } else {
-            toast(err.message);
-        }
+        toast(err.message);
     }
 }
 
@@ -668,7 +695,6 @@ async function showPluginInfo(id) {
         const m = await api('/plugins/' + id + '/info');
         const list = (arr) => arr.map((x) => '<li>' + x + '</li>').join('');
 
-        // Секции events и routes показываем только если они непустые
         let extra = '';
         if (m.events && m.events.length) {
             extra += '<h3>events</h3><ul class="info-list">' + list(m.events) + '</ul>';
@@ -732,10 +758,6 @@ function wireDrag(table) {
         });
     });
 }
-
-// ----------------------------------------------------------------------------
-// Секция: Settings
-// ----------------------------------------------------------------------------
 
 async function renderSettings() {
     const view = document.getElementById('view');
@@ -821,10 +843,6 @@ async function renderSettings() {
         view.innerHTML = '<div class="panel"><p>' + e.message + '</p></div>';
     }
 }
-
-// ----------------------------------------------------------------------------
-// Секция: Logs
-// ----------------------------------------------------------------------------
 
 async function renderLogs() {
     const view = document.getElementById('view');
