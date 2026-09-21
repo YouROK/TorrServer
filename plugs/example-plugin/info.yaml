@@ -1,0 +1,134 @@
+# ═══════════════════════════════════════════════════════════════
+# MANIFEST DOCUMENTATION — Every field explained
+# ═══════════════════════════════════════════════════════════════
+#
+# This info.yaml itself is a complete reference.
+# Copy it as a template when creating your own plugin.
+
+# ─── Identity ────────────────────────────────────────────────
+# REQUIRED. Unique string: lowercase, no spaces, slug format.
+# Used as:
+#   • URL prefix:       /plugins/<id>/
+#   • VFS namespace:    internal path lookup
+#   • Event prefix:     plugin:<id>:*
+#   • Storage prefix:    <id>: (inside BoltDB)
+id: "example-plugin"
+
+# REQUIRED. Human-readable name for admin UI and plugin list.
+name: "Plugin Showcase"
+
+# Recommended. Shows in admin panel, helps debugging.
+version: "1.0.1"
+
+# Optional. Author credit.
+author: "YouROK"
+
+# Optional. Short description for plugin list.
+description: >
+  Demonstration plugin: documents every capability of the Silo plugin system.
+  Use it as a template and reference when building your own plugins.
+
+# ─── Entry Point ─────────────────────────────────────────────
+# REQUIRED (unless you only use static files).
+# Path to the main JavaScript file inside the plugin archive.
+# Executed once when the plugin loads (on server startup).
+# All registrations (web routes, bus subscriptions) happen here.
+entry: "service.js"
+
+# ─── Theme UI ─────────────────────────────────────────────────
+# OPTIONAL. If true, this plugin REPLACES the main page at /.
+# Only ONE plugin can have this. The first loaded wins.
+# Default: false (plugin lives at /plugins/<id>/)
+# theme_ui: false
+
+# ─── Icon ────────────────────────────────────────────────────
+# OPTIONAL. Icon for the plugin card in admin list.
+# Served from the plugin's own VFS (can be /img/icon.png).
+icon: "/img/logo.png"
+
+# ─── Menu Entries ────────────────────────────────────────────
+# OPTIONAL. Links added to the sidebar navigation.
+# Each user sees only menu items where: user.rank >= entry.rank
+# Without menu, the plugin is invisible in navigation (still accessible by URL).
+menu:
+  # Minimal entry
+  - title: "Showcase"
+    route: "/"                       # Plugin-relative path
+    rank: 0                          # Visible to: everyone (rank 0 = all users)
+
+  # Full entry with icon and i18n key
+  # - title: "Showcase"               # Fallback text (if no translation)
+  #   title_key: "showcase"           # i18n key: translations/plugin-showcase/section_title
+  #   route: "/"
+  #   rank: 0                        # 0=all, 10=user, 50=admin, 100=owner
+  #   icon: "/img/logo.png"          # Icon from plugin's VFS
+
+# ─── Bus Events ──────────────────────────────────────────────
+# WHITELIST of event topics this plugin is allowed to emit and listen to.
+# If a topic is NOT listed here → permission denied at runtime.
+#
+# Patterns supported:
+#   "exact:topic"    — exactly this topic
+#   "prefix:*"       — any topic starting with "prefix:"
+#   "prefix:**"      — same, explicit alternative
+#
+# Convention:
+#   system:*         — core system events
+#   torrent:*        — torrent engine events
+#   plugin:<id>:*    — events scoped to a specific plugin
+#
+# Own plugin events are always allowed (no need to list plugin:example-plugin:*).
+events:
+  # System lifecycle
+  - "system:boot"      # Fired once when Silo finishes startup
+  - "system:shutdown"  # Fired before Silo stops
+
+  # Torrent events
+  - "torrent:*"        # Any torrent:* topic (added, metadata, removed...)
+
+  # Inter-plugin communication example
+  # - "plugin:other-plugin:something"
+
+  # Custom events for this showcase (own plugin namespace — always allowed)
+  # - "plugin:example-plugin:message"
+
+# ─── Web Routes ──────────────────────────────────────────────
+# WHITELIST of HTTP routes this plugin may register.
+# If a route is NOT listed here → registration is skipped silently.
+#
+# Patterns:
+#   "/exact"           — exactly /api/path
+#   "/prefix/*"        — any path under /api/path/
+#
+# The actual registration happens in service.js via ts.web.get/post/etc.
+routes:
+  # Static files
+  - "/"               # Root must be listed if you serve index.html at /
+  - "/index.html"    # Explicit entry point
+
+  # CSS/JS/Images
+  - "/css/*"
+  - "/js/*"
+  - "/img/*"
+  - "/i18n/*"
+
+  # API endpoints (examples for this plugin)
+  - "/api/info"              # GET — return ts.info snapshot
+  - "/api/echo"              # POST — echo back request body
+  - "/api/echo/*"            # With path parameter
+  - "/api/emit"              # POST — emit a custom bus event
+  - "/api/storage/get"       # POST — read from ts.storage
+  - "/api/storage/set"       # POST — write to ts.storage
+  - "/api/storage/rem"       # POST — remove from ts.storage
+  - "/api/storage/clear"       # POST — clear ts.storage
+  - "/api/torrent/list"      # GET — list torrents
+  - "/api/torrent/get"       # GET — get torrent info
+  - "/api/torrent/add"       # POST — add a torrent
+  - "/api/users/list"        # GET — list all users
+  - "/api/users/get"         # POST — get one user by ID
+  - "/api/http-demo"         # GET — fetch external API via ts.http
+  - "/api/events"            # GET — SSE stream for bus events
+  - "/api/vfs/list"          # POST — list files in folder
+  - "/api/vfs/stat"          # POST — file metadata
+  - "/api/vfs/read"          # POST — read file content
+  - "/api/vfs/exists"        # POST — file existence check

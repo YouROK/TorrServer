@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="page_title_full">Plugin Showcase — Silo</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="/i18n.js"></script>
+
+    <link rel="icon" type="image/x-icon" href="/img/favicon.ico">
+    <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
+    <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+    <link rel="manifest" href="/img/site.webmanifest">
+</head>
+<body>
+
+<div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="brand">
+            <svg class="logo-mini" width="32" height="32" viewBox="0 0 32 32" fill="none">
+                <rect width="32" height="32" rx="6" fill="#1abc9c"/>
+                <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-size="18" font-weight="bold" fill="#0d1210">S</text>
+            </svg>
+            <span class="brand-name">SILO</span>
+        </div>
+        <nav class="section-nav">
+            <a class="nav-item" href="#sec-info" data-i18n="nav_info">System Info</a>
+            <a class="nav-item" href="#sec-web" data-i18n="nav_web">Web Routes</a>
+            <a class="nav-item" href="#sec-bus" data-i18n="nav_bus">Event Bus</a>
+            <a class="nav-item" href="#sec-storage" data-i18n="nav_storage">Storage</a>
+            <a class="nav-item" href="#sec-http" data-i18n="nav_http">HTTP Client</a>
+            <a class="nav-item" href="#sec-torrent" data-i18n="nav_torrent">Torrent API</a>
+            <a class="nav-item" href="#sec-users" data-i18n="nav_users">Users API</a>
+            <a class="nav-item" href="#sec-i18n" data-i18n="nav_i18n">i18n</a>
+            <a class="nav-item" href="#sec-vfs" data-i18n="nav_vfs">VFS</a>
+            <a class="nav-item" href="#sec-manifest" data-i18n="nav_manifest">info.yaml Guide</a>
+        </nav>
+        <div class="sidebar-footer">
+            <span class="sidebar-footnote">example-plugin</span>
+        </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="content">
+
+        <!-- Header -->
+        <header class="topbar">
+            <h1 data-i18n="page_title">Plugin Showcase</h1>
+            <span class="topbar-sub" data-i18n="page_subtitle">All Silo plugin APIs, documented and interactive</span>
+        </header>
+
+        <!-- ── S1: ts.info ── -->
+        <section class="section" id="sec-info">
+            <h2 data-i18n="sec_info_title">1. ts.info — System Information</h2>
+            <p data-i18n="sec_info_desc">Read-only object with system data. Available in service.js immediately on startup. Use for logging, feature detection, or displaying version info to users.</p>
+
+            <div class="explain-box" data-i18n="sec_info_explain">
+                Contains version, OS, CPU count, and the plugin's own ID. Values are populated by the core before service.js executes.
+            </div>
+
+            <pre class="code-block"><code>// In service.js:
+console.log(ts.info.version);         // "1.2.3"
+console.log(ts.info.plugin_id);       // "example-plugin"
+console.log(ts.info.os);             // "linux"
+console.log(ts.info.arch);           // "amd64"
+console.log(ts.info.num_cpu);        // 4
+console.log(ts.info.torrent_version);</code></pre>
+
+            <div class="demo-row">
+                <button class="btn" id="btn-info" type="button" data-i18n="btn_load_info">Load System Info</button>
+                <div class="demo-output" id="out-info"></div>
+            </div>
+        </section>
+
+        <!-- ── S2: ts.web ── -->
+        <section class="section" id="sec-web">
+            <h2 data-i18n="sec_web_title">2. ts.web — Web Routes &amp; Static Files</h2>
+            <p data-i18n="sec_web_desc">Register HTTP endpoints and serve static files. Every route must be whitelisted in info.yaml <code>routes[]</code>. If not listed — request is silently dropped. Supported methods: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS. Also <code>any()</code> for all methods and <code>route(method, path, fn)</code>.</p>
+
+            <div class="explain-box">
+                <strong data-i18n="sec_web_url_title">URL Prefix Rule:</strong>
+                <p data-i18n="sec_web_url_desc">All plugin routes live under <code>/plugins/&lt;plugin_id&gt;/</code>. Example: registering <code>ts.web.staticDir("/css", "css")</code> makes files available at <code>/plugins/example-plugin/css/</code>. In HTML and JS files use <strong>relative paths</strong> (e.g. <code>css/style.css</code>, <code>js/app.js</code>) — they resolve correctly because the browser sees the page at <code>/plugins/example-plugin/</code>. Never use absolute root paths like <code>/css/style.css</code> — they resolve to the server root, not the plugin.</p>
+                <p>
+                    <strong data-i18n="sec_web_url_example_label">Example:</strong>
+                    <span data-i18n="sec_web_url_example_text">this plugin is at <code>/plugins/example-plugin/</code>. Write <code>&lt;link href="css/style.css"&gt;</code> (relative) or <code>href="/plugins/example-plugin/css/style.css"</code> (absolute).</span>
+                </p>
+            </div>
+
+            <div class="explain-box">
+                <strong data-i18n="sec_web_req_title">Request object (first arg):</strong>
+                <ul>
+                    <li><code>req.method</code> — <span data-i18n="sec_web_method">HTTP method string</span></li>
+                    <li><code>req.path</code> — <span data-i18n="sec_web_path">URL path</span></li>
+                    <li><code>req.query</code> — <span data-i18n="sec_web_query">parsed query params as object</span></li>
+                    <li><code>req.headers</code> — <span data-i18n="sec_web_headers">lowercase header names as keys</span></li>
+                    <li><code>req.body</code> — <span data-i18n="sec_web_body">parsed body: JSON object, form object, or raw string</span></li>
+                    <li><code>req.user</code> — <span data-i18n="sec_web_user">authenticated user object or null</span></li>
+                </ul>
+                <strong data-i18n="sec_web_res_title">Response (return value or second arg):</strong>
+                <ul>
+                    <li><code>return obj</code> → <span data-i18n="sec_web_res_auto">auto JSON</span></li>
+                    <li><code>return "string"</code> → <span data-i18n="sec_web_res_text">text/plain</span></li>
+                    <li><code>res.status(200).json({})</code> → <span data-i18n="sec_web_res_json">explicit JSON</span></li>
+                    <li><code>res.text("hello")</code> → <span data-i18n="sec_web_res_text2">text/plain</span></li>
+                    <li><code>res.html("&lt;b&gt;bold&lt;/b&gt;")</code> → <span data-i18n="sec_web_res_html">text/html</span></li>
+                </ul>
+            </div>
+
+            <pre class="code-block"><code>// Static files (VFS path → URL mapping)
+ts.web.staticFile("/", "index.html");
+ts.web.staticDir("/css", "css");
+ts.web.staticDir("/js", "js");
+
+// API endpoints
+ts.web.get("/api/hello", function(req) {
+    return { message: "Hello", user: req.user };
+});
+
+ts.web.post("/api/echo", function(req) {
+    return res.status(201).json({ you_sent: req.body });
+});
+
+ts.web.any("/api/all-methods", function(req) {
+    return { method: req.method };
+});</code></pre>
+
+            <div class="demo-row">
+                <button class="btn" id="btn-web-get" type="button" data-i18n="btn_web_get">GET /api/info</button>
+                <button class="btn" id="btn-web-post" type="button" data-i18n="btn_web_post">POST /api/echo</button>
+                <div class="demo-output" id="out-web"></div>
+            </div>
+        </section>
+
+        <!-- ── S3: ts.bus ── -->
+        <section class="section" id="sec-bus">
+            <h2 data-i18n="sec_bus_title">3. ts.bus — Event Bus</h2>
+            <p data-i18n="sec_bus_desc">Publish/subscribe messaging. Plugins communicate via named topics. Topics must be declared in info.yaml <code>events[]</code> — undeclared topics are <strong>denied at runtime</strong>. Own plugin topics (<code>plugin:&lt;id&gt;:*</code>) are always allowed.</p>
+
+            <div class="explain-box">
+                <strong data-i18n="sec_bus_topics">Topic naming convention:</strong>
+                <ul>
+                    <li data-i18n="sec_bus_system"><code>system:*</code> — Core lifecycle: system:boot, system:shutdown</li>
+                    <li data-i18n="sec_bus_torrent"><code>torrent:*</code> — Torrent engine events</li>
+                    <li data-i18n="sec_bus_plugin"><code>plugin:&lt;id&gt;:&lt;name&gt;</code> — Plugin-scoped events</li>
+                </ul>
+            </div>
+
+            <pre class="code-block"><code>// Subscribe (must be in info.yaml events[])
+// Returns unsubscribe() function
+var unsub = ts.bus.on("system:boot", function(payload) {
+    console.log("Silo started!");
+});
+
+// Publish an event
+ts.bus.emit("plugin:example-plugin:message", { text: "Hello!" });
+ts.bus.emit("torrent:added", { hash: "abc...", title: "My Torrent" });</code></pre>
+
+            <div class="explain-box" data-i18n="sec_bus_demo_hint">
+                <strong>Demo:</strong> Enter a topic and payload, click "Emit". The event goes to the server-side bus and is recorded. Polling fetches the last emitted event from the server.
+            </div>
+
+            <div class="demo-row">
+                <input class="input" id="emit-topic" type="text" value="plugin:example-plugin:message" placeholder="topic" data-i18n-placeholder="bus_topic_placeholder">
+                <input class="input" id="emit-payload" type="text" value="Hello from Showcase!" placeholder="payload" data-i18n-placeholder="bus_payload_placeholder">
+                <button class="btn" id="btn-bus-emit" type="button" data-i18n="btn_bus_emit">Emit Event</button>
+            </div>
+            <div class="demo-output" id="out-bus"></div>
+        </section>
+
+        <!-- ── S4: ts.storage ── -->
+        <section class="section" id="sec-storage">
+            <h2 data-i18n="sec_storage_title">4. ts.storage — Persistent Key-Value Storage</h2>
+            <p data-i18n="sec_storage_desc">BoltDB-backed key-value store. Keys are prefixed with <code>&lt;plugin_id&gt;:</code> so plugins never collide. Strings only — use JSON.stringify/parse for objects. Persists across restarts.</p>
+
+            <pre class="code-block"><code>// Read (returns string or undefined)
+var value = ts.storage.get("my_key");
+
+// Write
+ts.storage.set("my_key", "some string value");
+
+// Remove
+ts.storage.rem("my_key");
+
+// Clear
+ts.storage.clear();
+
+// Use JSON for complex data:
+ts.storage.set("config", JSON.stringify({ mode: "append" }));
+var cfg = JSON.parse(ts.storage.get("config"));</code></pre>
+
+            <div class="demo-row">
+                <input class="input" id="storage-key" type="text" value="showcase_message" placeholder="key" data-i18n-placeholder="storage_key_placeholder">
+                <input class="input" id="storage-val" type="text" placeholder="value" data-i18n-placeholder="storage_val_placeholder">
+                <button class="btn" id="btn-storage-get" type="button" data-i18n="btn_storage_get">Load</button>
+                <button class="btn" id="btn-storage-set" type="button" data-i18n="btn_storage_set">Save</button>
+                <button class="btn" id="btn-storage-rem" type="button" data-i18n="btn_storage_rem">Remove</button>
+                <button class="btn" id="btn-storage-clear" type="button" data-i18n="btn_storage_clear">Clear</button>
+            </div>
+            <div class="demo-output" id="out-storage"></div>
+        </section>
+
+        <!-- ── S5: ts.http ── -->
+        <section class="section" id="sec-http">
+            <h2 data-i18n="sec_http_title">5. ts.http — HTTP Client</h2>
+            <p data-i18n="sec_http_desc">Make outbound HTTP requests. Both GET and POST supported. Useful for fetching metadata, third-party APIs, or connectivity checks. SSRF protection is handled by the core.</p>
+
+            <pre class="code-block"><code>// GET request
+var resp = ts.http.get("https://api.example.com/data", {
+    headers: { "Authorization": "Bearer ..." },
+    timeout: 5000  // milliseconds
+});
+// resp.status — HTTP status code
+// resp.ok      — true if 2xx
+// resp.body    — raw string
+// resp.json()  — parsed JSON object
+
+// POST request
+var resp2 = ts.http.post("https://api.example.com/submit",
+    { action: "test", value: 123 },
+    { timeout: 5000 }
+);</code></pre>
+
+            <div class="demo-row">
+                <button class="btn" id="btn-http-get" type="button" data-i18n="btn_http_get">GET jsonplaceholder</button>
+                <div class="demo-output" id="out-http"></div>
+            </div>
+        </section>
+
+        <!-- ── S6: ts.torrent ── -->
+        <section class="section" id="sec-torrent">
+            <h2 data-i18n="sec_torrent_title">6. ts.torrent — Torrent Management</h2>
+            <p data-i18n="sec_torrent_desc">Full torrent lifecycle: add, list, get status, remove. Works with magnets or info hashes. All operations are scoped to a user (default: <code>"owner"</code>).</p>
+
+            <pre class="code-block"><code>// List all torrents
+var list = ts.torrent.list();
+
+// Add a torrent (magnet or hash)
+var status = ts.torrent.add("magnet:?xt=urn:btih:...", {
+    title: "My Torrent",
+    category: "movies"
+});
+
+// Get torrent details by hash
+var info = ts.torrent.get("abc123hash...");
+
+// Remove a torrent
+ts.torrent.remove("abc123hash...");</code></pre>
+
+            <div class="demo-row">
+                <button class="btn" id="btn-torrent-list" type="button" data-i18n="btn_torrent_list">List Torrents</button>
+                <input class="input" id="torrent-hash" type="text" placeholder="hash" data-i18n-placeholder="torrent_hash_placeholder">
+                <button class="btn" id="btn-torrent-get" type="button" data-i18n="btn_torrent_get">Get by Hash</button>
+            </div>
+            <div class="demo-row">
+                <input class="input" id="torrent-magnet" type="text" placeholder="magnet link or hash" data-i18n-placeholder="torrent_magnet_placeholder" style="flex:1">
+                <button class="btn" id="btn-torrent-add" type="button" data-i18n="btn_torrent_add">Add Torrent</button>
+            </div>
+            <div class="demo-output" id="out-torrent"></div>
+        </section>
+
+        <!-- ── S7: ts.users ── -->
+        <section class="section" id="sec-users">
+            <h2 data-i18n="sec_users_title">7. ts.users — User Management</h2>
+            <p data-i18n="sec_users_desc">Read-only access to the user list. Useful for access-control decisions. Returns user objects with id, username, rank (0=guest, 10=user, 50=admin, 100=owner), is_banned, created_at.</p>
+
+            <pre class="code-block"><code>// List all users
+var users = ts.users.list();
+// [{ id:"owner", username:"...", rank:100, ... }, ...]
+
+// Get one user by ID
+var user = ts.users.get("owner");
+// { id, username, rank, is_banned, created_at }</code></pre>
+
+            <div class="demo-row">
+                <button class="btn" id="btn-users-list" type="button" data-i18n="btn_users_list">List All Users</button>
+                <input class="input" id="user-id" type="text" placeholder="user ID" data-i18n-placeholder="user_id_placeholder">
+                <button class="btn" id="btn-users-get" type="button" data-i18n="btn_users_get">Get by ID</button>
+            </div>
+            <div class="demo-output" id="out-users"></div>
+        </section>
+
+        <!-- ── S8: ts.i18n ── -->
+        <section class="section" id="sec-i18n">
+            <h2 data-i18n="sec_i18n_title">8. ts.i18n — Internationalization</h2>
+            <p data-i18n="sec_i18n_desc">Plugins can add translations via static <code>i18n/&lt;lang&gt;.json</code> files (loaded automatically) AND programmatically via <code>ts.i18n.add/addMany</code> in service.js. Both merge into the global i18n registry served as <code>/i18n.js</code>. Later plugins override earlier ones.</p>
+
+            <pre class="code-block"><code>// Static: place i18n/en.json, i18n/ru.json in the archive
+// Loaded automatically before service.js runs.
+
+// Dynamic: add at runtime from service.js
+ts.i18n.lang("de", "Deutsch");  // declare language display name
+
+ts.i18n.add("en", "my_key", "English string");
+ts.i18n.add("ru", "my_key", "Строка на русском");
+
+// Add many at once
+ts.i18n.addMany("en", { "key1": "Value 1", "key2": "Value 2" });</code></pre>
+
+            <div class="demo-row">
+                <button class="btn" id="btn-i18n-demo" type="button" data-i18n="btn_i18n_demo">Show Dynamic Translation</button>
+                <div class="demo-output" id="out-i18n"></div>
+            </div>
+        </section>
+
+        <!-- ── S9: ts.vfs ── -->
+        <section class="section" id="sec-vfs">
+            <h2 data-i18n="sec_vfs_title">9. ts.vfs — Plugin File System</h2>
+            <p data-i18n="sec_vfs_desc">Read-only access to files bundled inside the plugin itself. The core exposes them through an isolated virtual file system (fs.FS): either the plugin's folder or its ZIP archive. Paths are relative, forward-slash only. Traversal outside the plugin is impossible — the VFS itself rejects it.</p>
+
+            <div class="explain-box">
+                <strong data-i18n="sec_vfs_api_title">API:</strong>
+                <ul>
+                    <li><code>ts.vfs.read(path)</code> — <span data-i18n="sec_vfs_api_read">file content as string</span></li>
+                    <li><code>ts.vfs.exists(path)</code> — <span data-i18n="sec_vfs_api_exists">boolean, never throws</span></li>
+                    <li><code>ts.vfs.stat(path)</code> — <span data-i18n="sec_vfs_api_stat">{ name, size, is_dir, mode, mod_time }</span></li>
+                    <li><code>ts.vfs.list([path])</code> — <span data-i18n="sec_vfs_api_list">array of { name, size, is_dir }</span></li>
+                </ul>
+                <p data-i18n="sec_vfs_api_note">read/stat/list throw a JS exception on error. Wrap in try/catch or check with exists() first.</p>
+            </div>
+
+            <pre class="code-block"><code>// Read a template file from the plugin's own archive
+var tpl = ts.vfs.read("templates/card.html");
+
+// Safe check before reading
+if (ts.vfs.exists("config.json")) {
+    var cfg = JSON.parse(ts.vfs.read("config.json"));
+}
+
+// Walk a folder
+for (const entry of ts.vfs.list("i18n")) {
+    if (!entry.is_dir &amp;&amp; entry.name.endsWith(".json")) {
+        console.log(entry.name, entry.size, "bytes");
+    }
+}
+
+// Metadata
+var st = ts.vfs.stat("info.yaml");
+console.log(st.size, st.mode, new Date(st.mod_time * 1000));</code></pre>
+
+            <div class="demo-row">
+                <input class="input" id="vfs-path" type="text" value="info.yaml" placeholder="path" data-i18n-placeholder="vfs_path_placeholder">
+                <button class="btn" id="btn-vfs-list" type="button" data-i18n="btn_vfs_list">List</button>
+                <button class="btn" id="btn-vfs-stat" type="button" data-i18n="btn_vfs_stat">Stat</button>
+                <button class="btn" id="btn-vfs-exists" type="button" data-i18n="btn_vfs_exists">Exists</button>
+                <button class="btn" id="btn-vfs-read" type="button" data-i18n="btn_vfs_read">Read</button>
+            </div>
+            <div class="demo-output" id="out-vfs"></div>
+        </section>
+
+        <!-- ── S10: info.yaml Guide ── -->
+        <section class="section" id="sec-manifest">
+            <h2 data-i18n="sec_manifest_title">10. info.yaml — Manifest Reference</h2>
+            <p data-i18n="sec_manifest_desc">Every plugin has an <code>info.yaml</code>. Think of it as a contract: fields you declare grant permission to use those APIs. Undeclared routes or events are silently denied at runtime.</p>
+
+            <table class="manifest-table">
+                <thead>
+                <tr>
+                    <th data-i18n="manifest_th_field">Field</th>
+                    <th data-i18n="manifest_th_type">Type</th>
+                    <th data-i18n="manifest_th_required">Required</th>
+                    <th data-i18n="manifest_th_desc">Description</th>
+                    <th data-i18n="manifest_th_example">Example</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>id</code></td>
+                    <td data-i18n="manifest_type_string">string</td>
+                    <td><strong data-i18n="manifest_req_yes">yes</strong></td>
+                    <td data-i18n="manifest_id_desc">Unique identifier. URL prefix, VFS namespace, storage prefix. Lowercase, no spaces.</td>
+                    <td><code>"my-plugin"</code></td>
+                </tr>
+                <tr>
+                    <td><code>name</code></td>
+                    <td data-i18n="manifest_type_string">string</td>
+                    <td><strong data-i18n="manifest_req_yes">yes</strong></td>
+                    <td data-i18n="manifest_name_desc">Human-readable name for admin UI and plugin lists.</td>
+                    <td><code>"My Plugin"</code></td>
+                </tr>
+                <tr>
+                    <td><code>version</code></td>
+                    <td data-i18n="manifest_type_string">string</td>
+                    <td data-i18n="manifest_req_recommended">recommended</td>
+                    <td data-i18n="manifest_version_desc">Semantic version shown in admin panel.</td>
+                    <td><code>"1.0.0"</code></td>
+                </tr>
+                <tr>
+                    <td><code>author</code></td>
+                    <td data-i18n="manifest_type_string">string</td>
+                    <td data-i18n="manifest_req_optional">optional</td>
+                    <td data-i18n="manifest_author_desc">Author credit shown in admin panel.</td>
+                    <td><code>"John Doe"</code></td>
+                </tr>
+                <tr>
+                    <td><code>description</code></td>
+                    <td data-i18n="manifest_type_string">string</td>
+                    <td data-i18n="manifest_req_optional">optional</td>
+                    <td data-i18n="manifest_desc_desc">Short description for plugin list.</td>
+                    <td><code>"Does X and Y"</code></td>
+                </tr>
+                <tr>
+                    <td><code>entry</code></td>
+                    <td data-i18n="manifest_type_string">string</td>
+                    <td data-i18n="manifest_req_recommended">recommended</td>
+                    <td data-i18n="manifest_entry_desc">Path to main JS file. Executed once on startup.</td>
+                    <td><code>"service.js"</code></td>
+                </tr>
+                <tr>
+                    <td><code>theme_ui</code></td>
+                    <td data-i18n="manifest_type_bool">bool</td>
+                    <td data-i18n="manifest_req_optional">optional</td>
+                    <td>
+                        <span data-i18n="manifest_theme_desc_1">If true, plugin REPLACES the root page at</span>
+                        <code>/</code><span data-i18n="manifest_theme_desc_2">. Only one plugin can be theme.</span>
+                    </td>
+                    <td><code>true</code></td>
+                </tr>
+                <tr>
+                    <td><code>icon</code></td>
+                    <td data-i18n="manifest_type_string">string</td>
+                    <td data-i18n="manifest_req_optional">optional</td>
+                    <td data-i18n="manifest_icon_desc">Path to icon inside plugin's VFS. Shown in admin plugin list.</td>
+                    <td><code>"/img/icon.png"</code></td>
+                </tr>
+                <tr>
+                    <td><code>menu[]</code></td>
+                    <td data-i18n="manifest_type_array">array</td>
+                    <td data-i18n="manifest_req_optional">optional</td>
+                    <td data-i18n="manifest_menu_desc">Sidebar navigation entries. Each: title, route, rank, icon. User sees only where user.rank &gt;= entry.rank.</td>
+                    <td><code>- title: "Page"<br>route: "/"<br>rank: 0</code></td>
+                </tr>
+                <tr>
+                    <td><code>events[]</code></td>
+                    <td data-i18n="manifest_type_array_strings">array of strings</td>
+                    <td data-i18n="manifest_req_recommended">recommended</td>
+                    <td>
+                        <strong data-i18n="manifest_whitelist">Whitelist</strong>
+                        <span data-i18n="manifest_events_desc_1">of bus topics. Use</span>
+                        <code>"topic:*"</code>
+                        <span data-i18n="manifest_events_desc_2">for wildcard. Unlisted → permission denied.</span>
+                    </td>
+                    <td><code>- "system:boot"<br>- "torrent:*"</code></td>
+                </tr>
+                <tr>
+                    <td><code>routes[]</code></td>
+                    <td data-i18n="manifest_type_array_strings">array of strings</td>
+                    <td data-i18n="manifest_req_recommended">recommended</td>
+                    <td>
+                        <strong data-i18n="manifest_whitelist">Whitelist</strong>
+                        <span data-i18n="manifest_routes_desc_1">of URL paths. Use</span>
+                        <code>"/path/*"</code>
+                        <span data-i18n="manifest_routes_desc_2">for prefix matching. Unlisted → silently dropped.</span>
+                    </td>
+                    <td><code>- "/api/*"<br>- "/static/*"</code></td>
+                </tr>
+                </tbody>
+            </table>
+        </section>
+
+    </main>
+</div>
+
+<!-- Modal: Torrents List -->
+<div class="modal-overlay" id="modal-torrents" style="display:none;">
+    <div class="modal modal-lg" role="dialog" aria-modal="true">
+        <div class="modal-header">
+            <h2 data-i18n="modal_torrents_title">Torrents</h2>
+            <button class="modal-close" id="modal-torrents-close" type="button">×</button>
+        </div>
+        <div class="modal-body">
+            <div id="torrents-list-content"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Users List -->
+<div class="modal-overlay" id="modal-users" style="display:none;">
+    <div class="modal modal-lg" role="dialog" aria-modal="true">
+        <div class="modal-header">
+            <h2 data-i18n="modal_users_title">Users</h2>
+            <button class="modal-close" id="modal-users-close" type="button">×</button>
+        </div>
+        <div class="modal-body">
+            <div id="users-list-content"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast notifications -->
+<div id="toast-root" class="toast-root"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
