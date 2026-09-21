@@ -1,6 +1,6 @@
 id: "default-ui"
 name: "Default Web UI"
-version: "2.0.0"
+version: "1.0.0"
 author: "Silo Core"
 description: "Media library with posters, streaming, and plugin menu"
 theme_ui: true
