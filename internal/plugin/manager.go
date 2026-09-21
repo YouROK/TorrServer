@@ -853,14 +853,19 @@ func (m *Manager) MenuFor(rank int) []map[string]any {
 			}
 
 			entry := map[string]any{
-				"plugin_id": id,
-				"title":     e.Title,
-				"title_key": e.TitleKey,
-				"href":      "/plugins/" + id + e.Route,
-				"rank":      e.Rank,
+				"plugin_id":   id,
+				"plugin_name": man.Name,
+				"title":       e.Title,
+				"title_key":   e.TitleKey,
+				"href":        "/plugins/" + id + e.Route,
+				"rank":        e.Rank,
 			}
-			if e.Icon != "" {
-				entry["icon"] = "/plugins/" + id + e.Icon
+			icon := e.Icon
+			if icon == "" {
+				icon = man.Icon
+			}
+			if icon != "" {
+				entry["icon"] = "/plugins/" + id + icon
 			}
 			result = append(result, entry)
 		}
