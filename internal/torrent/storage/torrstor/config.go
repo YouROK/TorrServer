@@ -2,7 +2,7 @@ package torrstor
 
 // Config содержит параметры работы кэша и хранилища
 type Config struct {
-	Capacity          int64  `json:"capacity"`             // Размер кэша в байтах (0 = автовыбор)
+	Capacity          int64  `json:"capacity"`             // Размер кэша в байтах
 	UseDisk           bool   `json:"use_disk"`             // Использовать диск вместо RAM
 	TorrentsSavePath  string `json:"torrents_save_path"`   // Путь для сохранения кусков на диске
 	RemoveCacheOnDrop bool   `json:"remove_cache_on_drop"` // Удалять файлы с диска при закрытии торрента
@@ -12,7 +12,7 @@ type Config struct {
 
 func DefaultConfig() *Config {
 	return &Config{
-		Capacity:          64, // 64 MB
+		Capacity:          64 * 1024 * 1024, // 64 MB
 		UseDisk:           false,
 		TorrentsSavePath:  "torrents",
 		RemoveCacheOnDrop: true,
