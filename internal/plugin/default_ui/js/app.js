@@ -27,11 +27,11 @@ async function loadUser() {
         const res = await fetch('/api/auth/me');
         if (res.ok) {
             window.me = await res.json();
-            document.getElementById('username').textContent = window.me.username;
+            renderUser(window.me);
             return;
         }
     } catch (e) {}
-    document.getElementById('username').textContent = t('guest');
+    renderUser(null);
 }
 
 async function init() {
@@ -41,6 +41,8 @@ async function init() {
         bindModals();
         bindGrid();
         bindInfoModal();
+        bindMenu();
+        await loadPluginsMenu();
         startEvents();
     } catch (e) {
         console.error('[Default UI] init failed:', e);

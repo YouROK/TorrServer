@@ -2,7 +2,7 @@
 
 let editHash = null;
 
-function modalConfirm(title, text) {
+function modalConfirm(title, text, okKey) {
     return new Promise((resolve) => {
         const overlay = document.getElementById('confirm-overlay');
         const okBtn = document.getElementById('confirm-ok');
@@ -10,7 +10,7 @@ function modalConfirm(title, text) {
 
         document.getElementById('confirm-title').textContent = title;
         document.getElementById('confirm-text').textContent = text;
-        okBtn.textContent = t('delete');
+        okBtn.textContent = t(okKey || 'delete');
         cancelBtn.textContent = t('cancel');
         overlay.style.display = 'flex';
 

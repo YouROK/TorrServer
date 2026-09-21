@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TorrServer</title>
+    <title>TS Silo</title>
     <link rel="icon" type="image/x-icon" href="/img/favicon.ico">
     <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
     <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
@@ -13,28 +13,66 @@
     <script src="/i18n.js"></script>
 </head>
 <body>
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
 <div class="layout" id="app">
-    <aside class="sidebar">
-        <div class="brand">
-            <img src="/img/favicon-96x96.png" alt="" class="logo-mini">
-            <span class="brand-name">SILO</span>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-top">
+            <div class="brand" id="brand">
+                <img src="/img/favicon-96x96.png" alt="" class="logo-mini">
+                <span class="brand-name">SILO</span>
+            </div>
+
+            <button class="nav-item" id="btn-add" type="button">
+                <img src="img/ico-add.svg" alt="" class="nav-icon">
+                <span data-i18n="add">Add</span>
+            </button>
+            <button class="nav-item" id="btn-remove-all" type="button">
+                <img src="img/ico-delete.svg" alt="" class="nav-icon">
+                <span data-i18n="remove_all">Remove All</span>
+            </button>
+            <button class="nav-item" id="btn-category" type="button">
+                <img src="img/ico-category.svg" alt="" class="nav-icon">
+                <span data-i18n="category">Category</span>
+            </button>
         </div>
 
-        <button class="btn-add" id="btn-add" type="button">
-            <img src="img/ico-add.svg" alt="" onerror="this.style.display='none'">
-            <span data-i18n="add">Add</span>
-        </button>
+        <div class="sidebar-scroll" id="sidebar-scroll">
+            <div class="nav-section" id="plugins-section" hidden>
+                <div class="nav-section-title" data-i18n="plugins">Plugins</div>
+                <div id="plugins-menu"></div>
+            </div>
+        </div>
 
-        <nav>
-            <a class="nav-item active" data-i18n="library">Library</a>
-        </nav>
-        <div class="sidebar-footer">
-            <span class="whoami" id="username">Loading...</span>
+        <div class="sidebar-bottom">
+            <button class="nav-item" id="btn-donate" type="button">
+                <img src="img/ico-donate.svg" alt="" class="nav-icon">
+                <span data-i18n="donate">Donate</span>
+            </button>
+            <button class="nav-item" id="btn-about" type="button">
+                <img src="img/ico-info.svg" alt="" class="nav-icon">
+                <span data-i18n="about">About</span>
+            </button>
+            <button class="nav-item nav-item-danger" id="btn-turn-off" type="button" hidden>
+                <img src="img/ico-power.svg" alt="" class="nav-icon">
+                <span data-i18n="turn_off">Turn Off</span>
+            </button>
+
+            <div class="user-row">
+                <div class="user-avatar" id="user-avatar">?</div>
+                <span class="user-name" id="username">...</span>
+                <button class="user-logout" id="btn-logout" type="button" title="Logout">
+                    <img src="img/ico-logout.svg" alt="">
+                </button>
+            </div>
         </div>
     </aside>
 
     <main class="content">
         <header class="topbar">
+            <button class="hamburger" id="hamburger" type="button" aria-label="Menu">
+                <img src="img/ico-menu.svg" alt="">
+            </button>
             <h1 data-i18n="library">Library</h1>
         </header>
         <section class="grid" id="grid">
@@ -43,6 +81,7 @@
     </main>
 </div>
 
+<!-- Add torrent modal -->
 <div class="modal-overlay" id="add-overlay" style="display:none;">
     <div class="modal" role="dialog" aria-modal="true">
         <div class="modal-header">
@@ -76,6 +115,7 @@
     </div>
 </div>
 
+<!-- Edit torrent modal -->
 <div class="modal-overlay" id="edit-overlay" style="display:none;">
     <div class="modal" role="dialog" aria-modal="true">
         <div class="modal-header">
@@ -109,6 +149,7 @@
     </div>
 </div>
 
+<!-- Info modal -->
 <div class="modal-overlay" id="info-overlay" style="display:none;">
     <div class="modal modal-info" role="dialog" aria-modal="true">
         <div class="info-header">
@@ -140,6 +181,7 @@
     </div>
 </div>
 
+<!-- Confirm modal -->
 <div class="modal-overlay" id="confirm-overlay" style="display:none;">
     <div class="modal modal-sm" role="dialog" aria-modal="true">
         <div class="modal-header">
@@ -155,12 +197,63 @@
     </div>
 </div>
 
+<!-- Donate modal -->
+<div class="modal-overlay" id="donate-overlay" style="display:none;">
+    <div class="modal modal-sm" role="dialog" aria-modal="true">
+        <div class="modal-header">
+            <h2 data-i18n="donate_title">Support the project</h2>
+            <button class="modal-close" data-close="donate-overlay" type="button">×</button>
+        </div>
+        <div class="modal-body">
+            <p class="confirm-text" data-i18n="donate_text"></p>
+            <div class="donate-links">
+                <a class="btn donate-btn" href="https://boosty.to/yourok" target="_blank" rel="noopener noreferrer">Boosty</a>
+                <a class="btn donate-btn" href="https://yoomoney.ru/to/410013733697114/200" target="_blank" rel="noopener noreferrer">YooMoney</a>
+                <a class="btn donate-btn" href="https://www.tbank.ru/cf/742qEMhKhKn" target="_blank" rel="noopener noreferrer">T-Bank</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- About modal -->
+<div class="modal-overlay" id="about-overlay" style="display:none;">
+    <div class="modal modal-about" role="dialog" aria-modal="true">
+        <div class="modal-header">
+            <h2 data-i18n="about">About</h2>
+            <button class="modal-close" data-close="about-overlay" type="button">×</button>
+        </div>
+        <div class="modal-body about-body">
+            <div class="about-brand">
+                <img src="/img/favicon-96x96.png" alt="">
+                <div class="about-brand-text">
+                    <div class="about-title">TorrServer</div>
+                    <div class="about-version" id="about-version">—</div>
+                </div>
+            </div>
+
+            <p class="about-thanks" data-i18n="about_thanks">Thanks to everyone who tested and helped!</p>
+
+            <div class="about-section-title" data-i18n="about_links">Links</div>
+            <ul class="about-links">
+                <li><a href="https://github.com/YouROK/TorrServer" target="_blank" rel="noopener noreferrer" data-i18n="about_link_project">Project GitHub</a></li>
+                <li><a href="https://github.com/YouROK/TorrServer/releases" target="_blank" rel="noopener noreferrer" data-i18n="about_link_releases">TorrServer Releases</a></li>
+                <li><a href="https://github.com/vladlenas" target="_blank" rel="noopener noreferrer" data-i18n="about_link_nas">NAS Releases</a></li>
+                <li><span class="about-muted" data-i18n="about_link_api">API Docs (coming soon)</span></li>
+            </ul>
+
+            <div class="about-section-title" data-i18n="about_special_thanks">Special Thanks</div>
+            <ul class="about-contributors" id="about-contributors"></ul>
+        </div>
+    </div>
+</div>
+
 <div id="toast-root" class="toast-root"></div>
 
 <script src="js/utils.js"></script>
 <script src="js/cards.js"></script>
 <script src="js/modals.js"></script>
 <script src="js/info.js"></script>
+<script src="js/menu.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
