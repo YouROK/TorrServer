@@ -5,7 +5,7 @@ author: "Silo Core"
 description: "Web interface for server administration: users, plugins, settings, logs, and torrent engine configuration."
 builtin: true
 entry: "service.js"
-icon: "img/logo.png"
+icon: "/img/logo.png"
 
 routes:
   - "/"

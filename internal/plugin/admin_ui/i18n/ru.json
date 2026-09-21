@@ -62,7 +62,7 @@
   "disable_utp": "Отключить uTP",
   "disable_tcp": "Отключить TCP",
   "enable_ipv6": "Включить IPv6",
-  "cache_size": "Размер кэша (МБ, 0 = авто)",
+  "cache_size": "Размер кэша (МБ)",
   "connections_limit": "Лимит подключений",
   "read_ahead": "Read-ahead (%)",
   "disk_cache_path": "Путь к кэшу на диске",

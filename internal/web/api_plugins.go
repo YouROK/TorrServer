@@ -187,6 +187,17 @@ func (s *Server) handlePluginInfo(c *gin.Context) {
 		return
 	}
 
+	menu := make([]gin.H, 0, len(man.Menu))
+	for _, m := range man.Menu {
+		menu = append(menu, gin.H{
+			"title":     m.Title,
+			"title_key": m.TitleKey,
+			"route":     m.Route,
+			"rank":      m.Rank,
+			"icon":      m.Icon,
+		})
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"id":          man.ID,
 		"name":        man.Name,
@@ -195,6 +206,8 @@ func (s *Server) handlePluginInfo(c *gin.Context) {
 		"description": man.Description,
 		"theme_ui":    man.ThemeUI,
 		"entry":       man.Entry,
+		"icon":        man.Icon,
+		"menu":        menu,
 		"events":      man.Events,
 		"routes":      man.Routes,
 		"builtin":     s.pluginMgr.IsBuiltin(man.ID),

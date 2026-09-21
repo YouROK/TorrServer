@@ -62,7 +62,7 @@
   "disable_utp": "Disable uTP",
   "disable_tcp": "Disable TCP",
   "enable_ipv6": "Enable IPv6",
-  "cache_size": "Cache size (MiB, 0 = auto)",
+  "cache_size": "Cache size (MiB)",
   "connections_limit": "Connections limit",
   "read_ahead": "Read--ahead (%)",
   "disk_cache_path": "Disk cache path",

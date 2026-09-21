@@ -15,6 +15,14 @@ let refreshTimer = null;
 let pluginDragId = null;
 let offlineShown = false;
 
+function esc(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
 function buildLangSelect() {
     const sel = document.getElementById('lang-select');
     sel.innerHTML = '';
@@ -611,7 +619,13 @@ async function loadPlugins() {
             return `
                 <tr draggable="true" data-id="${p.id}">
                     <td class="drag-cell"><span class="drag-handle"></span></td>
-                    <td>${p.id}${p.builtin ? ' <span class="badge badge-user">' + t('builtin') + '</span>' : ''}</td>
+                    <td>
+                        <span class="plugin-id-wrap">
+                            ${p.icon ? '<img class="plugin-icon" src="' + esc(p.icon) + '" alt="" onerror="this.style.display=\'none\'">' : ''}
+                            <span>${p.id}</span>
+                        </span>
+                        ${p.builtin ? ' <span class="badge badge-user">' + t('builtin') + '</span>' : ''}
+                    </td>
                     <td>${p.name}</td>
                     <td>${p.version}</td>
                     <td>${statusBadge}</td>
@@ -693,9 +707,27 @@ async function setPluginAsTheme(id) {
 async function showPluginInfo(id) {
     try {
         const m = await api('/plugins/' + id + '/info');
-        const list = (arr) => arr.map((x) => '<li>' + x + '</li>').join('');
+        const list = (arr) => arr.map((x) => '<li>' + esc(x) + '</li>').join('');
+
+        // Иконка рядом с именем
+        const iconHTML = m.icon
+            ? '<img class="plugin-icon" src="/plugins/' + esc(m.id) + esc(m.icon) + '" alt="" onerror="this.style.display=\'none\'">'
+            : '';
 
         let extra = '';
+
+        if (m.menu && m.menu.length) {
+            const items = m.menu.map((e) => {
+                const title = e.title_key ? (e.title + ' / ' + e.title_key) : e.title;
+                return '<li>' +
+                    esc(title) +
+                    ' → <code>' + esc(e.route) + '</code>' +
+                    ' <small>rank ' + e.rank + '</small>' +
+                    '</li>';
+            }).join('');
+            extra += '<h3>menu</h3><ul class="info-list">' + items + '</ul>';
+        }
+
         if (m.events && m.events.length) {
             extra += '<h3>events</h3><ul class="info-list">' + list(m.events) + '</ul>';
         }
@@ -704,15 +736,22 @@ async function showPluginInfo(id) {
         }
 
         await modalAlert(t('info'), `
-            <div class="info-grid">
-                <span>id</span><b>${m.id}</b>
-                <span>name</span><b>${m.name}</b>
-                <span>version</span><b>${m.version}</b>
-                <span>author</span><b>${m.author || '—'}</b>
-                <span>theme_ui</span><b>${m.theme_ui}</b>
-                <span>entry</span><b>${m.entry || '—'}</b>
+            <div class="info-head">
+                ${iconHTML}
+                <div class="info-head-text">
+                    <div class="info-head-name">${esc(m.name)}</div>
+                    <div class="info-head-id">${esc(m.id)}</div>
+                </div>
             </div>
-            <p class="info-desc">${m.description || ''}</p>
+            <div class="info-grid">
+                <span>version</span><b>${esc(m.version)}</b>
+                <span>author</span><b>${esc(m.author || '—')}</b>
+                <span>theme_ui</span><b>${m.theme_ui}</b>
+                <span>builtin</span><b>${m.builtin}</b>
+                <span>entry</span><b>${esc(m.entry || '—')}</b>
+                <span>icon</span><b>${esc(m.icon || '—')}</b>
+            </div>
+            <p class="info-desc">${esc(m.description || '')}</p>
             ${extra}
         `);
     } catch (e) {
@@ -794,7 +833,7 @@ async function renderSettings() {
             <fieldset class="subblock">
                 <legend>${t('cache')}</legend>
                 <label class="field"><span>${t('cache_size')}</span>
-                    <input class="input" id="te-cap" type="number" value="${Math.round((st.capacity || 0) / 1048576)}"></label>
+                    <input class="input" id="te-cap" type="number" min="1" value="${Math.max(1, Math.round((st.capacity || 0) / 1048576))}"></label>
                 <label class="field"><span>${t('connections_limit')}</span>
                     <input class="input" id="te-conn" type="number" value="${st.connections_limit || 0}"></label>
                 <label class="field"><span>${t('read_ahead')}</span>

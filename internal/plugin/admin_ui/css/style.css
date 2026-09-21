@@ -732,9 +732,9 @@ label:has(input[type="radio"]:hover) {
     color: var(--silo-amber);
 }
 
-/* Колонка Theme: центрируем бейджи и кнопку */
+/* Колонка Theme: бейдж и кнопки */
 .theme-cell {
-    text-align: center;
+    text-align: start;
     white-space: nowrap;
 }
 
@@ -814,4 +814,48 @@ label:has(input[type="radio"]:hover) {
     .file-input {
         width: 100%;
     }
+}
+
+.plugin-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    vertical-align: middle;
+    margin-right: 8px;
+    object-fit: contain;
+}
+
+.plugin-id-wrap {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+}
+
+.info-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--silo-border);
+}
+
+.info-head .plugin-icon {
+    width: 40px;
+    height: 40px;
+    margin-right: 0;
+    border-radius: 6px;
+}
+
+.info-head-name {
+    color: var(--silo-steel-bright);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.info-head-id {
+    color: var(--silo-text-faint);
+    font-size: 12px;
+    font-family: "JetBrains Mono", monospace;
+    margin-top: 2px;
 }
