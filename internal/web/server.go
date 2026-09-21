@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
-	admin "silo/internal/web/admin"
 	"time"
 
 	"silo/internal/config"
@@ -149,9 +148,6 @@ func (s *Server) registerRoutes() {
 		// SSE-поток обновлений библиотеки для главного экрана темы
 		api.GET("/events", s.handleEventsStream)
 	}
-
-	// Встроенная админка: аварийный люк и управление системой
-	admin.RegisterRoutes(s.router, s.userSvc)
 
 	// Главная страница и плагины
 	s.router.GET("/", s.pluginsRouter.HandleRoot)

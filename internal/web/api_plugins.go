@@ -1,12 +1,13 @@
 package web
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 
 	"silo/internal/log"
+	"silo/internal/plugin"
 	"silo/internal/user"
 
 	"github.com/gin-gonic/gin"
@@ -51,32 +52,54 @@ func (s *Server) handleUploadPlugin(c *gin.Context) {
 	}
 	defer file.Close()
 
-	tmpPath := filepath.Join(os.TempDir(), header.Filename)
-	out, err := os.Create(tmpPath)
+	tmp, err := os.CreateTemp("", "silo-plugin-upload-*.zip")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create temp file"})
 		return
 	}
-	defer out.Close()
+	tmpPath := tmp.Name()
 	defer os.Remove(tmpPath)
 
-	if _, err := io.Copy(out, file); err != nil {
+	if _, err := io.Copy(tmp, file); err != nil {
+		tmp.Close()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save file"})
 		return
 	}
+	tmp.Close()
 
-	installed, err := s.pluginMgr.InstallPlugin(tmpPath)
+	_, update := c.GetQuery("update")
+
+	var installed []string
+	if update {
+		installed, err = s.pluginMgr.UpdatePlugin(tmpPath)
+	} else {
+		installed, err = s.pluginMgr.InstallPlugin(tmpPath)
+	}
+
 	if err != nil {
+		var existsErr *plugin.PluginExistsError
+		if errors.As(err, &existsErr) {
+			c.JSON(http.StatusConflict, gin.H{
+				"error":      existsErr.Error(),
+				"code":       "plugin_exists",
+				"id":         existsErr.ID,
+				"version":    existsErr.Version,
+				"is_builtin": existsErr.IsBuiltin,
+			})
+			return
+		}
 		log.Errorf("[Web] Failed to install plugin: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	log.Infof("[Web] %d plugin(s) uploaded from '%s' by user %s", len(installed), header.Filename, currentUser.Username)
+	log.Infof("[Web] %d plugin(s) installed from '%s' by user %s (update=%v)",
+		len(installed), header.Filename, currentUser.Username, update)
 	c.JSON(http.StatusOK, gin.H{
 		"status":    "installed",
 		"filename":  header.Filename,
-		"installed": installed, // список ID установленных плагинов
+		"updated":   update,
+		"installed": installed,
 	})
 }
 
@@ -96,9 +119,12 @@ func (s *Server) handleDeletePlugin(c *gin.Context) {
 
 	pluginID := c.Param("id")
 
-	// Защита: встроенный плагин удалить нельзя
-	if pluginID == "default_ui" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "cannot delete built-in default UI"})
+	if s.pluginMgr.IsBuiltin(pluginID) {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": "cannot delete built-in plugin",
+			"code":  "plugin_builtin",
+			"id":    pluginID,
+		})
 		return
 	}
 
@@ -161,7 +187,6 @@ func (s *Server) handlePluginInfo(c *gin.Context) {
 		return
 	}
 
-	// Собираем snake_case ответ вручную, независимо от тегов манифеста
 	c.JSON(http.StatusOK, gin.H{
 		"id":          man.ID,
 		"name":        man.Name,
@@ -172,6 +197,7 @@ func (s *Server) handlePluginInfo(c *gin.Context) {
 		"entry":       man.Entry,
 		"events":      man.Events,
 		"routes":      man.Routes,
+		"builtin":     s.pluginMgr.IsBuiltin(man.ID),
 	})
 }
 
@@ -202,7 +228,7 @@ func (s *Server) handlePluginEnable(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "updated"})
 }
 
-// handleInstallPluginFromURL устанавливает плагин по прямой ссылке или ссылке на GitHub
+// handleInstallPluginFromURL устанавливает плагин по прямой ссылке
 func (s *Server) handleInstallPluginFromURL(c *gin.Context) {
 	val, _ := c.Get("user")
 	currentUser := val.(*user.User)
@@ -225,16 +251,38 @@ func (s *Server) handleInstallPluginFromURL(c *gin.Context) {
 		return
 	}
 
-	installed, err := s.pluginMgr.InstallFromURL(req.URL)
+	_, update := c.GetQuery("update")
+
+	var installed []string
+	var err error
+	if update {
+		installed, err = s.pluginMgr.UpdateFromURL(req.URL)
+	} else {
+		installed, err = s.pluginMgr.InstallFromURL(req.URL)
+	}
+
 	if err != nil {
+		var existsErr *plugin.PluginExistsError
+		if errors.As(err, &existsErr) {
+			c.JSON(http.StatusConflict, gin.H{
+				"error":      existsErr.Error(),
+				"code":       "plugin_exists",
+				"id":         existsErr.ID,
+				"version":    existsErr.Version,
+				"is_builtin": existsErr.IsBuiltin,
+			})
+			return
+		}
 		log.Errorf("[Web] Failed to install plugin from URL %s: %v", req.URL, err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	log.Infof("[Web] %d plugin(s) installed from URL by user %s", len(installed), currentUser.Username)
+	log.Infof("[Web] %d plugin(s) installed from URL by user %s (update=%v)",
+		len(installed), currentUser.Username, update)
 	c.JSON(http.StatusOK, gin.H{
 		"status":    "installed",
+		"updated":   update,
 		"installed": installed,
 	})
 }

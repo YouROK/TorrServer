@@ -33,19 +33,37 @@ type TorrentAPI interface {
 	SetBlocklistText(text string) error
 }
 
+// PluginExistsError возвращается при попытке установить плагин,
+// чей ID уже присутствует в системе (включая встроенные).
+// Веб-слой распознаёт его через errors.As и отдаёт 409 Conflict.
+type PluginExistsError struct {
+	ID        string
+	Version   string
+	IsBuiltin bool
+}
+
+func (e *PluginExistsError) Error() string {
+	if e.IsBuiltin {
+		return fmt.Sprintf("plugin '%s' is built-in and cannot be replaced", e.ID)
+	}
+	return fmt.Sprintf("plugin '%s' (v%s) is already installed", e.ID, e.Version)
+}
+
 type Manager struct {
-	mu           sync.RWMutex
-	pluginsDir   string
-	db           *database.DB
-	registrar    WebRegistrar
-	torrMgr      *torrent.Manager
-	userSvc      *user.Service
-	torrentAPI   TorrentAPI
-	defaultUIFS  fs.FS
-	defaultUIMan *Manifest
-	runtimes     map[string]*JSRuntime
-	manifests    map[string]*Manifest
-	i18n         *I18nRegistry
+	mu         sync.RWMutex
+	pluginsDir string
+	db         *database.DB
+	registrar  WebRegistrar
+	torrMgr    *torrent.Manager
+	userSvc    *user.Service
+	torrentAPI TorrentAPI
+
+	builtins     map[string]*BuiltinPlugin
+	builtinOrder []string
+
+	runtimes  map[string]*JSRuntime
+	manifests map[string]*Manifest
+	i18n      *I18nRegistry
 }
 
 func NewManager(pluginsDir string, db *database.DB, registrar WebRegistrar, torrMgr *torrent.Manager, userSvc *user.Service) (*Manager, error) {
@@ -53,14 +71,9 @@ func NewManager(pluginsDir string, db *database.DB, registrar WebRegistrar, torr
 		return nil, fmt.Errorf("failed to create plugins dir: %w", err)
 	}
 
-	defaultFS, err := GetDefaultUIFS()
+	builtins, builtinOrder, err := LoadBuiltins()
 	if err != nil {
-		return nil, fmt.Errorf("failed to load embedded default UI: %w", err)
-	}
-
-	defaultMan, err := LoadManifestFromFS(defaultFS)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load default UI manifest: %w", err)
+		return nil, fmt.Errorf("failed to load builtin plugins: %w", err)
 	}
 
 	m := &Manager{
@@ -69,8 +82,8 @@ func NewManager(pluginsDir string, db *database.DB, registrar WebRegistrar, torr
 		registrar:    registrar,
 		torrMgr:      torrMgr,
 		userSvc:      userSvc,
-		defaultUIFS:  defaultFS,
-		defaultUIMan: defaultMan,
+		builtins:     builtins,
+		builtinOrder: builtinOrder,
 		runtimes:     make(map[string]*JSRuntime),
 		manifests:    make(map[string]*Manifest),
 		i18n:         NewI18nRegistry(),
@@ -86,37 +99,35 @@ func (m *Manager) ReloadQueue() error {
 	m.registrar.Reset()
 	m.stopAllRuntimes()
 
-	// 1. СНАЧАЛА загружаем манифесты ВСЕХ плагинов (активных и отключённых)
-	//    чтобы ListPlugins мог показать их все
 	m.manifests = make(map[string]*Manifest)
 	m.i18n.Reset()
-	m.manifests[m.defaultUIMan.ID] = m.defaultUIMan
+
+	for id, bp := range m.builtins {
+		m.manifests[id] = bp.Manifest
+	}
 
 	states, err := m.loadStates()
 	if err != nil {
 		return err
 	}
 
-	// Убеждаемся что встроенный плагин есть в списке состояний
-	hasDefault := false
-	for i := range states {
-		if states[i].ID == m.defaultUIMan.ID {
-			hasDefault = true
-			break
-		}
+	existing := make(map[string]bool, len(states))
+	for _, st := range states {
+		existing[st.ID] = true
 	}
-	if !hasDefault {
-		states = append(states, PluginState{ID: m.defaultUIMan.ID, Order: 0, Enabled: true})
+	for i, id := range m.builtinOrder {
+		if !existing[id] {
+			states = append(states, PluginState{ID: id, Order: i, Enabled: true})
+		}
 	}
 
 	sort.Slice(states, func(i, j int) bool {
 		return states[i].Order < states[j].Order
 	})
 
-	// Загружаем манифесты для всех плагинов в кэш (независимо от флага Enabled)
 	for _, state := range states {
-		if state.ID == m.defaultUIMan.ID {
-			continue // уже добавлен выше
+		if _, isBuiltin := m.builtins[state.ID]; isBuiltin {
+			continue
 		}
 
 		_, manifest, loadErr := m.loadPluginVFS(state.ID)
@@ -127,7 +138,6 @@ func (m *Manager) ReloadQueue() error {
 		m.manifests[state.ID] = manifest
 	}
 
-	// 2. ТЕПЕРЬ запускаем только те плагины, у которых Enabled=true
 	loadedIDs := make(map[string]bool)
 	themeSet := false
 
@@ -138,7 +148,7 @@ func (m *Manager) ReloadQueue() error {
 
 		manifest, ok := m.manifests[state.ID]
 		if !ok {
-			continue // манифест не удалось загрузить
+			continue
 		}
 
 		if loadedIDs[manifest.ID] {
@@ -148,8 +158,8 @@ func (m *Manager) ReloadQueue() error {
 		loadedIDs[manifest.ID] = true
 
 		var pluginVFS fs.FS
-		if state.ID == m.defaultUIMan.ID {
-			pluginVFS = m.defaultUIFS
+		if bp, isBuiltin := m.builtins[state.ID]; isBuiltin {
+			pluginVFS = bp.VFS
 		} else {
 			vfs, _, loadErr := m.loadPluginVFS(state.ID)
 			if loadErr != nil {
@@ -276,7 +286,6 @@ func (m *Manager) SetPluginOrder(orderedIDs []string) error {
 		for index, id := range orderedIDs {
 			var state PluginState
 
-			// Сохраняем текущее состояние плагина, меняем только порядок
 			if data := b.Get([]byte(id)); data != nil {
 				_ = json.Unmarshal(data, &state)
 			} else {
@@ -308,6 +317,20 @@ func (m *Manager) SetPluginOrder(orderedIDs []string) error {
 // REST API Методы (Используются веб-слоем)
 // ============================================================================
 
+// IsBuiltin сообщает, является ли плагин встроенным.
+func (m *Manager) IsBuiltin(pluginID string) bool {
+	_, ok := m.builtins[pluginID]
+	return ok
+}
+
+// pluginExists возвращает манифест уже установленного плагина
+func (m *Manager) pluginExists(id string) (*Manifest, bool) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	man, ok := m.manifests[id]
+	return man, ok
+}
+
 // ListPlugins возвращает ВСЕ плагины (активные и отключённые) в порядке загрузки
 func (m *Manager) ListPlugins() []map[string]any {
 	m.mu.RLock()
@@ -319,7 +342,6 @@ func (m *Manager) ListPlugins() []map[string]any {
 		stateByID[st.ID] = st
 	}
 
-	// Текущая тема главной страницы
 	activeTheme := m.registrar.ActiveThemeID()
 
 	result := make([]map[string]any, 0, len(m.manifests))
@@ -336,16 +358,18 @@ func (m *Manager) ListPlugins() []map[string]any {
 			iconURL = "/plugins/" + id + man.Icon
 		}
 
+		_, isBuiltin := m.builtins[id]
+
 		result = append(result, map[string]any{
 			"id":            id,
 			"name":          man.Name,
 			"version":       man.Version,
 			"theme_ui":      man.ThemeUI,
-			"current_theme": id == activeTheme, // этот плагин сейчас является темой
+			"current_theme": id == activeTheme,
 			"enabled":       enabled,
 			"page":          hasRootRoute(man.Routes),
 			"order":         order,
-			"builtin":       id == m.defaultUIMan.ID,
+			"builtin":       isBuiltin,
 			"icon":          iconURL,
 		})
 	}
@@ -365,37 +389,43 @@ func hasRootRoute(routes []string) bool {
 	return false
 }
 
-// InstallPlugin устанавливает плагин из ZIP-файла на диск и регистрирует в БД
-// InstallPlugin устанавливает плагины из ZIP-файла.
-// Поддерживает: (1) плагин в корне, (2) плагин в подпапке, (3) несколько плагинов в разных подпапках.
-// Возвращает список ID установленных плагинов.
+// InstallPlugin устанавливает плагины из ZIP и запрещает перезапись:
+// если плагин с таким ID уже есть (включая встроенные) — вернёт
+// *PluginExistsError. Чтобы обновить существующий, используй UpdatePlugin.
 func (m *Manager) InstallPlugin(zipPath string) ([]string, error) {
+	return m.installPluginInternal(zipPath, false)
+}
+
+// UpdatePlugin — то же, что InstallPlugin, но разрешает замену внешнего
+// плагина. Встроенные всё равно запрещены. Данные плагина
+// (BucketPluginData), его order и enabled сохраняются.
+func (m *Manager) UpdatePlugin(zipPath string) ([]string, error) {
+	return m.installPluginInternal(zipPath, true)
+}
+
+func (m *Manager) installPluginInternal(zipPath string, update bool) ([]string, error) {
 	zr, err := zip.OpenReader(zipPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open zip: %w", err)
 	}
 	defer zr.Close()
 
-	// Ищем все вхождения info.yaml на глубине 0 или 1 (корень или подпапка)
 	type pluginRoot struct {
-		name   string // "" для корня, имя подпапки для подпапки
-		prefix string // префикс пути в ZIP для фильтрации файлов
+		name   string
+		prefix string
 	}
 
 	var roots []pluginRoot
 
-	// Проверка: есть ли info.yaml в корне?
 	_, err = zr.Open("info.yaml")
 	if err == nil {
 		roots = append(roots, pluginRoot{name: "", prefix: ""})
 	}
 
-	// Сканируем подпапки верхнего уровня
 	dirMap := make(map[string]bool)
 	for _, f := range zr.File {
 		parts := strings.SplitN(f.Name, "/", 2)
 		if len(parts) == 2 && parts[1] != "" && !f.FileInfo().IsDir() {
-			// Это файл в подпапке верхнего уровня
 			dirMap[parts[0]] = true
 		}
 	}
@@ -415,7 +445,6 @@ func (m *Manager) InstallPlugin(zipPath string) ([]string, error) {
 	installed := make([]string, 0, len(roots))
 
 	for _, root := range roots {
-		// Читаем манифест из нужного места
 		infoPath := "info.yaml"
 		if root.prefix != "" {
 			infoPath = root.prefix + "info.yaml"
@@ -440,19 +469,27 @@ func (m *Manager) InstallPlugin(zipPath string) ([]string, error) {
 			return installed, fmt.Errorf("manifest in %s missing 'id' field", infoPath)
 		}
 
+		if existing, ok := m.pluginExists(manifest.ID); ok {
+			_, isBuiltin := m.builtins[manifest.ID]
+			if isBuiltin || !update {
+				return installed, &PluginExistsError{
+					ID:        manifest.ID,
+					Version:   existing.Version,
+					IsBuiltin: isBuiltin,
+				}
+			}
+		}
+
 		pluginDir := filepath.Join(m.pluginsDir, manifest.ID)
 		if err := os.MkdirAll(pluginDir, 0755); err != nil {
 			return installed, fmt.Errorf("failed to create plugin dir: %w", err)
 		}
 
-		// Распаковываем только файлы из нужной подпапки (или все из корня)
 		for _, f := range zr.File {
-			// Фильтр: если есть префикс — берём только файлы из этой подпапки
 			if root.prefix != "" && !strings.HasPrefix(f.Name, root.prefix) {
 				continue
 			}
 
-			// Относительный путь в плагине
 			relName := strings.TrimPrefix(f.Name, root.prefix)
 			if relName == "" || relName == "/" {
 				continue
@@ -460,7 +497,6 @@ func (m *Manager) InstallPlugin(zipPath string) ([]string, error) {
 
 			fpath := filepath.Join(pluginDir, relName)
 
-			// Защита от ZipSlip
 			cleanPath := filepath.Clean(fpath)
 			if !strings.HasPrefix(cleanPath, filepath.Clean(pluginDir)+string(os.PathSeparator)) && cleanPath != filepath.Clean(pluginDir) {
 				return installed, fmt.Errorf("illegal file path: %s", fpath)
@@ -495,28 +531,35 @@ func (m *Manager) InstallPlugin(zipPath string) ([]string, error) {
 			}
 		}
 
-		// Добавляем в базу с максимальным порядком
 		err = m.db.GetRawConn().Update(func(tx *bolt.Tx) error {
 			b := tx.Bucket(database.BucketPlugins)
 
-			maxOrder := 0
-			_ = b.ForEach(func(k, v []byte) error {
-				var s PluginState
-				if err := json.Unmarshal(v, &s); err == nil {
-					if s.Order > maxOrder {
+			var state PluginState
+			if data := b.Get([]byte(manifest.ID)); data != nil {
+				// Update существующего: order, enabled и created_at сохраняем.
+				if err := json.Unmarshal(data, &state); err != nil {
+					return err
+				}
+			} else {
+				maxOrder := 0
+				_ = b.ForEach(func(k, v []byte) error {
+					var s PluginState
+					if err := json.Unmarshal(v, &s); err == nil && s.Order > maxOrder {
 						maxOrder = s.Order
 					}
-				}
-				return nil
-			})
-
-			state := PluginState{
-				ID:        manifest.ID,
-				Order:     maxOrder + 1,
-				Enabled:   true,
-				CreatedAt: time.Now(),
+					return nil
+				})
+				state.Order = maxOrder + 1
+				state.Enabled = true
+				state.CreatedAt = time.Now()
 			}
-			data, _ := json.Marshal(state)
+
+			state.ID = manifest.ID
+
+			data, err := json.Marshal(state)
+			if err != nil {
+				return err
+			}
 			return b.Put([]byte(manifest.ID), data)
 		})
 
@@ -524,7 +567,11 @@ func (m *Manager) InstallPlugin(zipPath string) ([]string, error) {
 			return installed, fmt.Errorf("failed to save plugin state to db: %w", err)
 		}
 
-		log.Infof("[Plugin] Installed plugin '%s' from %s", manifest.ID, zipPath)
+		action := "Installed"
+		if update {
+			action = "Updated"
+		}
+		log.Infof("[Plugin] %s plugin '%s' from %s", action, manifest.ID, zipPath)
 		installed = append(installed, manifest.ID)
 	}
 
@@ -537,11 +584,8 @@ func (m *Manager) InstallPlugin(zipPath string) ([]string, error) {
 
 // UninstallPlugin удаляет плагин с диска и из базы данных
 func (m *Manager) UninstallPlugin(pluginID string) error {
-	if pluginID == "default_ui" {
-		return fmt.Errorf("cannot uninstall built-in default UI")
-	}
-	if pluginID == "admin_ui" {
-		return fmt.Errorf("cannot uninstall built-in admin UI")
+	if _, isBuiltin := m.builtins[pluginID]; isBuiltin {
+		return fmt.Errorf("cannot uninstall built-in plugin '%s'", pluginID)
 	}
 
 	err := m.db.GetRawConn().Update(func(tx *bolt.Tx) error {
@@ -601,7 +645,6 @@ func (m *Manager) SetPluginEnabled(pluginID string, enabled bool) error {
 				return err
 			}
 		} else {
-			// Плагин еще не в базе (например, встроенный) — создаем запись
 			state.Enabled = true
 			state.CreatedAt = time.Now()
 		}
@@ -636,11 +679,17 @@ func (m *Manager) GetPluginInfo(pluginID string) (*Manifest, error) {
 	return man, nil
 }
 
-// InstallFromURL скачивает плагин по URL и устанавливает его.
-// Поддерживает любые прямые ссылки на .zip с автоматическим следованием редиректам.
-// Защита: SSRF (запрет на приватные IP), ограничение размера 50MB, таймаут 60с.
+// InstallFromURL скачивает плагин по URL и устанавливает его
 func (m *Manager) InstallFromURL(rawURL string) ([]string, error) {
-	// 1. Парсим и валидируем URL
+	return m.installFromURLInternal(rawURL, false)
+}
+
+// UpdateFromURL — то же, что InstallFromURL, но разрешает замену
+func (m *Manager) UpdateFromURL(rawURL string) ([]string, error) {
+	return m.installFromURLInternal(rawURL, true)
+}
+
+func (m *Manager) installFromURLInternal(rawURL string, update bool) ([]string, error) {
 	parsed, err := neturl.Parse(rawURL)
 	if err != nil {
 		return nil, fmt.Errorf("invalid url: %w", err)
@@ -650,7 +699,6 @@ func (m *Manager) InstallFromURL(rawURL string) ([]string, error) {
 		return nil, fmt.Errorf("only http and https schemes are allowed")
 	}
 
-	// 2. SSRF-защита: резолвим хост и проверяем, что IP не приватный
 	host := parsed.Hostname()
 	ips, err := net.LookupIP(host)
 	if err != nil {
@@ -662,10 +710,8 @@ func (m *Manager) InstallFromURL(rawURL string) ([]string, error) {
 		}
 	}
 
-	// 3. Скачиваем с кастомным клиентом: таймаут + автоматические редиректы (до 10)
 	client := &http.Client{
 		Timeout: 60 * time.Second,
-		// CheckRedirect оставляем дефолтным: http.Client сам следует до 10 редиректам
 	}
 
 	log.Infof("[Plugin] Downloading plugin from %s", rawURL)
@@ -680,7 +726,6 @@ func (m *Manager) InstallFromURL(rawURL string) ([]string, error) {
 		return nil, fmt.Errorf("server returned status %d", resp.StatusCode)
 	}
 
-	// 4. Создаём временный файл
 	tmpFile, err := os.CreateTemp("", "silo-plugin-*.zip")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create temp file: %w", err)
@@ -688,7 +733,6 @@ func (m *Manager) InstallFromURL(rawURL string) ([]string, error) {
 	tmpPath := tmpFile.Name()
 	defer os.Remove(tmpPath)
 
-	// 5. Скачиваем с лимитом 50 МБ
 	const maxPluginSize = 50 * 1024 * 1024
 	written, err := io.Copy(tmpFile, io.LimitReader(resp.Body, maxPluginSize+1))
 	tmpFile.Close()
@@ -702,7 +746,9 @@ func (m *Manager) InstallFromURL(rawURL string) ([]string, error) {
 
 	log.Infof("[Plugin] Downloaded %d bytes, installing...", written)
 
-	// 6. Делегируем установку существующему методу
+	if update {
+		return m.UpdatePlugin(tmpPath)
+	}
 	return m.InstallPlugin(tmpPath)
 }
 
@@ -731,7 +777,6 @@ func isPrivateIP(ip net.IP) bool {
 		}
 	}
 
-	// Link-local и unspecified
 	if ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsUnspecified() {
 		return true
 	}
@@ -745,11 +790,10 @@ func (m *Manager) I18n() *I18nRegistry {
 }
 
 // loadStaticI18n читает файлы плагина i18n/<lang>.json в его слой перевода.
-// Позволяет пакам переводов существовать без service.js.
 func (m *Manager) loadStaticI18n(pluginID string, vfs fs.FS) {
 	entries, err := fs.ReadDir(vfs, "i18n")
 	if err != nil {
-		return // папки i18n нет — это нормально
+		return
 	}
 
 	for _, e := range entries {
@@ -779,7 +823,6 @@ func (m *Manager) MenuFor(rank int) []map[string]any {
 		order[st.ID] = i
 	}
 
-	// ID плагинов в порядке загрузки
 	ids := make([]string, 0, len(m.manifests))
 	for id := range m.manifests {
 		ids = append(ids, id)
@@ -800,7 +843,6 @@ func (m *Manager) MenuFor(rank int) []map[string]any {
 	for _, id := range ids {
 		man := m.manifests[id]
 
-		// Меню могут давать только реально запущенные плагины
 		if _, active := m.runtimes[id]; !active {
 			continue
 		}

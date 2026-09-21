@@ -23,7 +23,7 @@ func (s *Server) handleLogin(c *gin.Context) {
 	u, token, err := s.userSvc.Login(req.Username, req.Password)
 	if err != nil {
 		log.Warnf("[Web] Failed login attempt for user '%s': %v", req.Username, err)
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid username or password"})
 		return
 	}
 
