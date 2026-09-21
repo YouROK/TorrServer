@@ -482,19 +482,22 @@ nav {
 .modal-info {
     max-width: 980px;
     width: 100%;
-    max-height: 100%;
+    height: min(720px, 90vh);
+    display: flex;
+    flex-direction: column;
 }
 
 .info-header {
     display: flex;
     gap: 16px;
-    padding: 20px;
+    padding: 16px 20px;
     border-bottom: 1px solid var(--silo-border);
+    flex-shrink: 0;
 }
 
 .info-poster {
-    width: 90px;
-    height: 135px;
+    width: 120px;
+    height: 180px;
     object-fit: cover;
     border-radius: 8px;
     flex-shrink: 0;
@@ -506,6 +509,7 @@ nav {
     flex-direction: column;
     gap: 12px;
     min-width: 0;
+    min-height: 180px;
 }
 
 .info-title-row {
@@ -526,32 +530,33 @@ nav {
 }
 
 .info-plaques {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 8px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: nowrap;
 }
 
 .plaque {
+    flex: 1 1 0;
+    min-width: 0;
     background: var(--silo-surface);
     border: 1px solid var(--silo-border);
     border-radius: 6px;
-    padding: 8px 10px;
+    padding: 6px 8px;
     display: flex;
     flex-direction: column;
     gap: 2px;
     align-items: center;
     text-align: center;
-    min-width: 0;
 }
 
 .plaque-label {
     color: var(--silo-text-muted);
-    font-size: 11px;
+    font-size: 10px;
 }
 
 .plaque-value {
     color: var(--silo-text);
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
@@ -564,6 +569,7 @@ nav {
     gap: 4px;
     padding: 0 20px;
     border-bottom: 1px solid var(--silo-border);
+    flex-shrink: 0;
 }
 
 .info-tab {
@@ -590,7 +596,10 @@ nav {
     display: flex;
     gap: 16px;
     padding: 16px 20px 20px;
-    max-height: 60vh;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    transition: opacity 0.18s ease;
 }
 
 .info-folders {
@@ -1100,4 +1109,134 @@ nav {
 
 [hidden] {
     display: none !important;
+}
+
+/* ----------------------------------------------------------------------------
+   Info modal: вкладка Cache
+   ---------------------------------------------------------------------------- */
+.info-body-cache {
+    flex-direction: column;
+    gap: 12px;
+}
+
+.cache-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.zoom-btn {
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: 1px solid var(--silo-border);
+    border-radius: 6px;
+    color: var(--silo-steel);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.zoom-btn:hover {
+    border-color: var(--silo-amber);
+    color: var(--silo-amber);
+}
+
+.zoom-value {
+    color: var(--silo-text-muted);
+    font-size: 12px;
+    font-family: "JetBrains Mono", monospace;
+    min-width: 48px;
+    text-align: center;
+}
+
+.cache-canvas-wrap {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: var(--silo-bg-raised);
+    border: 1px solid var(--silo-border);
+    border-radius: 6px;
+    min-height: 220px;
+    position: relative;
+}
+
+#cache-canvas {
+    display: block;
+}
+
+.cache-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--silo-text-muted);
+    font-size: 13px;
+    background: var(--silo-bg-raised);
+}
+
+.info-plaques-cache {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.info-plaques-cache.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* ----------------------------------------------------------------------------
+   Offline-баннер: показывается, когда сервер недоступен
+   ---------------------------------------------------------------------------- */
+.offline-banner {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 12, 14, 0.92);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+    padding: 24px;
+}
+
+.offline-banner.show {
+    display: flex;
+}
+
+.offline-card {
+    background: var(--silo-surface);
+    border: 1px solid var(--silo-danger);
+    border-radius: 10px;
+    padding: 32px;
+    max-width: 420px;
+    text-align: center;
+    width: 100%;
+}
+
+.offline-card h2 {
+    color: var(--silo-danger);
+    margin-bottom: 12px;
+    font-size: 16px;
+}
+
+.offline-card p {
+    color: var(--silo-text-muted);
+    margin-bottom: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.offline-hint {
+    font-size: 12px;
+    color: var(--silo-text-faint);
+    animation: offline-pulse 1.5s infinite;
+}
+
+@keyframes offline-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
 }

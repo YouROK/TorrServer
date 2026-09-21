@@ -70,5 +70,13 @@
   "turn_off_text": "Shut down the TorrServer process? You will need to start it again manually.",
   "turn_off_ok": "Turn Off",
   "turn_off_done": "Server is shutting down...",
-  "delete": "Delete"
+  "delete": "Delete",
+  "tab_cache": "Cache",
+  "cache_not_loaded": "Torrent is not loaded in RAM",
+  "pieces_count": "Pieces count",
+  "pieces_length": "Pieces length",
+  "cache_size": "Cache",
+  "server_offline_title": "Server unreachable",
+  "server_offline_text": "The Silo server is offline or the network connection was lost. The page will try to reconnect automatically.",
+  "retrying": "Retrying..."
 }

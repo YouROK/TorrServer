@@ -132,6 +132,10 @@ function renderInfo() {
     }
 }
 
+let currentTab = 'files';
+let cacheTimer = null;
+let cacheFetching = false;
+
 async function infoPoll() {
     if (!infoHash) return;
     try {
@@ -140,9 +144,75 @@ async function infoPoll() {
         infoStatus = await res.json();
         renderInfo();
     } catch (e) {}
+
     try {
         fetch('/api/torrents/' + infoHash + '/wake', { method: 'POST' }).catch(() => {});
-    }catch (e) {}
+    } catch (e) {}
+}
+
+async function cacheTick() {
+    if (!infoHash || currentTab !== 'cache') return;
+    if (cacheFetching) return;
+    cacheFetching = true;
+    try {
+        const res = await fetch('/api/torrents/' + infoHash + '/cache');
+        if (res.status === 204) {
+            setCacheData(null);
+        } else if (res.ok) {
+            setCacheData(await res.json());
+        }
+    } catch (e) {}
+    cacheFetching = false;
+}
+
+function startCacheTimer() {
+    stopCacheTimer();
+    cacheTick();
+    cacheTimer = setInterval(cacheTick, 100);
+}
+
+function stopCacheTimer() {
+    if (cacheTimer) {
+        clearInterval(cacheTimer);
+        cacheTimer = null;
+    }
+}
+
+function switchTab(tab) {
+    currentTab = tab;
+
+    document.querySelectorAll('.info-tab').forEach((el) => {
+        el.classList.toggle('active', el.getAttribute('data-tab') === tab);
+    });
+
+    const filesPanel = document.getElementById('info-files-panel');
+    const cachePanel = document.getElementById('info-cache-panel');
+    const cachePlaques = document.getElementById('info-plaques-cache');
+
+    const show = tab === 'files' ? filesPanel : cachePanel;
+    const hide = tab === 'files' ? cachePanel : filesPanel;
+
+    if (hide) {
+        hide.style.display = 'none';
+        hide.style.opacity = '';
+    }
+    if (show) {
+        show.style.display = '';
+        show.style.opacity = '0';
+        requestAnimationFrame(() => { show.style.opacity = '1'; });
+    }
+
+    if (cachePlaques) {
+        cachePlaques.classList.toggle('visible', tab === 'cache');
+    }
+
+    if (tab === 'cache' && infoHash) {
+        startCacheTimer();
+        renderCache();
+        renderCachePlaques();
+    } else {
+        stopCacheTimer();
+    }
 }
 
 function openInfoModal(hash) {
@@ -151,6 +221,7 @@ function openInfoModal(hash) {
     infoFilesJSON = '';
     infoFoldersJSON = '';
     infoStatus = null;
+    currentTab = 'files';
 
     const card = cardsStore.get(hash);
     document.getElementById('info-title').textContent = card ? (card.title || hash) : hash;
@@ -164,6 +235,9 @@ function openInfoModal(hash) {
     document.getElementById('info-media-only').checked = true;
     document.getElementById('info-overlay').style.display = 'flex';
 
+    switchTab('files');
+    setCacheData(null);
+
     infoPoll();
     infoTimer = setInterval(infoPoll, 1000);
 }
@@ -171,12 +245,18 @@ function openInfoModal(hash) {
 function closeInfoModal() {
     if (infoTimer) clearInterval(infoTimer);
     infoTimer = null;
+    stopCacheTimer();
     infoHash = null;
     infoStatus = null;
+    setCacheData(null);
     document.getElementById('info-overlay').style.display = 'none';
 }
 
 function bindInfoModal() {
+    document.querySelectorAll('.info-tab').forEach((el) => {
+        el.addEventListener('click', () => switchTab(el.getAttribute('data-tab')));
+    });
+
     document.getElementById('info-close').addEventListener('click', closeInfoModal);
     document.getElementById('info-edit').addEventListener('click', () => {
         if (infoHash) openEditModal(infoHash);
@@ -227,4 +307,6 @@ function bindInfoModal() {
             showToast(t('copied'), 'success');
         }
     });
+
+    bindCache();
 }

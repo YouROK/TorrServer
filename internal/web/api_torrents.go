@@ -1,8 +1,11 @@
 package web
 
 import (
+	"errors"
 	"io"
 	"net/http"
+	torr "silo/internal/torrent"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -290,4 +293,87 @@ func (s *Server) handlePreloadTorrent(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "preloaded"})
+}
+
+// cacheResponse — sparse-ответ для вкладки Cache.
+// Передаются только заполненные куски: ids + параллельные base64-массивы.
+type cacheResponse struct {
+	Hash        string        `json:"hash"`
+	Capacity    int64         `json:"capacity"`
+	Filled      int64         `json:"filled"`
+	PieceLength int64         `json:"piece_length"`
+	PieceCount  int           `json:"piece_count"`
+	IDs         []int         `json:"ids"`
+	Sizes       []int         `json:"sizes"`
+	Priorities  []int         `json:"priorities"`
+	Readers     []cacheReader `json:"readers"`
+}
+
+type cacheReader struct {
+	Start  int `json:"start"`
+	End    int `json:"end"`
+	Reader int `json:"reader"`
+}
+
+func (s *Server) handleGetCache(c *gin.Context) {
+	val, _ := c.Get("user")
+	currentUser := val.(*user.User)
+	hashHex := c.Param("hash")
+
+	state, err := s.torrentMgr.GetCacheState(currentUser, hashHex)
+	if err != nil {
+		if errors.Is(err, torr.ErrSessionNotInRAM) {
+			c.JSON(http.StatusNoContent, nil)
+			return
+		}
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Собираем индексы заполненных кусков, отбрасывая выходящие за границы.
+	ids := make([]int, 0, len(state.Pieces))
+	for id := range state.Pieces {
+		if id >= 0 && id < state.PiecesCount {
+			ids = append(ids, id)
+		}
+	}
+	sort.Ints(ids)
+
+	sizes := make([]int, len(ids))
+	priorities := make([]int, len(ids))
+	for i, id := range ids {
+		item := state.Pieces[id]
+		if state.PiecesLength > 0 {
+			p := int(item.Size * 255 / state.PiecesLength)
+			if p > 255 {
+				p = 255
+			}
+			if p < 0 {
+				p = 0
+			}
+			sizes[i] = p
+		}
+		priorities[i] = item.Priority
+	}
+
+	readers := make([]cacheReader, 0, len(state.Readers))
+	for _, r := range state.Readers {
+		readers = append(readers, cacheReader{
+			Start:  r.Start,
+			End:    r.End,
+			Reader: r.Reader,
+		})
+	}
+
+	c.JSON(http.StatusOK, cacheResponse{
+		Hash:        state.Hash,
+		Capacity:    state.Capacity,
+		Filled:      state.Filled,
+		PieceLength: state.PiecesLength,
+		PieceCount:  state.PiecesCount,
+		IDs:         ids,
+		Sizes:       sizes,
+		Priorities:  priorities,
+		Readers:     readers,
+	})
 }

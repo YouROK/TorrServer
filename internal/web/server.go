@@ -109,6 +109,7 @@ func (s *Server) registerRoutes() {
 		api.POST("/torrents", s.handleAddTorrent)
 		api.GET("/torrents/:hash", s.handleGetTorrent)
 		api.DELETE("/torrents/:hash", s.handleDropTorrent)
+		api.GET("/torrents/:hash/cache", s.handleGetCache)
 		api.POST("/torrents/:hash/files/:idx/viewed", s.handleSetFileViewed)
 		api.POST("/torrents/:hash/files/:idx/preload", s.handlePreloadTorrent)
 		api.POST("/torrents/:hash/wake", s.handleWakeTorrent)

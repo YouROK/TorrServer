@@ -2,6 +2,7 @@ package torrent
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"runtime"
@@ -656,4 +657,27 @@ func (m *Manager) PreloadTorrent(u *user.User, hashHex string, fileIdx int) erro
 	go sess.Preload(fileIdx, preloadSize)
 
 	return nil
+}
+
+// ErrSessionNotInRAM возвращается, когда торрент есть в БД, но не активен.
+var ErrSessionNotInRAM = errors.New("torrent is not active in RAM")
+
+// GetCacheState возвращает снимок кэша и приоритеты всех кусков.
+func (m *Manager) GetCacheState(u *user.User, hashHex string) (*torrstor.CacheState, error) {
+	if _, err := m.userSvc.GetUserTorrent(u.ID, hashHex); err != nil {
+		return nil, fmt.Errorf("torrent not found in your library")
+	}
+
+	hash := metainfo.NewHashFromHex(hashHex)
+	sess, ok := m.engine.Get(hash)
+	if !ok {
+		return nil, ErrSessionNotInRAM
+	}
+
+	state := sess.CacheState()
+	if state == nil {
+		return nil, ErrSessionNotInRAM
+	}
+
+	return state, nil
 }

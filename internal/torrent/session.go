@@ -391,3 +391,11 @@ func (s *Session) Trackers() [][]string {
 	defer s.mu.RUnlock()
 	return s.trackers
 }
+
+// CacheState возвращает снимок состояния кэша раздачи.
+func (s *Session) CacheState() *torrstor.CacheState {
+	if s.cache == nil {
+		return nil
+	}
+	return s.cache.GetState()
+}

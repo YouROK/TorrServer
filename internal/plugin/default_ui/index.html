@@ -163,12 +163,16 @@
                     <button class="modal-close" id="info-close" type="button" aria-label="Close">×</button>
                 </div>
                 <div class="info-plaques" id="info-plaques"></div>
+                <div class="info-plaques info-plaques-cache" id="info-plaques-cache"></div>
             </div>
         </div>
+
         <div class="info-tabs">
-            <button class="info-tab active" type="button" data-i18n="tab_files">Files</button>
+            <button class="info-tab active" type="button" data-tab="files" data-i18n="tab_files">Files</button>
+            <button class="info-tab" type="button" data-tab="cache" data-i18n="tab_cache">Cache</button>
         </div>
-        <div class="info-body">
+
+        <div class="info-body" id="info-files-panel">
             <div class="info-folders" id="info-folders"></div>
             <div class="info-files-wrap">
                 <label class="media-only">
@@ -176,6 +180,20 @@
                     <span data-i18n="media_only">Media only</span>
                 </label>
                 <div class="info-files" id="info-files"></div>
+            </div>
+        </div>
+
+        <div class="info-body info-body-cache" id="info-cache-panel" style="display:none;">
+            <div class="cache-toolbar">
+                <button class="zoom-btn" id="cache-zoom-out" type="button">−</button>
+                <span class="zoom-value" id="cache-zoom-value">14 px</span>
+                <button class="zoom-btn" id="cache-zoom-in" type="button">+</button>
+            </div>
+            <div class="cache-canvas-wrap" id="cache-canvas-wrap">
+                <canvas id="cache-canvas"></canvas>
+                <div class="cache-empty" id="cache-empty" style="display:none;" data-i18n="cache_not_loaded">
+                    Torrent is not loaded in RAM
+                </div>
             </div>
         </div>
     </div>
@@ -247,11 +265,20 @@
     </div>
 </div>
 
+<div class="offline-banner" id="offline-banner">
+    <div class="offline-card">
+        <h2 data-i18n="server_offline_title">Server unreachable</h2>
+        <p data-i18n="server_offline_text">The Silo server is offline or the network connection was lost.</p>
+        <p class="offline-hint" data-i18n="retrying">Retrying...</p>
+    </div>
+</div>
+
 <div id="toast-root" class="toast-root"></div>
 
 <script src="js/utils.js"></script>
 <script src="js/cards.js"></script>
 <script src="js/modals.js"></script>
+<script src="js/cache.js"></script>
 <script src="js/info.js"></script>
 <script src="js/menu.js"></script>
 <script src="js/app.js"></script>
