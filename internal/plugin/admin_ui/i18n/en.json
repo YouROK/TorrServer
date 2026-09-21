@@ -84,5 +84,6 @@
   "plugin_builtin_cannot_replace": "Built-in plugins cannot be replaced",
   "plugin_installed": "Plugin installed",
   "plugin_updated": "Plugin updated",
-  "update": "Update"
+  "update": "Update",
+  "admin_panel": "Settings"
 }

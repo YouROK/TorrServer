@@ -84,5 +84,6 @@
   "plugin_builtin_cannot_replace": "Встроенные плагины нельзя заменить",
   "plugin_installed": "Плагин установлен",
   "plugin_updated": "Плагин обновлён",
-  "update": "Обновить"
+  "update": "Обновить",
+  "admin_panel": "Настройки"
 }
