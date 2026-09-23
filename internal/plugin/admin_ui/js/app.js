@@ -11,6 +11,8 @@ const SECTIONS = [
 ];
 
 let ME = null;
+let CATALOG = null;
+let SILO_VERSION = '';
 let refreshTimer = null;
 let pluginDragId = null;
 let offlineShown = false;
@@ -215,6 +217,10 @@ async function boot() {
     } catch (e) {
         return;
     }
+    try {
+        const v = await api('/system/version');
+        SILO_VERSION = v.version || '';
+    } catch (e) {}
 
     document.getElementById('whoami').textContent = ME.username + ' · ' + rankName(ME.rank);
     document.getElementById('logout').addEventListener('click', async () => {
@@ -458,33 +464,48 @@ async function showUserTorrents(id, username) {
 async function renderPlugins() {
     const view = document.getElementById('view');
     view.innerHTML = `
-        <div class="panel">
-            <h2>${t('upload_plugin')}</h2>
-            <div class="row">
-                <label class="file-input">
-                    <input type="file" id="pl-file" accept=".zip">
-                    <span class="file-input-btn">${t('choose_file')}</span>
-                    <span class="file-input-name" id="pl-file-name">${t('no_file_selected')}</span>
-                </label>
-                <button class="btn" id="pl-upload" type="button">${t('upload_plugin')}</button>
+        <details class="panel manual-install">
+            <summary>
+                <span>${t('manual_install')}</span>
+            </summary>
+            <div class="manual-body">
+                <div class="row">
+                    <label class="file-input">
+                        <input type="file" id="pl-file" accept=".zip">
+                        <span class="file-input-btn">${t('choose_file')}</span>
+                        <span class="file-input-name" id="pl-file-name">${t('no_file_selected')}</span>
+                    </label>
+                    <button class="btn" id="pl-upload" type="button">${t('upload_plugin')}</button>
+                </div>
+                <p class="hint">${t('upload_hint')}</p>
+
+                <div class="row" style="margin-top:12px">
+                    <input class="input" id="pl-url" placeholder="${t('plugin_url_placeholder')}">
+                    <button class="btn" id="pl-url-install" type="button">${t('install_from_url')}</button>
+                </div>
+                <p class="hint">${t('install_from_url_hint')}</p>
             </div>
-            <p class="hint">${t('upload_hint')}</p>
-        </div>
+        </details>
+
         <div class="panel">
-            <h2>${t('install_from_url')}</h2>
-            <div class="row">
-                <input class="input" id="pl-url" placeholder="${t('plugin_url_placeholder')}">
-                <button class="btn" id="pl-url-install" type="button">${t('install_from_url')}</button>
+            <h2>${t('store')}</h2>
+            <div class="catalog-wrap">
+                <button class="carousel-nav left" id="cat-prev" type="button">‹</button>
+                <div class="catalog-scroll" id="catalog-scroll">
+                    <p class="hint">Loading...</p>
+                </div>
+                <button class="carousel-nav right" id="cat-next" type="button">›</button>
             </div>
-            <p class="hint">${t('install_from_url_hint')}</p>
+            <p class="hint catalog-stale" id="catalog-stale" style="display:none">${t('catalog_stale')}</p>
         </div>
+
         <p class="hint">${t('drag_hint')}</p>
         <div id="plugins-table-wrap"></div>
     `;
 
+    // ─── Manual install: file ─────────────────────────────
     const fileInput = document.getElementById('pl-file');
     const fileName = document.getElementById('pl-file-name');
-
     fileInput.addEventListener('change', () => {
         const f = fileInput.files[0];
         fileName.textContent = f ? f.name : t('no_file_selected');
@@ -492,38 +513,27 @@ async function renderPlugins() {
 
     document.getElementById('pl-upload').addEventListener('click', async () => {
         const file = fileInput.files[0];
-        if (!file) {
-            toast(t('select_file_first'));
-            return;
-        }
-
+        if (!file) { toast(t('select_file_first')); return; }
         await submitInstall(async (update) => {
             const fd = new FormData();
             fd.append('plugin', file);
-            const url = '/api/plugins/upload' + (update ? '?update' : '');
-            return fetch(url, { method: 'POST', body: fd });
+            return fetch('/api/plugins/upload' + (update ? '?update' : ''), { method: 'POST', body: fd });
         });
-
         fileInput.value = '';
         fileName.textContent = t('no_file_selected');
     });
 
+    // ─── Manual install: URL ──────────────────────────────
     document.getElementById('pl-url-install').addEventListener('click', async () => {
         const urlInput = document.getElementById('pl-url');
         const url = urlInput.value.trim();
-        if (!url) {
-            toast(t('enter_url_first'));
-            return;
-        }
-
+        if (!url) { toast(t('enter_url_first')); return; }
         const btn = document.getElementById('pl-url-install');
         btn.disabled = true;
         btn.textContent = '...';
-
         try {
             await submitInstall(async (update) => {
-                const endpoint = '/api/plugins/install-url' + (update ? '?update' : '');
-                return fetch(endpoint, {
+                return fetch('/api/plugins/install-url' + (update ? '?update' : ''), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: url }),
@@ -536,6 +546,17 @@ async function renderPlugins() {
         }
     });
 
+    // ─── Carousel navigation ──────────────────────────────
+    document.getElementById('cat-prev').addEventListener('click', () => {
+        const s = document.getElementById('catalog-scroll');
+        s.scrollBy({ left: -s.clientWidth * 0.8, behavior: 'smooth' });
+    });
+    document.getElementById('cat-next').addEventListener('click', () => {
+        const s = document.getElementById('catalog-scroll');
+        s.scrollBy({ left: s.clientWidth * 0.8, behavior: 'smooth' });
+    });
+
+    await loadCatalog();
     loadPlugins();
 }
 
@@ -907,6 +928,172 @@ async function renderLogs() {
     refreshTimer = setInterval(() => {
         if (document.getElementById('lg-auto').checked) load();
     }, 3000);
+}
+
+// ─── Catalog ──────────────────────────────────────────────────
+
+function parseSiloNum(v) {
+    const m = /^silo\.(\d+)$/i.exec(v || '');
+    return m ? parseInt(m[1], 10) : null;
+}
+
+function catalogCompatible(entry) {
+    if (!entry.min_silo_version) return true;
+    const need = parseSiloNum(entry.min_silo_version);
+    if (need === null) return false;
+    const have = parseSiloNum(SILO_VERSION);
+    if (have === null) return true;
+    return have >= need;
+}
+
+async function loadCatalog() {
+    const scroll = document.getElementById('catalog-scroll');
+    const stale = document.getElementById('catalog-stale');
+    if (!scroll) return;
+
+    scroll.innerHTML = '<p class="hint">Loading...</p>';
+
+    try {
+        const [cat, inst] = await Promise.all([
+            api('/plugins/catalog'),
+            api('/plugins'),
+        ]);
+        CATALOG = cat;
+
+        const installedMap = new Map();
+        for (const p of (inst.plugins || [])) installedMap.set(p.id, p);
+
+        if (stale) stale.style.display = cat.stale ? '' : 'none';
+
+        const list = cat.plugins || [];
+        if (!list.length) {
+            scroll.innerHTML = '<p class="hint">' + t('catalog_empty') + '</p>';
+            return;
+        }
+
+        scroll.innerHTML = list.map((e) => catalogCardHTML(e, installedMap.get(e.id))).join('');
+        scroll.querySelectorAll('[data-cat-action]').forEach((btn) => {
+            btn.addEventListener('click', onCatalogAction);
+        });
+    } catch (e) {
+        if (stale) stale.style.display = 'none';
+        scroll.innerHTML = '<p class="hint">' + esc(t('catalog_error')) + ': ' + esc(e.message) + '</p>';
+    }
+}
+
+function catalogCardHTML(entry, installed) {
+    const icon = entry.icon
+        ? '<img class="cat-icon" src="' + esc(entry.icon) + '" alt="" onerror="this.src=\'img/ico-plugin.svg\'">'
+        : '<img class="cat-icon" src="img/ico-plugin.svg" alt="">';
+
+    const compat = catalogCompatible(entry);
+    const versionLine = 'v' + esc(entry.version) +
+        (installed ? ' · installed v' + esc(installed.version) : '');
+
+    let actionBtn;
+    if (!compat) {
+        actionBtn = '<button class="btn btn-sm" disabled>' + t('install') + '</button>';
+    } else if (!installed) {
+        actionBtn = '<button class="btn btn-sm" data-cat-action="install" data-id="' + esc(entry.id) + '">' + t('install') + '</button>';
+    } else if (installed.version === entry.version) {
+        actionBtn = '<button class="btn btn-secondary btn-sm" disabled>' + t('installed') + '</button>';
+    } else {
+        actionBtn = '<button class="btn btn-sm" data-cat-action="install" data-id="' + esc(entry.id) + '">' + t('update') + '</button>';
+    }
+
+    const compatBadge = compat
+        ? ''
+        : '<span class="badge badge-banned">' + t('catalog_requires') + ' ' + esc(entry.min_silo_version) + '</span>';
+
+    return `
+        <div class="cat-card">
+            ${icon}
+            <div class="cat-name" title="${esc(entry.name)}">${esc(entry.name)}</div>
+            <div class="cat-meta">${versionLine}</div>
+            ${compatBadge}
+            <div class="cat-desc">${esc(entry.description || '')}</div>
+            <div class="cat-actions">
+                ${actionBtn}
+                <button class="btn-icon" data-cat-action="info" data-id="${esc(entry.id)}" title="${t('info')}">i</button>
+            </div>
+        </div>
+    `;
+}
+
+async function onCatalogAction(e) {
+    const id = e.target.dataset.id;
+    const act = e.target.dataset.catAction;
+
+    if (act === 'info') {
+        showCatalogInfo(id);
+        return;
+    }
+
+    if (act === 'install') {
+        e.target.disabled = true;
+        const prev = e.target.textContent;
+        e.target.textContent = '...';
+        try {
+            const res = await fetch('/api/plugins/catalog/install', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id }),
+            });
+            if (!res.ok) {
+                let msg = 'install failed';
+                try { msg = (await res.json()).error || msg; } catch (x) {}
+                toast(msg);
+                return;
+            }
+            toast(t('done'));
+            await loadCatalog();
+            loadPlugins();
+        } catch (err) {
+            toast(err.message);
+        } finally {
+            e.target.disabled = false;
+            e.target.textContent = prev;
+        }
+    }
+}
+
+function showCatalogInfo(id) {
+    if (!CATALOG) return;
+    const entry = (CATALOG.plugins || []).find((x) => x.id === id);
+    if (!entry) return;
+
+    const iconHTML = entry.icon
+        ? '<img class="plugin-icon" src="' + esc(entry.icon) + '" alt="" onerror="this.style.display=\'none\'">'
+        : '';
+
+    const compat = catalogCompatible(entry);
+    const compatText = compat
+        ? 'yes'
+        : 'no — requires ' + esc(entry.min_silo_version);
+
+    const linkRow = (label, url) =>
+        '<span>' + label + '</span><b><a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(url) + '</a></b>';
+
+    let grid = '<div class="info-grid">' +
+        '<span>version</span><b>' + esc(entry.version) + '</b>' +
+        '<span>author</span><b>' + esc(entry.author || '—') + '</b>' +
+        '<span>size</span><b>' + (entry.size ? fmtBytes(entry.size) : '—') + '</b>' +
+        '<span>compatible</span><b>' + compatText + '</b>' +
+        '<span>sha256</span><b class="mono" style="font-size:11px;word-break:break-all">' + esc(entry.sha256) + '</b>';
+    if (entry.homepage) {
+        grid += linkRow('homepage', entry.homepage);
+    }
+    grid += '</div>';
+
+    modalAlert(t('info'),
+        '<div class="info-head">' + iconHTML +
+        '<div class="info-head-text">' +
+        '<div class="info-head-name">' + esc(entry.name) + '</div>' +
+        '<div class="info-head-id">' + esc(entry.id) + '</div>' +
+        '</div></div>' +
+        grid +
+        '<p class="info-desc">' + esc(entry.description || '') + '</p>'
+    );
 }
 
 boot();

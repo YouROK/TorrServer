@@ -873,3 +873,11 @@ func (m *Manager) MenuFor(rank int) []map[string]any {
 
 	return result
 }
+
+// IsInstalled проверяет, есть ли плагин в системе (включая встроенные).
+func (m *Manager) IsInstalled(pluginID string) bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	_, ok := m.manifests[pluginID]
+	return ok
+}

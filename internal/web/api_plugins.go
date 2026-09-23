@@ -2,9 +2,11 @@ package web
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"silo/internal/version"
 
 	"silo/internal/log"
 	"silo/internal/plugin"
@@ -311,4 +313,96 @@ func (s *Server) handlePluginMenu(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"menu": s.pluginMgr.MenuFor(int(currentUser.Rank))})
+}
+
+// handleCatalog отдаёт каталог плагинов.
+// GET /api/plugins/catalog
+func (s *Server) handleCatalog(c *gin.Context) {
+	val, _ := c.Get("user")
+	currentUser := val.(*user.User)
+	if currentUser.Rank < 50 {
+		c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
+		return
+	}
+
+	resp, err := plugin.GetPluginCatalog().Fetch()
+	if err != nil {
+		log.Errorf("[Web] catalog fetch failed: %v", err)
+		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"stale":      resp.Stale,
+		"updated_at": resp.UpdatedAt,
+		"plugins":    resp.Plugins,
+	})
+}
+
+// handleInstallFromCatalog устанавливает плагин из каталога по id.
+// POST /api/plugins/catalog/install  { "id": "..." }
+func (s *Server) handleInstallFromCatalog(c *gin.Context) {
+	val, _ := c.Get("user")
+	currentUser := val.(*user.User)
+	if currentUser.Rank < 100 {
+		c.JSON(http.StatusForbidden, gin.H{"error": "owner access required"})
+		return
+	}
+
+	var req struct {
+		ID string `json:"id" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "id is required"})
+		return
+	}
+
+	entry, err := plugin.GetPluginCatalog().Get(req.ID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	if !plugin.IsCompatible(entry, version.Version) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("plugin requires %s, current is %s", entry.MinSiloVersion, version.Version),
+		})
+		return
+	}
+
+	tmpPath, err := plugin.GetPluginCatalog().Download(entry)
+	if err != nil {
+		log.Errorf("[Web] catalog download %s: %v", entry.ID, err)
+		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+		return
+	}
+	defer os.Remove(tmpPath)
+
+	var installed []string
+	if s.pluginMgr.IsInstalled(req.ID) {
+		installed, err = s.pluginMgr.UpdatePlugin(tmpPath)
+	} else {
+		installed, err = s.pluginMgr.InstallPlugin(tmpPath)
+	}
+	if err != nil {
+		var existsErr *plugin.PluginExistsError
+		if errors.As(err, &existsErr) {
+			c.JSON(http.StatusConflict, gin.H{
+				"error":      existsErr.Error(),
+				"code":       "plugin_exists",
+				"id":         existsErr.ID,
+				"version":    existsErr.Version,
+				"is_builtin": existsErr.IsBuiltin,
+			})
+			return
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	log.Infof("[Web] Plugin '%s' installed from catalog by %s", entry.ID, currentUser.Username)
+	c.JSON(http.StatusOK, gin.H{
+		"status":    "installed",
+		"installed": installed,
+	})
 }

@@ -132,6 +132,8 @@ func (s *Server) registerRoutes() {
 		api.PUT("/plugins/order", s.handleSetPluginOrder)
 		api.GET("/plugins/:id/info", s.handlePluginInfo)
 		api.POST("/plugins/:id/enable", s.handlePluginEnable)
+		api.GET("/plugins/catalog", s.handleCatalog)
+		api.POST("/plugins/catalog/install", s.handleInstallFromCatalog)
 
 		// Меню-расширения от плагинов
 		api.GET("/ui/menu", s.handlePluginMenu)

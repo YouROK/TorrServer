@@ -859,3 +859,185 @@ label:has(input[type="radio"]:hover) {
     font-family: "JetBrains Mono", monospace;
     margin-top: 2px;
 }
+
+/* ----------------------------------------------------------------------------
+   Manual install accordion
+   ---------------------------------------------------------------------------- */
+details.manual-install {
+    padding: 0;
+}
+
+details.manual-install > summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 20px;
+    cursor: pointer;
+    list-style: none;
+    color: var(--silo-steel-bright);
+    font-size: 14px;
+    font-weight: 600;
+    user-select: none;
+}
+
+details.manual-install > summary::-webkit-details-marker { display: none; }
+details.manual-install > summary::before {
+    content: '▸';
+    color: var(--silo-amber);
+    transition: transform 0.15s ease;
+    display: inline-block;
+    width: 12px;
+}
+details.manual-install[open] > summary::before {
+    transform: rotate(90deg);
+}
+
+.manual-body {
+    padding: 0 20px 16px;
+    border-top: 1px solid var(--silo-border);
+    padding-top: 14px;
+}
+
+/* ----------------------------------------------------------------------------
+   Catalog carousel
+   ---------------------------------------------------------------------------- */
+.catalog-wrap {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.catalog-scroll {
+    flex: 1 1 auto;
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    padding: 4px 0;
+    min-height: 200px;
+}
+
+.catalog-scroll::-webkit-scrollbar { height: 8px; }
+.catalog-scroll::-webkit-scrollbar-track { background: var(--silo-bg); }
+.catalog-scroll::-webkit-scrollbar-thumb {
+    background: var(--silo-border-strong);
+    border-radius: 4px;
+}
+.catalog-scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--silo-amber-deep);
+}
+
+.carousel-nav {
+    flex-shrink: 0;
+    width: 32px;
+    background: transparent;
+    border: 1px solid var(--silo-border);
+    border-radius: 6px;
+    color: var(--silo-steel);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    align-self: center;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.carousel-nav:hover {
+    border-color: var(--silo-amber);
+    color: var(--silo-amber);
+}
+
+.cat-card {
+    flex: 0 0 220px;
+    background: var(--silo-surface);
+    border: 1px solid var(--silo-border);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 200px;
+}
+
+.cat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    object-fit: contain;
+    background: var(--silo-bg-raised);
+    flex-shrink: 0;
+}
+
+.cat-name {
+    color: var(--silo-steel-bright);
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cat-meta {
+    color: var(--silo-text-faint);
+    font-size: 11px;
+    font-family: "JetBrains Mono", monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cat-desc {
+    color: var(--silo-text-muted);
+    font-size: 11px;
+    line-height: 1.4;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    flex-grow: 1;
+    margin: 2px 0;
+}
+
+.cat-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-top: auto;
+}
+
+.catalog-stale {
+    color: var(--silo-danger);
+    margin-top: 8px;
+}
+
+/* ----------------------------------------------------------------------------
+   Общие стили для info-head в модалке (используются в каталоге и списке)
+   ---------------------------------------------------------------------------- */
+.info-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--silo-border);
+}
+
+.info-head .plugin-icon {
+    width: 40px;
+    height: 40px;
+    margin-right: 0;
+    border-radius: 6px;
+}
+
+.info-head-name {
+    color: var(--silo-steel-bright);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.info-head-id {
+    color: var(--silo-text-faint);
+    font-size: 12px;
+    font-family: "JetBrains Mono", monospace;
+    margin-top: 2px;
+}

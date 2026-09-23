@@ -85,5 +85,13 @@
   "plugin_installed": "Plugin installed",
   "plugin_updated": "Plugin updated",
   "update": "Update",
-  "admin_panel": "Settings"
+  "admin_panel": "Settings",
+  "store": "Store",
+  "manual_install": "Manual install",
+  "install": "Install",
+  "installed": "Installed",
+  "catalog_empty": "Catalog is empty",
+  "catalog_error": "Failed to load catalog",
+  "catalog_stale": "Showing cached data — could not refresh catalog",
+  "catalog_requires": "Requires"
 }

@@ -85,5 +85,13 @@
   "plugin_installed": "Плагин установлен",
   "plugin_updated": "Плагин обновлён",
   "update": "Обновить",
-  "admin_panel": "Настройки"
+  "admin_panel": "Настройки",
+  "store": "Магазин",
+  "manual_install": "Ручная установка",
+  "install": "Установить",
+  "installed": "Установлен",
+  "catalog_empty": "Каталог пуст",
+  "catalog_error": "Не удалось загрузить каталог",
+  "catalog_stale": "Показаны кэшированные данные — не удалось обновить каталог",
+  "catalog_requires": "Требует"
 }
