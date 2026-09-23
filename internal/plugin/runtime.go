@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"io/fs"
+	"silo/internal/torrfs"
 	"sync"
 
 	"silo/internal/database"
@@ -28,9 +29,21 @@ type JSRuntime struct {
 	vm       *goja.Runtime
 	userSvc  *user.Service
 	mu       sync.Mutex
+
+	pendingHandles []*torrfs.Handle
 }
 
-func NewJSRuntime(pluginID string, manifest *Manifest, vfs fs.FS, registrar WebRegistrar, db *database.DB, torrMgr *torrent.Manager, userSvc *user.Service, i18nReg *I18nRegistry) *JSRuntime {
+func NewJSRuntime(
+	pluginID string,
+	manifest *Manifest,
+	vfs fs.FS,
+	registrar WebRegistrar,
+	db *database.DB,
+	torrMgr *torrent.Manager,
+	userSvc *user.Service,
+	i18nReg *I18nRegistry,
+	torrFS *torrfs.TorrFS,
+) *JSRuntime {
 	vm := goja.New()
 	rt := &JSRuntime{
 		pluginID: pluginID,
@@ -54,9 +67,9 @@ func NewJSRuntime(pluginID string, manifest *Manifest, vfs fs.FS, registrar WebR
 	tsObj.Set("i18n", rt.createI18nModule())
 	tsObj.Set("vfs", rt.createVFSModule(vfs))
 	tsObj.Set("crypto", rt.createCryptoModule())
+	tsObj.Set("torrfs", rt.createTorrFSModule(torrFS, userSvc))
 
 	vm.Set("ts", tsObj)
-	vm.Set("vault", tsObj)
 
 	return rt
 }
@@ -70,4 +83,14 @@ func (rt *JSRuntime) Execute(code string) error {
 
 func (rt *JSRuntime) Stop() {
 	rt.vm.Interrupt("plugin unloaded")
+}
+
+// removePendingHandle убирает handle из списка текущего запроса.
+func (rt *JSRuntime) removePendingHandle(h *torrfs.Handle) {
+	for i, x := range rt.pendingHandles {
+		if x == h {
+			rt.pendingHandles = append(rt.pendingHandles[:i], rt.pendingHandles[i+1:]...)
+			return
+		}
+	}
 }

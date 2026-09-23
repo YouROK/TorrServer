@@ -19,11 +19,12 @@ type RouteEntry struct {
 	VFS     fs.FS
 	VFSPath string
 	Handler gin.HandlerFunc
+	Method  string
 }
-
 type PluginRouter struct {
-	exactRoutes  map[string]RouteEntry
-	prefixRoutes []RouteEntry
+	exactRoutes    map[string]RouteEntry
+	prefixRoutes   []RouteEntry
+	wildcardRoutes []RouteEntry
 }
 
 type PluginsRouter struct {
@@ -58,8 +59,9 @@ func (pr *PluginsRouter) getOrCreatePluginRouter(pluginID string) *PluginRouter 
 		return r
 	}
 	r := &PluginRouter{
-		exactRoutes:  make(map[string]RouteEntry),
-		prefixRoutes: make([]RouteEntry, 0),
+		exactRoutes:    make(map[string]RouteEntry),
+		prefixRoutes:   make([]RouteEntry, 0),
+		wildcardRoutes: make([]RouteEntry, 0),
 	}
 	pr.routers[pluginID] = r
 	return r
@@ -69,6 +71,21 @@ func (pr *PluginsRouter) AddJSHandler(pluginID, method, route string, handler gi
 	pr.mu.Lock()
 	defer pr.mu.Unlock()
 	r := pr.getOrCreatePluginRouter(pluginID)
+
+	if idx := strings.Index(route, "/*"); idx >= 0 {
+		prefix := route[:idx]
+		if prefix == "" {
+			prefix = "/"
+		}
+		r.wildcardRoutes = append(r.wildcardRoutes, RouteEntry{
+			Route:   prefix,
+			Method:  method,
+			Handler: handler,
+		})
+		log.Debugf("[Web] Plugin '%s' registered JS handler %s %s", pluginID, method, route)
+		return
+	}
+
 	key := method + ":" + path.Clean(route)
 	r.exactRoutes[key] = RouteEntry{Route: route, Handler: handler}
 	log.Debugf("[Web] Plugin '%s' registered JS handler for %s %s", pluginID, method, route)
@@ -121,13 +138,22 @@ func (pr *PluginsRouter) Dispatch(c *gin.Context) {
 		return
 	}
 
-	// 1. Точное совпадение
 	if entry, found := pluginR.exactRoutes[key]; found {
 		pr.serveEntry(c, entry, entry.VFSPath)
 		return
 	}
 
-	// 2. Префиксные папки
+	for i := range pluginR.wildcardRoutes {
+		entry := &pluginR.wildcardRoutes[i]
+		if entry.Method != c.Request.Method {
+			continue
+		}
+		if entry.Route == "/" || reqPath == entry.Route || strings.HasPrefix(reqPath, entry.Route+"/") {
+			pr.serveEntry(c, *entry, "")
+			return
+		}
+	}
+
 	if c.Request.Method == http.MethodGet {
 		var bestMatch *RouteEntry
 		for i := range pluginR.prefixRoutes {

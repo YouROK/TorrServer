@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"net/http"
 	"net/url"
+	"silo/internal/torrfs"
 	"strings"
 
 	"silo/internal/log"
@@ -24,6 +25,10 @@ type webResponse struct {
 	contentType string
 	headers     map[string]string
 	bodyBytes   []byte
+	empty       bool
+
+	streamHandle *torrfs.Handle
+	streamName   string
 }
 
 // createWebModule — объект ts.web: собственные HTTP-роуты и статика плагина
@@ -139,13 +144,40 @@ func (rt *JSRuntime) ginHandler(handler goja.Callable) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		raw, _ := io.ReadAll(io.LimitReader(c.Request.Body, maxRequestBody))
 
-		// goja не потокобезопасен: запросы к плагину идем последовательно под мьютексом
 		rt.mu.Lock()
+		rt.pendingHandles = nil
 		res := rt.runWebHandler(handler, c, raw)
+		opened := rt.pendingHandles
+		rt.pendingHandles = nil
 		rt.mu.Unlock()
 
 		for k, v := range res.headers {
 			c.Header(k, v)
+		}
+
+		if res.empty {
+			c.Status(res.status)
+			return
+		}
+
+		if res.streamHandle != nil {
+			defer res.streamHandle.Close()
+			for _, h := range opened {
+				if h != res.streamHandle {
+					_ = h.Close()
+				}
+			}
+
+			name := res.streamName
+			if name == "" {
+				name = res.streamHandle.Name()
+			}
+			http.ServeContent(c.Writer, c.Request, name, res.streamHandle.ModTime(), res.streamHandle)
+			return
+		}
+
+		for _, h := range opened {
+			_ = h.Close()
 		}
 
 		ct := res.contentType
@@ -225,6 +257,22 @@ func (rt *JSRuntime) runWebHandler(handler goja.Callable, c *gin.Context, raw []
 		res.used = true
 		res.contentType = "text/html; charset=utf-8"
 		res.bodyBytes = []byte(call.Argument(0).String())
+		return resObj
+	})
+	resObj.Set("stream", func(call goja.FunctionCall) goja.Value {
+		h, ok := call.Argument(0).Export().(*torrfs.Handle)
+		if !ok || h == nil {
+			panic(rt.vm.ToValue("res.stream: first argument must be a torrfs handle"))
+		}
+		name := call.Argument(1).String()
+		res.used = true
+		res.streamHandle = h
+		res.streamName = name
+		return resObj
+	})
+	resObj.Set("end", func(call goja.FunctionCall) goja.Value {
+		res.used = true
+		res.empty = true
 		return resObj
 	})
 

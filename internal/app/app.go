@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"silo/internal/torrfs"
 	"time"
 
 	"silo/internal/bus"
@@ -40,7 +41,6 @@ type App struct {
 }
 
 func New(cfg *config.Config) (*App, error) {
-	// 1. Создаем системные директории
 	if err := os.MkdirAll(cfg.Storage.DataDir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create data dir: %w", err)
 	}
@@ -48,7 +48,6 @@ func New(cfg *config.Config) (*App, error) {
 		return nil, fmt.Errorf("failed to create plugins dir: %w", err)
 	}
 
-	// 2. Открываем базу данных bbolt
 	db, err := database.Open(cfg.DBPath())
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
@@ -56,11 +55,9 @@ func New(cfg *config.Config) (*App, error) {
 
 	appBus := bus.Get("app_core")
 
-	// 3. Сервис пользователей
 	userStore := user.NewStore(db)
 	userSvc := user.NewService(userStore, cfg)
 
-	// 4. Инициализация Торрент-движка
 	torrentStore := torrent.NewStore(db)
 
 	torrentCfg, err := torrentStore.GetConfig()
@@ -75,23 +72,20 @@ func New(cfg *config.Config) (*App, error) {
 		return nil, fmt.Errorf("failed to initialize torrent engine: %w", err)
 	}
 
-	// 5. Менеджер торрентов
 	torrentMgr := torrent.NewManager(engine, torrentStore, userSvc)
 
-	// 6. Веб-сервер (без pluginMgr)
 	webServer := web.NewServer(cfg, userSvc, torrentMgr)
 
-	// 7. Менеджер плагинов
-	pluginMgr, err := plugin.NewManager(cfg.Plugins.Dir, db, webServer.GetPluginsRouter(), torrentMgr, userSvc)
+	torrFS := torrfs.New(userSvc, torrentStore, torrentMgr)
+
+	pluginMgr, err := plugin.NewManager(cfg.Plugins.Dir, db, webServer.GetPluginsRouter(), torrentMgr, userSvc, torrFS)
 	if err != nil {
 		_ = db.Close()
 		return nil, fmt.Errorf("failed to initialize plugin manager: %w", err)
 	}
 
-	// 8. Связываем веб-сервер с менеджером плагинов (Setter Injection)
 	webServer.SetPluginManager(pluginMgr)
 
-	// Загружаем очередь маршрутов плагинов
 	if err := pluginMgr.ReloadQueue(); err != nil {
 		log.Errorf("[Plugin] Error loading initial plugin queue: %v", err)
 	}

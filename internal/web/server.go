@@ -155,6 +155,7 @@ func (s *Server) registerRoutes() {
 	// Главная страница и плагины
 	s.router.GET("/", s.pluginsRouter.HandleRoot)
 	s.router.Any("/plugins/:id/*path", s.pluginsRouter.Dispatch)
+	s.router.Handle("PROPFIND", "/plugins/:id/*path", s.pluginsRouter.Dispatch)
 }
 
 func (s *Server) Start() error {
