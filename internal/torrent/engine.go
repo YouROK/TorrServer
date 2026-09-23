@@ -27,12 +27,10 @@ func NewEngine(cfg *Config) (*Engine, error) {
 		cfg = DefaultConfig()
 	}
 
-	// 1. Создаем изолированное хранилище памяти torrstor
 	stor := torrstor.NewStorage(cfg.Storage)
 
 	dynBlocklist := NewDynamicBlocklist(nil)
 
-	// 2. Настраиваем anacrolix клиент
 	clientCfg := torrent.NewDefaultClientConfig()
 	clientCfg.DefaultStorage = stor
 	clientCfg.ListenPort = cfg.ListenPort
@@ -46,7 +44,6 @@ func NewEngine(cfg *Config) (*Engine, error) {
 	clientCfg.DisableTCP = cfg.DisableTCP
 	clientCfg.DisableIPv6 = !cfg.EnableIPv6
 
-	// Лимитеры скорости
 	if cfg.DownloadRateKB > 0 {
 		clientCfg.DownloadRateLimiter = NewRateLimiter(cfg.DownloadRateKB)
 	}
@@ -54,7 +51,6 @@ func NewEngine(cfg *Config) (*Engine, error) {
 		clientCfg.UploadRateLimiter = NewRateLimiter(cfg.UploadRateKB)
 	}
 
-	// ID клиента
 	peerID := GeneratePeerID("-qB4390-")
 	clientCfg.PeerID = peerID
 	clientCfg.Bep20 = "-qB4390-"
@@ -88,13 +84,11 @@ func (e *Engine) Restart(cfg *Config) error {
 
 	log.Info("[Torrent Engine] Restarting engine with new configuration...")
 
-	// 1. Закрываем все текущие сессии в RAM
 	for _, s := range e.sessions {
 		s.Close()
 	}
 	e.sessions = make(map[metainfo.Hash]*Session)
 
-	// 2. Закрываем хранилище и старый клиент
 	if e.storage != nil {
 		_ = e.storage.Close()
 	}
@@ -102,10 +96,8 @@ func (e *Engine) Restart(cfg *Config) error {
 		e.client.Close()
 	}
 
-	// Принудительно возвращаем память операционной системе
 	torrstor.FreeOSMemGC()
 
-	// 3. Создаем новое хранилище torrstor с новым размером кэша
 	if cfg == nil {
 		cfg = DefaultConfig()
 	}
@@ -114,14 +106,13 @@ func (e *Engine) Restart(cfg *Config) error {
 	stor := torrstor.NewStorage(cfg.Storage)
 	e.storage = stor
 
-	// 4. Настраиваем и поднимаем новый чистый anacrolix клиент
 	clientCfg := torrent.NewDefaultClientConfig()
 	clientCfg.DefaultStorage = stor
 	clientCfg.ListenPort = cfg.ListenPort
 	clientCfg.EstablishedConnsPerTorrent = cfg.Storage.ConnectionsLimit
 	clientCfg.TotalHalfOpenConns = 500
 
-	clientCfg.IPBlocklist = e.blocklist // сохраняем текущий блоклист
+	clientCfg.IPBlocklist = e.blocklist
 
 	clientCfg.NoDHT = cfg.DisableDHT
 	clientCfg.DisablePEX = cfg.DisablePEX
@@ -249,17 +240,14 @@ func (e *Engine) Close() error {
 
 // UpdateConfig сохраняет новые настройки в базу данных и перезапускает движок
 func (m *Manager) UpdateConfig(cfg *Config) error {
-	// 1. Сохраняем в bbolt базу данных
 	if err := m.store.SaveConfig(cfg); err != nil {
 		return fmt.Errorf("failed to save torrent config to DB: %w", err)
 	}
 
-	// 2. Перезапускаем чистый движок
 	if err := m.engine.Restart(cfg); err != nil {
 		return err
 	}
 
-	// 3. Оповещаем систему и плагины об изменении настроек
 	m.bus.Emit("system:config:updated", cfg)
 	return nil
 }
