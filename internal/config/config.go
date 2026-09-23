@@ -24,9 +24,8 @@ type ServerConfig struct {
 }
 
 type StorageConfig struct {
-	DataDir     string `yaml:"data_dir" json:"data_dir"`         // Базовая папка для данных программы (./data)
-	DBName      string `yaml:"db_name" json:"db_name"`           // Имя файла БД (torrserver.db)
-	TorrentsDir string `yaml:"torrents_dir" json:"torrents_dir"` // Папка для отслеживания файлов с торрентами (./torrents)
+	DataDir string `yaml:"data_dir" json:"data_dir"` // Базовая папка для данных программы (./data)
+	DBName  string `yaml:"db_name" json:"db_name"`   // Имя файла БД (torrserver.db)
 }
 
 type PluginsConfig struct {
@@ -62,9 +61,8 @@ func DefaultConfig() *Config {
 			Port: 8090,
 		},
 		Storage: StorageConfig{
-			DataDir:     "data",
-			DBName:      "torrserver.db",
-			TorrentsDir: "torrents",
+			DataDir: "data",
+			DBName:  "torrserver.db",
 		},
 		Plugins: PluginsConfig{
 			Dir: "plugins",

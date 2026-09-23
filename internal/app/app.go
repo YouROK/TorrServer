@@ -44,9 +44,6 @@ func New(cfg *config.Config) (*App, error) {
 	if err := os.MkdirAll(cfg.Storage.DataDir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create data dir: %w", err)
 	}
-	if err := os.MkdirAll(cfg.Storage.TorrentsDir, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create torrents dir: %w", err)
-	}
 	if err := os.MkdirAll(cfg.Plugins.Dir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create plugins dir: %w", err)
 	}
