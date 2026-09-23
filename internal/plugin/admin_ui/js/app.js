@@ -556,7 +556,7 @@ async function renderPlugins() {
         s.scrollBy({ left: s.clientWidth * 0.8, behavior: 'smooth' });
     });
 
-    await loadCatalog();
+    loadCatalog();
     loadPlugins();
 }
 
@@ -1046,7 +1046,7 @@ async function onCatalogAction(e) {
                 return;
             }
             toast(t('done'));
-            await loadCatalog();
+            loadCatalog();
             loadPlugins();
         } catch (err) {
             toast(err.message);
