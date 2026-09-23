@@ -53,6 +53,7 @@ func NewJSRuntime(pluginID string, manifest *Manifest, vfs fs.FS, registrar WebR
 	tsObj.Set("users", rt.createUsersModule(userSvc))
 	tsObj.Set("i18n", rt.createI18nModule())
 	tsObj.Set("vfs", rt.createVFSModule(vfs))
+	tsObj.Set("crypto", rt.createCryptoModule())
 
 	vm.Set("ts", tsObj)
 	vm.Set("vault", tsObj)
