@@ -823,8 +823,8 @@ func (m *Manager) MenuFor(rank int) []map[string]any {
 
 	states, _ := m.loadStates()
 	order := make(map[string]int, len(states))
-	for i, st := range states {
-		order[st.ID] = i
+	for _, st := range states {
+		order[st.ID] = st.Order
 	}
 
 	ids := make([]string, 0, len(m.manifests))
