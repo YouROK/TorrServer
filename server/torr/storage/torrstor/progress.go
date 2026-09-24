@@ -44,6 +44,12 @@ type progress struct {
 	buffer int64 // film the client is holding, in bytes
 	fixed  bool  // and whether that has been settled
 
+	// Where the picture stood when the client was first seen full, and when that was. It can
+	// have moved no faster than the clock since, which is what catches a size settled too small.
+	fullSec  float64
+	fullAt   time.Time
+	fullSeen bool
+
 	screenSec float64 // where the picture is, worked out at the last step
 	screenOff int64
 
@@ -296,6 +302,32 @@ func (p *progress) step(head float64, off int64, ix film, now time.Time) {
 	case p.fixed:
 		// The size is settled. The picture is that many bytes behind the head and follows it,
 		// which is also why a pause needs no handling of its own: the head stops, so it stops.
+		//
+		// Settled, but not beyond correction upwards. A client that is not taking film says it
+		// is full, and so does one behind a line that carries only about what it plays: the
+		// writes wait either way. The second is nearly empty, and the size settles on the few
+		// seconds it has. Measured on a 4K remux over a home line: 45MB, three seconds, while
+		// the player went on to fill several times that as soon as the line allowed, and the
+		// picture was put twenty seconds in front of itself.
+		//
+		// What gives it away is the clock. From where it stood when the client was first seen
+		// full, the picture can be no further on than the time since; a head more than that
+		// much film past it is film the client holds, and the size is raised to match. Never
+		// lowered. And never raised into the wrong side: the picture really is no further on
+		// than the clock allows, so the correction can leave it behind by at most what it
+		// already lagged at that moment, and never in front.
+		//
+		// Measured from the client being full rather than from the size being settled, because
+		// a size carried over from the connection before is settled before anything is seen.
+		// It comes with the picture the old connection last reported, and a player that skipped
+		// forward thirty seconds is thirty seconds past that. Counted from there the clock keeps
+		// the picture those thirty seconds behind for good, where the carried size alone catches
+		// up as soon as the client has refilled.
+		if p.fullSeen {
+			if at, ok := ix.OffsetAt(p.fullSec + now.Sub(p.fullAt).Seconds()); ok && off-at > p.buffer {
+				p.buffer = off - at
+			}
+		}
 	case p.played:
 		// Full and watching: what it holds is the film between the head and the picture, and
 		// the picture has been running since the session began.
@@ -344,13 +376,15 @@ func (p *progress) step(head float64, off int64, ix film, now time.Time) {
 	}
 
 	// What ends the fill decides what the answer was.
+	settled := false
 	if !p.fixed {
 		switch {
 		case silent:
-			p.fixed = true
+			settled = true
 		case p.played && p.clientLimited() && now.Sub(p.grew).Seconds() >= settleFor:
-			p.fixed = true
+			settled = true
 		}
+		p.fixed = settled
 	}
 
 	p.screenOff = off - p.buffer
@@ -359,6 +393,11 @@ func (p *progress) step(head float64, off int64, ix film, now time.Time) {
 	}
 	if sec, ok := ix.TimeAt(p.screenOff); ok {
 		p.screenSec = max(p.ref, sec)
+	}
+	// Full is what ends a fill, whichever way the fill ended — and for a size that was carried
+	// over rather than measured, a client that has stopped taking and stopped growing.
+	if !p.fullSeen && p.fixed && (settled || p.clientLimited() && now.Sub(p.grew).Seconds() >= settleFor) {
+		p.fullSec, p.fullAt, p.fullSeen = p.screenSec, now, true
 	}
 
 	p.head, p.off, p.at = head, off, now

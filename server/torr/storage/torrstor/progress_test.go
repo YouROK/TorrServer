@@ -338,3 +338,73 @@ func TestHandoverGoesOnlyToTheSamePlayback(t *testing.T) {
 		}
 	}
 }
+
+// A line to the TV that only just keeps up with the film makes the server wait on its writes,
+// and waiting on the client is what a full client looks like. This one is nearly empty: it takes
+// film about as fast as it plays it because that is all the line carries. Reported from a 4K
+// remux over a home line: the size was settled at 45MB, three seconds, and the player went on to
+// fill a buffer several times that once the line allowed. The position then ran twenty seconds
+// in front of the picture, held back only while playback went on without a stop.
+func TestASlowLineIsNotAFullClient(t *testing.T) {
+	c := &client{capacity: 19}
+	var p progress
+	now := time.Unix(1000000, 0)
+	p.start(0, 0, now, 0, 0, bytesPerSec)
+
+	for _, ph := range []phase{
+		{150, 1.05, true}, // the line barely keeps ahead, so the player holds almost nothing
+		{60, 1.6, true},   // it speeds up, and the player fills its buffer
+		{60, 1, true},
+		{60, 1, false}, // paused: full, so nothing arrives
+	} {
+		for i := 0; i < ph.seconds; i++ {
+			c.tick(ph.supply, ph.playing)
+			now = now.Add(time.Second)
+			p.waited(waits(true)) // the writes wait throughout, whether the client is full or not
+			p.step(c.head, int64(c.head*float64(bytesPerSec)), bytesPerSec, now)
+		}
+	}
+
+	screen, _ := p.screen()
+	t.Logf("показано %.0fс · счётчик %.0fс (%+.0f) · держит по счётчику %.0fс, на деле %.0fс",
+		c.screen, screen, screen-c.screen, p.held(), c.buffer)
+	if screen > c.screen+1 {
+		t.Fatalf("картинка на %.0fс, счётчик говорит %.0fс — впереди показанного", c.screen, screen)
+	}
+	if c.screen-screen > 3 {
+		t.Fatalf("картинка на %.0fс, счётчик говорит %.0fс — отстаёт слишком сильно", c.screen, screen)
+	}
+}
+
+// A skip forward lands inside what the old connection was serving, so it is handed a buffer: the
+// stretch between the old picture and the new byte, as if the client still held it. It does not
+// — a seek empties the player — and the new connection starts twenty seconds behind the picture.
+// That much is the price of the rule being generous, and it is paid only until the client has
+// refilled. Whatever keeps the picture from running ahead must not keep it behind for good.
+func TestASkipForwardCatchesUp(t *testing.T) {
+	const capacity = 30.0
+	c := &client{capacity: capacity, head: 520, screen: 520} // skipped from 500 to 520, holding nothing
+	var p progress
+	now := time.Unix(1000000, 0)
+	held := int64(20 * float64(bytesPerSec)) // 500..520, taken to be still in hand
+	box := int64(capacity * float64(bytesPerSec))
+	p.start(c.head, int64(c.head*float64(bytesPerSec)), now, held, box, bytesPerSec)
+
+	for _, ph := range []phase{{40, 4, true}, {90, 1, true}} {
+		for i := 0; i < ph.seconds; i++ {
+			full := c.tick(ph.supply, ph.playing)
+			now = now.Add(time.Second)
+			p.waited(waits(full))
+			p.step(c.head, int64(c.head*float64(bytesPerSec)), bytesPerSec, now)
+		}
+	}
+
+	screen, _ := p.screen()
+	t.Logf("показано %.0fс · счётчик %.0fс (%+.0f)", c.screen, screen, screen-c.screen)
+	if screen > c.screen+1 {
+		t.Fatalf("картинка на %.0fс, счётчик говорит %.0fс — впереди показанного", c.screen, screen)
+	}
+	if c.screen-screen > 3 {
+		t.Fatalf("картинка на %.0fс, счётчик говорит %.0fс — отставание от перемотки не ушло", c.screen, screen)
+	}
+}
