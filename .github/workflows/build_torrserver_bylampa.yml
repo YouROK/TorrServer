@@ -1,4 +1,4 @@
-name: Test Build
+name: Build Releases
 
 on:
   workflow_dispatch:
@@ -10,7 +10,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - run: |
+      - name: Repository test
+        run: |
           echo "Fork works"
           pwd
           ls -la
+
+      - name: Apply byLampa patch
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          FILE="server/web/waf/referer.go"
+
+          if [ ! -f "$FILE" ]; then
+            echo "File not found: $FILE"
+            exit 1
+          fi
+
+          sed -i '/"bylampa\.online"/d' "$FILE"
+
+          echo "Verification"
+
+          if grep -q '"bylampa.online"' "$FILE"; then
+            echo "Patch failed"
+            exit 1
+          fi
+
+          echo "Patch OK"
