@@ -1,0 +1,16 @@
+name: Test Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: |
+          echo "Fork works"
+          pwd
+          ls -la
