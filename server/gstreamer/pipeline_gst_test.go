@@ -87,6 +87,55 @@ func TestCreatePipelineArgsCopiesAACAudio(t *testing.T) {
 	}
 }
 
+// Browsers play AAC LC and HE-AAC only: Chrome, Firefox and Safari refuse
+// mp4a.40.1 (AAC Main), so hls.js rejects the whole stream. Such tracks are
+// re-encoded like any other audio.
+func TestCreatePipelineArgsEncodesAACMainAudio(t *testing.T) {
+	clearGStreamerRuntimeVersion(t)
+
+	for _, codec := range []string{
+		// As GStreamer's discoverer reports an MKV track with AAC Main audio.
+		"audio/mpeg, mpegversion=(int)4, framed=(boolean)true, stream-format=(string)raw, codec_data=(buffer)0990, level=(string)1, base-profile=(string)main, profile=(string)main, channels=(int)2, rate=(int)48000",
+		// Only the AudioSpecificConfig says so: object type 1 (AAC Main).
+		"audio/mpeg, mpegversion=(int)4, stream-format=(string)raw, codec_data=(buffer)0990, channels=(int)2, rate=(int)48000",
+		"audio/mpeg, mpegversion=(int)4, stream-format=(string)raw, profile=(string)ltp, channels=(int)2, rate=(int)48000",
+	} {
+		runner := newVersionedVideoPipelineRunner(1.28)
+		runner.audioIndex = 0
+		runner.task.Probe.Tracks = append(runner.task.Probe.Tracks,
+			TrackInfo{Type: "audio", Index: 0, Codec: codec, CapsName: "audio/mpeg", Channels: 2, Rate: 48000},
+		)
+
+		args := runner.createPipelineArgs()
+		for _, want := range []string{"d.audio_0 ! mq.sink_1 mq.src_1 ! decodebin ! audioconvert", "avenc_aac bitrate="} {
+			if !strings.Contains(args, want) {
+				t.Fatalf("%s:\ncreatePipelineArgs() =\n%s\nwant %q", codec, args, want)
+			}
+		}
+	}
+}
+
+func TestCreatePipelineArgsCopiesAACLCAndHEAACAudio(t *testing.T) {
+	clearGStreamerRuntimeVersion(t)
+
+	for _, codec := range []string{
+		"audio/mpeg, mpegversion=(int)4, stream-format=(string)raw, codec_data=(buffer)1190, level=(string)2, base-profile=(string)lc, profile=(string)lc, channels=(int)2, rate=(int)48000",
+		"audio/mpeg, mpegversion=(int)4, stream-format=(string)raw, base-profile=(string)lc, profile=(string)he-aac, channels=(int)2, rate=(int)48000",
+		"MPEG-4 AAC",
+	} {
+		runner := newVersionedVideoPipelineRunner(1.28)
+		runner.audioIndex = 0
+		runner.task.Probe.Tracks = append(runner.task.Probe.Tracks,
+			TrackInfo{Type: "audio", Index: 0, Codec: codec, CapsName: "audio/mpeg", Channels: 2, Rate: 48000},
+		)
+
+		args := runner.createPipelineArgs()
+		if want := "d.audio_0 ! mq.sink_1 mq.src_1 ! aacparse ! audio/mpeg,mpegversion=4,stream-format=raw ! mux.audio_0"; !strings.Contains(args, want) {
+			t.Fatalf("%s:\ncreatePipelineArgs() =\n%s\nwant %q", codec, args, want)
+		}
+	}
+}
+
 func TestCreatePipelineArgsEncodesNonAACAudio(t *testing.T) {
 	clearGStreamerRuntimeVersion(t)
 
