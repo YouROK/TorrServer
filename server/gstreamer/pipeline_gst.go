@@ -482,7 +482,7 @@ func (r *gstRunner) createPipelineArgs() string {
 		sb.WriteString("d.audio_")
 		sb.WriteString(strconv.Itoa(audioTrack.Index))
 		sb.WriteString(" ! mq.sink_1 mq.src_1 ! ")
-		if audioTrack.IsAACAudio() {
+		if audioTrack.IsBrowserAAC() {
 			sb.WriteString("aacparse ! audio/mpeg,mpegversion=4,stream-format=raw ! mux.audio_0 ")
 		} else {
 			aacChannels := effectiveAACChannels(conf, audioTrack)

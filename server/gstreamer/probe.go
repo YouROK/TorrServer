@@ -138,6 +138,49 @@ func (t TrackInfo) IsAACAudio() bool {
 		strings.Contains(codec, "mpegversion=4")
 }
 
+// IsBrowserAAC reports whether an AAC track can be copied into HLS as it is.
+// Browsers play AAC LC and HE-AAC (v1 and v2) only: Chrome, Firefox and Safari
+// refuse AAC Main, SSR and LTP (mp4a.40.1, .40.3, .40.4), and hls.js then
+// rejects the whole stream. Those are re-encoded like other audio.
+func (t TrackInfo) IsBrowserAAC() bool {
+	if !t.IsAACAudio() {
+		return false
+	}
+	switch aacProfile(t.Codec) {
+	case "main", "ssr", "ltp":
+		return false
+	}
+	return true
+}
+
+var (
+	aacProfileField   = regexp.MustCompile(`(?:^|[\s,;])profile=(?:\(string\))?"?([a-z0-9-]+)`)
+	aacCodecDataField = regexp.MustCompile(`codec_data=(?:\(buffer\))?([0-9a-f]{2})`)
+)
+
+// aacProfile is the AAC profile of codec (GStreamer caps): their "profile"
+// field, else the object type in codec_data (the AudioSpecificConfig's
+// first five bits), else "".
+func aacProfile(codec string) string {
+	codec = strings.ToLower(codec)
+	if m := aacProfileField.FindStringSubmatch(codec); m != nil {
+		return m[1]
+	}
+	if m := aacCodecDataField.FindStringSubmatch(codec); m != nil {
+		if b, err := strconv.ParseUint(m[1], 16, 8); err == nil {
+			switch b >> 3 {
+			case 1:
+				return "main"
+			case 3:
+				return "ssr"
+			case 4:
+				return "ltp"
+			}
+		}
+	}
+	return ""
+}
+
 func (t TrackInfo) IsHDRVideo() bool {
 	return t.Type == "video" && (t.IsDolbyVision || t.VideoTransfer == "pq" || t.VideoTransfer == "hlg")
 }
