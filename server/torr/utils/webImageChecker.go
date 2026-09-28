@@ -29,6 +29,8 @@ func CheckImgUrl(link string) bool {
 		log.TLogln("Error create request for image:", err)
 		return false
 	}
+	// Some image hosts (fastpic.org) answer 404 to the default "Go-http-client" agent
+	req.Header.Set("User-Agent", "Mozilla/5.0")
 
 	client := &http.Client{
 		Timeout: 5 * time.Second,
