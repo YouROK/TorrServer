@@ -249,9 +249,30 @@ func SetSettings(set *sets.BTSets) {
 	log.TLogln("disconect")
 	bts.Disconnect()
 	log.TLogln("connect")
-	bts.Connect()
+	reconnect()
 	time.Sleep(time.Second * 1)
 	log.TLogln("end set settings")
+}
+
+// reconnect retries Connect after Disconnect. The uTP socket of the closed client
+// closes lazily, only after its peer connections are gone, and until then
+// PeersListenPort is busy: "listen udp4 :port: bind: address already in use".
+// A failed Connect would leave bts.client nil until restart.
+func reconnect() {
+	var err error
+	for i := 0; i < 30; i++ {
+		if err = bts.Connect(); err == nil {
+			if i > 0 {
+				log.TLogln("connect ok, attempt", i+1)
+			}
+			return
+		}
+		if i == 0 {
+			log.TLogln("connect error, retrying:", err)
+		}
+		time.Sleep(time.Second)
+	}
+	log.TLogln("connect failed:", err)
 }
 
 func SetDefSettings() {
@@ -267,7 +288,7 @@ func SetDefSettings() {
 	log.TLogln("disconect")
 	bts.Disconnect()
 	log.TLogln("connect")
-	bts.Connect()
+	reconnect()
 	time.Sleep(time.Second * 1)
 	log.TLogln("end set default settings")
 }
