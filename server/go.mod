@@ -3,7 +3,7 @@ module server
 go 1.25.7
 
 replace (
-	github.com/anacrolix/torrent v1.59.1 => github.com/tsynik/torrent v1.2.29
+	github.com/anacrolix/torrent v1.59.1 => github.com/tsynik/torrent v1.2.31
 	github.com/anacrolix/upnp v0.1.4 => github.com/tsynik/upnp v0.1.5
 )
 
@@ -39,7 +39,7 @@ require (
 	golang.org/x/sys v0.45.0
 	golang.org/x/time v0.15.0
 	gopkg.in/telebot.v4 v4.0.0-beta.7
-	gopkg.in/vansante/go-ffprobe.v2 v2.3.0
+	gopkg.in/vansante/go-ffprobe.v2 v2.3.1
 )
 
 require (

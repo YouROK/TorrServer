@@ -280,6 +280,13 @@ func dropAllTorrent() {
 }
 
 func Shutdown() {
+	if sets.Embedded {
+		log.TLogln("Received shutdown (embedded)")
+		if sets.EmbeddedStop != nil {
+			sets.EmbeddedStop()
+		}
+		return
+	}
 	bts.Disconnect()
 	sets.CloseDB()
 	log.TLogln("Received shutdown. Quit")

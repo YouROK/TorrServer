@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/anacrolix/missinggo/v2/httptoo"
+	"github.com/anacrolix/torrent/bencode"
+	"github.com/anacrolix/torrent/metainfo"
 
 	sets "server/settings"
 	"server/torr"
@@ -66,16 +68,59 @@ func allPlayList(c *gin.Context) {
 	hash := ""
 	// fn=file.m3u fix forkplayer bug with end .m3u in link
 	for _, tr := range torrs {
-		list += "#EXTINF:0"
-		if tr.Poster != "" {
-			list += " tvg-logo=\"" + tr.Poster + "\""
+		if sets.BTsets != nil && sets.BTsets.MergeAllM3U {
+			if st := statusFromSpec(tr); st != nil {
+				list += getM3uList(st, host, false, "")
+			}
+		} else {
+			list += "#EXTINF:0"
+			if tr.Poster != "" {
+				list += " tvg-logo=\"" + tr.Poster + "\""
+			}
+			list += " type=\"playlist\"," + tr.Title + "\n"
+			list += host + "/stream/" + url.PathEscape(tr.Title) + ".m3u?link=" + tr.TorrentSpec.InfoHash.HexString() + "&m3u&fn=file.m3u\n"
 		}
-		list += " type=\"playlist\"," + tr.Title + "\n"
-		list += host + "/stream/" + url.PathEscape(tr.Title) + ".m3u?link=" + tr.TorrentSpec.InfoHash.HexString() + "&m3u&fn=file.m3u\n"
 		hash += tr.Hash().HexString()
 	}
 
 	sendM3U(c, "all.m3u", hash, list)
+}
+
+// statusFromSpec builds a minimal *state.TorrentStatus from locally-available
+// metadata (TorrentSpec.InfoBytes), without starting/adding the torrent to the BT engine
+func statusFromSpec(tr *torr.Torrent) *state.TorrentStatus {
+	if tr == nil || tr.TorrentSpec == nil || len(tr.TorrentSpec.InfoBytes) == 0 {
+		return nil
+	}
+
+	var info metainfo.Info
+	if err := bencode.Unmarshal(tr.TorrentSpec.InfoBytes, &info); err != nil {
+		return nil
+	}
+
+	st := new(state.TorrentStatus)
+	st.Hash = tr.TorrentSpec.InfoHash.HexString()
+	st.Title = tr.Title
+	st.Name = info.Name
+
+	files := info.UpvertedFiles()
+	sort.Slice(files, func(i, j int) bool {
+		return strings.Join(files[i].Path, "/") < strings.Join(files[j].Path, "/")
+	})
+
+	for i, f := range files {
+		path := strings.Join(f.Path, "/")
+		if path == "" {
+			path = info.Name
+		}
+		st.FileStats = append(st.FileStats, &state.TorrentFileStat{
+			Id:     i + 1,
+			Path:   path,
+			Length: f.Length,
+		})
+	}
+
+	return st
 }
 
 // playList godoc

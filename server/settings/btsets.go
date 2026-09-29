@@ -109,6 +109,9 @@ type BTSets struct {
 	SavePosition  bool // enable auto-saving playback position (needs ffprobe)
 	SmartTimecode bool // read the time out of the container instead of the average bitrate
 	BufferSizeMB  int  // player buffer in MB, only for containers with no timestamps to read
+
+	// M3U
+	MergeAllM3U bool // merge all torrents files into a single all.m3u playlist
 }
 
 func (v *BTSets) String() string {
@@ -225,6 +228,7 @@ func SetDefaultConfig() {
 	sets.LPDIPv6 = false
 	sets.EnableBonjour = true
 	sets.SmartTimecode = true
+	sets.MergeAllM3U = false
 	// Set default TMDB settings
 	sets.TMDBSettings = TMDBConfig{
 		APIKey:     "",

@@ -20,7 +20,6 @@ var defaultBlockedReferers = []string{
 	"lampa1.ru",
 	"line.pm",
 	"nnmtv.pw",
-	"stull.xyz",
 	"tvigl.info",
 	"uspeh.sbs",
 	"usph.xyz",

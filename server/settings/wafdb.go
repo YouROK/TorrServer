@@ -8,8 +8,10 @@ import (
 	"path/filepath"
 )
 
-const wafXPath = "Settings"
-const wafConfigKey = "waf"
+const (
+	wafXPath     = "Settings"
+	wafConfigKey = "waf"
+)
 
 const WAFConfigVersion = 1
 

@@ -87,12 +87,12 @@ export default function AboutDialog() {
                 <LinkComponent name='Matt Joiner' link='https://github.com/anacrolix' />
                 <LinkComponent name='Daniel Shleifman' link='https://github.com/dancheskus' />
                 <LinkComponent name='nikk' link='https://github.com/tsynik' />
+                <LinkComponent name='Pavel Pikta' link='https://github.com/pavelpikta' />
                 <LinkComponent name='kolsys' link='https://github.com/kolsys' />
                 <LinkComponent name='tw1cker' link='https://github.com/Nemiroff' />
-                <LinkComponent name='SpAwN_LMG' link='https://github.com/spawnlmg' />
+                <LinkComponent name='Alexander' link='https://github.com/spawnlmg' />
                 <LinkComponent name='damiva' link='https://github.com/damiva' />
                 <LinkComponent name='Vladlenas' link='https://github.com/vladlenas' />
-                <LinkComponent name='Pavel Pikta' link='https://github.com/pavelpikta' />
                 <LinkComponent name='Anton Potekhin' link='https://github.com/Anton111111' />
                 <LinkComponent name='FaintGhost' link='https://github.com/FaintGhost' />
                 <LinkComponent name='TopperBG' link='https://github.com/TopperBG' />
@@ -102,6 +102,22 @@ export default function AboutDialog() {
                 <LinkComponent name='Pavel' link='https://github.com/butaford' />
                 <LinkComponent name='Alexey Filimonov' link='https://github.com/filimonic' />
                 <LinkComponent name='Viacheslav Evseev' link='https://github.com/leporel' />
+                <LinkComponent name='Vuzzy' link='https://github.com/VuzzyM' />
+                <LinkComponent name='GriefNorth' link='https://github.com/GriefNorth' />
+                <LinkComponent name='Nikita' link='https://github.com/nikita322' />
+                <LinkComponent name='Dima Aratin' link='https://github.com/staners2' />
+                <LinkComponent name='kostiavn' link='https://github.com/kostiavn' />
+                <LinkComponent name='srgsf' link='https://github.com/srgsf' />
+                <LinkComponent name='ngcores' link='https://github.com/ngcores' />
+                <LinkComponent name='Kirill Pimenov' link='https://github.com/Cleste' />
+                <LinkComponent name='Fikirsiz' link='https://github.com/Fikirsiz' />
+                <LinkComponent name='kirill-782' link='https://github.com/kirill-782' />
+                <LinkComponent name='Ilya Nikitenkov' link='https://github.com/nikitenich' />
+                <LinkComponent name='Nicu' link='https://github.com/nicuvam' />
+                <LinkComponent name='letov404-ai' link='https://github.com/tov404-ai' />
+                <LinkComponent name='Renat Sharipov' link='https://github.com/SHAREN' />
+                <LinkComponent name='Artem' link='https://github.com/DrachenClon22' />
+                <LinkComponent name='Nicholas Velten' link='https://github.com/nfvelten' />
               </div>
             </Section>
           </div>

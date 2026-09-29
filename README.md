@@ -56,7 +56,7 @@ allowing the cache size to be adjusted according to the system parameters and th
 
 ### Installation
 
-Download the application for the required platform in the [releases](https://github.com/YouROK/TorrServer/releases) page. After installation, open the link <http://127.0.0.1:8090> in the browser.
+Download the application for the required platform in the [releases](https://github.com/YouROK/TorrServer/releases) page. After installation, open the link <http://127.0.0.1:8090> in the browser. iOS is shipped as `TorrServer-ios-TorrServerKit.xcframework.zip` for embedding in a host app (see [Build → iOS](#ios)).
 
 Standard binaries are named `TorrServer-<platform>-<arch>` (for example, `TorrServer-linux-amd64`). From release **141.10**, optional **GStreamer (gst)** builds are named `TorrServer-gst-<platform>-<arch>`. Supported gst targets are Windows amd64, Linux amd64/arm64, and macOS amd64/arm64. The install scripts below can install either variant when the matching release asset is available.
 
@@ -360,6 +360,47 @@ More info at <https://github.com/YouROK/TorrServer/tree/master/web#readme>
 #### Android
 
 To build an Android server you will need the Android Toolchain.
+
+#### iOS
+
+iOS cannot run TorrServer as a subprocess. Releases include an in-process XCFramework built with `gomobile bind`:
+
+- Asset: `TorrServer-ios-TorrServerKit.xcframework.zip`
+- Minimum iOS: **18.0**
+- Slices: `ios-arm64` (device), `ios-arm64-simulator`, `ios-amd64-simulator`
+
+Build on macOS with Xcode:
+
+```bash
+./build-ios.sh
+```
+
+Link `TorrServerKit.xcframework` into the host app and call the gomobile API:
+
+```swift
+import TorrServerKit
+
+let err = TorrserverkitStartServer(8090, dataDir)
+if !err.isEmpty { /* handle error */ }
+// HTTP API: http://127.0.0.1:8090  (/echo, /stream, /torrents, …)
+TorrserverkitStopServer()
+```
+
+Host `Info.plist`:
+
+```xml
+<key>NSAppTransportSecurity</key>
+<dict>
+    <key>NSAllowsArbitraryLoads</key>
+    <true/>
+    <key>NSAllowsLocalNetworking</key>
+    <true/>
+</dict>
+<key>NSLocalNetworkUsageDescription</key>
+<string>TorrServer discovers local peers and streams media over local HTTP.</string>
+```
+
+Limits: FUSE and GStreamer are not available on iOS. Background playback is the host app’s responsibility (`UIBackgroundModes`). The XCFramework is statically linked, so the combined iOS app is a GPL-3.0 derivative work. Public App Store submission of BitTorrent clients may be rejected under Guideline 5.2.3.
 
 #### Swagger
 

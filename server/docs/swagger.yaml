@@ -7,6 +7,11 @@ definitions:
       hash:
         type: string
     type: object
+  api.ffprobeStatusResponse:
+    properties:
+      available:
+        type: boolean
+    type: object
   api.gstreamerComponentDocStatus:
     properties:
       available:
@@ -242,6 +247,9 @@ definitions:
         description: Shared name for DLNA and Bonjour
         type: string
       lpdipv6:
+        type: boolean
+      mergeAllM3U:
+        description: M3U
         type: boolean
       peersListenPort:
         type: integer
@@ -597,6 +605,23 @@ paths:
       security:
       - BasicAuth: []
       summary: Gather informations using ffprobe
+      tags:
+      - API
+  /ffp/status:
+    get:
+      description: |-
+        Reports whether the ffprobe binary is available. Features that need real
+        media duration (e.g. saving playback position) are only usable when true.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ffprobeStatusResponse'
+      security:
+      - BasicAuth: []
+      summary: ffprobe availability
       tags:
       - API
   /gst/{hash}/heartbeat:

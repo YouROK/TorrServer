@@ -185,7 +185,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	server.Start()
+	if err := server.Start(); err != nil {
+		log.TLogln(err)
+		os.Exit(1)
+	}
 	log.TLogln(server.WaitServer())
 	log.Close()
 	time.Sleep(time.Second * 3)
