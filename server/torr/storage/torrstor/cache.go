@@ -297,8 +297,13 @@ func (c *Cache) getRemPieces() []*Piece {
 	c.clearPriority()
 	c.setLoadPriority(ranges)
 
-	// Sort by last access time (oldest first)
+	// Complete pieces first, oldest first; a piece still downloading goes last. The torrent
+	// client never re-requests chunks it has received, so evicting their bytes makes a
+	// responsive reader that comes back to them read zeros.
 	sort.Slice(piecesRemove, func(i, j int) bool {
+		if piecesRemove[i].Complete != piecesRemove[j].Complete {
+			return piecesRemove[i].Complete
+		}
 		return piecesRemove[i].Accessed < piecesRemove[j].Accessed
 	})
 
