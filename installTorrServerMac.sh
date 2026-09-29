@@ -1154,8 +1154,19 @@ updateTorrServerVersion() {
   downloadBinary "$urlBin" "$dirInstall/$binName" "$target_version"
   removeAlternateBinary
 
-  # Update plist file
+  # Update plist file. Read the current flags and launch location first:
+  # createPlistFile uses servicePort/isAuth/isRdb/isLog, and installService
+  # (via cleanup) deletes both LaunchAgent and LaunchDaemon copies.
   if [[ -f "$dirInstall/$serviceName.plist" ]]; then
+    if [[ -f "${HOME}/Library/LaunchAgents/$serviceName.plist" ]]; then
+      USE_USER_LAUNCHAGENT=1
+    elif [[ -f "/Library/LaunchDaemons/$serviceName.plist" ]]; then
+      USE_USER_LAUNCHAGENT=0
+    fi
+    readExistingConfig
+    if [[ ! "$servicePort" =~ ^[0-9]+$ ]]; then
+      servicePort="$DEFAULT_PORT"
+    fi
     createPlistFile
     installService
   fi
