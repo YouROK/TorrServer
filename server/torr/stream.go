@@ -208,6 +208,8 @@ const (
 	// is stored as the duration rather than as a point just short of it, so the film is not
 	// offered to be resumed at its credits.
 	endMargin = 15.0
+	// Within this much of the start a position does not replace a further one already stored.
+	startMargin = 15.0
 )
 
 // probeMarker is a query flag added to the URL ffprobe is pointed at. A stream carrying
@@ -494,6 +496,11 @@ func saveViewedPosition(t *Torrent, fileID int, file *torrent.File, reader *torr
 		}
 		pb := reader.Playback() // the probe may have taken a while; store where it is now
 		timecode, _ := playbackTime(reader, pb, hash, fileID)
+		if !mayReplace(sets.ListViewed(hash), fileID, timecode) {
+			log.Printf("[Position] %s:%d at %.0fs, not stored over a further position: nothing played yet",
+				hash[:8], fileID, timecode)
+			return
+		}
 		sets.SetViewed(&sets.Viewed{Hash: hash, FileIndex: fileID, TimeCode: timecode, Duration: dur})
 		how := fmt.Sprintf("%dMB from the average bitrate", pb.Buffer>>20)
 		if pb.HasTime {
@@ -502,6 +509,23 @@ func saveViewedPosition(t *Torrent, fileID int, file *torrent.File, reader *torr
 		log.Printf("[Position] %s:%d saved %.0fs of %.0fs (head %dMB, buffer %s)",
 			hash[:8], fileID, timecode, dur, pb.Head>>20, how)
 	}()
+}
+
+// mayReplace tells whether a position of timecode seconds may take the place of what is stored
+// for fileID. A position this close to the start does not replace a further one: a player
+// reading the header at the start of the file, on a torrent too slow to hand it over quickly,
+// looks for a while like a session that began at zero, and would wipe where the file was left.
+// Watching it again from the start gets past startMargin within seconds, and is stored then.
+func mayReplace(stored []*sets.Viewed, fileID int, timecode float64) bool {
+	if timecode >= startMargin {
+		return true
+	}
+	for _, v := range stored {
+		if v.FileIndex == fileID && v.TimeCode > timecode {
+			return false
+		}
+	}
+	return true
 }
 
 // GetActiveStreams returns number of currently active streams
