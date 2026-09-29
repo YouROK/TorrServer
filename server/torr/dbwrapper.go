@@ -33,8 +33,18 @@ func AddTorrentDB(torr *Torrent) {
 		t.Data = torr.Data
 	}
 
-	if torr.Poster != "" && utils.CheckImgUrl(torr.Poster) {
-		t.Poster = torr.Poster
+	t.Poster = torr.Poster
+	if t.Poster != "" {
+		var existing string
+		if db := GetTorrentDB(torr.Hash()); db != nil {
+			existing = db.Poster
+		}
+		if existing != t.Poster {
+			ok, verified := utils.CheckImgUrl(t.Poster)
+			if !ok || (existing != "" && !verified) {
+				t.Poster = existing
+			}
+		}
 	}
 	t.Size = torr.Size
 	if t.Size == 0 && torr.Torrent != nil {
