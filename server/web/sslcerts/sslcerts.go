@@ -1,6 +1,7 @@
 package sslcerts
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -10,11 +11,14 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"io/fs"
 	"math/big"
 	"net"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"server/log"
@@ -28,12 +32,24 @@ const (
 
 // EnsureCert returns usable cert and key file paths for the HTTPS server.
 //
-// If no paths are configured, a self-signed pair is generated. If the configured
-// pair is invalid, it is regenerated only when it is our own self-signed pair;
-// a user-supplied cert is never replaced, the error is returned instead.
+// If no paths are configured, a self-signed pair is generated, unless the user already
+// placed a certificate at the default location, which is then used as is. If the
+// configured pair is invalid, it is regenerated only when it is TorrServer's own
+// self-signed pair; a user-supplied cert, including one copied to the default location,
+// is never replaced, the error is returned instead.
 // changed reports whether the returned paths differ from the input and should be saved.
 func EnsureCert(certFile, keyFile string, ips []string) (cert, key string, changed bool, err error) {
 	if certFile == "" || keyFile == "" {
+		c, k := generatedPaths()
+		if !ownedPair(c, k) {
+			// the user placed a certificate at the default location: use it, never overwrite it
+			if verr := VerifyCertKeyFiles(c, k); verr != nil {
+				return "", "", false, fmt.Errorf("certificate at %q / %q is not TorrServer's and is invalid, "+
+					"so it is left untouched (fix it, or delete both files to have a new one generated): %w", c, k, verr)
+			}
+			log.TLogln("Using existing certificate at the default location:", c)
+			return c, k, true, nil
+		}
 		cert, key, err = MakeCertKeyFiles(ips)
 		return cert, key, err == nil, err
 	}
@@ -45,17 +61,98 @@ func EnsureCert(certFile, keyFile string, ips []string) (cert, key string, chang
 		return certFile, keyFile, false, nil
 	}
 	if !IsGenerated(certFile, keyFile) {
-		return "", "", false, fmt.Errorf("invalid ssl cert %q / key %q: %w", certFile, keyFile, verr)
+		err = fmt.Errorf("invalid ssl cert %q / key %q: %w", certFile, keyFile, verr)
+		if c, k := generatedPaths(); samePath(certFile, c) && samePath(keyFile, k) {
+			err = fmt.Errorf("%w (not a TorrServer self-signed certificate, so it is left untouched; "+
+				"delete both files to have a new one generated)", err)
+		}
+		return "", "", false, err
 	}
 	log.TLogln("Self-signed certificate is invalid, regenerating:", verr)
 	cert, key, err = MakeCertKeyFiles(ips)
 	return cert, key, err == nil && (cert != certFile || key != keyFile), err
 }
 
-// IsGenerated reports whether the paths point to the self-signed pair managed by TorrServer.
+// IsGenerated reports whether the paths point to the self-signed pair managed by TorrServer:
+// the default location, holding a certificate TorrServer generated (or none yet).
+// Ownership is decided by content, not by name, so a user's own certificate copied to
+// the default location is never regenerated or treated as self-signed.
 func IsGenerated(certFile, keyFile string) bool {
 	c, k := generatedPaths()
-	return samePath(certFile, c) && samePath(keyFile, k)
+	return samePath(certFile, c) && samePath(keyFile, k) && ownedPair(certFile, keyFile)
+}
+
+// ownedPair reports whether TorrServer may (re)write the pair: the cert is a TorrServer
+// self-signed one, or neither file exists yet. A lone key without a cert is kept, as it
+// may be the user's. Generated pairs are written cert first, so an interrupted write
+// never leaves such a lone key behind.
+func ownedPair(certFile, keyFile string) bool {
+	if _, err := os.Stat(certFile); errors.Is(err, fs.ErrNotExist) {
+		_, err := os.Stat(keyFile)
+		return errors.Is(err, fs.ErrNotExist)
+	}
+	return ownedCert(certFile)
+}
+
+type ownedEntry struct {
+	mod   time.Time
+	size  int64
+	owned bool
+}
+
+var (
+	ownedMu    sync.Mutex
+	ownedCache = map[string]ownedEntry{}
+)
+
+// ownedCert reports whether certFile is missing or holds a TorrServer self-signed
+// certificate. Results are cached by modification time and size, as it runs per request.
+func ownedCert(certFile string) bool {
+	st, err := os.Stat(certFile)
+	if errors.Is(err, fs.ErrNotExist) {
+		return true
+	}
+	if err != nil {
+		return false
+	}
+	ownedMu.Lock()
+	defer ownedMu.Unlock()
+	if e, ok := ownedCache[certFile]; ok && e.mod.Equal(st.ModTime()) && e.size == st.Size() {
+		return e.owned
+	}
+	owned := isTorrServerSelfSigned(readLeaf(certFile))
+	ownedCache[certFile] = ownedEntry{mod: st.ModTime(), size: st.Size(), owned: owned}
+	return owned
+}
+
+func readLeaf(certFile string) *x509.Certificate {
+	data, err := os.ReadFile(certFile)
+	if err != nil {
+		return nil
+	}
+	for {
+		var block *pem.Block
+		block, data = pem.Decode(data)
+		if block == nil {
+			return nil
+		}
+		if block.Type == "CERTIFICATE" {
+			leaf, err := x509.ParseCertificate(block.Bytes)
+			if err != nil {
+				return nil
+			}
+			return leaf
+		}
+	}
+}
+
+// isTorrServerSelfSigned matches certificates made by generateSelfSignedCert, including
+// those from older versions: issuer == subject, organization TorrServer, signed by its own key.
+func isTorrServerSelfSigned(leaf *x509.Certificate) bool {
+	return leaf != nil &&
+		bytes.Equal(leaf.RawIssuer, leaf.RawSubject) &&
+		slices.Equal(leaf.Subject.Organization, []string{"TorrServer"}) &&
+		leaf.CheckSignature(leaf.SignatureAlgorithm, leaf.RawTBSCertificate, leaf.Signature) == nil
 }
 
 func generatedPaths() (string, string) {
@@ -140,11 +237,16 @@ func MakeCertKeyFiles(ips []string) (string, string, error) {
 	if keyPath, err = filepath.Abs(keyPath); err != nil {
 		return "", "", err
 	}
-	if err = writeFileAtomic(keyPath, privPEM, 0o600); err != nil {
-		return "", "", fmt.Errorf("write private key: %w", err)
+	if !ownedPair(certPath, keyPath) {
+		return "", "", fmt.Errorf("refusing to overwrite %q / %q: not a TorrServer self-signed certificate", certPath, keyPath)
 	}
+	// cert first: a crash in between leaves our cert without a key, which is regenerated
+	// next time, instead of a lone key that looks like the user's
 	if err = writeFileAtomic(certPath, certPEM, 0o644); err != nil {
 		return "", "", fmt.Errorf("write certificate: %w", err)
+	}
+	if err = writeFileAtomic(keyPath, privPEM, 0o600); err != nil {
+		return "", "", fmt.Errorf("write private key: %w", err)
 	}
 	log.TLogln("Self-signed certificate and private key generated successfully.")
 	return certPath, keyPath, nil
