@@ -9,48 +9,104 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"math/big"
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"server/log"
 	"server/settings"
 )
 
+const (
+	certFileName = "server.pem"
+	keyFileName  = "server.key"
+)
+
+// EnsureCert returns usable cert and key file paths for the HTTPS server.
+//
+// If no paths are configured, a self-signed pair is generated. If the configured
+// pair is invalid, it is regenerated only when it is our own self-signed pair;
+// a user-supplied cert is never replaced, the error is returned instead.
+// changed reports whether the returned paths differ from the input and should be saved.
+func EnsureCert(certFile, keyFile string, ips []string) (cert, key string, changed bool, err error) {
+	if certFile == "" || keyFile == "" {
+		cert, key, err = MakeCertKeyFiles(ips)
+		return cert, key, err == nil, err
+	}
+	verr := VerifyCertKeyFiles(certFile, keyFile)
+	if verr == nil {
+		if IsGenerated(certFile, keyFile) {
+			restrictKeyPerms(keyFile)
+		}
+		return certFile, keyFile, false, nil
+	}
+	if !IsGenerated(certFile, keyFile) {
+		return "", "", false, fmt.Errorf("invalid ssl cert %q / key %q: %w", certFile, keyFile, verr)
+	}
+	log.TLogln("Self-signed certificate is invalid, regenerating:", verr)
+	cert, key, err = MakeCertKeyFiles(ips)
+	return cert, key, err == nil && (cert != certFile || key != keyFile), err
+}
+
+// IsGenerated reports whether the paths point to the self-signed pair managed by TorrServer.
+func IsGenerated(certFile, keyFile string) bool {
+	c, k := generatedPaths()
+	return samePath(certFile, c) && samePath(keyFile, k)
+}
+
+func generatedPaths() (string, string) {
+	return filepath.Join(settings.Path, certFileName), filepath.Join(settings.Path, keyFileName)
+}
+
+func samePath(a, b string) bool {
+	aa, err1 := filepath.Abs(a)
+	bb, err2 := filepath.Abs(b)
+	return err1 == nil && err2 == nil && filepath.Clean(aa) == filepath.Clean(bb)
+}
+
 func generateSelfSignedCert(ips []string) ([]byte, []byte, error) {
-	priv, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	notBefore := time.Now()
-	notAfter := notBefore.Add(365 * 24 * time.Hour) // Valid for 1 year
+	notBefore := time.Now().Add(-time.Hour) // tolerate small clock skew on clients
+	notAfter := notBefore.Add(365 * 24 * time.Hour)
 
 	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
 	if err != nil {
 		return nil, nil, err
 	}
 
-	netIps := make([]net.IP, 0)
-	if len(ips) != 0 {
-		for _, ip := range ips {
-			netIps = append(netIps, net.ParseIP(ip))
+	netIps := []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback}
+	for _, ip := range ips {
+		if parsed := net.ParseIP(ip); parsed != nil {
+			netIps = append(netIps, parsed)
 		}
+	}
+
+	dnsNames := []string{"localhost"}
+	if host, err := os.Hostname(); err == nil && host != "" {
+		host = strings.TrimSuffix(host, ".local")
+		dnsNames = append(dnsNames, host, host+".local")
 	}
 
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
 			Organization: []string{"TorrServer"},
+			CommonName:   "TorrServer",
 		},
 		NotBefore:             notBefore,
 		NotAfter:              notAfter,
-		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		KeyUsage:              x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
-		DNSNames:              []string{"localhost"},
+		DNSNames:              dnsNames,
 		IPAddresses:           netIps,
 	}
 
@@ -71,76 +127,92 @@ func generateSelfSignedCert(ips []string) ([]byte, []byte, error) {
 	return certPEM, privPEM, nil
 }
 
-func MakeCertKeyFiles(ips []string) (string, string) {
+// MakeCertKeyFiles generates a self-signed cert and key in settings.Path and returns their absolute paths.
+func MakeCertKeyFiles(ips []string) (string, string, error) {
 	certPEM, privPEM, err := generateSelfSignedCert(ips)
 	if err != nil {
-		log.TLogln("Error generating certificate:", err)
-		os.Exit(1)
+		return "", "", fmt.Errorf("generate certificate: %w", err)
 	}
-	certFile, err := os.Create(filepath.Join(settings.Path, "server.pem"))
-	if err != nil {
-		log.TLogln("Error creating certificate file:", err)
-		os.Exit(1)
+	certPath, keyPath := generatedPaths()
+	if certPath, err = filepath.Abs(certPath); err != nil {
+		return "", "", err
 	}
-	defer certFile.Close()
-
-	privFile, err := os.Create(filepath.Join(settings.Path, "server.key"))
-	if err != nil {
-		log.TLogln("Error creating private key file:", err)
-		os.Exit(1)
+	if keyPath, err = filepath.Abs(keyPath); err != nil {
+		return "", "", err
 	}
-	defer privFile.Close()
-
-	_, err = certFile.Write(certPEM)
-	if err != nil {
-		log.TLogln("Error writing certificate file:", err)
-		os.Exit(1)
+	if err = writeFileAtomic(keyPath, privPEM, 0o600); err != nil {
+		return "", "", fmt.Errorf("write private key: %w", err)
 	}
-	_, err = privFile.Write(privPEM)
-	if err != nil {
-		log.TLogln("Error writing private key file:", err)
-		os.Exit(1)
+	if err = writeFileAtomic(certPath, certPEM, 0o644); err != nil {
+		return "", "", fmt.Errorf("write certificate: %w", err)
 	}
 	log.TLogln("Self-signed certificate and private key generated successfully.")
-
-	return getAbsPath(certFile.Name()), getAbsPath(privFile.Name())
+	return certPath, keyPath, nil
 }
 
-func getAbsPath(fileName string) string {
-	filePath, err := filepath.Abs(fileName)
+// writeFileAtomic writes data to a temp file in the same directory and renames it into place,
+// so a crash never leaves a truncated PEM behind.
+func writeFileAtomic(path string, data []byte, perm os.FileMode) error {
+	tmp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".tmp*")
 	if err != nil {
-		log.TLogln("Error getting absolute path:", err)
-		os.Exit(1)
+		return err
 	}
-	return filePath
+	tmpName := tmp.Name()
+	defer os.Remove(tmpName) // no-op after successful rename
+
+	if err = tmp.Chmod(perm); err != nil {
+		tmp.Close()
+		return err
+	}
+	if _, err = tmp.Write(data); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err = tmp.Sync(); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err = tmp.Close(); err != nil {
+		return err
+	}
+	return os.Rename(tmpName, path)
 }
 
-func VerifyCertKeyFiles(certFile, keyFile, port string) error {
-	// Load the certificate and key
+// restrictKeyPerms tightens permissions of key files generated by older versions (0644).
+func restrictKeyPerms(keyFile string) {
+	st, err := os.Stat(keyFile)
+	if err != nil || st.Mode().Perm()&0o077 == 0 {
+		return
+	}
+	if err := os.Chmod(keyFile, 0o600); err != nil {
+		log.TLogln("Error restricting private key permissions:", err)
+	}
+}
+
+// VerifyCertKeyFiles checks that the cert and key load, match and the leaf is currently valid.
+func VerifyCertKeyFiles(certFile, keyFile string) error {
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
 		return err
 	}
-	// Check if the certificate chain is expired
-	for _, cert := range cert.Certificate {
-		x509Cert, err := x509.ParseCertificate(cert)
-		if err != nil {
-			return err
-		}
-		if x509Cert.NotAfter.Before(time.Now()) {
-			return errors.New("certificate has expired")
-		}
+	if len(cert.Certificate) == 0 {
+		return errors.New("no certificate found")
 	}
-	// Create a TLS configuration
-	config := tls.Config{
-		Certificates: []tls.Certificate{cert},
-	}
-	// Create a listener to check the certificate and key
-	ln, err := tls.Listen("tcp", ":"+port, &config)
+	leaf, err := x509.ParseCertificate(cert.Certificate[0])
 	if err != nil {
 		return err
 	}
-	defer ln.Close()
-	log.TLogln("Certificate and key are valid.")
+	now := time.Now()
+	if now.Before(leaf.NotBefore) {
+		return fmt.Errorf("certificate is not valid until %s", leaf.NotBefore.Format(time.RFC3339))
+	}
+	if now.After(leaf.NotAfter) {
+		return fmt.Errorf("certificate has expired on %s", leaf.NotAfter.Format(time.RFC3339))
+	}
+	sans := append([]string{}, leaf.DNSNames...)
+	for _, ip := range leaf.IPAddresses {
+		sans = append(sans, ip.String())
+	}
+	log.TLogln("Certificate valid:", leaf.Subject.String(), "SANs:", sans, "expires:", leaf.NotAfter.Format(time.RFC3339))
 	return nil
 }
