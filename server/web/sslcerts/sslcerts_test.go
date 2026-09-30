@@ -166,6 +166,134 @@ func TestEnsureCertMissingUserCert(t *testing.T) {
 	}
 }
 
+func TestEnsureCertRenewsWhenIPMoved(t *testing.T) {
+	withTempPath(t)
+	cert, key, err := MakeCertKeyFiles([]string{"10.0.0.5"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// DHCP moved the host: none of the current IPs is covered
+	if _, _, _, err := EnsureCert(cert, key, []string{"192.168.7.7"}); err != nil {
+		t.Fatal(err)
+	}
+	c := leaf(t, cert, key)
+	for _, ip := range []string{"192.168.7.7", "10.0.0.5"} {
+		if err := c.VerifyHostname(ip); err != nil {
+			t.Errorf("%s not in SANs after renewal: %v", ip, err)
+		}
+	}
+}
+
+func TestEnsureCertRenewsNearExpiry(t *testing.T) {
+	withTempPath(t)
+	old := selfSignedValidity
+	selfSignedValidity = 24 * time.Hour
+	cert, key, err := MakeCertKeyFiles(nil)
+	selfSignedValidity = old
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, _, _, err := EnsureCert(cert, key, nil); err != nil {
+		t.Fatal(err)
+	}
+	if left := time.Until(leaf(t, cert, key).NotAfter); left < 300*24*time.Hour {
+		t.Fatalf("cert not renewed, %s left", left)
+	}
+}
+
+func TestEnsureCertKeepsHealthyGeneratedCert(t *testing.T) {
+	withTempPath(t)
+	cert, key, err := MakeCertKeyFiles([]string{"10.0.0.5"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	before := leaf(t, cert, key).SerialNumber
+
+	if _, _, _, err := EnsureCert(cert, key, []string{"10.0.0.5"}); err != nil {
+		t.Fatal(err)
+	}
+	if leaf(t, cert, key).SerialNumber.Cmp(before) != 0 {
+		t.Fatal("healthy cert was regenerated")
+	}
+}
+
+func TestLoaderReloadsChangedFiles(t *testing.T) {
+	withTempPath(t)
+	cert, key, err := MakeCertKeyFiles(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	l, err := NewLoader(func() (string, string) { return cert, key })
+	if err != nil {
+		t.Fatal(err)
+	}
+	first, _ := l.GetCertificate(nil)
+
+	// regenerate in place, bump mtime in case the FS has coarse timestamps
+	if _, _, err := MakeCertKeyFiles(nil); err != nil {
+		t.Fatal(err)
+	}
+	future := time.Now().Add(time.Minute)
+	os.Chtimes(cert, future, future)
+	l.lastCheck = time.Time{}
+
+	second, _ := l.GetCertificate(nil)
+	if second.Leaf.SerialNumber.Cmp(first.Leaf.SerialNumber) == 0 {
+		t.Fatal("loader did not pick up the new certificate")
+	}
+}
+
+func TestLoaderKeepsPreviousOnBrokenFile(t *testing.T) {
+	withTempPath(t)
+	cert, key, err := MakeCertKeyFiles(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	l, err := NewLoader(func() (string, string) { return cert, key })
+	if err != nil {
+		t.Fatal(err)
+	}
+	first, _ := l.GetCertificate(nil)
+
+	os.WriteFile(cert, []byte("garbage"), 0o644)
+	future := time.Now().Add(time.Minute)
+	os.Chtimes(cert, future, future)
+	l.lastCheck = time.Time{}
+
+	got, err := l.GetCertificate(nil)
+	if err != nil || got != first {
+		t.Fatalf("got %p err %v, want previous cert %p", got, err, first)
+	}
+}
+
+func TestLoaderFollowsPathChange(t *testing.T) {
+	withTempPath(t)
+	cert, key, err := MakeCertKeyFiles(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	paths := [2]string{cert, key}
+	l, err := NewLoader(func() (string, string) { return paths[0], paths[1] })
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	userDir := t.TempDir()
+	certPEM, keyPEM, _ := generateSelfSignedCert(nil)
+	paths = [2]string{filepath.Join(userDir, "c.pem"), filepath.Join(userDir, "k.pem")}
+	os.WriteFile(paths[0], certPEM, 0o644)
+	os.WriteFile(paths[1], keyPEM, 0o600)
+	l.lastCheck = time.Time{}
+
+	got, _ := l.GetCertificate(nil)
+	want := leaf(t, paths[0], paths[1])
+	if got.Leaf.SerialNumber.Cmp(want.SerialNumber) != 0 {
+		t.Fatal("loader did not switch to the new cert path")
+	}
+}
+
 // writeUserCert writes a CA-signed pair (like a Let's Encrypt cert) and returns its paths.
 func writeUserCert(t *testing.T, certFile, keyFile string) {
 	t.Helper()
@@ -237,6 +365,27 @@ func TestGarbageAtDefaultPathIsLeftAlone(t *testing.T) {
 	}
 }
 
+func TestEnsureCertRegeneratesExpiredGeneratedCert(t *testing.T) {
+	withTempPath(t)
+	old := selfSignedValidity
+	selfSignedValidity = 30 * time.Minute // NotBefore is backdated 1h, so this is already expired
+	cert, key, err := MakeCertKeyFiles(nil)
+	selfSignedValidity = old
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := VerifyCertKeyFiles(cert, key); err == nil {
+		t.Fatal("test setup: cert should be expired")
+	}
+
+	if _, _, _, err := EnsureCert(cert, key, nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := VerifyCertKeyFiles(cert, key); err != nil {
+		t.Fatalf("regenerated pair invalid: %v", err)
+	}
+}
+
 func TestEnsureCertRegeneratesMissingGeneratedFiles(t *testing.T) {
 	withTempPath(t)
 	cert, key, err := MakeCertKeyFiles(nil)
@@ -274,6 +423,25 @@ func TestLoneKeyAtDefaultPathIsKept(t *testing.T) {
 	}
 	if b, _ := os.ReadFile(key); string(b) != "someone's key" {
 		t.Fatal("lone key was overwritten")
+	}
+}
+
+func TestEnsureCertRenewsWhenIPChangesBesideStableInterface(t *testing.T) {
+	withTempPath(t)
+	// e.g. a Tailscale IP that never changes plus a DHCP LAN address
+	cert, key, err := MakeCertKeyFiles([]string{"100.115.156.3", "192.168.0.169"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, _, _, err := EnsureCert(cert, key, []string{"100.115.156.3", "192.168.0.200"}); err != nil {
+		t.Fatal(err)
+	}
+	c := leaf(t, cert, key)
+	for _, ip := range []string{"100.115.156.3", "192.168.0.200", "192.168.0.169"} {
+		if err := c.VerifyHostname(ip); err != nil {
+			t.Errorf("%s not in SANs after renewal: %v", ip, err)
+		}
 	}
 }
 

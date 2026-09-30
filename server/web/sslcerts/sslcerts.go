@@ -30,13 +30,18 @@ const (
 	keyFileName  = "server.key"
 )
 
+// renewBefore is how long before expiry the self-signed cert is regenerated.
+const renewBefore = 30 * 24 * time.Hour
+
+// selfSignedValidity is the lifetime of generated certs (a var so tests can shorten it).
+var selfSignedValidity = 365 * 24 * time.Hour
+
 // EnsureCert returns usable cert and key file paths for the HTTPS server.
 //
-// If no paths are configured, a self-signed pair is generated, unless the user already
-// placed a certificate at the default location, which is then used as is. If the
-// configured pair is invalid, it is regenerated only when it is TorrServer's own
-// self-signed pair; a user-supplied cert, including one copied to the default location,
-// is never replaced, the error is returned instead.
+// If no paths are configured, a self-signed pair is generated. The self-signed pair
+// is regenerated when it is invalid, close to expiry, or missing a current local IP
+// or hostname (previously covered IPs are kept). A user-supplied cert, including one
+// copied to the default location, is never replaced; the error is returned instead.
 // changed reports whether the returned paths differ from the input and should be saved.
 func EnsureCert(certFile, keyFile string, ips []string) (cert, key string, changed bool, err error) {
 	if certFile == "" || keyFile == "" {
@@ -53,24 +58,71 @@ func EnsureCert(certFile, keyFile string, ips []string) (cert, key string, chang
 		cert, key, err = MakeCertKeyFiles(ips)
 		return cert, key, err == nil, err
 	}
-	verr := VerifyCertKeyFiles(certFile, keyFile)
-	if verr == nil {
-		if IsGenerated(certFile, keyFile) {
-			restrictKeyPerms(keyFile)
-		}
-		return certFile, keyFile, false, nil
-	}
-	if !IsGenerated(certFile, keyFile) {
+	generated := IsGenerated(certFile, keyFile)
+	pair, verr := loadPair(certFile, keyFile)
+	switch {
+	case verr != nil && !generated:
 		err = fmt.Errorf("invalid ssl cert %q / key %q: %w", certFile, keyFile, verr)
 		if c, k := generatedPaths(); samePath(certFile, c) && samePath(keyFile, k) {
 			err = fmt.Errorf("%w (not a TorrServer self-signed certificate, so it is left untouched; "+
 				"delete both files to have a new one generated)", err)
 		}
 		return "", "", false, err
+	case verr != nil:
+		log.TLogln("Self-signed certificate is invalid, regenerating:", verr)
+	case !generated:
+		return certFile, keyFile, false, nil
+	default:
+		restrictKeyPerms(keyFile)
+		reason := renewalReason(pair.Leaf, ips)
+		if reason == "" {
+			return certFile, keyFile, false, nil
+		}
+		log.TLogln("Renewing self-signed certificate:", reason)
+		// keep previously covered IPs so flapping interfaces (VPN, Docker) don't cause churn
+		ips = mergeIPs(pair.Leaf.IPAddresses, ips)
 	}
-	log.TLogln("Self-signed certificate is invalid, regenerating:", verr)
 	cert, key, err = MakeCertKeyFiles(ips)
 	return cert, key, err == nil && (cert != certFile || key != keyFile), err
+}
+
+// renewalReason returns why a generated leaf should be regenerated, or "" if it is fine.
+func renewalReason(leaf *x509.Certificate, ips []string) string {
+	if time.Until(leaf.NotAfter) < renewBefore {
+		return "expires on " + leaf.NotAfter.Format(time.RFC3339)
+	}
+	for _, s := range ips {
+		if ip := net.ParseIP(s); ip != nil && !containsIP(leaf.IPAddresses, ip) {
+			return "missing IP " + s
+		}
+	}
+	for _, name := range localDNSNames() {
+		if !slices.Contains(leaf.DNSNames, name) {
+			return "missing hostname " + name
+		}
+	}
+	return ""
+}
+
+func containsIP(list []net.IP, ip net.IP) bool {
+	return slices.ContainsFunc(list, ip.Equal)
+}
+
+func mergeIPs(old []net.IP, current []string) []string {
+	out := slices.Clone(current)
+	for _, ip := range old {
+		out = append(out, ip.String())
+	}
+	return out
+}
+
+func localDNSNames() []string {
+	names := []string{"localhost"}
+	if host, err := os.Hostname(); err == nil && host != "" {
+		host = strings.TrimSuffix(host, ".local")
+		names = append(names, host, host+".local")
+	}
+	return names
 }
 
 // IsGenerated reports whether the paths point to the self-signed pair managed by TorrServer:
@@ -172,7 +224,7 @@ func generateSelfSignedCert(ips []string) ([]byte, []byte, error) {
 	}
 
 	notBefore := time.Now().Add(-time.Hour) // tolerate small clock skew on clients
-	notAfter := notBefore.Add(365 * 24 * time.Hour)
+	notAfter := notBefore.Add(selfSignedValidity)
 
 	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
 	if err != nil {
@@ -181,15 +233,9 @@ func generateSelfSignedCert(ips []string) ([]byte, []byte, error) {
 
 	netIps := []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback}
 	for _, ip := range ips {
-		if parsed := net.ParseIP(ip); parsed != nil {
+		if parsed := net.ParseIP(ip); parsed != nil && !containsIP(netIps, parsed) {
 			netIps = append(netIps, parsed)
 		}
-	}
-
-	dnsNames := []string{"localhost"}
-	if host, err := os.Hostname(); err == nil && host != "" {
-		host = strings.TrimSuffix(host, ".local")
-		dnsNames = append(dnsNames, host, host+".local")
 	}
 
 	template := x509.Certificate{
@@ -203,7 +249,7 @@ func generateSelfSignedCert(ips []string) ([]byte, []byte, error) {
 		KeyUsage:              x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
-		DNSNames:              dnsNames,
+		DNSNames:              localDNSNames(),
 		IPAddresses:           netIps,
 	}
 
@@ -291,27 +337,39 @@ func restrictKeyPerms(keyFile string) {
 	}
 }
 
-// VerifyCertKeyFiles checks that the cert and key load, match and the leaf is currently valid.
-func VerifyCertKeyFiles(certFile, keyFile string) error {
+// loadPair loads the cert and key, checks they match and the leaf is currently valid.
+func loadPair(certFile, keyFile string) (*tls.Certificate, error) {
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if len(cert.Certificate) == 0 {
-		return errors.New("no certificate found")
+		return nil, errors.New("no certificate found")
 	}
-	leaf, err := x509.ParseCertificate(cert.Certificate[0])
+	if cert.Leaf == nil {
+		if cert.Leaf, err = x509.ParseCertificate(cert.Certificate[0]); err != nil {
+			return nil, err
+		}
+	}
+	now := time.Now()
+	if now.Before(cert.Leaf.NotBefore) {
+		return nil, fmt.Errorf("certificate is not valid until %s", cert.Leaf.NotBefore.Format(time.RFC3339))
+	}
+	if now.After(cert.Leaf.NotAfter) {
+		return nil, fmt.Errorf("certificate has expired on %s", cert.Leaf.NotAfter.Format(time.RFC3339))
+	}
+	return &cert, nil
+}
+
+// VerifyCertKeyFiles checks that the cert and key load, match and the leaf is currently valid,
+// and logs what will be served.
+func VerifyCertKeyFiles(certFile, keyFile string) error {
+	cert, err := loadPair(certFile, keyFile)
 	if err != nil {
 		return err
 	}
-	now := time.Now()
-	if now.Before(leaf.NotBefore) {
-		return fmt.Errorf("certificate is not valid until %s", leaf.NotBefore.Format(time.RFC3339))
-	}
-	if now.After(leaf.NotAfter) {
-		return fmt.Errorf("certificate has expired on %s", leaf.NotAfter.Format(time.RFC3339))
-	}
-	sans := append([]string{}, leaf.DNSNames...)
+	leaf := cert.Leaf
+	sans := slices.Clone(leaf.DNSNames)
 	for _, ip := range leaf.IPAddresses {
 		sans = append(sans, ip.String())
 	}

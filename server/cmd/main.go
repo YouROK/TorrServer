@@ -52,6 +52,7 @@ type args struct {
 	ProxyURL    string   `help:"proxy URL for BitTorrent traffic (http, socks4, socks5, socks5h), e.g. socks5://user:password@127.0.0.1:8080"`
 	ProxyMode   string   `help:"proxy mode: tracker (only HTTP trackers, default), peers (only peer connections), or full (all traffic)"`
 	ForceHTTPS  bool     `arg:"--force-https" help:"redirect all HTTP requests to HTTPS (requires --ssl)"`
+	HTTPMedia   bool     `arg:"--http-media" help:"with --force-https, keep serving media URLs (/stream, /play, playlists) over plain HTTP for players and TVs that can't use HTTPS. Stream URLs and Basic auth credentials then travel unencrypted: use on trusted networks only"`
 }
 
 func (args) Version() string {
@@ -70,7 +71,7 @@ func main() {
 	}
 
 	if params.Port == "" {
-		params.Port = "8090"
+		params.Port = settings.DefaultPort
 	}
 
 	settings.Path = params.Path
@@ -174,6 +175,7 @@ func main() {
 		ProxyURL:    params.ProxyURL,
 		ProxyMode:   params.ProxyMode,
 		ForceHTTPS:  params.ForceHTTPS,
+		HTTPMedia:   params.HTTPMedia,
 	}
 
 	if params.ProxyURL != "" {
@@ -182,6 +184,10 @@ func main() {
 
 	if params.ForceHTTPS && !params.Ssl {
 		log.TLogln("Error: --force-https requires --ssl")
+		os.Exit(1)
+	}
+	if params.HTTPMedia && !params.ForceHTTPS {
+		log.TLogln("Error: --http-media requires --force-https (without it, media is already served over HTTP)")
 		os.Exit(1)
 	}
 
