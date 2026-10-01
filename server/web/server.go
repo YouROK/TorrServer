@@ -98,7 +98,7 @@ func Start() error {
 
 	api.SetupRoute(route)
 	mcp.Mount(route.Group("/", auth.CheckAuth()))
-	gstreamer.SetupRoute(route)
+	setupGStreamerRoutes(route)
 	msx.SetupRoute(route)
 	pages.SetupRoute(route)
 	if settings.Args.WebDAV {
@@ -149,6 +149,12 @@ func Start() error {
 		}
 	}()
 	return nil
+}
+
+// setupGStreamerRoutes mounts the GStreamer routes behind the same authentication as
+// the rest of the API (a no-op for builds without the gst tag).
+func setupGStreamerRoutes(route gin.IRouter) {
+	gstreamer.SetupRoute(route.Group("/", auth.CheckAuth()))
 }
 
 func Wait() error {
