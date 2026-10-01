@@ -211,6 +211,7 @@ On FreeBSD (TrueNAS/FreeNAS) you can use this plugin: <https://github.com/filka9
 - `--sslkey PATH` - path to SSL key file. If not set, will be taken from db (if stored previously) or default self-signed certificate/key will be generated.
 - `--force-https` - with `--ssl`, the HTTP listener (`--port`) answers every request with **307 Temporary Redirect** to the same path on HTTPS (`--sslport`). Requires `--ssl` (startup fails if `--force-https` is set without `--ssl`). Default is off. Media players and TVs usually can't use a self-signed certificate, see [HTTPS](#https).
 - `--http-media` - with `--force-https`, keep serving media URLs (`/stream`, `/play`, `/playlist`, `/playlistall`, which DLNA also uses, and GStreamer HLS under `/gst/<hash>/`) over plain HTTP for players that can't use HTTPS; everything else still redirects. Stream URLs and Basic auth credentials then travel unencrypted, so only use it on a trusted network and never expose the HTTP port to the internet. Requires `--force-https`.
+- `--https-only` - with `--ssl`, don't open the plain HTTP port (`--port`) at all: the UI, API, media, DLNA links and Bonjour all use HTTPS on `--sslport`. Unlike `--force-https`, clients can't send credentials or requests over plain HTTP before being redirected. Use it with a trusted certificate, see [HTTPS](#https); with the self-signed one, players and TVs won't play. Requires `--ssl`; can't be combined with `--http-media`.
 
 - `--path PATH`, `-d PATH` - database and config dir path
 - `--logpath LOGPATH`, `-l LOGPATH` - server log file path
@@ -236,7 +237,7 @@ On FreeBSD (TrueNAS/FreeNAS) you can use this plugin: <https://github.com/filka9
 Example:
 
 ```bash
-TorrServer-darwin-arm64 [--port PORT] [--ip IP ...] [--path PATH] [--logpath LOGPATH] [--weblogpath WEBLOGPATH] [--rdb] [--httpauth] [--dontkill] [--ui] [--torrentsdir TORRENTSDIR] [--torrentaddr TORRENTADDR] [--pubipv4 PUBIPV4] [--pubipv6 PUBIPV6] [--searchwa] [--maxsize MAXSIZE] [--tg TGTOKEN] [--fuse FUSEPATH] [--webdav] [--ssl] [--sslport PORT] [--sslcert PATH] [--sslkey PATH] [--force-https] [--http-media]
+TorrServer-darwin-arm64 [--port PORT] [--ip IP ...] [--path PATH] [--logpath LOGPATH] [--weblogpath WEBLOGPATH] [--rdb] [--httpauth] [--dontkill] [--ui] [--torrentsdir TORRENTSDIR] [--torrentaddr TORRENTADDR] [--pubipv4 PUBIPV4] [--pubipv6 PUBIPV6] [--searchwa] [--maxsize MAXSIZE] [--tg TGTOKEN] [--fuse FUSEPATH] [--webdav] [--ssl] [--sslport PORT] [--sslcert PATH] [--sslkey PATH] [--force-https] [--http-media] [--https-only]
 ```
 
 ### Running in Docker & Docker Compose
@@ -276,6 +277,7 @@ docker run --rm -d --name torrserver -v ~/ts:/opt/ts -p 8090:8090 ghcr.io/yourok
 - `TS_SSL_KEY_PATH` – Specifies the path to the SSL private key file via the `--sslkey` flag.
 - `TS_FORCE_HTTPS_ENABLE` – If set to `1`, enables the `--force-https` flag.
 - `TS_HTTP_MEDIA_ENABLE` – If set to `1`, enables the `--http-media` flag.
+- `TS_HTTPS_ONLY_ENABLE` – If set to `1`, enables the `--https-only` flag.
 - `TS_WEB_LOG_PATH` – Overrides the web server log path using the `--weblogpath` flag.
 - `TS_PUBLIC_IPV4_ADDR` – Sets the public IPv4 address using the `--pubipv4` flag.
 - `TS_PUBLIC_IPV6_ADDR` – Sets the public IPv6 address using the `--pubipv6` flag.
@@ -497,6 +499,7 @@ Let's Encrypt can issue a certificate for a name that points to a **private** IP
    ```
 
 5. Open `https://mytorr.duckdns.org:8091` on any device on the LAN. Use the name, not the IP: the IP isn't in the certificate.
+6. Optional: add `--https-only` so TorrServer doesn't open the plain HTTP port at all, or `--force-https` to keep it open but redirect it to HTTPS.
 
 acme.sh renews the certificate automatically every ~60 days and rewrites the files; TorrServer picks up the new files within seconds, without a restart. Any ACME client with DNS-01 support (certbot, lego, Caddy with a DNS plugin) works the same way. Note that certificate names are published in public Certificate Transparency logs.
 

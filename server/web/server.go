@@ -159,6 +159,12 @@ func startServers(h http.Handler) error {
 
 	startInternalServer(h)
 
+	if !settings.HTTPEnabled() {
+		log.TLogln("HTTPS only: the plain HTTP port", settings.Port, "is not opened")
+		warnSelfSignedStrict("--https-only")
+		return nil
+	}
+
 	ln, err := netbind.Listen(settings.IPs, settings.Port)
 	if err != nil {
 		return fmt.Errorf("http listen: %w", err)
@@ -173,11 +179,7 @@ func startServers(h http.Handler) error {
 				"credentials travel unencrypted. Don't expose the HTTP port to the internet.")
 		} else {
 			logAddrs("Start http server (redirect to https) at", settings.Port)
-			if sslcerts.IsGenerated(sslCertPaths()) {
-				log.TLogln("Warning: --force-https with a self-signed certificate: media players and TVs " +
-					"usually reject it and won't play. Use a trusted certificate (see README, HTTPS) " +
-					"or add --http-media on a trusted network.")
-			}
+			warnSelfSignedStrict("--force-https")
 		}
 		return nil
 	}
@@ -185,6 +187,16 @@ func startServers(h http.Handler) error {
 	serve(func() error { return srv.Serve(ln) })
 	logAddrs("Start http server at", settings.Port)
 	return nil
+}
+
+// warnSelfSignedStrict warns when media is only served over HTTPS with the self-signed
+// certificate, which most players and TVs reject.
+func warnSelfSignedStrict(flag string) {
+	if sslcerts.IsGenerated(sslCertPaths()) {
+		log.TLogln("Warning: " + flag + " with a self-signed certificate: media players and TVs " +
+			"usually reject it and won't play. Use a trusted certificate (see README, HTTPS)" +
+			" or, on a trusted network, --force-https --http-media.")
+	}
 }
 
 // startInternalServer serves h over plain HTTP on a random loopback port for

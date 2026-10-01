@@ -6,12 +6,15 @@ import (
 	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"io"
 	"math/big"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -286,5 +289,68 @@ func TestInternalServerBypassesForceHTTPS(t *testing.T) {
 	shutdownServers()
 	if _, err := net.DialTimeout("tcp", "127.0.0.1:"+port, time.Second); err == nil {
 		t.Fatal("internal listener still accepting after shutdown")
+	}
+}
+
+func freePort(t *testing.T) string {
+	t.Helper()
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+	_, port, _ := net.SplitHostPort(ln.Addr().String())
+	return port
+}
+
+func TestStartServersHTTPSOnly(t *testing.T) {
+	cert := testCert(t)
+	keyDER, err := x509.MarshalECPrivateKey(cert.PrivateKey.(*ecdsa.PrivateKey))
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	certPath, keyPath := filepath.Join(dir, "cert.pem"), filepath.Join(dir, "key.pem")
+	os.WriteFile(certPath, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Certificate[0]}), 0o600)
+	os.WriteFile(keyPath, pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER}), 0o600)
+
+	oldSsl, oldArgs, oldIPs, oldPort, oldSslPort, oldSets, oldInternal := settings.Ssl, settings.Args,
+		settings.IPs, settings.Port, settings.SslPort, settings.BTsets, settings.InternalPort
+	t.Cleanup(func() {
+		if stopRenew != nil {
+			close(stopRenew)
+			stopRenew = nil
+		}
+		shutdownServers()
+		settings.Ssl, settings.Args, settings.IPs, settings.Port, settings.SslPort, settings.BTsets,
+			settings.InternalPort = oldSsl, oldArgs, oldIPs, oldPort, oldSslPort, oldSets, oldInternal
+	})
+	settings.Ssl = true
+	settings.Args = &settings.ExecArgs{Ssl: true, HTTPSOnly: true}
+	settings.IPs = []string{"127.0.0.1"}
+	settings.Port, settings.SslPort = freePort(t), freePort(t)
+	settings.BTsets = &settings.BTSets{SslCert: certPath, SslKey: keyPath}
+
+	if err := startServers(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, "ok")
+	})); err != nil {
+		t.Fatal(err)
+	}
+
+	resp, err := insecureClient().Get("https://127.0.0.1:" + settings.SslPort + "/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK || string(body) != "ok" {
+		t.Fatalf("https: %d %q, want 200 ok", resp.StatusCode, body)
+	}
+	if conn, err := net.DialTimeout("tcp", "127.0.0.1:"+settings.Port, time.Second); err == nil {
+		conn.Close()
+		t.Fatal("plain HTTP port is open with --https-only")
+	}
+	if settings.InternalPort == "" {
+		t.Fatal("internal loopback listener not started")
 	}
 }

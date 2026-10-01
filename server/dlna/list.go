@@ -403,6 +403,11 @@ func getLink(host, path string) string {
 	if pos > 7 {
 		host = host[:pos]
 	}
+	if !settings.HTTPEnabled() {
+		// --https-only: the HTTP port isn't open
+		return "https://" + strings.TrimPrefix(strings.TrimPrefix(host, "http://"), "https://") +
+			":" + settings.SslPort + "/" + path
+	}
 	return host + ":" + settings.Port + "/" + path
 }
 

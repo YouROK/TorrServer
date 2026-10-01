@@ -21,9 +21,19 @@ func IsDebug() bool {
 	return false
 }
 
+// HTTPEnabled reports whether the plain HTTP port (--port) is open: always, unless
+// --https-only with --ssl.
+func HTTPEnabled() bool {
+	return !Ssl || Args == nil || !Args.HTTPSOnly
+}
+
 // PlainHTTPServesMedia reports whether media URLs (/stream, /play, playlists) are
-// served on the plain HTTP port: always, unless --force-https without --http-media.
+// served on the plain HTTP port: always, unless --force-https without --http-media
+// or --https-only.
 func PlainHTTPServesMedia() bool {
+	if !HTTPEnabled() {
+		return false
+	}
 	if !Ssl || Args == nil || !Args.ForceHTTPS {
 		return true
 	}
