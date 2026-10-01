@@ -403,8 +403,8 @@ func getLink(host, path string) string {
 	if pos > 7 {
 		host = host[:pos]
 	}
-	if !settings.HTTPEnabled() {
-		// --https-only: the HTTP port isn't open
+	if !settings.PlainHTTPServesMedia() {
+		// --https-only, or --force-https without --http-media: link to HTTPS directly
 		return "https://" + strings.TrimPrefix(strings.TrimPrefix(host, "http://"), "https://") +
 			":" + settings.SslPort + "/" + path
 	}

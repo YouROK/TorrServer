@@ -475,6 +475,39 @@ Start with `--ssl` to serve the web UI and API over HTTPS on `--sslport` (defaul
 | Let's Encrypt via DNS-01, LAN only | yes | yes (except Android ≤ 7.0) | a domain or free DuckDNS name |
 | Reverse proxy (Caddy, nginx) | yes | yes | a domain and a port open to the internet |
 
+### HTTP and HTTPS modes
+
+Four flags decide what the plain HTTP port (`--port`, default 8090) and the HTTPS port (`--sslport`, default 8091) serve:
+
+| Mode | Flags | HTTP port | HTTPS port | Use it when |
+|---|---|---|---|---|
+| HTTP only (default) | none | everything | not opened | a trusted home network, or behind a [reverse proxy](#reverse-proxy) |
+| HTTP and HTTPS | `--ssl` | everything | everything | browsers use HTTPS, players and TVs keep using HTTP |
+| HTTPS, media also on HTTP | `--ssl --force-https --http-media` | media only; everything else redirects to HTTPS | everything | the self-signed certificate, with players and TVs that can't use it |
+| HTTPS preferred | `--ssl --force-https` | redirects everything to HTTPS | everything | a trusted certificate; clients that type `http://` are sent to HTTPS |
+| HTTPS only | `--ssl --https-only` | not opened | everything | a trusted certificate, and nothing should ever travel unencrypted |
+
+- **Media** means `/stream`, `/play`, `/playlist`, `/playlistall` (also used by DLNA) and GStreamer HLS under `/gst/<hash>/`. The web UI, the API and GStreamer control endpoints (`/gst/settings`, `/gst/remove`, `/gst/echo`) are not media.
+- **Redirects** are `307 Temporary Redirect` to the same path and query on `https://<host>:<sslport>`. A request still reaches the HTTP port before it's redirected, so its URL and any Basic auth credentials have already been sent unencrypted. Only `--https-only` avoids that, because the HTTP port is never opened.
+- **Plain HTTP sent to the HTTPS port** (for example `http://host:8091`) is redirected to `https://` in every mode, instead of failing with "Client sent an HTTP request to an HTTPS server".
+- **Links handed to players:** playlists and the web UI's external-player and copy-link buttons use the address the page was opened on. The exception is a page opened over the self-signed certificate while the HTTP port serves media: then they point at the HTTP port, because players reject that certificate. DLNA links point at the HTTP port when it serves media, and at the HTTPS port otherwise. With `--https-only`, Bonjour advertises `_torrserver` on the HTTPS port and doesn't advertise `_http`.
+- **TorrServer's own requests** (ffprobe, GStreamer) use an internal listener on a random `127.0.0.1` port that is never redirected, so they work in every mode, including when `--ip` excludes loopback.
+- **Self-signed certificate with `--force-https` or `--https-only`:** startup logs a warning, because most players and TVs won't play. Use a trusted certificate, or `--force-https --http-media` on a trusted network.
+- **Invalid combinations stop startup:** `--force-https` or `--https-only` without `--ssl`, `--http-media` without `--force-https`, and `--https-only` with `--http-media`. `--force-https` with `--https-only` is allowed and behaves like `--https-only`.
+- **Docker:** `TS_SSL_ENABLE`, `TS_FORCE_HTTPS_ENABLE`, `TS_HTTP_MEDIA_ENABLE` and `TS_HTTPS_ONLY_ENABLE` set to `1` enable the matching flags.
+
+HTTPS is only on when TorrServer is started with `--ssl`; the choice isn't saved in the settings. The HTTPS port, certificate and key paths are saved, and reused on later starts with `--ssl`.
+
+Examples:
+
+```bash
+# HTTPS only, with a trusted certificate
+TorrServer --ssl --https-only --sslcert /opt/torrserver/tls/fullchain.pem --sslkey /opt/torrserver/tls/key.pem
+
+# self-signed certificate for browsers, players and TVs on HTTP
+TorrServer --ssl --force-https --http-media
+```
+
 ### Self-signed certificate
 
 Without `--sslcert`/`--sslkey`, TorrServer generates a self-signed certificate for `localhost`, the hostname, `hostname.local` and the local IPs, and renews it before it expires or when the host moves to a new IP. Browsers show a warning you can accept once. Most media players, TVs and DLNA renderers reject it, so give them HTTP links: don't use `--force-https`, or add `--http-media` on a trusted network. When a playlist is requested over the self-signed HTTPS port and HTTP still serves media, its links point to the HTTP port. The self-signed certificate is only ever regenerated if it is one TorrServer created; your own certificate is never touched, even at the default location.
@@ -532,7 +565,7 @@ Running acme.sh on the box itself (e.g. in Termux) also works, but Android's sto
 
 ### Reverse proxy
 
-If TorrServer is exposed to the internet under a domain, the simplest option is a reverse proxy that handles certificates itself. Never expose the plain HTTP port (`--port`) to the internet: Basic auth credentials and stream URLs would travel unencrypted. Run TorrServer without `--ssl` and enable `--httpauth`. TorrServer honours `X-Forwarded-Proto`/`X-Forwarded-Host`, so playlist links use the public `https://` name. Disable response buffering, or playback will stutter.
+If TorrServer is exposed to the internet under a domain, the simplest option is a reverse proxy that handles certificates itself. Never expose the plain HTTP port (`--port`) to the internet: Basic auth credentials and stream URLs would travel unencrypted. Run TorrServer without `--ssl`, enable `--httpauth`, and bind it to loopback with `--ip 127.0.0.1` when the proxy runs on the same host. TorrServer honours `X-Forwarded-Proto`/`X-Forwarded-Host`, so playlist links use the public `https://` name. Disable response buffering, or playback will stutter.
 
 Caddy (obtains and renews Let's Encrypt certificates automatically):
 
