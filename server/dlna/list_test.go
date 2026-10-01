@@ -8,7 +8,9 @@ import (
 
 func TestGetLinkFollowsHTTPSMode(t *testing.T) {
 	oldSsl, oldArgs, oldPort, oldSslPort := settings.Ssl, settings.Args, settings.Port, settings.SslPort
-	t.Cleanup(func() { settings.Ssl, settings.Args, settings.Port, settings.SslPort = oldSsl, oldArgs, oldPort, oldSslPort })
+	t.Cleanup(func() {
+		settings.Ssl, settings.Args, settings.Port, settings.SslPort = oldSsl, oldArgs, oldPort, oldSslPort
+	})
 	settings.Port, settings.SslPort = "8090", "8091"
 
 	tests := []struct {
