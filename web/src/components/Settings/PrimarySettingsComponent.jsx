@@ -104,6 +104,8 @@ export default function PrimarySettingsComponent({
           sliderMax={100}
           inputMin={0}
           inputMax={100}
+          step={0.01}
+          onBlurCallback={value => setPreloadCachePercentage(Math.round(value * 100) / 100)}
         />
       </div>
 
