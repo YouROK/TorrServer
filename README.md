@@ -494,6 +494,7 @@ Four flags decide what the plain HTTP port (`--port`, default 8090) and the HTTP
 - **TorrServer's own requests** (ffprobe, GStreamer) use an internal listener on a random `127.0.0.1` port that is never redirected, so they work in every mode, including when `--ip` excludes loopback.
 - **Self-signed certificate with `--force-https` or `--https-only`:** startup logs a warning, because most players and TVs won't play. Use a trusted certificate, or `--force-https --http-media` on a trusted network.
 - **Invalid combinations stop startup:** `--force-https` or `--https-only` without `--ssl`, `--http-media` without `--force-https`, and `--https-only` with `--http-media`. `--force-https` with `--https-only` is allowed and behaves like `--https-only`.
+- **Apps that use the API** (Lampa and other TorrServer clients that add torrents, list them or call `/gst/remove`) must be configured with the `https://` address when `--force-https` or `--https-only` is on: browsers and apps don't follow a redirect for API requests such as `POST /torrents`. `--http-media` only helps players that receive stream links.
 - **Docker:** `TS_SSL_ENABLE`, `TS_FORCE_HTTPS_ENABLE`, `TS_HTTP_MEDIA_ENABLE` and `TS_HTTPS_ONLY_ENABLE` set to `1` enable the matching flags.
 
 HTTPS is only on when TorrServer is started with `--ssl`; the choice isn't saved in the settings. The HTTPS port, certificate and key paths are saved, and reused on later starts with `--ssl`.
