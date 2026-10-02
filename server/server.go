@@ -65,11 +65,14 @@ func Start() error {
 		settings.Args.Port = settings.DefaultPort
 	}
 
-	log.TLogln("Check web port", settings.Args.Port, "on", netbind.Normalize(settings.Args.IPs))
-	if err := netbind.CheckPort(settings.Args.IPs, settings.Args.Port); err != nil {
-		msg := fmt.Sprintf("cannot bind HTTP port %s: %v", settings.Args.Port, err)
-		log.TLogln(msg)
-		return errors.New(msg)
+	// --https-only never opens the HTTP port, so it doesn't have to be free
+	if settings.HTTPEnabled() {
+		log.TLogln("Check web port", settings.Args.Port, "on", netbind.Normalize(settings.Args.IPs))
+		if err := netbind.CheckPort(settings.Args.IPs, settings.Args.Port); err != nil {
+			msg := fmt.Sprintf("cannot bind HTTP port %s: %v", settings.Args.Port, err)
+			log.TLogln(msg)
+			return errors.New(msg)
+		}
 	}
 	// remove old disk caches
 	go cleanCache()
