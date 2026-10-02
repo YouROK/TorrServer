@@ -111,6 +111,9 @@ func (c *Cache) priorityWatchdog() {
 }
 
 func (c *Cache) SetTorrent(torr *torrent.Torrent) {
+	if c == nil {
+		return
+	}
 	c.torrent = torr
 }
 

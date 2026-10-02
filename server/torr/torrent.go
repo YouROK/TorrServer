@@ -129,8 +129,13 @@ func (t *Torrent) WaitInfo() bool {
 			t.TorrentSpec.InfoBytes = t.Torrent.Metainfo().InfoBytes
 		}
 		if t.bt != nil && t.bt.storage != nil {
-			t.cache = t.bt.storage.GetCache(t.Hash())
-			t.cache.SetTorrent(t.Torrent)
+			cache := t.bt.storage.GetCache(t.Hash())
+			if cache == nil {
+				// torrent was dropped while waiting for info: CloseHash already removed the cache
+				return false
+			}
+			t.cache = cache
+			cache.SetTorrent(t.Torrent)
 		}
 		return true
 	case <-t.closed:
