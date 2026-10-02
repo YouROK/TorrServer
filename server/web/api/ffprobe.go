@@ -58,7 +58,7 @@ func ffp(c *gin.Context) {
 		return
 	}
 
-	link := "http://127.0.0.1:" + sets.Port + "/play/" + hash + "/" + indexStr
+	link := sets.LoopbackBaseURL() + "/play/" + hash + "/" + indexStr
 
 	data, err := ffprobe.ProbeUrl(link)
 	if err != nil {
