@@ -56,6 +56,18 @@ func Start() error {
 	if len(ips) > 0 {
 		log.TLogln("Local IPs:", ips)
 	}
+	if settings.Ssl {
+		cert, key, changed, err := sslcerts.EnsureCert(settings.BTsets.SslCert, settings.BTsets.SslKey, ips)
+		if err != nil {
+			log.TLogln("Cannot start HTTPS (fix --sslcert/--sslkey or clear them in settings to use a self-signed cert):", err)
+			return err
+		}
+		if changed {
+			settings.BTsets.SslCert, settings.BTsets.SslKey = cert, key
+			log.TLogln("Saving path to ssl cert and key in db", cert, key)
+			settings.SetBTSets(settings.BTsets)
+		}
+	}
 	err := BTS.Connect()
 	if err != nil {
 		log.TLogln("BTS.Connect() error!", err)
@@ -107,21 +119,6 @@ func Start() error {
 
 	// check if https enabled
 	if settings.Ssl {
-		// if no cert and key files set in db/settings, generate new self-signed cert and key files
-		if settings.BTsets.SslCert == "" || settings.BTsets.SslKey == "" {
-			settings.BTsets.SslCert, settings.BTsets.SslKey = sslcerts.MakeCertKeyFiles(ips)
-			log.TLogln("Saving path to ssl cert and key in db", settings.BTsets.SslCert, settings.BTsets.SslKey)
-			settings.SetBTSets(settings.BTsets)
-		}
-		// verify if cert and key files are valid
-		err = sslcerts.VerifyCertKeyFiles(settings.BTsets.SslCert, settings.BTsets.SslKey, settings.SslPort)
-		// if not valid, generate new self-signed cert and key files
-		if err != nil {
-			log.TLogln("Error checking certificate and private key files:", err)
-			settings.BTsets.SslCert, settings.BTsets.SslKey = sslcerts.MakeCertKeyFiles(ips)
-			log.TLogln("Saving path to ssl cert and key in db", settings.BTsets.SslCert, settings.BTsets.SslKey)
-			settings.SetBTSets(settings.BTsets)
-		}
 		go func() {
 			for _, ip := range netbind.Normalize(settings.IPs) {
 				addr := netbind.Addr(ip, settings.SslPort)
