@@ -45,6 +45,7 @@ func cmdFfp(c tele.Context) error {
 		return c.Send(tr(uid, "torrent_not_found"))
 	}
 
+	notifyTyping(c)
 	link := fmt.Sprintf("%s/play/%s/%d", settings.LoopbackBaseURL(), hash, id)
 
 	data, err := ffprobe.ProbeUrl(link)
