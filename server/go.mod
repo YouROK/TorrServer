@@ -5,7 +5,6 @@ go 1.25.7
 replace (
 	github.com/anacrolix/torrent v1.59.1 => github.com/tsynik/torrent v1.2.31
 	github.com/anacrolix/upnp v0.1.4 => github.com/tsynik/upnp v0.1.5
-	gopkg.in/vansante/go-ffprobe.v2 v2.3.0 => github.com/tsynik/go-ffprobe v1.0.1
 )
 
 require (
@@ -24,6 +23,7 @@ require (
 	github.com/gin-gonic/gin v1.11.0
 	github.com/grandcat/zeroconf v1.0.0
 	github.com/hanwen/go-fuse/v2 v2.9.0
+	github.com/kljensen/snowball v0.10.0
 	github.com/modelcontextprotocol/go-sdk v1.7.0
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/pkg/errors v0.9.1
@@ -38,8 +38,8 @@ require (
 	golang.org/x/sync v0.20.0
 	golang.org/x/sys v0.45.0
 	golang.org/x/time v0.15.0
-	gopkg.in/telebot.v4 v4.0.0-beta.10
-	gopkg.in/vansante/go-ffprobe.v2 v2.3.0
+	gopkg.in/telebot.v4 v4.0.0-beta.7
+	gopkg.in/vansante/go-ffprobe.v2 v2.3.1
 )
 
 require (

@@ -5,8 +5,8 @@ import (
 	"runtime/debug"
 )
 
-// Version is set at build time via -ldflags "-X server/version.Version=..." (GoReleaser {{.Version}})
-var Version = "MatriX.144"
+// Version is set at build time via -ldflags "-X server/version.Version=<tag>"
+var Version = "MatriX.145"
 
 func GetTorrentVersion() string {
 	bi, ok := debug.ReadBuildInfo()

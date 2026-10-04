@@ -68,6 +68,7 @@ gomobile init
 echo "=== gomobile bind ==="
 rm -rf "${XCFRAMEWORK}"
 cd "${ROOT}/server/mobile/torrserverkit"
+go mod tidy
 gomobile bind \
   -target=ios,iossimulator \
   -iosversion="${IOS_VERSION_MIN}" \
