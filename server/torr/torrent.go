@@ -83,7 +83,16 @@ func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 		}
 	}
 
+	// The read lock is taken and released explicitly, NOT with defer: the code below
+	// takes bt.mu.Lock() for the torrents map, and sync.RWMutex is not reentrant,
+	// so holding an RLock across that would self-deadlock.
+	bt.mu.RLock()
+	if bt.client == nil {
+		bt.mu.RUnlock()
+		return nil, errors.New("BT client not connected")
+	}
 	goTorrent, _, err := bt.client.AddTorrentSpec(spec)
+	bt.mu.RUnlock()
 	if err != nil {
 		return nil, err
 	}
@@ -128,14 +137,23 @@ func (t *Torrent) WaitInfo() bool {
 		if t.TorrentSpec != nil && len(t.TorrentSpec.InfoBytes) == 0 {
 			t.TorrentSpec.InfoBytes = t.Torrent.Metainfo().InfoBytes
 		}
-		if t.bt != nil && t.bt.storage != nil {
-			cache := t.bt.storage.GetCache(t.Hash())
-			if cache == nil {
-				// torrent was dropped while waiting for info: CloseHash already removed the cache
-				return false
+		if t.bt != nil {
+			// bt.storage is replaced by Connect under bt.mu; snapshot it under the
+			// lock and use the snapshot afterwards, because the storage object keeps
+			// its own locking and is never closed. Reading the field unlocked was
+			// reported by -race and can tear the interface value.
+			t.bt.mu.RLock()
+			storage := t.bt.storage
+			t.bt.mu.RUnlock()
+			if storage != nil {
+				cache := storage.GetCache(t.Hash())
+				if cache == nil {
+					// torrent was dropped while waiting for info: CloseHash already removed the cache
+					return false
+				}
+				t.cache = cache
+				cache.SetTorrent(t.Torrent)
 			}
-			t.cache = cache
-			cache.SetTorrent(t.Torrent)
 		}
 		return true
 	case <-t.closed:
