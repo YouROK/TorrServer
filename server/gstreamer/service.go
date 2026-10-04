@@ -665,9 +665,9 @@ func sourceURL(conf Config, hash string, fileID string) string {
 }
 
 func streamURL(hash string, fileID string) string {
-	return "http://127.0.0.1:" + settings.Port + "/stream/?link=" + url.QueryEscape(hash) + "&index=" + url.QueryEscape(fileID) + "&play"
+	return settings.LoopbackBaseURL() + "/stream/?link=" + url.QueryEscape(hash) + "&index=" + url.QueryEscape(fileID) + "&play"
 }
 
 func playURL(hash string, fileID string) string {
-	return "http://127.0.0.1:" + settings.Port + "/play/" + url.PathEscape(hash) + "/" + url.PathEscape(fileID)
+	return settings.LoopbackBaseURL() + "/play/" + url.PathEscape(hash) + "/" + url.PathEscape(fileID)
 }

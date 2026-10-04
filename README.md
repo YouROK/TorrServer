@@ -207,9 +207,12 @@ On FreeBSD (TrueNAS/FreeNAS) you can use this plugin: <https://github.com/filka9
 - `--ip IP`, `-i IP` - web server bind addr (repeatable; default empty binds to all interfaces)
 - `--ssl` - enables HTTPS for web server
 - `--sslport PORT` -  web server https port (default 8091). If not set, will be taken from db (if stored previously) or the default will be used.
-- `--sslcert PATH` -  path to SSL cert file. If not set, will be taken from db (if stored previously) or default self-signed certificate/key will be generated.
+- `--sslcert PATH` -  path to SSL cert file. If not set, will be taken from db (if stored previously) or default self-signed certificate/key will be generated. Replacing the cert/key files (e.g. a certbot renewal) takes effect without a restart. An invalid user-supplied cert stops startup instead of being replaced.
 - `--sslkey PATH` - path to SSL key file. If not set, will be taken from db (if stored previously) or default self-signed certificate/key will be generated.
-- `--force-https` - with `--ssl`, the HTTP listener (`--port`) answers only with **307 Temporary Redirect** to the same path on HTTPS (`--sslport`). The web UI and API are served on HTTPS only; nothing is served on HTTP except redirects. Requires `--ssl` (startup fails if `--force-https` is set without `--ssl`). Default is off so plain HTTP still works when SSL is disabled.
+- `--force-https` - with `--ssl`, the HTTP listener (`--port`) answers every request with **307 Temporary Redirect** to the same path on HTTPS (`--sslport`). Requires `--ssl` (startup fails if `--force-https` is set without `--ssl`). Default is off. Media players and TVs usually can't use a self-signed certificate, see [HTTPS](#https).
+- `--http-media` - with `--force-https`, keep serving media URLs (`/stream`, `/play`, `/playlist`, `/playlistall`, which DLNA also uses, and GStreamer HLS under `/gst/<hash>/`) over plain HTTP for players that can't use HTTPS; everything else still redirects. Stream URLs and Basic auth credentials then travel unencrypted, so only use it on a trusted network and never expose the HTTP port to the internet. Requires `--force-https`.
+- `--https-only` - with `--ssl`, don't open the plain HTTP port (`--port`) at all: the UI, API, media, DLNA links and Bonjour all use HTTPS on `--sslport`. Unlike `--force-https`, clients using the usual `http://host:<port>` address can't send credentials or requests over plain HTTP before being redirected. Use it with a trusted certificate, see [HTTPS](#https); with the self-signed one, players and TVs won't play. Requires `--ssl`; can't be combined with `--http-media`.
+
 - `--path PATH`, `-d PATH` - database and config dir path
 - `--logpath LOGPATH`, `-l LOGPATH` - server log file path
 - `--weblogpath WEBLOGPATH`, `-w WEBLOGPATH` - web access log file path
@@ -234,7 +237,7 @@ On FreeBSD (TrueNAS/FreeNAS) you can use this plugin: <https://github.com/filka9
 Example:
 
 ```bash
-TorrServer-darwin-arm64 [--port PORT] [--ip IP ...] [--path PATH] [--logpath LOGPATH] [--weblogpath WEBLOGPATH] [--rdb] [--httpauth] [--dontkill] [--ui] [--torrentsdir TORRENTSDIR] [--torrentaddr TORRENTADDR] [--pubipv4 PUBIPV4] [--pubipv6 PUBIPV6] [--searchwa] [--maxsize MAXSIZE] [--tg TGTOKEN] [--fuse FUSEPATH] [--webdav] [--ssl] [--sslport PORT] [--sslcert PATH] [--sslkey PATH] [--force-https]
+TorrServer-darwin-arm64 [--port PORT] [--ip IP ...] [--path PATH] [--logpath LOGPATH] [--weblogpath WEBLOGPATH] [--rdb] [--httpauth] [--dontkill] [--ui] [--torrentsdir TORRENTSDIR] [--torrentaddr TORRENTADDR] [--pubipv4 PUBIPV4] [--pubipv6 PUBIPV6] [--searchwa] [--maxsize MAXSIZE] [--tg TGTOKEN] [--fuse FUSEPATH] [--webdav] [--ssl] [--sslport PORT] [--sslcert PATH] [--sslkey PATH] [--force-https] [--http-media] [--https-only]
 ```
 
 ### Running in Docker & Docker Compose
@@ -269,10 +272,12 @@ docker run --rm -d --name torrserver -v ~/ts:/opt/ts -p 8090:8090 ghcr.io/yourok
   - `full` – Proxy all BitTorrent traffic.
 - `TS_SEARCH_WA_ENABLE` – If set to `1`, enables the `--searchwa` flag.
 - `TS_SSL_ENABLE` – If set to `1`, enables the `--ssl` flag.
-- `TS_SSL_PORT` – If set to `1`, enables the `--sslport` flag.
+- `TS_SSL_PORT` – Specifies the HTTPS port via the `--sslport` flag.
 - `TS_SSL_CERT_PATH` – Specifies the path to the SSL certificate file via the `--sslcert` flag.
 - `TS_SSL_KEY_PATH` – Specifies the path to the SSL private key file via the `--sslkey` flag.
 - `TS_FORCE_HTTPS_ENABLE` – If set to `1`, enables the `--force-https` flag.
+- `TS_HTTP_MEDIA_ENABLE` – If set to `1`, enables the `--http-media` flag.
+- `TS_HTTPS_ONLY_ENABLE` – If set to `1`, enables the `--https-only` flag.
 - `TS_WEB_LOG_PATH` – Overrides the web server log path using the `--weblogpath` flag.
 - `TS_PUBLIC_IPV4_ADDR` – Sets the public IPv4 address using the `--pubipv4` flag.
 - `TS_PUBLIC_IPV6_ADDR` – Sets the public IPv6 address using the `--pubipv6` flag.
@@ -459,6 +464,134 @@ mcp_servers:
 ```
 
 See [server/mcp/README.md](server/mcp/README.md) for the tool list and next-unwatched behavior.
+
+## HTTPS
+
+Start with `--ssl` to serve the web UI and API over HTTPS on `--sslport` (default 8091) alongside plain HTTP on `--port`. Plain HTTP requests sent to the HTTPS port are redirected to `https://`. There are three ways to get a certificate:
+
+| Option | Trusted by browsers | Trusted by players/TVs | Needs |
+|---|---|---|---|
+| Self-signed (default) | after accepting a warning | no | nothing |
+| Let's Encrypt via DNS-01, LAN only | yes | yes (except Android ≤ 7.0) | a domain or free DuckDNS name |
+| Reverse proxy (Caddy, nginx) | yes | yes | a domain and a port open to the internet |
+
+### HTTP and HTTPS modes
+
+Four flags decide what the plain HTTP port (`--port`, default 8090) and the HTTPS port (`--sslport`, default 8091) serve:
+
+| Mode | Flags | HTTP port | HTTPS port | Use it when |
+|---|---|---|---|---|
+| HTTP only (default) | none | everything | not opened | a trusted home network, or behind a [reverse proxy](#reverse-proxy) |
+| HTTP and HTTPS | `--ssl` | everything | everything | browsers use HTTPS, players and TVs keep using HTTP |
+| HTTPS, media also on HTTP | `--ssl --force-https --http-media` | media only; everything else redirects to HTTPS | everything | the self-signed certificate, with players and TVs that can't use it |
+| HTTPS preferred | `--ssl --force-https` | redirects everything to HTTPS | everything | a trusted certificate; clients that type `http://` are sent to HTTPS |
+| HTTPS only | `--ssl --https-only` | not opened | everything | a trusted certificate, and nothing should ever travel unencrypted |
+
+- **Media** means `/stream`, `/play`, `/playlist`, `/playlistall` (also used by DLNA) and GStreamer HLS under `/gst/<hash>/`. The web UI, the API and GStreamer control endpoints (`/gst/settings`, `/gst/remove`, `/gst/echo`) are not media.
+- **Redirects** are `307 Temporary Redirect` to the same path and query on `https://<host>:<sslport>`. A request still reaches the HTTP port before it's redirected, so its URL and any Basic auth credentials have already been sent unencrypted. `--https-only` removes that path, because the HTTP port is never opened. The same applies to plain HTTP sent to the HTTPS port (below) in every mode, so always configure clients with the `https://` address.
+- **Plain HTTP sent to the HTTPS port** (for example `http://host:8091`) is redirected to `https://` in every mode, instead of failing with "Client sent an HTTP request to an HTTPS server".
+- **Links handed to players:** playlists and the web UI's external-player and copy-link buttons use the address the page was opened on. The exception is a page opened over the self-signed certificate while the HTTP port serves media: then they point at the HTTP port, because players reject that certificate. DLNA links point at the HTTP port when it serves media, and at the HTTPS port otherwise. With `--https-only`, Bonjour advertises `_torrserver` on the HTTPS port and doesn't advertise `_http`.
+- **TorrServer's own requests** (ffprobe, GStreamer) use an internal listener on a random `127.0.0.1` port that is never redirected, so they work in every mode, including when `--ip` excludes loopback.
+- **Self-signed certificate with `--force-https` or `--https-only`:** startup logs a warning, because most players and TVs won't play. Use a trusted certificate, or `--force-https --http-media` on a trusted network.
+- **Invalid combinations stop startup:** `--force-https` or `--https-only` without `--ssl`, `--http-media` without `--force-https`, and `--https-only` with `--http-media`. `--force-https` with `--https-only` is allowed and behaves like `--https-only`.
+- **Apps that use the API** (Lampa and other TorrServer clients that add torrents, list them or call `/gst/remove`) must be configured with the `https://` address when `--force-https` or `--https-only` is on: HTTP redirects are unreliable for browser API requests, particularly those requiring CORS preflight. `--http-media` only helps players that receive stream links.
+- **Docker:** `TS_SSL_ENABLE`, `TS_FORCE_HTTPS_ENABLE`, `TS_HTTP_MEDIA_ENABLE` and `TS_HTTPS_ONLY_ENABLE` set to `1` enable the matching flags.
+
+HTTPS is only on when TorrServer is started with `--ssl`; the choice isn't saved in the settings. The HTTPS port, certificate and key paths are saved, and reused on later starts with `--ssl`.
+
+Examples:
+
+```bash
+# HTTPS only, with a trusted certificate
+TorrServer --ssl --https-only --sslcert /opt/torrserver/tls/fullchain.pem --sslkey /opt/torrserver/tls/key.pem
+
+# self-signed certificate for browsers, players and TVs on HTTP
+TorrServer --ssl --force-https --http-media
+```
+
+### Self-signed certificate
+
+Without `--sslcert`/`--sslkey`, TorrServer generates a self-signed certificate for `localhost`, the hostname, `hostname.local` and the local IPs, and renews it before it expires or when the host moves to a new IP. Browsers show a warning you can accept once. Most media players, TVs and DLNA renderers reject it, so give them HTTP links: don't use `--force-https`, or add `--http-media` on a trusted network. When a playlist is requested over the self-signed HTTPS port and HTTP still serves media, its links point to the HTTP port. The self-signed certificate is only ever regenerated if it is one TorrServer created; your own certificate is never touched, even at the default location.
+
+### Trusted certificate on your LAN (Let's Encrypt DNS-01)
+
+Let's Encrypt can issue a certificate for a name that points to a **private** IP. It verifies you own the name through a DNS record, so nothing has to be reachable from the internet. Example with [DuckDNS](https://www.duckdns.org) (free) and [acme.sh](https://github.com/acmesh-official/acme.sh):
+
+1. Create a DuckDNS subdomain, e.g. `mytorr.duckdns.org`, and set its IP to TorrServer's LAN IP (e.g. `192.168.1.10`). Give the host a DHCP reservation so that IP doesn't change.
+2. Check it resolves on your LAN: `dig +short mytorr.duckdns.org`. If it returns nothing, your router's DNS rebinding protection blocks public names with private IPs; allow the domain there.
+3. Issue the certificate and install it where TorrServer reads it:
+
+   ```bash
+   DuckDNS_Token=YOUR_TOKEN acme.sh --issue --dns dns_duckdns -d mytorr.duckdns.org --server letsencrypt --dnssleep 180
+   acme.sh --install-cert -d mytorr.duckdns.org --key-file /opt/torrserver/tls/key.pem --fullchain-file /opt/torrserver/tls/fullchain.pem
+   ```
+
+4. Start TorrServer with the certificate. Use the **full chain** file: TVs and Android players reject a certificate without its intermediate.
+
+   ```bash
+   TorrServer --ssl --sslcert /opt/torrserver/tls/fullchain.pem --sslkey /opt/torrserver/tls/key.pem
+   ```
+
+5. Open `https://mytorr.duckdns.org:8091` on any device on the LAN. Use the name, not the IP: the IP isn't in the certificate.
+6. Optional: add `--https-only` so TorrServer doesn't open the plain HTTP port at all, or `--force-https` to keep it open but redirect it to HTTPS.
+
+acme.sh renews the certificate automatically every ~60 days and rewrites the files; TorrServer picks up the new files within seconds, without a restart. Any ACME client with DNS-01 support (certbot, lego, Caddy with a DNS plugin) works the same way. Note that certificate names are published in public Certificate Transparency logs.
+
+### TorrServer on an Android TV box
+
+A certificate belongs to a name, not to a device or IP, so it doesn't have to be issued on the box. Two practical setups:
+
+**Issue on a computer, push to the box.** Run the DNS-01 steps above on a Mac, Linux or Windows (WSL) machine, point the DuckDNS name at the **box's** LAN IP, and let acme.sh copy each renewed certificate to the box over ADB (enable network debugging on the box):
+
+```bash
+acme.sh --install-cert -d mytorr.duckdns.org --key-file ~/tls/key.pem --fullchain-file ~/tls/fullchain.pem --reloadcmd "adb connect 192.168.1.50 && adb push ~/tls/fullchain.pem ~/tls/key.pem /sdcard/torrserver/tls/"
+```
+
+Start TorrServer on the box with `--ssl --sslcert /sdcard/torrserver/tls/fullchain.pem --sslkey /sdcard/torrserver/tls/key.pem`. TorrServer reloads the pushed files within seconds, without a restart. The computer has to be on around renewal time (every ~60 days).
+
+**Let another always-on device handle HTTPS.** If you have a NAS, Raspberry Pi or router that can run [Caddy](https://caddyserver.com) (built with the [DuckDNS plugin](https://github.com/caddy-dns/duckdns)), point the name at that device and forward to the box. Caddy obtains and renews the certificate by itself, and the box runs TorrServer without `--ssl`:
+
+```
+mytorr.duckdns.org {
+    tls {
+        dns duckdns YOUR_TOKEN
+    }
+    reverse_proxy 192.168.1.50:8090 {
+        flush_interval -1
+    }
+}
+```
+
+Running acme.sh on the box itself (e.g. in Termux) also works, but Android's storage restrictions and aggressive background-app killing make renewals unreliable. The box's own Android version doesn't matter, because TorrServer brings its own TLS stack; only the devices that *connect* to it must trust Let's Encrypt.
+
+### Reverse proxy
+
+If TorrServer is exposed to the internet under a domain, the simplest option is a reverse proxy that handles certificates itself. Never expose the plain HTTP port (`--port`) to the internet: Basic auth credentials and stream URLs would travel unencrypted. Run TorrServer without `--ssl`, enable `--httpauth`, and bind it to loopback with `--ip 127.0.0.1` when the proxy runs on the same host. TorrServer honours `X-Forwarded-Proto`/`X-Forwarded-Host`, so playlist links use the public `https://` name. Disable response buffering, or playback will stutter.
+
+Caddy (obtains and renews Let's Encrypt certificates automatically):
+
+```
+tv.example.com {
+    reverse_proxy 127.0.0.1:8090 {
+        flush_interval -1
+    }
+}
+```
+
+nginx (certificate from certbot or similar):
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:8090;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_buffering off;
+    proxy_request_buffering off;
+    proxy_read_timeout 24h;
+    client_max_body_size 50m;
+}
+```
 
 ## Authentication
 
