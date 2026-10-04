@@ -105,7 +105,7 @@ func (t *Torrent) Preload(index int, size int64) {
 	}(logStopChan)
 
 	if ffprobe.Exists() {
-		link := "http://127.0.0.1:" + settings.Port + "/play/" + t.Hash().HexString() + "/" + strconv.Itoa(index)
+		link := settings.LoopbackBaseURL() + "/play/" + t.Hash().HexString() + "/" + strconv.Itoa(index)
 		if data, err := ffprobe.ProbeUrl(link); err == nil {
 			t.BitRate = data.Format.BitRate
 			t.DurationSeconds = data.Format.DurationSeconds

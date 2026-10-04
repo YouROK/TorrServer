@@ -12,7 +12,6 @@ import (
 
 	"server/torr"
 	"server/torr/state"
-	utils2 "server/utils"
 	"server/web/api/utils"
 
 	"github.com/anacrolix/torrent"
@@ -189,7 +188,7 @@ func stream(c *gin.Context) {
 		} else if !strings.HasSuffix(strings.ToLower(name), ".m3u") && !strings.HasSuffix(strings.ToLower(name), ".m3u8") {
 			name += ".m3u"
 		}
-		m3ulist := "#EXTM3U\n" + getM3uList(tor.Status(), utils2.GetScheme(c)+"://"+utils2.GetHost(c), fromlast, indexStr)
+		m3ulist := "#EXTM3U\n" + getM3uList(tor.Status(), mediaBaseURL(c), fromlast, indexStr)
 		sendM3U(c, name, tor.Hash().HexString(), m3ulist)
 		return
 	} else
@@ -309,7 +308,7 @@ func streamNoAuth(c *gin.Context) {
 		} else if !strings.HasSuffix(strings.ToLower(name), ".m3u") && !strings.HasSuffix(strings.ToLower(name), ".m3u8") {
 			name += ".m3u"
 		}
-		m3ulist := "#EXTM3U\n" + getM3uList(tor.Status(), utils2.GetScheme(c)+"://"+utils2.GetHost(c), fromlast, indexStr)
+		m3ulist := "#EXTM3U\n" + getM3uList(tor.Status(), mediaBaseURL(c), fromlast, indexStr)
 		sendM3U(c, name, tor.Hash().HexString(), m3ulist)
 		return
 	} else

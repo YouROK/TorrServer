@@ -19,6 +19,7 @@ func SetupRoute(route gin.IRouter) {
 
 	authorized.POST("/settings", settings)
 	authorized.GET("/waf", getWAF)
+	authorized.GET("/mediabase", mediaBase)
 	authorized.POST("/waf", updateWAF)
 	authorized.POST("/torznab/test", torznabTest)
 

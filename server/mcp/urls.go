@@ -79,7 +79,7 @@ func baseURLFromRequest(r *http.Request) string {
 func fallbackBaseURL() string {
 	port := settings.Port
 	if port == "" {
-		port = "8090"
+		port = settings.DefaultPort
 	}
 	if settings.Ssl {
 		if settings.SslPort != "" {
