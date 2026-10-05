@@ -2255,13 +2255,33 @@ body {
   overscroll-behavior: none;
 }
 
-@media (display-mode: standalone), (display-mode: fullscreen) {
+@media (display-mode: standalone),
+(display-mode: fullscreen) {
+
   html,
   body {
     height: 100vh;
     max-height: 100vh;
     height: var(--app-height, 100vh);
     max-height: var(--app-height, 100vh);
+  }
+
+  /*
+   * iOS 27 (status-bar-style `default`) paints the status bar with the color of a
+   * fixed element at the top edge; it must be ~12px+ tall (1px is ignored) and a real
+   * element, not ::before. Undocumented, see WebKit bug 325807. Under modals (z-index 1).
+   * iOS reads the declared background-color; `background-clip: text` (no text) paints
+   * nothing, so the strip never covers header content such as badges.
+   */
+  .ts-status-bar-tint {
+    position: fixed;
+    inset: 0 0 auto;
+    height: 12px;
+    z-index: 1;
+    background-color: var(--app-header);
+    -webkit-background-clip: text;
+    background-clip: text;
+    pointer-events: none;
   }
 }
 
@@ -2310,7 +2330,7 @@ body[data-immersive='true'] .ts-bottom-nav {
  * max-width gives the container a hard floor, independent of what scrolls
  * inside it.
  */
-@media (width >= 40rem) {
+@media (width >=40rem) {
   .modal__dialog--xs {
     min-width: 20rem;
   }
@@ -2430,8 +2450,7 @@ body[data-immersive='true'] .ts-bottom-nav {
     min-width: 100% !important;
     height: var(--app-height, 100vh) !important;
     max-height: var(--app-height, 100vh) !important;
-    padding: max(1rem, env(safe-area-inset-top, 0px)) 1rem
-      max(1rem, env(safe-area-inset-bottom, 0px)) !important;
+    padding: max(1rem, env(safe-area-inset-top, 0px)) 1rem max(1rem, env(safe-area-inset-bottom, 0px)) !important;
     align-items: center !important;
     justify-content: center !important;
   }
@@ -2447,8 +2466,8 @@ body[data-immersive='true'] .ts-bottom-nav {
     margin: 0 !important;
   }
 
-  .modal__dialog > .modal__close-trigger,
-  .modal__dialog > .modal__header .modal__close-trigger {
+  .modal__dialog>.modal__close-trigger,
+  .modal__dialog>.modal__header .modal__close-trigger {
     top: max(0.5rem, env(safe-area-inset-top, 0px));
     right: max(0.5rem, env(safe-area-inset-right, 0px));
     z-index: 20;
@@ -2465,17 +2484,17 @@ body[data-immersive='true'] .ts-bottom-nav {
     right: max(3.5rem, calc(3rem + env(safe-area-inset-right, 0px)));
   }
 
-  .modal__dialog > .modal__body.modal__body--scroll-inside,
-  .modal__dialog > .modal__body [role='tabpanel'] {
+  .modal__dialog>.modal__body.modal__body--scroll-inside,
+  .modal__dialog>.modal__body [role='tabpanel'] {
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
   }
 
   /* Details: flush hero + safe-area even when size class is still `lg`. */
-  .modal__dialog.ts-details-modal > .modal__header {
+  .modal__dialog.ts-details-modal>.modal__header {
     padding: 0;
   }
 
-  .modal__dialog.ts-details-modal > .modal__body {
+  .modal__dialog.ts-details-modal>.modal__body {
     padding-top: 0;
     padding-right: 0;
     padding-left: 0;
@@ -2514,7 +2533,7 @@ body[data-immersive='true'] .ts-bottom-nav {
     padding-bottom: 0;
   }
 
-  .modal__dialog.ts-details-modal > .modal__body.modal__body--scroll-inside {
+  .modal__dialog.ts-details-modal>.modal__body.modal__body--scroll-inside {
     overflow: hidden !important;
     display: flex;
     flex-direction: column;
@@ -2548,7 +2567,7 @@ body[data-immersive='true'] .ts-bottom-nav {
 }
 
 /**
- * Fullscreen dialogs on iOS PWA (`viewport-fit=cover` + `black-translucent`):
+ * Fullscreen dialogs on iOS PWA (`viewport-fit=cover`):
  *
  * 1) HeroUI/RAC sets `--visual-viewport-height` from `useViewportSize()` on the backdrop.
  *    On iOS Safari/PWA that value is often short, so backdrop/container (which use
@@ -2589,7 +2608,7 @@ body[data-immersive='true'] .ts-bottom-nav {
   transform: none !important;
 }
 
-@media (width >= 40rem) {
+@media (width >=40rem) {
   .modal__container--full {
     width: 100% !important;
     max-width: 100% !important;
@@ -2669,49 +2688,50 @@ body[data-immersive='true'] .ts-bottom-nav {
   padding-right: 1.5rem;
 }
 
-.modal__dialog--full.ts-compact-modal > .modal__header,
-.modal__dialog.ts-compact-modal > .modal__header {
+.modal__dialog--full.ts-compact-modal>.modal__header,
+.modal__dialog.ts-compact-modal>.modal__header {
   padding-top: 0.75rem;
 }
 
-.modal__dialog--full.ts-compact-modal > .modal__body,
-.modal__dialog.ts-compact-modal > .modal__body {
+.modal__dialog--full.ts-compact-modal>.modal__body,
+.modal__dialog.ts-compact-modal>.modal__body {
   flex: 0 1 auto;
 }
 
-.modal__dialog--full.ts-compact-modal > .modal__footer,
-.modal__dialog.ts-compact-modal > .modal__footer {
+.modal__dialog--full.ts-compact-modal>.modal__footer,
+.modal__dialog.ts-compact-modal>.modal__footer {
   padding-bottom: 0.75rem;
 }
 
-.modal__dialog--full > .modal__header {
+.modal__dialog--full>.modal__header {
   padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
-  padding-right: 3.5rem; /* clearance for absolute close */
+  padding-right: 3.5rem;
+  /* clearance for absolute close */
   padding-bottom: 0.5rem;
   padding-left: 1rem;
 }
 
-.modal__dialog--full > .modal__body {
+.modal__dialog--full>.modal__body {
   padding-right: 1rem;
   padding-bottom: 0;
   padding-left: 1rem;
 }
 
 /* Home-indicator clearance scrolls with content instead of eating fixed chrome. */
-.modal__dialog--full > .modal__body.modal__body--scroll-inside,
-.modal__dialog--full > .modal__body [role='tabpanel'] {
+.modal__dialog--full>.modal__body.modal__body--scroll-inside,
+.modal__dialog--full>.modal__body [role='tabpanel'] {
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
 }
 
-.modal__dialog--full > .modal__footer {
+.modal__dialog--full>.modal__footer {
   padding-right: 1rem;
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
   padding-left: 1rem;
 }
 
 /* Absolute close must clear the status bar itself — padding on the dialog does not affect it. */
-.modal__dialog--full > .modal__close-trigger,
-.modal__dialog--full > .modal__header .modal__close-trigger {
+.modal__dialog--full>.modal__close-trigger,
+.modal__dialog--full>.modal__header .modal__close-trigger {
   top: max(0.5rem, env(safe-area-inset-top, 0px));
   right: max(0.5rem, env(safe-area-inset-right, 0px));
   z-index: 20;
@@ -2729,11 +2749,11 @@ body[data-immersive='true'] .ts-bottom-nav {
   padding: 0;
 }
 
-.modal__dialog--full.ts-details-modal > .modal__header {
+.modal__dialog--full.ts-details-modal>.modal__header {
   padding: 0;
 }
 
-.modal__dialog--full.ts-details-modal > .modal__body {
+.modal__dialog--full.ts-details-modal>.modal__body {
   padding-top: 0;
   padding-right: 0;
   padding-left: 0;
@@ -2771,7 +2791,7 @@ body[data-immersive='true'] .ts-bottom-nav {
   padding-bottom: 0;
 }
 
-.modal__dialog--full.ts-details-modal > .modal__body.modal__body--scroll-inside {
+.modal__dialog--full.ts-details-modal>.modal__body.modal__body--scroll-inside {
   overflow: hidden !important;
   display: flex;
   flex-direction: column;
@@ -2791,10 +2811,8 @@ html[data-dialogs-fullscreen] .modal__backdrop:has(.modal__dialog:not(.ts-sheet-
   --visual-viewport-height: var(--app-height, 100vh);
 }
 
-html[data-dialogs-fullscreen]
-  .modal__backdrop:has(.modal__dialog:not(.ts-sheet-modal):not(.ts-compact-modal)),
-html[data-dialogs-fullscreen]
-  .modal__container:has(.modal__dialog:not(.ts-sheet-modal):not(.ts-compact-modal)) {
+html[data-dialogs-fullscreen] .modal__backdrop:has(.modal__dialog:not(.ts-sheet-modal):not(.ts-compact-modal)),
+html[data-dialogs-fullscreen] .modal__container:has(.modal__dialog:not(.ts-sheet-modal):not(.ts-compact-modal)) {
   width: 100% !important;
   max-width: 100% !important;
   min-width: 100% !important;
@@ -2822,11 +2840,11 @@ html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal {
   padding: 0;
 }
 
-html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal > .modal__header {
+html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal>.modal__header {
   padding: 0;
 }
 
-html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal > .modal__body {
+html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal>.modal__body {
   padding-top: 0;
   padding-right: 0;
   padding-left: 0;
@@ -2864,7 +2882,7 @@ html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal .ts-details-tabs [
   padding-bottom: 0;
 }
 
-html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal > .modal__body.modal__body--scroll-inside {
+html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal>.modal__body.modal__body--scroll-inside {
   overflow: hidden !important;
   display: flex;
   flex-direction: column;
@@ -2872,8 +2890,8 @@ html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal > .modal__body.mod
 }
 
 /* Cache Details View — same height chain as Details Cache tab. */
-.modal__dialog.ts-cache-map-modal > .modal__body.modal__body--scroll-inside,
-.modal__dialog--full.ts-cache-map-modal > .modal__body.modal__body--scroll-inside {
+.modal__dialog.ts-cache-map-modal>.modal__body.modal__body--scroll-inside,
+.modal__dialog--full.ts-cache-map-modal>.modal__body.modal__body--scroll-inside {
   overflow: hidden !important;
   display: flex;
   flex-direction: column;
@@ -2891,12 +2909,12 @@ html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal > .modal__body.mod
   padding: 0;
 }
 
-.ts-player-modal-full .modal__dialog--full > .modal__header,
-.modal__dialog--full:has(.ts-player) > .modal__header,
-.ts-player-modal-full .modal__dialog--full > .modal__body,
-.modal__dialog--full:has(.ts-player) > .modal__body,
-.ts-player-modal-full .modal__dialog--full > .modal__footer,
-.modal__dialog--full:has(.ts-player) > .modal__footer {
+.ts-player-modal-full .modal__dialog--full>.modal__header,
+.modal__dialog--full:has(.ts-player)>.modal__header,
+.ts-player-modal-full .modal__dialog--full>.modal__body,
+.modal__dialog--full:has(.ts-player)>.modal__body,
+.ts-player-modal-full .modal__dialog--full>.modal__footer,
+.modal__dialog--full:has(.ts-player)>.modal__footer {
   padding: 0;
 }
 
@@ -2993,14 +3011,13 @@ html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal > .modal__body.mod
   pointer-events: none;
 }
 
-.ts-player-top > * {
+.ts-player-top>* {
   pointer-events: auto;
 }
 
 .ts-player-bar {
   width: 100%;
-  padding: 0.35rem max(0.5rem, env(safe-area-inset-right, 0px)) max(0.5rem, env(safe-area-inset-bottom, 0px))
-    max(0.5rem, env(safe-area-inset-left, 0px));
+  padding: 0.35rem max(0.5rem, env(safe-area-inset-right, 0px)) max(0.5rem, env(safe-area-inset-bottom, 0px)) max(0.5rem, env(safe-area-inset-left, 0px));
   background: linear-gradient(to top, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.45));
   backdrop-filter: blur(12px);
   overflow-x: auto;
@@ -3039,7 +3056,7 @@ html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal > .modal__body.mod
   grid-template-columns: repeat(auto-fill, minmax(min(140px, 100%), 1fr));
 }
 
-.torrent-poster-grid > .torrent-card {
+.torrent-poster-grid>.torrent-card {
   min-width: 0;
 }
 

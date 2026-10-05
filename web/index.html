@@ -28,7 +28,8 @@
     <!-- Apple PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="TorrServer">
-    <meta name='apple-mobile-web-app-status-bar-style' content='black-translucent'>
+    <!-- No apple-mobile-web-app-status-bar-style: iOS 27 covers `black-translucent` with an
+         unremovable blur (WebKit bug 325807). Default bar is solid, tinted by .ts-status-bar-tint. -->
     <link rel="apple-touch-icon" href="./icon.png">
     <meta name="mobile-web-app-capable" content="yes">
 
@@ -85,6 +86,7 @@
 
   <body>
     <noscript>You need to enable JavaScript to run this App.</noscript>
+    <div class="ts-status-bar-tint" aria-hidden="true"></div>
     <div id="root"></div>
     <script type="module" src="/src/index.tsx"></script>
   </body>
