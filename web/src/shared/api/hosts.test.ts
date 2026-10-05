@@ -24,5 +24,6 @@ describe('Hosts URL construction', () => {
     expect(hosts.playlistTorrHost()).toBe(hosts.streamHost())
     expect(hosts.wafHost()).toBe('https://ts.example:8443/waf')
     expect(hosts.mcpHost()).toBe('https://ts.example:8443/mcp')
+    expect(hosts.mediaBaseHost()).toBe('https://ts.example:8443/mediabase')
   })
 })

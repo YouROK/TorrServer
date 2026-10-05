@@ -21,6 +21,7 @@ import { torrsShareUrl } from 'shared/api/extras'
 import { dropTorrent, markTorrentsDroppedInList, removeTorrent, TORRENTS_QUERY_KEY } from 'shared/api/torrents'
 import { copyToClipboard } from 'shared/lib/clipboard'
 import { useExternalPlayers } from 'shared/lib/externalPlayers'
+import { externalLink, useExternalMediaBase } from 'shared/lib/mediaBase'
 import { magnetFromHash, streamPlayUrl, torrentPlaylistUrl } from 'shared/lib/posterPlay'
 import { filesFromMetadata } from 'shared/torrent/fileMetadata'
 import { isFilePlayable } from 'shared/torrent/playable'
@@ -77,6 +78,7 @@ export default function TorrentCardActions({ torrent, onDetails, onEdit }: Torre
 
   const { runConfiguredPlay } = useConfiguredPlayAction()
   const { buildExternalPlayers } = useExternalPlayers()
+  const mediaBase = useExternalMediaBase()
 
   useSyncModalOpen(confirmState.isOpen || dropdownState.isOpen)
 
@@ -85,14 +87,14 @@ export default function TorrentCardActions({ torrent, onDetails, onEdit }: Torre
     if (knownPlayableFiles.length !== 1) return []
     const file = knownPlayableFiles[0]
     const link = streamPlayUrl(hash, file)
-    const fullLink = new URL(link, window.location.href).toString()
+    const fullLink = externalLink(link, mediaBase).toString()
     return buildExternalPlayers(fullLink)
-  }, [knownPlayableFiles, hash, buildExternalPlayers])
+  }, [knownPlayableFiles, hash, buildExternalPlayers, mediaBase])
 
   const singleFileStreamHref = useMemo(() => {
     if (knownPlayableFiles.length !== 1) return null
-    return new URL(streamPlayUrl(hash, knownPlayableFiles[0]), window.location.href).toString()
-  }, [knownPlayableFiles, hash])
+    return externalLink(streamPlayUrl(hash, knownPlayableFiles[0]), mediaBase).toString()
+  }, [knownPlayableFiles, hash, mediaBase])
 
   const copyText = async (text: string) => {
     try {

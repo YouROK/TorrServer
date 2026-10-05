@@ -1,6 +1,7 @@
 package torr
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -17,7 +18,14 @@ import (
 
 var bts *BTServer
 
+// bts is read by request handlers without any synchronisation of their own, so it
+// must be written exactly once. Connect calls this on every settings save with the
+// same receiver, and the repeated assignment was reported by -race as a data race
+// against every /stat request.
 func InitApiHelper(bt *BTServer) {
+	if bts == bt {
+		return
+	}
 	bts = bt
 }
 
@@ -264,9 +272,30 @@ func SetSettings(set *sets.BTSets) {
 	log.TLogln("disconect")
 	bts.Disconnect()
 	log.TLogln("connect")
-	_ = bts.Connect()
+	reconnect()
 	time.Sleep(time.Second * 1)
 	log.TLogln("end set settings")
+}
+
+// reconnect retries Connect after Disconnect. The uTP socket of the closed client
+// closes lazily, only after its peer connections are gone, and until then
+// PeersListenPort is busy: "listen udp4 :port: bind: address already in use".
+// A failed Connect would leave bts.client nil until restart.
+func reconnect() {
+	var err error
+	for i := 0; i < 30; i++ {
+		if err = bts.Connect(); err == nil {
+			if i > 0 {
+				log.TLogln("connect ok, attempt", i+1)
+			}
+			return
+		}
+		if i == 0 {
+			log.TLogln("connect error, retrying:", err)
+		}
+		time.Sleep(time.Second)
+	}
+	log.TLogln("connect failed:", err)
 }
 
 func SetDefSettings() {
@@ -282,7 +311,7 @@ func SetDefSettings() {
 	log.TLogln("disconect")
 	bts.Disconnect()
 	log.TLogln("connect")
-	_ = bts.Connect()
+	reconnect()
 	time.Sleep(time.Second * 1)
 	log.TLogln("end set default settings")
 }
@@ -308,7 +337,19 @@ func Shutdown() {
 	os.Exit(0)
 }
 
+// Disconnect sets bts.client to nil while a reconnect is in progress. Reading it
+// without holding bt.mu races with that write and panics inside the torrent
+// library, so readers enter bt.mu for the whole call: that also keeps Disconnect
+// from closing the client underneath a reader, and a nil client is reported
+// instead of dereferenced.
 func WriteStatus(w io.Writer) {
+	bts.mu.RLock()
+	defer bts.mu.RUnlock()
+
+	if bts.client == nil {
+		_, _ = fmt.Fprintf(w, "Torrent client is not connected\n")
+		return
+	}
 	bts.client.WriteStatus(w)
 }
 

@@ -10,6 +10,7 @@ import type { PlayableFile, TorrentFileStat } from 'shared/api/types'
 import { remViewedFile, VIEWED_QUERY_KEY } from 'shared/api/viewed'
 import { shouldUseGStreamerPlayer, useGStreamerRuntime } from 'shared/lib/gstreamer'
 import { useExternalPlayers, type ExternalPlayerLink } from 'shared/lib/externalPlayers'
+import { externalLink, useExternalMediaBase } from 'shared/lib/mediaBase'
 import { humanizeSize } from 'shared/lib/format'
 import { queryMax } from 'shared/theme/breakpoints'
 import { useOptionalAppToast } from 'shared/ui/Toast'
@@ -176,6 +177,7 @@ const FilesDataGrid = memo(
     const [unsupportedPlayerKeys, setUnsupportedPlayerKeys] = useState<Record<string, boolean>>({})
     const [mediaInfo, setMediaInfo] = useState<{ fileId: number; fileName: string } | null>(null)
     const gstRuntime = useGStreamerRuntime()
+    const mediaBase = useExternalMediaBase()
     const { buildExternalPlayers, shouldShowOpenLink } = useExternalPlayers()
 
     const knownPlayableFiles = useMemo(() => playableFileList || [], [playableFileList])
@@ -237,7 +239,7 @@ const FilesDataGrid = memo(
           const link = buildFileLink(file.path, file.id)
           const useGStreamer = shouldUseGStreamerPlayer(file.path, gstRuntime)
           const playerKey = `${file.id}:${useGStreamer ? 'gst' : 'stream'}`
-          const fullLink = new URL(link, window.location.href).toString()
+          const fullLink = externalLink(link, mediaBase).toString()
           const fileName = file.path.split('/').pop() || file.path
           const episodeLabel =
             parsed.episode != null
@@ -260,8 +262,8 @@ const FilesDataGrid = memo(
             playable: file,
           }
         }),
-      // eslint-disable-next-line react-hooks/exhaustive-deps -- link builders close over hash/gstRuntime
-      [filteredFiles, viewedFileList, shouldDisplayFullFileName, hash, gstRuntime],
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- link builders close over hash/gstRuntime/mediaBase
+      [filteredFiles, viewedFileList, shouldDisplayFullFileName, hash, gstRuntime, mediaBase],
     )
 
     if (!playableFileList?.length) {

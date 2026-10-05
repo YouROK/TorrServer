@@ -38,6 +38,8 @@ export const storageSettingsHost = () => `${torrserverHost}/storage/settings`
 export const runtimeStatusHost = () => `${torrserverHost}/runtime/status`
 export const wafHost = () => `${torrserverHost}/waf`
 export const mcpHost = () => `${torrserverHost}/mcp`
+/** Base URL for external players / copied media links (`GET /mediabase`). */
+export const mediaBaseHost = () => `${torrserverHost}/mediabase`
 
 /** Resolved API origin (no trailing path). Useful for building ad-hoc GST URLs. */
 export const getTorrServerHost = () => torrserverHost

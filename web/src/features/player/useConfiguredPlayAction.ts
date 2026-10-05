@@ -3,6 +3,7 @@ import { useCallback } from 'react'
 import type { PlayableFile } from 'shared/api/types'
 import { buildExternalPlayerHref, useExternalPlayers } from 'shared/lib/externalPlayers'
 import { useLocalJsonPref } from 'shared/hooks/useLocalPref'
+import { externalLink, useExternalMediaBase } from 'shared/lib/mediaBase'
 import { detectApplePlatform } from 'shared/lib/platform'
 import {
   coercePosterPlayAction,
@@ -37,6 +38,7 @@ export function useConfiguredPlayAction() {
   const isIOS = detectApplePlatform().isIOS
   const [stored] = useLocalJsonPref<PosterPlayAction>(POSTER_PLAY_ACTION_KEY, defaultPosterPlayAction(isIOS))
   const { playerFlags } = useExternalPlayers()
+  const mediaBase = useExternalMediaBase()
   const playAction = coercePosterPlayAction(stored, playerFlags, isIOS)
 
   const runConfiguredPlay = useCallback(
@@ -60,21 +62,21 @@ export function useConfiguredPlayAction() {
 
       if (playAction === 'copyLink') {
         if (knownPlayableFiles.length === 1) {
-          const href = new URL(streamPlayUrl(hash, knownPlayableFiles[0]), window.location.href).toString()
+          const href = externalLink(streamPlayUrl(hash, knownPlayableFiles[0]), mediaBase).toString()
           void copyText(href)
           return
         }
-        const playlist = new URL(torrentPlaylistUrl(hash, displayName), window.location.href).toString()
+        const playlist = externalLink(torrentPlaylistUrl(hash, displayName), mediaBase).toString()
         void copyText(playlist)
         return
       }
 
       resolvePlayableFile(file => {
-        const fullLink = new URL(streamPlayUrl(hash, file), window.location.href).toString()
+        const fullLink = externalLink(streamPlayUrl(hash, file), mediaBase).toString()
         window.location.href = buildExternalPlayerHref(playAction, fullLink)
       })
     },
-    [playAction],
+    [playAction, mediaBase],
   )
 
   return { playAction, runConfiguredPlay }

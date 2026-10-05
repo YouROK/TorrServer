@@ -21,6 +21,7 @@ import { playlistTorrHost, streamHost } from 'shared/api/hosts'
 import { dropTorrent, markTorrentsDroppedInList, removeTorrent, TORRENTS_QUERY_KEY } from 'shared/api/torrents'
 import { clearViewedFiles } from 'shared/api/viewed'
 import { useExternalPlayers } from 'shared/lib/externalPlayers'
+import { externalLink, useExternalMediaBase } from 'shared/lib/mediaBase'
 import { copyToClipboard } from 'shared/lib/clipboard'
 import { requestOpenSettings } from 'shared/lib/settingsEvents'
 import { queryMax } from 'shared/theme/breakpoints'
@@ -141,14 +142,15 @@ function TorrentActions({
 
   /** Only offer app deep links when there's exactly one obvious file to hand off. */
   const { buildExternalPlayers, hasAnyExternalPlayer } = useExternalPlayers()
+  const mediaBase = useExternalMediaBase()
   const singleFileStream = useMemo(() => {
     if (playableFileList?.length !== 1) return null
     const file = playableFileList[0]
     const fileName = file.path.split('\\').pop()?.split('/').pop() || file.path
     const link = `${streamHost()}/${encodeURIComponent(fileName)}?link=${hash}&index=${file.id}&play`
-    const fullLink = new URL(link, window.location.href).toString()
+    const fullLink = externalLink(link, mediaBase).toString()
     return { link, fullLink, externalPlayers: buildExternalPlayers(fullLink) }
-  }, [playableFileList, hash, buildExternalPlayers])
+  }, [playableFileList, hash, buildExternalPlayers, mediaBase])
   const externalPlayers = singleFileStream?.externalPlayers ?? []
 
   const runPendingConfirm = () => {

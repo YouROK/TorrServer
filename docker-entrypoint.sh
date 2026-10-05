@@ -9,6 +9,8 @@ if [ "$TS_SSL_ENABLE" = "1" ]; then FLAGS="${FLAGS} --ssl"; fi
 if [ "$TS_SEARCH_WA_ENABLE" = "1" ]; then FLAGS="${FLAGS} --searchwa"; fi
 if [ "$TS_WEBDAV_ENABLE" = "1" ]; then FLAGS="${FLAGS} --webdav"; fi
 if [ "$TS_FORCE_HTTPS_ENABLE" = "1" ]; then FLAGS="${FLAGS} --force-https"; fi
+if [ "$TS_HTTP_MEDIA_ENABLE" = "1" ]; then FLAGS="${FLAGS} --http-media"; fi
+if [ "$TS_HTTPS_ONLY_ENABLE" = "1" ]; then FLAGS="${FLAGS} --https-only"; fi
 if [ -n "$TS_SSL_PORT" ]; then FLAGS="${FLAGS} --sslport ${TS_SSL_PORT}"; fi
 if [ -n "$TS_SSL_CERT_PATH" ]; then FLAGS="${FLAGS} --sslcert ${TS_SSL_CERT_PATH}"; fi
 if [ -n "$TS_SSL_KEY_PATH" ]; then FLAGS="${FLAGS} --sslkey ${TS_SSL_KEY_PATH}"; fi

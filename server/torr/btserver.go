@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
+	"time"
 
 	"github.com/anacrolix/publicip"
 	"github.com/anacrolix/torrent"
@@ -64,7 +65,7 @@ func (bt *BTServer) Connect() error {
 	bt.mu.Lock()
 	defer bt.mu.Unlock()
 	var err error
-	bt.configure(context.TODO())
+	bt.configure()
 	bt.client, err = torrent.NewClient(bt.config)
 	bt.torrents = make(map[metainfo.Hash]*Torrent)
 	InitApiHelper(bt)
@@ -82,7 +83,7 @@ func (bt *BTServer) Disconnect() {
 	}
 }
 
-func (bt *BTServer) configure(ctx context.Context) {
+func (bt *BTServer) configure() {
 	blocklist, _ := utils.ReadBlockedIP()
 	bt.config = torrent.NewDefaultClientConfig()
 
@@ -165,6 +166,9 @@ func (bt *BTServer) configure(ctx context.Context) {
 		}
 	}
 	if bt.config.PublicIp4 == nil {
+		// Create a context with a 3-second timeout for the IP lookup
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
 		bt.config.PublicIp4, err = publicip.Get4(ctx)
 		if err != nil {
 			log.Printf("error getting public ipv4 address: %v", err)
@@ -184,6 +188,9 @@ func (bt *BTServer) configure(ctx context.Context) {
 		}
 	}
 	if bt.config.PublicIp6 == nil && settings.BTsets.EnableIPv6 {
+		// Create a context with a 3-second timeout for the IP lookup
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
 		bt.config.PublicIp6, err = publicip.Get6(ctx)
 		if err != nil {
 			log.Printf("error getting public ipv6 address: %v", err)
