@@ -27,8 +27,8 @@ func openRutorLs(t *testing.T) *json.Decoder {
 	}
 	r := flate.NewReader(ff)
 	t.Cleanup(func() {
-		r.Close()
-		ff.Close()
+		_ = r.Close()
+		_ = ff.Close()
 	})
 	dec := json.NewDecoder(r)
 	if _, err := dec.Token(); err != nil {

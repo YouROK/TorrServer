@@ -126,8 +126,8 @@ func TestEnsureCertKeepsValidUserCert(t *testing.T) {
 	}
 	cert := filepath.Join(userDir, "fullchain.pem")
 	key := filepath.Join(userDir, "privkey.pem")
-	os.WriteFile(cert, certPEM, 0o644)
-	os.WriteFile(key, keyPEM, 0o600)
+	_ = os.WriteFile(cert, certPEM, 0o644)
+	_ = os.WriteFile(key, keyPEM, 0o600)
 
 	gotCert, gotKey, changed, err := EnsureCert(cert, key, nil)
 	if err != nil {
@@ -143,8 +143,8 @@ func TestEnsureCertNeverReplacesInvalidUserCert(t *testing.T) {
 	userDir := t.TempDir()
 	cert := filepath.Join(userDir, "fullchain.pem")
 	key := filepath.Join(userDir, "privkey.pem")
-	os.WriteFile(cert, []byte("garbage"), 0o644)
-	os.WriteFile(key, []byte("garbage"), 0o600)
+	_ = os.WriteFile(cert, []byte("garbage"), 0o644)
+	_ = os.WriteFile(key, []byte("garbage"), 0o600)
 
 	_, _, changed, err := EnsureCert(cert, key, nil)
 	if err == nil {
@@ -236,7 +236,7 @@ func TestLoaderReloadsChangedFiles(t *testing.T) {
 		t.Fatal(err)
 	}
 	future := time.Now().Add(time.Minute)
-	os.Chtimes(cert, future, future)
+	_ = os.Chtimes(cert, future, future)
 	l.lastCheck = time.Time{}
 
 	second, _ := l.GetCertificate(nil)
@@ -257,9 +257,9 @@ func TestLoaderKeepsPreviousOnBrokenFile(t *testing.T) {
 	}
 	first, _ := l.GetCertificate(nil)
 
-	os.WriteFile(cert, []byte("garbage"), 0o644)
+	_ = os.WriteFile(cert, []byte("garbage"), 0o644)
 	future := time.Now().Add(time.Minute)
-	os.Chtimes(cert, future, future)
+	_ = os.Chtimes(cert, future, future)
 	l.lastCheck = time.Time{}
 
 	got, err := l.GetCertificate(nil)
@@ -283,8 +283,8 @@ func TestLoaderFollowsPathChange(t *testing.T) {
 	userDir := t.TempDir()
 	certPEM, keyPEM, _ := generateSelfSignedCert(nil)
 	paths = [2]string{filepath.Join(userDir, "c.pem"), filepath.Join(userDir, "k.pem")}
-	os.WriteFile(paths[0], certPEM, 0o644)
-	os.WriteFile(paths[1], keyPEM, 0o600)
+	_ = os.WriteFile(paths[0], certPEM, 0o644)
+	_ = os.WriteFile(paths[1], keyPEM, 0o600)
 	l.lastCheck = time.Time{}
 
 	got, _ := l.GetCertificate(nil)
@@ -327,8 +327,8 @@ func writeUserCert(t *testing.T, certFile, keyFile string) {
 	keyDER, _ := x509.MarshalECPrivateKey(key)
 	chain := append(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}),
 		pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: caDER})...)
-	os.WriteFile(certFile, chain, 0o644)
-	os.WriteFile(keyFile, pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER}), 0o600)
+	_ = os.WriteFile(certFile, chain, 0o644)
+	_ = os.WriteFile(keyFile, pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER}), 0o600)
 }
 
 func TestUserCertAtDefaultPathIsNeverReplaced(t *testing.T) {
@@ -353,8 +353,8 @@ func TestUserCertAtDefaultPathIsNeverReplaced(t *testing.T) {
 func TestGarbageAtDefaultPathIsLeftAlone(t *testing.T) {
 	dir := withTempPath(t)
 	cert, key := filepath.Join(dir, certFileName), filepath.Join(dir, keyFileName)
-	os.WriteFile(cert, []byte("not a cert"), 0o644)
-	os.WriteFile(key, []byte("not a key"), 0o600)
+	_ = os.WriteFile(cert, []byte("not a cert"), 0o644)
+	_ = os.WriteFile(key, []byte("not a key"), 0o600)
 
 	_, _, _, err := EnsureCert(cert, key, nil)
 	if err == nil || !strings.Contains(err.Error(), "delete both files") {
@@ -394,7 +394,7 @@ func TestEnsureCertRegeneratesMissingGeneratedFiles(t *testing.T) {
 	}
 
 	// our cert without its key (e.g. interrupted write): regenerated
-	os.Remove(key)
+	_ = os.Remove(key)
 	if _, _, _, err := EnsureCert(cert, key, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -403,8 +403,8 @@ func TestEnsureCertRegeneratesMissingGeneratedFiles(t *testing.T) {
 	}
 
 	// both deleted by the user to force a new one: regenerated
-	os.Remove(cert)
-	os.Remove(key)
+	_ = os.Remove(cert)
+	_ = os.Remove(key)
 	if _, _, _, err := EnsureCert(cert, key, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -416,7 +416,7 @@ func TestEnsureCertRegeneratesMissingGeneratedFiles(t *testing.T) {
 func TestLoneKeyAtDefaultPathIsKept(t *testing.T) {
 	dir := withTempPath(t)
 	key := filepath.Join(dir, keyFileName)
-	os.WriteFile(key, []byte("someone's key"), 0o600)
+	_ = os.WriteFile(key, []byte("someone's key"), 0o600)
 
 	if _, _, _, err := EnsureCert("", "", nil); err == nil {
 		t.Fatal("expected error with a lone key at the default path")
@@ -459,7 +459,7 @@ func TestIsGeneratedRecognisesLegacyCert(t *testing.T) {
 	}
 	der, _ := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &priv.PublicKey, priv)
 	cert, key := filepath.Join(dir, certFileName), filepath.Join(dir, keyFileName)
-	os.WriteFile(cert, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}), 0o644)
+	_ = os.WriteFile(cert, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}), 0o644)
 	if !IsGenerated(cert, key) {
 		t.Fatal("legacy TorrServer cert not recognised")
 	}
@@ -487,8 +487,8 @@ func TestFirstStartAdoptsUserCertAtDefaultPath(t *testing.T) {
 func TestFirstStartKeepsInvalidUserFiles(t *testing.T) {
 	dir := withTempPath(t)
 	cert, key := filepath.Join(dir, certFileName), filepath.Join(dir, keyFileName)
-	os.WriteFile(cert, []byte("not a cert"), 0o644)
-	os.WriteFile(key, []byte("not a key"), 0o600)
+	_ = os.WriteFile(cert, []byte("not a cert"), 0o644)
+	_ = os.WriteFile(key, []byte("not a key"), 0o600)
 
 	if _, _, _, err := EnsureCert("", "", nil); err == nil {
 		t.Fatal("expected error for invalid files at the default path")

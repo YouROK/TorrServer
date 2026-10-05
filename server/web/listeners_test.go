@@ -59,7 +59,7 @@ func startSplitServer(t *testing.T) string {
 	tlsLn, plainLn := splitTLS(ln)
 	cert := testCert(t)
 	srv := newServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, "ok "+r.Proto)
+		_, _ = io.WriteString(w, "ok "+r.Proto)
 	}))
 	srv.TLSConfig = &tls.Config{Certificates: []tls.Certificate{cert}}
 	serve(func() error { return srv.ServeTLS(tlsLn, "", "") })
@@ -85,7 +85,7 @@ func TestSplitServesTLS(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	if string(body) != "ok HTTP/2.0" {
 		t.Fatalf("body = %q, want HTTP/2 response", body)
@@ -98,7 +98,7 @@ func TestSplitRedirectsPlainHTTP(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusTemporaryRedirect {
 		t.Fatalf("status = %d, want 307", resp.StatusCode)
 	}
@@ -114,13 +114,13 @@ func TestSplitSilentClientDoesNotBlockOthers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer silent.Close()
+	defer func() { _ = silent.Close() }()
 
 	resp, err := insecureClient().Get("https://127.0.0.1:" + port + "/")
 	if err != nil {
 		t.Fatalf("request blocked by silent client: %v", err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 func TestShutdownServersIsQuiet(t *testing.T) {
@@ -129,7 +129,7 @@ func TestShutdownServersIsQuiet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	shutdownServers()
 
@@ -174,7 +174,7 @@ func TestForceHTTPSHandler(t *testing.T) {
 	t.Cleanup(func() { settings.SslPort = old })
 
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, "served")
+		_, _ = io.WriteString(w, "served")
 	})
 	tests := []struct {
 		httpMedia    bool
@@ -237,7 +237,7 @@ func TestServerErrorLogThrottlesTLSErrors(t *testing.T) {
 		"http: panic serving 1.2.3.4:5: boom\n",
 	}
 	for _, line := range lines {
-		l.Write([]byte(line))
+		_, _ = l.Write([]byte(line))
 	}
 	if len(got) != 4 {
 		t.Fatalf("got %d lines, want 4 (one per client + both non-TLS lines):\n%s", len(got), strings.Join(got, "\n"))
@@ -255,7 +255,7 @@ func TestServerErrorLogThrottlesTLSErrors(t *testing.T) {
 
 	// after the quiet period the client is reported again
 	l.seen["192.168.0.169"] = time.Now().Add(-tlsErrorQuietPeriod - time.Second)
-	l.Write([]byte(lines[0]))
+	_, _ = l.Write([]byte(lines[0]))
 	if len(got) != 5 {
 		t.Fatal("client not reported again after the quiet period")
 	}
@@ -266,7 +266,7 @@ func TestInternalServerBypassesForceHTTPS(t *testing.T) {
 	t.Cleanup(func() { settings.InternalPort = oldInternal })
 
 	startInternalServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, "media")
+		_, _ = io.WriteString(w, "media")
 	}))
 	if settings.InternalPort == "" {
 		t.Fatal("internal port not set")
@@ -280,7 +280,7 @@ func TestInternalServerBypassesForceHTTPS(t *testing.T) {
 		t.Fatal(err)
 	}
 	body, _ := io.ReadAll(resp.Body)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusOK || string(body) != "media" {
 		t.Fatalf("internal request: %d %q, want 200 media", resp.StatusCode, body)
 	}
@@ -298,7 +298,7 @@ func freePort(t *testing.T) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer ln.Close()
+	defer func() { _ = ln.Close() }()
 	_, port, _ := net.SplitHostPort(ln.Addr().String())
 	return port
 }
@@ -311,8 +311,8 @@ func TestStartServersHTTPSOnly(t *testing.T) {
 	}
 	dir := t.TempDir()
 	certPath, keyPath := filepath.Join(dir, "cert.pem"), filepath.Join(dir, "key.pem")
-	os.WriteFile(certPath, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Certificate[0]}), 0o600)
-	os.WriteFile(keyPath, pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER}), 0o600)
+	_ = os.WriteFile(certPath, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Certificate[0]}), 0o600)
+	_ = os.WriteFile(keyPath, pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER}), 0o600)
 
 	oldSsl, oldArgs, oldIPs, oldPort, oldSslPort, oldSets, oldInternal := settings.Ssl, settings.Args,
 		settings.IPs, settings.Port, settings.SslPort, settings.BTsets, settings.InternalPort
@@ -332,7 +332,7 @@ func TestStartServersHTTPSOnly(t *testing.T) {
 	settings.BTsets = &settings.BTSets{SslCert: certPath, SslKey: keyPath}
 
 	if err := startServers(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, "ok")
+		_, _ = io.WriteString(w, "ok")
 	})); err != nil {
 		t.Fatal(err)
 	}
@@ -342,12 +342,12 @@ func TestStartServersHTTPSOnly(t *testing.T) {
 		t.Fatal(err)
 	}
 	body, _ := io.ReadAll(resp.Body)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusOK || string(body) != "ok" {
 		t.Fatalf("https: %d %q, want 200 ok", resp.StatusCode, body)
 	}
 	if conn, err := net.DialTimeout("tcp", "127.0.0.1:"+settings.Port, time.Second); err == nil {
-		conn.Close()
+		_ = conn.Close()
 		t.Fatal("plain HTTP port is open with --https-only")
 	}
 	if settings.InternalPort == "" {

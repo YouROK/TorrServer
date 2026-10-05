@@ -46,11 +46,11 @@ func configureCARoots() string {
 	}
 	msg := "Root CA certificates:"
 	if file != "" {
-		os.Setenv("SSL_CERT_FILE", file)
+		_ = os.Setenv("SSL_CERT_FILE", file)
 		msg += " SSL_CERT_FILE=" + file
 	}
 	if dir != "" {
-		os.Setenv("SSL_CERT_DIR", dir)
+		_ = os.Setenv("SSL_CERT_DIR", dir)
 		msg += " SSL_CERT_DIR=" + dir
 	}
 	return msg

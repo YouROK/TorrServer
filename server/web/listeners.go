@@ -135,7 +135,7 @@ func shutdownServers() {
 		go func() {
 			defer wg.Done()
 			if err := srv.Shutdown(ctx); err != nil {
-				srv.Close()
+				_ = srv.Close()
 			}
 		}()
 	}
@@ -150,7 +150,7 @@ func splitTLS(inner net.Listener) (tlsLn, plainLn net.Listener) {
 	open.Store(2)
 	onClose := func() {
 		if open.Add(-1) == 0 {
-			inner.Close()
+			_ = inner.Close()
 		}
 	}
 	t := newConnQueue(inner.Addr(), onClose)
@@ -175,11 +175,11 @@ func splitTLS(inner net.Listener) (tlsLn, plainLn net.Listener) {
 
 func routeConn(c net.Conn, tlsQ, plainQ *connQueue) {
 	br := bufio.NewReader(c)
-	c.SetReadDeadline(time.Now().Add(sniffTimeout))
+	_ = c.SetReadDeadline(time.Now().Add(sniffTimeout))
 	first, err := br.Peek(1)
-	c.SetReadDeadline(time.Time{})
+	_ = c.SetReadDeadline(time.Time{})
 	if err != nil {
-		c.Close()
+		_ = c.Close()
 		return
 	}
 	pc := &peekedConn{Conn: c, r: br}
@@ -215,7 +215,7 @@ func (q *connQueue) push(c net.Conn) {
 	select {
 	case q.conns <- c:
 	case <-q.done:
-		c.Close()
+		_ = c.Close()
 	}
 }
 

@@ -29,7 +29,7 @@ func TestMediaBaseURL(t *testing.T) {
 	userCert, userKey := filepath.Join(userDir, "c.pem"), filepath.Join(userDir, "k.pem")
 	for src, dst := range map[string]string{genCert: userCert, genKey: userKey} {
 		b, _ := os.ReadFile(src)
-		os.WriteFile(dst, b, 0o600)
+		_ = os.WriteFile(dst, b, 0o600)
 	}
 
 	gin.SetMode(gin.TestMode)
@@ -125,9 +125,9 @@ func TestMediaBaseEndpoint(t *testing.T) {
 	userDir := t.TempDir()
 	userCert, userKey := filepath.Join(userDir, "c.pem"), filepath.Join(userDir, "k.pem")
 	b, _ := os.ReadFile(cert)
-	os.WriteFile(userCert, b, 0o644)
+	_ = os.WriteFile(userCert, b, 0o644)
 	b, _ = os.ReadFile(key)
-	os.WriteFile(userKey, b, 0o600)
+	_ = os.WriteFile(userKey, b, 0o600)
 	sets.BTsets = &sets.BTSets{SslCert: userCert, SslKey: userKey}
 	sets.Args = &sets.ExecArgs{}
 	if w := get(); w.Body.String() != `{"base":"https://192.168.1.2:8091"}` {

@@ -28,7 +28,7 @@ func TestCheckImgUrl(t *testing.T) {
 
 	okSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "image/jpeg")
-		w.Write(jpegBuf.Bytes())
+		_, _ = w.Write(jpegBuf.Bytes())
 	}))
 	defer okSrv.Close()
 	if ok, verified := CheckImgUrl(okSrv.URL + "/poster.jpg"); !ok || !verified {
@@ -37,7 +37,7 @@ func TestCheckImgUrl(t *testing.T) {
 
 	htmlSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte("<html>not an image</html>"))
+		_, _ = w.Write([]byte("<html>not an image</html>"))
 	}))
 	defer htmlSrv.Close()
 	if ok, _ := CheckImgUrl(htmlSrv.URL + "/index.html"); ok {
