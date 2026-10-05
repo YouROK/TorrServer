@@ -108,6 +108,11 @@ definitions:
       Width:
         type: integer
     type: object
+  api.mediaBaseResponse:
+    properties:
+      base:
+        type: string
+    type: object
   api.setsReqJS:
     properties:
       action:
@@ -1044,6 +1049,25 @@ paths:
       summary: Get HTML of magnet links
       tags:
       - Pages
+  /mediabase:
+    get:
+      description: |-
+        Scheme and host that links handed to external players (VLC, copied links)
+        should use. It differs from the web UI origin when the UI is served over
+        TorrServer's self-signed HTTPS certificate, which players reject, and the
+        plain HTTP port serves media. In-page playback should keep using the UI origin.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.mediaBaseResponse'
+      security:
+      - BasicAuth: []
+      summary: Base URL for external players
+      tags:
+      - API
   /play/{hash}/{id}:
     get:
       description: Play given torrent referenced by infohash and file id.

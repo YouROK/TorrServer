@@ -661,6 +661,31 @@ const docTemplate = `{
                 }
             }
         },
+        "/mediabase": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Scheme and host that links handed to external players (VLC, copied links)\nshould use. It differs from the web UI origin when the UI is served over\nTorrServer's self-signed HTTPS certificate, which players reject, and the\nplain HTTP port serves media. In-page playback should keep using the UI origin.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Base URL for external players",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.mediaBaseResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/play/{hash}/{id}": {
             "get": {
                 "description": "Play given torrent referenced by infohash and file id.",
@@ -1602,6 +1627,14 @@ const docTemplate = `{
                 },
                 "Width": {
                     "type": "integer"
+                }
+            }
+        },
+        "api.mediaBaseResponse": {
+            "type": "object",
+            "properties": {
+                "base": {
+                    "type": "string"
                 }
             }
         },
