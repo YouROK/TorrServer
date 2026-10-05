@@ -1652,17 +1652,17 @@
     "@tailwindcss/oxide" "4.3.3"
     tailwindcss "4.3.3"
 
-"@tanstack/query-core@5.104.0":
-  version "5.104.0"
-  resolved "https://registry.yarnpkg.com/@tanstack/query-core/-/query-core-5.104.0.tgz#31e432c573b9ed383d9a9fb2ed9ba7871fcfbd17"
-  integrity sha512-JrC2r/JQlXt7khBSdUpsgxNvybzOg+aITa+ARRMlP2AFo93Y8vIqz077rp+e61mJetSZ0T6AJbwW1JHer1vrPQ==
+"@tanstack/query-core@5.104.1":
+  version "5.104.1"
+  resolved "https://registry.yarnpkg.com/@tanstack/query-core/-/query-core-5.104.1.tgz#c9819a22f8183e423bbe04b71780a4e17b42aff8"
+  integrity sha512-TiRghcrGkUTE+M4JBxvpPSpBhxvIzQairw+cksrHYGr+2uwC77yW1SY9nYxnYRYOppvucf8rEg6b5byoz4rTpw==
 
-"@tanstack/react-query@^5.104.0":
-  version "5.104.0"
-  resolved "https://registry.yarnpkg.com/@tanstack/react-query/-/react-query-5.104.0.tgz#5ddb71742d8ccdaf42aa3e42d1c4dd2148d5569e"
-  integrity sha512-e1TZmDCQnWIfiDVryIHeA6Idj+Lfx1hORLOhXS/l5wcgvtVD4yYqbTDl378sGQKIi2cSgb0TEMC9cKK8GGoJEw==
+"@tanstack/react-query@^5.104.1":
+  version "5.104.1"
+  resolved "https://registry.yarnpkg.com/@tanstack/react-query/-/react-query-5.104.1.tgz#c9c6b66ea96f8b5f73f4f3491b1776036a3c5456"
+  integrity sha512-Zz70EgjahNI7aCz8BZxM3vUGU44ycxEAzMuCUjLeA7SVhhOkg3ZgPjPJPvHjs6Rmky/dtmnu1WzjGHNHmhCoZQ==
   dependencies:
-    "@tanstack/query-core" "5.104.0"
+    "@tanstack/query-core" "5.104.1"
 
 "@thaunknown/thirty-two@^1.0.6":
   version "1.0.6"
@@ -3942,10 +3942,10 @@ lru-cache@^5.1.1:
   dependencies:
     yallist "^3.0.2"
 
-lucide-react@^1.49.0:
-  version "1.49.0"
-  resolved "https://registry.yarnpkg.com/lucide-react/-/lucide-react-1.49.0.tgz#f54137cb62f90ac1b2f0a98f6ed388ea3319227d"
-  integrity sha512-ApfaNM4/7jBrVopqLJ84Jz8TMQ1Q1JeZ1PmKh25aeS3E1FTVcMkSh1bEQB7dfzdIrwXRP8p3z4AJjTIHHb5IIA==
+lucide-react@^1.50.0:
+  version "1.50.0"
+  resolved "https://registry.yarnpkg.com/lucide-react/-/lucide-react-1.50.0.tgz#0ab49dfa86a204115e649263c1c110ae8e6b7110"
+  integrity sha512-RqHPQtKX6S9IE1xOL4oTHHsVQbcwJWTnmlxI6AdI9IpOwKiy7q+COPCQyMepI/Qu1x3h7sunpyEMvqtgFbgNiQ==
 
 magic-string@^0.30.21, magic-string@^0.30.3:
   version "0.30.21"
