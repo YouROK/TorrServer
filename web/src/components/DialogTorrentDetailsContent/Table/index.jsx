@@ -11,6 +11,7 @@ import {
   shouldUseGStreamerPlayer,
   useGStreamerRuntime,
 } from 'utils/GStreamer'
+import { externalLink, useExternalMediaBase } from 'utils/MediaBase'
 
 import VideoPlayer from '../../VideoPlayer'
 import { TableStyle, ShortTableWrapper, ShortTable } from './style'
@@ -33,6 +34,7 @@ const Table = memo(
     const { t } = useTranslation()
     const [unsupportedPlayers, setUnsupportedPlayers] = useState({})
     const gstRuntime = useGStreamerRuntime()
+    const mediaBase = useExternalMediaBase()
     const preloadBuffer = fileId => fetch(`${streamHost()}?link=${hash}&index=${fileId}&preload`)
     const getFileLink = (path, id) =>
       `${streamHost()}/${encodeURIComponent(path.split('\\').pop().split('/').pop())}?link=${hash}&index=${id}&play`
@@ -90,7 +92,7 @@ const Table = memo(
               const link = getFileLink(path, id)
               const player = getPlayer(path, id)
               const playerSupported = !unsupportedPlayers[player.key]
-              const fullLink = new URL(link, window.location.href)
+              const fullLink = externalLink(link, mediaBase)
               const infuseLink = `infuse://x-callback-url/play?url=${encodeURIComponent(fullLink)}`
               const senPlayerLink = `senplayer://x-callback-url/play?url=${encodeURIComponent(fullLink)}`
               const iinaLink = `iina://weblink?url=${encodeURIComponent(fullLink)}`
@@ -183,7 +185,7 @@ const Table = memo(
             const link = getFileLink(path, id)
             const player = getPlayer(path, id)
             const playerSupported = !unsupportedPlayers[player.key]
-            const fullLink = new URL(link, window.location.href)
+            const fullLink = externalLink(link, mediaBase)
             const infuseLink = `infuse://x-callback-url/play?url=${encodeURIComponent(fullLink)}`
             const senPlayerLink = `senplayer://x-callback-url/play?url=${encodeURIComponent(fullLink)}`
             const iinaLink = `iina://weblink?url=${encodeURIComponent(fullLink)}`

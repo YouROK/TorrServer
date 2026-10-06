@@ -43,6 +43,7 @@ import {
   shouldUseGStreamerPlayer,
   useGStreamerRuntime,
 } from 'utils/GStreamer'
+import { externalLink, useExternalMediaBase } from 'utils/MediaBase'
 
 import {
   StatusIndicators,
@@ -170,6 +171,7 @@ const Torrent = ({ torrent }) => {
   const episodeButtonRef = useRef(null)
   const audioButtonRef = useRef(null)
   const gstRuntime = useGStreamerRuntime()
+  const mediaBase = useExternalMediaBase()
 
   useEffect(
     () => () => {
@@ -267,7 +269,7 @@ const Torrent = ({ torrent }) => {
 
   const openSingleFileInVlc = () => {
     if (!singlePlayer) return
-    const streamUrl = new URL(singlePlayer.downloadSrc, window.location.href)
+    const streamUrl = externalLink(singlePlayer.downloadSrc, mediaBase)
     window.location.href = `vlc://${streamUrl}`
   }
 

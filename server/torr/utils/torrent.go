@@ -253,23 +253,30 @@ func fetchTrackersFromURL(url string, local []string) ([]string, error) {
 func trackersRefreshLoop() {
 	for {
 		time.Sleep(trackersRefreshInterval)
-		urls := configuredTrackersListURLs()
-		if len(urls) == 0 {
-			continue
-		}
-		gen := trackersFetchGen.Load()
-		local := configuredDefaultTrackers()
-		merged, usedURL, err := fetchTrackersFromURLs(urls, local)
-		if err != nil {
-			log.TLogln("trackerslist refresh failed:", err.Error())
-			continue
-		}
-		if !updateLoadedTrackersIfCurrent(gen, merged) {
-			continue
-		}
-		remoteCount := len(merged) - len(local)
-		log.TLogln(fmt.Sprintf("trackerslist refreshed from %s: %d remote + %d local", usedURL, remoteCount, len(local)))
+		refreshTrackers()
 	}
+}
+
+// refreshTrackers re-fetches the remote trackers list once and replaces the
+// cache on success. On failure, or if the cache was invalidated meanwhile,
+// the existing cache is kept.
+func refreshTrackers() {
+	urls := configuredTrackersListURLs()
+	if len(urls) == 0 {
+		return
+	}
+	gen := trackersFetchGen.Load()
+	local := configuredDefaultTrackers()
+	merged, usedURL, err := fetchTrackersFromURLs(urls, local)
+	if err != nil {
+		log.TLogln("trackerslist refresh failed:", err.Error())
+		return
+	}
+	if !updateLoadedTrackersIfCurrent(gen, merged) {
+		return
+	}
+	remoteCount := len(merged) - len(local)
+	log.TLogln(fmt.Sprintf("trackerslist refreshed from %s: %d remote + %d local", usedURL, remoteCount, len(local)))
 }
 
 func updateLoadedTrackersIfCurrent(gen uint64, trackers []string) bool {

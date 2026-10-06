@@ -259,11 +259,7 @@ func forgetTorrent(hash string) {
 // tells the stream handler this is a probe, not a viewing session: without it the probe would
 // start the position ticker and save on close, over the real resume point.
 func probeLink(hash string, fileID int) string {
-	link := "http://127.0.0.1:" + sets.Port
-	if sets.Ssl {
-		link = "https://127.0.0.1:" + sets.SslPort
-	}
-	return link + "/play/" + hash + "/" + strconv.Itoa(fileID) + "?" + probeMarker + "=1"
+	return sets.LoopbackBaseURL() + "/play/" + hash + "/" + strconv.Itoa(fileID) + "?" + probeMarker + "=1"
 }
 
 // setDuration records a media duration discovered elsewhere (preload already runs ffprobe).

@@ -17,6 +17,7 @@ export const torznabTestHost = () => `${torrserverHost}/torznab/test`
 export const tmdbSettingsHost = () => `${torrserverHost}/tmdb/settings`
 export const gstSettingsHost = () => `${torrserverHost}/gst/settings`
 export const ffprobeStatusHost = () => `${torrserverHost}/ffp/status`
+export const mediaBaseHost = () => `${torrserverHost}/mediabase`
 export const wafHost = () => `${torrserverHost}/waf`
 
 export const getTorrServerHost = () => torrserverHost

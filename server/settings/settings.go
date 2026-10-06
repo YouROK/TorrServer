@@ -21,6 +21,48 @@ func IsDebug() bool {
 	return false
 }
 
+// HTTPEnabled reports whether the plain HTTP port (--port) is open: always, unless
+// --https-only with --ssl.
+func HTTPEnabled() bool {
+	return !Ssl || Args == nil || !Args.HTTPSOnly
+}
+
+// PlainHTTPServesMedia reports whether media URLs (/stream, /play, playlists) are
+// served on the plain HTTP port: always, unless --force-https without --http-media
+// or --https-only.
+func PlainHTTPServesMedia() bool {
+	if !HTTPEnabled() {
+		return false
+	}
+	if !Ssl || Args == nil || !Args.ForceHTTPS {
+		return true
+	}
+	return Args.HTTPMedia
+}
+
+// InternalPort is the random loopback port of the internal listener, set by the web
+// server. It serves TorrServer's requests to itself over plain HTTP and is never
+// redirected, advertised or bound to other interfaces.
+var InternalPort string
+
+// LoopbackBaseURL is the base URL for TorrServer's requests to itself (ffprobe,
+// GStreamer): the internal listener when running, otherwise the public ports.
+func LoopbackBaseURL() string {
+	if InternalPort != "" {
+		return "http://127.0.0.1:" + InternalPort
+	}
+	if PlainHTTPServesMedia() {
+		return "http://127.0.0.1:" + Port
+	}
+	return "https://127.0.0.1:" + SslPort
+}
+
+// Default web server ports.
+const (
+	DefaultPort    = "8090"
+	DefaultSslPort = "8091"
+)
+
 var (
 	tdb      TorrServerDB
 	Path     string

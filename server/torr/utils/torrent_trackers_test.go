@@ -443,10 +443,6 @@ func TestGetDefTrackersNeverBlocksNewTorrentPath(t *testing.T) {
 }
 
 func TestTrackersPeriodicRefresh(t *testing.T) {
-	oldInterval := trackersRefreshInterval
-	trackersRefreshInterval = 40 * time.Millisecond
-	t.Cleanup(func() { trackersRefreshInterval = oldInterval })
-
 	var version atomic.Int32
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		v := version.Add(1)
@@ -460,26 +456,19 @@ func TestTrackersPeriodicRefresh(t *testing.T) {
 	defer srv.Close()
 
 	setupTrackersTest(t, srv.URL, "udp://local.example:80/announce")
-	refreshLoopOnce = sync.Once{}
-	PrefetchTrackers()
-
 	waitForTrackersFetch(t, 2*time.Second)
-	got := GetDefTrackers()
+
 	wantV1 := []string{"udp://remote-v1.example:1/announce", "udp://local.example:80/announce"}
-	if !reflect.DeepEqual(got, wantV1) {
+	if got := GetDefTrackers(); !reflect.DeepEqual(got, wantV1) {
 		t.Fatalf("initial got %#v, want %#v", got, wantV1)
 	}
 
-	deadline := time.Now().Add(2 * time.Second)
+	refreshTrackers()
+
 	wantV2 := []string{"udp://remote-v2.example:2/announce", "udp://local.example:80/announce"}
-	for time.Now().Before(deadline) {
-		got = GetDefTrackers()
-		if reflect.DeepEqual(got, wantV2) {
-			return
-		}
-		time.Sleep(10 * time.Millisecond)
+	if got := GetDefTrackers(); !reflect.DeepEqual(got, wantV2) {
+		t.Fatalf("after refresh got %#v, want %#v", got, wantV2)
 	}
-	t.Fatalf("after refresh got %#v, want %#v", got, wantV2)
 }
 
 func TestTrackersRefreshKeepsCacheOnFailure(t *testing.T) {
@@ -515,10 +504,6 @@ func TestTrackersRefreshKeepsCacheOnFailure(t *testing.T) {
 }
 
 func TestTrackersRefreshFallsBackToNextURL(t *testing.T) {
-	oldInterval := trackersRefreshInterval
-	trackersRefreshInterval = 40 * time.Millisecond
-	t.Cleanup(func() { trackersRefreshInterval = oldInterval })
-
 	var failFirst atomic.Bool
 	srv1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if failFirst.Load() {
@@ -537,34 +522,23 @@ func TestTrackersRefreshFallsBackToNextURL(t *testing.T) {
 	defer srv2.Close()
 
 	setupTrackersTestWithURLs(t, "", []string{srv1.URL, srv2.URL}, "udp://local.example:80/announce")
-	refreshLoopOnce = sync.Once{}
-	PrefetchTrackers()
-
 	waitForTrackersFetch(t, 2*time.Second)
-	got := GetDefTrackers()
+
 	wantV1 := []string{"udp://remote-v1.example:1/announce", "udp://local.example:80/announce"}
-	if !reflect.DeepEqual(got, wantV1) {
+	if got := GetDefTrackers(); !reflect.DeepEqual(got, wantV1) {
 		t.Fatalf("initial got %#v, want %#v", got, wantV1)
 	}
 
 	failFirst.Store(true)
-	deadline := time.Now().Add(2 * time.Second)
+	refreshTrackers()
+
 	wantV2 := []string{"udp://remote-v2.example:2/announce", "udp://local.example:80/announce"}
-	for time.Now().Before(deadline) {
-		got = GetDefTrackers()
-		if reflect.DeepEqual(got, wantV2) {
-			return
-		}
-		time.Sleep(10 * time.Millisecond)
+	if got := GetDefTrackers(); !reflect.DeepEqual(got, wantV2) {
+		t.Fatalf("after refresh fallback got %#v, want %#v", got, wantV2)
 	}
-	t.Fatalf("after refresh fallback got %#v, want %#v", got, wantV2)
 }
 
 func TestTrackersRefreshAllFailKeepsCache(t *testing.T) {
-	oldInterval := trackersRefreshInterval
-	trackersRefreshInterval = 40 * time.Millisecond
-	t.Cleanup(func() { trackersRefreshInterval = oldInterval })
-
 	var failAll atomic.Bool
 	srv1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if failAll.Load() {
@@ -581,8 +555,6 @@ func TestTrackersRefreshAllFailKeepsCache(t *testing.T) {
 	defer srv2.Close()
 
 	setupTrackersTestWithURLs(t, "", []string{srv1.URL, srv2.URL}, "udp://local.example:80/announce")
-	refreshLoopOnce = sync.Once{}
-	PrefetchTrackers()
 	waitForTrackersFetch(t, 2*time.Second)
 
 	want := []string{"udp://remote.example:1/announce", "udp://local.example:80/announce"}
@@ -591,7 +563,7 @@ func TestTrackersRefreshAllFailKeepsCache(t *testing.T) {
 	}
 
 	failAll.Store(true)
-	time.Sleep(200 * time.Millisecond)
+	refreshTrackers()
 
 	if got := GetDefTrackers(); !reflect.DeepEqual(got, want) {
 		t.Fatalf("after all-URL refresh failure got %#v, want cached %#v", got, want)
