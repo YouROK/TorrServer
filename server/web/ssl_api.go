@@ -116,6 +116,7 @@ func sslCertDownload(c *gin.Context) {
 //	@Success		200		{object}	sslStatus
 //	@Failure		400		{object}	map[string]string
 //	@Failure		403		{object}	map[string]string
+//	@Failure		409		{object}	map[string]string
 //	@Router			/ssl/upload [post]
 func sslUpload(c *gin.Context) {
 	if denyCertChange(c) {
