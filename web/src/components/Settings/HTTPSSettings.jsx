@@ -181,6 +181,8 @@ export default function HTTPSSettings({ updateSettings }) {
           margin='dense'
           id='SslCertPath'
           label={t('HTTPSSettings.CertPath')}
+          placeholder={t('HTTPSSettings.CertPathExample')}
+          InputLabelProps={{ shrink: true }}
           value={paths.cert}
           onChange={e => setPaths({ ...paths, cert: e.target.value })}
           disabled={locked}
@@ -191,6 +193,8 @@ export default function HTTPSSettings({ updateSettings }) {
           margin='dense'
           id='SslKeyPath'
           label={t('HTTPSSettings.KeyPath')}
+          placeholder={t('HTTPSSettings.KeyPathExample')}
+          InputLabelProps={{ shrink: true }}
           value={paths.key}
           onChange={e => setPaths({ ...paths, key: e.target.value })}
           disabled={locked}

@@ -417,10 +417,12 @@
     "SwitchedToSelfSigned": "Используется самоподписанный сертификат.",
     "FromFlagsHint": "Сертификат задан флагами запуска --sslcert/--sslkey, поэтому изменить его здесь нельзя.",
     "ModeHint": "Режим HTTP/HTTPS и порты задаются флагами запуска (--ssl, --sslport, --force-https, --http-media, --https-only).",
-    "PathsHint": "Или используйте файлы сертификата и ключа на сервере, например обновляемые acme.sh или certbot. Обновлённые файлы подхватываются без перезапуска.",
+    "PathsHint": "Или используйте файлы сертификата, которые уже лежат на машине с TorrServer, например обновляемые acme.sh или certbot. Укажите полные пути так, как их видит TorrServer (для Docker — внутри контейнера); файлы никуда не загружаются. Обновлённые файлы подхватываются без перезапуска.",
     "CertPath": "Файл сертификата (полная цепочка)",
     "KeyPath": "Файл закрытого ключа",
     "UsePaths": "Использовать эти файлы",
-    "PathsApplied": "Файлы сертификата используются."
+    "PathsApplied": "Файлы сертификата используются.",
+    "CertPathExample": "например /etc/letsencrypt/live/example.com/fullchain.pem",
+    "KeyPathExample": "например /etc/letsencrypt/live/example.com/privkey.pem"
   }
 }
