@@ -14,8 +14,13 @@ import (
 	"server/settings"
 )
 
-// uploadDir holds certificates uploaded from the web UI, next to the settings.
-const uploadDir = "ssl"
+// Certificates uploaded from the web UI are stored as copies in uploadDir, next to the
+// settings. Fixed names make a new upload replace the previous one.
+const (
+	uploadDir      = "ssl"
+	uploadCertName = "uploaded.crt"
+	uploadKeyName  = "uploaded.key"
+)
 
 // MaxPEMSize limits uploaded cert and key files.
 const MaxPEMSize = 1 << 20
@@ -107,7 +112,7 @@ func IsUploaded(certFile, keyFile string) bool {
 
 func uploadedPaths() (string, string) {
 	dir := filepath.Join(settings.Path, uploadDir)
-	return filepath.Join(dir, certFileName), filepath.Join(dir, keyFileName)
+	return filepath.Join(dir, uploadCertName), filepath.Join(dir, uploadKeyName)
 }
 
 // SaveUploaded validates a PEM certificate (chain) and private key and stores them in

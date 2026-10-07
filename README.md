@@ -513,7 +513,7 @@ TorrServer --ssl --force-https --http-media
 
 **Settings → Additional → HTTPS** shows the HTTPS mode and ports and the certificate in use (names, issuer, expiry), and changes it without a restart:
 
-- **Upload** a PEM certificate (full chain) and its unencrypted private key, e.g. `fullchain.pem` and `privkey.pem`. The pair must match and be currently valid. It is stored in `<config dir>/ssl/` and served within a few seconds. The upload sends the private key, so do it over HTTPS or from the same machine.
+- **Upload** a PEM certificate (full chain) and its unencrypted private key, e.g. `fullchain.pem` and `privkey.pem`. The pair must match and be currently valid. It is copied to `<config dir>/ssl/uploaded.crt` and `uploaded.key` (your files are left as they are) and served within a few seconds. The copy isn't renewed: for a certificate renewed automatically (acme.sh, certbot), set the certificate and key paths in the same section instead; TorrServer notices when those files change and serves the renewed certificate without a restart. The upload sends the private key, so do it over HTTPS or from the same machine.
 - **Use self-signed** switches back to TorrServer's self-signed certificate and deletes the uploaded one.
 - **Regenerate** creates a new self-signed certificate and key.
 - **Download certificate** saves the certificate in use (never the key), e.g. to trust the self-signed one on your devices.

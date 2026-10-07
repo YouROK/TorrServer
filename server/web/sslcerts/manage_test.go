@@ -19,7 +19,7 @@ func TestSaveUploadedAndInspect(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !samePath(cert, filepath.Join(dir, uploadDir, certFileName)) || !IsUploaded(cert, key) {
+	if !samePath(cert, filepath.Join(dir, uploadDir, uploadCertName)) || !IsUploaded(cert, key) {
 		t.Fatalf("unexpected paths %q %q", cert, key)
 	}
 	if st, _ := os.Stat(key); st.Mode().Perm() != 0o600 {

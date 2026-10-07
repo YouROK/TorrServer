@@ -409,7 +409,7 @@
     "Download": "Download certificate",
     "Regenerate": "Regenerate",
     "UseSelfSigned": "Use self-signed",
-    "UploadHint": "Upload a PEM certificate (full chain) and its unencrypted private key, e.g. fullchain.pem and privkey.pem from Let's Encrypt. It is used immediately, no restart needed.",
+    "UploadHint": "Upload a PEM certificate (full chain) and its unencrypted private key, e.g. fullchain.pem and privkey.pem from Let's Encrypt. It is used immediately, no restart needed. Uploaded files are a copy that isn't renewed: for a certificate renewed automatically (acme.sh, certbot), set the paths below instead.",
     "PlainHTTPWarning": "This page is opened over plain HTTP: the private key would be sent unencrypted. Prefer uploading over HTTPS.",
     "ChooseCert": "Certificate…",
     "ChooseKey": "Private key…",
