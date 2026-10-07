@@ -423,6 +423,8 @@
     "UsePaths": "Use these files",
     "PathsApplied": "Certificate files in use.",
     "CertPathExample": "e.g. /etc/letsencrypt/live/example.com/fullchain.pem",
-    "KeyPathExample": "e.g. /etc/letsencrypt/live/example.com/privkey.pem"
+    "KeyPathExample": "e.g. /etc/letsencrypt/live/example.com/privkey.pem",
+    "CertFileInUse": "Certificate file",
+    "KeyFileInUse": "Key file"
   }
 }

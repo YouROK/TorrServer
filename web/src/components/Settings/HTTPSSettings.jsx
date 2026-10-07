@@ -120,6 +120,13 @@ export default function HTTPSSettings({ updateSettings }) {
               {t('HTTPSSettings.Names')}: {names.join(', ')}
             </div>
           )}
+          {cert.cert_file && (
+            <div className='gst-status-error' style={{ wordBreak: 'break-all' }}>
+              {t('HTTPSSettings.CertFileInUse')}: {cert.cert_file}
+              <br />
+              {t('HTTPSSettings.KeyFileInUse')}: {cert.key_file}
+            </div>
+          )}
           {cert.error && <div className='gst-status-error'>{cert.error}</div>}
         </GstRuntimeStatusItem>
       </GstRuntimeStatusList>
