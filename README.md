@@ -511,14 +511,15 @@ TorrServer --ssl --force-https --http-media
 
 ### Certificate in the web UI
 
-**Settings → Additional → HTTPS** shows the HTTPS mode and ports and the certificate in use (names, issuer, expiry), and changes it without a restart:
+With `--ssl`, **Settings → Additional → HTTPS** shows the HTTPS mode and ports and the certificate in use (names, issuer, expiry), and changes the certificate without a restart. The mode and ports stay startup flags, and without `--ssl` the section isn't shown.
 
-- **Upload** a PEM certificate (full chain) and its unencrypted private key, e.g. `fullchain.pem` and `privkey.pem`. The pair must match and be currently valid. It is copied to `<config dir>/ssl/uploaded.crt` and `uploaded.key` (your files are left as they are) and served within a few seconds. The copy isn't renewed: for a certificate renewed automatically (acme.sh, certbot), set the certificate and key paths in the same section instead; TorrServer notices when those files change and serves the renewed certificate without a restart. The upload sends the private key, so do it over HTTPS or from the same machine.
-- **Use self-signed** switches back to TorrServer's self-signed certificate and deletes the uploaded one.
+- **Upload** a PEM certificate (full chain) and its unencrypted private key, e.g. `fullchain.pem` and `privkey.pem`. The pair must match and be currently valid. It is copied to `<config dir>/ssl/uploaded.crt` and `uploaded.key` (your files are left as they are) and served within a few seconds. The upload sends the private key, so do it over HTTPS or from the same machine. The copy isn't renewed.
+- **Use these files** takes the paths of a certificate and key already on the server, e.g. kept up to date by acme.sh or certbot. TorrServer notices when those files change and serves the renewed certificate without a restart.
+- **Use self-signed** switches back to TorrServer's self-signed certificate and deletes an uploaded copy.
 - **Regenerate** creates a new self-signed certificate and key.
 - **Download certificate** saves the certificate in use (never the key), e.g. to trust the self-signed one on your devices.
 
-The same actions are available in the API under `/ssl/` (see `/swagger`). They are not available with `--rdb`, and the certificate can't be changed here when `--sslcert`/`--sslkey` are given, because those flags are applied again on every start. Without `--ssl` the certificate is saved and used on the next start with `--ssl`.
+The same actions are available in the API under `/ssl/` (see `/swagger`). They are not available with `--rdb`, and the certificate can't be changed here when `--sslcert`/`--sslkey` are given, because those flags are applied again on every start.
 
 ### Self-signed certificate
 

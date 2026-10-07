@@ -71,9 +71,6 @@ export default function SecondarySettingsComponent({ settings, inputForm, update
     PeersListenPort,
     ResponsiveMode,
     MergeAllM3U,
-    SslPort,
-    SslCert,
-    SslKey,
     ShowFSActiveTorr,
   } = settings || {}
 
@@ -400,45 +397,7 @@ export default function SecondarySettingsComponent({ settings, inputForm, update
         variant='outlined'
         fullWidth
       />
-      {/* HTTPS Section */}
-      <SettingSectionLabel style={{ marginTop: '20px' }}>{t('HTTPS')}</SettingSectionLabel>
       <HTTPSSettings updateSettings={updateSettings} />
-      <TextField
-        onChange={inputForm}
-        margin='normal'
-        id='SslPort'
-        label={t('SettingsDialog.SslPort')}
-        helperText={t('SettingsDialog.SslPortHint')}
-        value={SslPort}
-        type='number'
-        variant='outlined'
-        fullWidth
-      />
-      <br />
-      <TextField
-        onChange={inputForm}
-        margin='normal'
-        id='SslCert'
-        label={t('SettingsDialog.SslCert')}
-        helperText={t('SettingsDialog.SslCertHint')}
-        value={SslCert}
-        type='text'
-        variant='outlined'
-        fullWidth
-      />
-      <br />
-      <TextField
-        onChange={inputForm}
-        margin='normal'
-        id='SslKey'
-        label={t('SettingsDialog.SslKey')}
-        helperText={t('SettingsDialog.SslKeyHint')}
-        value={SslKey}
-        type='text'
-        variant='outlined'
-        fullWidth
-      />
-      <br />
       {/* TorrFS */}
       <SettingSectionLabel style={{ marginTop: '20px' }}>{t('TorrFS')}</SettingSectionLabel>
       <FormGroup>

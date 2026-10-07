@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -41,7 +42,8 @@ func sslTestRouter(t *testing.T) *gin.Engine {
 		t.Fatal(sslTestDBErr)
 	}
 	setSSLCertPaths("", "")
-	t.Cleanup(func() { settings.ReadOnly = false })
+	settings.Ssl = true
+	t.Cleanup(func() { settings.ReadOnly, settings.Ssl = false, false })
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	setupSSLRoutes(r)
@@ -183,5 +185,59 @@ func TestSSLAPIRejectsBadUploadAndReadOnly(t *testing.T) {
 	}
 	if _, st, _ = sslDo(t, r, http.MethodGet, "/ssl/status", nil, ""); !st.CertFromFlags {
 		t.Fatal("cert_from_flags not reported")
+	}
+}
+
+func TestSSLAPIPaths(t *testing.T) {
+	r := sslTestRouter(t)
+	dir := t.TempDir()
+	certPEM, keyPEM := pemPair(t)
+	certFile, keyFile := filepath.Join(dir, "fullchain.pem"), filepath.Join(dir, "privkey.pem")
+	os.WriteFile(certFile, certPEM, 0o644)
+	os.WriteFile(keyFile, keyPEM, 0o600)
+
+	// start from an uploaded certificate: switching to paths deletes its copy
+	body := &bytes.Buffer{}
+	mw := multipart.NewWriter(body)
+	fw, _ := mw.CreateFormFile("cert", "cert.pem")
+	fw.Write(certPEM)
+	fw, _ = mw.CreateFormFile("key", "key.pem")
+	fw.Write(keyPEM)
+	mw.Close()
+	if code, _, raw := sslDo(t, r, http.MethodPost, "/ssl/upload", body, mw.FormDataContentType()); code != http.StatusOK {
+		t.Fatalf("upload %d %s", code, raw)
+	}
+	uploaded := settings.BTsets.SslCert
+
+	req := func(cert, key string) *bytes.Buffer {
+		b, _ := json.Marshal(map[string]string{"cert": cert, "key": key})
+		return bytes.NewBuffer(b)
+	}
+	if code, _, _ := sslDo(t, r, http.MethodPost, "/ssl/paths", req(certFile, filepath.Join(dir, "missing.key")), "application/json"); code != http.StatusBadRequest {
+		t.Fatalf("missing key: %d", code)
+	}
+	code, st, raw := sslDo(t, r, http.MethodPost, "/ssl/paths", req(certFile, keyFile), "application/json")
+	if code != http.StatusOK || st.Cert.Source != sslcerts.SourceUser || st.Cert.CertFile != certFile {
+		t.Fatalf("paths %d %s", code, raw)
+	}
+	if _, err := os.Stat(uploaded); !os.IsNotExist(err) {
+		t.Fatal("uploaded copy not removed after switching to paths")
+	}
+}
+
+func TestSSLAPIRequiresHTTPS(t *testing.T) {
+	r := sslTestRouter(t)
+	settings.Ssl = false
+	code, st, _ := sslDo(t, r, http.MethodGet, "/ssl/status", nil, "")
+	if code != http.StatusOK || st.Enabled {
+		t.Fatalf("status %d %+v", code, st)
+	}
+	for _, path := range []string{"/ssl/selfsigned", "/ssl/regenerate", "/ssl/upload", "/ssl/paths"} {
+		if code, _, _ := sslDo(t, r, http.MethodPost, path, nil, ""); code != http.StatusConflict {
+			t.Errorf("%s without --ssl: %d", path, code)
+		}
+	}
+	if code, _, _ := sslDo(t, r, http.MethodGet, "/ssl/cert", nil, ""); code != http.StatusNotFound {
+		t.Errorf("download without --ssl: %d", code)
 	}
 }

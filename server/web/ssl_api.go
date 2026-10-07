@@ -19,8 +19,8 @@ import (
 var sslMu sync.Mutex
 
 type sslStatus struct {
-	// Enabled is true when TorrServer was started with --ssl. Certificate changes are
-	// stored either way and served without a restart while HTTPS runs.
+	// Enabled is true when TorrServer was started with --ssl. HTTP/HTTPS modes and ports
+	// are startup flags; the certificate can only be managed here while HTTPS runs.
 	Enabled     bool   `json:"enabled"`
 	Port        string `json:"port,omitempty"`
 	HTTPPort    string `json:"http_port,omitempty"`
@@ -39,6 +39,7 @@ func setupSSLRoutes(route gin.IRouter) {
 	g.GET("/status", sslStatusHandler)
 	g.GET("/cert", sslCertDownload)
 	g.POST("/upload", sslUpload)
+	g.POST("/paths", sslSetPaths)
 	g.POST("/selfsigned", sslUseSelfSigned)
 	g.POST("/regenerate", sslRegenerate)
 }
@@ -89,7 +90,7 @@ func sslStatusHandler(c *gin.Context) {
 //	@Router			/ssl/cert [get]
 func sslCertDownload(c *gin.Context) {
 	certFile, keyFile := sslCertPaths()
-	if certFile == "" || keyFile == "" {
+	if !settings.Ssl || certFile == "" || keyFile == "" {
 		c.JSON(http.StatusNotFound, gin.H{"error": "no certificate configured"})
 		return
 	}
@@ -160,6 +161,52 @@ func formFile(c *gin.Context, field string) ([]byte, error) {
 	return io.ReadAll(io.LimitReader(f, sslcerts.MaxPEMSize))
 }
 
+type sslPathsReq struct {
+	Cert string `json:"cert" binding:"required"`
+	Key  string `json:"key" binding:"required"`
+}
+
+// sslSetPaths godoc
+//
+//	@Summary		Use HTTPS certificate files by path
+//	@Description	Uses a certificate (chain) and key already on the server, e.g. kept up to date by acme.sh or certbot. The pair must load, match and be currently valid. Renewals of these files are picked up without a restart.
+//
+//	@Tags			API
+//	@Accept			json
+//	@Produce		json
+//	@Security		BasicAuth
+//	@Param			request	body		sslPathsReq	true	"Absolute paths of the certificate and key files"
+//	@Success		200		{object}	sslStatus
+//	@Failure		400		{object}	map[string]string
+//	@Failure		403		{object}	map[string]string
+//	@Failure		409		{object}	map[string]string
+//	@Router			/ssl/paths [post]
+func sslSetPaths(c *gin.Context) {
+	if denyCertChange(c) {
+		return
+	}
+	var req sslPathsReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "cert and key paths are required"})
+		return
+	}
+	cert, err := filepath.Abs(req.Cert)
+	if err == nil {
+		req.Key, err = filepath.Abs(req.Key)
+	}
+	if err == nil {
+		err = sslcerts.VerifyCertKeyFiles(cert, req.Key)
+	}
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	sslMu.Lock()
+	defer sslMu.Unlock()
+	setSSLCertPaths(cert, req.Key)
+	c.JSON(http.StatusOK, currentSSLStatus())
+}
+
 // sslUseSelfSigned godoc
 //
 //	@Summary		Use the self-signed HTTPS certificate
@@ -186,13 +233,7 @@ func sslUseSelfSigned(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	wasUploaded := sslcerts.IsUploaded(sslCertPaths())
 	setSSLCertPaths(cert, key)
-	if wasUploaded {
-		if err := sslcerts.RemoveUploaded(); err != nil {
-			log.TLogln("Error removing uploaded certificate:", err)
-		}
-	}
 	c.JSON(http.StatusOK, currentSSLStatus())
 }
 
@@ -236,6 +277,8 @@ func certFromFlags() bool {
 // the next start.
 func denyCertChange(c *gin.Context) bool {
 	switch {
+	case !settings.Ssl:
+		c.JSON(http.StatusConflict, gin.H{"error": "HTTPS is not enabled (start TorrServer with --ssl)"})
 	case settings.ReadOnly:
 		c.JSON(http.StatusForbidden, gin.H{"error": "Read-only mode"})
 	case certFromFlags():
@@ -247,6 +290,7 @@ func denyCertChange(c *gin.Context) bool {
 }
 
 // setSSLCertPaths saves new cert paths; the Loader serves them within a few seconds.
+// Leaving an uploaded certificate deletes its copy, so a stale key isn't kept around.
 func setSSLCertPaths(cert, key string) {
 	cur, curKey := sslCertPaths()
 	if cur == cert && curKey == key {
@@ -255,4 +299,9 @@ func setSSLCertPaths(cert, key string) {
 	sets := *settings.BTsets
 	sets.SslCert, sets.SslKey = cert, key
 	settings.SetBTSets(&sets)
+	if sslcerts.IsUploaded(cur, curKey) && !sslcerts.IsUploaded(cert, key) {
+		if err := sslcerts.RemoveUploaded(); err != nil {
+			log.TLogln("Error removing uploaded certificate:", err)
+		}
+	}
 }

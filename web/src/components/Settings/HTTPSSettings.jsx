@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Box, Button, CircularProgress, FormHelperText } from '@material-ui/core'
+import { Box, Button, CircularProgress, FormHelperText, TextField } from '@material-ui/core'
 import axios from 'axios'
 import { sslHost } from 'utils/Hosts'
 
-import { SettingsStatusMessage, GstRuntimeStatusList, GstRuntimeStatusItem } from './style'
+import { SettingSectionLabel, SettingsStatusMessage, GstRuntimeStatusList, GstRuntimeStatusItem } from './style'
 
 const expiringSoonMs = 30 * 24 * 60 * 60 * 1000
 
@@ -17,21 +17,24 @@ const Row = ({ label, value, style }) => (
   </div>
 )
 
-// HTTPSSettings shows the HTTPS mode and certificate, and lets the user upload a
-// certificate or manage the self-signed one. Changes apply without a restart.
+// HTTPSSettings shows the HTTPS mode and certificate and manages the certificate: upload,
+// files by path, or the self-signed one. Changes apply without a restart. Modes and ports
+// are startup flags, and nothing is shown unless TorrServer runs with --ssl.
 export default function HTTPSSettings({ updateSettings }) {
   const { t } = useTranslation()
   const [status, setStatus] = useState()
-  const [loadError, setLoadError] = useState('')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState({ text: '', type: '' })
   const [certFile, setCertFile] = useState(null)
   const [keyFile, setKeyFile] = useState(null)
   const [inputKey, setInputKey] = useState(0)
+  const [paths, setPaths] = useState({ cert: '', key: '' })
 
   const applyStatus = useCallback(
     (data, syncPaths) => {
       setStatus(data)
+      const user = data.cert.source === 'user'
+      setPaths({ cert: user ? data.cert.cert_file : '', key: user ? data.cert.key_file : '' })
       // keep the dialog's copy of the paths in sync, or Save would revert the change
       if (syncPaths) updateSettings?.({ SslCert: data.cert.cert_file || '', SslKey: data.cert.key_file || '' })
     },
@@ -42,7 +45,7 @@ export default function HTTPSSettings({ updateSettings }) {
     axios
       .get(`${sslHost()}/status`)
       .then(({ data }) => applyStatus(data, false))
-      .catch(err => setLoadError(err.response?.data?.error || err.message))
+      .catch(() => setStatus(null))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -73,12 +76,7 @@ export default function HTTPSSettings({ updateSettings }) {
     }
   }
 
-  if (loadError) {
-    return <SettingsStatusMessage severity='error'>{loadError}</SettingsStatusMessage>
-  }
-  if (!status) {
-    return <CircularProgress color='secondary' size={24} />
-  }
+  if (!status?.enabled) return null
 
   const { cert } = status
   const selfSigned = cert.source === 'self-signed'
@@ -90,18 +88,16 @@ export default function HTTPSSettings({ updateSettings }) {
   const { protocol, hostname } = window.location
   const plainHTTPPage = protocol === 'http:' && !['localhost', '127.0.0.1', '[::1]'].includes(hostname)
 
-  let mode = t('HTTPSSettings.ModeOff')
-  if (status.enabled) {
-    if (!status.http_enabled) mode = t('HTTPSSettings.ModeHTTPSOnly', { port: status.port })
-    else if (status.http_media) mode = t('HTTPSSettings.ModeHTTPMedia', { port: status.port })
-    else if (status.force_https) mode = t('HTTPSSettings.ModeForceHTTPS', { port: status.port })
-    else mode = t('HTTPSSettings.ModeBoth', { port: status.port, httpPort: status.http_port })
-  }
+  let mode = t('HTTPSSettings.ModeBoth', { port: status.port, httpPort: status.http_port })
+  if (!status.http_enabled) mode = t('HTTPSSettings.ModeHTTPSOnly', { port: status.port })
+  else if (status.http_media) mode = t('HTTPSSettings.ModeHTTPMedia', { port: status.port })
+  else if (status.force_https) mode = t('HTTPSSettings.ModeForceHTTPS', { port: status.port })
 
   return (
     <>
+      <SettingSectionLabel style={{ marginTop: '20px' }}>{t('HTTPS')}</SettingSectionLabel>
       <GstRuntimeStatusList>
-        <GstRuntimeStatusItem ok={status.enabled && healthy} warn={status.enabled && !healthy}>
+        <GstRuntimeStatusItem ok={healthy} warn={!healthy}>
           <Row label={t('HTTPSSettings.Mode')} value={mode} />
           <Row label={t('HTTPSSettings.Certificate')} value={t(`HTTPSSettings.Source.${cert.source}`)} />
           {cert.subject && <Row label={t('HTTPSSettings.Subject')} value={cert.subject} />}
@@ -127,7 +123,7 @@ export default function HTTPSSettings({ updateSettings }) {
           {cert.error && <div className='gst-status-error'>{cert.error}</div>}
         </GstRuntimeStatusItem>
       </GstRuntimeStatusList>
-      {!status.enabled && <FormHelperText>{t('HTTPSSettings.OffHint')}</FormHelperText>}
+      <FormHelperText>{t('HTTPSSettings.ModeHint')}</FormHelperText>
       {selfSigned && <FormHelperText>{t('HTTPSSettings.SelfSignedHint')}</FormHelperText>}
       {status.cert_from_flags && <FormHelperText>{t('HTTPSSettings.FromFlagsHint')}</FormHelperText>}
 
@@ -175,6 +171,40 @@ export default function HTTPSSettings({ updateSettings }) {
           </Button>
           <Button variant='contained' color='secondary' disabled={locked || !certFile || !keyFile} onClick={upload}>
             {t('HTTPSSettings.Upload')}
+          </Button>
+        </Box>
+      </Box>
+
+      <Box mt={2}>
+        <FormHelperText>{t('HTTPSSettings.PathsHint')}</FormHelperText>
+        <TextField
+          margin='dense'
+          id='SslCertPath'
+          label={t('HTTPSSettings.CertPath')}
+          value={paths.cert}
+          onChange={e => setPaths({ ...paths, cert: e.target.value })}
+          disabled={locked}
+          variant='outlined'
+          fullWidth
+        />
+        <TextField
+          margin='dense'
+          id='SslKeyPath'
+          label={t('HTTPSSettings.KeyPath')}
+          value={paths.key}
+          onChange={e => setPaths({ ...paths, key: e.target.value })}
+          disabled={locked}
+          variant='outlined'
+          fullWidth
+        />
+        <Box display='flex' alignItems='center' mt={1} style={{ gap: 8 }}>
+          <Button
+            variant='contained'
+            color='secondary'
+            disabled={locked || !paths.cert || !paths.key}
+            onClick={() => run(() => axios.post(`${sslHost()}/paths`, paths), t('HTTPSSettings.PathsApplied'))}
+          >
+            {t('HTTPSSettings.UsePaths')}
           </Button>
           {busy && <CircularProgress color='secondary' size={20} />}
         </Box>
