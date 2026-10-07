@@ -509,9 +509,20 @@ TorrServer --ssl --https-only --sslcert /opt/torrserver/tls/fullchain.pem --sslk
 TorrServer --ssl --force-https --http-media
 ```
 
+### Certificate in the web UI
+
+**Settings → Additional → HTTPS** shows the HTTPS mode and ports and the certificate in use (names, issuer, expiry), and changes it without a restart:
+
+- **Upload** a PEM certificate (full chain) and its unencrypted private key, e.g. `fullchain.pem` and `privkey.pem`. The pair must match and be currently valid. It is stored in `<config dir>/ssl/` and served within a few seconds. The upload sends the private key, so do it over HTTPS or from the same machine.
+- **Use self-signed** switches back to TorrServer's self-signed certificate and deletes the uploaded one.
+- **Regenerate** creates a new self-signed certificate and key.
+- **Download certificate** saves the certificate in use (never the key), e.g. to trust the self-signed one on your devices.
+
+The same actions are available in the API under `/ssl/` (see `/swagger`). They are not available with `--rdb`, and the certificate can't be changed here when `--sslcert`/`--sslkey` are given, because those flags are applied again on every start. Without `--ssl` the certificate is saved and used on the next start with `--ssl`.
+
 ### Self-signed certificate
 
-Without `--sslcert`/`--sslkey`, TorrServer generates a self-signed certificate for `localhost`, the hostname, `hostname.local` and the local IPs, and renews it before it expires or when the host moves to a new IP. Browsers show a warning you can accept once. Most media players, TVs and DLNA renderers reject it, so give them HTTP links: don't use `--force-https`, or add `--http-media` on a trusted network. When a playlist is requested over the self-signed HTTPS port and HTTP still serves media, its links point to the HTTP port. The self-signed certificate is only ever regenerated if it is one TorrServer created; your own certificate is never touched, even at the default location.
+Without `--sslcert`/`--sslkey`, TorrServer generates a self-signed certificate for `localhost`, the hostname, `hostname.local` and the local IPs, and renews it before it expires or when the host moves to a new IP. Global IPv6 addresses are included but don't cause a renewal when they change, as IPv6 privacy extensions rotate them every few hours. Browsers show a warning you can accept once. Most media players, TVs and DLNA renderers reject it, so give them HTTP links: don't use `--force-https`, or add `--http-media` on a trusted network. When a playlist is requested over the self-signed HTTPS port and HTTP still serves media, its links point to the HTTP port. The self-signed certificate is only ever regenerated if it is one TorrServer created; your own certificate is never touched, even at the default location.
 
 ### Trusted certificate on your LAN (Let's Encrypt DNS-01)
 

@@ -17,6 +17,7 @@ import { styled } from '@material-ui/core/styles'
 import { useEffect, useMemo, useState } from 'react'
 
 import { SecondarySettingsContent, SettingSectionLabel } from './style'
+import HTTPSSettings from './HTTPSSettings'
 
 // Create a styled status message component
 const StatusMessage = styled('div')(({ theme, severity }) => ({
@@ -37,7 +38,7 @@ const StatusMessage = styled('div')(({ theme, severity }) => ({
   },
 }))
 
-export default function SecondarySettingsComponent({ settings, inputForm }) {
+export default function SecondarySettingsComponent({ settings, inputForm, updateSettings }) {
   const { t } = useTranslation()
   const [storageSettings, setStorageSettings] = useState({
     settings: 'json',
@@ -401,6 +402,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
       />
       {/* HTTPS Section */}
       <SettingSectionLabel style={{ marginTop: '20px' }}>{t('HTTPS')}</SettingSectionLabel>
+      <HTTPSSettings updateSettings={updateSettings} />
       <TextField
         onChange={inputForm}
         margin='normal'
@@ -420,7 +422,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         label={t('SettingsDialog.SslCert')}
         helperText={t('SettingsDialog.SslCertHint')}
         value={SslCert}
-        type='url'
+        type='text'
         variant='outlined'
         fullWidth
       />
@@ -432,7 +434,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         label={t('SettingsDialog.SslKey')}
         helperText={t('SettingsDialog.SslKeyHint')}
         value={SslKey}
-        type='url'
+        type='text'
         variant='outlined'
         fullWidth
       />

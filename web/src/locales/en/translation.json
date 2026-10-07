@@ -382,5 +382,41 @@
   "Uncategorized": "Uncategorized",
   "UploadFile": "Upload File",
   "UploadSpeed": "Upload speed",
-  "Viewed": "Viewed"
+  "Viewed": "Viewed",
+  "HTTPSSettings": {
+    "Mode": "Mode",
+    "Certificate": "Certificate",
+    "Subject": "Subject",
+    "Issuer": "Issuer",
+    "Names": "Valid for",
+    "ValidUntil": "Valid until",
+    "Trusted": "Issued by a trusted CA",
+    "Yes": "Yes",
+    "No": "No",
+    "ModeOff": "HTTPS off (start with --ssl)",
+    "ModeBoth": "HTTPS on port {{port}}, HTTP on port {{httpPort}}",
+    "ModeForceHTTPS": "HTTPS on port {{port}}, HTTP redirects to HTTPS",
+    "ModeHTTPMedia": "HTTPS on port {{port}}, HTTP for media only",
+    "ModeHTTPSOnly": "HTTPS only, port {{port}}",
+    "Source": {
+      "none": "Not created yet",
+      "self-signed": "Self-signed (managed by TorrServer)",
+      "uploaded": "Uploaded",
+      "user": "From file path"
+    },
+    "OffHint": "HTTPS is enabled with the --ssl startup flag. The certificate set here is used once it is on.",
+    "SelfSignedHint": "Browsers warn about a self-signed certificate and most media players and TVs reject it. Download it to trust it on your devices, or upload a certificate from a trusted CA.",
+    "Download": "Download certificate",
+    "Regenerate": "Regenerate",
+    "UseSelfSigned": "Use self-signed",
+    "UploadHint": "Upload a PEM certificate (full chain) and its unencrypted private key, e.g. fullchain.pem and privkey.pem from Let's Encrypt. It is used immediately, no restart needed.",
+    "PlainHTTPWarning": "This page is opened over plain HTTP: the private key would be sent unencrypted. Prefer uploading over HTTPS.",
+    "ChooseCert": "Certificate…",
+    "ChooseKey": "Private key…",
+    "Upload": "Upload",
+    "Uploaded": "Certificate uploaded and in use.",
+    "Regenerated": "New self-signed certificate created.",
+    "SwitchedToSelfSigned": "Switched to the self-signed certificate.",
+    "FromFlagsHint": "The certificate is set by the --sslcert/--sslkey startup flags, so it can't be changed here."
+  }
 }
