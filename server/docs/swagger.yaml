@@ -87,6 +87,11 @@ definitions:
       Width:
         type: integer
     type: object
+  api.mediaBaseResponse:
+    properties:
+      base:
+        type: string
+    type: object
   api.setsReqJS:
     properties:
       action:
@@ -357,6 +362,37 @@ definitions:
       timecode:
         type: number
     type: object
+  sslcerts.Info:
+    properties:
+      cert_file:
+        type: string
+      dns_names:
+        items:
+          type: string
+        type: array
+      error:
+        type: string
+      ips:
+        items:
+          type: string
+        type: array
+      issuer:
+        type: string
+      key_file:
+        type: string
+      not_after:
+        type: string
+      not_before:
+        type: string
+      source:
+        type: string
+      subject:
+        type: string
+      trusted:
+        description: Trusted reports whether the chain verifies against this system's
+          root CAs.
+        type: boolean
+    type: object
   state.CacheState:
     properties:
       capacity:
@@ -515,6 +551,43 @@ definitions:
         type: integer
       list:
         type: string
+    type: object
+  web.sslPathsReq:
+    properties:
+      cert:
+        type: string
+      key:
+        type: string
+    required:
+    - cert
+    - key
+    type: object
+  web.sslStatus:
+    properties:
+      cert:
+        $ref: '#/definitions/sslcerts.Info'
+      cert_from_flags:
+        description: |-
+          CertFromFlags is true when --sslcert/--sslkey set the paths: they are applied again
+          on every start, so the certificate can't be changed here.
+        type: boolean
+      enabled:
+        description: |-
+          Enabled is true when TorrServer was started with --ssl. HTTP/HTTPS modes and ports
+          are startup flags; the certificate can only be managed here while HTTPS runs.
+        type: boolean
+      force_https:
+        type: boolean
+      http_enabled:
+        type: boolean
+      http_media:
+        type: boolean
+      http_port:
+        type: string
+      port:
+        type: string
+      read_only:
+        type: boolean
     type: object
 externalDocs:
   description: OpenAPI
@@ -951,6 +1024,25 @@ paths:
       summary: Get HTML of magnet links
       tags:
       - Pages
+  /mediabase:
+    get:
+      description: |-
+        Scheme and host that links handed to external players (VLC, copied links)
+        should use. It differs from the web UI origin when the UI is served over
+        TorrServer's self-signed HTTPS certificate, which players reject, and the
+        plain HTTP port serves media. In-page playback should keep using the UI origin.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.mediaBaseResponse'
+      security:
+      - BasicAuth: []
+      summary: Base URL for external players
+      tags:
+      - API
   /play/{hash}/{id}:
     get:
       description: Play given torrent referenced by infohash and file id.
@@ -1067,6 +1159,205 @@ paths:
       security:
       - BasicAuth: []
       summary: Shuts down server
+      tags:
+      - API
+  /ssl/cert:
+    get:
+      description: The configured certificate (chain) in PEM, e.g. to trust the self-signed
+        one on a device. The private key is never served.
+      produces:
+      - application/x-x509-ca-cert
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BasicAuth: []
+      summary: Download the HTTPS certificate
+      tags:
+      - API
+  /ssl/paths:
+    post:
+      consumes:
+      - application/json
+      description: Uses a certificate (chain) and key already on the server, e.g.
+        kept up to date by acme.sh or certbot. The pair must load, match and be currently
+        valid. Renewals of these files are picked up without a restart.
+      parameters:
+      - description: Absolute paths of the certificate and key files
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/web.sslPathsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/web.sslStatus'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BasicAuth: []
+      summary: Use HTTPS certificate files by path
+      tags:
+      - API
+  /ssl/regenerate:
+    post:
+      description: Creates a new self-signed certificate and key for the current local
+        IPs and hostname. Only when the self-signed certificate is in use.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/web.sslStatus'
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BasicAuth: []
+      summary: Regenerate the self-signed HTTPS certificate
+      tags:
+      - API
+  /ssl/selfsigned:
+    post:
+      description: Switches to TorrServer's self-signed certificate (reused, or generated
+        if missing) and deletes an uploaded one. Certificate files given by path are
+        left on disk.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/web.sslStatus'
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BasicAuth: []
+      summary: Use the self-signed HTTPS certificate
+      tags:
+      - API
+  /ssl/status:
+    get:
+      description: HTTPS mode, ports and the configured certificate (subject, SANs,
+        issuer, validity, source). Never returns key material.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/web.sslStatus'
+      security:
+      - BasicAuth: []
+      summary: HTTPS status
+      tags:
+      - API
+  /ssl/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Stores a PEM certificate (chain) and its unencrypted private key
+        in <config>/ssl/ and uses them. The pair must match and be currently valid.
+        Served without a restart when HTTPS is running.
+      parameters:
+      - description: Certificate (chain), PEM
+        in: formData
+        name: cert
+        required: true
+        type: file
+      - description: Private key, PEM
+        in: formData
+        name: key
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/web.sslStatus'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BasicAuth: []
+      summary: Upload an HTTPS certificate
       tags:
       - API
   /stat:

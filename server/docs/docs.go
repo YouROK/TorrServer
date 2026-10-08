@@ -661,6 +661,31 @@ const docTemplate = `{
                 }
             }
         },
+        "/mediabase": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Scheme and host that links handed to external players (VLC, copied links)\nshould use. It differs from the web UI origin when the UI is served over\nTorrServer's self-signed HTTPS certificate, which players reject, and the\nplain HTTP port serves media. In-page playback should keep using the UI origin.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Base URL for external players",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.mediaBaseResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/play/{hash}/{id}": {
             "get": {
                 "description": "Play given torrent referenced by infohash and file id.",
@@ -845,6 +870,306 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "OK"
+                    }
+                }
+            }
+        },
+        "/ssl/cert": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "The configured certificate (chain) in PEM, e.g. to trust the self-signed one on a device. The private key is never served.",
+                "produces": [
+                    "application/x-x509-ca-cert"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Download the HTTPS certificate",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ssl/paths": {
+            "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Uses a certificate (chain) and key already on the server, e.g. kept up to date by acme.sh or certbot. The pair must load, match and be currently valid. Renewals of these files are picked up without a restart.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Use HTTPS certificate files by path",
+                "parameters": [
+                    {
+                        "description": "Absolute paths of the certificate and key files",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/web.sslPathsReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/web.sslStatus"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ssl/regenerate": {
+            "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Creates a new self-signed certificate and key for the current local IPs and hostname. Only when the self-signed certificate is in use.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Regenerate the self-signed HTTPS certificate",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/web.sslStatus"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ssl/selfsigned": {
+            "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Switches to TorrServer's self-signed certificate (reused, or generated if missing) and deletes an uploaded one. Certificate files given by path are left on disk.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Use the self-signed HTTPS certificate",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/web.sslStatus"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ssl/status": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "HTTPS mode, ports and the configured certificate (subject, SANs, issuer, validity, source). Never returns key material.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "HTTPS status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/web.sslStatus"
+                        }
+                    }
+                }
+            }
+        },
+        "/ssl/upload": {
+            "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Stores a PEM certificate (chain) and its unencrypted private key in \u003cconfig\u003e/ssl/ and uses them. The pair must match and be currently valid. Served without a restart when HTTPS is running.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "Upload an HTTPS certificate",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Certificate (chain), PEM",
+                        "name": "cert",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Private key, PEM",
+                        "name": "key",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/web.sslStatus"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
             }
@@ -1546,6 +1871,14 @@ const docTemplate = `{
                 }
             }
         },
+        "api.mediaBaseResponse": {
+            "type": "object",
+            "properties": {
+                "base": {
+                    "type": "string"
+                }
+            }
+        },
         "api.setsReqJS": {
             "type": "object",
             "properties": {
@@ -1937,6 +2270,51 @@ const docTemplate = `{
                 }
             }
         },
+        "sslcerts.Info": {
+            "type": "object",
+            "properties": {
+                "cert_file": {
+                    "type": "string"
+                },
+                "dns_names": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "error": {
+                    "type": "string"
+                },
+                "ips": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "issuer": {
+                    "type": "string"
+                },
+                "key_file": {
+                    "type": "string"
+                },
+                "not_after": {
+                    "type": "string"
+                },
+                "not_before": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "trusted": {
+                    "description": "Trusted reports whether the chain verifies against this system's root CAs.",
+                    "type": "boolean"
+                }
+            }
+        },
         "state.CacheState": {
             "type": "object",
             "properties": {
@@ -2168,6 +2546,55 @@ const docTemplate = `{
                 },
                 "list": {
                     "type": "string"
+                }
+            }
+        },
+        "web.sslPathsReq": {
+            "type": "object",
+            "required": [
+                "cert",
+                "key"
+            ],
+            "properties": {
+                "cert": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                }
+            }
+        },
+        "web.sslStatus": {
+            "type": "object",
+            "properties": {
+                "cert": {
+                    "$ref": "#/definitions/sslcerts.Info"
+                },
+                "cert_from_flags": {
+                    "description": "CertFromFlags is true when --sslcert/--sslkey set the paths: they are applied again\non every start, so the certificate can't be changed here.",
+                    "type": "boolean"
+                },
+                "enabled": {
+                    "description": "Enabled is true when TorrServer was started with --ssl. HTTP/HTTPS modes and ports\nare startup flags; the certificate can only be managed here while HTTPS runs.",
+                    "type": "boolean"
+                },
+                "force_https": {
+                    "type": "boolean"
+                },
+                "http_enabled": {
+                    "type": "boolean"
+                },
+                "http_media": {
+                    "type": "boolean"
+                },
+                "http_port": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "string"
+                },
+                "read_only": {
+                    "type": "boolean"
                 }
             }
         }
