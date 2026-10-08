@@ -3,6 +3,7 @@ package user
 import (
 	"errors"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"silo/internal/config"
@@ -324,5 +325,95 @@ func TestOwnerCannotBeBanned(t *testing.T) {
 	}
 	if err := svc.BanUser(admin, owner.ID, true); !errors.Is(err, ErrOwnerProtected) {
 		t.Errorf("Admin must not be able to ban Owner, got: %v", err)
+	}
+}
+
+// ChangePassword: пользователь может сменить пароль себе, вышестоящий - подчинённому.
+func TestChangePassword(t *testing.T) {
+	svc, cleanup := setupTestEnv(t, "secret")
+	defer cleanup()
+
+	owner, _, err := svc.Login("owner", "secret")
+	if err != nil {
+		t.Fatalf("login owner: %v", err)
+	}
+
+	bob, err := svc.CreateUser(owner, "bob", "oldpass", RankUser, Limits{})
+	if err != nil {
+		t.Fatalf("create bob: %v", err)
+	}
+
+	admin, err := svc.CreateUser(owner, "carol", "adminpass", RankAdmin, Limits{})
+	if err != nil {
+		t.Fatalf("create carol: %v", err)
+	}
+
+	// Старый пароль работает, новый - ещё нет.
+	if _, _, err := svc.Login("bob", "oldpass"); err != nil {
+		t.Fatalf("login with old password failed: %v", err)
+	}
+	if _, _, err := svc.Login("bob", "newpass"); err == nil {
+		t.Errorf("new password must not work before change")
+	}
+
+	// Админ меняет пароль подчинённому.
+	if err := svc.ChangePassword(admin, bob.ID, "newpass"); err != nil {
+		t.Fatalf("admin failed to change password: %v", err)
+	}
+
+	if _, _, err := svc.Login("bob", "newpass"); err != nil {
+		t.Errorf("login with new password failed: %v", err)
+	}
+	if _, _, err := svc.Login("bob", "oldpass"); err == nil {
+		t.Errorf("old password must stop working")
+	}
+
+	// Пользователь меняет пароль себе.
+	if err := svc.ChangePassword(bob, bob.ID, "selfpass"); err != nil {
+		t.Fatalf("self change failed: %v", err)
+	}
+	if _, _, err := svc.Login("bob", "selfpass"); err != nil {
+		t.Errorf("login after self change failed: %v", err)
+	}
+
+	// Пользователь не может менять пароль другому.
+	if err := svc.ChangePassword(bob, admin.ID, "hacked"); !errors.Is(err, ErrPermissionDenied) {
+		t.Errorf("user must not change another password, got: %v", err)
+	}
+
+	// Пароль Owner задаётся в конфиге, менять его нельзя.
+	if err := svc.ChangePassword(owner, "owner", "whatever"); !errors.Is(err, ErrOwnerProtected) {
+		t.Errorf("owner password must be protected, got: %v", err)
+	}
+
+	// Пустой пароль отклоняется.
+	if err := svc.ChangePassword(admin, bob.ID, ""); !errors.Is(err, ErrInvalidPassword) {
+		t.Errorf("empty password must be rejected, got: %v", err)
+	}
+}
+
+// Пароль длиннее 72 байт bcrypt не принимает: это ошибка ввода, а не сбой сервиса.
+func TestChangePasswordTooLong(t *testing.T) {
+	svc, cleanup := setupTestEnv(t, "secret")
+	defer cleanup()
+
+	owner, _, err := svc.Login("owner", "secret")
+	if err != nil {
+		t.Fatalf("login owner: %v", err)
+	}
+	bob, err := svc.CreateUser(owner, "bob", "pass", RankUser, Limits{})
+	if err != nil {
+		t.Fatalf("create bob: %v", err)
+	}
+
+	long := strings.Repeat("x", 73)
+	if err := svc.ChangePassword(owner, bob.ID, long); !errors.Is(err, ErrPasswordTooLong) {
+		t.Errorf("expected ErrPasswordTooLong, got: %v", err)
+	}
+
+	// Пароль в пределах лимита по-прежнему принимается.
+	ok := strings.Repeat("y", 72)
+	if err := svc.ChangePassword(owner, bob.ID, ok); err != nil {
+		t.Errorf("72-byte password must be accepted, got: %v", err)
 	}
 }

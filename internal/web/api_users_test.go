@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"silo/internal/config"
@@ -143,5 +144,39 @@ func TestPingIsPublicOthersProtected(t *testing.T) {
 		if rec.Code != tc.want {
 			t.Errorf("%s: got %d, want %d", tc.path, rec.Code, tc.want)
 		}
+	}
+}
+
+// Cookie с токеном должна уходить с SameSite=Lax: это защищает
+// изменяющие состояние ручки от межсайтовых запросов (CSRF).
+func TestTokenCookieHasSameSiteLax(t *testing.T) {
+	s, _ := setupAuthTestEnv(t, "supersecret")
+	s.registerRoutes()
+
+	body := strings.NewReader(`{"username":"owner","password":"supersecret"}`)
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/login", body)
+	req.Header.Set("Content-Type", "application/json")
+	s.router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("login status = %d, body: %s", rec.Code, rec.Body.String())
+	}
+
+	var found bool
+	for _, ck := range rec.Result().Cookies() {
+		if ck.Name != CookieTokenName {
+			continue
+		}
+		found = true
+		if ck.SameSite != http.SameSiteLaxMode {
+			t.Errorf("cookie SameSite = %v, want Lax", ck.SameSite)
+		}
+		if !ck.HttpOnly {
+			t.Errorf("cookie must stay HttpOnly")
+		}
+	}
+	if !found {
+		t.Fatalf("cookie %q not set on login", CookieTokenName)
 	}
 }
