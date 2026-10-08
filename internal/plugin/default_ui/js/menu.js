@@ -79,7 +79,7 @@ async function openAboutModal() {
     document.getElementById('about-overlay').style.display = 'flex';
 
     const ver = document.getElementById('about-version');
-    ver.textContent = '—';
+    ver.textContent = '-';
     try {
         const res = await fetch('/api/system/version');
         if (res.ok) {
@@ -219,7 +219,7 @@ function renderUser(me) {
         return;
     }
 
-    nameEl.textContent = me.username || me.id || '—';
+    nameEl.textContent = me.username || me.id || '-';
     avatarEl.textContent = (me.username || me.id || '?').charAt(0).toUpperCase();
 
     if (typeof me.rank === 'number' && me.rank >= 100) {

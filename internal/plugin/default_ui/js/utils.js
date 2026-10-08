@@ -7,7 +7,7 @@ function esc(s) {
 }
 
 function fmtSize(bytes) {
-    if (!bytes || bytes <= 0) return '—';
+    if (!bytes || bytes <= 0) return '-';
     if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(1) + ' GiB';
     if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' MiB';
     if (bytes >= 1024) return (bytes / 1024).toFixed(1) + ' KiB';
@@ -15,14 +15,14 @@ function fmtSize(bytes) {
 }
 
 function fmtSpeed(bps) {
-    if (!bps || bps <= 0) return '—';
+    if (!bps || bps <= 0) return '-';
     if (bps >= 1048576) return (bps / 1048576).toFixed(1) + ' MB/s';
     if (bps >= 1024) return (bps / 1024).toFixed(0) + ' KB/s';
     return bps.toFixed(0) + ' B/s';
 }
 
 function fmtPeers(peers, seeders) {
-    if ((!peers || peers <= 0) && (!seeders || seeders <= 0)) return '—';
+    if ((!peers || peers <= 0) && (!seeders || seeders <= 0)) return '-';
     return (peers || 0) + '/' + (seeders || 0);
 }
 

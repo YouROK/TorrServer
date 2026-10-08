@@ -65,8 +65,8 @@ function renderInfo() {
         [t('upload'), fmtSpeed(infoStatus.upload_speed)],
         [t('peers_seeds'), peersVal],
         [t('size'), fmtSize(infoStatus.torrent_size)],
-        [t('status'), infoStatus.stat_string || '—'],
-        [t('category'), infoStatus.category || '—'],
+        [t('status'), infoStatus.stat_string || '-'],
+        [t('category'), infoStatus.category || '-'],
     ];
     document.getElementById('info-plaques').innerHTML = plaques
         .map((p) => '<div class="plaque"><span class="plaque-label">' + p[0] + '</span><span class="plaque-value">' + esc(p[1]) + '</span></div>')

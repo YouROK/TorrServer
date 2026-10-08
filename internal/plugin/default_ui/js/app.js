@@ -51,12 +51,12 @@ function startEvents() {
         removeCard(JSON.parse(e.data).hash);
     });
 
-    // Сервер отвечает — точно онлайн
+    // Сервер отвечает - точно онлайн
     es.onopen = () => {
         setOffline(false);
     };
 
-    // Ошибка SSE — проверяем реальное состояние один раз
+    // Ошибка SSE - проверяем реальное состояние один раз
     es.onerror = () => {
         if (offlineShown) return;
         pingOnce();

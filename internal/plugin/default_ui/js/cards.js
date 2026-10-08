@@ -20,7 +20,7 @@ function menuItem(action, icon, key, danger) {
 function cardHTML(c) {
     if (!c) return '';
     const hash = c.hash || '';
-    const title = c.title || hash || '—';
+    const title = c.title || hash || '-';
     const poster = c.poster || '';
     const badge = badgeFor(c.stat);
 
@@ -80,7 +80,7 @@ function renderSync(cards) {
 
 function patchCard(el, c) {
     const titleEl = el.querySelector('.title');
-    const newTitle = c.title || c.hash || '—';
+    const newTitle = c.title || c.hash || '-';
     if (titleEl && titleEl.textContent !== newTitle) {
         titleEl.textContent = newTitle;
     }
