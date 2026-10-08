@@ -1,6 +1,7 @@
 package user
 
 import (
+	"errors"
 	"path/filepath"
 	"testing"
 
@@ -228,5 +229,100 @@ func TestUserTorrentsAndViewedFiles(t *testing.T) {
 	err = svc.RemoveTorrent(u2, hash)
 	if err != nil {
 		t.Fatalf("Failed to remove torrent for u2: %v", err)
+	}
+}
+
+// Регрессия: после регенерации токена Owner логин обязан вернуть ЖИВОЙ токен.
+// Раньше Login отдавал копию из памяти (s.ownerU), из-за чего после смены
+// токена вход был "успешным", но выдавал мёртвый токен — бесконечная петля /login.
+func TestOwnerTokenStaysInSyncAfterRegenerate(t *testing.T) {
+	svc, cleanup := setupTestEnv(t, "supersecret")
+	defer cleanup()
+
+	_, oldToken, err := svc.Login("owner", "supersecret")
+	if err != nil {
+		t.Fatalf("Initial login failed: %v", err)
+	}
+
+	owner, err := svc.GetUserByID("owner")
+	if err != nil {
+		t.Fatalf("Failed to get owner: %v", err)
+	}
+
+	newToken, err := svc.RegenerateToken(owner, "owner")
+	if err != nil {
+		t.Fatalf("Failed to regenerate owner token: %v", err)
+	}
+	if newToken == oldToken {
+		t.Fatalf("Token was not actually regenerated")
+	}
+
+	// Токен, который вернул RegenerateToken, должен работать сразу.
+	if _, err := svc.Authenticate(newToken); err != nil {
+		t.Fatalf("Freshly regenerated token is not authenticatable: %v", err)
+	}
+
+	// Логин обязан вернуть тот же новый токен, а не устаревшую копию.
+	_, loginToken, err := svc.Login("owner", "supersecret")
+	if err != nil {
+		t.Fatalf("Login after regenerate failed: %v", err)
+	}
+	if loginToken != newToken {
+		t.Fatalf("Login returned stale token:\n  got  %q\n  want %q", loginToken, newToken)
+	}
+
+	// И выданный логином токен тоже должен проходить аутентификацию.
+	if _, err := svc.Authenticate(loginToken); err != nil {
+		t.Fatalf("Token handed out by login is not authenticatable: %v", err)
+	}
+
+	// Старый токен после смены работать не должен.
+	if _, err := svc.Authenticate(oldToken); err == nil {
+		t.Errorf("Old token must stop working after regeneration")
+	}
+}
+
+// Режим без пароля: сервер открыт, подходит пустой или произвольный токен.
+func TestOpenModeAcceptsAnyToken(t *testing.T) {
+	svc, cleanup := setupTestEnv(t, "")
+	defer cleanup()
+
+	for _, token := range []string{"", "garbage", "ts_deadbeef"} {
+		u, err := svc.Authenticate(token)
+		if err != nil {
+			t.Fatalf("Open mode must accept token %q, got error: %v", token, err)
+		}
+		if !u.Rank.IsOwner() {
+			t.Errorf("Token %q: expected Owner rank, got %d", token, u.Rank)
+		}
+	}
+
+	if _, token, err := svc.Login("owner", ""); err != nil {
+		t.Fatalf("Open mode login failed: %v", err)
+	} else if _, err := svc.Authenticate(token); err != nil {
+		t.Fatalf("Open mode: token from login was rejected: %v", err)
+	}
+}
+
+// Owner защищён от бана: и админом, и самим собой.
+func TestOwnerCannotBeBanned(t *testing.T) {
+	svc, cleanup := setupTestEnv(t, "secret")
+	defer cleanup()
+
+	owner, _, err := svc.Login("owner", "secret")
+	if err != nil {
+		t.Fatalf("Login failed: %v", err)
+	}
+
+	if err := svc.BanUser(owner, owner.ID, true); !errors.Is(err, ErrOwnerProtected) {
+		t.Errorf("Owner must not be able to ban himself, got: %v", err)
+	}
+
+	admin, err := svc.CreateUser(owner, "admin_x", "pass", RankAdmin, Limits{})
+	if err != nil {
+		t.Fatalf("Failed to create admin: %v", err)
+	}
+	if err := svc.BanUser(admin, owner.ID, true); !errors.Is(err, ErrOwnerProtected) {
+		t.Errorf("Admin must not be able to ban Owner, got: %v", err)
 	}
 }
