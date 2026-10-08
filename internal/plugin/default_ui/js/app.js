@@ -28,6 +28,10 @@ function setOffline(off) {
 async function pingOnce() {
     try {
         const res = await fetch('/api/system/ping', { cache: 'no-store' });
+        if (res.status === 401) {
+            location.href = '/login';
+            return;
+        }
         setOffline(!res.ok);
     } catch (e) {
         setOffline(true);
@@ -65,9 +69,16 @@ function startEvents() {
 
 // ─── User ─────────────────────────────────────────────────────
 
+// loadUser загружает профиль пользователя.
+// 401 - это не оффлайн, а отсутствие валидной сессии: уводим на логин.
+// Баннер недоступности показываем только при реальной сетевой ошибке.
 async function loadUser() {
     try {
         const res = await fetch('/api/auth/me');
+        if (res.status === 401) {
+            location.href = '/login';
+            return;
+        }
         if (res.ok) {
             window.me = await res.json();
             renderUser(window.me);

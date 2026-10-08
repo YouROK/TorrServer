@@ -85,13 +85,15 @@ func (s *Server) registerRoutes() {
 	s.router.POST("/api/auth/login", s.handleLogin)
 	s.router.POST("/api/auth/logout", s.handleLogout)
 
+	// Ping сервера
+	s.router.GET("/api/system/ping", s.handlePing)
+
 	// Защищенные роуты API
 	api := s.router.Group("/api", AuthMiddleware(s.userSvc))
 	{
 		api.GET("/auth/me", s.handleGetMe)
 
 		// Системные эндпоинты
-		api.GET("/system/ping", s.handlePing)
 		api.GET("/system/version", s.handleGetVersion)
 		api.GET("/system/logs", s.handleGetLogs)
 		api.POST("/system/blocklist", s.handleSetBlocklist)

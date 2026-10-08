@@ -112,6 +112,18 @@
             return;
         }
 
+        try {
+            const me = await fetch('/api/auth/me', { cache: 'no-store' });
+            if (me.status === 401) {
+                const msg = t('session_not_saved');
+                errorEl.textContent = msg;
+                showToast(msg);
+                return;
+            }
+        } catch (err) {
+            // Сеть отвалилась сразу после логина - не блокируем переход.
+        }
+
         location.href = from;
     });
 </script>

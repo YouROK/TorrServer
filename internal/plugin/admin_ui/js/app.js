@@ -66,11 +66,14 @@ async function api(path, opts = {}) {
             headers: { 'Content-Type': 'application/json' },
         }, opts));
     } catch (e) {
+        if (e && e.name === 'AbortError') throw new Error('request aborted');
         showOffline();
         throw new Error('server offline');
     }
 
     if (res.status === 401) {
+        // Сессия недействительна - уходим на логин, сняв баннер недоступности.
+        hideOffline();
         location.href = '/login';
         throw new Error('unauthorized');
     }
@@ -117,12 +120,27 @@ function hideOffline() {
 let healthTimer = null;
 function startHealthCheck() {
     if (healthTimer) return;
+
+    const stop = () => {
+        clearInterval(healthTimer);
+        healthTimer = null;
+    };
+
     healthTimer = setInterval(async () => {
         try {
             const res = await fetch('/api/system/ping', { cache: 'no-store' });
+
+            // Сессия недействительна: сервер жив, поэтому баннер недоступности
+            // снимаем и уходим на логин вместо бесконечного «переподключения».
+            if (res.status === 401) {
+                stop();
+                hideOffline();
+                location.href = '/login';
+                return;
+            }
+
             if (res.ok) {
-                clearInterval(healthTimer);
-                healthTimer = null;
+                stop();
                 hideOffline();
                 route();
             }
