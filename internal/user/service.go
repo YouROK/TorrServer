@@ -75,17 +75,17 @@ func (s *Service) IsAuthRequired() bool {
 
 // Authenticate вызывается при каждом HTTP-запросе
 func (s *Service) Authenticate(token string) (*User, error) {
-	// 1. Если пароль не задан в config.yaml — пускаем всех как Owner!
+	// Если пароль не задан в config.yaml - пускаем всех как Owner!
 	if !s.IsAuthRequired() {
 		return s.ownerU, nil
 	}
 
-	// 2. Если пароль задан, но токен пустой — отказ
+	// Если пароль задан, но токен пустой - отказ
 	if token == "" {
 		return nil, ErrTokenNotFound
 	}
 
-	// 3. Ищем пользователя по токену в базе за O(1)
+	// Ищем пользователя по токену в базе за O(1)
 	u, err := s.store.GetUserByToken(token)
 	if err != nil {
 		return nil, err
@@ -100,12 +100,15 @@ func (s *Service) Authenticate(token string) (*User, error) {
 
 // Login аутентифицирует по логину и паролю, возвращая токен
 func (s *Service) Login(username, password string) (*User, string, error) {
-	// Вход под Owner
 	if username == "owner" {
 		if s.IsAuthRequired() && password != s.cfg.Auth.OwnerPassword {
 			return nil, "", ErrInvalidPassword
 		}
-		return s.ownerU, s.ownerU.APIToken, nil
+		owner, err := s.store.GetUserByID("owner")
+		if err != nil {
+			return nil, "", err
+		}
+		return owner, owner.APIToken, nil
 	}
 
 	// Вход для остальных пользователей
@@ -118,7 +121,6 @@ func (s *Service) Login(username, password string) (*User, string, error) {
 		return nil, "", ErrUserIsBanned
 	}
 
-	// Проверяем bcrypt хэш пароля
 	if err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password)); err != nil {
 		return nil, "", ErrInvalidPassword
 	}
@@ -168,9 +170,13 @@ func (s *Service) CreateUser(actor *User, username, password string, rank RoleRa
 	return u, nil
 }
 
-// GetUserByID находит пользователя по его ID (включая профиль Owner)
+// GetUserByID находит пользователя по его ID (включая профиль Owner).
+// Для Owner читаем из БД, чтобы профиль не расходился с сохранённым токеном.
 func (s *Service) GetUserByID(id string) (*User, error) {
 	if id == "owner" || (s.ownerU != nil && id == s.ownerU.ID) {
+		if u, err := s.store.GetUserByID(s.ownerU.ID); err == nil {
+			return u, nil
+		}
 		return s.ownerU, nil
 	}
 	return s.store.GetUserByID(id)
@@ -333,7 +339,7 @@ func (s *Service) RemoveTorrent(u *User, hash string) error {
 		"hash":    hash,
 	})
 
-	// Если этот торрент не держит больше ни один другой пользователь — выгружаем из RAM
+	// Если этот торрент не держит больше ни один другой пользователь выгружаем из RAM
 	if isLastOwner {
 		log.Infof("[Torrent] Torrent '%s' has no owners left. Dropping from RAM cache...", hash)
 		s.bus.Emit("torrent:drop", hash)
