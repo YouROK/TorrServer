@@ -118,3 +118,30 @@ func TestRegenerateOtherUserLeavesCookieAlone(t *testing.T) {
 		t.Errorf("Cookie must not change when regenerating another user's token, got %q", cookieToken)
 	}
 }
+
+// Health-check /api/system/ping обязан быть публичным: он отвечает на вопрос
+// «жив ли сервер», а не «авторизован ли клиент». Иначе при истёкшей куке он
+// отдавал 401, и фронтенд рисовал «сервер недоступен» на работающем сервере.
+// Остальные роуты при этом должны остаться защищёнными.
+func TestPingIsPublicOthersProtected(t *testing.T) {
+	s, _ := setupAuthTestEnv(t, "supersecret")
+	s.registerRoutes()
+
+	cases := []struct {
+		path string
+		want int
+	}{
+		{"/api/system/ping", http.StatusOK},
+		{"/api/auth/me", http.StatusUnauthorized},
+		{"/api/users", http.StatusUnauthorized},
+		{"/api/system/logs", http.StatusUnauthorized},
+	}
+
+	for _, tc := range cases {
+		rec := httptest.NewRecorder()
+		s.router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, tc.path, nil))
+		if rec.Code != tc.want {
+			t.Errorf("%s: got %d, want %d", tc.path, rec.Code, tc.want)
+		}
+	}
+}
