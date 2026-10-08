@@ -28,8 +28,13 @@ func (s *Server) handleLogin(c *gin.Context) {
 	}
 
 	// Устанавливаем Cookie на 30 дней
-	c.SetCookie(CookieTokenName, token, 3600*24*30, "/", "", false, true)
+	setTokenCookie(c, token)
 	c.JSON(http.StatusOK, gin.H{"user": u, "token": token})
+}
+
+// setTokenCookie выставляет cookie с токеном доступа (30 дней)
+func setTokenCookie(c *gin.Context, token string) {
+	c.SetCookie(CookieTokenName, token, 3600*24*30, "/", "", false, true)
 }
 
 func (s *Server) handleLogout(c *gin.Context) {

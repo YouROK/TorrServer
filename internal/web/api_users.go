@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"silo/internal/log"
+	torr "silo/internal/torrent"
 	"silo/internal/user"
 
 	"github.com/gin-gonic/gin"
@@ -113,6 +114,10 @@ func (s *Server) handleRegenerateToken(c *gin.Context) {
 		return
 	}
 
+	if actor.ID == targetID {
+		setTokenCookie(c, newToken)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"token": newToken})
 }
 
@@ -151,7 +156,29 @@ func (s *Server) handleSetRank(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "rank updated"})
 }
 
-// handleAdminListTorrents показывает торренты конкретного пользователя
+// adminTorrentView - раздача глазами админа: метаданные карточки пользователя
+// плюс живое состояние движка и активные HTTP-потоки.
+type adminTorrentView struct {
+	Hash             string           `json:"torrent_hash"`
+	Title            string           `json:"title"`
+	Category         string           `json:"category"`
+	Poster           string           `json:"poster"`
+	Size             int64            `json:"size"`
+	Stat             int              `json:"stat"`
+	StatString       string           `json:"stat_string"`
+	InRAM            bool             `json:"in_ram"`
+	DownloadSpeed    float64          `json:"download_speed"`
+	ActivePeers      int              `json:"active_peers"`
+	TotalPeers       int              `json:"total_peers"`
+	ConnectedSeeders int              `json:"connected_seeders"`
+	LoadedSize       int64            `json:"loaded_size"`
+	StreamCount      int              `json:"stream_count"`
+	Streams          []StreamSnapshot `json:"streams"`
+}
+
+// handleAdminListTorrents показывает торренты конкретного пользователя.
+// Дополнительно отдаёт живую статистику и активные HTTP-потоки, чтобы админ
+// видел, что пользователь смотрит прямо сейчас, с каких адресов и на какой скорости.
 func (s *Server) handleAdminListTorrents(c *gin.Context) {
 	val, _ := c.Get("user")
 	actor := val.(*user.User)
@@ -163,5 +190,48 @@ func (s *Server) handleAdminListTorrents(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"torrents": list})
+	// Личные метаданные (название, постер) берём от лица самого пользователя.
+	target, err := s.userSvc.GetUserByID(targetID)
+	if err != nil {
+		handleUserError(c, err)
+		return
+	}
+
+	// Активные потоки этого пользователя, сгруппированные по хэшу.
+	streamsByHash := s.streamTracker.ForUser(targetID)
+
+	views := make([]adminTorrentView, 0, len(list))
+	for _, ut := range list {
+		view := adminTorrentView{
+			Hash:     ut.TorrentHash,
+			Title:    ut.Title,
+			Category: ut.Category,
+			Poster:   ut.Poster,
+			Streams:  []StreamSnapshot{},
+		}
+
+		if st, err := s.torrentMgr.GetTorrentStatus(target, ut.TorrentHash); err == nil {
+			view.Title = st.Title
+			view.Category = st.Category
+			view.Poster = st.Poster
+			view.Size = st.TorrentSize
+			view.Stat = int(st.Stat)
+			view.StatString = st.StatString
+			view.DownloadSpeed = st.DownloadSpeed
+			view.ActivePeers = st.ActivePeers
+			view.TotalPeers = st.TotalPeers
+			view.ConnectedSeeders = st.ConnectedSeeders
+			view.LoadedSize = st.LoadedSize
+			view.InRAM = st.Stat != torr.TorrentInDB
+		}
+
+		if streams := streamsByHash[ut.TorrentHash]; len(streams) > 0 {
+			view.Streams = streams
+			view.StreamCount = len(streams)
+		}
+
+		views = append(views, view)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"torrents": views})
 }
