@@ -441,24 +441,302 @@ async function showRankModal(id, currentRank) {
     loadUsers();
 }
 
-async function showUserTorrents(id, username) {
-    try {
-        const data = await api('/users/' + id + '/torrents');
-        const torrents = data.torrents || [];
-        let body = '';
+// fmtSpeed форматирует байты в секунду
+function fmtSpeed(bps) {
+    if (!bps || bps <= 0) return '-';
+    if (bps >= 1048576) return (bps / 1048576).toFixed(1) + ' MiB/s';
+    if (bps >= 1024) return (bps / 1024).toFixed(0) + ' KiB/s';
+    return Math.round(bps) + ' B/s';
+}
 
-        if (torrents.length === 0) {
-            body = '<p>' + t('no_torrents') + '</p>';
+// fmtDuration форматирует секунды в компактный вид
+function fmtDuration(sec) {
+    sec = Math.max(0, Math.floor(sec || 0));
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    if (h > 0) return h + 'h ' + m + 'm';
+    if (m > 0) return m + 'm ' + s + 's';
+    return s + 's';
+}
+
+// shortText сокращает строку посередине: начало и конец обычно информативнее
+// середины. Полное значение показывается в подсказке при наведении.
+function shortText(s, max) {
+    const str = String(s == null ? '' : s);
+    if (str.length <= max) return str;
+
+    const keep = max - 3;
+    const head = Math.ceil(keep / 2);
+    const tail = Math.floor(keep / 2);
+
+    return str.slice(0, head) + '...' + str.slice(str.length - tail);
+}
+
+// setText обновляет текст узла, только если значение реально изменилось.
+// Узел при этом не пересоздаётся: нет мигания и не сбрасывается выделение текста.
+function setText(el, value) {
+    const next = value == null ? '' : String(value);
+    if (el.textContent !== next) el.textContent = next;
+}
+
+// syncList приводит дочерние узлы контейнера в соответствие списку items,
+// переиспользуя существующие элементы по ключу. Это «сопоставление по ключу»
+// (keyed reconciliation): строки обновляются на месте, лишние удаляются,
+// недостающие добавляются - разметка целиком не пересобирается.
+// Ровно то же самое внутри делают React/Vue, только автоматически.
+function syncList(container, items, keyOf, create, update) {
+    const existing = new Map();
+    for (const el of Array.from(container.children)) {
+        existing.set(el.dataset.key, el);
+    }
+
+    let prev = null;
+    for (const item of items) {
+        const key = String(keyOf(item));
+        let el = existing.get(key);
+
+        if (el) {
+            existing.delete(key);
         } else {
-            body = '<div class="info-grid">' + torrents.map((tr) =>
-                `<span>${tr.category || '—'}</span><b>${tr.title} <small style="color:var(--silo-text-faint)">${tr.torrent_hash.slice(0, 8)}</small></b>`
-            ).join('') + '</div>';
+            el = create(item);
+            el.dataset.key = key;
         }
 
-        await modalAlert(username + ' — ' + t('user_torrents'), body);
-    } catch (e) {
-        toast(e.message);
+        update(el, item);
+
+        const ref = prev ? prev.nextSibling : container.firstChild;
+        if (el !== ref) container.insertBefore(el, ref);
+        prev = el;
     }
+
+    for (const el of existing.values()) el.remove();
+}
+
+// streamIPTitle собирает расшифровку адреса для подсказки при наведении:
+// реальный адрес соединения, адрес из заголовков прокси и клиент плеера.
+function streamIPTitle(st) {
+    const parts = [];
+    if (st.forwarded_ip) parts.push('X-Forwarded-For: ' + st.forwarded_ip);
+    if (st.client_ip) parts.push('TCP: ' + st.client_ip);
+    if (st.user_agent) parts.push(st.user_agent);
+    return parts.join('\n');
+}
+
+// Показывает раздачи пользователя: таблица + активные подключения в реальном времени.
+// После первой отрисовки обновляются только изменившиеся ячейки, а не вся таблица.
+async function showUserTorrents(id, username) {
+    let streamTimer = null;
+
+    // Разметка создаётся один раз. Дальше меняем только текст в узлах.
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal modal-wide">
+            <h2>${esc(username)} - ${t('user_torrents')}</h2>
+            <div class="modal-body">
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>${t('torrent')}</th>
+                                <th>${t('connections')}</th>
+                                <th>${t('stream_details')}</th>
+                                <th>${t('speed')}</th>
+                                <th>${t('peers_seeds')}</th>
+                                <th>${t('size')}</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <p class="hint" data-empty hidden>${t('no_torrents')}</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" type="button" data-close>${t('ok')}</button>
+            </div>
+        </div>`;
+
+    const tbody = overlay.querySelector('tbody');
+    const emptyHint = overlay.querySelector('[data-empty]');
+
+    // ── Строка одного подключения (потока) ───────────────────────────────
+    // Колонки: адрес клиента, скорость и время. Имя файла показываем
+    // в подсказке к скорости, чтобы строка оставалась компактной.
+    const createStreamRow = () => {
+        const row = document.createElement('div');
+        row.className = 'stream-row';
+
+        const ip = document.createElement('span');
+        ip.className = 'stream-meta stream-ip';
+
+        const speed = document.createElement('span');
+        speed.className = 'stream-meta stream-speed';
+
+        const dur = document.createElement('span');
+        dur.className = 'stream-meta stream-dur';
+
+        row.append(ip, speed, dur);
+        row._c = { ip, speed, dur };
+        return row;
+    };
+
+    const updateStreamRow = (row, st) => {
+        const c = row._c;
+
+        // Показываем адрес клиента: если запрос пришёл через прокси, берём его,
+        // а реальный адрес соединения остаётся в подсказке.
+        setText(c.ip, st.forwarded_ip || st.client_ip || '-');
+        c.ip.title = streamIPTitle(st);
+
+        setText(c.speed, fmtSpeed(st.speed_bps));
+        setText(c.dur, fmtDuration(st.duration_sec));
+
+        // В подсказке к скорости - имя файла и объём отданного.
+        // В title перевод строки переносится как есть, поэтому строк может быть несколько.
+        const speedTip = [];
+        if (st.file_name) speedTip.push(t('file') + ': ' + st.file_name);
+        if (st.bytes > 0) speedTip.push(t('transferred') + ': ' + fmtBytes(st.bytes));
+        c.speed.title = speedTip.join('\n');
+
+        c.dur.title = t('connected_since') + ': ' + new Date(st.started_at * 1000).toLocaleString();
+    };
+
+    // ── Строка раздачи ───────────────────────────────────────────────────
+    const createRow = () => {
+        const row = document.createElement('tr');
+
+        const tdTitle = document.createElement('td');
+        tdTitle.className = 'torrent-cell';
+        const title = document.createElement('b');
+        const sub = document.createElement('div');
+        sub.className = 'cell-sub';
+        tdTitle.append(title, sub);
+
+        const tdConn = document.createElement('td');
+        tdConn.className = 'conn-cell';
+        const conn = document.createElement('span');
+
+        const tdStreams = document.createElement('td');
+        const list = document.createElement('div');
+        list.className = 'stream-list';
+        tdStreams.appendChild(list);
+
+        const tdSpeed = document.createElement('td');
+        tdSpeed.className = 'speed-cell';
+        const speed = document.createElement('span');
+
+        const tdPeers = document.createElement('td');
+        const tdSize = document.createElement('td');
+        tdSize.className = 'size-cell';
+
+        tdConn.appendChild(conn);
+        tdSpeed.appendChild(speed);
+
+        row.append(tdTitle, tdConn, tdStreams, tdSpeed, tdPeers, tdSize);
+        row._c = {
+            title, sub, conn, list,
+            speed, peers: tdPeers, size: tdSize,
+        };
+        return row;
+    };
+
+    const updateRow = (row, tr) => {
+        const c = row._c;
+
+        // Название сокращаем, чтобы длинное имя не переносилось и не растило строку.
+        // Полное название, хэш и категория - в подсказке при наведении.
+        setText(c.title, shortText(tr.title, 46));
+
+        const titleTip = [tr.title || ''];
+        if (tr.category) titleTip.push(t('category') + ': ' + tr.category);
+        if (tr.StatString) titleTip.push(t('status') + ': ' + tr.StatString);
+        if (tr.size > 0) titleTip.push(t('size') + ': ' + fmtBytes(tr.size));
+        if (tr.torrent_hash) titleTip.push(t('hash') + ': ' + tr.torrent_hash);
+        c.title.title = titleTip.filter(Boolean).join('\n');
+
+        setText(c.sub, (tr.torrent_hash || '').slice(0, 12));
+
+        // Колонка «Потоки»: просто число HTTP-потоков, без бейджа.
+        const count = tr.stream_count || 0;
+        if (count > 0) {
+            c.conn.className = '';
+            setText(c.conn, count);
+        } else {
+            c.conn.className = 'muted';
+            setText(c.conn, '-');
+        }
+
+        // Колонка «Инфо»: адрес, скорость и время подключения.
+        syncList(c.list, tr.streams || [], (st) => st.id, createStreamRow, updateStreamRow);
+
+        if (tr.in_ram) {
+            c.speed.className = '';
+            // Показываем только загрузку: отдача здесь неинтересна.
+            setText(c.speed, fmtSpeed(tr.download_speed));
+            setText(c.peers, (tr.active_peers || 0) + '/' + (tr.total_peers || 0) + ' \u00b7 ' + (tr.connected_seeders || 0));
+
+            const speedTip = [
+                t('download') + ': ' + fmtSpeed(tr.download_speed),
+                t('loaded') + ': ' + fmtBytes(tr.loaded_size) + ' / ' + fmtBytes(tr.size),
+            ];
+            c.speed.title = speedTip.join('\n');
+
+            const peersTip = [
+                t('active_peers') + ': ' + (tr.active_peers || 0),
+                t('total_peers') + ': ' + (tr.total_peers || 0),
+                t('seeders') + ': ' + (tr.connected_seeders || 0),
+            ];
+            c.peers.title = peersTip.join('\n');
+        } else {
+            c.speed.className = 'muted';
+            setText(c.speed, t('sleeping'));
+            c.speed.title = t('status') + ': ' + (tr.StatString || t('sleeping'));
+            setText(c.peers, '-');
+            c.peers.title = '';
+        }
+
+        setText(c.size, tr.size > 0 ? fmtBytes(tr.size) : '-');
+        c.size.title = tr.size > 0 ? tr.size.toLocaleString() + ' ' + t('bytes') : '';
+
+        c.conn.title = t('connections') + ': ' + count;
+    };
+
+    const close = () => {
+        if (streamTimer) clearInterval(streamTimer);
+        streamTimer = null;
+        overlay.remove();
+    };
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay || e.target.hasAttribute('data-close')) close();
+    });
+
+    document.getElementById('modal-root').appendChild(overlay);
+
+    let initialised = false;
+    const load = async () => {
+        try {
+            const data = await api('/users/' + id + '/torrents');
+            if (!overlay.isConnected) {
+                close();
+                return;
+            }
+
+            const torrents = data.torrents || [];
+            syncList(tbody, torrents, (tr) => tr.torrent_hash, createRow, updateRow);
+            emptyHint.hidden = torrents.length > 0;
+            initialised = true;
+        } catch (e) {
+            if (!initialised && overlay.isConnected) {
+                emptyHint.hidden = false;
+                emptyHint.textContent = e.message;
+            }
+        }
+    };
+
+    await load();
+    streamTimer = setInterval(load, 2000);
 }
 
 async function renderPlugins() {
@@ -766,11 +1044,11 @@ async function showPluginInfo(id) {
             </div>
             <div class="info-grid">
                 <span>version</span><b>${esc(m.version)}</b>
-                <span>author</span><b>${esc(m.author || '—')}</b>
+                <span>author</span><b>${esc(m.author || '-')}</b>
                 <span>theme_ui</span><b>${m.theme_ui}</b>
                 <span>builtin</span><b>${m.builtin}</b>
-                <span>entry</span><b>${esc(m.entry || '—')}</b>
-                <span>icon</span><b>${esc(m.icon || '—')}</b>
+                <span>entry</span><b>${esc(m.entry || '-')}</b>
+                <span>icon</span><b>${esc(m.icon || '-')}</b>
             </div>
             <p class="info-desc">${esc(m.description || '')}</p>
             ${extra}
@@ -1069,15 +1347,15 @@ function showCatalogInfo(id) {
     const compat = catalogCompatible(entry);
     const compatText = compat
         ? 'yes'
-        : 'no — requires ' + esc(entry.min_silo_version);
+        : 'no - requires ' + esc(entry.min_silo_version);
 
     const linkRow = (label, url) =>
-        '<span>' + label + '</span><b><a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(url) + '</a></b>';
+        '<span>' + label + '</span><b><a style="color:var(--silo-amber);font-size:11px;word-break:break-all" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(url) + '</a></b>';
 
     let grid = '<div class="info-grid">' +
         '<span>version</span><b>' + esc(entry.version) + '</b>' +
-        '<span>author</span><b>' + esc(entry.author || '—') + '</b>' +
-        '<span>size</span><b>' + (entry.size ? fmtBytes(entry.size) : '—') + '</b>' +
+        '<span>author</span><b>' + esc(entry.author || '-') + '</b>' +
+        '<span>size</span><b>' + (entry.size ? fmtBytes(entry.size) : '-') + '</b>' +
         '<span>compatible</span><b>' + compatText + '</b>' +
         '<span>sha256</span><b class="mono" style="font-size:11px;word-break:break-all">' + esc(entry.sha256) + '</b>';
     if (entry.homepage) {

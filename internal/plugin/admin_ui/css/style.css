@@ -1,5 +1,5 @@
 /* ============================================================================
-   Silo Admin — адаптивная темная тема (десктоп + мобильные)
+   Silo Admin - адаптивная темная тема (десктоп + мобильные)
    ============================================================================ */
 
 :root {
@@ -697,7 +697,7 @@ input[type="checkbox"]:checked {
     border-color: var(--silo-amber);
 }
 
-/* Галочка рисуется через ::after — тёмная на янтарном фоне для контраста */
+/* Галочка рисуется через ::after - тёмная на янтарном фоне для контраста */
 input[type="checkbox"]:checked::after {
     content: '';
     position: absolute;
@@ -710,7 +710,7 @@ input[type="checkbox"]:checked::after {
     transform: rotate(45deg);
 }
 
-/* Фокус с клавиатуры — янтарная обводка для доступности */
+/* Фокус с клавиатуры - янтарная обводка для доступности */
 input[type="checkbox"]:focus-visible {
     outline: 2px solid var(--silo-amber);
     outline-offset: 2px;
@@ -1040,4 +1040,97 @@ details.manual-install[open] > summary::before {
     font-size: 12px;
     font-family: "JetBrains Mono", monospace;
     margin-top: 2px;
+}
+
+/* ----------------------------------------------------------------------------
+   Раздачи пользователя: широкая модалка с подключениями
+   ---------------------------------------------------------------------------- */
+.modal-wide {
+    width: 1040px;
+    max-width: 100%;
+}
+
+.modal-wide .table-wrap { margin-top: 12px; }
+.modal-wide .table td { white-space: normal; vertical-align: top; }
+
+/* Ширины колонок заданы явно: иначе браузер растягивает «Потоки»,
+   где лежит одна цифра, и сжимает «Инфо» с самым длинным содержимым. */
+.modal-wide .table { table-layout: fixed; }
+
+/* Базовое правило .table th запрещает перенос, из-за чего длинный заголовок
+   вылезал на соседнюю колонку. Здесь разрешаем перенос: так любой заголовок
+   останется в своих границах независимо от ширины колонки. */
+.modal-wide .table th { white-space: normal; }
+.modal-wide .table th:nth-child(1) { width: 34%; }
+.modal-wide .table th:nth-child(2) { width: 80px; text-align: center; }
+.modal-wide .table th:nth-child(3) { width: auto; }
+.modal-wide .table th:nth-child(4) { width: 96px; }
+.modal-wide .table th:nth-child(5) { width: 104px; }
+.modal-wide .table th:nth-child(6) { width: 88px; }
+
+/* Колонка «Потоки»: одна цифра или прочерк - выравниваем по центру */
+.conn-cell { text-align: center; }
+.speed-cell, .size-cell { text-align: right; }
+
+.cell-sub {
+    color: var(--silo-text-faint);
+    font-size: 11px;
+    font-family: "JetBrains Mono", monospace;
+    margin-top: 2px;
+}
+
+/* Приглушённый прочерк вместо пустого значения */
+.muted { color: var(--silo-text-faint); }
+
+/* Список активных HTTP-подключений внутри ячейки «Инфо» */
+.stream-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* Фон и рамку не рисуем: строки подключений выглядят как обычное содержимое
+   окна, а разделяют их тонкие линии. Колонки: адрес, скорость, время. */
+.stream-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 84px 64px;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    font-family: "JetBrains Mono", monospace;
+    color: var(--silo-text-muted);
+    padding: 2px 0;
+}
+
+.stream-row + .stream-row {
+    border-top: 1px solid var(--silo-border);
+}
+
+/* Адрес клиента: обычный цвет текста, как в остальных колонках */
+.stream-ip {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.stream-meta { color: var(--silo-text-faint); }
+.stream-speed { text-align: right; }
+.stream-dur { text-align: right; }
+
+/* Название раздачи не переносим: длинное имя сокращено, полное - в подсказке */
+.torrent-cell b {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+    .modal-wide .table { table-layout: auto; }
+    .stream-row {
+        grid-template-columns: 1fr;
+        gap: 2px;
+    }
+    .stream-speed, .stream-dur { text-align: left; }
+    .conn-cell, .speed-cell, .size-cell { text-align: left; }
 }
