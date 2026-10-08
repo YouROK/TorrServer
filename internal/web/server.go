@@ -24,6 +24,7 @@ type Server struct {
 	pluginMgr     *plugin.Manager
 	router        *gin.Engine
 	pluginsRouter *PluginsRouter
+	streamTracker *StreamTracker
 	httpSrv       *http.Server
 	startedAt     time.Time
 	shutdownFn    func()
@@ -46,6 +47,7 @@ func NewServer(
 		torrentMgr:    torrentMgr,
 		router:        engine,
 		pluginsRouter: plugRouter,
+		streamTracker: NewStreamTracker(),
 		startedAt:     time.Now(),
 	}
 
@@ -167,11 +169,28 @@ func (s *Server) Start() error {
 		IdleTimeout:       5 * time.Minute,
 	}
 
+	s.startStreamJanitor()
+
 	log.Infof("[Web] Server listening on http://%s", addr)
 	if err := s.httpSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
 	return nil
+}
+
+// startStreamJanitor периодически убирает из трекера зависшие потоки,
+// которые так и не отдали ни байта (соединение открылось, но чтение не пошло).
+func (s *Server) startStreamJanitor() {
+	go func() {
+		ticker := time.NewTicker(10 * time.Minute)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			if n := s.streamTracker.Idle(30 * time.Minute); n > 0 {
+				log.Warnf("[Web] Dropped %d stale stream(s) from tracker", n)
+			}
+		}
+	}()
 }
 
 func (s *Server) Stop(ctx context.Context) error {

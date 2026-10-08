@@ -28,7 +28,7 @@ func (s *Server) handleStream(c *gin.Context) {
 	val, _ := c.Get("user")
 	currentUser := val.(*user.User)
 
-	// 1. Пробуждаем торрент (если он спит в БД) и получаем поток байт
+	// Пробуждаем торрент (если он спит в БД) и получаем поток байт
 	reader, fileStat, err := s.torrentMgr.GetStreamReader(currentUser, hashHex, fileIdx)
 	if err != nil {
 		log.Errorf("[Web] Failed to get stream reader for %s/%d: %v", hashHex, fileIdx, err)
@@ -40,7 +40,7 @@ func (s *Server) handleStream(c *gin.Context) {
 		return
 	}
 
-	// 2. Гарантируем закрытие ридера и отметку о просмотре
+	// Гарантируем закрытие ридера и отметку о просмотре
 	defer func() {
 		_ = reader.Close()
 		if markErr := s.torrentMgr.SetFileViewed(currentUser, hashHex, fileIdx, true); markErr != nil {
@@ -48,20 +48,57 @@ func (s *Server) handleStream(c *gin.Context) {
 		}
 	}()
 
-	// 3. Определяем MIME-тип по расширению файла
+	// Определяем MIME-тип по расширению файла
 	ext := strings.ToLower(path.Ext(fileStat.Path))
 	contentType := mime.TypeByExtension(ext)
 	if contentType == "" {
 		contentType = "application/octet-stream"
 	}
 
-	// 4. Устанавливаем заголовки для DLNA-плееров, Smart TV и браузеров
+	// Устанавливаем заголовки для DLNA-плееров, Smart TV и браузеров
 	c.Header("transferMode.dlna.org", "Streaming")
 	c.Header("contentFeatures.dlna.org", "DLNA.ORG_OP=01;DLNA.ORG_CI=0")
 	c.Header("Accept-Ranges", "bytes")
 	c.Header("Content-Type", contentType)
 
-	// 5. Делегируем обработку Range-запросов (Seek) стандартной библиотеке Go.
+	// Регистрируем поток в трекере: админка видит, кто и с какого IP смотрит.
+	// Берём реальный адрес соединения (RemoteIP), а не ClientIP: у gin по умолчанию
+	// все прокси считаются доверенными, поэтому ClientIP подставляется из заголовка
+	// X-Forwarded-For от кого угодно. Оба адреса показываем отдельно.
+	handle := s.streamTracker.Open(StreamOpen{
+		UserID:      currentUser.ID,
+		Hash:        hashHex,
+		FileIdx:     fileIdx,
+		FileName:    fileStat.Name,
+		ClientIP:    c.RemoteIP(),
+		ForwardedIP: forwardedIP(c),
+		UserAgent:   c.Request.UserAgent(),
+	})
+	defer handle.Close()
+
+	// Оборачиваем writer, чтобы считать реально отданные байты (для скорости).
+	c.Writer = &countingWriter{ResponseWriter: c.Writer, handle: handle}
+
+	// Делегируем обработку Range-запросов (Seek) стандартной библиотеке Go.
 	// http.ServeContent сам распарсит заголовок Range, сделает Seek и отдаст нужный кусок.
 	http.ServeContent(c.Writer, c.Request, fileStat.Path, time.Now(), reader)
+}
+
+// forwardedIP возвращает адрес клиента из заголовков reverse-proxy.
+// Нужен, когда Silo стоит за прокси: реальный клиент будет здесь,
+// а не в адресе TCP-соединения.
+func forwardedIP(c *gin.Context) string {
+	for _, header := range []string{"X-Forwarded-For", "X-Real-IP"} {
+		raw := strings.TrimSpace(c.GetHeader(header))
+		if raw == "" {
+			continue
+		}
+
+		// X-Forwarded-For может содержать цепочку: client, proxy1, proxy2
+		first := strings.TrimSpace(strings.Split(raw, ",")[0])
+		if first != "" {
+			return first
+		}
+	}
+	return ""
 }
