@@ -32,13 +32,17 @@ func (s *Server) handleLogin(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"user": u, "token": token})
 }
 
-// setTokenCookie выставляет cookie с токеном доступа (30 дней)
+// setTokenCookie выставляет cookie с токеном доступа (30 дней).
+// SameSite=Lax не даёт отправлять cookie в межсайтовых POST-запросах,
+// что защищает изменяющие состояние ручки от CSRF.
 func setTokenCookie(c *gin.Context, token string) {
+	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie(CookieTokenName, token, 3600*24*30, "/", "", false, true)
 }
 
 func (s *Server) handleLogout(c *gin.Context) {
-	// Удаляем Cookie
+	// Удаляем cookie теми же атрибутами, иначе браузер не сопоставит её с прежней.
+	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie(CookieTokenName, "", -1, "/", "", false, true)
 	c.JSON(http.StatusOK, gin.H{"status": "logged out"})
 }

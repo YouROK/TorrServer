@@ -85,7 +85,12 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 		}
 	}
 
-	// TODO: Добавить смену пароля, если req.Password != nil
+	if req.Password != nil {
+		if err := s.userSvc.ChangePassword(actor, targetID, *req.Password); err != nil {
+			handleUserError(c, err)
+			return
+		}
+	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "updated"})
 }
@@ -129,6 +134,10 @@ func handleUserError(c *gin.Context, err error) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "cannot modify or delete the owner"})
 	} else if errors.Is(err, user.ErrUserNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+	} else if errors.Is(err, user.ErrInvalidPassword) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid password"})
+	} else if errors.Is(err, user.ErrPasswordTooLong) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "password is too long"})
 	} else {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}

@@ -18,6 +18,7 @@ var (
 	ErrPermissionDenied = errors.New("permission denied")
 	ErrUserIsBanned     = errors.New("user is banned")
 	ErrInvalidPassword  = errors.New("invalid password")
+	ErrPasswordTooLong  = errors.New("password is too long")
 	ErrOwnerProtected   = errors.New("cannot modify or delete the owner")
 )
 
@@ -168,6 +169,45 @@ func (s *Service) CreateUser(actor *User, username, password string, rank RoleRa
 	s.bus.Emit("user:created", u)
 
 	return u, nil
+}
+
+// ChangePassword задаёт новый пароль пользователя.
+// Пароль Owner хранится в config.yaml, поэтому через сервис он не меняется.
+func (s *Service) ChangePassword(actor *User, targetID, newPassword string) error {
+	if newPassword == "" {
+		return ErrInvalidPassword
+	}
+
+	target, err := s.store.GetUserByID(targetID)
+	if err != nil {
+		return err
+	}
+
+	if target.Rank.IsOwner() {
+		return ErrOwnerProtected
+	}
+
+	// Пользователь может сменить пароль себе, остальным - только вышестоящий.
+	if actor.ID != target.ID && !actor.CanManage(target) {
+		return ErrPermissionDenied
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		// bcrypt не принимает пароли длиннее 72 байт - это ошибка ввода, а не сбоя.
+		if errors.Is(err, bcrypt.ErrPasswordTooLong) {
+			return ErrPasswordTooLong
+		}
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	target.PasswordHash = string(hash)
+	if err := s.store.SaveUser(target); err != nil {
+		return err
+	}
+
+	log.Infof("[User] Password changed for user '%s'", target.Username)
+	return nil
 }
 
 // GetUserByID находит пользователя по его ID (включая профиль Owner).

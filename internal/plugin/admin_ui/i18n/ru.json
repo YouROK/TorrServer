@@ -112,5 +112,11 @@
   "seeders": "Сиды",
   "bytes": "байт",
   "category": "Категория",
-  "hash": "Хэш"
+  "hash": "Хэш",
+  "change_password": "Сменить пароль",
+  "change_password_for": "Новый пароль для",
+  "new_password": "Новый пароль",
+  "repeat_password": "Повторите пароль",
+  "password_empty": "Пароль не может быть пустым",
+  "passwords_differ": "Пароли не совпадают"
 }

@@ -185,6 +185,11 @@ function wrapTable(tableHtml) {
     return '<div class="table-wrap">' + tableHtml + '</div>';
 }
 
+// showModal показывает модальное окно и возвращает значение нажатой кнопки.
+// У кнопки с collect: true вызывается opts.getValue(box, value) до удаления окна
+// из DOM: после remove() поля формы уже недоступны. Если getValue вернул
+// undefined, окно остаётся открытым - так показывают ошибку ввода на месте.
+// Остальные кнопки (отмена) возвращают своё value, не читая форму.
 function showModal(opts) {
     return new Promise((resolve) => {
         const root = document.getElementById('modal-root');
@@ -207,7 +212,17 @@ function showModal(opts) {
             btn.type = 'button';
             btn.className = 'btn' + (b.primary ? '' : ' btn-secondary') + (b.danger ? ' btn-danger' : '');
             btn.textContent = b.label;
-            btn.addEventListener('click', () => { box.remove(); resolve(b.value); });
+            btn.addEventListener('click', () => {
+                if (b.collect && opts.getValue) {
+                    const value = opts.getValue(box, b.value);
+                    if (value === undefined) return;
+                    box.remove();
+                    resolve(value);
+                    return;
+                }
+                box.remove();
+                resolve(b.value);
+            });
             actions.appendChild(btn);
         });
 
@@ -371,13 +386,20 @@ async function renderUsers() {
 async function loadUsers() {
     try {
         const data = await api('/users');
-        const rows = (data.users || []).map((u) => `
+        const rows = (data.users || []).map((u) => {
+            // У Owner пароль задаётся в config.yaml, менять его из админки нельзя.
+            const passwordBtn = u.rank >= 100
+                ? ''
+                : `<button class="btn btn-secondary btn-sm" data-act="password" data-id="${u.id}" data-name="${u.username}" type="button">${t('change_password')}</button>`;
+
+            return `
             <tr>
                 <td>${u.username}</td>
                 <td>${badgeRank(u.rank)}</td>
                 <td>${u.is_banned ? '<span class="badge badge-banned">' + t('banned') + '</span>' : t('active')}</td>
                 <td class="actions-cell">
                     <button class="btn btn-secondary btn-sm" data-act="rank" data-id="${u.id}" data-rank="${u.rank}" type="button">${t('set_rank')}</button>
+                    ${passwordBtn}
                     <button class="btn btn-secondary btn-sm" data-act="torrents" data-id="${u.id}" data-name="${u.username}" type="button">${t('view_torrents')}</button>
                     <button class="btn btn-secondary btn-sm" data-act="ban" data-id="${u.id}" data-banned="${u.is_banned}" type="button">
                         ${u.is_banned ? t('unban') : t('ban')}
@@ -386,7 +408,8 @@ async function loadUsers() {
                     <button class="btn btn-danger btn-sm" data-act="del" data-id="${u.id}" type="button">${t('delete')}</button>
                 </td>
             </tr>
-        `).join('');
+        `;
+        }).join('');
 
         const html = `
             <table class="table" id="users-table">
@@ -425,6 +448,8 @@ async function onUserAction(e) {
         } else if (act === 'rank') {
             const currentRank = parseInt(e.target.dataset.rank, 10);
             await showRankModal(id, currentRank);
+        } else if (act === 'password') {
+            await showPasswordModal(id, e.target.dataset.name);
         } else if (act === 'torrents') {
             await showUserTorrents(id, e.target.dataset.name);
         }
@@ -442,21 +467,75 @@ async function showRankModal(id, currentRank) {
         </select>
     `;
 
+    // Значение читаем внутри getValue, пока окно ещё в DOM.
     const result = await showModal({
         title: t('set_rank'),
         body: body,
+        getValue: (box, value) => {
+            if (!value) return null;
+            const el = box.querySelector('#rank-select');
+            return el ? parseInt(el.value, 10) : null;
+        },
         buttons: [
             { label: t('cancel'), value: false },
-            { label: t('save'), value: true, primary: true },
+            { label: t('save'), value: true, primary: true, collect: true },
         ],
     });
 
     if (!result) return;
 
-    const newRank = parseInt(document.getElementById('rank-select').value, 10);
-    await api('/users/' + id + '/rank', { method: 'POST', body: JSON.stringify({ rank: newRank }) });
+    await api('/users/' + id + '/rank', { method: 'POST', body: JSON.stringify({ rank: result }) });
     toast(t('done'));
     loadUsers();
+}
+
+// showPasswordModal запрашивает новый пароль пользователя и сохраняет его.
+async function showPasswordModal(id, username) {
+    const body = `
+        <p style="margin-bottom:12px">${t('change_password_for')} <b>${esc(username)}</b></p>
+        <label class="field"><span>${t('new_password')}</span>
+            <input class="input" id="pw-new" type="password" autocomplete="new-password"></label>
+        <label class="field"><span>${t('repeat_password')}</span>
+            <input class="input" id="pw-repeat" type="password" autocomplete="new-password"></label>
+        <p class="hint" id="pw-hint"></p>
+    `;
+
+    const result = await showModal({
+        title: t('change_password'),
+        body: body,
+        // Проверяем ввод до закрытия окна. При ошибке окно остаётся открытым,
+        // а текст показывается рядом с полями - введённое не теряется.
+        getValue: (box) => {
+            const hint = box.querySelector('#pw-hint');
+            const pw = box.querySelector('#pw-new').value;
+            const repeat = box.querySelector('#pw-repeat').value;
+
+            if (!pw) {
+                hint.textContent = t('password_empty');
+                return undefined;
+            }
+            if (pw !== repeat) {
+                hint.textContent = t('passwords_differ');
+                return undefined;
+            }
+
+            hint.textContent = '';
+            return { password: pw };
+        },
+        buttons: [
+            { label: t('cancel'), value: null },
+            { label: t('save'), value: true, primary: true, collect: true },
+        ],
+    });
+
+    if (!result) return;
+
+    try {
+        await api('/users/' + id, { method: 'PUT', body: JSON.stringify({ password: result.password }) });
+        toast(t('done'));
+    } catch (err) {
+        toast(err.message);
+    }
 }
 
 // fmtSpeed форматирует байты в секунду

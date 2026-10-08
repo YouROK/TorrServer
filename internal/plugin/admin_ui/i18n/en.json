@@ -112,5 +112,11 @@
   "seeders": "Seeders",
   "bytes": "bytes",
   "category": "Category",
-  "hash": "Hash"
+  "hash": "Hash",
+  "change_password": "Change password",
+  "change_password_for": "New password for",
+  "new_password": "New password",
+  "repeat_password": "Repeat password",
+  "password_empty": "Password cannot be empty",
+  "passwords_differ": "Passwords do not match"
 }
