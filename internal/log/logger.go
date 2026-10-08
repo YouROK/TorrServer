@@ -105,7 +105,7 @@ func GetRecentLogs() []string {
 // ============================================================================
 
 func logMsg(level slog.Level, msg string, args ...any) {
-	// Если уровень выключен (None) — выходим мгновенно с нулевым оверхедом
+	// Если уровень выключен (None) - выходим мгновенно с нулевым оверхедом
 	if !defaultLogger.Enabled(context.Background(), level) {
 		return
 	}

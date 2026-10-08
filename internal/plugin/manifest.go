@@ -7,7 +7,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// MenuEntry — пункт меню, который плагин хочет добавить в веб-интерфейс
+// MenuEntry - пункт меню, который плагин хочет добавить в веб-интерфейс
 type MenuEntry struct {
 	Title    string `yaml:"title" json:"title"`                   // Текст по умолчанию (fallback)
 	TitleKey string `yaml:"title_key" json:"title_key,omitempty"` // Опциональный ключ i18n

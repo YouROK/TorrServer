@@ -68,7 +68,7 @@ func (s *Server) handleAddTorrent(c *gin.Context) {
 	var spec *torrent.TorrentSpec
 
 	switch {
-	// torrs:// — наш упакованный формат со всеми полями
+	// torrs:// - наш упакованный формат со всеми полями
 	case strings.HasPrefix(link, "torrs://"):
 		th, err := torrshash.Unpack(strings.TrimPrefix(link, "torrs://"))
 		if err != nil {
@@ -90,7 +90,7 @@ func (s *Server) handleAddTorrent(c *gin.Context) {
 			DisplayName: title,
 		}
 
-	// magnet: — стандартная ссылка
+	// magnet: - стандартная ссылка
 	case strings.HasPrefix(link, "magnet:"):
 		mi, err := metainfo.ParseMagnetURI(link)
 		if err != nil {
@@ -295,7 +295,7 @@ func (s *Server) handlePreloadTorrent(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "preloaded"})
 }
 
-// cacheResponse — sparse-ответ для вкладки Cache.
+// cacheResponse - sparse-ответ для вкладки Cache.
 // Передаются только заполненные куски: ids + параллельные base64-массивы.
 type cacheResponse struct {
 	Hash        string        `json:"hash"`

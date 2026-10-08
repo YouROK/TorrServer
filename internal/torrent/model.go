@@ -55,7 +55,7 @@ func GenerateFileHash(path string, length int64) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-// TorrentStatus — оперативная статистика раздачи из памяти
+// TorrentStatus - оперативная статистика раздачи из памяти
 type TorrentStatus struct {
 	Title               string             `json:"title"`
 	Name                string             `json:"name,omitempty"`
@@ -84,7 +84,7 @@ type TorrentStatus struct {
 	FileStats           []*TorrentFileStat `json:"file_stats,omitempty"`
 }
 
-// TorrentRecord — глобальная физическая карточка раздачи в базе (без личных данных!)
+// TorrentRecord - глобальная физическая карточка раздачи в базе (без личных данных!)
 type TorrentRecord struct {
 	Hash      string             `json:"hash"`
 	Size      int64              `json:"size"`
@@ -95,7 +95,7 @@ type TorrentRecord struct {
 	Files     []*TorrentFileStat `json:"files,omitempty"`
 }
 
-// EphemeralMeta — личные метаданные пользователя для временных торрентов в RAM
+// EphemeralMeta - личные метаданные пользователя для временных торрентов в RAM
 type EphemeralMeta struct {
 	Title    string
 	Poster   string

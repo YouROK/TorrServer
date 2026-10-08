@@ -67,8 +67,8 @@ var globalCatalog = &PluginCatalog{}
 func GetPluginCatalog() *PluginCatalog { return globalCatalog }
 
 // Fetch возвращает каталог с TTL-кэшем.
-// Если CDN недоступен, но есть устаревший кэш — отдаём его с флагом stale.
-// Повторные попытки после ошибки — не чаще, чем раз в plugincatalogRetry.
+// Если CDN недоступен, но есть устаревший кэш - отдаём его с флагом stale.
+// Повторные попытки после ошибки - не чаще, чем раз в plugincatalogRetry.
 func (c *PluginCatalog) Fetch() (*catalogResponse, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()

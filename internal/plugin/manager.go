@@ -28,7 +28,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// TorrentAPI — интерфейс для управления движком из плагинов
+// TorrentAPI - интерфейс для управления движком из плагинов
 type TorrentAPI interface {
 	SetTrackerPolicy(mode string, trackers []string)
 	SetBlocklistText(text string) error
@@ -394,13 +394,13 @@ func hasRootRoute(routes []string) bool {
 }
 
 // InstallPlugin устанавливает плагины из ZIP и запрещает перезапись:
-// если плагин с таким ID уже есть (включая встроенные) — вернёт
+// если плагин с таким ID уже есть (включая встроенные) - вернёт
 // *PluginExistsError. Чтобы обновить существующий, используй UpdatePlugin.
 func (m *Manager) InstallPlugin(zipPath string) ([]string, error) {
 	return m.installPluginInternal(zipPath, false)
 }
 
-// UpdatePlugin — то же, что InstallPlugin, но разрешает замену внешнего
+// UpdatePlugin - то же, что InstallPlugin, но разрешает замену внешнего
 // плагина. Встроенные всё равно запрещены. Данные плагина
 // (BucketPluginData), его order и enabled сохраняются.
 func (m *Manager) UpdatePlugin(zipPath string) ([]string, error) {
@@ -688,7 +688,7 @@ func (m *Manager) InstallFromURL(rawURL string) ([]string, error) {
 	return m.installFromURLInternal(rawURL, false)
 }
 
-// UpdateFromURL — то же, что InstallFromURL, но разрешает замену
+// UpdateFromURL - то же, что InstallFromURL, но разрешает замену
 func (m *Manager) UpdateFromURL(rawURL string) ([]string, error) {
 	return m.installFromURLInternal(rawURL, true)
 }

@@ -146,13 +146,13 @@ func (m *Manager) AddTorrent(u *user.User, spec *torrent.TorrentSpec, title, pos
 	// 2. Устанавливаем личные метаданные в RAM (для Lampa/NUM)
 	session.SetUserMeta(u.ID, displayTitle, poster, category)
 
-	// 3. Если это временный торрент — на этом всё! В базу не пишем.
+	// 3. Если это временный торрент - на этом всё! В базу не пишем.
 	if !saveToDB {
 		go m.asyncFetchMetadata(session, nil) // Просто ждем метаданные для RAM
 		return session.Status(u.ID), nil
 	}
 
-	// 4. Если сохраняем в базу — пишем в личный список и в глобальную базу
+	// 4. Если сохраняем в базу - пишем в личный список и в глобальную базу
 	if err := m.userSvc.AddTorrent(u, hashHex, displayTitle, poster, category); err != nil {
 		return nil, err
 	}
@@ -244,7 +244,7 @@ func (m *Manager) WakeTorrent(u *user.User, hashHex string) error {
 func (m *Manager) GetTorrentStatus(u *user.User, hashHex string) (*TorrentStatus, error) {
 	hash := metainfo.NewHashFromHex(hashHex)
 
-	// Если активен в RAM — отдаем живую статистику (она сама подтянет личные данные юзера)
+	// Если активен в RAM - отдаем живую статистику (она сама подтянет личные данные юзера)
 	sess, ok := m.engine.Get(hash)
 	if ok {
 		st := sess.Status(u.ID)
@@ -261,7 +261,7 @@ func (m *Manager) GetTorrentStatus(u *user.User, hashHex string) (*TorrentStatus
 		return st, nil
 	}
 
-	// Если спит — достаем физику из базы
+	// Если спит - достаем физику из базы
 	rec, err := m.store.Get(hashHex)
 	if err != nil {
 		return nil, err
@@ -454,7 +454,7 @@ func (m *Manager) SetBlocklistText(text string) error {
 	return m.engine.SetBlocklistText(text)
 }
 
-// EngineStats — живой снимок состояния движка и процесса для дашборда
+// EngineStats - живой снимок состояния движка и процесса для дашборда
 type EngineStats struct {
 	ActiveSessions int      `json:"active_sessions"`
 	ActiveReaders  int      `json:"active_readers"`
@@ -600,7 +600,7 @@ func (m *Manager) ImportLibrary(u *user.User, lines []string) (int, error) {
 			continue
 		}
 
-		// Уже есть в библиотеке — пропускаем
+		// Уже есть в библиотеке - пропускаем
 		if _, err := m.userSvc.GetUserTorrent(u.ID, th.Hash); err == nil {
 			continue
 		}

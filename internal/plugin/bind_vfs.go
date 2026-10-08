@@ -12,7 +12,7 @@ import (
 	"github.com/dop251/goja"
 )
 
-// createVFSModule — объект ts.vfs: чтение собственных файлов плагина
+// createVFSModule - объект ts.vfs: чтение собственных файлов плагина
 // через изолированную VFS (fs.FS, привязанную к папке или ZIP плагина).
 //
 // Безопасность обеспечивает сама VFS. os.DirFS и *zip.Reader реализуют
@@ -22,20 +22,20 @@ import (
 //   - невалидный UTF-8.
 //
 // Это отсекает классический path traversal на Linux/macOS. Единственное,
-// что VFS не закрывает — обратные слэши на Windows: fs.ValidPath считает
+// что VFS не закрывает - обратные слэши на Windows: fs.ValidPath считает
 // `a\..\b` валидным (backslash для него обычный символ), а
 // filepath.FromSlash его не преобразует. В итоге filepath.Join разрешает
 // `..\..` относительно реальной ФС и выходит за пределы VFS. Поэтому
 // backslash отвергаем явно, до вызова vfs.Open.
 //
 // path.Clean применяется, чтобы авторы плагинов могли писать `./x`
-// вместо `x`. Clean не создаёт новых сегментов — он только схлопывает
+// вместо `x`. Clean не создаёт новых сегментов - он только схлопывает
 // `a/../b` в `b` и убирает `.`. Итог всё равно проверяется VFS.
 //
 // Ошибки передаются в JS через panic: goja на границе VM превращает
 // panic(vm.ToValue(...)) в JS-исключение, которое плагин может поймать
 // через try/catch. Это тот же стиль, что в bind_http.go, bind_torrent.go,
-// bind_storage.go — консистентно с остальными модулями ts.*.
+// bind_storage.go - консистентно с остальными модулями ts.*.
 //
 // API:
 //
@@ -94,7 +94,7 @@ func (rt *JSRuntime) createVFSModule(vfs fs.FS) *goja.Object {
 
 		modTime := info.ModTime()
 		if modTime.IsZero() {
-			// *zip.Reader часто отдаёт нулевое время — нормализуем в epoch,
+			// *zip.Reader часто отдаёт нулевое время - нормализуем в epoch,
 			// чтобы плагин не получал отрицательный timestamp.
 			modTime = time.Unix(0, 0).UTC()
 		}

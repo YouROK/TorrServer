@@ -2,7 +2,7 @@ package user
 
 import "time"
 
-// RoleRank — числовой ранг прав доступа (10..100)
+// RoleRank - числовой ранг прав доступа (10..100)
 type RoleRank int
 
 const (
@@ -45,7 +45,7 @@ func (u *User) CanAssignRank(newRank RoleRank) bool {
 	return u.Rank > newRank
 }
 
-// UserTorrent — карточка связи пользователя с конкретным торрентом
+// UserTorrent - карточка связи пользователя с конкретным торрентом
 type UserTorrent struct {
 	UserID      string    `json:"user_id"`
 	TorrentHash string    `json:"torrent_hash"` // Хэш раздачи

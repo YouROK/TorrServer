@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// LibraryCard — краткие данные карточки для главного экрана темы
+// LibraryCard - краткие данные карточки для главного экрана темы
 type LibraryCard struct {
 	Hash          string  `json:"hash"`
 	Title         string  `json:"title"`
@@ -49,7 +49,7 @@ func (s *Server) buildLibraryCards(u *user.User) ([]LibraryCard, error) {
 	return cards, nil
 }
 
-// handleEventsStream — SSE-поток обновлений библиотеки.
+// handleEventsStream - SSE-поток обновлений библиотеки.
 func (s *Server) handleEventsStream(c *gin.Context) {
 	val, _ := c.Get("user")
 	u := val.(*user.User)

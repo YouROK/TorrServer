@@ -12,7 +12,7 @@ var (
 	ErrIsDir    = errors.New("is a directory")
 )
 
-// Node — узел виртуального дерева торрентов.
+// Node - узел виртуального дерева торрентов.
 type Node interface {
 	Name() string
 	Path() string

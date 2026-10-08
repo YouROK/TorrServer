@@ -12,7 +12,7 @@ var defaultUIFiles embed.FS
 //go:embed all:admin_ui
 var adminUIFiles embed.FS
 
-// BuiltinPlugin — один встроенный плагин: уже открытая VFS и разобранный манифест.
+// BuiltinPlugin - один встроенный плагин: уже открытая VFS и разобранный манифест.
 type BuiltinPlugin struct {
 	VFS      fs.FS
 	Manifest *Manifest

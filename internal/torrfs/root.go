@@ -9,7 +9,7 @@ import (
 	"silo/internal/user"
 )
 
-// rootEntry — торрент юзера + его физическая карточка.
+// rootEntry - торрент юзера + его физическая карточка.
 type rootEntry struct {
 	ut  *user.UserTorrent
 	rec *torrent.TorrentRecord

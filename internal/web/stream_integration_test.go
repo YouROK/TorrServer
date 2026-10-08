@@ -141,7 +141,7 @@ func loadAdminTorrents(t *testing.T, s *Server, actor *user.User, targetID strin
 }
 
 // Пока запрос стрима «висит» (плеер читает), поток обязан быть виден в админском API
-// с именем файла, раздачей и IP клиента, а после завершения — исчезнуть.
+// с именем файла, раздачей и IP клиента, а после завершения - исчезнуть.
 func TestStreamVisibleInAdminWhileOpen(t *testing.T) {
 	s, engine, _, owner, hash := setupStreamTestEnv(t)
 
@@ -256,7 +256,7 @@ func TestStreamVisibleInAdminWhileOpen(t *testing.T) {
 }
 
 // Список раздач обязан отдавать живые поля (статус, размер, факт наличия в RAM),
-// даже когда потоков нет — админка рисует по ним таблицу.
+// даже когда потоков нет - админка рисует по ним таблицу.
 func TestAdminTorrentsHasLiveFields(t *testing.T) {
 	s, _, _, owner, hash := setupStreamTestEnv(t)
 

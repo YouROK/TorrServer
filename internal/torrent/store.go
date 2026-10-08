@@ -88,7 +88,7 @@ func (s *Store) GetConfig() (*Config, error) {
 	})
 
 	if err != nil {
-		// Если конфига еще нет в базе — возвращаем дефолтный
+		// Если конфига еще нет в базе - возвращаем дефолтный
 		return DefaultConfig(), nil
 	}
 	return &cfg, nil

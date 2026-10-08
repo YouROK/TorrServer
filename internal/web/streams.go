@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// StreamSnapshot — снимок одного активного HTTP-потока раздачи.
+// StreamSnapshot - снимок одного активного HTTP-потока раздачи.
 // Один плеер может держать несколько одновременных соединений на один файл
 // (перемотка, параллельные range-запросы), поэтому потоков на пару
 // (пользователь, раздача) может быть больше одного.
@@ -67,7 +67,7 @@ func NewStreamTracker() *StreamTracker {
 	}
 }
 
-// StreamHandle — ссылка на зарегистрированный поток.
+// StreamHandle - ссылка на зарегистрированный поток.
 type StreamHandle struct {
 	tracker *StreamTracker
 	id      int64

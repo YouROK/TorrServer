@@ -59,7 +59,7 @@ func newSession(t *torrent.Torrent, spec *torrent.TorrentSpec, stor *torrstor.St
 		closed:        make(chan struct{}),
 	}
 
-	// Если метаданные уже были на старте — привязываем кэш сразу
+	// Если метаданные уже были на старте - привязываем кэш сразу
 	if stor != nil {
 		s.cache = stor.GetCache(spec.InfoHash)
 		if s.cache != nil {

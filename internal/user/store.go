@@ -167,7 +167,7 @@ func (s *Store) ListUsers() ([]*User, error) {
 }
 
 // DeleteUser удаляет пользователя, все его индексы и привязки к торрентам.
-// Возвращает список orphanedHashes — торренты, которые больше никому не принадлежат.
+// Возвращает список orphanedHashes - торренты, которые больше никому не принадлежат.
 func (s *Store) DeleteUser(userID string) ([]string, error) {
 	var orphanedHashes []string
 

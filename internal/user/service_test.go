@@ -208,7 +208,7 @@ func TestUserTorrentsAndViewedFiles(t *testing.T) {
 	}
 
 	// 5. Удаление торрента и счетчик ссылок
-	// u1 удаляет торрент — раздача должна остаться у u2
+	// u1 удаляет торрент - раздача должна остаться у u2
 	err = svc.RemoveTorrent(u1, hash)
 	if err != nil {
 		t.Fatalf("Failed to remove torrent for u1: %v", err)
@@ -225,7 +225,7 @@ func TestUserTorrentsAndViewedFiles(t *testing.T) {
 		t.Errorf("Torrent should still exist for u2: %v", err)
 	}
 
-	// u2 удаляет торрент — теперь раздачу больше никто не держит
+	// u2 удаляет торрент - теперь раздачу больше никто не держит
 	err = svc.RemoveTorrent(u2, hash)
 	if err != nil {
 		t.Fatalf("Failed to remove torrent for u2: %v", err)
@@ -234,7 +234,7 @@ func TestUserTorrentsAndViewedFiles(t *testing.T) {
 
 // Регрессия: после регенерации токена Owner логин обязан вернуть ЖИВОЙ токен.
 // Раньше Login отдавал копию из памяти (s.ownerU), из-за чего после смены
-// токена вход был "успешным", но выдавал мёртвый токен — бесконечная петля /login.
+// токена вход был "успешным", но выдавал мёртвый токен - бесконечная петля /login.
 func TestOwnerTokenStaysInSyncAfterRegenerate(t *testing.T) {
 	svc, cleanup := setupTestEnv(t, "supersecret")
 	defer cleanup()

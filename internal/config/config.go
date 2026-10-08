@@ -45,7 +45,7 @@ type LoggingConfig struct {
 }
 
 type AuthConfig struct {
-	// Если пароль пустой ("") — авторизация отключена, сервер работает в открытом режиме!
+	// Если пароль пустой ("") - авторизация отключена, сервер работает в открытом режиме!
 	OwnerPassword string `yaml:"owner_password" json:"owner_password"`
 }
 
@@ -89,7 +89,7 @@ func Load(configPath string) (*Config, error) {
 
 	data, err := os.ReadFile(configPath)
 	if errors.Is(err, os.ErrNotExist) {
-		// Файла нет — создаем дефолтный с красивым форматированием
+		// Файла нет - создаем дефолтный с красивым форматированием
 		if err := Save(configPath, cfg); err != nil {
 			return nil, fmt.Errorf("failed to create default config: %w", err)
 		}

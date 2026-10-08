@@ -15,10 +15,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// maxRequestBody — лимит чтения тела запроса (10 МБ)
+// maxRequestBody - лимит чтения тела запроса (10 МБ)
 const maxRequestBody = 10 * 1024 * 1024
 
-// webResponse — накопитель ответа, который JS-обработчик заполняет через res.*
+// webResponse - накопитель ответа, который JS-обработчик заполняет через res.*
 type webResponse struct {
 	used        bool
 	status      int
@@ -31,7 +31,7 @@ type webResponse struct {
 	streamName   string
 }
 
-// createWebModule — объект ts.web: собственные HTTP-роуты и статика плагина
+// createWebModule - объект ts.web: собственные HTTP-роуты и статика плагина
 func (rt *JSRuntime) createWebModule(manifest *Manifest, vfs fs.FS, registrar WebRegistrar) *goja.Object {
 	obj := rt.vm.NewObject()
 
@@ -44,7 +44,7 @@ func (rt *JSRuntime) createWebModule(manifest *Manifest, vfs fs.FS, registrar We
 	obj.Set("head", rt.webRegistrar(registrar, manifest, http.MethodHead))
 	obj.Set("options", rt.webRegistrar(registrar, manifest, http.MethodOptions))
 
-	// ts.web.any(route, handler) — обработчик сразу на все основные методы
+	// ts.web.any(route, handler) - обработчик сразу на все основные методы
 	obj.Set("any", func(call goja.FunctionCall) goja.Value {
 		route := call.Argument(0).String()
 		handler, ok := rt.exportHandler(call.Argument(1))
@@ -61,7 +61,7 @@ func (rt *JSRuntime) createWebModule(manifest *Manifest, vfs fs.FS, registrar We
 		return goja.Undefined()
 	})
 
-	// ts.web.route(method, route, handler) — произвольный HTTP-метод
+	// ts.web.route(method, route, handler) - произвольный HTTP-метод
 	obj.Set("route", func(call goja.FunctionCall) goja.Value {
 		method := strings.ToUpper(call.Argument(0).String())
 		route := call.Argument(1).String()
@@ -73,7 +73,7 @@ func (rt *JSRuntime) createWebModule(manifest *Manifest, vfs fs.FS, registrar We
 		return goja.Undefined()
 	})
 
-	// ts.web.staticFile(route, vfsPath) — отдать один файл из своей VFS
+	// ts.web.staticFile(route, vfsPath) - отдать один файл из своей VFS
 	obj.Set("staticFile", func(call goja.FunctionCall) goja.Value {
 		route := call.Argument(0).String()
 		vfsPath := call.Argument(1).String()
@@ -85,7 +85,7 @@ func (rt *JSRuntime) createWebModule(manifest *Manifest, vfs fs.FS, registrar We
 		return goja.Undefined()
 	})
 
-	// ts.web.staticDir(route, vfsDir) — отдать директорию из своей VFS
+	// ts.web.staticDir(route, vfsDir) - отдать директорию из своей VFS
 	obj.Set("staticDir", func(call goja.FunctionCall) goja.Value {
 		route := call.Argument(0).String()
 		vfsDir := call.Argument(1).String()
