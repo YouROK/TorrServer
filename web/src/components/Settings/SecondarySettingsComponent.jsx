@@ -17,6 +17,7 @@ import { styled } from '@material-ui/core/styles'
 import { useEffect, useMemo, useState } from 'react'
 
 import { SecondarySettingsContent, SettingSectionLabel } from './style'
+import HTTPSSettings from './HTTPSSettings'
 
 // Create a styled status message component
 const StatusMessage = styled('div')(({ theme, severity }) => ({
@@ -37,7 +38,7 @@ const StatusMessage = styled('div')(({ theme, severity }) => ({
   },
 }))
 
-export default function SecondarySettingsComponent({ settings, inputForm }) {
+export default function SecondarySettingsComponent({ settings, inputForm, updateSettings }) {
   const { t } = useTranslation()
   const [storageSettings, setStorageSettings] = useState({
     settings: 'json',
@@ -70,9 +71,6 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
     PeersListenPort,
     ResponsiveMode,
     MergeAllM3U,
-    SslPort,
-    SslCert,
-    SslKey,
     ShowFSActiveTorr,
   } = settings || {}
 
@@ -399,44 +397,7 @@ export default function SecondarySettingsComponent({ settings, inputForm }) {
         variant='outlined'
         fullWidth
       />
-      {/* HTTPS Section */}
-      <SettingSectionLabel style={{ marginTop: '20px' }}>{t('HTTPS')}</SettingSectionLabel>
-      <TextField
-        onChange={inputForm}
-        margin='normal'
-        id='SslPort'
-        label={t('SettingsDialog.SslPort')}
-        helperText={t('SettingsDialog.SslPortHint')}
-        value={SslPort}
-        type='number'
-        variant='outlined'
-        fullWidth
-      />
-      <br />
-      <TextField
-        onChange={inputForm}
-        margin='normal'
-        id='SslCert'
-        label={t('SettingsDialog.SslCert')}
-        helperText={t('SettingsDialog.SslCertHint')}
-        value={SslCert}
-        type='url'
-        variant='outlined'
-        fullWidth
-      />
-      <br />
-      <TextField
-        onChange={inputForm}
-        margin='normal'
-        id='SslKey'
-        label={t('SettingsDialog.SslKey')}
-        helperText={t('SettingsDialog.SslKeyHint')}
-        value={SslKey}
-        type='url'
-        variant='outlined'
-        fullWidth
-      />
-      <br />
+      <HTTPSSettings updateSettings={updateSettings} />
       {/* TorrFS */}
       <SettingSectionLabel style={{ marginTop: '20px' }}>{t('TorrFS')}</SettingSectionLabel>
       <FormGroup>
