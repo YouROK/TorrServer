@@ -58,7 +58,7 @@ export default function CommandPalette({
       },
       {
         id: 'search',
-        label: t('Search.Search'),
+        label: t('nav.Search'),
         run: () => {
           onSearch()
           onClose()
@@ -72,7 +72,7 @@ export default function CommandPalette({
           onClose()
         },
       },
-      { id: 'settings', label: t('Search.Settings'), run: () => openSettings('primary') },
+      { id: 'settings', label: t('nav.Settings'), run: () => openSettings('primary') },
       { id: 'appearance', label: t('SettingsDialog.SectionAppearance'), run: () => openSettings('appearance') },
       {
         id: 'theme',

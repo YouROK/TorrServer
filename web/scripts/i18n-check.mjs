@@ -2,6 +2,7 @@
 /**
  * Locale parity check: every language must contain the same flattened key set as en.
  * Also fails on flat dotted top-level keys like "Search.Tracker" (use nested objects).
+ * Scans web/src for static t('…') / i18n.t('…') keys and fails if any are missing from en.
  */
 import fs from 'node:fs'
 import path from 'node:path'
@@ -9,7 +10,16 @@ import { fileURLToPath } from 'node:url'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const localesDir = path.join(root, 'src/locales')
+const srcDir = path.join(root, 'src')
 const langs = ['en', 'ru', 'ua', 'bg', 'fr', 'ro', 'zh']
+
+/** Dynamic t(`prefix${…}`) / t('ThemePalette'+id) prefixes — not full keys. */
+const DYNAMIC_PREFIXES = [
+  'HTTPSSettings.Source.',
+  'ThemePalette',
+  'WAF.Lists.',
+  'WAF.WarningCodes.',
+]
 
 function flatten(obj, prefix = '', out = {}) {
   for (const [k, v] of Object.entries(obj)) {
@@ -18,6 +28,29 @@ function flatten(obj, prefix = '', out = {}) {
     else out[key] = v
   }
   return out
+}
+
+function walkTsFiles(dir, out = []) {
+  for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, ent.name)
+    if (ent.isDirectory()) walkTsFiles(p, out)
+    else if (ent.isFile() && /\.(ts|tsx)$/.test(ent.name)) out.push(p)
+  }
+  return out
+}
+
+function collectStaticTKeys(files) {
+  const re = /(?:\bi18n\.t|\bt)\(\s*['"]([^'"]+)['"]/g
+  const keys = new Set()
+  for (const file of files) {
+    const text = fs.readFileSync(file, 'utf8')
+    for (const m of text.matchAll(re)) keys.add(m[1])
+  }
+  return keys
+}
+
+function isDynamicKey(key) {
+  return DYNAMIC_PREFIXES.some(p => key === p || key.startsWith(p))
 }
 
 let failed = false
@@ -55,8 +88,16 @@ for (const lang of langs) {
   }
 }
 
+const usedKeys = collectStaticTKeys(walkTsFiles(srcDir))
+const missingUsed = [...usedKeys].filter(k => !enKeys.has(k) && !isDynamicKey(k)).sort()
+if (missingUsed.length) {
+  failed = true
+  console.error(`used t() keys missing from en: ${missingUsed.length}`)
+  console.error('  ', missingUsed.slice(0, 30).join(', '))
+}
+
 if (failed) {
   console.error('i18n:check failed')
   process.exit(1)
 }
-console.log(`i18n:check ok — ${enKeys.size} keys × ${langs.length} locales`)
+console.log(`i18n:check ok — ${enKeys.size} keys × ${langs.length} locales; ${usedKeys.size} static t() keys covered`)
