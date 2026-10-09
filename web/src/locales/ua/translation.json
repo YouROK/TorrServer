@@ -218,7 +218,9 @@
     "UseIINA": "Пропонувати відкрити відео в IINA",
     "UseIINAHint": "Додати кнопку програвача IINA до списку торрент-контенту (тільки macOS)",
     "ViewedHistoryStorage": "Збереження історії переглядів:",
-    "ViewedStorageHint": "Виберіть місце збереження історії переглядів серій"
+    "ViewedStorageHint": "Виберіть місце збереження історії переглядів серій",
+    "ShowQuickVLCButton": "Показувати кнопку VLC на картках торентів",
+    "ShowQuickVLCButtonHint": "Необов'язкове швидке посилання для торентів з одним відеофайлом. VLC також має бути увімкнено."
   },
   "Size": "Розмір",
   "SpecialThanks": "Окрема подяка",
@@ -262,10 +264,11 @@
     "Test": "Тест",
     "TorrentAddedSuccessfully": "Торрент успішно додано",
     "TorznabHostURL": "URL хосту Torznab",
-    "SelectCategoryType": "Categories to search",
-    "LabelDefault": "Default",
-    "LabelManual": "Manual",
-    "LabelAll": "All"
+    "Category": "Категорії для пошуку",
+    "SelectCategoryType": "Категорії для пошуку",
+    "LabelDefault": "За замовчуванням",
+    "LabelManual": "Вручну",
+    "LabelAll": "Усі"
   },
   "GStreamer": {
     "Tab": "GStreamer",
@@ -324,7 +327,13 @@
     "HardwareAcceleration": "Апаратний H.264 encoder",
     "HardwareAccelerationHint": "Один раз перевіряє доступні GPU-кодувальники; за невдачі використовується x264.",
     "X264Ultrafast": "Використовувати x264 ultrafast",
-    "X264UltrafastHint": "Зменшує навантаження CPU ціною якості за того самого бітрейту."
+    "X264UltrafastHint": "Зменшує навантаження CPU ціною якості за того самого бітрейту.",
+    "AppSinkBuffers": "Буфери AppSink",
+    "AppSinkBuffersHint": "Список підготовлених буферів AppSink. Зазвичай залишайте значення за замовчуванням.",
+    "TempFS": "Увімкнути файловий буфер для вихідного потоку",
+    "TempFSHint": "Створює тимчасовий кільцевий буфер gst-XXXXXX у робочому каталозі TorrServer. Допомагає згладжувати просідання швидкості на слабких торентах, рекомендується зберігання на SSD.",
+    "TempFSRing": "Додатковий буфер для потоку",
+    "TempFSRingHint": "0 = базовий буфер приблизно 90 секунд. Кожна одиниця додає ~30 секунд, 10 додає приблизно 300 секунд."
   },
   "TMDB": {
     "Settings": "TMDB",
@@ -379,5 +388,49 @@
     "Saved": "Списки збережено й перезавантажено",
     "LoadFailed": "Не вдалося завантажити списки доступу",
     "SaveFailed": "Не вдалося зберегти списки доступу"
+  },
+  "HTTPSSettings": {
+    "Mode": "Режим",
+    "Certificate": "Сертифікат",
+    "Subject": "Суб'єкт",
+    "Issuer": "Видавець",
+    "Names": "Дійсний для",
+    "ValidUntil": "Дійсний до",
+    "Trusted": "Виданий довіреним CA",
+    "Yes": "Так",
+    "No": "Ні",
+    "ModeBoth": "HTTPS на порту {{port}}, HTTP на порту {{httpPort}}",
+    "ModeForceHTTPS": "HTTPS на порту {{port}}, HTTP перенаправляє на HTTPS",
+    "ModeHTTPMedia": "HTTPS на порту {{port}}, HTTP лише для медіа",
+    "ModeHTTPSOnly": "Лише HTTPS, порт {{port}}",
+    "Source": {
+      "none": "Ще не створено",
+      "self-signed": "Самопідписаний (керується TorrServer)",
+      "uploaded": "Завантажений",
+      "user": "За шляхом до файлу"
+    },
+    "SelfSignedHint": "Браузери попереджають про самопідписаний сертифікат, а більшість медіаплеєрів і телевізорів його відкидають. Завантажте його, щоб додати до довірених на своїх пристроях, або завантажте сертифікат від довіреного CA.",
+    "Download": "Завантажити сертифікат",
+    "Regenerate": "Перестворити",
+    "UseSelfSigned": "Використовувати самопідписаний",
+    "UploadHint": "Завантажте PEM сертифікат (повний ланцюжок) і його незашифрований приватний ключ, напр. fullchain.pem і privkey.pem від Let's Encrypt. Застосовується одразу, без перезапуску. Завантажені файли — це копія, яка не оновлюється: для сертифіката з автопоновленням (acme.sh, certbot) використовуйте файли нижче.",
+    "PlainHTTPWarning": "Ця сторінка відкрита через HTTP: приватний ключ буде надіслано незашифрованим. Краще завантажувати через HTTPS.",
+    "ChooseCert": "Сертифікат…",
+    "ChooseKey": "Приватний ключ…",
+    "Upload": "Завантажити",
+    "Uploaded": "Сертифікат завантажено й використовується.",
+    "Regenerated": "Створено новий самопідписаний сертифікат.",
+    "SwitchedToSelfSigned": "Використовується самопідписаний сертифікат.",
+    "FromFlagsHint": "Сертифікат задано прапорцями запуску --sslcert/--sslkey, тому його не можна змінити тут.",
+    "ModeHint": "Режим HTTP/HTTPS і порти задаються прапорцями запуску (--ssl, --sslport, --force-https, --http-media, --https-only).",
+    "PathsHint": "Або використовуйте файли сертифіката, які вже є на машині з TorrServer, напр. оновлювані acme.sh або certbot. Вкажіть повні шляхи так, як їх бачить TorrServer (для Docker — всередині контейнера); файли нікуди не завантажуються. Оновлені файли підхоплюються без перезапуску.",
+    "CertPath": "Файл сертифіката (повний ланцюжок)",
+    "KeyPath": "Файл приватного ключа",
+    "UsePaths": "Використовувати ці файли",
+    "PathsApplied": "Файли сертифіката використовуються.",
+    "CertPathExample": "наприклад /etc/letsencrypt/live/example.com/fullchain.pem",
+    "KeyPathExample": "наприклад /etc/letsencrypt/live/example.com/privkey.pem",
+    "CertFileInUse": "Файл сертифіката",
+    "KeyFileInUse": "Файл ключа"
   }
 }

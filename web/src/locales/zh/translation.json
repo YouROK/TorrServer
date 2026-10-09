@@ -218,7 +218,9 @@
     "UseIINA": "提示在 IINA 中打开视频",
     "UseIINAHint": "将 IINA 播放器按钮添加到种子内容列表（仅 macOS）",
     "ViewedHistoryStorage": "查看历史存储：",
-    "ViewedStorageHint": "存储查看历史记录的位置"
+    "ViewedStorageHint": "存储查看历史记录的位置",
+    "ShowQuickVLCButton": "在种子卡片上显示 VLC 按钮",
+    "ShowQuickVLCButtonHint": "单视频种子的可选快捷方式。VLC 也必须启用。"
   },
   "Size": "大小",
   "SpecialThanks": "特别感谢",
@@ -325,7 +327,13 @@
     "HardwareAcceleration": "硬件 H.264 编码器",
     "HardwareAccelerationHint": "测试支持的 GPU 编码器一次，若无可用则回退到 x264。",
     "X264Ultrafast": "使用 x264 ultrafast 预设",
-    "X264UltrafastHint": "在相同比特率下以质量换取更低的 CPU 负载。"
+    "X264UltrafastHint": "在相同比特率下以质量换取更低的 CPU 负载。",
+    "AppSinkBuffers": "AppSink 缓冲区",
+    "AppSinkBuffersHint": "预分配的 AppSink 缓冲区列表。通常保持默认值。",
+    "TempFS": "为源流启用文件缓冲区",
+    "TempFSHint": "在 TorrServer 工作目录中创建临时环形缓冲区 gst-XXXXXX。有助于缓解弱种子上的速度下降，建议使用 SSD 存储。",
+    "TempFSRing": "额外流缓冲区",
+    "TempFSRingHint": "0 = 约 90 秒的基本缓冲区。每单位增加约 30 秒，10 约增加 300 秒。"
   },
   "TMDB": {
     "Settings": "TMDB",
@@ -380,5 +388,49 @@
     "Saved": "访问列表已保存并重新加载",
     "LoadFailed": "加载访问列表失败",
     "SaveFailed": "保存访问列表失败"
+  },
+  "HTTPSSettings": {
+    "Mode": "模式",
+    "Certificate": "证书",
+    "Subject": "主体",
+    "Issuer": "颁发者",
+    "Names": "适用于",
+    "ValidUntil": "有效期至",
+    "Trusted": "由受信任的 CA 颁发",
+    "Yes": "是",
+    "No": "否",
+    "ModeBoth": "HTTPS 端口 {{port}}，HTTP 端口 {{httpPort}}",
+    "ModeForceHTTPS": "HTTPS 端口 {{port}}，HTTP 重定向到 HTTPS",
+    "ModeHTTPMedia": "HTTPS 端口 {{port}}，HTTP 仅用于媒体",
+    "ModeHTTPSOnly": "仅 HTTPS，端口 {{port}}",
+    "Source": {
+      "none": "尚未创建",
+      "self-signed": "自签名（由 TorrServer 管理）",
+      "uploaded": "已上传",
+      "user": "来自文件路径"
+    },
+    "SelfSignedHint": "浏览器会警告自签名证书，大多数媒体播放器和电视会拒绝它。下载它以便在您的设备上信任它，或上传来自受信任 CA 的证书。",
+    "Download": "下载证书",
+    "Regenerate": "重新生成",
+    "UseSelfSigned": "使用自签名",
+    "UploadHint": "上传 PEM 证书（完整链）及其未加密的私钥，例如 Let's Encrypt 的 fullchain.pem 和 privkey.pem。立即使用，无需重启。上传的文件是副本，不会续期：对于自动续期的证书（acme.sh、certbot），请改用下面的文件。",
+    "PlainHTTPWarning": "此页面通过纯 HTTP 打开：私钥将以未加密方式发送。建议通过 HTTPS 上传。",
+    "ChooseCert": "证书…",
+    "ChooseKey": "私钥…",
+    "Upload": "上传",
+    "Uploaded": "证书已上传并正在使用。",
+    "Regenerated": "已创建新的自签名证书。",
+    "SwitchedToSelfSigned": "已切换到自签名证书。",
+    "FromFlagsHint": "证书由启动标志 --sslcert/--sslkey 设置，因此无法在此更改。",
+    "ModeHint": "HTTP/HTTPS 模式和端口通过启动标志设置（--ssl、--sslport、--force-https、--http-media、--https-only）。",
+    "PathsHint": "或使用 TorrServer 机器上已有的证书文件，例如由 acme.sh 或 certbot 保持更新。输入 TorrServer 看到的完整路径（Docker 中为容器内路径）；不会上传任何内容。续期后的文件无需重启即可生效。",
+    "CertPath": "证书文件（完整链）",
+    "KeyPath": "私钥文件",
+    "UsePaths": "使用这些文件",
+    "PathsApplied": "证书文件正在使用。",
+    "CertPathExample": "例如 /etc/letsencrypt/live/example.com/fullchain.pem",
+    "KeyPathExample": "例如 /etc/letsencrypt/live/example.com/privkey.pem",
+    "CertFileInUse": "证书文件",
+    "KeyFileInUse": "密钥文件"
   }
 }
