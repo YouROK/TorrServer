@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 )
@@ -126,6 +127,20 @@ func TestStreamBufferMultipartAndHead(t *testing.T) {
 		if method == http.MethodHead {
 			if a.Body.Len() != 0 || b.Body.Len() != 0 {
 				t.Fatal("HEAD returned a body")
+			}
+			continue
+		}
+		if a.Header().Get("Content-Type") != b.Header().Get("Content-Type") {
+			t.Fatal("Content-Type differs")
+		}
+		// Go 1.27+ ServeContent may ignore multi-range and return the full body instead of multipart.
+		mediatype, params, err := mime.ParseMediaType(a.Header().Get("Content-Type"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.HasPrefix(mediatype, "multipart/") || params["boundary"] == "" {
+			if !bytes.Equal(a.Body.Bytes(), b.Body.Bytes()) {
+				t.Fatal("bodies differ")
 			}
 			continue
 		}

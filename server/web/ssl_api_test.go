@@ -60,7 +60,7 @@ func TestMain(m *testing.M) {
 	code := m.Run()
 	if sslTestDBDir != "" {
 		settings.CloseDB()
-		os.RemoveAll(sslTestDBDir)
+		_ = os.RemoveAll(sslTestDBDir)
 	}
 	os.Exit(code)
 }
@@ -115,10 +115,10 @@ func TestSSLAPIUploadAndSwitchBack(t *testing.T) {
 	body := &bytes.Buffer{}
 	mw := multipart.NewWriter(body)
 	fw, _ := mw.CreateFormFile("cert", "cert.pem")
-	fw.Write(certPEM)
+	_, _ = fw.Write(certPEM)
 	fw, _ = mw.CreateFormFile("key", "key.pem")
-	fw.Write(keyPEM)
-	mw.Close()
+	_, _ = fw.Write(keyPEM)
+	_ = mw.Close()
 	code, st, raw := sslDo(t, r, http.MethodPost, "/ssl/upload", body, mw.FormDataContentType())
 	if code != http.StatusOK || st.Cert.Source != sslcerts.SourceUploaded || st.Cert.Subject != "CN=tv.example.com" {
 		t.Fatalf("upload %d %s", code, raw)
@@ -164,8 +164,8 @@ func TestSSLAPIRejectsBadUploadAndReadOnly(t *testing.T) {
 	body := &bytes.Buffer{}
 	mw := multipart.NewWriter(body)
 	fw, _ := mw.CreateFormFile("cert", "cert.pem")
-	fw.Write([]byte("not a cert"))
-	mw.Close()
+	_, _ = fw.Write([]byte("not a cert"))
+	_ = mw.Close()
 	if code, _, _ := sslDo(t, r, http.MethodPost, "/ssl/upload", body, mw.FormDataContentType()); code != http.StatusBadRequest {
 		t.Fatalf("missing key: %d", code)
 	}
@@ -193,17 +193,21 @@ func TestSSLAPIPaths(t *testing.T) {
 	dir := t.TempDir()
 	certPEM, keyPEM := pemPair(t)
 	certFile, keyFile := filepath.Join(dir, "fullchain.pem"), filepath.Join(dir, "privkey.pem")
-	os.WriteFile(certFile, certPEM, 0o644)
-	os.WriteFile(keyFile, keyPEM, 0o600)
+	if err := os.WriteFile(certFile, certPEM, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(keyFile, keyPEM, 0o600); err != nil {
+		t.Fatal(err)
+	}
 
 	// start from an uploaded certificate: switching to paths deletes its copy
 	body := &bytes.Buffer{}
 	mw := multipart.NewWriter(body)
 	fw, _ := mw.CreateFormFile("cert", "cert.pem")
-	fw.Write(certPEM)
+	_, _ = fw.Write(certPEM)
 	fw, _ = mw.CreateFormFile("key", "key.pem")
-	fw.Write(keyPEM)
-	mw.Close()
+	_, _ = fw.Write(keyPEM)
+	_ = mw.Close()
 	if code, _, raw := sslDo(t, r, http.MethodPost, "/ssl/upload", body, mw.FormDataContentType()); code != http.StatusOK {
 		t.Fatalf("upload %d %s", code, raw)
 	}
