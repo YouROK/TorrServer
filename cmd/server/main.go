@@ -30,7 +30,7 @@ func main() {
 	}
 	defer log.Close()
 
-	log.Infof("[App] === Silo %s started ===", version.Version)
+	log.Infof("[App] === TorrServer %s, engine: %s started ===", version.Version, version.GetTorrentVersion())
 	log.Debugf("[Config] loaded successfully from %s", *configPath)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
