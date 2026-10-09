@@ -1,6 +1,11 @@
 'use strict';
 
 let editHash = null;
+let editLinkPoster = '';
+let editFoundPosters = [];
+let editSelectedPoster = '';
+let editSearchTimer = null;
+let editSearchSeq = 0;
 
 function modalConfirm(title, text, okKey) {
     return new Promise((resolve) => {
@@ -31,91 +36,166 @@ function modalConfirm(title, text, okKey) {
     });
 }
 
-function openAddModal() {
-    const overlay = document.getElementById('add-overlay');
-    overlay.style.display = 'flex';
-    document.getElementById('add-form').reset();
-    setTimeout(() => document.querySelector('#add-form [name="link"]').focus(), 50);
+// editStripUrls собирает список постеров: первым идет ссылка из поля, затем найденные в TMDB
+function editStripUrls() {
+    const list = [];
+    const seen = new Set();
+
+    const push = (url) => {
+        const value = (url || '').trim();
+        if (!value || seen.has(value)) return;
+        seen.add(value);
+        list.push(value);
+    };
+
+    push(editLinkPoster);
+    for (const url of editFoundPosters) push(url);
+    return list;
 }
 
-function closeAddModal() {
-    document.getElementById('add-overlay').style.display = 'none';
-}
+function editRenderStrip() {
+    const strip = document.getElementById('edit-poster-strip');
+    if (!strip) return;
 
-async function submitAdd(e) {
-    e.preventDefault();
-    const form = e.target;
-    const fd = new FormData(form);
-    const link = (fd.get('link') || '').toString().trim();
-    if (!link) {
-        showToast(t('required_field'), 'error');
+    const list = editStripUrls();
+    if (list.length === 0) {
+        strip.innerHTML = '<span class="poster-empty">' + esc(t('poster_none')) + '</span>';
         return;
     }
 
-    const body = {
-        link: link,
-        title: (fd.get('title') || '').toString().trim(),
-        poster: (fd.get('poster') || '').toString().trim(),
-        category: (fd.get('category') || '').toString().trim(),
-        save_to_db: true,
-    };
+    strip.innerHTML = list.map((url) => {
+        const active = url === editSelectedPoster ? ' active' : '';
+        return '<button class="poster-item' + active + '" type="button" data-url="' + esc(url) + '">' +
+            '<img src="' + esc(url) + '" alt="" loading="lazy" ' +
+            'onerror="this.closest(\'.poster-item\').classList.add(\'broken\')">' +
+            '</button>';
+    }).join('');
+}
 
-    const submitBtn = form.querySelector('[type="submit"]');
-    submitBtn.disabled = true;
+function editRenderPreview() {
+    const img = document.getElementById('edit-preview-img');
+    const empty = document.getElementById('edit-preview-empty');
+    if (!img || !empty) return;
 
-    try {
-        const res = await fetch('/api/torrents', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-        });
-
-        if (!res.ok) {
-            let errMsg = 'error';
-            try {
-                const j = await res.json();
-                if (j && j.error) errMsg = j.error;
-            } catch (x) {}
-            showToast(errMsg, 'error');
-            return;
-        }
-
-        showToast(t('added_successfully'), 'success');
-        closeAddModal();
-    } catch (err) {
-        showToast(err.message, 'error');
-    } finally {
-        submitBtn.disabled = false;
+    if (editSelectedPoster) {
+        img.src = editSelectedPoster;
+        img.hidden = false;
+        empty.hidden = true;
+    } else {
+        img.removeAttribute('src');
+        img.hidden = true;
+        empty.hidden = false;
     }
+}
+
+function editSetPoster(url) {
+    editSelectedPoster = (url || '').trim();
+    const input = document.getElementById('edit-poster-url');
+    if (input && input.value.trim() !== editSelectedPoster) input.value = editSelectedPoster;
+    editLinkPoster = editSelectedPoster;
+    editRenderPreview();
+    editRenderStrip();
+}
+
+function editSetStatus(key) {
+    const status = document.getElementById('edit-poster-status');
+    if (status) status.textContent = key ? t(key) : '';
+}
+
+// editSearchPosters подтягивает постеры из TMDB по текущему названию
+function editSearchPosters() {
+    if (editSearchTimer) {
+        clearTimeout(editSearchTimer);
+        editSearchTimer = null;
+    }
+
+    const query = shortenPosterQuery(document.querySelector('#edit-form [name="title"]').value);
+    if (query.length < POSTER_SEARCH_MIN_LEN) {
+        editFoundPosters = [];
+        editSetStatus('');
+        editRenderStrip();
+        editRenderPreview();
+        return;
+    }
+
+    const seq = ++editSearchSeq;
+    editSetStatus('poster_searching');
+    editSearchTimer = setTimeout(async () => {
+        editSearchTimer = null;
+        try {
+            const found = await tmdbPosters(query);
+            if (seq !== editSearchSeq) return;
+            editFoundPosters = found;
+            editSetStatus(found.length > 0 ? '' : 'poster_not_found');
+        } catch (e) {
+            if (seq !== editSearchSeq) return;
+            editFoundPosters = [];
+            editSetStatus('poster_not_found');
+        }
+        editRenderStrip();
+        editRenderPreview();
+    }, POSTER_SEARCH_DELAY);
+}
+
+// editSyncFromUrlInput переносит ссылку из поля в начало списка постеров
+function editSyncFromUrlInput() {
+    editLinkPoster = document.getElementById('edit-poster-url').value.trim();
+    editSelectedPoster = editLinkPoster || editFoundPosters[0] || '';
+    editRenderStrip();
+    editRenderPreview();
 }
 
 function openEditModal(hash) {
     const card = cardsStore.get(hash);
     if (!card) return;
+
     editHash = hash;
-    document.getElementById('edit-hash').textContent = hash;
+    editLinkPoster = card.poster || '';
+    editFoundPosters = [];
+    editSelectedPoster = editLinkPoster;
+    if (editSearchTimer) {
+        clearTimeout(editSearchTimer);
+        editSearchTimer = null;
+    }
+    editSearchSeq++;
+
+    const hashEl = document.getElementById('edit-hash');
+    hashEl.textContent = shortHash(hash);
+    hashEl.title = hash;
     const form = document.getElementById('edit-form');
     form.reset();
     form.querySelector('[name="title"]').value = card.title || '';
-    form.querySelector('[name="poster"]').value = card.poster || '';
-    form.querySelector('[name="category"]').value = card.category || '';
+    document.getElementById('edit-poster-url').value = card.poster || '';
+    categoryFillSelect(document.getElementById('edit-category'), card.category || '');
+
+    editSetStatus('');
+    editRenderStrip();
+    editRenderPreview();
+
     document.getElementById('edit-overlay').style.display = 'flex';
     setTimeout(() => form.querySelector('[name="title"]').focus(), 50);
+    editSearchPosters();
 }
 
 function closeEditModal() {
     document.getElementById('edit-overlay').style.display = 'none';
+    if (editSearchTimer) {
+        clearTimeout(editSearchTimer);
+        editSearchTimer = null;
+    }
+    editSearchSeq++;
     editHash = null;
 }
 
 async function submitEdit(e) {
     e.preventDefault();
     if (!editHash) return;
+
     const form = e.target;
     const fd = new FormData(form);
     const body = {
         title: (fd.get('title') || '').toString().trim(),
-        poster: (fd.get('poster') || '').toString().trim(),
+        poster: (fd.get('poster') || '').toString().trim() || editSelectedPoster,
         category: (fd.get('category') || '').toString().trim(),
     };
 
@@ -149,13 +229,10 @@ async function submitEdit(e) {
 }
 
 function bindModals() {
-    document.getElementById('btn-add').addEventListener('click', openAddModal);
-    document.getElementById('add-close').addEventListener('click', closeAddModal);
-    document.getElementById('add-cancel').addEventListener('click', closeAddModal);
-    document.getElementById('add-form').addEventListener('submit', submitAdd);
-    document.getElementById('add-overlay').addEventListener('click', (e) => {
-        if (e.target.id === 'add-overlay') closeAddModal();
-    });
+    const editTitleInput = document.querySelector('#edit-form [name="title"]');
+    const editPosterInput = document.getElementById('edit-poster-url');
+    const editStrip = document.getElementById('edit-poster-strip');
+    const editSelect = document.getElementById('edit-category');
 
     document.getElementById('edit-close').addEventListener('click', closeEditModal);
     document.getElementById('edit-cancel').addEventListener('click', closeEditModal);
@@ -163,6 +240,18 @@ function bindModals() {
     document.getElementById('edit-overlay').addEventListener('click', (e) => {
         if (e.target.id === 'edit-overlay') closeEditModal();
     });
+
+    editTitleInput.addEventListener('input', () => editSearchPosters());
+    editPosterInput.addEventListener('input', () => editSyncFromUrlInput());
+    editStrip.addEventListener('click', (e) => {
+        const item = e.target.closest('.poster-item');
+        if (!item) return;
+        editSetPoster(item.getAttribute('data-url'));
+    });
+
+    categoryFillSelect(editSelect, '');
+    editRenderStrip();
+    editRenderPreview();
 
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {

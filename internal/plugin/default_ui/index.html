@@ -82,29 +82,58 @@
 
 <!-- Add torrent modal -->
 <div class="modal-overlay" id="add-overlay" style="display:none;">
-    <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal modal-add" role="dialog" aria-modal="true">
         <div class="modal-header">
             <h2 data-i18n="add_torrent">Add torrent</h2>
             <button class="modal-close" id="add-close" type="button" aria-label="Close">×</button>
         </div>
         <form id="add-form" autocomplete="off">
-            <div class="modal-body">
-                <label class="field">
-                    <span data-i18n="link">Link (magnet / hash / torrs://)</span>
-                    <input class="input" name="link" required>
-                </label>
-                <label class="field">
-                    <span data-i18n="title">Title</span>
-                    <input class="input" name="title">
-                </label>
-                <label class="field">
-                    <span data-i18n="poster">Poster URL</span>
-                    <input class="input" name="poster" type="url">
-                </label>
-                <label class="field">
-                    <span data-i18n="category">Category</span>
-                    <input class="input" name="category">
-                </label>
+            <div class="modal-body add-body">
+                <div class="add-preview">
+                    <div class="add-preview-frame" id="add-preview-frame">
+                        <img id="add-preview-img" src="" alt="" hidden>
+                        <div class="add-preview-empty" id="add-preview-empty" data-i18n="no_poster">No Poster</div>
+                    </div>
+                    <div class="add-preview-label" data-i18n="selected_poster">Selected poster</div>
+                </div>
+
+                <div class="add-fields">
+                    <label class="field">
+                        <span data-i18n="link">Link (magnet / hash / torrs://)</span>
+                        <textarea class="input add-textarea" name="link" rows="2" data-i18n-placeholder="link_placeholder"></textarea>
+                    </label>
+
+                    <label class="file-drop" id="add-drop">
+                        <input type="file" id="add-file" accept=".torrent,application/x-bittorrent">
+                        <img class="file-drop-icon" src="img/ico-download.svg" alt="" onerror="this.style.display='none'">
+                        <span class="file-drop-text" data-i18n="file_drop">Choose or drop a .torrent file</span>
+                        <span class="file-drop-name" id="add-file-name" hidden></span>
+                        <button class="file-drop-clear" id="add-file-clear" type="button" hidden aria-label="Clear">×</button>
+                    </label>
+
+                    <label class="field">
+                        <span data-i18n="title">Title</span>
+                        <input class="input" name="title" data-i18n-placeholder="title_placeholder">
+                    </label>
+
+                    <label class="field">
+                        <span data-i18n="category">Category</span>
+                        <select class="input" name="category" id="add-category"></select>
+                    </label>
+
+                    <div class="field">
+                        <span data-i18n="poster">Poster URL</span>
+                        <input class="input" name="poster" id="add-poster-url" data-i18n-placeholder="poster_placeholder">
+                    </div>
+
+                    <div class="poster-block">
+                        <div class="poster-block-head">
+                            <span data-i18n="poster_list">Posters</span>
+                            <span class="poster-status" id="add-poster-status"></span>
+                        </div>
+                        <div class="poster-strip" id="add-poster-strip"></div>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" type="button" id="add-cancel" data-i18n="cancel">Cancel</button>
@@ -116,29 +145,49 @@
 
 <!-- Edit torrent modal -->
 <div class="modal-overlay" id="edit-overlay" style="display:none;">
-    <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal modal-add" role="dialog" aria-modal="true">
         <div class="modal-header">
             <h2 data-i18n="edit_torrent">Edit torrent</h2>
             <button class="modal-close" id="edit-close" type="button" aria-label="Close">×</button>
         </div>
         <form id="edit-form" autocomplete="off">
-            <div class="modal-body">
-                <label class="field">
-                    <span data-i18n="hash">Hash</span>
-                    <div class="edit-hash" id="edit-hash"></div>
-                </label>
-                <label class="field">
-                    <span data-i18n="title">Title</span>
-                    <input class="input" name="title">
-                </label>
-                <label class="field">
-                    <span data-i18n="poster">Poster URL</span>
-                    <input class="input" name="poster" type="url">
-                </label>
-                <label class="field">
-                    <span data-i18n="category">Category</span>
-                    <input class="input" name="category">
-                </label>
+            <div class="modal-body add-body">
+                <div class="add-preview">
+                    <div class="add-preview-frame">
+                        <img id="edit-preview-img" src="" alt="" hidden>
+                        <div class="add-preview-empty" id="edit-preview-empty" data-i18n="no_poster">No Poster</div>
+                    </div>
+                    <div class="add-preview-label" data-i18n="selected_poster">Selected poster</div>
+                    <div class="edit-hash">
+                        <span class="hash-label" data-i18n="hash">Hash</span>
+                        <span class="hash-value" id="edit-hash"></span>
+                    </div>
+                </div>
+
+                <div class="add-fields">
+                    <label class="field">
+                        <span data-i18n="title">Title</span>
+                        <input class="input" name="title" data-i18n-placeholder="title_placeholder">
+                    </label>
+
+                    <label class="field">
+                        <span data-i18n="category">Category</span>
+                        <select class="input" name="category" id="edit-category"></select>
+                    </label>
+
+                    <div class="field">
+                        <span data-i18n="poster">Poster URL</span>
+                        <input class="input" name="poster" id="edit-poster-url" data-i18n-placeholder="poster_placeholder">
+                    </div>
+
+                    <div class="poster-block">
+                        <div class="poster-block-head">
+                            <span data-i18n="poster_list">Posters</span>
+                            <span class="poster-status" id="edit-poster-status"></span>
+                        </div>
+                        <div class="poster-strip" id="edit-poster-strip"></div>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" type="button" id="edit-cancel" data-i18n="cancel">Cancel</button>
@@ -156,10 +205,11 @@
             <div class="info-head-right">
                 <div class="info-title-row">
                     <h2 id="info-title"></h2>
-                    <button class="modal-close" id="info-edit" type="button" aria-label="Edit">
-                        <img src="img/ico-edit.svg" alt="" onerror="this.style.display='none'">
-                    </button>
                     <button class="modal-close" id="info-close" type="button" aria-label="Close">×</button>
+                </div>
+                <div class="hash-row">
+                    <span class="hash-label" data-i18n="hash">Hash</span>
+                    <span class="hash-value" id="info-hash"></span>
                 </div>
                 <div class="info-plaques" id="info-plaques"></div>
                 <div class="info-plaques info-plaques-cache" id="info-plaques-cache"></div>
@@ -275,7 +325,9 @@
 <div id="toast-root" class="toast-root"></div>
 
 <script src="js/utils.js"></script>
+<script src="js/categories.js"></script>
 <script src="js/cards.js"></script>
+<script src="js/add.js"></script>
 <script src="js/modals.js"></script>
 <script src="js/cache.js"></script>
 <script src="js/info.js"></script>

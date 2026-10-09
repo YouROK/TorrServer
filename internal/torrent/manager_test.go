@@ -294,6 +294,77 @@ func TestManager_AutoSleep(t *testing.T) {
 	}
 }
 
+// TestManager_TitleFromMetadata проверяет подстановку имени раздачи из метаданных,
+// когда пользователь не задал свое название (голый хэш или magnet без dn)
+func TestManager_TitleFromMetadata(t *testing.T) {
+	mgr, _, engine, tStore, owner := setupManagerTest(t)
+
+	spec := createSyntheticSpec(t)
+	hashHex := spec.InfoHash.HexString()
+
+	// Добавляем без названия - имя должно прийти из метаданных "Test_Series_Season_1"
+	st, err := mgr.AddTorrent(owner, spec, "", "", "", true)
+	if err != nil {
+		t.Fatalf("AddTorrent failed: %v", err)
+	}
+
+	// Информация уже в InfoBytes, поэтому имя известно сразу
+	if st.Title != "Test_Series_Season_1" {
+		t.Errorf("Expected name from info bytes, got: %q", st.Title)
+	}
+
+	// Ждем фонового сохранения метаданных
+	time.Sleep(200 * time.Millisecond)
+
+	rec, err := tStore.Get(hashHex)
+	if err != nil {
+		t.Fatalf("Torrent card missing from database: %v", err)
+	}
+	if rec.Name != "Test_Series_Season_1" {
+		t.Errorf("Expected metadata name in DB, got: %q", rec.Name)
+	}
+
+	// Личная карточка осталась без названия: его подставляет резолв при чтении
+	ut, err := mgr.userSvc.GetUserTorrent(owner.ID, hashHex)
+	if err != nil {
+		t.Fatalf("User torrent missing: %v", err)
+	}
+	if ut.Title != "" {
+		t.Errorf("User title should stay empty, got: %q", ut.Title)
+	}
+
+	// Живой статус отдает имя из метаданных
+	st, err = mgr.GetTorrentStatus(owner, hashHex)
+	if err != nil {
+		t.Fatalf("GetTorrentStatus failed: %v", err)
+	}
+	if st.Title != "Test_Series_Season_1" {
+		t.Errorf("Expected metadata title, got: %q", st.Title)
+	}
+
+	// Спящий статус тоже отдает имя из метаданных
+	engine.Stop(spec.InfoHash)
+	sleepSt, err := mgr.GetTorrentStatus(owner, hashHex)
+	if err != nil {
+		t.Fatalf("GetTorrentStatus failed for sleeping torrent: %v", err)
+	}
+	if sleepSt.Title != "Test_Series_Season_1" {
+		t.Errorf("Expected metadata title for sleeping torrent, got: %q", sleepSt.Title)
+	}
+
+	// Личное название пользователя имеет приоритет над именем из метаданных
+	if err := mgr.userSvc.UpdateTorrentMeta(owner, hashHex, "My Own Title", "", ""); err != nil {
+		t.Fatalf("UpdateTorrentMeta failed: %v", err)
+	}
+	st, err = mgr.GetTorrentStatus(owner, hashHex)
+	if err != nil {
+		t.Fatalf("GetTorrentStatus failed: %v", err)
+	}
+	if st.Title != "My Own Title" {
+		t.Errorf("Expected user title to win, got: %q", st.Title)
+	}
+}
+
 // TestManager_DropOnUserDelete проверяет полное удаление из БД и RAM по сигналу шины
 func TestManager_DropOnUserDelete(t *testing.T) {
 	mgr, userSvc, engine, tStore, owner := setupManagerTest(t)

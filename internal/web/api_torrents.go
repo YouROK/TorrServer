@@ -45,29 +45,102 @@ func isHexHash(s string) bool {
 	return true
 }
 
-// handleAddTorrent принимает magnet-ссылку, голый info-hash или torrs:// ссылку
+// addTorrentRequest - разобранные поля формы добавления раздачи
+type addTorrentRequest struct {
+	Link     string
+	File     []byte
+	Title    string
+	Poster   string
+	Category string
+	SaveToDB bool
+}
+
+// maxTorrentFileSize ограничивает размер загружаемого .torrent файла
+const maxTorrentFileSize = 10 << 20
+
+// parseAddTorrentRequest читает запрос в формате multipart (с файлом) или JSON
+func parseAddTorrentRequest(c *gin.Context, defaultSaveToDB bool) (*addTorrentRequest, error) {
+	if strings.HasPrefix(c.GetHeader("Content-Type"), "multipart/form-data") {
+		if err := c.Request.ParseMultipartForm(maxTorrentFileSize); err != nil {
+			return nil, errors.New("invalid multipart form")
+		}
+
+		req := &addTorrentRequest{
+			Link:     strings.TrimSpace(c.PostForm("link")),
+			Title:    strings.TrimSpace(c.PostForm("title")),
+			Poster:   strings.TrimSpace(c.PostForm("poster")),
+			Category: strings.TrimSpace(c.PostForm("category")),
+			SaveToDB: defaultSaveToDB,
+		}
+		if raw := c.PostForm("save_to_db"); raw != "" {
+			req.SaveToDB = raw == "true"
+		}
+
+		if file, _, err := c.Request.FormFile("file"); err == nil {
+			defer file.Close()
+			data, err := io.ReadAll(io.LimitReader(file, maxTorrentFileSize))
+			if err != nil {
+				return nil, errors.New("failed to read torrent file")
+			}
+			req.File = data
+		}
+
+		if len(req.File) == 0 && req.Link == "" {
+			return nil, errors.New("torrent file or link is required")
+		}
+		return req, nil
+	}
+
+	var body struct {
+		Link     string `json:"link"`
+		Title    string `json:"title"`
+		Poster   string `json:"poster"`
+		Category string `json:"category"`
+		SaveToDB *bool  `json:"save_to_db"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		return nil, errors.New("invalid request format")
+	}
+
+	saveToDB := defaultSaveToDB
+	if body.SaveToDB != nil {
+		saveToDB = *body.SaveToDB
+	}
+
+	return &addTorrentRequest{
+		Link:     strings.TrimSpace(body.Link),
+		Title:    body.Title,
+		Poster:   body.Poster,
+		Category: body.Category,
+		SaveToDB: saveToDB,
+	}, nil
+}
+
+// handleAddTorrent принимает magnet-ссылку, голый info-hash, torrs:// ссылку или .torrent файл
 func (s *Server) handleAddTorrent(c *gin.Context) {
 	val, _ := c.Get("user")
 	currentUser := val.(*user.User)
 
-	var req struct {
-		Link     string `json:"link" binding:"required"`
-		Title    string `json:"title"`
-		Poster   string `json:"poster"`
-		Category string `json:"category"`
-		SaveToDB bool   `json:"save_to_db"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request format"})
+	req, err := parseAddTorrentRequest(c, true)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	link := strings.TrimSpace(req.Link)
+	link := req.Link
 	title, poster, category := req.Title, req.Poster, req.Category
 	var trackers []string
 	var spec *torrent.TorrentSpec
 
 	switch {
+	// Загруженный .torrent файл: хэш, имя и трекеры уже внутри
+	case len(req.File) > 0:
+		spec, err = torr.ParseTorrentFile(req.File)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid torrent file"})
+			return
+		}
+
 	// torrs:// - наш упакованный формат со всеми полями
 	case strings.HasPrefix(link, "torrs://"):
 		th, err := torrshash.Unpack(strings.TrimPrefix(link, "torrs://"))
@@ -111,7 +184,7 @@ func (s *Server) handleAddTorrent(c *gin.Context) {
 		}
 
 	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "unsupported link format: use magnet, hash or torrs://"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "unsupported link format: use magnet, hash, torrs:// or .torrent file"})
 		return
 	}
 
@@ -120,7 +193,9 @@ func (s *Server) handleAddTorrent(c *gin.Context) {
 	for _, tr := range trackers {
 		tiers = append(tiers, []string{tr})
 	}
-	spec.Trackers = tiers
+	if len(tiers) > 0 {
+		spec.Trackers = append(spec.Trackers, tiers...)
+	}
 
 	status, err := s.torrentMgr.AddTorrent(currentUser, spec, title, poster, category, req.SaveToDB)
 	if err != nil {
@@ -195,7 +270,7 @@ func (s *Server) handleUpdateTorrentMeta(c *gin.Context) {
 		return
 	}
 
-	if err := s.userSvc.UpdateTorrentMeta(currentUser, hashHex, req.Title, req.Poster, req.Category); err != nil {
+	if err := s.userSvc.UpdateTorrentMeta(currentUser, hashHex, req.Title, req.Poster, torr.CategoryKey(req.Category)); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}

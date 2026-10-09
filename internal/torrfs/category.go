@@ -5,6 +5,7 @@ import (
 	"sort"
 	"time"
 
+	"silo/internal/torrent"
 	"silo/internal/user"
 )
 
@@ -33,7 +34,7 @@ func (c *CategoryNode) Children() ([]Node, error) {
 	names := make([]string, len(entries))
 	counts := map[string]int{}
 	for i, e := range entries {
-		names[i] = sanitizeName(e.ut.Title)
+		names[i] = sanitizeName(torrent.ResolveTitle(e.ut.Title, e.rec.Name, e.ut.TorrentHash))
 		counts[names[i]]++
 	}
 

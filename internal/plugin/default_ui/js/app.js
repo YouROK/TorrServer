@@ -97,6 +97,7 @@ async function init() {
     try {
         applyTranslations();
         await loadUser();
+        bindAddModal();
         bindModals();
         bindGrid();
         bindInfoModal();

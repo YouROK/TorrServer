@@ -586,6 +586,265 @@ h1, h2, h3 {
 .modal-sm { max-width: 380px; }
 .modal-about { max-width: 560px; }
 
+.modal-add {
+    max-width: 760px;
+    width: 100%;
+}
+
+.add-body {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.add-preview {
+    flex: 0 0 260px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.add-preview-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    background: var(--silo-surface);
+    border: 1px solid var(--silo-border);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.add-preview-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.add-preview-empty {
+    color: var(--silo-text-faint);
+    font-size: 13px;
+    text-align: center;
+    padding: 12px;
+}
+
+.add-preview-label {
+    color: var(--silo-text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center;
+}
+
+.add-fields {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+select.input {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2398a2a9' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 34px;
+    cursor: pointer;
+}
+
+.edit-hash {
+    margin-top: 10px;
+    padding: 6px 8px;
+    background: var(--silo-surface);
+    border: 1px solid var(--silo-border);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.add-textarea {
+    resize: vertical;
+    min-height: 56px;
+    font-family: inherit;
+}
+
+/* Настоящий input скрыт, роль кнопки играет сама зона загрузки */
+.file-drop {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    background: var(--silo-surface);
+    border: 1px dashed var(--silo-border-strong);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.file-drop:hover,
+.file-drop.dragging {
+    border-color: var(--silo-amber);
+    background: var(--silo-surface-hover);
+}
+
+.file-drop.has-file {
+    border-style: solid;
+}
+
+.file-drop input[type="file"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.file-drop-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    opacity: 0.85;
+}
+
+.file-drop-text {
+    color: var(--silo-text-muted);
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.file-drop-name {
+    color: var(--silo-steel-bright);
+    font-size: 13px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.file-drop-clear {
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    color: var(--silo-text-muted);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.file-drop-clear:hover {
+    background: var(--silo-bg-raised);
+    color: var(--silo-danger);
+}
+
+.poster-block-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.poster-block-head > span:first-child {
+    color: var(--silo-text-muted);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.poster-status {
+    color: var(--silo-text-faint);
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.poster-strip {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    min-height: 132px;
+    align-items: flex-start;
+}
+
+.poster-strip::-webkit-scrollbar { height: 6px; }
+.poster-strip::-webkit-scrollbar-thumb {
+    background: var(--silo-border-strong);
+    border-radius: 3px;
+}
+
+.poster-item {
+    flex: 0 0 auto;
+    width: 92px;
+    height: 138px;
+    padding: 0;
+    background: var(--silo-surface);
+    border: 2px solid var(--silo-border);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.2s ease, transform 0.15s ease;
+}
+
+.poster-item:hover {
+    border-color: var(--silo-amber);
+    transform: translateY(-2px);
+}
+
+.poster-item.active {
+    border-color: var(--silo-amber-bright);
+    box-shadow: 0 0 0 1px var(--silo-amber-bright) inset;
+}
+
+.poster-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.poster-item.broken {
+    display: none;
+}
+
+.poster-empty {
+    color: var(--silo-text-faint);
+    font-size: 12px;
+    align-self: center;
+}
+
+@media (max-width: 720px) {
+    .add-body {
+        flex-direction: column;
+    }
+
+    .add-preview {
+        flex: 0 0 auto;
+        width: 100%;
+        max-width: 220px;
+        margin: 0 auto;
+    }
+}
+
 .modal-info {
     max-width: 980px;
     width: 100%;
@@ -598,14 +857,6 @@ h1, h2, h3 {
     margin: 0;
     color: var(--silo-text-muted);
     font-size: 14px;
-}
-
-.edit-hash {
-    color: var(--silo-text-faint);
-    font-size: 11px;
-    font-family: "JetBrains Mono", "Consolas", monospace;
-    word-break: break-all;
-    line-height: 1.4;
 }
 
 .info-header {
@@ -654,6 +905,36 @@ h1, h2, h3 {
     display: flex;
     gap: 6px;
     flex-wrap: nowrap;
+}
+
+.hash-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.hash-label {
+    color: var(--silo-text-muted);
+    font-size: 11px;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.hash-value {
+    color: var(--silo-text);
+    font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+    font-size: 12px;
+    word-break: break-all;
+    min-width: 0;
+}
+
+.hash-row .hash-value {
+    cursor: pointer;
+}
+
+.hash-row .hash-value:hover {
+    color: var(--silo-amber);
 }
 
 .info-plaques-cache {
@@ -1085,6 +1366,15 @@ h1, h2, h3 {
 ::-webkit-scrollbar-thumb:hover { background: var(--silo-amber-deep); }
 
 @media (max-width: 767px) {
+    .modal-add .modal-body {
+        padding: 16px;
+    }
+
+    .poster-item {
+        width: 78px;
+        height: 117px;
+    }
+
     .sidebar {
         position: fixed;
         top: 0;

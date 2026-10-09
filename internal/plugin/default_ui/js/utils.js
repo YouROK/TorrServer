@@ -26,6 +26,12 @@ function fmtPeers(peers, seeders) {
     return (peers || 0) + '/' + (seeders || 0);
 }
 
+// shortHash укорачивает info-хэш для компактных подписей
+function shortHash(hash) {
+    const value = (hash || '').trim();
+    return value.length > 8 ? value.slice(0, 8) : value;
+}
+
 function legacyCopy(text) {
     const ta = document.createElement('textarea');
     ta.value = text;
@@ -66,5 +72,8 @@ function applyTranslations() {
     document.querySelectorAll('[data-i18n]').forEach((el) => {
         const key = el.getAttribute('data-i18n');
         el.textContent = t(key);
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+        el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder')));
     });
 }

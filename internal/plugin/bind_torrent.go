@@ -20,9 +20,8 @@ func (rt *JSRuntime) createTorrentModule(mgr *torrent.Manager, userSvc *user.Ser
 			panic(rt.vm.ToValue(fmt.Sprintf("invalid torrent input: %v", err)))
 		}
 
-		// Параметры по умолчанию
-		title := spec.DisplayName
-		var poster, category string
+		// Параметры по умолчанию: пустое название подставится из метаданных раздачи
+		var title, poster, category string
 		saveToDB := true
 		targetUserID := "owner"
 

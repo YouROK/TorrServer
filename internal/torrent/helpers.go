@@ -1,14 +1,17 @@
 package torrent
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/base32"
 	"fmt"
+	"os"
 	"strings"
 
 	"golang.org/x/time/rate"
 
 	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/bencode"
 	"github.com/anacrolix/torrent/metainfo"
 )
 
@@ -33,24 +36,44 @@ func NewRateLimiter(rateKB int) *rate.Limiter {
 	return rate.NewLimiter(rate.Limit(bytesPerSec), burst)
 }
 
-// OpenTorrentFile читает .torrent файл с диска и создает спецификацию
-func OpenTorrentFile(filePath string) (*torrent.TorrentSpec, error) {
-	minfo, err := metainfo.LoadFromFile(filePath)
+// InfoName достает имя раздачи из bencode info-словаря
+func InfoName(infoBytes []byte) string {
+	if len(infoBytes) == 0 {
+		return ""
+	}
+	var info metainfo.Info
+	if err := bencode.Unmarshal(infoBytes, &info); err != nil {
+		return ""
+	}
+	return info.BestName()
+}
+
+// ParseTorrentFile разбирает .torrent файл и создает спецификацию
+func ParseTorrentFile(data []byte) (*torrent.TorrentSpec, error) {
+	minfo, err := metainfo.Load(bytes.NewReader(data))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid torrent file: %w", err)
 	}
 	info, err := minfo.UnmarshalInfo()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid torrent info: %w", err)
 	}
 
-	mag := minfo.Magnet(nil, &info)
 	return &torrent.TorrentSpec{
 		InfoBytes:   minfo.InfoBytes,
-		Trackers:    [][]string{mag.Trackers},
-		DisplayName: info.Name,
+		Trackers:    minfo.UpvertedAnnounceList(),
+		DisplayName: info.BestName(),
 		InfoHash:    minfo.HashInfoBytes(),
 	}, nil
+}
+
+// OpenTorrentFile читает .torrent файл с диска и создает спецификацию
+func OpenTorrentFile(filePath string) (*torrent.TorrentSpec, error) {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+	return ParseTorrentFile(data)
 }
 
 // ParseTorrentSpec преобразует magnet-ссылку или 40-символьный hex-хэш в TorrentSpec

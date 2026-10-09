@@ -29,6 +29,9 @@ type Session struct {
 	// Личные метаданные пользователей, которые сейчас смотрят раздачу
 	userMeta map[string]EphemeralMeta
 
+	// Имя раздачи из полученных метаданных
+	metaName string
+
 	// Скорость и статистика
 	lastSpeedCalc   time.Time
 	downloadSpeed   float64
@@ -47,13 +50,15 @@ type Session struct {
 
 func newSession(t *torrent.Torrent, spec *torrent.TorrentSpec, stor *torrstor.Storage) *Session {
 	s := &Session{
-		t:             t,
-		spec:          spec,
-		storage:       stor,
-		stat:          TorrentAdded,
-		timestamp:     time.Now().Unix(),
-		userMeta:      make(map[string]EphemeralMeta),
-		trackers:      spec.Trackers,
+		t:         t,
+		spec:      spec,
+		storage:   stor,
+		stat:      TorrentAdded,
+		timestamp: time.Now().Unix(),
+		userMeta:  make(map[string]EphemeralMeta),
+		trackers:  spec.Trackers,
+		// Готовые info-байты несут имя сразу, без ожидания сети
+		metaName:      InfoName(spec.InfoBytes),
 		lastSpeedCalc: time.Now(),
 		lastActive:    time.Now(),
 		closed:        make(chan struct{}),
@@ -78,6 +83,7 @@ func (s *Session) WaitInfo(ctx context.Context) error {
 		s.mu.Lock()
 		s.stat = TorrentWorking
 		s.initFiles()
+		s.metaName = s.t.Name()
 
 		// Подтягиваем кэш из хранилища сразу после получения метаданных!
 		if s.storage != nil {
@@ -118,6 +124,25 @@ func (s *Session) Files() []*TorrentFileStat {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.files
+}
+
+// MetaName возвращает имя раздачи из полученных метаданных
+func (s *Session) MetaName() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.metaName
+}
+
+// SetMetaName сохраняет имя из базы, пока движок не получил метаданные
+func (s *Session) SetMetaName(name string) {
+	if name == "" {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.metaName == "" {
+		s.metaName = name
+	}
 }
 
 // NewReader создает ридер для воспроизведения файла
@@ -311,17 +336,23 @@ func (s *Session) SetUserMeta(userID, title, poster, category string) {
 	}
 }
 
+// UserTitle возвращает личное название пользователя, без имени из метаданных
+func (s *Session) UserTitle(userID string) string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.userMeta[userID].Title
+}
+
 // Status возвращает статус раздачи с учетом личных метаданных запрашивающего пользователя
 func (s *Session) Status(userID string) *TorrentStatus {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
+	hashHex := s.spec.InfoHash.HexString()
+
 	// Достаем личные данные пользователя (если есть)
 	meta := s.userMeta[userID]
-	displayTitle := meta.Title
-	if displayTitle == "" {
-		displayTitle = s.spec.DisplayName // Fallback на оригинальное имя
-	}
+	displayTitle := ResolveTitle(meta.Title, s.metaName, hashHex)
 
 	st := &TorrentStatus{
 		Title:          displayTitle,

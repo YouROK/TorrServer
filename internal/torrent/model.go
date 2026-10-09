@@ -87,12 +87,31 @@ type TorrentStatus struct {
 // TorrentRecord - глобальная физическая карточка раздачи в базе (без личных данных!)
 type TorrentRecord struct {
 	Hash      string             `json:"hash"`
+	Name      string             `json:"name,omitempty"` // Имя раздачи из метаданных
 	Size      int64              `json:"size"`
 	Timestamp int64              `json:"timestamp"`
 	MagnetUri string             `json:"magnet_uri,omitempty"`
 	InfoBytes []byte             `json:"info_bytes,omitempty"`
 	Trackers  []string           `json:"trackers,omitempty"`
 	Files     []*TorrentFileStat `json:"files,omitempty"`
+}
+
+// ResolveTitle выбирает название раздачи: личное, затем имя из метаданных, затем техническое.
+// Пустой hash отключает техническую подстановку: название остается пустым.
+func ResolveTitle(title, metaName, hash string) string {
+	if title != "" {
+		return title
+	}
+	if metaName != "" {
+		return metaName
+	}
+	if hash == "" {
+		return ""
+	}
+	if len(hash) >= 8 {
+		return "Torrent " + hash[:8]
+	}
+	return "Torrent"
 }
 
 // EphemeralMeta - личные метаданные пользователя для временных торрентов в RAM

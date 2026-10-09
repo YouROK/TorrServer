@@ -51,6 +51,7 @@ function renderInfo() {
     if (!infoStatus) return;
 
     document.getElementById('info-title').textContent = infoStatus.title || infoHash;
+    document.getElementById('info-hash').textContent = infoStatus.hash || infoHash || '';
     const poster = document.getElementById('info-poster');
     if (infoStatus.poster) {
         poster.src = infoStatus.poster;
@@ -66,7 +67,7 @@ function renderInfo() {
         [t('peers_seeds'), peersVal],
         [t('size'), fmtSize(infoStatus.torrent_size)],
         [t('status'), infoStatus.stat_string || '-'],
-        [t('category'), infoStatus.category || '-'],
+        [t('category'), infoStatus.category ? categoryLabel(infoStatus.category) : '-'],
     ];
     document.getElementById('info-plaques').innerHTML = plaques
         .map((p) => '<div class="plaque"><span class="plaque-label">' + p[0] + '</span><span class="plaque-value">' + esc(p[1]) + '</span></div>')
@@ -225,6 +226,7 @@ function openInfoModal(hash) {
 
     const card = cardsStore.get(hash);
     document.getElementById('info-title').textContent = card ? (card.title || hash) : hash;
+    document.getElementById('info-hash').textContent = hash;
     const poster = document.getElementById('info-poster');
     if (card && card.poster) {
         poster.src = card.poster;
@@ -258,8 +260,10 @@ function bindInfoModal() {
     });
 
     document.getElementById('info-close').addEventListener('click', closeInfoModal);
-    document.getElementById('info-edit').addEventListener('click', () => {
-        if (infoHash) openEditModal(infoHash);
+    document.getElementById('info-hash').addEventListener('click', async () => {
+        if (!infoHash) return;
+        await copyText(infoHash);
+        showToast(t('copied'), 'success');
     });
     document.getElementById('info-overlay').addEventListener('click', (e) => {
         if (e.target.id === 'info-overlay') closeInfoModal();

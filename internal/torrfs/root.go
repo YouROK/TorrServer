@@ -37,15 +37,23 @@ func (r *RootNode) Children() ([]Node, error) {
 		return nil, nil
 	}
 
-	cats := map[string]bool{}
+	// Раздачи без категории лежат прямо в корне, сгруппированные - в своих папках
+	categorized := make([]rootEntry, 0, len(entries))
+	plain := make([]rootEntry, 0, len(entries))
 	for _, e := range entries {
-		cats[effectiveCategory(e.ut.Category)] = true
+		if torrent.CategoryKey(e.ut.Category) == "" {
+			plain = append(plain, e)
+			continue
+		}
+		categorized = append(categorized, e)
 	}
 
-	if len(cats) >= 2 {
-		return r.categoryChildren(entries), nil
+	var nodes []Node
+	if len(categorized) > 0 {
+		nodes = append(nodes, r.categoryChildren(categorized)...)
 	}
-	return r.torrentChildren(entries, ""), nil
+	// Корневые раздачи нумеруются без префикса: узел категории сам добавляет свой путь
+	return append(nodes, r.torrentChildren(plain, "")...), nil
 }
 
 func (r *RootNode) loadEntries() ([]rootEntry, error) {
@@ -68,7 +76,7 @@ func (r *RootNode) loadEntries() ([]rootEntry, error) {
 func (r *RootNode) categoryChildren(entries []rootEntry) []Node {
 	byCat := map[string][]rootEntry{}
 	for _, e := range entries {
-		cat := effectiveCategory(e.ut.Category)
+		cat := sanitizeName(torrent.CategoryLabel(torrent.CategoryKey(e.ut.Category)))
 		byCat[cat] = append(byCat[cat], e)
 	}
 
@@ -99,7 +107,7 @@ func (r *RootNode) torrentChildren(entries []rootEntry, prefix string) []Node {
 	names := make([]string, len(entries))
 	counts := map[string]int{}
 	for i, e := range entries {
-		names[i] = sanitizeName(e.ut.Title)
+		names[i] = sanitizeName(torrent.ResolveTitle(e.ut.Title, e.rec.Name, e.ut.TorrentHash))
 		counts[names[i]]++
 	}
 
@@ -119,12 +127,4 @@ func (r *RootNode) torrentChildren(entries []rootEntry, prefix string) []Node {
 		})
 	}
 	return nodes
-}
-
-func effectiveCategory(c string) string {
-	s := sanitizeName(c)
-	if s == "unnamed" {
-		return "other"
-	}
-	return s
 }

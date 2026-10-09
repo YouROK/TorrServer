@@ -131,29 +131,22 @@ func (m *Manager) applyTrackerPolicy(spec *torrent.TorrentSpec) {
 func (m *Manager) AddTorrent(u *user.User, spec *torrent.TorrentSpec, title, poster, category string, saveToDB bool) (*TorrentStatus, error) {
 	m.applyTrackerPolicy(spec)
 	hashHex := spec.InfoHash.HexString()
+	category = CategoryKey(category)
 
-	displayTitle := title
-	if displayTitle == "" {
-		displayTitle = spec.DisplayName
-	}
-
-	// 1. Запускаем раздачу в оперативной памяти движка
 	session, err := m.engine.Start(spec)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start engine session: %w", err)
 	}
 
-	// 2. Устанавливаем личные метаданные в RAM (для Lampa/NUM)
-	session.SetUserMeta(u.ID, displayTitle, poster, category)
+	// Пустое название не сохраняем: оно подставится из метаданных при получении информации
+	session.SetUserMeta(u.ID, title, poster, category)
 
-	// 3. Если это временный торрент - на этом всё! В базу не пишем.
 	if !saveToDB {
 		go m.asyncFetchMetadata(session, nil) // Просто ждем метаданные для RAM
 		return session.Status(u.ID), nil
 	}
 
-	// 4. Если сохраняем в базу - пишем в личный список и в глобальную базу
-	if err := m.userSvc.AddTorrent(u, hashHex, displayTitle, poster, category); err != nil {
+	if err := m.userSvc.AddTorrent(u, hashHex, title, poster, category); err != nil {
 		return nil, err
 	}
 
@@ -184,6 +177,7 @@ func (m *Manager) asyncFetchMetadata(sess *Session, rec *TorrentRecord) {
 	if rec != nil {
 		rec.Size = sess.Status("").TorrentSize
 		rec.Files = files
+		rec.Name = sess.MetaName()
 		if len(sess.spec.InfoBytes) > 0 {
 			rec.InfoBytes = sess.spec.InfoBytes
 		}
@@ -211,10 +205,10 @@ func (m *Manager) WakeTorrent(u *user.User, hashHex string) error {
 		return fmt.Errorf("torrent not found in database: %w", err)
 	}
 
-	title := "Torrent " + hashHex[:8]
+	title := ResolveTitle("", rec.Name, hashHex)
 	var poster, category string
 	if ut, err := m.userSvc.GetUserTorrent(u.ID, hashHex); err == nil {
-		title = ut.Title
+		title = ResolveTitle(ut.Title, rec.Name, hashHex)
 		poster = ut.Poster
 		category = ut.Category
 	}
@@ -234,6 +228,7 @@ func (m *Manager) WakeTorrent(u *user.User, hashHex string) error {
 		return fmt.Errorf("failed to wake up torrent: %w", err)
 	}
 
+	sess.SetMetaName(rec.Name)
 	go m.asyncFetchMetadata(sess, rec)
 
 	sess.SetUserMeta(u.ID, title, poster, category)
@@ -257,7 +252,15 @@ func (m *Manager) GetTorrentStatus(u *user.User, hashHex string) (*TorrentStatus
 		if st.TorrentSize == 0 && recErr == nil && rec != nil {
 			st.TorrentSize = rec.Size
 		}
-		st.Torrs = packTorrs(hashHex, st.Title, st.Poster, st.Category, st.TorrentSize, flattenTrackers(sess.Trackers()))
+		// Имя, сохраненное ранее, подставляется, пока метаданные не получены
+		metaName := sess.MetaName()
+		if metaName == "" && recErr == nil && rec != nil {
+			metaName = rec.Name
+		}
+		userTitle := sess.UserTitle(u.ID)
+		st.Title = ResolveTitle(userTitle, metaName, hashHex)
+		// В torrs-ссылку техническое название не пишем: имя из метаданных есть у получателя
+		st.Torrs = packTorrs(hashHex, ResolveTitle(userTitle, metaName, ""), st.Poster, st.Category, st.TorrentSize, flattenTrackers(sess.Trackers()))
 		return st, nil
 	}
 
@@ -274,8 +277,11 @@ func (m *Manager) GetTorrentStatus(u *user.User, hashHex string) (*TorrentStatus
 		return nil, fmt.Errorf("torrent not found in your library")
 	}
 
+	title := ResolveTitle(ut.Title, rec.Name, hashHex)
+
 	return &TorrentStatus{
-		Title:       ut.Title,
+		Title:       title,
+		Name:        rec.Name,
 		Poster:      ut.Poster,
 		Category:    ut.Category,
 		Hash:        rec.Hash,
@@ -284,7 +290,7 @@ func (m *Manager) GetTorrentStatus(u *user.User, hashHex string) (*TorrentStatus
 		TorrentSize: rec.Size,
 		FileStats:   rec.Files,
 		Timestamp:   rec.Timestamp,
-		Torrs:       packTorrs(rec.Hash, ut.Title, ut.Poster, ut.Category, rec.Size, rec.Trackers),
+		Torrs:       packTorrs(rec.Hash, title, ut.Poster, ut.Category, rec.Size, rec.Trackers),
 	}, nil
 }
 
@@ -320,12 +326,12 @@ func (m *Manager) GetStreamReader(u *user.User, hashHex string, fileIdx int) (io
 		}
 
 		// Fallback-название (если вдруг юзер открыл торрент не из своей библиотеки)
-		title := "Torrent " + hashHex[:8]
+		title := ResolveTitle("", rec.Name, hashHex)
 		var poster, category string
 
 		// Достаем личные данные пользователя (красивое название, постер)
 		if ut, err := m.userSvc.GetUserTorrent(u.ID, hashHex); err == nil {
-			title = ut.Title
+			title = ResolveTitle(ut.Title, rec.Name, hashHex)
 			poster = ut.Poster
 			category = ut.Category
 		}
@@ -347,6 +353,7 @@ func (m *Manager) GetStreamReader(u *user.User, hashHex string, fileIdx int) (io
 		}
 
 		// Восстанавливаем личные метаданные в RAM для этого пользователя
+		sess.SetMetaName(rec.Name)
 		sess.SetUserMeta(u.ID, title, poster, category)
 	}
 
@@ -572,10 +579,13 @@ func (m *Manager) ExportLibrary(u *user.User) ([]string, error) {
 	lines := make([]string, 0, len(uts))
 	for _, ut := range uts {
 		size := int64(0)
+		var name string
 		if rec, err := m.store.Get(ut.TorrentHash); err == nil {
 			size = rec.Size
+			name = rec.Name
 		}
-		line := packTorrs(ut.TorrentHash, ut.Title, ut.Poster, ut.Category, size, m.trackersFor(ut.TorrentHash))
+		title := ResolveTitle(ut.Title, name, ut.TorrentHash)
+		line := packTorrs(ut.TorrentHash, title, ut.Poster, ut.Category, size, m.trackersFor(ut.TorrentHash))
 		if line != "" {
 			lines = append(lines, line)
 		}
@@ -605,7 +615,7 @@ func (m *Manager) ImportLibrary(u *user.User, lines []string) (int, error) {
 			continue
 		}
 
-		if err := m.userSvc.AddTorrent(u, th.Hash, th.Title(), th.Poster(), th.Category()); err != nil {
+		if err := m.userSvc.AddTorrent(u, th.Hash, th.Title(), th.Poster(), CategoryKey(th.Category())); err != nil {
 			log.Warnf("[Torrent Manager] import: failed to add %s: %v", th.Hash, err)
 			continue
 		}
