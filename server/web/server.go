@@ -104,6 +104,7 @@ func Start() error {
 	route.GET("/echo", echo)
 
 	api.SetupRoute(route)
+	setupSSLRoutes(route)
 	mcp.Mount(route.Group("/", auth.CheckAuth()))
 	gstreamer.SetupRoute(route)
 	msx.SetupRoute(route)
