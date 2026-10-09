@@ -81,7 +81,7 @@ func (s *Server) handleStream(c *gin.Context) {
 
 	// Делегируем обработку Range-запросов (Seek) стандартной библиотеке Go.
 	// http.ServeContent сам распарсит заголовок Range, сделает Seek и отдаст нужный кусок.
-	http.ServeContent(c.Writer, c.Request, fileStat.Path, time.Now(), reader)
+	http.ServeContent(c.Writer, c.Request, fileStat.Path, time.Now(), newBufferedStreamReader(reader, 1<<20))
 }
 
 // forwardedIP возвращает адрес клиента из заголовков reverse-proxy.
