@@ -40,6 +40,8 @@ export const wafHost = () => `${torrserverHost}/waf`
 export const mcpHost = () => `${torrserverHost}/mcp`
 /** Base URL for external players / copied media links (`GET /mediabase`). */
 export const mediaBaseHost = () => `${torrserverHost}/mediabase`
+/** HTTPS certificate management (`GET/POST /ssl/…`, only when started with `--ssl`). */
+export const sslHost = () => `${torrserverHost}/ssl`
 
 /** Resolved API origin (no trailing path). Useful for building ad-hoc GST URLs. */
 export const getTorrServerHost = () => torrserverHost

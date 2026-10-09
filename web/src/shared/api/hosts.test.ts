@@ -25,5 +25,6 @@ describe('Hosts URL construction', () => {
     expect(hosts.wafHost()).toBe('https://ts.example:8443/waf')
     expect(hosts.mcpHost()).toBe('https://ts.example:8443/mcp')
     expect(hosts.mediaBaseHost()).toBe('https://ts.example:8443/mediabase')
+    expect(hosts.sslHost()).toBe('https://ts.example:8443/ssl')
   })
 })

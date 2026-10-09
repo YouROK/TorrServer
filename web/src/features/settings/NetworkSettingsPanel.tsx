@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import type { BTSets } from 'shared/api/types'
 
+import HTTPSSettingsPanel from './HTTPSSettingsPanel'
 import { SettingSwitch } from './SettingSwitch'
 import SettingsSection from './SettingsSection'
 
@@ -214,6 +215,7 @@ export default function NetworkSettingsPanel({
           <Input placeholder='/etc/ssl/key.pem' />
           <Description>{t('SettingsDialog.SslKeyHint')}</Description>
         </TextField>
+        <HTTPSSettingsPanel onUpdate={onUpdate} />
       </SettingsSection>
     </div>
   )
