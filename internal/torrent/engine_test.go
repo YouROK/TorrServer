@@ -33,11 +33,13 @@ func TestEngineFullLifecycle(t *testing.T) {
 	// 1. Конфигурируем чистый движок с оперативным кэшем
 	cfg := DefaultConfig()
 	cfg.ListenPort = 0 // случайный свободный порт
+	cfg.DisableDHT = true
 	cfg.Storage = &torrstor.Config{
 		Capacity:         10 << 20, // 10 MB кэша
-		UseDisk:          false,    // чисто в RAM!
+		NextAheadMB:      1,
+		ReadaheadMB:      4,
+		UseDisk:          false, // чисто в RAM!
 		ConnectionsLimit: 25,
-		ReaderReadAHead:  95,
 	}
 
 	engine, err := NewEngine(cfg)

@@ -1,7 +1,6 @@
 package torrstor
 
 import (
-	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/storage"
 )
 
@@ -65,6 +64,8 @@ func (p *Piece) Completion() storage.Completion {
 	}
 }
 
+// Release освобождает память куска. Приоритет куска не трогается: движок выводит его
+// из зон ридеров, поэтому вытесненный кусок перестает запрашиваться сам.
 func (p *Piece) Release() {
 	if !p.cache.storage.cfg.UseDisk {
 		p.mPiece.Release()
@@ -72,8 +73,9 @@ func (p *Piece) Release() {
 		p.dPiece.Release()
 	}
 
+	// Сообщаем движку, что данных больше нет. Флаги куска уже сброшены, поэтому
+	// движок снимет кусок с раздачи и не будет отдавать его пирам.
 	if p.cache != nil && p.cache.torrent != nil {
-		p.cache.torrent.Piece(p.Id).SetPriority(torrent.PiecePriorityNone)
 		p.cache.torrent.Piece(p.Id).UpdateCompletion()
 	}
 }

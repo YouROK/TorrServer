@@ -377,3 +377,22 @@ func (s *Server) handleGetCache(c *gin.Context) {
 		Readers:     readers,
 	})
 }
+
+// handleGetPeers отдает снимок подключенных пиров для диагностики скорости загрузки.
+func (s *Server) handleGetPeers(c *gin.Context) {
+	val, _ := c.Get("user")
+	currentUser := val.(*user.User)
+	hashHex := c.Param("hash")
+
+	peers, err := s.torrentMgr.GetPeerStates(currentUser, hashHex)
+	if err != nil {
+		if errors.Is(err, torr.ErrSessionNotInRAM) {
+			c.JSON(http.StatusNoContent, nil)
+			return
+		}
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"hash": hashHex, "peers": peers})
+}

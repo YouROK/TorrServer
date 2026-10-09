@@ -14,6 +14,8 @@ type Reader struct {
 	torrent.Reader
 	offset    int64
 	readahead int64
+	next      int64
+	zone      int64
 	file      *torrent.File
 
 	cache    *Cache
@@ -29,9 +31,9 @@ func newReader(file *torrent.File, cache *Cache) *Reader {
 	r.file = file
 	r.Reader = file.NewReader()
 
-	r.SetReadahead(0)
 	r.cache = cache
 	r.isUse = true
+	r.SetResponsive()
 
 	cache.muReaders.Lock()
 	cache.readers[r] = struct{}{}
@@ -74,14 +76,40 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 	return
 }
 
-func (r *Reader) SetReadahead(length int64) {
-	if r.cache != nil && length > r.cache.capacity {
-		length = r.cache.capacity
+// SetZones задает зоны загрузки ридера: ближнюю, дальнюю и полную.
+func (r *Reader) SetZones(next, readahead, zone int64) {
+	if limit := r.cache.capacity; zone > limit {
+		zone = limit
 	}
-	if r.isUse {
-		r.Reader.SetReadahead(length)
+	if readahead > zone {
+		readahead = zone
 	}
-	r.readahead = length
+	if next > readahead {
+		next = readahead
+	}
+
+	r.mu.Lock()
+	r.next, r.readahead, r.zone = next, readahead, zone
+	on := r.isUse
+	r.mu.Unlock()
+
+	if !on {
+		return
+	}
+	r.applyZones(next, readahead, zone)
+}
+
+func (r *Reader) applyZones(next, readahead, zone int64) {
+	r.Reader.SetNext(next)
+	r.Reader.SetReadahead(readahead)
+	r.Reader.SetZone(zone)
+}
+
+// Zoned сообщает, заданы ли ридеру зоны загрузки.
+func (r *Reader) Zoned() bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.zone > 0
 }
 
 func (r *Reader) Offset() int64 {
@@ -89,6 +117,8 @@ func (r *Reader) Offset() int64 {
 }
 
 func (r *Reader) Readahead() int64 {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	return r.readahead
 }
 
@@ -110,76 +140,81 @@ func (r *Reader) getReaderPiece() int {
 }
 
 func (r *Reader) getReaderRAHPiece() int {
-	return r.getPieceNum(r.offset + r.readahead)
+	r.mu.Lock()
+	readahead := r.readahead
+	r.mu.Unlock()
+	return r.getPieceNum(r.offset + readahead)
+}
+
+// readerEnd возвращает байт, до которого ридер хочет держать данные.
+func (r *Reader) readerEnd() int64 {
+	_, end := r.getOffsetRange()
+	return end
 }
 
 func (r *Reader) getPieceNum(offset int64) int {
 	return int((offset + r.file.Offset()) / r.cache.pieceLength)
 }
 
+// getOffsetRange возвращает границы зоны загрузки ридера в байтах файла.
 func (r *Reader) getOffsetRange() (int64, int64) {
-	prc := int64(r.cache.storage.cfg.ReaderReadAHead)
-	if prc <= 0 {
-		prc = 95
-	}
-	readers := int64(r.getUseReaders())
-	if readers == 0 {
-		readers = 1
-	}
+	r.mu.Lock()
+	zone := r.zone
+	r.mu.Unlock()
 
-	beginOffset := r.offset - (r.cache.capacity/readers)*(100-prc)/100
-	endOffset := r.offset + (r.cache.capacity/readers)*prc/100
-
-	if beginOffset < 0 {
-		beginOffset = 0
+	begin := r.offset
+	if begin < 0 {
+		begin = 0
 	}
-
-	if endOffset > r.file.Length() {
-		endOffset = r.file.Length()
+	end := begin + zone
+	if end > r.file.Length() {
+		end = r.file.Length()
 	}
-	return beginOffset, endOffset
+	return begin, end
 }
 
 func (r *Reader) checkReader() {
-	if time.Now().Unix() > r.lastAccess+60 && len(r.cache.readers) > 1 {
+	if time.Now().Unix() > r.lastAccess+60 && r.cache.Readers() > 1 {
 		r.readerOff()
 	} else {
 		r.readerOn()
 	}
 }
 
+// readerOn возвращает ридеру его зоны загрузки после парковки.
 func (r *Reader) readerOn() {
 	r.mu.Lock()
-	defer r.mu.Unlock()
-	if !r.isUse {
-		if pos, err := r.Reader.Seek(0, io.SeekCurrent); err == nil && pos == 0 {
-			r.Reader.Seek(r.offset, io.SeekStart)
-		}
-		r.SetReadahead(r.readahead)
-		r.isUse = true
+	if r.isUse {
+		r.mu.Unlock()
+		return
 	}
+	if pos, err := r.Reader.Seek(0, io.SeekCurrent); err == nil && pos == 0 {
+		r.Reader.Seek(r.offset, io.SeekStart)
+	}
+	r.isUse = true
+	next, readahead, zone := r.next, r.readahead, r.zone
+	r.mu.Unlock()
+
+	r.applyZones(next, readahead, zone)
 }
 
+// readerOff снимает зоны ридера, чтобы движок перестал качать для него.
 func (r *Reader) readerOff() {
 	r.mu.Lock()
-	defer r.mu.Unlock()
-	if r.isUse {
-		r.SetReadahead(0)
-		r.isUse = false
-		if r.offset > 0 {
-			r.Reader.Seek(0, io.SeekStart)
-		}
+	if !r.isUse {
+		r.mu.Unlock()
+		return
+	}
+	r.isUse = false
+	offset := r.offset
+	r.mu.Unlock()
+
+	r.applyZones(0, 0, 0)
+	if offset > 0 {
+		r.Reader.Seek(0, io.SeekStart)
 	}
 }
 
 func (r *Reader) getUseReaders() int {
-	readers := 0
-	if r.cache != nil {
-		for reader := range r.cache.readers {
-			if reader.isUse {
-				readers++
-			}
-		}
-	}
-	return readers
+	return r.cache.GetUseReaders()
 }

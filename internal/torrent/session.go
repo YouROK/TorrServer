@@ -200,6 +200,8 @@ func (s *Session) Preload(fileIdx int, size int64) {
 		tailReader := file.NewReader()
 		tailReader.SetResponsive()
 		tailReader.SetReadahead(0)
+		tailReader.SetNext(0)
+		tailReader.SetZone(startEndSize)
 
 		tailOffset := file.Length() - startEndSize
 		_, _ = tailReader.Seek(tailOffset, io.SeekStart)
@@ -220,6 +222,8 @@ func (s *Session) Preload(fileIdx int, size int64) {
 	headReader.SetResponsive()
 	readahead := pieceLen * 4
 	headReader.SetReadahead(readahead)
+	headReader.SetNext(readahead)
+	headReader.SetZone(size)
 
 	var offset int64
 	buf := make([]byte, 32768)
@@ -398,4 +402,12 @@ func (s *Session) CacheState() *torrstor.CacheState {
 		return nil
 	}
 	return s.cache.GetState()
+}
+
+// PeerStates возвращает снимок состояния подключенных пиров раздачи.
+func (s *Session) PeerStates() []torrent.PeerStatus {
+	if s.t == nil {
+		return nil
+	}
+	return s.t.PeerStatuses()
 }

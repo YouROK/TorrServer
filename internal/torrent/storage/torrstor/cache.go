@@ -5,20 +5,13 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
+	"silo/internal/log"
 	"sort"
 	"sync"
-	"time"
-
-	"silo/internal/log"
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/anacrolix/torrent/storage"
-)
-
-var (
-	lastFreeMem time.Time
-	freeMemMu   sync.Mutex
 )
 
 // freeOSMemory возвращает свободную память операционной системе с троттлингом
@@ -132,16 +125,44 @@ func (c *Cache) removePiece(piece *Piece) {
 	}
 }
 
-func (c *Cache) AdjustRA(readahead int64) {
-	if c.storage.cfg.Capacity == 0 {
-		c.capacity = readahead * 3
+// applyZones распределяет зону скачивания торрента между активными ридерами.
+// Зона одного ридера это Capacity за вычетом запаса, поделенная на число ридеров.
+func (c *Cache) applyZones() {
+	if c == nil || c.torrent == nil {
+		return
 	}
-	if c.Readers() > 0 {
-		c.muReaders.Lock()
-		for r := range c.readers {
-			r.SetReadahead(readahead)
+
+	c.muReaders.Lock()
+	readers := make([]*Reader, 0, len(c.readers))
+	for r := range c.readers {
+		if r.isUse {
+			readers = append(readers, r)
 		}
-		c.muReaders.Unlock()
+	}
+	c.muReaders.Unlock()
+
+	cfg := c.storage.cfg
+	capacity := c.capacity
+	if capacity <= 0 {
+		capacity = cfg.Capacity
+	}
+
+	zone := cfg.ZoneBytes(capacity)
+	// Мелкий кэш не делится на зону и запас: ридеру отдается весь буфер.
+	if zone < 2*c.pieceLength {
+		zone = capacity
+	}
+	next := cfg.NextBytes()
+	readahead := cfg.ReadaheadBytes()
+
+	if n := int64(len(readers)); n > 1 {
+		zone /= n
+		next /= n
+		readahead /= n
+	}
+
+	for _, r := range readers {
+		r.SetZones(next, readahead, zone)
 	}
 }
 
@@ -230,6 +251,12 @@ func (c *Cache) getRemPieces() []*Piece {
 	for r := range c.readers {
 		readers = append(readers, r)
 	}
+	// Снимок карты кусков берется под тем же мьютексом, что и обнуление в Close:
+	// иначе вытеснение читает карту, пока закрытие кэша ее очищает.
+	pieces := make([]*Piece, 0, len(c.pieces))
+	for _, p := range c.pieces {
+		pieces = append(pieces, p)
+	}
 	c.muReaders.Unlock()
 
 	ranges := make([]Range, 0)
@@ -244,7 +271,8 @@ func (c *Cache) getRemPieces() []*Piece {
 	piecesRemove := make([]*Piece, 0)
 	fill := int64(0)
 
-	for id, p := range c.pieces {
+	for _, p := range pieces {
+		id := p.Id
 		if p.Size > 0 {
 			fill += p.Size
 		}
@@ -261,62 +289,15 @@ func (c *Cache) getRemPieces() []*Piece {
 		}
 	}
 
-	c.clearPriority()
-	c.setLoadPriority(ranges)
-
 	sort.Slice(piecesRemove, func(i, j int) bool {
+		if piecesRemove[i].Complete != piecesRemove[j].Complete {
+			return piecesRemove[i].Complete
+		}
 		return piecesRemove[i].Accessed < piecesRemove[j].Accessed
 	})
 
 	c.filled = fill
 	return piecesRemove
-}
-
-func (c *Cache) setLoadPriority(ranges []Range) {
-	if c.torrent == nil {
-		return
-	}
-
-	c.muReaders.Lock()
-	connLimit := c.storage.cfg.ConnectionsLimit
-	if connLimit <= 0 {
-		connLimit = 25
-	}
-	numReaders := len(c.readers)
-	if numReaders == 0 {
-		numReaders = 1
-	}
-	count := connLimit / numReaders
-
-	for r := range c.readers {
-		if !r.isUse {
-			continue
-		}
-		if c.isIdInFileBE(ranges, r.getReaderPiece()) {
-			continue
-		}
-		readerPos := r.getReaderPiece()
-		readerRAHPos := r.getReaderRAHPiece()
-		end := r.getPiecesRange().End
-		limit := 0
-		for i := readerPos; i < end && limit < count; i++ {
-			if i < len(c.pieces) && !c.pieces[i].Complete {
-				if i == readerPos {
-					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNow)
-				} else if i == readerPos+1 {
-					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNext)
-				} else if i > readerPos && i <= readerRAHPos {
-					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityReadahead)
-				} else if i > readerRAHPos && i <= readerRAHPos+5 && c.torrent.PieceState(i).Priority != torrent.PiecePriorityHigh {
-					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityHigh)
-				} else if i > readerRAHPos+5 && c.torrent.PieceState(i).Priority != torrent.PiecePriorityNormal {
-					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNormal)
-				}
-				limit++
-			}
-		}
-	}
-	c.muReaders.Unlock()
 }
 
 func (c *Cache) isIdInFileBE(ranges []Range, id int) bool {
@@ -343,7 +324,9 @@ func (c *Cache) isIdInFileBE(ranges []Range, id int) bool {
 }
 
 func (c *Cache) NewReader(file *torrent.File) *Reader {
-	return newReader(file, c)
+	r := newReader(file, c)
+	c.applyZones()
+	return r
 }
 
 func (c *Cache) GetUseReaders() int {
@@ -375,41 +358,10 @@ func (c *Cache) Readers() int {
 
 func (c *Cache) CloseReader(r *Reader) {
 	r.cache.muReaders.Lock()
-	r.Close()
 	delete(r.cache.readers, r)
 	r.cache.muReaders.Unlock()
-	go c.clearPriority()
-}
-
-func (c *Cache) clearPriority() {
-	if c.torrent == nil {
-		return
-	}
-	time.Sleep(time.Second)
-	ranges := make([]Range, 0)
-	c.muReaders.Lock()
-	for r := range c.readers {
-		r.checkReader()
-		if r.isUse {
-			ranges = append(ranges, r.getPiecesRange())
-		}
-	}
-	c.muReaders.Unlock()
-	ranges = mergeRange(ranges)
-
-	for id := range c.pieces {
-		if len(ranges) > 0 {
-			if !inRanges(ranges, id) {
-				if c.torrent.PieceState(id).Priority != torrent.PiecePriorityNone {
-					c.torrent.Piece(id).SetPriority(torrent.PiecePriorityNone)
-				}
-			}
-		} else {
-			if c.torrent.PieceState(id).Priority != torrent.PiecePriorityNone {
-				c.torrent.Piece(id).SetPriority(torrent.PiecePriorityNone)
-			}
-		}
-	}
+	r.Close()
+	go c.applyZones()
 }
 
 func (c *Cache) GetCapacity() int64 {

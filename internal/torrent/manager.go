@@ -681,3 +681,18 @@ func (m *Manager) GetCacheState(u *user.User, hashHex string) (*torrstor.CacheSt
 
 	return state, nil
 }
+
+// GetPeerStates возвращает снимок подключенных пиров раздачи для диагностики скорости.
+func (m *Manager) GetPeerStates(u *user.User, hashHex string) ([]torrent.PeerStatus, error) {
+	if _, err := m.userSvc.GetUserTorrent(u.ID, hashHex); err != nil {
+		return nil, fmt.Errorf("torrent not found in your library")
+	}
+
+	hash := metainfo.NewHashFromHex(hashHex)
+	sess, ok := m.engine.Get(hash)
+	if !ok {
+		return nil, ErrSessionNotInRAM
+	}
+
+	return sess.PeerStates(), nil
+}

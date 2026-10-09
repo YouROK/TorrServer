@@ -74,9 +74,12 @@ func setupManagerTest(t *testing.T) (*Manager, *user.Service, *Engine, *Store, *
 	// 3. Чистый движок
 	engineCfg := DefaultConfig()
 	engineCfg.ListenPort = 0
+	engineCfg.DisableDHT = true
 	engineCfg.Storage = &torrstor.Config{
-		Capacity: 10 << 20,
-		UseDisk:  false,
+		Capacity:    10 << 20,
+		NextAheadMB: 1,
+		ReadaheadMB: 4,
+		UseDisk:     false,
 	}
 
 	engine, err := NewEngine(engineCfg)
