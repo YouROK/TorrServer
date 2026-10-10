@@ -38,6 +38,7 @@ type App struct {
 	bus       *bus.Client
 	userSvc   *user.Service
 	engine    *torrent.Engine
+	torrMgr   *torrent.Manager
 	ffmpeg    *ffmpeg.FFmpeg
 	pluginMgr *plugin.Manager
 	webSrv    *web.Server
@@ -109,6 +110,7 @@ func New(cfg *config.Config) (*App, error) {
 		bus:       appBus,
 		userSvc:   userSvc,
 		engine:    engine,
+		torrMgr:   torrentMgr,
 		ffmpeg:    ffmpegModule,
 		pluginMgr: pluginMgr,
 		webSrv:    webServer,
@@ -171,6 +173,11 @@ func (a *App) Stop() {
 	defer cancel()
 	if err := a.webSrv.Stop(shutdownCtx); err != nil {
 		log.Errorf("[Web] Error stopping web server: %v", err)
+	}
+
+	// Менеджер останавливается первым: его фоновые задачи пишут в базу и работают с движком
+	if a.torrMgr != nil {
+		a.torrMgr.Close()
 	}
 
 	if err := a.engine.Close(); err != nil {

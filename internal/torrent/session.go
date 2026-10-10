@@ -9,6 +9,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"silo/internal/bus"
+	"silo/internal/log"
 	"silo/internal/torrent/storage/torrstor"
 
 	"github.com/anacrolix/torrent"
@@ -46,6 +48,9 @@ type Session struct {
 	lastActive    time.Time
 	closed        chan struct{}
 	ticker        *time.Ticker
+
+	// Фоновые задачи раздачи: закрытие сессии дожидается их завершения
+	tasks *bus.Group
 }
 
 func newSession(t *torrent.Torrent, spec *torrent.TorrentSpec, stor *torrstor.Storage) *Session {
@@ -62,6 +67,7 @@ func newSession(t *torrent.Torrent, spec *torrent.TorrentSpec, stor *torrstor.St
 		lastSpeedCalc: time.Now(),
 		lastActive:    time.Now(),
 		closed:        make(chan struct{}),
+		tasks:         bus.NewGroup(context.Background()),
 	}
 
 	// Если метаданные уже были на старте - привязываем кэш сразу
@@ -72,7 +78,7 @@ func newSession(t *torrent.Torrent, spec *torrent.TorrentSpec, stor *torrstor.St
 		}
 	}
 
-	go s.watchProgress()
+	s.tasks.Go(func(ctx context.Context) { s.watchProgress(ctx) })
 	return s
 }
 
@@ -262,7 +268,7 @@ func (s *Session) Preload(fileIdx int, size int64) {
 	headReader.Close()
 }
 
-func (s *Session) watchProgress() {
+func (s *Session) watchProgress(ctx context.Context) {
 	s.ticker = time.NewTicker(time.Second)
 	defer s.ticker.Stop()
 
@@ -271,6 +277,8 @@ func (s *Session) watchProgress() {
 		case <-s.ticker.C:
 			s.calculateSpeed()
 		case <-s.closed:
+			return
+		case <-ctx.Done():
 			return
 		}
 	}
@@ -392,6 +400,11 @@ func (s *Session) Close() {
 		return
 	default:
 		close(s.closed)
+	}
+
+	// Сначала фоновые задачи: они не должны обращаться к движку и хранилищу после их остановки
+	if s.tasks != nil && !s.tasks.Close(3*time.Second) {
+		log.Warnf("[Torrent Engine] Session tasks did not stop in time: %s", s.spec.InfoHash.HexString())
 	}
 
 	if s.t != nil {

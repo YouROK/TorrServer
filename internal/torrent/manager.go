@@ -37,12 +37,12 @@ type TrackerPolicy struct {
 }
 
 type Manager struct {
-	engine     *Engine
-	store      *Store
-	userSvc    *user.Service
-	bus        *bus.Client
-	mu         sync.RWMutex
-	stopWorker chan struct{}
+	engine  *Engine
+	store   *Store
+	userSvc *user.Service
+	bus     *bus.Client
+	mu      sync.RWMutex
+	tasks   *bus.Group
 
 	// Политика трекеров, которой управляют плагины
 	trackerPolicy TrackerPolicy
@@ -57,7 +57,7 @@ func NewManager(engine *Engine, store *Store, userSvc *user.Service) *Manager {
 		store:             store,
 		userSvc:           userSvc,
 		bus:               bus.Get("torrent_manager"),
-		stopWorker:        make(chan struct{}),
+		tasks:             bus.NewGroup(context.Background()),
 		inactivityTimeout: 60 * time.Second,
 		trackerPolicy: TrackerPolicy{
 			Mode: TrackerModeNone,
@@ -72,7 +72,7 @@ func NewManager(engine *Engine, store *Store, userSvc *user.Service) *Manager {
 	})
 
 	// 2. Запускаем фоновый воркер автозасыпания неактивных раздач
-	go m.startAutoSleepWorker()
+	m.tasks.Go(func(ctx context.Context) { m.startAutoSleepWorker(ctx) })
 
 	return m
 }
@@ -142,7 +142,7 @@ func (m *Manager) AddTorrent(u *user.User, spec *torrent.TorrentSpec, title, pos
 	session.SetUserMeta(u.ID, title, poster, category)
 
 	if !saveToDB {
-		go m.asyncFetchMetadata(session, nil) // Просто ждем метаданные для RAM
+		session.tasks.Go(func(ctx context.Context) { m.asyncFetchMetadata(ctx, session, nil) })
 		return session.Status(u.ID), nil
 	}
 
@@ -157,17 +157,22 @@ func (m *Manager) AddTorrent(u *user.User, spec *torrent.TorrentSpec, title, pos
 	}
 	_ = m.store.Save(rec)
 
-	go m.asyncFetchMetadata(session, rec)
+	session.tasks.Go(func(ctx context.Context) { m.asyncFetchMetadata(ctx, session, rec) })
 
 	return session.Status(u.ID), nil
 }
 
-func (m *Manager) asyncFetchMetadata(sess *Session, rec *TorrentRecord) {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+func (m *Manager) asyncFetchMetadata(ctx context.Context, sess *Session, rec *TorrentRecord) {
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
 	if err := sess.WaitInfo(ctx); err != nil {
 		log.Warnf("[Torrent Manager] Failed to fetch metadata: %v", err)
+		return
+	}
+
+	// Отмена могла прийти вместе с метаданными: запись в базу после закрытия недопустима.
+	if ctx.Err() != nil {
 		return
 	}
 
@@ -229,7 +234,7 @@ func (m *Manager) WakeTorrent(u *user.User, hashHex string) error {
 	}
 
 	sess.SetMetaName(rec.Name)
-	go m.asyncFetchMetadata(sess, rec)
+	sess.tasks.Go(func(ctx context.Context) { m.asyncFetchMetadata(ctx, sess, rec) })
 
 	sess.SetUserMeta(u.ID, title, poster, category)
 	return nil
@@ -385,7 +390,7 @@ func (m *Manager) GetStreamReader(u *user.User, hashHex string, fileIdx int) (io
 // Фоновый воркер: Автозасыпание при неактивности
 // ============================================================================
 
-func (m *Manager) startAutoSleepWorker() {
+func (m *Manager) startAutoSleepWorker(ctx context.Context) {
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
@@ -393,7 +398,7 @@ func (m *Manager) startAutoSleepWorker() {
 		select {
 		case <-ticker.C:
 			m.checkInactiveSessions()
-		case <-m.stopWorker:
+		case <-ctx.Done():
 			return
 		}
 	}
@@ -422,7 +427,10 @@ func (m *Manager) handleTorrentDrop(hashHex string) {
 }
 
 func (m *Manager) Close() {
-	close(m.stopWorker)
+	// Сначала фоновые задачи: они пишут в базу и работают с движком
+	if m.tasks != nil && !m.tasks.Close(5*time.Second) {
+		log.Warn("[Torrent Manager] Background tasks did not stop in time")
+	}
 	m.bus.UnsubscribeAll()
 	_ = m.engine.Close()
 	log.Info("[Torrent Manager] Closed successfully")
@@ -664,7 +672,7 @@ func (m *Manager) PreloadTorrent(u *user.User, hashHex string, fileIdx int) erro
 		return fmt.Errorf("file index out of bounds: %d", fileIdx)
 	}
 
-	go sess.Preload(fileIdx, preloadSize)
+	sess.tasks.Go(func(ctx context.Context) { sess.Preload(fileIdx, preloadSize) })
 
 	return nil
 }
