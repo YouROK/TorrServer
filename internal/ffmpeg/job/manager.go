@@ -12,6 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"silo/internal/bus"
 	"silo/internal/ffmpeg/args"
 	"silo/internal/log"
 )
@@ -68,7 +69,7 @@ type Manager struct {
 	jobs    map[string]*Job
 	active  atomic.Int64
 	stopped bool
-	wg      sync.WaitGroup
+	tasks   *bus.Group
 }
 
 // NewManager создаёт менеджер заданий.
@@ -77,8 +78,9 @@ func NewManager(cfg Config) *Manager {
 		cfg.StopTimeout = 5 * time.Second
 	}
 	return &Manager{
-		cfg:  cfg,
-		jobs: make(map[string]*Job),
+		cfg:   cfg,
+		jobs:  make(map[string]*Job),
+		tasks: bus.NewGroup(context.Background()),
 	}
 }
 
@@ -152,8 +154,7 @@ func (m *Manager) Start(ctx context.Context, req StartRequest) (*Job, error) {
 
 	m.emit("transcode:session:started", j.Snapshot())
 
-	m.wg.Add(1)
-	go m.watch(ctx, j, stderr)
+	m.tasks.GoCtx(ctx, func(groupCtx context.Context) { m.watch(groupCtx, j, stderr) })
 
 	log.Infof("%s Session %s started", Tag, j.ID)
 	return j, nil
@@ -161,11 +162,13 @@ func (m *Manager) Start(ctx context.Context, req StartRequest) (*Job, error) {
 
 // watch читает вывод процесса, обновляет прогресс и фиксирует завершение.
 func (m *Manager) watch(ctx context.Context, j *Job, stderr io.ReadCloser) {
-	defer m.wg.Done()
 
 	// Разрыв соединения клиента останавливает процесс
 	watcherDone := make(chan struct{})
+	var watcher sync.WaitGroup
+	watcher.Add(1)
 	go func() {
+		defer watcher.Done()
 		select {
 		case <-ctx.Done():
 			j.Stop(m.cfg.StopTimeout)
@@ -182,6 +185,7 @@ func (m *Manager) watch(ctx context.Context, j *Job, stderr io.ReadCloser) {
 	err := j.cmd.Wait()
 	close(watcherDone)
 	<-stderrDone
+	watcher.Wait()
 
 	if j.throttler != nil {
 		j.throttler.shutdown()
@@ -342,7 +346,7 @@ func (m *Manager) StopAll() {
 }
 
 // Wait ожидает завершения всех отслеживающих горутин.
-func (m *Manager) Wait() { m.wg.Wait() }
+func (m *Manager) Wait() { m.tasks.Wait() }
 
 // reserve проверяет и занимает слот под новое задание.
 func (m *Manager) reserve() error {

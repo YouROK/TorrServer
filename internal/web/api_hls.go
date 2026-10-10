@@ -411,19 +411,24 @@ func (s *Server) StopAllHLS() {
 
 // startHLSJanitor убирает сессии, к которым давно не обращались.
 func (s *Server) startHLSJanitor() {
-	go func() {
+	s.tasks.Go(func(ctx context.Context) {
 		ticker := time.NewTicker(30 * time.Second)
 		defer ticker.Stop()
 
-		for range ticker.C {
-			for _, session := range s.registry().List() {
-				if session.idleFor() > hlsIdleTimeout {
-					log.Infof("[Web] HLS session %s stopped after inactivity", session.ID)
-					s.stopHLSSession(session)
+		for {
+			select {
+			case <-ticker.C:
+				for _, session := range s.registry().List() {
+					if session.idleFor() > hlsIdleTimeout {
+						log.Infof("[Web] HLS session %s stopped after inactivity", session.ID)
+						s.stopHLSSession(session)
+					}
 				}
+			case <-ctx.Done():
+				return
 			}
 		}
-	}()
+	})
 }
 
 // markServed отмечает сегмент, отданный плееру: по этому счётчику

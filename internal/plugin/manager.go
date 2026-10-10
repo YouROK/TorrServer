@@ -3,6 +3,7 @@ package plugin
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -73,6 +74,9 @@ type Manager struct {
 	transcode *ffmpeg.FFmpeg
 	profiles  *profile.Service
 	prober    ProbeFunc
+
+	// Фоновые задачи плагинов: выгрузка дожидается их завершения
+	tasks *bus.Group
 }
 
 func NewManager(
@@ -110,6 +114,7 @@ func NewManager(
 		transcode:    transcode,
 		profiles:     profilesSvc,
 		prober:       prober,
+		tasks:        bus.NewGroup(context.Background()),
 	}
 
 	return m, nil
@@ -219,22 +224,22 @@ func (m *Manager) startPlugin(pluginID string, manifest *Manifest, vfs fs.FS) {
 	rt := NewJSRuntime(pluginID, manifest, vfs, m.registrar, m.db, m.torrMgr, m.userSvc, m.i18n, m.torrFS, m.transcode, m.profiles, m.prober)
 	m.runtimes[pluginID] = rt
 
-	go func(id string, code string, runtime *JSRuntime) {
-		log.Debugf("[Plugin:%s] Starting background script...", id)
-		if err := runtime.Execute(code); err != nil {
-			log.Errorf("[Plugin:%s] Execution error: %v. Purging from memory...", id, err)
+	m.tasks.Go(func(ctx context.Context) {
+		log.Debugf("[Plugin:%s] Starting background script...", pluginID)
+		if err := rt.Execute(string(codeBytes)); err != nil {
+			log.Errorf("[Plugin:%s] Execution error: %v. Purging from memory...", pluginID, err)
 
 			m.mu.Lock()
-			runtime.Stop()
-			delete(m.runtimes, id)
-			m.registrar.RemovePlugin(id)
+			rt.Stop()
+			delete(m.runtimes, pluginID)
+			m.registrar.RemovePlugin(pluginID)
 			m.mu.Unlock()
 
-			bus.Clear(id)
+			bus.Clear(pluginID)
 
-			log.Warnf("[Plugin:%s] Plugin completely purged due to startup error", id)
+			log.Warnf("[Plugin:%s] Plugin completely purged due to startup error", pluginID)
 		}
-	}(pluginID, string(codeBytes), rt)
+	})
 }
 
 func (m *Manager) stopAllRuntimes() {
@@ -247,12 +252,18 @@ func (m *Manager) stopAllRuntimes() {
 
 func (m *Manager) UnloadAll() {
 	m.mu.Lock()
-	defer m.mu.Unlock()
 
 	log.Info("[Plugin] Unloading all active plugins...")
 	m.registrar.Reset()
 	m.stopAllRuntimes()
 	m.manifests = make(map[string]*Manifest)
+	m.mu.Unlock()
+
+	// Фоновые скрипты завершаются после снятия плагинов, но до освобождения ресурсов
+	if m.tasks != nil && !m.tasks.Close(5*time.Second) {
+		log.Warn("[Plugin] Background tasks did not stop in time")
+	}
+
 	log.Info("[Plugin] All plugins successfully unloaded")
 }
 

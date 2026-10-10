@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"silo/internal/bus"
 	"silo/internal/config"
 	"silo/internal/ffmpeg"
 	"silo/internal/ffmpeg/profile"
@@ -44,6 +45,9 @@ type Server struct {
 	sourceHost string
 	sourcePort int
 
+	// Фоновые задачи сервера: закрытие дожидается их завершения
+	tasks *bus.Group
+
 	// sourceOpen подменяет открытие файла раздачи в тестах
 	sourceOpen sourceOpener
 }
@@ -69,6 +73,7 @@ func NewServer(
 		sourceRegistry: source.NewRegistry(0),
 		hlsRegistry:    newHLSRegistry(),
 		startedAt:      time.Now(),
+		tasks:          bus.NewGroup(context.Background()),
 	}
 
 	s.registerRoutes()
@@ -265,36 +270,51 @@ func (s *Server) Start() error {
 
 // startRegistryJanitor периодически убирает просроченные доступы к источникам.
 func (s *Server) startRegistryJanitor() {
-	go func() {
+	s.tasks.Go(func(ctx context.Context) {
 		ticker := time.NewTicker(time.Minute)
 		defer ticker.Stop()
 
-		for range ticker.C {
-			if n := s.sourceRegistry.Cleanup(); n > 0 {
-				log.Debugf("[Web] Removed %d expired source lease(s)", n)
+		for {
+			select {
+			case <-ticker.C:
+				if n := s.sourceRegistry.Cleanup(); n > 0 {
+					log.Debugf("[Web] Removed %d expired source lease(s)", n)
+				}
+			case <-ctx.Done():
+				return
 			}
 		}
-	}()
+	})
 }
 
 // startStreamJanitor периодически убирает из трекера зависшие потоки,
 // которые так и не отдали ни байта (соединение открылось, но чтение не пошло).
 func (s *Server) startStreamJanitor() {
-	go func() {
+	s.tasks.Go(func(ctx context.Context) {
 		ticker := time.NewTicker(10 * time.Minute)
 		defer ticker.Stop()
 
-		for range ticker.C {
-			if n := s.streamTracker.Idle(30 * time.Minute); n > 0 {
-				log.Warnf("[Web] Dropped %d stale stream(s) from tracker", n)
+		for {
+			select {
+			case <-ticker.C:
+				if n := s.streamTracker.Idle(30 * time.Minute); n > 0 {
+					log.Warnf("[Web] Dropped %d stale stream(s) from tracker", n)
+				}
+			case <-ctx.Done():
+				return
 			}
 		}
-	}()
+	})
 }
 
 func (s *Server) Stop(ctx context.Context) error {
 	log.Info("[Web] Stopping HTTP server...")
 	s.StopAllHLS()
+
+	// Фоновые задачи останавливаются после остановки сервера, но до освобождения ресурсов
+	if s.tasks != nil && !s.tasks.Close(3*time.Second) {
+		log.Warn("[Web] Background tasks did not stop in time")
+	}
 
 	if s.httpSrv != nil {
 		return s.httpSrv.Shutdown(ctx)
