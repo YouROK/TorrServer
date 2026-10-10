@@ -13,6 +13,7 @@ import (
 
 	"silo/internal/config"
 	"silo/internal/database"
+	"silo/internal/ffmpeg/source"
 	torr "silo/internal/torrent"
 	"silo/internal/torrent/storage/torrstor"
 	"silo/internal/user"
@@ -92,12 +93,14 @@ func setupStreamTestEnv(t *testing.T) (*Server, *torr.Engine, *user.Service, *us
 	t.Cleanup(func() { mgr.Close() })
 
 	s := &Server{
-		cfg:           cfg,
-		userSvc:       userSvc,
-		torrentMgr:    mgr,
-		router:        gin.New(),
-		streamTracker: NewStreamTracker(),
+		cfg:            cfg,
+		userSvc:        userSvc,
+		torrentMgr:     mgr,
+		router:         gin.New(),
+		streamTracker:  NewStreamTracker(),
+		sourceRegistry: source.NewRegistry(0),
 	}
+	s.registerRoutes()
 
 	spec := synthSpec(t)
 	hashHex := spec.InfoHash.HexString()

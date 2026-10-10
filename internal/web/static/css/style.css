@@ -54,6 +54,9 @@ h1, h2, h3 {
     margin-bottom: 24px;
 }
 
+/* Панель с таблицей занимает всю ширину: иначе кнопки действий уезжают */
+.panel.panel-wide { max-width: none; }
+
 .panel h2 {
     font-size: 16px;
     margin-bottom: 16px;
@@ -383,3 +386,88 @@ input[type="number"] {
         max-width: 360px;
     }
 }
+
+/* ----------------------------------------------------------------------------
+   Таблицы, карточки показателей и бейджи.
+   Эти элементы используются админкой, темой и плагинами,
+   поэтому живут в общем стиле, а не в стиле конкретной панели.
+   ---------------------------------------------------------------------------- */
+.table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--silo-border);
+    border-radius: 8px;
+    background: var(--silo-surface);
+}
+
+.table { width: 100%; border-collapse: collapse; }
+
+.table th {
+    text-align: left;
+    color: var(--silo-text-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--silo-border-strong);
+    white-space: nowrap;
+}
+
+.table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--silo-border);
+    white-space: nowrap;
+}
+
+.table tr:last-child td { border-bottom: none; }
+.table tr:hover td { background: var(--silo-surface-hover); }
+
+.actions-cell { white-space: nowrap; }
+.actions-cell > * { margin-right: 6px; }
+
+/* Карточки показателей: заголовок сверху, значение снизу */
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.stat-card, .cards .card {
+    background: var(--silo-surface);
+    border: 1px solid var(--silo-border);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.stat-card .label, .cards .card .label {
+    color: var(--silo-text-muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.stat-card .value, .cards .card .value {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--silo-steel-bright);
+    margin-top: 4px;
+}
+
+.stat-card .value.amber, .cards .card .value.amber { color: var(--silo-amber); }
+
+.badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--silo-border);
+    color: var(--silo-text-muted);
+}
+
+.badge-ok { background: var(--silo-teal); color: var(--silo-steel-bright); }
+.badge-warn { background: var(--silo-amber-deep); color: #14171a; }
+.badge-owner { background: var(--silo-amber); color: #14171a; }
+.badge-admin { background: var(--silo-teal); color: var(--silo-steel-bright); }
+.badge-user { background: var(--silo-border); color: var(--silo-text-muted); }
+.badge-banned { background: var(--silo-danger); color: #fff; }
