@@ -10,6 +10,8 @@ import (
 	"silo/internal/bus"
 	"silo/internal/config"
 	"silo/internal/database"
+	"silo/internal/ffmpeg"
+	"silo/internal/ffmpeg/profile"
 	"silo/internal/log"
 	"silo/internal/plugin"
 	"silo/internal/torrent"
@@ -36,6 +38,7 @@ type App struct {
 	bus       *bus.Client
 	userSvc   *user.Service
 	engine    *torrent.Engine
+	ffmpeg    *ffmpeg.FFmpeg
 	pluginMgr *plugin.Manager
 	webSrv    *web.Server
 }
@@ -74,11 +77,21 @@ func New(cfg *config.Config) (*App, error) {
 
 	torrentMgr := torrent.NewManager(engine, torrentStore, userSvc)
 
+	ffmpegModule := ffmpeg.New(cfg.FFmpeg, cfg.Storage.DataDir)
+
+	profileSvc := profile.NewService(profile.NewStore(db))
+
 	webServer := web.NewServer(cfg, userSvc, torrentMgr)
+	webServer.SetTranscoder(ffmpegModule)
+	webServer.SetProfileService(profileSvc)
 
 	torrFS := torrfs.New(userSvc, torrentStore, torrentMgr)
 
-	pluginMgr, err := plugin.NewManager(cfg.Plugins.Dir, db, webServer.GetPluginsRouter(), torrentMgr, userSvc, torrFS)
+	pluginMgr, err := plugin.NewManager(
+		cfg.Plugins.Dir, db, webServer.GetPluginsRouter(),
+		torrentMgr, userSvc, torrFS, ffmpegModule, profileSvc,
+		webServer.ProbeFile,
+	)
 	if err != nil {
 		_ = db.Close()
 		return nil, fmt.Errorf("failed to initialize plugin manager: %w", err)
@@ -96,6 +109,7 @@ func New(cfg *config.Config) (*App, error) {
 		bus:       appBus,
 		userSvc:   userSvc,
 		engine:    engine,
+		ffmpeg:    ffmpegModule,
 		pluginMgr: pluginMgr,
 		webSrv:    webServer,
 	}, nil
@@ -110,6 +124,13 @@ func (a *App) Start(ctx context.Context) error {
 		log.Info("[Auth] Access mode: PASSWORD REQUIRED")
 	} else {
 		log.Warn("[Auth] Access mode: OPEN (Running as Owner without password)")
+	}
+
+	if a.ffmpeg.Enabled() {
+		info := a.ffmpeg.Info()
+		log.Infof("[FFmpeg] Transcoding enabled: version %s, cache dir %s", info.Version, info.CacheDir)
+	} else {
+		log.Warnf("[FFmpeg] Transcoding disabled: %s", a.ffmpeg.Reason())
 	}
 
 	go func() {
@@ -137,6 +158,13 @@ func (a *App) Stop() {
 	time.Sleep(500 * time.Millisecond)
 
 	a.pluginMgr.UnloadAll()
+
+	if a.ffmpeg.Enabled() {
+		log.Info("[FFmpeg] Stopping active sessions...")
+		a.ffmpeg.StopAll()
+		a.ffmpeg.Wait()
+	}
+
 	a.bus.UnsubscribeAll()
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

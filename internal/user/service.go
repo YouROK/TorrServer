@@ -497,3 +497,28 @@ func (s *Service) UpdateTorrentMeta(u *User, hash, title, poster, category strin
 	})
 	return nil
 }
+
+// SetTranscodeProfile сохраняет выбранный профиль транскодирования.
+// Пустой идентификатор означает профиль по умолчанию.
+func (s *Service) SetTranscodeProfile(u *User, profileID string) error {
+	if u == nil {
+		return ErrPermissionDenied
+	}
+
+	target, err := s.store.GetUserByID(u.ID)
+	if err != nil {
+		return err
+	}
+
+	target.TranscodeProfile = profileID
+	if err := s.store.SaveUser(target); err != nil {
+		return err
+	}
+
+	log.Infof("[User:%s] Transcode profile set to %q", u.Username, profileID)
+	s.bus.Emit("user:transcode_profile:changed", map[string]string{
+		"user_id": u.ID,
+		"profile": profileID,
+	})
+	return nil
+}

@@ -22,6 +22,8 @@ import (
 
 	"silo/internal/bus"
 	"silo/internal/database"
+	"silo/internal/ffmpeg"
+	"silo/internal/ffmpeg/profile"
 	"silo/internal/log"
 
 	bolt "go.etcd.io/bbolt"
@@ -67,9 +69,23 @@ type Manager struct {
 	i18n      *I18nRegistry
 
 	torrFS *torrfs.TorrFS
+
+	transcode *ffmpeg.FFmpeg
+	profiles  *profile.Service
+	prober    ProbeFunc
 }
 
-func NewManager(pluginsDir string, db *database.DB, registrar WebRegistrar, torrMgr *torrent.Manager, userSvc *user.Service, torrFS *torrfs.TorrFS) (*Manager, error) {
+func NewManager(
+	pluginsDir string,
+	db *database.DB,
+	registrar WebRegistrar,
+	torrMgr *torrent.Manager,
+	userSvc *user.Service,
+	torrFS *torrfs.TorrFS,
+	transcode *ffmpeg.FFmpeg,
+	profilesSvc *profile.Service,
+	prober ProbeFunc,
+) (*Manager, error) {
 	if err := os.MkdirAll(pluginsDir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create plugins dir: %w", err)
 	}
@@ -91,6 +107,9 @@ func NewManager(pluginsDir string, db *database.DB, registrar WebRegistrar, torr
 		manifests:    make(map[string]*Manifest),
 		i18n:         NewI18nRegistry(),
 		torrFS:       torrFS,
+		transcode:    transcode,
+		profiles:     profilesSvc,
+		prober:       prober,
 	}
 
 	return m, nil
@@ -197,7 +216,7 @@ func (m *Manager) startPlugin(pluginID string, manifest *Manifest, vfs fs.FS) {
 		return
 	}
 
-	rt := NewJSRuntime(pluginID, manifest, vfs, m.registrar, m.db, m.torrMgr, m.userSvc, m.i18n, m.torrFS)
+	rt := NewJSRuntime(pluginID, manifest, vfs, m.registrar, m.db, m.torrMgr, m.userSvc, m.i18n, m.torrFS, m.transcode, m.profiles, m.prober)
 	m.runtimes[pluginID] = rt
 
 	go func(id string, code string, runtime *JSRuntime) {

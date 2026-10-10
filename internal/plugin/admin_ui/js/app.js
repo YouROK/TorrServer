@@ -6,6 +6,7 @@ const SECTIONS = [
     { id: 'dashboard', rank: 50 },
     { id: 'users', rank: 50 },
     { id: 'logs', rank: 50 },
+    { id: 'transcoding', rank: 50 },
     { id: 'plugins', rank: 100 },
     { id: 'settings', rank: 100 },
 ];
@@ -13,7 +14,6 @@ const SECTIONS = [
 let ME = null;
 let CATALOG = null;
 let SILO_VERSION = '';
-let refreshTimer = null;
 let pluginDragId = null;
 let offlineShown = false;
 
@@ -156,7 +156,11 @@ function toast(msg) {
     setTimeout(() => el.classList.remove('show'), 2500);
 }
 
-const val = (id) => document.getElementById(id).value;
+// val читает значение поля, отсутствие узла даёт пустую строку
+const val = (id) => {
+    const el = document.getElementById(id);
+    return el ? el.value : '';
+};
 const chk = (id) => document.getElementById(id).checked;
 
 function fmtBytes(b) {
@@ -292,10 +296,8 @@ function buildNav() {
 }
 
 function route() {
-    if (refreshTimer) {
-        clearInterval(refreshTimer);
-        refreshTimer = null;
-    }
+    // Смена секции останавливает все фоновые обновления предыдущей
+    siloUI.stopAll();
 
     let id = (location.hash || '#/dashboard').slice(2);
     const sec = SECTIONS.find((s) => s.id === id);
@@ -309,6 +311,7 @@ function route() {
     const renderers = {
         dashboard: renderDashboard,
         users: renderUsers,
+        transcoding: renderTranscoding,
         plugins: renderPlugins,
         settings: renderSettings,
         logs: renderLogs,
@@ -324,7 +327,8 @@ async function renderDashboard() {
         try {
             const data = await api('/system/stats');
             const s = data.stats;
-            document.getElementById('cards').innerHTML = `
+
+            siloUI.render('cards', `
                 <div class="card"><div class="label">${t('active_torrents')}</div>
                     <div class="value amber">${s.active_sessions}</div></div>
                 <div class="card"><div class="label">${t('active_readers')}</div>
@@ -335,14 +339,13 @@ async function renderDashboard() {
                     <div class="value">${fmtUptime(data.uptime_sec)}</div></div>
                 <div class="card"><div class="label">${t('goroutines')}</div>
                     <div class="value">${s.goroutines}</div></div>
-            `;
+            `);
         } catch (e) {
             toast(e.message);
         }
     };
 
-    await load();
-    refreshTimer = setInterval(load, 5000);
+    siloUI.timer('dashboard', load, 5000);
 }
 
 async function renderUsers() {
@@ -1279,6 +1282,313 @@ async function renderSettings() {
     }
 }
 
+
+// showProfileEditModal правит имя и разрешение профиля в модальном окне.
+// Отдельные окна вместо prompt: они оформлены как остальной интерфейс
+// и позволяют проверить ввод, не теряя введённое.
+async function showProfileEditModal(prof, onSaved) {
+    const height = prof.video ? (prof.video.max_height || 0) : 0;
+
+    const body = `
+        <label class="field"><span>${t('name')}</span>
+            <input class="input" id="pe-name" value="${esc(prof.name)}"></label>
+        <label class="field"><span>${t('resolution')}</span>
+            <input class="input" id="pe-height" type="number" min="0" value="${height}"></label>
+        <p class="hint" id="pe-hint"></p>
+    `;
+
+    const result = await showModal({
+        title: t('edit'),
+        body: body,
+        getValue: (box) => {
+            const name = box.querySelector('#pe-name').value.trim();
+            const hint = box.querySelector('#pe-hint');
+
+            if (!name) {
+                hint.textContent = t('name_required');
+                return undefined;
+            }
+
+            return {
+                name: name,
+                height: parseInt(box.querySelector('#pe-height').value, 10) || 0,
+            };
+        },
+        buttons: [
+            { label: t('cancel'), value: false },
+            { label: t('save'), value: true, primary: true, collect: true },
+        ],
+    });
+
+    if (!result) return;
+
+    prof.name = result.name;
+    if (prof.video) prof.video.max_height = result.height;
+
+    try {
+        await api('/transcode/profiles/' + prof.id, {
+            method: 'PUT',
+            body: JSON.stringify(prof),
+        });
+        toast(t('saved'));
+        onSaved();
+    } catch (e) {
+        modalAlert(t('edit'), '<p>' + esc(e.message) + '</p>');
+    }
+}
+
+
+async function renderTranscoding() {
+    const view = document.getElementById('view');
+
+    // Каркас строится один раз, дальше обновляются только области.
+    // Так ввод в форме создания профиля не сбрасывается обновлением по таймеру.
+    // Обработчики вешаются на этот узел: он создаётся заново при каждом входе,
+    // поэтому старые подписки не накапливаются.
+    view.innerHTML = `<div id="tp-root">
+        <div class="panel">
+            <h2>${t('transcoding')} <span id="tp-status"></span></h2>
+            <div class="cards" id="tp-cards"></div>
+        </div>
+        <div class="panel panel-wide">
+            <h2>${t('active_sessions')}</h2>
+            <div class="table-wrap">
+                <table class="table">
+                    <tr>
+                        <th>${t('torrent')}</th><th>${t('user')}</th><th>${t('protocol')}</th>
+                        <th>${t('progress')}</th><th>${t('actions')}</th>
+                    </tr>
+                    <tbody id="tp-sessions"></tbody>
+                </table>
+            </div>
+        </div>
+        ${(ME && ME.rank >= 50) ? `
+        <div class="panel">
+            <h2>${t('create_profile')}</h2>
+            <div class="row">
+                <input class="input" id="tp-name" placeholder="${t('name')}">
+                <select class="input" id="tp-protocol" style="max-width:160px">
+                    <option value="hls">hls</option>
+                    <option value="progressive">progressive</option>
+                </select>
+                <select class="input" id="tp-container" style="max-width:140px">
+                    <option value="ts">ts</option>
+                    <option value="mp4">mp4</option>
+                    <option value="mkv">mkv</option>
+                </select>
+            </div>
+            <div class="row">
+                <select class="input" id="tp-vcodec" style="max-width:140px">
+                    <option value="h264">h264</option>
+                    <option value="hevc">hevc</option>
+                    <option value="copy">copy</option>
+                </select>
+                <select class="input" id="tp-acodec" style="max-width:140px">
+                    <option value="aac">aac</option>
+                    <option value="opus">opus</option>
+                    <option value="copy">copy</option>
+                </select>
+                <input class="input" id="tp-height" type="number" placeholder="${t('resolution')} (720)" style="max-width:160px">
+                <select class="input" id="tp-visibility" style="max-width:160px">
+                    <option value="private">private</option>
+                    <option value="public">public</option>
+                </select>
+                <button class="btn" id="tp-create" type="button">${t('create_profile')}</button>
+            </div>
+        </div>` : ''}
+        <div class="panel panel-wide">
+            <h2>${t('profiles')}</h2>
+            <div class="table-wrap">
+                <table class="table">
+                    <tr>
+                        <th>${t('name')}</th><th>${t('owner')}</th>
+                        <th>${t('protocol')}</th><th>${t('codecs')}</th><th>${t('resolution')}</th>
+                        <th>${t('actions')}</th>
+                    </tr>
+                    <tbody id="tp-profiles"></tbody>
+                </table>
+            </div>
+        </div></div>`;
+
+    const root = document.getElementById('tp-root');
+
+    const sessionsBox = document.getElementById('tp-sessions');
+    const profilesBox = document.getElementById('tp-profiles');
+    const cardsBox = document.getElementById('tp-cards');
+    const statusBox = document.getElementById('tp-status');
+
+    let profiles = [];
+
+    const load = async () => {
+        let info = null;
+        let sessions = [];
+
+        try {
+            info = await api('/transcode/module');
+        } catch (e) {
+            info = null;
+        }
+        try {
+            const data = await api('/transcode/sessions');
+            sessions = data.sessions || [];
+        } catch (e) {
+            sessions = [];
+        }
+        try {
+            const data = await api('/transcode/profiles');
+            profiles = data.profiles || [];
+        } catch (e) {
+            profiles = [];
+        }
+
+        // Состояние и карточки обновляются точечно
+        statusBox.innerHTML = info && info.enabled
+            ? `<span class="badge badge-ok">${esc(info.version || 'on')}</span>`
+            : `<span class="badge badge-warn">${esc((info && info.reason) || t('disabled'))}</span>`;
+
+        siloUI.render(cardsBox, `
+            <div class="card"><div class="label">${t('active_sessions')}</div>
+                <div class="value amber">${sessions.length}</div></div>
+            <div class="card"><div class="label">${t('max_sessions')}</div>
+                <div class="value">${info ? info.max_sessions : 0}</div></div>
+            <div class="card"><div class="label">${t('ffmpeg_version')}</div>
+                <div class="value">${esc((info && info.version) || '-')}</div></div>
+        `);
+
+        // Строки обновляются по ключу: неизменившиеся не трогаются,
+        // поэтому фокус на кнопке не теряется
+        siloUI.rows(sessionsBox, sessions, {
+            key: (s) => s.id,
+            html: (s) => `
+                    <td>${esc(s.hash ? s.hash.slice(0, 12) : s.id)}</td>
+                    <td>${esc(s.user_id)}</td>
+                    <td>${esc(s.protocol)}</td>
+                    <td>${Math.round(s.percent || 0)}% / ${s.fps ? s.fps.toFixed(1) : 0} fps</td>
+                    <td class="actions-cell">
+                        ${s.pause_support ? (s.paused
+                            ? `<button class="btn btn-secondary btn-sm" data-resume="${esc(s.id)}" type="button">${t('resume')}</button>`
+                            : `<button class="btn btn-secondary btn-sm" data-pause="${esc(s.id)}" type="button">${t('pause')}</button>`) : ''}
+                        <button class="btn btn-danger btn-sm" data-stop="${esc(s.id)}" type="button">${t('stop')}</button>
+                    </td>`,
+        });
+
+        if (sessions.length === 0) {
+            siloUI.render(sessionsBox, `<tr><td colspan="5">${t('no_active_sessions')}</td></tr>`);
+        }
+
+        const canEdit = ME && ME.rank >= 50;
+        const isOwner = ME && ME.rank >= 100;
+
+        const visible = profiles.filter((p) => p.id !== 'default' || p.is_default);
+
+        siloUI.rows(profilesBox, visible, {
+            key: (p) => p.id,
+            html: (p) => `
+                    <td>${esc(p.name)}${p.is_default ? ' *' : ''}</td>
+                    <td>${esc(p.owner_id)}</td>
+                    <td>${esc(p.protocol || '')} / ${esc(p.container || '')}</td>
+                    <td>${esc(p.video ? p.video.codec : '')} / ${esc(p.audio ? p.audio.codec : '')}</td>
+                    <td>${p.video && p.video.max_height ? p.video.max_height + 'p' : '-'}</td>
+                    <td class="actions-cell">
+                        ${isOwner && !p.is_default ? `<button class="btn btn-secondary btn-sm" data-default="${esc(p.id)}" type="button">${t('set_default')}</button>` : ''}
+                        ${canEdit ? `<button class="btn btn-secondary btn-sm" data-edit="${esc(p.id)}" type="button">${t('edit')}</button>` : ''}
+                        ${canEdit ? `<button class="btn btn-danger btn-sm" data-delete="${esc(p.id)}" type="button">${t('delete')}</button>` : ''}
+                    </td>`,
+        });
+
+        if (visible.length === 0) {
+            siloUI.render(profilesBox, `<tr><td colspan="6">${t('no_profiles')}</td></tr>`);
+        }
+    };
+
+    // Обработчики вешаются на контейнер: они переживают перерисовку области
+    siloUI.on(root, 'click', '[data-stop]', async (e, el) => {
+        try {
+            await api('/transcode/sessions/' + el.dataset.stop, { method: 'DELETE' });
+            toast(t('done'));
+            load();
+        } catch (err) {
+            toast(err.message);
+        }
+    });
+
+    siloUI.on(root, 'click', '[data-pause]', async (e, el) => {
+        try {
+            await api('/transcode/sessions/' + el.dataset.pause + '/pause', { method: 'POST' });
+            load();
+        } catch (err) {
+            toast(err.message);
+        }
+    });
+
+    siloUI.on(root, 'click', '[data-resume]', async (e, el) => {
+        try {
+            await api('/transcode/sessions/' + el.dataset.resume + '/resume', { method: 'POST' });
+            load();
+        } catch (err) {
+            toast(err.message);
+        }
+    });
+
+    siloUI.on(root, 'click', '[data-delete]', async (e, el) => {
+        if (!(await modalConfirm(t('delete'), t('confirm_delete')))) return;
+        try {
+            await api('/transcode/profiles/' + el.dataset.delete, { method: 'DELETE' });
+            toast(t('done'));
+            load();
+        } catch (err) {
+            toast(err.message);
+        }
+    });
+
+    siloUI.on(root, 'click', '[data-default]', async (e, el) => {
+        try {
+            await api('/transcode/profiles/' + el.dataset.default + '/default', { method: 'POST' });
+            toast(t('saved'));
+            load();
+        } catch (err) {
+            toast(err.message);
+        }
+    });
+
+    siloUI.on(root, 'click', '[data-edit]', async (e, el) => {
+        const prof = profiles.find((p) => p.id === el.dataset.edit);
+        if (!prof) return;
+
+        await showProfileEditModal(prof, load);
+    });
+
+    siloUI.on(root, 'click', '#tp-create', async () => {
+        const payload = {
+            name: val('tp-name').trim(),
+            protocol: val('tp-protocol'),
+            container: val('tp-container'),
+            visibility: val('tp-visibility'),
+            video: { codec: val('tp-vcodec'), max_height: parseInt(val('tp-height'), 10) || 0 },
+            audio: { codec: val('tp-acodec') },
+        };
+
+        if (!payload.name) {
+            modalAlert(t('create_profile'), '<p>' + t('name_required') + '</p>');
+            return;
+        }
+
+        try {
+            await api('/transcode/profiles', { method: 'POST', body: JSON.stringify(payload) });
+            toast(t('saved'));
+
+            // Поля очищаются вручную: каркас формы не перерисовывается
+            document.getElementById('tp-name').value = '';
+            document.getElementById('tp-height').value = '';
+            load();
+        } catch (err) {
+            toast(err.message);
+        }
+    });
+
+    siloUI.timer('transcoding', load, 5000);
+}
+
 async function renderLogs() {
     const view = document.getElementById('view');
     view.innerHTML = `
@@ -1299,9 +1609,9 @@ async function renderLogs() {
         }
     };
 
-    await load();
-    refreshTimer = setInterval(() => {
-        if (document.getElementById('lg-auto').checked) load();
+    siloUI.timer('logs', () => {
+        const auto = document.getElementById('lg-auto');
+        if (auto && auto.checked) load();
     }, 3000);
 }
 

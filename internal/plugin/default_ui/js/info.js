@@ -69,9 +69,10 @@ function renderInfo() {
         [t('status'), infoStatus.stat_string || '-'],
         [t('category'), infoStatus.category ? categoryLabel(infoStatus.category) : '-'],
     ];
-    document.getElementById('info-plaques').innerHTML = plaques
+    // Плашки обновляются точечно: они меняются каждую секунду
+    siloUI.render(document.getElementById('info-plaques'), plaques
         .map((p) => '<div class="plaque"><span class="plaque-label">' + p[0] + '</span><span class="plaque-value">' + esc(p[1]) + '</span></div>')
-        .join('');
+        .join(''));
 
     const base = infoBaseFiles();
     const folders = infoFoldersOf(base);
@@ -120,6 +121,12 @@ function renderInfo() {
                     '</div>' +
                     '<div class="file-actions">' +
                     '<button class="btn btn-sm" type="button" data-open="' + f.id + '">' + t('open') + '</button>' +
+                    '<button class="btn-sm-icon" type="button" data-transcode="' + f.id + '" title="' + t('transcode') + '">' +
+                    '<img src="img/ico-transcode.svg" alt="" onerror="this.style.display=\'none\'">' +
+                    '</button>' +
+                    '<button class="btn-sm-icon" type="button" data-fileinfo="' + f.id + '" title="' + t('file_info') + '">' +
+                    '<img src="img/ico-info.svg" alt="" onerror="this.textContent=\'i\'">' +
+                    '</button>' +
                     '<button class="btn-sm-icon" type="button" data-preload="' + f.id + '" title="' + t('preload') + '">' +
                     '<img src="img/ico-download.svg" alt="" onerror="this.style.display=\'none\'">' +
                     '</button>' +
@@ -310,7 +317,199 @@ function bindInfoModal() {
             copyText(streamUrl(parseInt(copyBtn.getAttribute('data-copylink'), 10), true));
             showToast(t('copied'), 'success');
         }
+
+        const transcodeBtn = e.target.closest('[data-transcode]');
+        if (transcodeBtn) {
+            showTranscodePicker(parseInt(transcodeBtn.getAttribute('data-transcode'), 10));
+            return;
+        }
+
+        const infoBtn = e.target.closest('[data-fileinfo]');
+        if (infoBtn) {
+            showFileInfo(parseInt(infoBtn.getAttribute('data-fileinfo'), 10));
+        }
     });
 
     bindCache();
+    bindTranscodeModal();
+
+    document.getElementById('fileinfo-close').addEventListener('click', () => {
+        document.getElementById('fileinfo-overlay').style.display = 'none';
+    });
+}
+// --- Транскодирование из списка файлов ---
+
+let transcodeIndex = 0;
+let transcodeProfiles = null;
+
+// apiToken возвращает токен доступа текущего пользователя.
+function apiToken() {
+    return (window.me && window.me.api_token) ? window.me.api_token : '';
+}
+
+// transcodeUrl собирает адрес транскодированного потока.
+// withToken добавляет токен: без него ссылку нельзя открыть в другом плеере.
+function transcodeUrl(idx, profileID, withToken) {
+    let url = location.origin + '/api/transcode/' + infoHash + '/' + idx;
+    const params = [];
+    if (profileID) params.push('profile=' + encodeURIComponent(profileID));
+    if (withToken && apiToken()) params.push('token=' + encodeURIComponent(apiToken()));
+    if (params.length) url += '?' + params.join('&');
+    return url;
+}
+
+// loadProfiles получает доступные пользователю профили.
+async function loadProfiles() {
+    if (transcodeProfiles) return transcodeProfiles;
+
+    const res = await fetch('/api/transcode/profiles?token=' + encodeURIComponent(apiToken()));
+    if (!res.ok) throw new Error(t('transcode_unavailable'));
+
+    const data = await res.json();
+    transcodeProfiles = data.profiles || [];
+    return transcodeProfiles;
+}
+
+// showTranscodePicker открывает список профилей для файла.
+async function showTranscodePicker(idx) {
+    const overlay = document.getElementById('transcode-overlay');
+    const list = document.getElementById('transcode-list');
+
+    document.getElementById('transcode-title').textContent = t('transcode');
+    document.getElementById('transcode-close').textContent = t('cancel');
+    list.innerHTML = '<div class="transcode-empty">' + t('loading') + '</div>';
+    overlay.style.display = 'flex';
+
+    let profiles = [];
+    try {
+        profiles = await loadProfiles();
+    } catch (e) {
+        list.innerHTML = '<div class="transcode-empty">' + esc(e.message) + '</div>';
+        return;
+    }
+
+    if (profiles.length === 0) {
+        list.innerHTML = '<div class="transcode-empty">' + t('no_profiles') + '</div>';
+        return;
+    }
+
+    transcodeIndex = idx;
+
+    // Профиль по умолчанию ставится первым: он используется без параметров
+    const sorted = profiles.slice().sort((a, b) => (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0));
+
+    list.innerHTML = sorted.map((p) => {
+        const details = [];
+        if (p.protocol) details.push(p.protocol === 'hls' ? 'HLS' : 'MP4');
+        if (p.video && p.video.codec) details.push(p.video.codec.toUpperCase());
+        if (p.video && p.video.max_height) details.push(p.video.max_height + 'p');
+        if (p.audio && p.audio.codec) details.push(p.audio.codec.toUpperCase());
+
+        return '<div class="transcode-item" data-profile="' + esc(p.id) + '">' +
+            '<div class="transcode-main">' +
+            '<div class="transcode-name">' + esc(p.name) +
+            (p.is_default ? ' <span class="transcode-star">*</span>' : '') + '</div>' +
+            '<div class="transcode-sub">' + esc(details.join(' · ')) + '</div>' +
+            '</div>' +
+            '<div class="transcode-actions">' +
+            '<button class="btn btn-sm" type="button" data-play="' + esc(p.id) + '">' + t('open') + '</button>' +
+            '<button class="btn btn-secondary btn-sm" type="button" data-copy="' + esc(p.id) + '">' + t('copy') + '</button>' +
+            '</div>' +
+            '</div>';
+    }).join('');
+}
+
+// hdrRange возвращает подпись расширенного диапазона или пустую строку.
+// PQ используется в HDR10 и Dolby Vision, HLG - в телевещании.
+function hdrRange(s) {
+    const transfer = (s.color_transfer || '').toLowerCase();
+    if (transfer === 'smpte2084') return 'HDR10';
+    if (transfer === 'arib-std-b67') return 'HLG';
+
+    if (s.bit_depth >= 10 && (s.color_primaries || '').toLowerCase() === 'bt2020') return 'HDR';
+    return '';
+}
+
+// showFileInfo открывает окно с параметрами файла из ffprobe.
+async function showFileInfo(idx) {
+    const overlay = document.getElementById('fileinfo-overlay');
+    const body = document.getElementById('fileinfo-body');
+
+    document.getElementById('fileinfo-title').textContent = t('file_info');
+    document.getElementById('fileinfo-close').textContent = t('close');
+    body.innerHTML = '<div class="transcode-empty">' + t('loading') + '</div>';
+    overlay.style.display = 'flex';
+
+    let info = null;
+    try {
+        const res = await fetch('/api/transcode/info/' + infoHash + '/' + idx + '?token=' + encodeURIComponent(apiToken()));
+        if (!res.ok) throw new Error(t('transcode_unavailable'));
+        info = await res.json();
+    } catch (e) {
+        body.innerHTML = '<div class="transcode-empty">' + esc(e.message) + '</div>';
+        return;
+    }
+
+    const rows = [];
+    rows.push([t('container'), info.container || info.format || '-']);
+    rows.push([t('duration'), info.duration_h || '-']);
+    rows.push([t('size'), fmtSize(info.size)]);
+
+    let html = '<table class="fileinfo-table">';
+    html += rows.map((r) => '<tr><td>' + esc(r[0]) + '</td><td>' + esc(r[1]) + '</td></tr>').join('');
+    html += '</table>';
+
+    // Потоки: видео, аудио и субтитры с их параметрами
+    const streams = info.streams || [];
+    if (streams.length) {
+        html += '<h3 class="fileinfo-head">' + t('streams') + '</h3>';
+        html += '<table class="fileinfo-table">';
+        html += streams.map((s) => {
+            const parts = [s.codec];
+            if (s.kind === 'video') {
+                if (s.width) parts.push(s.width + 'x' + s.height);
+                if (s.bit_depth) parts.push(s.bit_depth + ' bit');
+                if (s.pix_fmt) parts.push(s.pix_fmt);
+                if (s.framerate) parts.push(Number(s.framerate).toFixed(2) + ' fps');
+                if (s.bitrate) parts.push(Math.round(s.bitrate / 1000) + ' kbps');
+                const range = hdrRange(s);
+                if (range) parts.push(range);
+            } else if (s.kind === 'audio') {
+                if (s.channels) parts.push(s.channels + ' ch');
+                if (s.sample_rate) parts.push(s.sample_rate + ' Hz');
+                if (s.bitrate) parts.push(Math.round(s.bitrate / 1000) + ' kbps');
+            }
+            if (s.language) parts.push(s.language);
+            if (s.title) parts.push(s.title);
+
+            return '<tr><td>' + esc(s.kind) + ' #' + s.index + '</td><td>' + esc(parts.join(' · ')) + '</td></tr>';
+        }).join('');
+        html += '</table>';
+    }
+
+    body.innerHTML = html;
+}
+
+// bindTranscodeModal вешает обработчики окна выбора профиля.
+function bindTranscodeModal() {
+    const overlay = document.getElementById('transcode-overlay');
+    const list = document.getElementById('transcode-list');
+
+    document.getElementById('transcode-close').addEventListener('click', () => {
+        overlay.style.display = 'none';
+    });
+
+    list.addEventListener('click', (e) => {
+        const playBtn = e.target.closest('[data-play]');
+        if (playBtn) {
+            window.open(transcodeUrl(transcodeIndex, playBtn.getAttribute('data-play'), false), '_blank');
+            return;
+        }
+
+        const copyBtn = e.target.closest('[data-copy]');
+        if (copyBtn) {
+            copyText(transcodeUrl(transcodeIndex, copyBtn.getAttribute('data-copy'), true));
+            showToast(t('copied'), 'success');
+        }
+    });
 }

@@ -92,5 +92,14 @@
   "cache_size": "Cache",
   "server_offline_title": "Server unreachable",
   "server_offline_text": "The Silo server is offline or the network connection was lost. The page will try to reconnect automatically.",
-  "retrying": "Retrying..."
+  "retrying": "Retrying...",
+  "transcode": "Transcode",
+  "file_info": "File details",
+  "copy": "Copy",
+  "close": "Close",
+  "streams": "Streams",
+  "container": "Container",
+  "duration": "Duration",
+  "no_profiles": "No profiles available",
+  "transcode_unavailable": "Transcoding is unavailable"
 }

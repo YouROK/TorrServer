@@ -6,6 +6,8 @@ import (
 	"sync"
 
 	"silo/internal/database"
+	"silo/internal/ffmpeg"
+	"silo/internal/ffmpeg/profile"
 	"silo/internal/torrent"
 	"silo/internal/user"
 
@@ -43,6 +45,9 @@ func NewJSRuntime(
 	userSvc *user.Service,
 	i18nReg *I18nRegistry,
 	torrFS *torrfs.TorrFS,
+	transcode *ffmpeg.FFmpeg,
+	profilesSvc *profile.Service,
+	prober ProbeFunc,
 ) *JSRuntime {
 	vm := goja.New()
 	rt := &JSRuntime{
@@ -68,6 +73,7 @@ func NewJSRuntime(
 	tsObj.Set("vfs", rt.createVFSModule(vfs))
 	tsObj.Set("crypto", rt.createCryptoModule())
 	tsObj.Set("torrfs", rt.createTorrFSModule(torrFS, userSvc))
+	tsObj.Set("transcode", rt.createTranscodeModule(transcode, profilesSvc, prober))
 
 	vm.Set("ts", tsObj)
 

@@ -8,8 +8,10 @@
     <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
     <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
     <link rel="manifest" href="/img/site.webmanifest">
+    <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="css/style.css">
     <script src="/i18n.js"></script>
+    <script src="/js/ui.js"></script>
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay"></div>
@@ -260,6 +262,36 @@
         <div class="modal-footer">
             <button class="btn btn-secondary" id="confirm-cancel" type="button"></button>
             <button class="btn btn-danger" id="confirm-ok" type="button"></button>
+        </div>
+    </div>
+</div>
+
+<!-- Transcode profile picker -->
+<div class="modal-overlay" id="transcode-overlay" style="display:none;">
+    <div class="modal modal-sm" role="dialog" aria-modal="true">
+        <div class="modal-header">
+            <h2 id="transcode-title"></h2>
+            <button class="modal-close" data-close="transcode-overlay" type="button">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="transcode-list" id="transcode-list"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="transcode-close" type="button"></button>
+        </div>
+    </div>
+</div>
+
+<!-- File details -->
+<div class="modal-overlay" id="fileinfo-overlay" style="display:none;">
+    <div class="modal" role="dialog" aria-modal="true">
+        <div class="modal-header">
+            <h2 id="fileinfo-title"></h2>
+            <button class="modal-close" data-close="fileinfo-overlay" type="button">×</button>
+        </div>
+        <div class="modal-body" id="fileinfo-body"></div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="fileinfo-close" type="button"></button>
         </div>
     </div>
 </div>

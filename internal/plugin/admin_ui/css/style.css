@@ -23,21 +23,11 @@
     --silo-sidebar-w: 220px;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
 
-body {
-    background: var(--silo-bg);
-    color: var(--silo-text);
-    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
-    font-size: 14px;
-    line-height: 1.5;
-}
 
-h1, h2, h3 {
-    color: var(--silo-steel-bright);
-    font-weight: 600;
-    letter-spacing: 0.02em;
-}
+
+
+
 
 /* ----------------------------------------------------------------------------
    Каркас SPA
@@ -114,18 +104,7 @@ h1, h2, h3 {
     min-width: 0; /* важно для grid/flex внутри */
 }
 
-.topbar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 24px;
-    border-bottom: 1px solid var(--silo-border);
-    padding-bottom: 12px;
-}
 
-.topbar h1 {
-    flex-grow: 1;
-}
 
 /* Кнопка-гамбургер: скрыта на десктопе */
 .hamburger {
@@ -149,11 +128,7 @@ h1, h2, h3 {
 /* ----------------------------------------------------------------------------
    Карточки, кнопки, поля, таблицы
    ---------------------------------------------------------------------------- */
-.cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 16px;
-}
+
 
 .card {
     background: var(--silo-surface);
@@ -178,28 +153,13 @@ h1, h2, h3 {
 
 .card .value.amber { color: var(--silo-amber); }
 
-.btn {
-    background: var(--silo-amber);
-    color: #14171a;
-    border: none;
-    border-radius: 6px;
-    padding: 8px 16px;
-    font-weight: 600;
-    cursor: pointer;
-}
 
-.btn:hover { background: var(--silo-amber-bright); }
 
-.btn-secondary {
-    background: transparent;
-    color: var(--silo-steel);
-    border: 1px solid var(--silo-border-strong);
-}
 
-.btn-secondary:hover {
-    color: var(--silo-steel-bright);
-    border-color: var(--silo-steel);
-}
+
+
+
+
 
 .btn-danger {
     background: transparent;
@@ -207,12 +167,12 @@ h1, h2, h3 {
     border: 1px solid var(--silo-danger);
 }
 
-.btn-danger:hover { background: var(--silo-danger); color: #fff; }
+
 
 .btn-sm { padding: 4px 10px; font-size: 12px; }
 
-.field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
-.field span { color: var(--silo-text-muted); font-size: 12px; }
+
+
 
 .input {
     background: var(--silo-bg-raised);
@@ -224,38 +184,19 @@ h1, h2, h3 {
     width: 100%;
 }
 
-.input:focus { border-color: var(--silo-amber); }
+
 
 /* Обёртка таблицы с горизонтальной прокруткой на мобильных */
-.table-wrap {
-    overflow-x: auto;
-    border: 1px solid var(--silo-border);
-    border-radius: 8px;
-    background: var(--silo-surface);
-}
 
-.table { width: 100%; border-collapse: collapse; }
 
-.table th {
-    text-align: left;
-    color: var(--silo-text-muted);
-    font-weight: 500;
-    text-transform: uppercase;
-    font-size: 12px;
-    letter-spacing: 0.06em;
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--silo-border-strong);
-    white-space: nowrap;
-}
 
-.table td {
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--silo-border);
-    white-space: nowrap;
-}
 
-.table tr:last-child td { border-bottom: none; }
-.table tr:hover td { background: var(--silo-surface-hover); }
+
+
+
+
+
+
 
 /* Бейджи */
 .badge {
@@ -266,10 +207,10 @@ h1, h2, h3 {
     font-weight: 600;
 }
 
-.badge-owner { background: var(--silo-amber); color: #14171a; }
-.badge-admin { background: var(--silo-teal); color: var(--silo-steel-bright); }
-.badge-user  { background: var(--silo-border); color: var(--silo-text-muted); }
-.badge-banned { background: var(--silo-danger); color: #fff; }
+
+
+
+
 
 /* Логи */
 .logs-box {
@@ -295,7 +236,7 @@ h1, h2, h3 {
     margin-bottom: 24px;
 }
 
-.panel h2 { font-size: 16px; margin-bottom: 16px; }
+
 
 .row {
     display: flex;
@@ -305,7 +246,7 @@ h1, h2, h3 {
     margin-bottom: 16px;
 }
 
-.row .input { flex: 1 1 160px; min-width: 120px; }
+
 
 /* ----------------------------------------------------------------------------
    Модальные окна
@@ -408,26 +349,15 @@ tr.drag-over td { border-top: 2px solid var(--silo-amber); }
 
 .btn-icon:hover { border-color: var(--silo-amber); }
 
-.actions-cell { white-space: nowrap; }
-.actions-cell > * { margin-right: 6px; }
 
-.hint { color: var(--silo-text-faint); font-size: 12px; }
+
+
+
 
 /* ----------------------------------------------------------------------------
    Настройки: подблоки и чекбоксы
    ---------------------------------------------------------------------------- */
-.subblock {
-    border: 1px solid var(--silo-border);
-    border-radius: 6px;
-    padding: 16px;
-    margin-bottom: 16px;
-}
 
-.subblock legend {
-    color: var(--silo-amber);
-    padding: 0 8px;
-    font-weight: 600;
-}
 
 .checks {
     display: flex;
@@ -471,7 +401,6 @@ tr.drag-over td { border-top: 2px solid var(--silo-amber); }
     max-width: calc(100vw - 48px);
 }
 
-.toast.show { opacity: 1; }
 
 /* ----------------------------------------------------------------------------
    Баннер недоступности сервера
@@ -564,16 +493,10 @@ tr.drag-over td { border-top: 2px solid var(--silo-amber); }
     }
 
     /* Панели занимают всю ширину */
-    .panel {
-        max-width: 100%;
-        padding: 16px;
-    }
+
 
     /* Строки формы в столбик */
-    .row {
-        flex-direction: column;
-        align-items: stretch;
-    }
+
 
     .row .input, .row .btn {
         width: 100%;
@@ -585,16 +508,9 @@ tr.drag-over td { border-top: 2px solid var(--silo-amber); }
     }
 
     /* Модалки почти на весь экран */
-    .modal {
-        width: 100%;
-        max-width: 100%;
-        max-height: 90vh;
-        border-radius: 8px;
-    }
 
-    .modal-overlay {
-        padding: 8px;
-    }
+
+
 
     /* Кнопки действий на мобильных в столбик */
     .actions-cell {
@@ -609,11 +525,6 @@ tr.drag-over td { border-top: 2px solid var(--silo-amber); }
     }
 
     /* Тост снизу по центру */
-    .toast {
-        left: 24px;
-        right: 24px;
-        text-align: center;
-    }
 
     /* Логи меньше по высоте */
     .logs-box {
@@ -625,10 +536,7 @@ tr.drag-over td { border-top: 2px solid var(--silo-amber); }
         padding: 10px 14px;
     }
 
-    .btn-sm {
-        padding: 8px 12px;
-        font-size: 13px;
-    }
+
 
     .input {
         padding: 10px 12px;
@@ -640,10 +548,10 @@ tr.drag-over td { border-top: 2px solid var(--silo-amber); }
 /* ----------------------------------------------------------------------------
    Скроллбар в стиле бункера
    ---------------------------------------------------------------------------- */
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: var(--silo-bg); }
-::-webkit-scrollbar-thumb { background: var(--silo-border-strong); border-radius: 5px; }
-::-webkit-scrollbar-thumb:hover { background: var(--silo-amber-deep); }
+
+
+
+
 
 
 
@@ -657,10 +565,6 @@ tr.drag-over td { border-top: 2px solid var(--silo-amber); }
    Убираем дефолтные стрелочки у number-полей
    ---------------------------------------------------------------------------- */
 input[type="number"]::-webkit-outer-spin-button,
-input[type="number"]::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
 
 input[type="number"] {
     -moz-appearance: textfield; /* Firefox */
@@ -1134,3 +1038,39 @@ details.manual-install[open] > summary::before {
     .stream-speed, .stream-dur { text-align: left; }
     .conn-cell, .speed-cell, .size-cell { text-align: left; }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -22,14 +22,17 @@ type Limits struct {
 }
 
 type User struct {
-	ID           string    `json:"id"`            // Уникальный ID (например, "u_admin")
-	Username     string    `json:"username"`      // Уникальный логин
-	PasswordHash string    `json:"password_hash"` // bcrypt хэш
-	Rank         RoleRank  `json:"rank"`          // Числовой ранг
-	APIToken     string    `json:"api_token"`     // Постоянный токен для плеера и API
-	IsBanned     bool      `json:"is_banned"`     // Флаг блокировки
-	Limits       Limits    `json:"limits"`        // Персональные квоты
-	CreatedAt    time.Time `json:"created_at"`
+	ID           string   `json:"id"`            // Уникальный ID (например, "u_admin")
+	Username     string   `json:"username"`      // Уникальный логин
+	PasswordHash string   `json:"password_hash"` // bcrypt хэш
+	Rank         RoleRank `json:"rank"`          // Числовой ранг
+	APIToken     string   `json:"api_token"`     // Постоянный токен для плеера и API
+	IsBanned     bool     `json:"is_banned"`     // Флаг блокировки
+	Limits       Limits   `json:"limits"`        // Персональные квоты
+	// TranscodeProfile - выбранный пользователем профиль транскодирования,
+	// пусто означает профиль по умолчанию
+	TranscodeProfile string    `json:"transcode_profile,omitempty"`
+	CreatedAt        time.Time `json:"created_at"`
 }
 
 // CanManage проверяет, может ли текущий пользователь управлять целевым (строго больше по рангу)
