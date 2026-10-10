@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"silo/internal/ffmpeg"
+
 	"gopkg.in/yaml.v3"
 )
 
@@ -16,6 +18,7 @@ type Config struct {
 	Torrent TorrentConfig `yaml:"torrent" json:"torrent"`
 	Logging LoggingConfig `yaml:"logging" json:"logging"`
 	Auth    AuthConfig    `yaml:"auth" json:"auth"`
+	FFmpeg  ffmpeg.Config `yaml:"ffmpeg" json:"ffmpeg"`
 }
 
 type ServerConfig struct {
@@ -80,6 +83,7 @@ func DefaultConfig() *Config {
 		Auth: AuthConfig{
 			OwnerPassword: "",
 		},
+		FFmpeg: ffmpeg.DefaultConfig(),
 	}
 }
 

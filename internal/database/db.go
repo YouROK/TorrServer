@@ -19,6 +19,7 @@ var (
 	BucketTorrentRefs  = []byte("torrent_refs")  // Счетчики ссылок: TorrentHash -> int
 	BucketPlugins      = []byte("plugins")
 	BucketPluginData   = []byte("plugin_data")
+	BucketProfiles     = []byte("transcode_profiles") // Профили транскодирования (ID -> Profile)
 )
 
 type DB struct {
@@ -57,6 +58,7 @@ func (d *DB) initBuckets() error {
 			BucketTorrentRefs,
 			BucketPlugins,
 			BucketPluginData,
+			BucketProfiles,
 		}
 		for _, b := range buckets {
 			if _, err := tx.CreateBucketIfNotExists(b); err != nil {
