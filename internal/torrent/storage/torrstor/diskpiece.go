@@ -1,6 +1,7 @@
 package torrstor
 
 import (
+	"context"
 	"io"
 	"os"
 	"path/filepath"
@@ -21,9 +22,9 @@ func NewDiskPiece(p *Piece) *DiskPiece {
 	cfg := p.cache.storage.cfg
 	name := filepath.Join(cfg.TorrentsSavePath, p.cache.hash.HexString(), strconv.Itoa(p.Id))
 	if ff, err := os.Stat(name); err == nil {
-		p.Size = ff.Size()
-		p.Complete = ff.Size() == p.cache.pieceLength
-		p.Accessed = ff.ModTime().Unix()
+		p.AddSize(ff.Size())
+		p.SetComplete(ff.Size() == p.cache.pieceLength)
+		p.SetAccessed(ff.ModTime().Unix())
 	}
 	return &DiskPiece{piece: p, name: name}
 }
@@ -41,11 +42,8 @@ func (p *DiskPiece) WriteAt(b []byte, off int64) (n int, err error) {
 
 	n, err = ff.WriteAt(b, off)
 
-	p.piece.Size += int64(n)
-	if p.piece.Size > p.piece.cache.pieceLength {
-		p.piece.Size = p.piece.cache.pieceLength
-	}
-	p.piece.Accessed = time.Now().Unix()
+	p.piece.AddSize(int64(n))
+	p.piece.SetAccessed(time.Now().Unix())
 	return
 }
 
@@ -65,9 +63,9 @@ func (p *DiskPiece) ReadAt(b []byte, off int64) (n int, err error) {
 
 	n, err = ff.ReadAt(b, off)
 
-	p.piece.Accessed = time.Now().Unix()
-	if int64(len(b))+off >= p.piece.Size {
-		go p.piece.cache.cleanPieces()
+	p.piece.SetAccessed(time.Now().Unix())
+	if int64(len(b))+off >= p.piece.SizeOf() {
+		p.piece.cache.tasks.Go(func(ctx context.Context) { p.piece.cache.cleanPieces() })
 	}
 	return n, nil
 }
@@ -76,8 +74,7 @@ func (p *DiskPiece) Release() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.piece.Size = 0
-	p.piece.Complete = false
+	p.piece.Reset()
 
 	_ = os.Remove(p.name)
 }

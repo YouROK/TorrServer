@@ -1,13 +1,17 @@
 package torrstor
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
+	"silo/internal/bus"
 	"silo/internal/log"
 	"sort"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
@@ -36,10 +40,27 @@ type Cache struct {
 	readers   map[*Reader]struct{}
 	muReaders sync.Mutex
 
-	isRemove bool
-	isClosed bool
+	isClosed atomic.Bool
 	muRemove sync.Mutex
+	muTorr   sync.RWMutex
+	muFill   sync.RWMutex
 	torrent  *torrent.Torrent
+
+	tasks *bus.Group
+}
+
+// setFilled сохраняет занятый объем кэша.
+func (c *Cache) setFilled(v int64) {
+	c.muFill.Lock()
+	c.filled = v
+	c.muFill.Unlock()
+}
+
+// filledBytes возвращает занятый объем кэша.
+func (c *Cache) filledBytes() int64 {
+	c.muFill.RLock()
+	defer c.muFill.RUnlock()
+	return c.filled
 }
 
 func NewCache(capacity int64, s *Storage) *Cache {
@@ -49,6 +70,7 @@ func NewCache(capacity int64, s *Storage) *Cache {
 		pieces:   make(map[int]*Piece),
 		storage:  s,
 		readers:  make(map[*Reader]struct{}),
+		tasks:    bus.NewGroup(context.Background()),
 	}
 }
 
@@ -77,7 +99,17 @@ func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
 }
 
 func (c *Cache) SetTorrent(torr *torrent.Torrent) {
+	c.muTorr.Lock()
 	c.torrent = torr
+	c.muTorr.Unlock()
+}
+
+// Torrent возвращает раздачу кэша. Запись происходит при получении метаданных,
+// чтение - из движка при закрытии, поэтому доступ идет через мьютекс.
+func (c *Cache) Torrent() *torrent.Torrent {
+	c.muTorr.RLock()
+	defer c.muTorr.RUnlock()
+	return c.torrent
 }
 
 func (c *Cache) Piece(m metainfo.Piece) storage.PieceImpl {
@@ -88,12 +120,17 @@ func (c *Cache) Piece(m metainfo.Piece) storage.PieceImpl {
 }
 
 func (c *Cache) Close() error {
-	if c.torrent != nil {
-		log.Debugf("[TorrStor] Close cache for: %s (%s)", c.torrent.Name(), c.hash.HexString())
+	// Фоновые задачи кэша останавливаются до освобождения данных
+	if c.tasks != nil && !c.tasks.Close(3*time.Second) {
+		log.Warnf("[TorrStor] Cache tasks did not stop in time: %s", c.hash.HexString())
+	}
+
+	if t := c.Torrent(); t != nil {
+		log.Debugf("[TorrStor] Close cache for: %s (%s)", t.Name(), c.hash.HexString())
 	} else {
 		log.Debugf("[TorrStor] Close cache for: %s", c.hash.HexString())
 	}
-	c.isClosed = true
+	c.isClosed.Store(true)
 
 	delete(c.storage.caches, c.hash)
 
@@ -120,7 +157,7 @@ func (c *Cache) Close() error {
 }
 
 func (c *Cache) removePiece(piece *Piece) {
-	if !c.isClosed {
+	if !c.isClosed.Load() {
 		piece.Release()
 	}
 }
@@ -128,7 +165,7 @@ func (c *Cache) removePiece(piece *Piece) {
 // applyZones распределяет зону скачивания торрента между активными ридерами.
 // Зона одного ридера это Capacity за вычетом запаса, поделенная на число ридеров.
 func (c *Cache) applyZones() {
-	if c == nil || c.torrent == nil {
+	if c == nil || c.Torrent() == nil {
 		return
 	}
 
@@ -174,17 +211,18 @@ func (c *Cache) GetState() *CacheState {
 
 	if len(c.pieces) > 0 {
 		for _, p := range c.pieces {
-			if p.Size > 0 {
-				fill += p.Size
+			size := p.SizeOf()
+			if size > 0 {
+				fill += size
 				priority := 0
-				if c.torrent != nil {
-					priority = int(c.torrent.PieceState(p.Id).Priority)
+				if t := c.Torrent(); t != nil {
+					priority = int(t.PieceState(p.Id).Priority)
 				}
 				piecesState[p.Id] = ItemState{
 					Id:        p.Id,
-					Size:      p.Size,
+					Size:      size,
 					Length:    c.pieceLength,
-					Completed: p.Complete,
+					Completed: p.IsComplete(),
 					Priority:  priority,
 				}
 			}
@@ -207,7 +245,7 @@ func (c *Cache) GetState() *CacheState {
 		c.muReaders.Unlock()
 	}
 
-	c.filled = fill
+	c.setFilled(fill)
 	cState.Capacity = c.capacity
 	cState.PiecesLength = c.pieceLength
 	cState.PiecesCount = c.pieceCount
@@ -219,21 +257,20 @@ func (c *Cache) GetState() *CacheState {
 }
 
 func (c *Cache) cleanPieces() {
-	if c.isRemove || c.isClosed {
+	if c.isClosed.Load() {
 		return
 	}
 
+	// Повторный вход запрещен: вытеснение уже идет в другой горутине
 	if !c.muRemove.TryLock() {
 		return
 	}
 	defer c.muRemove.Unlock()
 
-	c.isRemove = true
-	defer func() { c.isRemove = false }()
-
 	remPieces := c.getRemPieces()
-	if c.filled > c.capacity {
-		rems := (c.filled-c.capacity)/c.pieceLength + 1
+	filled := c.filledBytes()
+	if filled > c.capacity {
+		rems := (filled-c.capacity)/c.pieceLength + 1
 		for _, p := range remPieces {
 			c.removePiece(p)
 			rems--
@@ -273,30 +310,33 @@ func (c *Cache) getRemPieces() []*Piece {
 
 	for _, p := range pieces {
 		id := p.Id
-		if p.Size > 0 {
-			fill += p.Size
+		size := p.SizeOf()
+		if size > 0 {
+			fill += size
 		}
 		if len(ranges) > 0 {
 			if !inRanges(ranges, id) {
-				if p.Size > 0 && !c.isIdInFileBE(ranges, id) {
+				if size > 0 && !c.isIdInFileBE(ranges, id) {
 					piecesRemove = append(piecesRemove, p)
 				}
 			}
 		} else {
-			if p.Size > 0 && !c.isIdInFileBE(ranges, id) {
+			if size > 0 && !c.isIdInFileBE(ranges, id) {
 				piecesRemove = append(piecesRemove, p)
 			}
 		}
 	}
 
+	// Полные куски вытесняются первыми: их данные есть у пиров и восстанавливаются дешевле
 	sort.Slice(piecesRemove, func(i, j int) bool {
-		if piecesRemove[i].Complete != piecesRemove[j].Complete {
-			return piecesRemove[i].Complete
+		ci, cj := piecesRemove[i].IsComplete(), piecesRemove[j].IsComplete()
+		if ci != cj {
+			return ci
 		}
-		return piecesRemove[i].Accessed < piecesRemove[j].Accessed
+		return piecesRemove[i].AccessedAt() < piecesRemove[j].AccessedAt()
 	})
 
-	c.filled = fill
+	c.setFilled(fill)
 	return piecesRemove
 }
 
@@ -361,7 +401,7 @@ func (c *Cache) CloseReader(r *Reader) {
 	delete(r.cache.readers, r)
 	r.cache.muReaders.Unlock()
 	r.Close()
-	go c.applyZones()
+	c.tasks.Go(func(ctx context.Context) { c.applyZones() })
 }
 
 func (c *Cache) GetCapacity() int64 {

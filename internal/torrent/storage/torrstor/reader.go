@@ -1,8 +1,10 @@
 package torrstor
 
 import (
+	"context"
 	"io"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"silo/internal/log"
@@ -19,7 +21,7 @@ type Reader struct {
 	file      *torrent.File
 
 	cache    *Cache
-	isClosed bool
+	isClosed atomic.Bool
 
 	lastAccess int64
 	isUse      bool
@@ -42,7 +44,7 @@ func newReader(file *torrent.File, cache *Cache) *Reader {
 }
 
 func (r *Reader) Seek(offset int64, whence int) (n int64, err error) {
-	if r.isClosed {
+	if r.isClosed.Load() {
 		return 0, io.EOF
 	}
 	switch whence {
@@ -62,7 +64,7 @@ func (r *Reader) Seek(offset int64, whence int) (n int64, err error) {
 
 func (r *Reader) Read(p []byte) (n int, err error) {
 	err = io.EOF
-	if r.isClosed {
+	if r.isClosed.Load() {
 		return
 	}
 	if r.file.Torrent() != nil && r.file.Torrent().Info() != nil {
@@ -123,11 +125,11 @@ func (r *Reader) Readahead() int64 {
 }
 
 func (r *Reader) Close() {
-	r.isClosed = true
+	r.isClosed.Store(true)
 	if r.file != nil && r.file.Torrent() != nil && len(r.file.Torrent().Files()) > 0 {
 		r.Reader.Close()
 	}
-	go r.cache.getRemPieces()
+	r.cache.tasks.Go(func(ctx context.Context) { r.cache.getRemPieces() })
 }
 
 func (r *Reader) getPiecesRange() Range {
