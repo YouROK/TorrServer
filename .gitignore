@@ -5,6 +5,10 @@
 *.so
 *.dylib
 
+# Torrserver running binary configs
+config.db
+settings.json
+
 # Mac suff
 .DS_Store
 
