@@ -71,15 +71,24 @@ export const castMedia = (source, base, hls = false) => {
   try {
     const original = new URL(source, window.location.href)
     const target = base ? new URL(base) : original
-    if (original.username || original.password || target.username || target.password) throw new Error()
+    if (
+      !['http:', 'https:'].includes(original.protocol) ||
+      !['http:', 'https:'].includes(target.protocol) ||
+      original.username ||
+      original.password ||
+      target.username ||
+      target.password
+    )
+      throw new Error()
     url = externalLink(source, base)
-    const host = url.hostname.toLowerCase()
+    const host = url.hostname.toLowerCase().replace(/\.$/, '')
     if (
       !['http:', 'https:'].includes(url.protocol) ||
       host === 'localhost' ||
       host.endsWith('.localhost') ||
       host === '[::1]' ||
-      host === '[::ffff:7f00:1]' ||
+      host === '[::]' ||
+      /^\[::ffff:7f[0-9a-f]{2}:/.test(host) ||
       host === '0.0.0.0' ||
       host.startsWith('127.')
     )

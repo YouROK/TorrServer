@@ -4,7 +4,7 @@ import { castMedia, loadCastSdk } from './GoogleCast'
 
 // A page may contain many players, but only the latest explicit request may LOAD.
 let latestRequest = 0
-const initialState = { available: false, busy: false, error: '', connected: false }
+const initialState = { ready: false, available: false, busy: false, error: '', connected: false }
 
 const useGoogleCast = ({ active, source, base, hls, title, video }) => {
   const [state, setState] = useState(initialState)
@@ -36,10 +36,12 @@ const useGoogleCast = ({ active, source, base, hls, title, video }) => {
         const controller = new framework.RemotePlayerController(player)
         const update = () => {
           if (disposed) return
-          const connected = ownsMedia() && player.isConnected
-          if (!connected) owner.current = null
+          const owned = ownsMedia()
+          const connected = owned && player.isConnected
+          if (!owned) owner.current = null
           setState(previous => ({
             ...previous,
+            ready: true,
             available: context.getCastState() !== framework.CastState.NO_DEVICES_AVAILABLE,
             connected,
             paused: player.isPaused,
@@ -52,6 +54,9 @@ const useGoogleCast = ({ active, source, base, hls, title, video }) => {
         const sessionChanged = () => {
           if (api.current?.loadingSession && context.getCurrentSession() !== api.current.loadingSession) {
             generation.current += 1
+            api.current.activeRequest = null
+            api.current.loadingSession = null
+            setState(previous => ({ ...previous, busy: false }))
           }
           update()
         }
@@ -85,8 +90,10 @@ const useGoogleCast = ({ active, source, base, hls, title, video }) => {
       return
     }
     const currentApi = api.current
+    if (currentApi.activeRequest) return
     const token = generation.current
     const request = ++latestRequest
+    currentApi.activeRequest = request
     const fresh = () => token === generation.current && request === latestRequest && api.current === currentApi
     let loadingMedia = false
     try {
@@ -128,7 +135,8 @@ const useGoogleCast = ({ active, source, base, hls, title, video }) => {
         }))
       }
     } finally {
-      if (api.current === currentApi) {
+      if (api.current === currentApi && currentApi.activeRequest === request) {
+        currentApi.activeRequest = null
         currentApi.loadingSession = null
         setState(previous => ({ ...previous, busy: false }))
       }

@@ -230,3 +230,52 @@ test('explicit disconnect ends owned session; close only removes listeners', asy
   expect(remoteListeners.size).toBe(0)
   expect(session.endSession).toHaveBeenCalledTimes(1)
 })
+
+test('retains accepted ownership when remote connection state arrives after LOAD', async () => {
+  await startLoad()
+  player.isConnected = false
+  await acceptLoad()
+  expect(current.connected).toBe(false)
+  player.isConnected = true
+  act(emitRemote)
+  expect(current.connected).toBe(true)
+})
+
+test('closing an owned player detaches every listener without stopping the receiver', async () => {
+  await startLoad()
+  await acceptLoad()
+  await render({ active: false })
+  expect(session.endSession).not.toHaveBeenCalled()
+  expect(contextListeners.size).toBe(0)
+  expect(remoteListeners.size).toBe(0)
+})
+
+test('a bad URL fails before requesting a receiver and leaves the local video playing', async () => {
+  await render({ source: 'http://localhost/sample.mp4' })
+  await act(async () => {
+    await current.start()
+  })
+  expect(current.error).toBe('Url')
+  expect(context.requestSession).not.toHaveBeenCalled()
+  expect(props.video.pause).not.toHaveBeenCalled()
+})
+
+test('disconnect abandons a pending LOAD without letting its completion clear a newer request', async () => {
+  await startLoad()
+  const oldResolve = resolveLoad
+  const oldSession = session
+  session = null
+  act(() => contextListeners.get('session')())
+  expect(current.busy).toBe(false)
+  session = oldSession
+  await act(async () => {
+    current.start()
+  })
+  expect(current.busy).toBe(true)
+  await act(async () => oldResolve())
+  expect(current.busy).toBe(true)
+  expect(props.video.pause).not.toHaveBeenCalled()
+  await acceptLoad()
+  expect(current.busy).toBe(false)
+  expect(props.video.pause).toHaveBeenCalledTimes(1)
+})

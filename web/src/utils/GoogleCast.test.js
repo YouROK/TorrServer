@@ -72,6 +72,9 @@ test.each([
   'http://127.0.0.2/sample.mp4',
   'http://[::1]/sample.mp4',
   'http://0.0.0.0/sample.mp4',
+  'http://localhost./sample.mp4',
+  'http://[::]/sample.mp4',
+  'http://[::ffff:127.0.0.2]/sample.mp4',
 ])('rejects receiver-unreachable or unsafe URL %s', source => {
   expect(() => castMedia(source)).toThrow('Url')
 })
@@ -79,4 +82,5 @@ test.each([
 test('rejects credentials in the external media base and unsupported containers', () => {
   expect(() => castMedia('/sample.mp4', 'https://user:secret@media.example')).toThrow('Url')
   expect(() => castMedia('https://media.example/sample.mkv')).toThrow('Media')
+  expect(() => castMedia('ftp://media.example/sample.mp4', 'https://media.example')).toThrow('Url')
 })
