@@ -1,248 +1,12 @@
+/* ============================================================================
+   Тема TorrServer: сетка карточек, окно раздачи и профили транскодирования.
+   Каркас, панели, поля, кнопки, модальные окна и уведомления берет
+   общий /css/style.css.
+   ============================================================================ */
 
-
-
-
-[hidden] { display: none !important; }
-
-
-
-
-
-.layout {
-    display: flex;
-    min-height: 100vh;
-}
-
-.sidebar {
-    width: 220px;
-    flex-shrink: 0;
-    background: var(--silo-bg-raised);
-    border-right: 1px solid var(--silo-border);
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    position: sticky;
-    top: 0;
-    padding: 16px 12px 12px;
-}
-
-.sidebar-top { flex-shrink: 0; }
-
-.sidebar-scroll {
-    flex: 1 1 auto;
-    overflow-y: auto;
-    overflow-x: hidden;
-    margin: 8px 0;
-    padding-right: 4px;
-    min-height: 0;
-}
-
-.sidebar-scroll::-webkit-scrollbar { width: 6px; }
-.sidebar-scroll::-webkit-scrollbar-thumb {
-    background: var(--silo-border-strong);
-    border-radius: 3px;
-}
-
-.sidebar-bottom {
-    flex-shrink: 0;
-    border-top: 1px solid var(--silo-border);
-    padding-top: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 8px 16px;
-    border-bottom: 1px solid var(--silo-border);
-    margin-bottom: 12px;
-    cursor: pointer;
-}
-
-.logo-mini {
-    width: 28px;
-    height: 28px;
-    border-radius: 4px;
-}
-
-.brand-name {
-    color: var(--silo-steel-bright);
-    font-weight: 700;
-    letter-spacing: 0.25em;
-}
-
-.btn-add {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    background: transparent;
-    border: none;
-    padding: 8px 12px;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--silo-amber);
-    text-align: left;
-    cursor: pointer;
-    margin-bottom: 8px;
-    border-radius: 6px;
-    transition: color 0.25s ease, background-color 0.25s ease;
-}
-
-.btn-add img { width: 16px; height: 16px; opacity: 0.9; }
-.btn-add:hover { color: var(--silo-amber-bright); background: var(--silo-surface); }
-.btn-add:active { color: var(--silo-amber-deep); }
-
-.nav-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
-    color: var(--silo-text-muted);
-    text-decoration: none;
-    background: transparent;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font: inherit;
-    font-size: 14px;
-    text-align: left;
-    width: 100%;
-    transition: color 0.2s ease, background-color 0.2s ease;
-}
-
-.nav-item:hover { color: var(--silo-text); background: var(--silo-surface); }
-.nav-item.active { color: var(--silo-amber); }
-.nav-item-danger:hover { color: var(--silo-danger); }
-
-.nav-icon {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-    opacity: 0.85;
-}
-
-.nav-section { margin-top: 12px; }
-
-.nav-section-title {
-    color: var(--silo-text-faint);
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    padding: 8px 12px 4px;
-}
-
-.plugin-group { margin-bottom: 4px; }
-
-.plugin-group-name {
-    color: var(--silo-text-faint);
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 6px 12px 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.user-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 6px 4px;
-    margin-top: 4px;
-    border-top: 1px solid var(--silo-border);
-}
-
-.user-avatar {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: var(--silo-amber);
-    color: #14171a;
-    font-weight: 700;
-    font-size: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-transform: uppercase;
-    flex-shrink: 0;
-}
-
-.user-name {
-    flex: 1 1 auto;
-    color: var(--silo-text);
-    font-size: 13px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-width: 0;
-}
-
-.user-logout {
-    background: transparent;
-    border: 1px solid var(--silo-border);
-    border-radius: 6px;
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: border-color 0.2s ease, background-color 0.2s ease;
-}
-
-.user-logout:hover { border-color: var(--silo-danger); background: var(--silo-surface); }
-.user-logout img { width: 14px; height: 14px; opacity: 0.85; }
-
-.hamburger {
-    display: none;
-    width: 36px;
-    height: 36px;
-    background: transparent;
-    border: 1px solid var(--silo-border-strong);
-    border-radius: 6px;
-    color: var(--silo-steel);
-    cursor: pointer;
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: center;
-}
-
-.hamburger img { width: 18px; height: 18px; }
-.hamburger:hover { border-color: var(--silo-amber); }
-
-.sidebar-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.55);
-    z-index: 40;
-}
-
-.sidebar-overlay.show { display: block; }
-
-.content {
-    flex-grow: 1;
-    padding: 24px 32px;
-    max-width: 1200px;
-    min-width: 0;
-}
-
-
-.topbar h1 {
-    color: var(--silo-steel-bright);
-    font-size: 20px;
-    font-weight: 600;
-    flex-grow: 1;
-}
-
+/* ----------------------------------------------------------------------------
+   Сетка карточек раздач
+   ---------------------------------------------------------------------------- */
 .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -339,6 +103,9 @@
 
 .grid-msg.error { color: var(--silo-danger); }
 
+/* ----------------------------------------------------------------------------
+   Меню карточки
+   ---------------------------------------------------------------------------- */
 .card-dots {
     position: absolute;
     top: 8px;
@@ -398,141 +165,9 @@
 .card-menu-item img { width: 14px; height: 14px; opacity: 0.8; }
 .card-menu-item.danger:hover { color: var(--silo-danger); }
 
-
-
-
-
-
-
-
-
-.btn-danger {
-    background: transparent;
-    color: var(--silo-danger);
-    border: 1px solid var(--silo-danger);
-}
-
-
-.btn-sm { padding: 4px 10px; font-size: 12px; }
-
-.btn-sm-icon {
-    background: transparent;
-    border: 1px solid var(--silo-border);
-    border-radius: 6px;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: border-color 0.2s ease;
-}
-
-.btn-sm-icon:hover { border-color: var(--silo-border-strong); }
-.btn-sm-icon img { width: 14px; height: 14px; opacity: 0.8; }
-
-
-
-.field > span {
-    color: var(--silo-text-muted);
-    font-size: 12px;
-    font-weight: 500;
-}
-
-.input {
-    background: var(--silo-surface);
-    color: var(--silo-text);
-    border: 1px solid var(--silo-border);
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-size: 14px;
-    outline: none;
-    width: 100%;
-    transition: border-color 0.15s ease;
-}
-
-
-
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(2px);
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
-.modal {
-    background: var(--silo-bg-raised);
-    border: 1px solid var(--silo-border);
-    border-radius: 10px;
-    width: 100%;
-    max-width: 520px;
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
-    animation: modal-in 0.15s ease-out;
-}
-
-@keyframes modal-in {
-    from { opacity: 0; transform: translateY(-8px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--silo-border);
-}
-
-.modal-header h2 {
-    color: var(--silo-steel-bright);
-    font-size: 16px;
-    font-weight: 600;
-    margin: 0;
-}
-
-.modal-close {
-    background: transparent;
-    border: none;
-    color: var(--silo-text-muted);
-    font-size: 22px;
-    line-height: 1;
-    cursor: pointer;
-    padding: 4px 10px;
-    border-radius: 4px;
-}
-
-.modal-close:hover { background: var(--silo-surface); color: var(--silo-text); }
-.modal-close img { width: 16px; height: 16px; opacity: 0.8; }
-
-.modal-body {
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.modal-body .field > span {
-    color: var(--silo-text-muted);
-    font-size: 12px;
-    font-weight: 500;
-}
-
-.modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    padding: 16px 20px;
-    border-top: 1px solid var(--silo-border);
-}
-
-.modal-sm { max-width: 380px; }
-.modal-about { max-width: 560px; }
-
+/* ----------------------------------------------------------------------------
+   Окно добавления и правки раздачи
+   ---------------------------------------------------------------------------- */
 .modal-add {
     max-width: 760px;
     width: 100%;
@@ -592,15 +227,6 @@
     min-width: 0;
 }
 
-select.input {
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2398a2a9' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    padding-right: 34px;
-    cursor: pointer;
-}
-
 .edit-hash {
     margin-top: 10px;
     padding: 6px 8px;
@@ -641,9 +267,7 @@ select.input {
     background: var(--silo-surface-hover);
 }
 
-.file-drop.has-file {
-    border-style: solid;
-}
+.file-drop.has-file { border-style: solid; }
 
 .file-drop input[type="file"] {
     position: absolute;
@@ -702,6 +326,9 @@ select.input {
     color: var(--silo-danger);
 }
 
+/* ----------------------------------------------------------------------------
+   Полоска постеров
+   ---------------------------------------------------------------------------- */
 .poster-block-head {
     display: flex;
     align-items: baseline;
@@ -769,9 +396,7 @@ select.input {
     display: block;
 }
 
-.poster-item.broken {
-    display: none;
-}
+.poster-item.broken { display: none; }
 
 .poster-empty {
     color: var(--silo-text-faint);
@@ -779,19 +404,9 @@ select.input {
     align-self: center;
 }
 
-@media (max-width: 720px) {
-    .add-body {
-        flex-direction: column;
-    }
-
-    .add-preview {
-        flex: 0 0 auto;
-        width: 100%;
-        max-width: 220px;
-        margin: 0 auto;
-    }
-}
-
+/* ----------------------------------------------------------------------------
+   Окно раздачи: вкладки файлов и кэша
+   ---------------------------------------------------------------------------- */
 .modal-info {
     max-width: 980px;
     width: 100%;
@@ -805,6 +420,16 @@ select.input {
     color: var(--silo-text-muted);
     font-size: 14px;
 }
+
+/* Тело формы: поля идут в столбик с равным шагом */
+.modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.modal-sm { max-width: 380px; }
+.modal-about { max-width: 560px; }
 
 .info-header {
     display: flex;
@@ -876,13 +501,8 @@ select.input {
     min-width: 0;
 }
 
-.hash-row .hash-value {
-    cursor: pointer;
-}
-
-.hash-row .hash-value:hover {
-    color: var(--silo-amber);
-}
+.hash-row .hash-value { cursor: pointer; }
+.hash-row .hash-value:hover { color: var(--silo-amber); }
 
 .info-plaques-cache {
     opacity: 0;
@@ -1026,6 +646,27 @@ select.input {
 
 .file-row:hover { background: var(--silo-surface); }
 
+/* Точка о просмотре: тот же цвет, что у кнопки Open, и та же высота строки,
+   поэтому место под неё зарезервировано у всех строк - иначе кнопки съезжают */
+.file-viewed {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: transparent;
+    flex-shrink: 0;
+}
+
+.file-viewed.is-on { background: var(--silo-amber); }
+
+/* Фильтр и кнопка массовой отметки в одной строке */
+.info-files-tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
 .file-main { flex-grow: 1; min-width: 0; }
 
 .file-name {
@@ -1058,27 +699,15 @@ select.input {
     padding: 12px 0;
 }
 
+/* ----------------------------------------------------------------------------
+   Карта кэша
+   ---------------------------------------------------------------------------- */
 .cache-toolbar {
     display: flex;
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
 }
-
-.zoom-btn {
-    width: 28px;
-    height: 28px;
-    background: transparent;
-    border: 1px solid var(--silo-border);
-    border-radius: 6px;
-    color: var(--silo-steel);
-    font-size: 16px;
-    line-height: 1;
-    cursor: pointer;
-    transition: border-color 0.15s ease, color 0.15s ease;
-}
-
-.zoom-btn:hover { border-color: var(--silo-amber); color: var(--silo-amber); }
 
 .zoom-value {
     color: var(--silo-text-muted);
@@ -1112,6 +741,9 @@ select.input {
     background: var(--silo-bg-raised);
 }
 
+/* ----------------------------------------------------------------------------
+   Окна поддержки и о проекте
+   ---------------------------------------------------------------------------- */
 .donate-links {
     display: flex;
     flex-direction: column;
@@ -1214,6 +846,23 @@ select.input {
 
 .about-contributors li a:hover { border-color: var(--silo-amber); }
 
+/* ----------------------------------------------------------------------------
+   Группы плагинов в сайдбаре
+   ---------------------------------------------------------------------------- */
+.plugin-group { margin-bottom: 4px; }
+
+.plugin-group-name {
+    color: var(--silo-text-faint);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 6px 12px 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .about-contributors .uc-initials {
     width: 20px;
     height: 20px;
@@ -1228,174 +877,9 @@ select.input {
     flex-shrink: 0;
 }
 
-.toast-root {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 2000;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.toast {
-    background: var(--silo-surface);
-    border: 1px solid var(--silo-border);
-    border-left: 3px solid var(--silo-amber);
-    border-radius: 6px;
-    padding: 10px 16px;
-    color: var(--silo-text);
-    font-size: 13px;
-    max-width: 320px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-    opacity: 0;
-    transform: translateX(20px);
-    transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-.toast-show { opacity: 1; transform: translateX(0); }
-.toast-success { border-left-color: var(--silo-teal-bright); }
-.toast-error { border-left-color: var(--silo-danger); }
-
-.offline-banner {
-    position: fixed;
-    inset: 0;
-    background: rgba(10, 12, 14, 0.92);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 3000;
-    padding: 24px;
-}
-
-.offline-banner.show { display: flex; }
-
-.offline-card {
-    background: var(--silo-surface);
-    border: 1px solid var(--silo-danger);
-    border-radius: 10px;
-    padding: 32px;
-    max-width: 420px;
-    text-align: center;
-    width: 100%;
-}
-
-.offline-card h2 {
-    color: var(--silo-danger);
-    margin-bottom: 12px;
-    font-size: 16px;
-}
-
-.offline-card p {
-    color: var(--silo-text-muted);
-    margin-bottom: 8px;
-    font-size: 13px;
-    line-height: 1.5;
-}
-
-.offline-hint {
-    font-size: 12px;
-    color: var(--silo-text-faint);
-    animation: offline-pulse 1.5s infinite;
-}
-
-@keyframes offline-pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-}
-
-
-
-
-
-
-@media (max-width: 767px) {
-    .modal-add .modal-body {
-        padding: 16px;
-    }
-
-    .poster-item {
-        width: 78px;
-        height: 117px;
-    }
-
-    .sidebar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        width: 260px;
-        z-index: 50;
-        background: var(--silo-bg-raised);
-        transform: translateX(-100%);
-        transition: transform 0.25s ease;
-        height: 100vh;
-    }
-
-    .sidebar.open { transform: translateX(0); }
-
-    .hamburger { display: flex; }
-    .content { padding: 16px; }
-
-    .topbar {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .modal {
-        max-width: 100%;
-        max-height: 90vh;
-        border-radius: 8px;
-    }
-
-
-
-    .info-header {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
-
-    .info-poster {
-        width: 90px;
-        height: 135px;
-    }
-
-    .info-plaques { flex-wrap: wrap; }
-    .plaque { flex: 1 1 calc(50% - 3px); }
-
-    .info-body { flex-direction: column; }
-
-    .info-folders {
-        width: 100%;
-        max-height: 120px;
-    }
-
-    .toast {
-        left: 20px;
-        right: 20px;
-        max-width: none;
-        text-align: center;
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* Список профилей транскодирования */
+/* ----------------------------------------------------------------------------
+   Профили транскодирования и сведения о файле
+   ---------------------------------------------------------------------------- */
 .transcode-list {
     display: flex;
     flex-direction: column;
@@ -1447,7 +931,6 @@ select.input {
     text-align: center;
 }
 
-/* Таблица сведений о файле */
 .fileinfo-table {
     width: 100%;
     border-collapse: collapse;
@@ -1472,4 +955,48 @@ select.input {
     text-transform: uppercase;
     letter-spacing: 0.06em;
     margin: 12px 0 6px;
+}
+
+/* ----------------------------------------------------------------------------
+   Мобильная адаптация
+   ---------------------------------------------------------------------------- */
+@media (max-width: 720px) {
+    .add-body { flex-direction: column; }
+
+    .add-preview {
+        flex: 0 0 auto;
+        width: 100%;
+        max-width: 220px;
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 767px) {
+    .modal-add .modal-body { padding: 16px; }
+
+    .poster-item {
+        width: 78px;
+        height: 117px;
+    }
+
+    .info-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .info-poster {
+        width: 90px;
+        height: 135px;
+    }
+
+    .info-plaques { flex-wrap: wrap; }
+    .plaque { flex: 1 1 calc(50% - 3px); }
+
+    .info-body { flex-direction: column; }
+
+    .info-folders {
+        width: 100%;
+        max-height: 120px;
+    }
 }

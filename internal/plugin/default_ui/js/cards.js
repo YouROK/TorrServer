@@ -182,8 +182,8 @@ async function handleCardAction(action, hash) {
     }
 
     if (action === 'delete') {
-        const ok = await modalConfirm(t('confirm_delete_title'), t('confirm_delete_text'));
-        if (!ok) return;
+        // Подтверждение не спрашивается: удаление через меню карточки требует
+        // двух осознанных действий, а окно только мешает нажать на пункт
         try {
             const res = await fetch('/api/torrents/' + hash, { method: 'DELETE' });
             if (!res.ok) throw new Error('delete failed');

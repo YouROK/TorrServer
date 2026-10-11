@@ -25,6 +25,29 @@ function infoBaseFiles() {
     return infoStatus.file_stats.filter((f) => isMediaName(f.name || f.path));
 }
 
+function infoViewedSet() {
+    const list = (infoStatus && infoStatus.viewed_files) || [];
+    return new Set(list);
+}
+
+// infoAllViewed сообщает, отмечены ли просмотренными все файлы раздачи.
+function infoAllViewed() {
+    const files = (infoStatus && infoStatus.file_stats) || [];
+    if (files.length === 0) return false;
+    const viewed = infoViewedSet();
+    return files.every((f) => viewed.has(f.id));
+}
+
+// renderViewedToggle обновляет надпись кнопки массовой отметки под текущее состояние.
+function renderViewedToggle() {
+    const btn = document.getElementById('info-viewed-toggle');
+    if (!btn) return;
+
+    const files = (infoStatus && infoStatus.file_stats) || [];
+    btn.textContent = t(infoAllViewed() ? 'unmark_all_viewed' : 'mark_all_viewed');
+    btn.disabled = files.length === 0;
+}
+
 function infoFoldersOf(files) {
     const set = new Set();
     for (const f of files) {
@@ -96,6 +119,8 @@ function renderInfo() {
         el.classList.toggle('selected', (el.getAttribute('data-folder') || '') === infoFolder);
     });
 
+    const viewed = infoViewedSet();
+
     const visible = infoFolder
         ? base.filter((f) => {
             const lastSlash = f.path.lastIndexOf('/');
@@ -103,7 +128,9 @@ function renderInfo() {
             return parent === infoFolder;
         })
         : base;
-    const filesJSON = JSON.stringify(visible.map((f) => f.id));
+
+    // Отметка входит в сигнатуру: иначе список не перерисуется при просмотре
+    const filesJSON = JSON.stringify(visible.map((f) => [f.id, viewed.has(f.id)]));
     if (filesJSON !== infoFilesJSON) {
         infoFilesJSON = filesJSON;
         const filesBox = document.getElementById('info-files');
@@ -120,6 +147,7 @@ function renderInfo() {
                     '<div class="file-sub">' + esc(sub) + '</div>' +
                     '</div>' +
                     '<div class="file-actions">' +
+                    '<span class="file-viewed' + (viewed.has(f.id) ? ' is-on' : '') + '" title="' + esc(t('viewed')) + '"></span>' +
                     '<button class="btn btn-sm" type="button" data-open="' + f.id + '">' + t('open') + '</button>' +
                     '<button class="btn-sm-icon" type="button" data-transcode="' + f.id + '" title="' + t('transcode') + '">' +
                     '<img src="img/ico-transcode.svg" alt="" onerror="this.style.display=\'none\'">' +
@@ -138,6 +166,8 @@ function renderInfo() {
             }).join('');
         }
     }
+
+    renderViewedToggle();
 }
 
 let currentTab = 'files';
@@ -247,6 +277,8 @@ function openInfoModal(hash) {
     switchTab('files');
     setCacheData(null);
 
+    // Повторное открытие окна иначе оставило бы второй таймер
+    if (infoTimer) clearInterval(infoTimer);
     infoPoll();
     infoTimer = setInterval(infoPoll, 1000);
 }
@@ -279,6 +311,33 @@ function bindInfoModal() {
         infoFoldersJSON = '';
         infoFilesJSON = '';
         renderInfo();
+    });
+    document.getElementById('info-viewed-toggle').addEventListener('click', async (e) => {
+        if (!infoHash) return;
+
+        const btn = e.currentTarget;
+        const viewed = !infoAllViewed();
+        btn.disabled = true;
+        try {
+            const res = await fetch('/api/torrents/' + infoHash + '/viewed', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ viewed: viewed }),
+            });
+            if (!res.ok) throw new Error('request failed');
+            // Список перерисуется после ближайшего опроса
+            const data = await fetch('/api/torrents/' + infoHash);
+            if (data.ok) {
+                infoStatus = await data.json();
+                infoFilesJSON = '';
+                renderInfo();
+            }
+        } catch (err) {
+            showToast(err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            renderViewedToggle();
+        }
     });
     document.getElementById('info-folders').addEventListener('click', (e) => {
         const btn = e.target.closest('.info-folder');

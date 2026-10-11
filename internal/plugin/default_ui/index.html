@@ -226,19 +226,22 @@
         <div class="info-body" id="info-files-panel">
             <div class="info-folders" id="info-folders"></div>
             <div class="info-files-wrap">
-                <label class="media-only">
-                    <input type="checkbox" id="info-media-only" checked>
-                    <span data-i18n="media_only">Media only</span>
-                </label>
+                <div class="info-files-tools">
+                    <label class="media-only">
+                        <input type="checkbox" id="info-media-only" checked>
+                        <span data-i18n="media_only">Media only</span>
+                    </label>
+                    <button class="btn btn-secondary btn-sm" id="info-viewed-toggle" type="button" data-i18n="mark_all_viewed">Mark all as watched</button>
+                </div>
                 <div class="info-files" id="info-files"></div>
             </div>
         </div>
 
         <div class="info-body info-body-cache" id="info-cache-panel" style="display:none;">
             <div class="cache-toolbar">
-                <button class="zoom-btn" id="cache-zoom-out" type="button">−</button>
+                <button class="btn-sm-icon" id="cache-zoom-out" type="button">−</button>
                 <span class="zoom-value" id="cache-zoom-value">14 px</span>
-                <button class="zoom-btn" id="cache-zoom-in" type="button">+</button>
+                <button class="btn-sm-icon" id="cache-zoom-in" type="button">+</button>
             </div>
             <div class="cache-canvas-wrap" id="cache-canvas-wrap">
                 <canvas id="cache-canvas"></canvas>
