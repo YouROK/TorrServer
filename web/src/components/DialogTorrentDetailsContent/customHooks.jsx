@@ -49,6 +49,9 @@ export const useCreateCacheMap = cache => {
 
       Readers.forEach(r => {
         if (i === r.Reader) newPiece.isReader = true
+        // Where the picture is, as opposed to where reading is. Only worth its own marker
+        // when the client's buffer spans more than a piece, otherwise the two coincide.
+        if (i === r.Screen && r.Screen !== r.Reader) newPiece.isScreen = true
         if (i >= r.Start && i < r.End) newPiece.isReaderRange = true
       })
 

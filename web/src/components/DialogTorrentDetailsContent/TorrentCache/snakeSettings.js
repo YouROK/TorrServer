@@ -12,6 +12,7 @@ export const snakeSettings = {
       backgroundColor: '#949ca0',
       progressColor: rgba('#fff', 0.2),
       readerColor: '#8f0405',
+      screenColor: '#f5a623',
       rangeColor: '#cda184',
     },
     mini: {
@@ -24,6 +25,7 @@ export const snakeSettings = {
       backgroundColor: '#949ca0',
       progressColor: '#949ca0',
       readerColor: '#ccc',
+      screenColor: '#f5a623',
       rangeColor: '#cda184',
     },
   },
@@ -37,6 +39,7 @@ export const snakeSettings = {
       backgroundColor: '#fff',
       progressColor: '#b3dfc9',
       readerColor: '#000',
+      screenColor: '#c2410c',
       rangeColor: '#afa6e3',
     },
     mini: {
@@ -49,6 +52,7 @@ export const snakeSettings = {
       backgroundColor: '#dbf2e8',
       progressColor: '#dbf2e8',
       readerColor: '#0a0a0a',
+      screenColor: '#c2410c',
       rangeColor: '#afa6e3',
     },
   },

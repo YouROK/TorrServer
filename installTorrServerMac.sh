@@ -98,6 +98,10 @@ MSG_EN_have_latest="You have latest TorrServer %s"
 MSG_EN_update_found="TorrServer update found!"
 MSG_EN_will_install="Will install TorrServer version %s"
 MSG_EN_installing_packages="Installing missing packages…"
+MSG_EN_install_ffprobe="Install ffprobe? It is required to save the playback position so players can resume where you stopped"
+MSG_EN_ffprobe_found="ffprobe found, saving playback position is available"
+MSG_EN_ffprobe_skipped="Skipped. Saving playback position stays disabled until ffprobe is installed"
+MSG_EN_ffprobe_no_brew="Homebrew not found, install ffmpeg manually to enable saving playback position"
 MSG_EN_install_configure="Install and configure TorrServer…"
 MSG_EN_starting_service="Starting TorrServer…"
 MSG_EN_install_complete="TorrServer %s installed to %s"
@@ -165,6 +169,10 @@ MSG_RU_have_latest="Установлен TorrServer последней верс�
 MSG_RU_update_found="Доступно обновление сервера"
 MSG_RU_will_install="Будет установлена версия TorrServer %s"
 MSG_RU_installing_packages="Устанавливаем недостающие пакеты…"
+MSG_RU_install_ffprobe="Установить ffprobe? Он нужен для сохранения позиции воспроизведения, чтобы плееры продолжали с места остановки"
+MSG_RU_ffprobe_found="ffprobe найден, сохранение позиции воспроизведения доступно"
+MSG_RU_ffprobe_skipped="Пропущено. Сохранение позиции воспроизведения будет недоступно, пока не установлен ffprobe"
+MSG_RU_ffprobe_no_brew="Homebrew не найден, установите ffmpeg вручную для сохранения позиции воспроизведения"
 MSG_RU_install_configure="Устанавливаем и настраиваем TorrServer…"
 MSG_RU_starting_service="Запускаем службу TorrServer…"
 MSG_RU_install_complete="TorrServer %s установлен в директории %s"
@@ -663,6 +671,25 @@ downloadBinary() {
 #     OS DETECTION & ARCHITECTURE
 #############################################
 
+# ffprobe provides the real media duration, which the playback position feature needs.
+installFfprobe() {
+  if command -v ffprobe >/dev/null 2>&1; then
+    echo " $(msg ffprobe_found)"
+    return
+  fi
+
+  if ! promptYesNo "$(msg install_ffprobe)" "y" "y"; then
+    echo " $(msg ffprobe_skipped)"
+    return
+  fi
+
+  if command -v brew >/dev/null 2>&1; then
+    brew install ffmpeg
+  else
+    echo " $(msg ffprobe_no_brew)"
+  fi
+}
+
 checkOS() {
   if [[ "$(uname)" != "Darwin" ]]; then
     echo " $(msg unsupported_os)"
@@ -684,6 +711,7 @@ checkArch() {
 
 initialCheck() {
   checkOS
+  installFfprobe
   checkArch
 }
 

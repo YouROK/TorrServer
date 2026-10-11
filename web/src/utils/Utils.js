@@ -19,6 +19,17 @@ export function humanizeSpeed(speed) {
   }`
 }
 
+// humanizeTime renders a number of seconds the way a player shows it: h:mm:ss, or m:ss
+// while under an hour.
+export function humanizeTime(seconds) {
+  if (!(seconds > 0)) return '0:00'
+  const total = Math.round(seconds)
+  const pad = value => String(value).padStart(2, '0')
+  const hours = Math.floor(total / 3600)
+  const minutes = Math.floor(total / 60) % 60
+  return hours ? `${hours}:${pad(minutes)}:${pad(total % 60)}` : `${minutes}:${pad(total % 60)}`
+}
+
 export function getPeerString(torrent) {
   if (!torrent || !torrent.active_peers) return null
   const seeders = typeof torrent.connected_seeders !== 'undefined' ? torrent.connected_seeders : 0

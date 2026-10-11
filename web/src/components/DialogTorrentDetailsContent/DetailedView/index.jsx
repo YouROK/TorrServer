@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Checkbox, FormControlLabel } from '@material-ui/core'
 import { useState } from 'react'
+import PlaybackReadout from 'components/PlaybackReadout'
 
 import { SectionTitle, WidgetWrapper } from '../style'
 import { DetailedViewCacheSection, DetailedViewWidgetSection } from './style'
@@ -68,6 +69,8 @@ export default function DetailedView({
             />
           </div>
         </SectionTitle>
+
+        <PlaybackReadout playback={cache.Torrent?.playback || torrent.playback} />
 
         <TorrentCache cache={cache} isSnakeDebugMode={isSnakeDebugMode} />
       </DetailedViewCacheSection>

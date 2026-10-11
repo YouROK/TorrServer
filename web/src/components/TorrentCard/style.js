@@ -93,6 +93,7 @@ export const TorrentCardButtons = styled.div`
 `
 export const TorrentCardDescription = styled.div`
   ${({
+    hasPlayback,
     theme: {
       torrentCard: { cardSecondaryColor, accentCardColor },
     },
@@ -102,11 +103,12 @@ export const TorrentCardDescription = styled.div`
     border-radius: 5px;
     padding: 5px;
     display: grid;
-    grid-template-rows: 55% 1fr;
+    /* The card height is fixed, so the extra playback line has to come out of the title. */
+    grid-template-rows: ${hasPlayback ? '45%' : '55%'} 1fr;
     gap: 10px;
 
     @media (max-width: 770px) {
-      grid-template-rows: 60% 1fr;
+      grid-template-rows: ${hasPlayback ? '50%' : '60%'} 1fr;
       gap: 3px;
     }
 
@@ -168,6 +170,27 @@ export const TorrentCardDescription = styled.div`
       @media (max-width: 700px) {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    /* The playback readout appears only while someone is streaming. The card is 260px wide
+       and its rows are fixed, so it takes a line of its own under the three columns rather
+       than a fourth column — four of them leave 45px each and the labels collide. */
+    .description-statistics-wrapper.has-playback .description-statistics-element-value {
+      margin-bottom: 2px;
+    }
+
+    .description-playback {
+      grid-column: 1 / -1;
+      font-size: 11px;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: ${accentCardColor};
+
+      @media (max-width: 1260px), (max-height: 500px) {
+        font-size: 0.6rem;
       }
     }
 
