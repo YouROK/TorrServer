@@ -182,7 +182,7 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 	// }
 	// http.ServeContent(wrappedResp, req, file.Path(), time.Unix(t.Timestamp, 0), reader)
 
-	http.ServeContent(resp, req, file.Path(), time.Unix(t.Timestamp, 0), reader)
+	http.ServeContent(resp, req, file.Path(), time.Unix(t.Timestamp, 0), newBufferedStreamReader(reader, 1<<20))
 
 	// Auto-save playback position on stream close (resume feature)
 	if !isProbe && positionSavingEnabled() {

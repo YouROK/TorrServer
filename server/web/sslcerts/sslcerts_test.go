@@ -10,6 +10,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"math/big"
+	"net"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -509,5 +510,53 @@ func TestMakeCertKeyFilesRefusesToOverwriteUserCert(t *testing.T) {
 	}
 	if after, _ := os.ReadFile(cert); !bytes.Equal(before, after) {
 		t.Fatal("user cert changed")
+	}
+}
+
+func TestEnsureCertIgnoresRotatingIPv6(t *testing.T) {
+	withTempPath(t)
+	cert, key, err := MakeCertKeyFiles([]string{"192.168.0.10", "2001:db8::1111", "fd00::5"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	before := leaf(t, cert, key).SerialNumber
+
+	// privacy extensions replaced the temporary global address
+	if _, _, changed, err := EnsureCert(cert, key, []string{"192.168.0.10", "2001:db8::2222", "fd00::5"}); err != nil || changed {
+		t.Fatalf("changed=%v err=%v", changed, err)
+	}
+	if after := leaf(t, cert, key).SerialNumber; after.Cmp(before) != 0 {
+		t.Fatal("certificate regenerated for a rotated global IPv6 address")
+	}
+
+	// a missing unique local address is stable, so it still triggers a renewal
+	if _, _, _, err := EnsureCert(cert, key, []string{"192.168.0.10", "fd00::6"}); err != nil {
+		t.Fatal(err)
+	}
+	c := leaf(t, cert, key)
+	if c.SerialNumber.Cmp(before) == 0 {
+		t.Fatal("certificate not renewed for a new unique local address")
+	}
+	if err := c.VerifyHostname("2001:db8::1111"); err == nil {
+		t.Error("stale global IPv6 address carried over")
+	}
+	for _, ip := range []string{"192.168.0.10", "fd00::5", "fd00::6"} {
+		if err := c.VerifyHostname(ip); err != nil {
+			t.Errorf("%s not in SANs after renewal: %v", ip, err)
+		}
+	}
+}
+
+func TestMergeIPsIsBounded(t *testing.T) {
+	var old []net.IP
+	for i := range 3 * maxKeptIPs {
+		old = append(old, net.IPv4(10, 0, 0, byte(i+1)))
+	}
+	got := mergeIPs(old, []string{"192.168.0.1"})
+	if len(got) != 1+maxKeptIPs {
+		t.Fatalf("len = %d, want %d", len(got), 1+maxKeptIPs)
+	}
+	if got[1] != "10.0.0.1" {
+		t.Fatalf("most recent old IP not kept first: %v", got)
 	}
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"os"
 	"path/filepath"
@@ -316,9 +315,9 @@ type DNSConfig struct {
 func DefaultDNSConfig() DNSConfig {
 	return DNSConfig{
 		PrimaryServers: []string{
+			"9.9.9.9:53", // Quad9 DNS
 			"8.8.8.8:53", // Google DNS
 			"1.1.1.1:53", // CloudFlare DNS
-			"9.9.9.9:53", // Quad9 DNS
 		},
 		FallbackServers: []string{
 			"208.67.222.222:53", // OpenDNS
@@ -359,7 +358,6 @@ func (d *DNSChecker) CheckAndResolve() *net.Resolver {
 		log.TLogln("System DNS check passed")
 		return net.DefaultResolver
 	}
-
 	log.TLogln("System DNS check failed, using custom resolver")
 	d.initCustomResolver()
 	return d.customResolver
@@ -367,10 +365,10 @@ func (d *DNSChecker) CheckAndResolve() *net.Resolver {
 
 // testSystemDNS checks if system DNS is working properly
 func (d *DNSChecker) testSystemDNS() bool {
-	_, cancel := context.WithTimeout(context.Background(), d.config.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), d.config.Timeout)
 	defer cancel()
 
-	addrs, err := net.LookupHost("themoviedb.org")
+	addrs, err := net.DefaultResolver.LookupHost(ctx, "themoviedb.org")
 	if err != nil {
 		log.TLogln("DNS lookup error:", err)
 		return false
@@ -401,10 +399,6 @@ func isSuspiciousAddress(addr string) bool {
 		// "10.",       // Private network
 		"192.168.", // Private network
 		"169.254.", // Link-local
-		// "172.16.", "172.17.", "172.18.", "172.19.",
-		// "172.20.", "172.21.", "172.22.", "172.23.",
-		// "172.24.", "172.25.", "172.26.", "172.27.",
-		// "172.28.", "172.29.", "172.30.", "172.31.", // Private network range
 	}
 
 	for _, prefix := range suspiciousPrefixes {
@@ -418,6 +412,14 @@ func isSuspiciousAddress(addr string) bool {
 
 // initCustomResolver creates a custom resolver with fallback support
 func (d *DNSChecker) initCustomResolver() {
+	server := d.pickServer()
+	if server == "" {
+		log.TLogln("No DNS server from the list answered, keeping system resolver")
+		d.customResolver = net.DefaultResolver
+		return
+	}
+	log.TLogln("Using DNS server:", server)
+
 	d.customResolver = &net.Resolver{
 		PreferGo: true, // Use Go's DNS implementation
 		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
@@ -425,27 +427,9 @@ func (d *DNSChecker) initCustomResolver() {
 				Timeout:   d.config.Timeout,
 				KeepAlive: 30 * time.Second,
 			}
-
-			// Try primary servers first
-			for _, dns := range d.config.PrimaryServers {
-				conn, err := dialer.DialContext(ctx, network, dns)
-				if err == nil {
-					return conn, nil
-				}
-				log.TLogln("Failed to connect to DNS server", dns, ":", err)
-			}
-
-			// Try fallback servers if primary fails
-			for _, dns := range d.config.FallbackServers {
-				conn, err := dialer.DialContext(ctx, network, dns)
-				if err == nil {
-					log.TLogln("Using fallback DNS server:", dns)
-					return conn, nil
-				}
-				log.TLogln("Failed to connect to fallback DNS", dns, ":", err)
-			}
-
-			return nil, fmt.Errorf("all DNS servers failed")
+			// UDP dial succeeds even when nobody answers, so the server
+			// is chosen by a real reply in pickServer, not here
+			return dialer.DialContext(ctx, network, server)
 		},
 	}
 
@@ -522,6 +506,9 @@ func dnsResolve() {
 	// Store the resolver for later use if needed
 	net.DefaultResolver = resolver // Optional: replace global resolver
 
+	if !checker.useFallback {
+		return // system DNS has just resolved this name in the check
+	}
 	// Test the resolver
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -534,27 +521,40 @@ func dnsResolve() {
 	}
 }
 
-// func dnsResolve() {
-// 	addrs, err := net.LookupHost("themoviedb.org")
-// 	if len(addrs) == 0 {
-// 		log.TLogln("System DNS check failed", err)
+// pickServer asks all servers at once and returns the first one that really
+// answered with a non-suspicious address, or "" if none did within Timeout
+func (d *DNSChecker) pickServer() string {
+	servers := append(append([]string{}, d.config.PrimaryServers...), d.config.FallbackServers...)
+	ctx, cancel := context.WithTimeout(context.Background(), d.config.Timeout)
+	defer cancel()
 
-// 		fn := func(ctx context.Context, network, address string) (net.Conn, error) {
-// 			d := net.Dialer{}
-// 			return d.DialContext(ctx, "udp", "1.1.1.1:53")
-// 		}
+	answered := make(chan string, len(servers))
+	for _, server := range servers {
+		go func(server string) {
+			r := &net.Resolver{
+				PreferGo: true,
+				Dial: func(ctx context.Context, network, _ string) (net.Conn, error) {
+					var dialer net.Dialer
+					return dialer.DialContext(ctx, network, server)
+				},
+			}
+			addrs, err := r.LookupHost(ctx, "themoviedb.org")
+			if err != nil || len(addrs) == 0 {
+				return
+			}
+			for _, addr := range addrs {
+				if isSuspiciousAddress(addr) {
+					return
+				}
+			}
+			answered <- server
+		}(server)
+	}
 
-// 		net.DefaultResolver = &net.Resolver{
-// 			Dial: fn,
-// 		}
-
-// 		addrs, err = net.LookupHost("themoviedb.org")
-// 		if err != nil {
-// 			log.TLogln("Check CloudFlare DNS error:", err)
-// 		} else {
-// 			log.TLogln("Use CloudFlare DNS")
-// 		}
-// 	} else {
-// 		log.TLogln("System DNS check passed")
-// 	}
-// }
+	select {
+	case server := <-answered:
+		return server
+	case <-ctx.Done():
+		return ""
+	}
+}

@@ -19,6 +19,7 @@ export const gstSettingsHost = () => `${torrserverHost}/gst/settings`
 export const ffprobeStatusHost = () => `${torrserverHost}/ffp/status`
 export const mediaBaseHost = () => `${torrserverHost}/mediabase`
 export const wafHost = () => `${torrserverHost}/waf`
+export const sslHost = () => `${torrserverHost}/ssl`
 
 export const getTorrServerHost = () => torrserverHost
 export const setTorrServerHost = host => {

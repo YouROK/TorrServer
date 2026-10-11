@@ -509,9 +509,21 @@ TorrServer --ssl --https-only --sslcert /opt/torrserver/tls/fullchain.pem --sslk
 TorrServer --ssl --force-https --http-media
 ```
 
+### Certificate in the web UI
+
+With `--ssl`, **Settings → Additional → HTTPS** (turn on **PRO mode** to see the Additional tab) shows the HTTPS mode and ports, the certificate in use (names, issuer, expiry, whether a trusted CA issued it) and the certificate and key files it's served from. The certificate can be changed there without a restart. The mode and ports stay startup flags, and without `--ssl` the section isn't shown.
+
+- **Upload** a PEM certificate (full chain) and its unencrypted private key from the computer you're browsing on, e.g. `fullchain.pem` and `privkey.pem`. The pair must match and be currently valid. TorrServer copies them to `ssl/uploaded.crt` and `ssl/uploaded.key` in its config folder (the `--path` folder, e.g. `/opt/torrserver` with the Linux install script or `/opt/ts/config` in Docker; the HTTPS section shows the full path) and serves them within a few seconds. The upload sends the private key, so do it over HTTPS or on the TorrServer machine itself. The copy isn't renewed: upload again after renewing, or use the next option.
+- **Use these files** takes the full paths of a certificate and key that are already on the TorrServer machine, as TorrServer sees them (inside the container for Docker); nothing is uploaded. Use it for certificates renewed automatically by acme.sh, certbot or another ACME client: TorrServer notices when the files change and serves the renewed certificate without a restart.
+- **Use self-signed** switches back to TorrServer's self-signed certificate (the existing one is reused, so devices that trust it keep working) and deletes an uploaded copy.
+- **Regenerate** creates a new self-signed certificate and key.
+- **Download certificate** saves the certificate in use (never the key), e.g. to trust the self-signed one on your devices.
+
+The same actions are available in the API under `/ssl/` (see `/swagger`). They are not available with `--rdb`, and the certificate can't be changed here when `--sslcert`/`--sslkey` are given, because those flags are applied again on every start; start without them to manage the certificate from the web UI.
+
 ### Self-signed certificate
 
-Without `--sslcert`/`--sslkey`, TorrServer generates a self-signed certificate for `localhost`, the hostname, `hostname.local` and the local IPs, and renews it before it expires or when the host moves to a new IP. Browsers show a warning you can accept once. Most media players, TVs and DLNA renderers reject it, so give them HTTP links: don't use `--force-https`, or add `--http-media` on a trusted network. When a playlist is requested over the self-signed HTTPS port and HTTP still serves media, its links point to the HTTP port. The self-signed certificate is only ever regenerated if it is one TorrServer created; your own certificate is never touched, even at the default location.
+Without `--sslcert`/`--sslkey`, TorrServer generates a self-signed certificate for `localhost`, the hostname, `hostname.local` and the local IPs, and renews it before it expires or when the host moves to a new IP. Global IPv6 addresses are included but don't cause a renewal when they change, as IPv6 privacy extensions rotate them every few hours. Browsers show a warning you can accept once. Most media players, TVs and DLNA renderers reject it, so give them HTTP links: don't use `--force-https`, or add `--http-media` on a trusted network. When a playlist is requested over the self-signed HTTPS port and HTTP still serves media, its links point to the HTTP port. The self-signed certificate is only ever regenerated if it is one TorrServer created; your own certificate is never touched, even at the default location.
 
 ### Trusted certificate on your LAN (Let's Encrypt DNS-01)
 
@@ -531,6 +543,8 @@ Let's Encrypt can issue a certificate for a name that points to a **private** IP
    ```bash
    TorrServer --ssl --sslcert /opt/torrserver/tls/fullchain.pem --sslkey /opt/torrserver/tls/key.pem
    ```
+
+   Or start with just `--ssl` and set the same two paths in the web UI under **Use these files** (see [Certificate in the web UI](#certificate-in-the-web-ui)).
 
 5. Open `https://mytorr.duckdns.org:8091` on any device on the LAN. Use the name, not the IP: the IP isn't in the certificate.
 6. Optional: add `--https-only` so TorrServer doesn't open the plain HTTP port at all, or `--force-https` to keep it open but redirect it to HTTPS.

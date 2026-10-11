@@ -33,6 +33,10 @@ const (
 // renewBefore is how long before expiry the self-signed cert is regenerated.
 const renewBefore = 30 * 24 * time.Hour
 
+// maxKeptIPs caps how many previously covered addresses a renewal carries over, so the
+// SAN list stays bounded on networks where the address keeps changing.
+const maxKeptIPs = 16
+
 // selfSignedValidity is the lifetime of generated certs (a var so tests can shorten it).
 var selfSignedValidity = 365 * 24 * time.Hour
 
@@ -40,7 +44,8 @@ var selfSignedValidity = 365 * 24 * time.Hour
 //
 // If no paths are configured, a self-signed pair is generated. The self-signed pair
 // is regenerated when it is invalid, close to expiry, or missing a current local IP
-// or hostname (previously covered IPs are kept). A user-supplied cert, including one
+// or hostname (previously covered stable IPs are kept). Global IPv6 addresses are
+// covered but don't trigger a renewal, as privacy extensions rotate them every few hours. A user-supplied cert, including one
 // copied to the default location, is never replaced; the error is returned instead.
 // changed reports whether the returned paths differ from the input and should be saved.
 func EnsureCert(certFile, keyFile string, ips []string) (cert, key string, changed bool, err error) {
@@ -92,7 +97,7 @@ func renewalReason(leaf *x509.Certificate, ips []string) string {
 		return "expires on " + leaf.NotAfter.Format(time.RFC3339)
 	}
 	for _, s := range ips {
-		if ip := net.ParseIP(s); ip != nil && !containsIP(leaf.IPAddresses, ip) {
+		if ip := net.ParseIP(s); ip != nil && !volatileIP(ip) && !containsIP(leaf.IPAddresses, ip) {
 			return "missing IP " + s
 		}
 	}
@@ -108,10 +113,27 @@ func containsIP(list []net.IP, ip net.IP) bool {
 	return slices.ContainsFunc(list, ip.Equal)
 }
 
+// volatileIP reports addresses that change on their own: global IPv6, where SLAAC
+// privacy extensions (RFC 8981) replace the temporary address every few hours.
+// Unique local (fd00::/8) IPv6 addresses are stable.
+func volatileIP(ip net.IP) bool {
+	return ip.To4() == nil && ip.IsGlobalUnicast() && !ip.IsPrivate()
+}
+
+// mergeIPs returns the current IPs plus up to maxKeptIPs previously covered stable ones,
+// most recent first. Volatile old addresses are dropped, as they never come back.
 func mergeIPs(old []net.IP, current []string) []string {
 	out := slices.Clone(current)
+	kept := 0
 	for _, ip := range old {
+		if kept == maxKeptIPs {
+			break
+		}
+		if ip.IsLoopback() || volatileIP(ip) || slices.Contains(out, ip.String()) {
+			continue
+		}
 		out = append(out, ip.String())
+		kept++
 	}
 	return out
 }
