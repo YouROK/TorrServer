@@ -10,13 +10,12 @@ import (
 
 // TestGenerateFileHash проверяет устойчивость хэша при смене имени папки релиза
 func TestGenerateFileHash(t *testing.T) {
-	// Релиз 1: папка "Series.720p"
+	// Другое имя папки релиза, файл и размер те же
 	hash1 := GenerateFileHash("Series.720p/Season 1/S01E01.mkv", 1450000)
 
-	// Релиз 2: папка "Series.1080p.Remux" (другое имя папки, но файл и размер те же!)
 	hash2 := GenerateFileHash("Series.1080p.Remux/S01E01.mkv", 1450000)
 
-	// Релиз 3: серия 2 (другой файл)
+	// Другой файл
 	hash3 := GenerateFileHash("Series.1080p.Remux/S01E02.mkv", 1450000)
 
 	if hash1 != hash2 {
@@ -30,7 +29,7 @@ func TestGenerateFileHash(t *testing.T) {
 
 // TestEngineFullLifecycle тестирует полный цикл: запуск, чтение, сессии, RAM кэш и остановку
 func TestEngineFullLifecycle(t *testing.T) {
-	// 1. Конфигурируем чистый движок с оперативным кэшем
+	// Чистый движок с оперативным кэшем
 	cfg := DefaultConfig()
 	cfg.ListenPort = 0 // случайный свободный порт
 	cfg.DisableDHT = true
@@ -48,12 +47,11 @@ func TestEngineFullLifecycle(t *testing.T) {
 	}
 	defer engine.Close()
 
-	// 2. Создаем синтетическую раздачу и запускаем в памяти
+	// Синтетическая раздача в памяти
 	spec := createSyntheticSpec(t)
 	title := "My Awesome Test Series"
 	userID := "test_user"
 
-	// Теперь движок принимает только спецификацию
 	session, err := engine.Start(spec)
 	if err != nil {
 		t.Fatalf("Failed to start torrent session: %v", err)
@@ -62,7 +60,7 @@ func TestEngineFullLifecycle(t *testing.T) {
 	// Имитируем работу менеджера: задаем личные метаданные пользователя
 	session.SetUserMeta(userID, title, "", "")
 
-	// 3. Ожидаем загрузки метаданных (для синтетической раздачи это доли миллисекунды)
+	// Ожидание загрузки метаданных
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
@@ -70,7 +68,7 @@ func TestEngineFullLifecycle(t *testing.T) {
 		t.Fatalf("WaitInfo failed: %v", err)
 	}
 
-	// 4. Проверяем файлы раздачи и вычисленные хэши
+	// Файлы раздачи и вычисленные хэши
 	files := session.Files()
 	if len(files) != 2 {
 		t.Fatalf("Expected 2 files in session, got: %d", len(files))
@@ -83,7 +81,7 @@ func TestEngineFullLifecycle(t *testing.T) {
 		t.Errorf("Invalid file 1 stats: %+v", files[1])
 	}
 
-	// 5. Проверяем статус раздачи для конкретного пользователя
+	// Статус раздачи для конкретного пользователя
 	status := session.Status(userID)
 	if status.Title != title {
 		t.Errorf("Status title mismatch: got %s, want %s", status.Title, title)
@@ -95,7 +93,7 @@ func TestEngineFullLifecycle(t *testing.T) {
 		t.Errorf("Torrent size mismatch: got %d, want %d", status.TorrentSize, 128*1024)
 	}
 
-	// 6. Проверяем создание ридеров и трекинг активности (ActiveReaders)
+	// Создание ридеров и трекинг активности (ActiveReaders)
 	if session.ActiveReaders() != 0 {
 		t.Errorf("Expected 0 active readers initially, got: %d", session.ActiveReaders())
 	}
@@ -115,7 +113,7 @@ func TestEngineFullLifecycle(t *testing.T) {
 		t.Errorf("Expected 0 active readers after CloseReader, got: %d", session.ActiveReaders())
 	}
 
-	// 7. Проверяем методы фасадного движка (Get, List)
+	// Методы фасадного движка (Get, List)
 	if _, ok := engine.Get(spec.InfoHash); !ok {
 		t.Errorf("Engine.Get failed to find active session by hash")
 	}
@@ -125,7 +123,7 @@ func TestEngineFullLifecycle(t *testing.T) {
 		t.Errorf("Expected 1 session in Engine.List, got: %d", len(activeSessions))
 	}
 
-	// 8. Останавливаем раздачу и проверяем выгрузку из RAM
+	// Остановка раздачи и выгрузка из RAM
 	engine.Stop(spec.InfoHash)
 
 	if _, ok := engine.Get(spec.InfoHash); ok {
@@ -145,7 +143,7 @@ func TestHelpersAndRateLimiter(t *testing.T) {
 		t.Errorf("Expected non-nil rate limiter")
 	}
 
-	// PeerID
+	// PeerID занимает ровно 20 байт
 	peerID := GeneratePeerID("-VT0001-")
 	if len(peerID) != 20 {
 		t.Errorf("PeerID must be exactly 20 bytes, got length %d: %s", len(peerID), peerID)

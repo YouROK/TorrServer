@@ -31,14 +31,14 @@ func main() {
 	defer log.Close()
 
 	log.Infof("[App] === TorrServer %s, engine: %s started ===", version.Version, version.GetTorrentVersion())
-	log.Debugf("[Config] loaded successfully from %s", *configPath)
+	log.Debugf("[Config] Loaded successfully from %s", *configPath)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
 	application, err := app.New(cfg)
 	if err != nil {
-		log.Errorf("[App] failed to initialize: %v", err)
+		log.Errorf("[App] Failed to initialize: %v", err)
 		os.Exit(1)
 	}
 
@@ -46,12 +46,12 @@ func main() {
 
 	go func() {
 		if err := application.Start(ctx); err != nil {
-			log.Errorf("[App] runtime error: %v", err)
+			log.Errorf("[App] Runtime error: %v", err)
 			cancel()
 		}
 	}()
 
 	<-ctx.Done()
-	log.Warn("[App] shutdown signal received")
+	log.Warn("[App] Shutdown signal received")
 	application.Stop()
 }

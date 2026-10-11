@@ -20,7 +20,7 @@ func RegisterStaticRoutes(r *gin.Engine) {
 	sub := func(name string) (fs.FS, bool) {
 		dir, err := fs.Sub(staticFS, "static/"+name)
 		if err != nil {
-			log.Errorf("[Web] failed to open embedded %s fs: %v", name, err)
+			log.Errorf("[Web] Failed to open embedded %s fs: %v", name, err)
 			return nil, false
 		}
 		return dir, true

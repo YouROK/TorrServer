@@ -225,9 +225,9 @@ func (m *Manager) startPlugin(pluginID string, manifest *Manifest, vfs fs.FS) {
 	m.runtimes[pluginID] = rt
 
 	m.tasks.Go(func(ctx context.Context) {
-		log.Debugf("[Plugin:%s] Starting background script...", pluginID)
+		log.Debugf("[Plugin:%s] Starting background script", pluginID)
 		if err := rt.Execute(string(codeBytes)); err != nil {
-			log.Errorf("[Plugin:%s] Execution error: %v. Purging from memory...", pluginID, err)
+			log.Errorf("[Plugin:%s] Purging from memory after execution error: %v", pluginID, err)
 
 			m.mu.Lock()
 			rt.Stop()
@@ -253,7 +253,7 @@ func (m *Manager) stopAllRuntimes() {
 func (m *Manager) UnloadAll() {
 	m.mu.Lock()
 
-	log.Info("[Plugin] Unloading all active plugins...")
+	log.Info("[Plugin] Unloading all active plugins")
 	m.registrar.Reset()
 	m.stopAllRuntimes()
 	m.manifests = make(map[string]*Manifest)
@@ -778,7 +778,7 @@ func (m *Manager) installFromURLInternal(rawURL string, update bool) ([]string, 
 		return nil, fmt.Errorf("plugin file too large (max %d MB)", maxPluginSize/1024/1024)
 	}
 
-	log.Infof("[Plugin] Downloaded %d bytes, installing...", written)
+	log.Infof("[Plugin] Downloaded %d bytes, installing", written)
 
 	if update {
 		return m.UpdatePlugin(tmpPath)
@@ -838,7 +838,7 @@ func (m *Manager) loadStaticI18n(pluginID string, vfs fs.FS) {
 		lang := strings.TrimSuffix(e.Name(), ".json")
 		data, err := fs.ReadFile(vfs, "i18n/"+e.Name())
 		if err != nil {
-			log.Warnf("[Plugin:%s] failed to read i18n file %s: %v", pluginID, e.Name(), err)
+			log.Warnf("[Plugin:%s] Failed to read i18n file %s: %v", pluginID, e.Name(), err)
 			continue
 		}
 

@@ -102,7 +102,6 @@ func Load(configPath string) (*Config, error) {
 		return nil, fmt.Errorf("failed to read config: %w", err)
 	}
 
-	// Парсим существующий файл
 	if err := yaml.Unmarshal(data, cfg); err != nil {
 		return nil, fmt.Errorf("failed to parse yaml: %w", err)
 	}

@@ -91,7 +91,6 @@ func (s *Store) GetConfig() (*Config, error) {
 		// Если конфига еще нет в базе - возвращаем дефолтный
 		cfg = *DefaultConfig()
 	} else if cfg.Storage != nil {
-		// Конфиги, сохраненные до появления зон загрузки, приходят с нулями
 		cfg.Storage.Normalize()
 	}
 	return &cfg, nil

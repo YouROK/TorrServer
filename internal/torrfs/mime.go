@@ -6,7 +6,7 @@ import (
 )
 
 var mimeByExt = map[string]string{
-	// video
+	// Видео
 	".mp4":  "video/mp4",
 	".mkv":  "video/x-matroska",
 	".webm": "video/webm",
@@ -23,7 +23,7 @@ var mimeByExt = map[string]string{
 	".ogv":  "video/ogg",
 	".vob":  "video/dvd",
 
-	// audio
+	// Аудио
 	".mp3":  "audio/mpeg",
 	".flac": "audio/flac",
 	".aac":  "audio/aac",
@@ -35,7 +35,7 @@ var mimeByExt = map[string]string{
 	".wma":  "audio/x-ms-wma",
 	".ape":  "audio/x-ape",
 
-	// image
+	// Изображения
 	".jpg":  "image/jpeg",
 	".jpeg": "image/jpeg",
 	".png":  "image/png",
@@ -46,7 +46,7 @@ var mimeByExt = map[string]string{
 	".tiff": "image/tiff",
 	".ico":  "image/x-icon",
 
-	// subtitles & text
+	// Субтитры и текст
 	".srt":  "application/x-subrip",
 	".vtt":  "text/vtt",
 	".ass":  "text/x-ssa",
@@ -62,14 +62,14 @@ var mimeByExt = map[string]string{
 	".css":  "text/css",
 	".js":   "application/javascript",
 
-	// archives
+	// Архивы
 	".zip": "application/zip",
 	".rar": "application/vnd.rar",
 	".7z":  "application/x-7z-compressed",
 	".tar": "application/x-tar",
 	".gz":  "application/gzip",
 
-	// docs
+	// Документы
 	".pdf": "application/pdf",
 }
 

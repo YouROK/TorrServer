@@ -95,8 +95,7 @@ func (s *Server) handleUploadPlugin(c *gin.Context) {
 		return
 	}
 
-	log.Infof("[Web] %d plugin(s) installed from '%s' by user %s (update=%v)",
-		len(installed), header.Filename, currentUser.Username, update)
+	log.Infof("[Web] %d plugin(s) installed from '%s' by user %s (update=%v)", len(installed), header.Filename, currentUser.Username, update)
 	c.JSON(http.StatusOK, gin.H{
 		"status":    "installed",
 		"filename":  header.Filename,
@@ -293,8 +292,7 @@ func (s *Server) handleInstallPluginFromURL(c *gin.Context) {
 		return
 	}
 
-	log.Infof("[Web] %d plugin(s) installed from URL by user %s (update=%v)",
-		len(installed), currentUser.Username, update)
+	log.Infof("[Web] %d plugin(s) installed from URL by user %s (update=%v)", len(installed), currentUser.Username, update)
 	c.JSON(http.StatusOK, gin.H{
 		"status":    "installed",
 		"updated":   update,
@@ -327,7 +325,7 @@ func (s *Server) handleCatalog(c *gin.Context) {
 
 	resp, err := plugin.GetPluginCatalog().Fetch()
 	if err != nil {
-		log.Errorf("[Web] catalog fetch failed: %v", err)
+		log.Errorf("[Web] Catalog fetch failed: %v", err)
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
 		return
 	}
@@ -372,7 +370,7 @@ func (s *Server) handleInstallFromCatalog(c *gin.Context) {
 
 	tmpPath, err := plugin.GetPluginCatalog().Download(entry)
 	if err != nil {
-		log.Errorf("[Web] catalog download %s: %v", entry.ID, err)
+		log.Errorf("[Web] Catalog download %s: %v", entry.ID, err)
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
 		return
 	}

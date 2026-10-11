@@ -57,10 +57,10 @@ func NewJSRuntime(
 		userSvc:  userSvc,
 	}
 
-	// 1. Системная консоль (глобально)
+	// Системная консоль (глобально)
 	rt.bindConsole()
 
-	// 2. Единое пространство имен "ts" и "vault"
+	// Единое пространство имен "ts" и "vault"
 	tsObj := vm.NewObject()
 	tsObj.Set("info", rt.createInfoModule())
 	tsObj.Set("bus", rt.createBusModule(manifest))

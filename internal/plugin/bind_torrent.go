@@ -12,6 +12,7 @@ import (
 func (rt *JSRuntime) createTorrentModule(mgr *torrent.Manager, userSvc *user.Service) *goja.Object {
 	torrObj := rt.vm.NewObject()
 
+	// Добавляет раздачу по magnet-ссылке, хэшу или торрент-файлу:
 	// ts.torrent.add(magnetOrHash, [options])
 	torrObj.Set("add", func(call goja.FunctionCall) goja.Value {
 		input := call.Argument(0).String()
@@ -57,6 +58,7 @@ func (rt *JSRuntime) createTorrentModule(mgr *torrent.Manager, userSvc *user.Ser
 		return rt.vm.ToValue(status)
 	})
 
+	// Список раздач пользователя:
 	// ts.torrent.list([userID])
 	torrObj.Set("list", func(call goja.FunctionCall) goja.Value {
 		targetUserID := "owner"
@@ -76,6 +78,7 @@ func (rt *JSRuntime) createTorrentModule(mgr *torrent.Manager, userSvc *user.Ser
 		return rt.vm.ToValue(list)
 	})
 
+	// Статус одной раздачи:
 	// ts.torrent.get(hash, [userID])
 	torrObj.Set("get", func(call goja.FunctionCall) goja.Value {
 		hash := call.Argument(0).String()
@@ -96,6 +99,7 @@ func (rt *JSRuntime) createTorrentModule(mgr *torrent.Manager, userSvc *user.Ser
 		return rt.vm.ToValue(st)
 	})
 
+	// Удаляет раздачу у пользователя:
 	// ts.torrent.remove(hash, [userID])
 	torrObj.Set("remove", func(call goja.FunctionCall) goja.Value {
 		hash := call.Argument(0).String()
@@ -115,6 +119,7 @@ func (rt *JSRuntime) createTorrentModule(mgr *torrent.Manager, userSvc *user.Ser
 		return goja.Undefined()
 	})
 
+	// Отмечает файл раздачи просмотренным:
 	// ts.torrent.setViewed(hash, fileIdx, viewed, [userID])
 	torrObj.Set("setViewed", func(call goja.FunctionCall) goja.Value {
 		hash := call.Argument(0).String()
@@ -136,6 +141,7 @@ func (rt *JSRuntime) createTorrentModule(mgr *torrent.Manager, userSvc *user.Ser
 		return goja.Undefined()
 	})
 
+	// Загружает IP-блоклист из текста:
 	// ts.torrent.setBlocklist(text)
 	torrObj.Set("setBlocklist", func(call goja.FunctionCall) goja.Value {
 		text := call.Argument(0).String()
@@ -145,6 +151,7 @@ func (rt *JSRuntime) createTorrentModule(mgr *torrent.Manager, userSvc *user.Ser
 		return goja.Undefined()
 	})
 
+	// Задает политику трекеров:
 	// ts.torrent.setTrackerPolicy({ mode: "replace", trackers: [...] })
 	torrObj.Set("setTrackerPolicy", func(call goja.FunctionCall) goja.Value {
 		opts := call.Argument(0).Export().(map[string]any)

@@ -82,7 +82,7 @@ func (e *Engine) Restart(cfg *Config) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	log.Info("[Torrent Engine] Restarting engine with new configuration...")
+	log.Info("[Torrent Engine] Restarting engine with new configuration")
 
 	for _, s := range e.sessions {
 		s.Close()

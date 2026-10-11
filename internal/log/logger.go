@@ -36,7 +36,7 @@ func Init(levelStr, filePath string) error {
 	mu.Lock()
 	defer mu.Unlock()
 
-	// 1. Устанавливаем уровень (поддерживаем отключение через none / off / disabled)
+	// Уровень; отключение поддерживается через none / off / disabled
 	switch strings.ToLower(strings.TrimSpace(levelStr)) {
 	case "none", "off", "disabled", "mute":
 		levelVar.Set(LevelNone)
@@ -60,7 +60,7 @@ func Init(levelStr, filePath string) error {
 		return nil
 	}
 
-	// 2. Настраиваем вывод
+	// Настройка вывода
 	writers := []io.Writer{os.Stdout, ringBuf}
 
 	if filePath != "" {
@@ -149,10 +149,10 @@ func (h *customHandler) Enabled(_ context.Context, level slog.Level) bool {
 func (h *customHandler) Handle(_ context.Context, r slog.Record) error {
 	buf := bytes.NewBuffer(make([]byte, 0, 128))
 
-	// Время [2026-09-04 15:04:05.000]
+	// Время [2006-01-02 15:04:05.000]
 	buf.WriteString(r.Time.Format("[2006-01-02 15:04:05.000] "))
 
-	// Уровень без пробела: [INFO] / [DEBUG] / [ERROR]
+	// Уровень [INFO] / [DEBUG] / [ERROR]
 	levelStr := fmt.Sprintf("[%s] ", r.Level.String())
 	buf.WriteString(levelStr)
 

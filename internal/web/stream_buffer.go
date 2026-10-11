@@ -17,7 +17,7 @@ func newBufferedStreamReader(source io.ReadSeeker, size int) *bufferedStreamRead
 func (r *bufferedStreamReader) Read(p []byte) (int, error) { return r.buffer.Read(p) }
 func (r *bufferedStreamReader) Seek(offset int64, whence int) (int64, error) {
 	if whence == io.SeekCurrent {
-		// The source has advanced past unread buffered bytes.
+		// Часть байтов уже прочитана в буфер, поэтому смещение уменьшается.
 		offset -= int64(r.buffer.Buffered())
 	}
 	pos, err := r.source.Seek(offset, whence)

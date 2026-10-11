@@ -78,7 +78,7 @@ func (rt *JSRuntime) createWebModule(manifest *Manifest, vfs fs.FS, registrar We
 		route := call.Argument(0).String()
 		vfsPath := call.Argument(1).String()
 		if !routeAllowed(manifest, route) {
-			log.Warnf("[Plugin:%s] route '%s' is not in manifest whitelist, static file skipped", rt.pluginID, route)
+			log.Warnf("[Plugin:%s] Route '%s' is not in manifest whitelist, static file skipped", rt.pluginID, route)
 			return goja.Undefined()
 		}
 		registrar.AddStaticFile(rt.pluginID, route, vfsPath, vfs)
@@ -96,11 +96,11 @@ func (rt *JSRuntime) createWebModule(manifest *Manifest, vfs fs.FS, registrar We
 		}
 
 		if !routeAllowed(manifest, route) {
-			log.Warnf("[Plugin:%s] route '%s' is not in manifest whitelist, static dir skipped", rt.pluginID, route)
+			log.Warnf("[Plugin:%s] Route '%s' is not in manifest whitelist, static dir skipped", rt.pluginID, route)
 			return goja.Undefined()
 		}
 		registrar.AddStaticDir(rt.pluginID, route, vfsDir, vfs)
-		log.Debugf("[Plugin:%s] registered static dir %s -> %s/", rt.pluginID, route, vfsDir)
+		log.Debugf("[Plugin:%s] Registered static dir %s -> %s/", rt.pluginID, route, vfsDir)
 		return goja.Undefined()
 	})
 
@@ -123,18 +123,18 @@ func (rt *JSRuntime) webRegistrar(registrar WebRegistrar, manifest *Manifest, me
 // registerRoute проверяет белый список манифеста и регистрирует обработчик
 func (rt *JSRuntime) registerRoute(registrar WebRegistrar, manifest *Manifest, method, route string, handler goja.Callable) {
 	if !routeAllowed(manifest, route) {
-		log.Warnf("[Plugin:%s] route '%s' is not in manifest whitelist, handler skipped", rt.pluginID, route)
+		log.Warnf("[Plugin:%s] Route '%s' is not in manifest whitelist, handler skipped", rt.pluginID, route)
 		return
 	}
 	registrar.AddJSHandler(rt.pluginID, method, route, rt.ginHandler(handler))
-	log.Debugf("[Plugin:%s] registered %s %s", rt.pluginID, method, route)
+	log.Debugf("[Plugin:%s] Registered %s %s", rt.pluginID, method, route)
 }
 
 // exportHandler приводит значение goja к вызываемой функции
 func (rt *JSRuntime) exportHandler(v goja.Value) (goja.Callable, bool) {
 	fn, ok := goja.AssertFunction(v)
 	if !ok {
-		log.Warnf("[Plugin:%s] web handler is not a function", rt.pluginID)
+		log.Warnf("[Plugin:%s] Web handler is not a function", rt.pluginID)
 	}
 	return fn, ok
 }
@@ -278,7 +278,7 @@ func (rt *JSRuntime) runWebHandler(handler goja.Callable, c *gin.Context, raw []
 
 	result, err := handler(goja.Undefined(), req, resObj)
 	if err != nil {
-		log.Errorf("[Plugin:%s] web handler error: %v", rt.pluginID, err)
+		log.Errorf("[Plugin:%s] Web handler error: %v", rt.pluginID, err)
 		return &webResponse{
 			used:        true,
 			status:      http.StatusInternalServerError,

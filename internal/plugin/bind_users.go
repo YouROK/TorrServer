@@ -11,6 +11,7 @@ import (
 func (rt *JSRuntime) createUsersModule(userSvc *user.Service) *goja.Object {
 	usersObj := rt.vm.NewObject()
 
+	// Список пользователей:
 	// ts.users.list() -> массив пользователей
 	usersObj.Set("list", func(call goja.FunctionCall) goja.Value {
 		users, err := userSvc.ListUsers()
@@ -31,6 +32,7 @@ func (rt *JSRuntime) createUsersModule(userSvc *user.Service) *goja.Object {
 		return rt.vm.ToValue(result)
 	})
 
+	// Пользователь по ID или undefined:
 	// ts.users.get(userID)
 	usersObj.Set("get", func(call goja.FunctionCall) goja.Value {
 		userID := call.Argument(0).String()

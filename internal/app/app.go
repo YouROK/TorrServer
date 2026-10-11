@@ -151,7 +151,7 @@ func (a *App) Start(ctx context.Context) error {
 }
 
 func (a *App) Stop() {
-	log.Info("[App] Shutting down services...")
+	log.Info("[App] Shutting down services")
 
 	a.bus.Emit("system:shutdown", map[string]any{
 		"reason": "os_signal",
@@ -162,7 +162,7 @@ func (a *App) Stop() {
 	a.pluginMgr.UnloadAll()
 
 	if a.ffmpeg.Enabled() {
-		log.Info("[FFmpeg] Stopping active sessions...")
+		log.Info("[FFmpeg] Stopping active sessions")
 		a.ffmpeg.StopAll()
 		a.ffmpeg.Wait()
 	}

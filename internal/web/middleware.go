@@ -14,10 +14,10 @@ const CookieTokenName = "silo_token"
 
 func AuthMiddleware(userSvc *user.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 1. Проверяем параметр URL: ?token=ts_xxx (для плееров)
+		// Токен из параметра URL: ?token=ts_xxx (для плееров)
 		token := c.Query("token")
 
-		// 2. Проверяем заголовок: Authorization: Bearer ts_xxx (для API)
+		// Токен из заголовка Authorization: Bearer ts_xxx (для API)
 		if token == "" {
 			authHeader := c.GetHeader("Authorization")
 			if strings.HasPrefix(authHeader, "Bearer ") {
@@ -25,7 +25,7 @@ func AuthMiddleware(userSvc *user.Service) gin.HandlerFunc {
 			}
 		}
 
-		// 3. Проверяем Cookie: silo_token (для браузера)
+		// Токен из Cookie: silo_token (для браузера)
 		if token == "" {
 			token, _ = c.Cookie(CookieTokenName)
 		}

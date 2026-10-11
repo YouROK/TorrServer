@@ -14,28 +14,8 @@ import (
 
 // createVFSModule - объект ts.vfs: чтение собственных файлов плагина
 // через изолированную VFS (fs.FS, привязанную к папке или ZIP плагина).
-//
-// Безопасность обеспечивает сама VFS. os.DirFS и *zip.Reader реализуют
-// fs.FS и внутри вызывают fs.ValidPath, который отвергает:
-//   - пустые сегменты и ведущий/замыкающий "/",
-//   - сегменты "." и "..",
-//   - невалидный UTF-8.
-//
-// Это отсекает классический path traversal на Linux/macOS. Единственное,
-// что VFS не закрывает - обратные слэши на Windows: fs.ValidPath считает
-// `a\..\b` валидным (backslash для него обычный символ), а
-// filepath.FromSlash его не преобразует. В итоге filepath.Join разрешает
-// `..\..` относительно реальной ФС и выходит за пределы VFS. Поэтому
-// backslash отвергаем явно, до вызова vfs.Open.
-//
-// path.Clean применяется, чтобы авторы плагинов могли писать `./x`
-// вместо `x`. Clean не создаёт новых сегментов - он только схлопывает
-// `a/../b` в `b` и убирает `.`. Итог всё равно проверяется VFS.
-//
-// Ошибки передаются в JS через panic: goja на границе VM превращает
-// panic(vm.ToValue(...)) в JS-исключение, которое плагин может поймать
-// через try/catch. Это тот же стиль, что в bind_http.go, bind_torrent.go,
-// bind_storage.go - консистентно с остальными модулями ts.*.
+// Обратные слэши отвергаются явно: fs.ValidPath считает их обычными
+// символами и пропускает `..\..` на Windows.
 //
 // API:
 //
@@ -55,6 +35,7 @@ func (rt *JSRuntime) createVFSModule(vfs fs.FS) *goja.Object {
 		return path.Clean(raw), nil
 	}
 
+	// Читает файл как строку:
 	// ts.vfs.read(path) -> string
 	obj.Set("read", func(call goja.FunctionCall) goja.Value {
 		p, err := checkPath(call.Argument(0).String())
@@ -69,7 +50,8 @@ func (rt *JSRuntime) createVFSModule(vfs fs.FS) *goja.Object {
 		return rt.vm.ToValue(string(data))
 	})
 
-	// ts.vfs.exists(path) -> bool.
+	// Проверяет наличие файла:
+	// ts.vfs.exists(path) -> bool
 	// Boolean-запрос: «ошибка пути» и «файла нет» для плагина равнозначны false.
 	obj.Set("exists", func(call goja.FunctionCall) goja.Value {
 		p, err := checkPath(call.Argument(0).String())
@@ -80,6 +62,7 @@ func (rt *JSRuntime) createVFSModule(vfs fs.FS) *goja.Object {
 		return rt.vm.ToValue(err == nil)
 	})
 
+	// Сведения о файле:
 	// ts.vfs.stat(path) -> {name, size, is_dir, mode, mod_time}
 	obj.Set("stat", func(call goja.FunctionCall) goja.Value {
 		p, err := checkPath(call.Argument(0).String())
@@ -108,6 +91,7 @@ func (rt *JSRuntime) createVFSModule(vfs fs.FS) *goja.Object {
 		})
 	})
 
+	// Содержимое каталога:
 	// ts.vfs.list([path="."]) -> [{name, size, is_dir}, ...]
 	obj.Set("list", func(call goja.FunctionCall) goja.Value {
 		p := "."

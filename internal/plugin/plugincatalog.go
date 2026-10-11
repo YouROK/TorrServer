@@ -89,7 +89,7 @@ func (c *PluginCatalog) Fetch() (*catalogResponse, error) {
 	if err != nil {
 		c.lastFailed = time.Now()
 		if c.cached != nil {
-			log.Warnf("[Catalog] fetch failed, serving stale: %v", err)
+			log.Warnf("[Catalog] Fetch failed, serving stale: %v", err)
 			return c.response(true), nil
 		}
 		return nil, err
@@ -129,16 +129,16 @@ func (c *PluginCatalog) fetchRemote() (*catalogFile, error) {
 	valid := cf.Plugins[:0]
 	for _, e := range cf.Plugins {
 		if e == nil || e.ID == "" || e.Version == "" || e.DownloadURL == "" {
-			log.Warnf("[Catalog] entry skipped: missing required fields")
+			log.Warnf("[Catalog] Entry skipped: missing required fields")
 			continue
 		}
 		if !sha256Re.MatchString(e.SHA256) {
-			log.Warnf("[Catalog] entry '%s' skipped: invalid sha256", e.ID)
+			log.Warnf("[Catalog] Entry '%s' skipped: invalid sha256", e.ID)
 			continue
 		}
 		if e.MinSiloVersion != "" {
 			if _, ok := parseSiloVersion(e.MinSiloVersion); !ok {
-				log.Warnf("[Catalog] entry '%s' skipped: invalid min_silo_version '%s'", e.ID, e.MinSiloVersion)
+				log.Warnf("[Catalog] Entry '%s' skipped: invalid min_silo_version '%s'", e.ID, e.MinSiloVersion)
 				continue
 			}
 		}
@@ -146,7 +146,7 @@ func (c *PluginCatalog) fetchRemote() (*catalogFile, error) {
 	}
 	cf.Plugins = valid
 
-	log.Infof("[Catalog] loaded %d plugins", len(cf.Plugins))
+	log.Infof("[Catalog] Loaded %d plugins", len(cf.Plugins))
 	return &cf, nil
 }
 
