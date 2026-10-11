@@ -316,7 +316,8 @@ func TestAWrongCarryOnlyEverLandsBehind(t *testing.T) {
 // minutes away and must inherit nothing, or the position it reports is a whole buffer behind
 // somewhere it was never playing.
 func TestHandoverGoesOnlyToTheSamePlayback(t *testing.T) {
-	c := &Cache{handovers: map[string]*handover{}}
+	resetHandovers()
+	c := &Cache{}
 	const path = "film.mkv"
 	c.noteRead(path, 1, 30<<20, 30<<20, 600<<20, 600) // picture at 600s, holding 30s, so served 600..630
 

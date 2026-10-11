@@ -46,13 +46,6 @@ type Cache struct {
 	indexes   map[string]*timeindex.Index
 	muIndexes sync.Mutex
 
-	// What a client was holding when its connection ended, kept per file so the next one can
-	// pick it up. A player that pauses long enough loses the connection and opens another,
-	// and the new one would otherwise start from the only assumption available to it — that
-	// nothing is buffered — while the player still holds everything it had.
-	handovers  map[string]*handover
-	muHandover sync.Mutex
-
 	isRemove atomic.Bool
 	isClosed atomic.Bool
 	muRemove sync.Mutex
@@ -65,13 +58,12 @@ type Cache struct {
 
 func NewCache(capacity int64, storage *Storage) *Cache {
 	ret := &Cache{
-		capacity:  capacity,
-		filled:    0,
-		pieces:    make(map[int]*Piece),
-		storage:   storage,
-		readers:   make(map[*Reader]struct{}),
-		indexes:   make(map[string]*timeindex.Index),
-		handovers: make(map[string]*handover),
+		capacity: capacity,
+		filled:   0,
+		pieces:   make(map[int]*Piece),
+		storage:  storage,
+		readers:  make(map[*Reader]struct{}),
+		indexes:  make(map[string]*timeindex.Index),
 	}
 
 	return ret
@@ -185,16 +177,9 @@ func (c *Cache) noteRead(path string, by, holding, size, picture int64, sec floa
 	if c == nil {
 		return
 	}
-	c.muHandover.Lock()
-	defer c.muHandover.Unlock()
-	if c.handovers == nil {
-		return
-	}
-	h := c.handovers[path]
-	if h == nil {
-		h = &handover{}
-		c.handovers[path] = h
-	}
+	handovers.Lock()
+	defer handovers.Unlock()
+	h := handoverFor(handoverKey(c.hash, path), true)
 	h.at = time.Now()
 	// The most it was seen holding, not what it holds at this instant. Handing over the
 	// instant value was tried and reverted: it left the next connection with nothing to
@@ -254,17 +239,16 @@ func (c *Cache) takeOver(path string, startOff int64) (held, size int64, ok bool
 	if c == nil {
 		return 0, 0, false
 	}
-	c.muHandover.Lock()
-	defer c.muHandover.Unlock()
-	h := c.handovers[path]
+	handovers.Lock()
+	defer handovers.Unlock()
+	h := handoverFor(handoverKey(c.hash, path), false)
 	if h == nil || h.holding <= 0 {
 		return 0, 0, false
 	}
 	// No expiry. A buffer size is a property of the device, and an hour's pause does not
 	// change it — while letting the record lapse would have the next connection assume the
 	// client holds nothing, which puts the picture at the read head, a whole buffer past
-	// where it really is. The record lives as long as the torrent's cache, and goes when
-	// that does.
+	// where it really is. The record outlives the torrent's cache: see handovers.
 	from, to := h.picture-rejoinMargin, h.picture+h.holding+rejoinMargin
 	if startOff < from || startOff > to {
 		log.TLogln("[Handover] starting at", startOff>>20, "MB, outside", max(from, 0)>>20, "..", to>>20,
@@ -317,9 +301,9 @@ func (c *Cache) FurthestScreen(path string) (float64, bool) {
 	if c == nil {
 		return 0, false
 	}
-	c.muHandover.Lock()
-	defer c.muHandover.Unlock()
-	h := c.handovers[path]
+	handovers.Lock()
+	defer handovers.Unlock()
+	h := handoverFor(handoverKey(c.hash, path), false)
 	if h == nil || h.sec <= 0 {
 		return 0, false
 	}
@@ -370,10 +354,6 @@ func (c *Cache) Close() error {
 	c.muIndexes.Lock()
 	c.indexes = nil
 	c.muIndexes.Unlock()
-
-	c.muHandover.Lock()
-	c.handovers = nil
-	c.muHandover.Unlock()
 
 	c.muPieces.Lock()
 	c.pieces = nil
