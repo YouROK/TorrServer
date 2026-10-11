@@ -17,6 +17,11 @@ let SILO_VERSION = '';
 let pluginDragId = null;
 let offlineShown = false;
 
+// Ключи для пустых состояний таблиц: строка-заглушка должна быть такой же
+// строкой siloUI.rows, иначе она не убирается при появлении данных.
+const NO_SESSIONS = { id: '__none__' };
+const NO_PROFILES = { id: '__none__' };
+
 function esc(s) {
     return String(s == null ? '' : s)
         .replace(/&/g, '&amp;')
@@ -148,12 +153,20 @@ function startHealthCheck() {
     }, 3000);
 }
 
+// toast показывает уведомление в общем контейнере уведомлений
 function toast(msg) {
-    const el = document.getElementById('toast');
-    if (!el) return;
+    const root = document.getElementById('toast-root');
+    if (!root) return;
+
+    const el = document.createElement('div');
+    el.className = 'toast';
     el.textContent = msg;
-    el.classList.add('show');
-    setTimeout(() => el.classList.remove('show'), 2500);
+    root.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('toast-show'));
+    setTimeout(() => {
+        el.classList.remove('toast-show');
+        setTimeout(() => el.remove(), 300);
+    }, 2500);
 }
 
 // val читает значение поля, отсутствие узла даёт пустую строку
@@ -183,10 +196,6 @@ function badgeRank(rank) {
     if (rank >= 100) return '<span class="badge badge-owner">Owner</span>';
     if (rank >= 50) return '<span class="badge badge-admin">Admin</span>';
     return '<span class="badge badge-user">User</span>';
-}
-
-function wrapTable(tableHtml) {
-    return '<div class="table-wrap">' + tableHtml + '</div>';
 }
 
 // showModal показывает модальное окно и возвращает значение нажатой кнопки.
@@ -248,6 +257,7 @@ const modalAlert = (title, bodyHtml) => showModal({ title: title, body: bodyHtml
 async function boot() {
     document.getElementById('hamburger').addEventListener('click', openSidebar);
     document.getElementById('sidebar-overlay').addEventListener('click', closeSidebar);
+    document.getElementById('brand-home').addEventListener('click', () => { location.href = '/'; });
 
     try {
         ME = await api('/auth/me');
@@ -363,8 +373,19 @@ async function renderUsers() {
                 <button class="btn" id="nu-create" type="button">${t('create_user')}</button>
             </div>
         </div>
-        <div id="users-table-wrap"></div>
+        <div class="panel panel-wide">
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr><th>${t('username')}</th><th>${t('rank')}</th><th>${t('status')}</th><th>${t('actions')}</th></tr>
+                    </thead>
+                    <tbody id="users-table"></tbody>
+                </table>
+            </div>
+        </div>
     `;
+
+    siloUI.on('users-table', 'click', 'button[data-act]', onUserAction);
 
     document.getElementById('nu-create').addEventListener('click', async () => {
         try {
@@ -386,44 +407,36 @@ async function renderUsers() {
     loadUsers();
 }
 
+// userRowHTML собирает строку таблицы пользователей.
+function userRowHTML(u) {
+    // У Owner пароль задаётся в config.yaml, менять его из админки нельзя.
+    const passwordBtn = u.rank >= 100
+        ? ''
+        : `<button class="btn btn-secondary btn-sm" data-act="password" data-id="${u.id}" data-name="${u.username}" type="button">${t('change_password')}</button>`;
+
+    return `
+        <td>${u.username}</td>
+        <td>${badgeRank(u.rank)}</td>
+        <td>${u.is_banned ? '<span class="badge badge-banned">' + t('banned') + '</span>' : t('active')}</td>
+        <td class="actions-cell">
+            <button class="btn btn-secondary btn-sm" data-act="rank" data-id="${u.id}" data-rank="${u.rank}" type="button">${t('set_rank')}</button>
+            ${passwordBtn}
+            <button class="btn btn-secondary btn-sm" data-act="torrents" data-id="${u.id}" data-name="${u.username}" type="button">${t('view_torrents')}</button>
+            <button class="btn btn-secondary btn-sm" data-act="ban" data-id="${u.id}" data-banned="${u.is_banned}" type="button">
+                ${u.is_banned ? t('unban') : t('ban')}
+            </button>
+            <button class="btn btn-secondary btn-sm" data-act="token" data-id="${u.id}" type="button">${t('new_token')}</button>
+            <button class="btn btn-danger btn-sm" data-act="del" data-id="${u.id}" type="button">${t('delete')}</button>
+        </td>
+    `;
+}
+
 async function loadUsers() {
     try {
         const data = await api('/users');
-        const rows = (data.users || []).map((u) => {
-            // У Owner пароль задаётся в config.yaml, менять его из админки нельзя.
-            const passwordBtn = u.rank >= 100
-                ? ''
-                : `<button class="btn btn-secondary btn-sm" data-act="password" data-id="${u.id}" data-name="${u.username}" type="button">${t('change_password')}</button>`;
-
-            return `
-            <tr>
-                <td>${u.username}</td>
-                <td>${badgeRank(u.rank)}</td>
-                <td>${u.is_banned ? '<span class="badge badge-banned">' + t('banned') + '</span>' : t('active')}</td>
-                <td class="actions-cell">
-                    <button class="btn btn-secondary btn-sm" data-act="rank" data-id="${u.id}" data-rank="${u.rank}" type="button">${t('set_rank')}</button>
-                    ${passwordBtn}
-                    <button class="btn btn-secondary btn-sm" data-act="torrents" data-id="${u.id}" data-name="${u.username}" type="button">${t('view_torrents')}</button>
-                    <button class="btn btn-secondary btn-sm" data-act="ban" data-id="${u.id}" data-banned="${u.is_banned}" type="button">
-                        ${u.is_banned ? t('unban') : t('ban')}
-                    </button>
-                    <button class="btn btn-secondary btn-sm" data-act="token" data-id="${u.id}" type="button">${t('new_token')}</button>
-                    <button class="btn btn-danger btn-sm" data-act="del" data-id="${u.id}" type="button">${t('delete')}</button>
-                </td>
-            </tr>
-        `;
-        }).join('');
-
-        const html = `
-            <table class="table" id="users-table">
-                <tr><th>${t('username')}</th><th>${t('rank')}</th><th>${t('status')}</th><th>${t('actions')}</th></tr>
-                ${rows}
-            </table>
-        `;
-        document.getElementById('users-table-wrap').innerHTML = wrapTable(html);
-
-        document.querySelectorAll('#users-table button').forEach((btn) => {
-            btn.addEventListener('click', onUserAction);
+        siloUI.rows('users-table', data.users || [], {
+            key: (u) => u.id,
+            html: userRowHTML,
         });
     } catch (e) {
         toast(e.message);
@@ -626,7 +639,10 @@ function streamIPTitle(st) {
 // Показывает раздачи пользователя: таблица + активные подключения в реальном времени.
 // После первой отрисовки обновляются только изменившиеся ячейки, а не вся таблица.
 async function showUserTorrents(id, username) {
-    let streamTimer = null;
+    // Опрос живёт в общем модуле, поэтому смена раздела его останавливает:
+    // модалка лежит вне #view, и собственный setInterval пережил бы route().
+    const streamTimerKey = 'user-torrents';
+    let closed = false;
 
     // Разметка создаётся один раз. Дальше меняем только текст в узлах.
     const overlay = document.createElement('div');
@@ -803,8 +819,9 @@ async function showUserTorrents(id, username) {
     };
 
     const close = () => {
-        if (streamTimer) clearInterval(streamTimer);
-        streamTimer = null;
+        if (closed) return;
+        closed = true;
+        siloUI.stopTimer(streamTimerKey);
         overlay.remove();
     };
 
@@ -836,7 +853,7 @@ async function showUserTorrents(id, username) {
     };
 
     await load();
-    streamTimer = setInterval(load, 2000);
+    siloUI.timer(streamTimerKey, load, 2000);
 }
 
 async function renderPlugins() {
@@ -850,7 +867,7 @@ async function renderPlugins() {
                 <div class="row">
                     <label class="file-input">
                         <input type="file" id="pl-file" accept=".zip">
-                        <span class="file-input-btn">${t('choose_file')}</span>
+                        <span class="btn btn-secondary file-input-btn">${t('choose_file')}</span>
                         <span class="file-input-name" id="pl-file-name">${t('no_file_selected')}</span>
                     </label>
                     <button class="btn" id="pl-upload" type="button">${t('upload_plugin')}</button>
@@ -868,18 +885,30 @@ async function renderPlugins() {
         <div class="panel">
             <h2>${t('store')}</h2>
             <div class="catalog-wrap">
-                <button class="carousel-nav left" id="cat-prev" type="button">‹</button>
+                <button class="btn-sm-icon carousel-nav" id="cat-prev" type="button">‹</button>
                 <div class="catalog-scroll" id="catalog-scroll">
                     <p class="hint">Loading...</p>
                 </div>
-                <button class="carousel-nav right" id="cat-next" type="button">›</button>
+                <button class="btn-sm-icon carousel-nav" id="cat-next" type="button">›</button>
             </div>
             <p class="hint catalog-stale" id="catalog-stale" style="display:none">${t('catalog_stale')}</p>
         </div>
 
         <p class="hint">${t('drag_hint')}</p>
-        <div id="plugins-table-wrap"></div>
+        <div class="panel panel-wide">
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr><th></th><th>${t('id')}</th><th>${t('name')}</th><th>${t('version')}</th><th>${t('status')}</th><th>${t('theme')}</th><th>${t('page')}</th><th>${t('actions')}</th></tr>
+                    </thead>
+                    <tbody id="plugins-table"></tbody>
+                </table>
+            </div>
+        </div>
     `;
+
+    siloUI.on('plugins-table', 'click', 'button[data-act]', onPluginAction);
+    wireDrag(document.getElementById('plugins-table'));
 
     // ─── Manual install: file ─────────────────────────────
     const fileInput = document.getElementById('pl-file');
@@ -990,69 +1019,62 @@ async function submitInstall(doRequest) {
     loadPlugins();
 }
 
+// pluginRowHTML собирает строку таблицы плагинов.
+function pluginRowHTML(p) {
+    let themeCell;
+    if (p.current_theme) {
+        themeCell = '<span class="badge badge-owner">' + t('current') + '</span>';
+    } else if (p.theme_ui) {
+        themeCell = '<button class="btn btn-secondary btn-sm" data-act="theme" data-id="' + p.id + '" type="button">' + t('set_theme') + '</button>';
+    } else {
+        themeCell = '<span class="badge badge-user">' + t('no_theme') + '</span>';
+    }
+
+    const pageCell = (p.enabled && p.page)
+        ? `<a class="btn btn-secondary btn-sm" href="/plugins/${p.id}/" target="_blank">${t('open')}</a>`
+        : '';
+
+    const statusBadge = p.enabled
+        ? '<span class="badge badge-admin">' + t('active') + '</span>'
+        : '<span class="badge badge-banned">' + t('disabled') + '</span>';
+
+    const deleteBtn = p.builtin
+        ? ''
+        : `<button class="btn btn-danger btn-sm" data-act="del" data-id="${p.id}" type="button">${t('delete')}</button>`;
+
+    return `
+        <td class="drag-cell"><span class="drag-handle"></span></td>
+        <td>
+            <span class="plugin-id-wrap">
+                ${p.icon ? '<img class="plugin-icon" src="' + esc(p.icon) + '" alt="" onerror="this.style.display=\'none\'">' : ''}
+                <span>${p.id}</span>
+            </span>
+            ${p.builtin ? ' <span class="badge badge-user">' + t('builtin') + '</span>' : ''}
+        </td>
+        <td>${p.name}</td>
+        <td>${p.version}</td>
+        <td>${statusBadge}</td>
+        <td class="theme-cell">${themeCell}</td>
+        <td class="page-cell">${pageCell}</td>
+        <td class="actions-cell">
+            <button class="btn-icon" data-act="info" data-id="${p.id}" type="button" title="${t('info')}">i</button>
+            <button class="btn btn-secondary btn-sm" data-act="toggle" data-id="${p.id}" data-enabled="${p.enabled}" type="button">
+                ${p.enabled ? t('disable') : t('enable')}
+            </button>
+            ${deleteBtn}
+        </td>
+    `;
+}
+
 async function loadPlugins() {
     try {
         const data = await api('/plugins');
-        const rows = (data.plugins || []).map((p) => {
-            let themeCell;
-            if (p.current_theme) {
-                themeCell = '<span class="badge badge-owner">' + t('current') + '</span>';
-            } else if (p.theme_ui) {
-                themeCell = '<button class="btn btn-secondary btn-sm" data-act="theme" data-id="' + p.id + '" type="button">' + t('set_theme') + '</button>';
-            } else {
-                themeCell = '<span class="badge badge-user">' + t('no_theme') + '</span>';
-            }
-
-            const pageCell = (p.enabled && p.page)
-                ? `<a class="btn btn-secondary btn-sm" href="/plugins/${p.id}/" target="_blank">${t('open')}</a>`
-                : '';
-
-            const statusBadge = p.enabled
-                ? '<span class="badge badge-admin">' + t('active') + '</span>'
-                : '<span class="badge badge-banned">' + t('disabled') + '</span>';
-
-            const deleteBtn = p.builtin
-                ? ''
-                : `<button class="btn btn-danger btn-sm" data-act="del" data-id="${p.id}" type="button">${t('delete')}</button>`;
-
-            return `
-                <tr draggable="true" data-id="${p.id}">
-                    <td class="drag-cell"><span class="drag-handle"></span></td>
-                    <td>
-                        <span class="plugin-id-wrap">
-                            ${p.icon ? '<img class="plugin-icon" src="' + esc(p.icon) + '" alt="" onerror="this.style.display=\'none\'">' : ''}
-                            <span>${p.id}</span>
-                        </span>
-                        ${p.builtin ? ' <span class="badge badge-user">' + t('builtin') + '</span>' : ''}
-                    </td>
-                    <td>${p.name}</td>
-                    <td>${p.version}</td>
-                    <td>${statusBadge}</td>
-                    <td class="theme-cell">${themeCell}</td>
-                    <td class="page-cell">${pageCell}</td>
-                    <td class="actions-cell">
-                        <button class="btn-icon" data-act="info" data-id="${p.id}" type="button" title="${t('info')}">i</button>
-                        <button class="btn btn-secondary btn-sm" data-act="toggle" data-id="${p.id}" data-enabled="${p.enabled}" type="button">
-                            ${p.enabled ? t('disable') : t('enable')}
-                        </button>
-                        ${deleteBtn}
-                    </td>
-                </tr>
-            `;
-        }).join('');
-
-        const html = `
-            <table class="table" id="plugins-table">
-                <tr><th></th><th>${t('id')}</th><th>${t('name')}</th><th>${t('version')}</th><th>${t('status')}</th><th>${t('theme')}</th><th>${t('page')}</th><th>${t('actions')}</th></tr>
-                ${rows}
-            </table>
-        `;
-        document.getElementById('plugins-table-wrap').innerHTML = wrapTable(html);
-
-        document.querySelectorAll('#plugins-table button').forEach((btn) => {
-            btn.addEventListener('click', onPluginAction);
+        siloUI.rows('plugins-table', data.plugins || [], {
+            key: (p) => p.id,
+            // draggable и data-id принадлежат самой строке: её создаёт siloUI.rows
+            attrs: (p) => ({ draggable: 'true', 'data-id': p.id }),
+            html: pluginRowHTML,
         });
-        wireDrag(document.getElementById('plugins-table'));
     } catch (e) {
         toast(e.message);
     }
@@ -1158,42 +1180,76 @@ async function showPluginInfo(id) {
     }
 }
 
+// wireDrag включает перетаскивание строк плагинов через делегирование:
+// siloUI.rows переиспользует и пересоздаёт строки, поэтому подписки на сами
+// строки накапливались бы и терялись.
 function wireDrag(table) {
-    table.querySelectorAll('tr[draggable]').forEach((row) => {
-        row.addEventListener('dragstart', () => {
-            pluginDragId = row.dataset.id;
-            row.classList.add('dragging');
+    if (!table || table.dataset.dragWired === '1') return;
+    table.dataset.dragWired = '1';
+
+    // clearDragMarks убирает подсветку строк.
+    const clearDragMarks = () => {
+        table.querySelectorAll('tr').forEach((r) => {
+            r.classList.remove('drag-over', 'drag-over-after', 'dragging');
         });
+    };
 
-        row.addEventListener('dragend', () => {
-            pluginDragId = null;
-            table.querySelectorAll('tr').forEach((r) => r.classList.remove('drag-over', 'dragging'));
-        });
+    // dropAfter сообщает, что курсор в нижней половине строки.
+    // Тогда плагин встаёт после неё, и последнюю строку можно занять собой.
+    const dropAfter = (e, row) => {
+        const box = row.getBoundingClientRect();
+        return (e.clientY - box.top) > box.height / 2;
+    };
 
-        row.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            if (!pluginDragId || row.dataset.id === pluginDragId) return;
-            table.querySelectorAll('tr').forEach((r) => r.classList.remove('drag-over'));
-            row.classList.add('drag-over');
-        });
+    table.addEventListener('dragstart', (e) => {
+        const row = e.target.closest('tr[draggable]');
+        if (!row) return;
+        pluginDragId = row.dataset.id;
+        row.classList.add('dragging');
+    });
 
-        row.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            const targetId = row.dataset.id;
-            if (!pluginDragId || pluginDragId === targetId) return;
+    table.addEventListener('dragend', () => {
+        pluginDragId = null;
+        clearDragMarks();
+    });
 
-            const ids = Array.from(table.querySelectorAll('tr[draggable]')).map((r) => r.dataset.id);
-            ids.splice(ids.indexOf(pluginDragId), 1);
-            ids.splice(ids.indexOf(targetId), 0, pluginDragId);
+    table.addEventListener('dragover', (e) => {
+        const row = e.target.closest('tr[draggable]');
+        if (!row) return;
+        e.preventDefault();
+        if (!pluginDragId || row.dataset.id === pluginDragId) return;
 
-            try {
-                await api('/plugins/order', { method: 'PUT', body: JSON.stringify({ order: ids }) });
-                toast(t('saved'));
-                loadPlugins();
-            } catch (err) {
-                toast(err.message);
-            }
-        });
+        const after = dropAfter(e, row);
+        table.querySelectorAll('tr').forEach((r) => r.classList.remove('drag-over', 'drag-over-after'));
+        row.classList.add(after ? 'drag-over-after' : 'drag-over');
+    });
+
+    table.addEventListener('drop', async (e) => {
+        const row = e.target.closest('tr[draggable]');
+        if (!row) return;
+        e.preventDefault();
+
+        const targetId = row.dataset.id;
+        if (!pluginDragId || pluginDragId === targetId) return;
+
+        // Порядок собирается без перетаскиваемой строки, поэтому индекс цели
+        // не сдвигается и совпадает с позицией вставки.
+        const ids = Array.from(table.querySelectorAll('tr[draggable]'))
+            .map((r) => r.dataset.id)
+            .filter((id) => id !== pluginDragId);
+
+        const at = ids.indexOf(targetId);
+        if (at < 0) return;
+
+        ids.splice(dropAfter(e, row) ? at + 1 : at, 0, pluginDragId);
+
+        try {
+            await api('/plugins/order', { method: 'PUT', body: JSON.stringify({ order: ids }) });
+            toast(t('saved'));
+            loadPlugins();
+        } catch (err) {
+            toast(err.message);
+        }
     });
 }
 
@@ -1354,10 +1410,12 @@ async function renderTranscoding() {
             <h2>${t('active_sessions')}</h2>
             <div class="table-wrap">
                 <table class="table">
-                    <tr>
-                        <th>${t('torrent')}</th><th>${t('user')}</th><th>${t('protocol')}</th>
-                        <th>${t('progress')}</th><th>${t('actions')}</th>
-                    </tr>
+                    <thead>
+                        <tr>
+                            <th>${t('torrent')}</th><th>${t('user')}</th><th>${t('protocol')}</th>
+                            <th>${t('progress')}</th><th>${t('actions')}</th>
+                        </tr>
+                    </thead>
                     <tbody id="tp-sessions"></tbody>
                 </table>
             </div>
@@ -1400,11 +1458,13 @@ async function renderTranscoding() {
             <h2>${t('profiles')}</h2>
             <div class="table-wrap">
                 <table class="table">
-                    <tr>
-                        <th>${t('name')}</th><th>${t('owner')}</th>
-                        <th>${t('protocol')}</th><th>${t('codecs')}</th><th>${t('resolution')}</th>
-                        <th>${t('actions')}</th>
-                    </tr>
+                    <thead>
+                        <tr>
+                            <th>${t('name')}</th><th>${t('owner')}</th>
+                            <th>${t('protocol')}</th><th>${t('codecs')}</th><th>${t('resolution')}</th>
+                            <th>${t('actions')}</th>
+                        </tr>
+                    </thead>
                     <tbody id="tp-profiles"></tbody>
                 </table>
             </div>
@@ -1442,9 +1502,9 @@ async function renderTranscoding() {
         }
 
         // Состояние и карточки обновляются точечно
-        statusBox.innerHTML = info && info.enabled
+        siloUI.render(statusBox, info && info.enabled
             ? `<span class="badge badge-ok">${esc(info.version || 'on')}</span>`
-            : `<span class="badge badge-warn">${esc((info && info.reason) || t('disabled'))}</span>`;
+            : `<span class="badge badge-warn">${esc((info && info.reason) || t('disabled'))}</span>`);
 
         siloUI.render(cardsBox, `
             <div class="card"><div class="label">${t('active_sessions')}</div>
@@ -1456,10 +1516,14 @@ async function renderTranscoding() {
         `);
 
         // Строки обновляются по ключу: неизменившиеся не трогаются,
-        // поэтому фокус на кнопке не теряется
-        siloUI.rows(sessionsBox, sessions, {
+        // поэтому фокус на кнопке не теряется.
+        // Пустое состояние - тоже строка с ключом, иначе она застрянет
+        // рядом с данными при следующем обновлении.
+        siloUI.rows(sessionsBox, sessions.length ? sessions : [NO_SESSIONS], {
             key: (s) => s.id,
-            html: (s) => `
+            html: (s) => s.id === NO_SESSIONS.id
+                ? `<td colspan="5">${t('no_active_sessions')}</td>`
+                : `
                     <td>${esc(s.hash ? s.hash.slice(0, 12) : s.id)}</td>
                     <td>${esc(s.user_id)}</td>
                     <td>${esc(s.protocol)}</td>
@@ -1472,18 +1536,16 @@ async function renderTranscoding() {
                     </td>`,
         });
 
-        if (sessions.length === 0) {
-            siloUI.render(sessionsBox, `<tr><td colspan="5">${t('no_active_sessions')}</td></tr>`);
-        }
-
         const canEdit = ME && ME.rank >= 50;
         const isOwner = ME && ME.rank >= 100;
 
         const visible = profiles.filter((p) => p.id !== 'default' || p.is_default);
 
-        siloUI.rows(profilesBox, visible, {
+        siloUI.rows(profilesBox, visible.length ? visible : [NO_PROFILES], {
             key: (p) => p.id,
-            html: (p) => `
+            html: (p) => p.id === NO_PROFILES.id
+                ? `<td colspan="6">${t('no_profiles')}</td>`
+                : `
                     <td>${esc(p.name)}${p.is_default ? ' *' : ''}</td>
                     <td>${esc(p.owner_id)}</td>
                     <td>${esc(p.protocol || '')} / ${esc(p.container || '')}</td>
@@ -1495,10 +1557,6 @@ async function renderTranscoding() {
                         ${canEdit ? `<button class="btn btn-danger btn-sm" data-delete="${esc(p.id)}" type="button">${t('delete')}</button>` : ''}
                     </td>`,
         });
-
-        if (visible.length === 0) {
-            siloUI.render(profilesBox, `<tr><td colspan="6">${t('no_profiles')}</td></tr>`);
-        }
     };
 
     // Обработчики вешаются на контейнер: они переживают перерисовку области

@@ -18,11 +18,17 @@
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
     <aside class="sidebar" id="sidebar">
-        <div class="brand" onclick="location.href='/'" style="cursor:pointer;">
-            <img src="/img/favicon-96x96.png" alt="" class="logo-mini">
-            <span class="brand-name">SILO</span>
+        <div class="sidebar-top">
+            <div class="brand" id="brand-home">
+                <img src="/img/favicon-96x96.png" alt="" class="logo-mini">
+                <span class="brand-name">SILO</span>
+            </div>
         </div>
-        <nav id="nav"></nav>
+
+        <div class="sidebar-scroll">
+            <nav id="nav" class="nav-list"></nav>
+        </div>
+
         <div class="sidebar-footer">
             <select class="lang-select" id="lang-select" title="Language"></select>
             <span id="whoami"></span>
@@ -40,7 +46,7 @@
 </div>
 
 <div id="modal-root"></div>
-<div id="toast" class="toast"></div>
+<div id="toast-root" class="toast-root"></div>
 <script src="js/app.js"></script>
 </body>
 </html>
