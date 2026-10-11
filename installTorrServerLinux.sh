@@ -89,6 +89,8 @@ declare -A MSG_EN=(
   [install_ffprobe]="Install ffprobe? It is required to save the playback position so players can resume where you stopped"
   [ffprobe_found]="ffprobe found, saving playback position is available"
   [ffprobe_skipped]="Skipped. Saving playback position stays disabled until ffprobe is installed"
+  [ffprobe_unavailable]="ffmpeg is not in the enabled repositories (on RHEL-based systems it comes from RPM Fusion). Saving playback position stays disabled until ffprobe is installed"
+  [ffprobe_failed]="Could not install ffmpeg. Saving playback position stays disabled until ffprobe is installed"
 
   # User management
   [user_exists]="User %s exists!"
@@ -230,6 +232,8 @@ declare -A MSG_RU=(
   [install_ffprobe]="Установить ffprobe? Он нужен для сохранения позиции воспроизведения, чтобы плееры продолжали с места остановки"
   [ffprobe_found]="ffprobe найден, сохранение позиции воспроизведения доступно"
   [ffprobe_skipped]="Пропущено. Сохранение позиции воспроизведения будет недоступно, пока не установлен ffprobe"
+  [ffprobe_unavailable]="ffmpeg нет в подключённых репозиториях (в системах на базе RHEL он есть в RPM Fusion). Сохранение позиции воспроизведения будет недоступно, пока не установлен ffprobe"
+  [ffprobe_failed]="Не удалось установить ffmpeg. Сохранение позиции воспроизведения будет недоступно, пока не установлен ffprobe"
 
   # User management
   [user_exists]="пользователь %s найден!"
@@ -1242,14 +1246,30 @@ installFfprobe() {
     return
   fi
 
-  if [[ -e /etc/debian_version ]]; then
-    installPackages deb ffmpeg
-  elif isAltLinux; then
-    installPackages apt-rpm ffmpeg
-  elif [[ -e /etc/arch-release ]]; then
-    installPackages arch ffmpeg
-  elif [[ -e /etc/system-release ]]; then
-    installPackages rpm "$(getRpmPackageManager)" ffmpeg
+  # Optional: TorrServer runs without it, so a missing package must never stop the install.
+  # On RHEL-based systems ffmpeg lives in RPM Fusion, which is not enabled by default.
+  if [[ -e /etc/system-release ]] && ! isAltLinux && [[ ! -e /etc/debian_version ]] && [[ ! -e /etc/arch-release ]]; then
+    local pm
+    pm=$(getRpmPackageManager)
+    if ! "$pm" -q list available ffmpeg >/dev/null 2>&1 && ! "$pm" -q list installed ffmpeg >/dev/null 2>&1; then
+      echo " $(msg ffprobe_unavailable)"
+      return
+    fi
+  fi
+
+  # installPackages exits on failure; a subshell keeps that from ending the installer.
+  if ! (
+    if [[ -e /etc/debian_version ]]; then
+      installPackages deb ffmpeg
+    elif isAltLinux; then
+      installPackages apt-rpm ffmpeg
+    elif [[ -e /etc/arch-release ]]; then
+      installPackages arch ffmpeg
+    elif [[ -e /etc/system-release ]]; then
+      installPackages rpm "$(getRpmPackageManager)" ffmpeg
+    fi
+  ); then
+    echo " $(msg ffprobe_failed)"
   fi
 }
 
