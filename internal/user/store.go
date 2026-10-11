@@ -39,7 +39,7 @@ func (s *Store) SaveUser(u *User) error {
 		bNames := tx.Bucket(database.BucketUsernames)
 		bTokens := tx.Bucket(database.BucketUserTokens)
 
-		// 1. Автоинкремент ID через NextSequence bbolt
+		// Автоинкремент ID через NextSequence bbolt
 		if u.ID == "" {
 			seq, err := bUsers.NextSequence()
 			if err != nil {
@@ -48,19 +48,19 @@ func (s *Store) SaveUser(u *User) error {
 			u.ID = fmt.Sprintf("u_%d", seq) // "u_1", "u_2" и т.д.
 		}
 
-		// 2. Проверка уникальности токена
+		// Проверка уникальности токена
 		if u.APIToken != "" {
 			if existingID := bTokens.Get([]byte(u.APIToken)); existingID != nil && string(existingID) != u.ID {
 				return ErrTokenAlreadyExists
 			}
 		}
 
-		// 3. Проверка уникальности логина
+		// Проверка уникальности логина
 		if existingID := bNames.Get([]byte(u.Username)); existingID != nil && string(existingID) != u.ID {
 			return ErrUserAlreadyExists
 		}
 
-		// 4. Зачищаем старые индексы при обновлении пользователя
+		// Зачистка старых индексов при обновлении пользователя
 		if oldBytes := bUsers.Get([]byte(u.ID)); oldBytes != nil {
 			var oldUser User
 			if err := json.Unmarshal(oldBytes, &oldUser); err == nil {
@@ -73,7 +73,7 @@ func (s *Store) SaveUser(u *User) error {
 			}
 		}
 
-		// 5. Сериализуем и сохраняем
+		// Сериализация и сохранение
 		data, err := json.Marshal(u)
 		if err != nil {
 			return err
@@ -83,7 +83,7 @@ func (s *Store) SaveUser(u *User) error {
 			return err
 		}
 
-		// 6. Записываем обновленные индексы
+		// Запись обновленных индексов
 		if err := bNames.Put([]byte(u.Username), []byte(u.ID)); err != nil {
 			return err
 		}
@@ -179,7 +179,7 @@ func (s *Store) DeleteUser(userID string) ([]string, error) {
 		bRefs := tx.Bucket(database.BucketTorrentRefs)
 		bTorrents := tx.Bucket(database.BucketTorrents)
 
-		// 1. Получаем пользователя для очистки индексов
+		// Чтение пользователя для очистки индексов
 		userBytes := bUsers.Get([]byte(userID))
 		if userBytes == nil {
 			return ErrUserNotFound
@@ -187,7 +187,7 @@ func (s *Store) DeleteUser(userID string) ([]string, error) {
 		var u User
 		_ = json.Unmarshal(userBytes, &u)
 
-		// 2. Сначала считываем торренты и ключи для безопасного удаления
+		// Сначала считываем торренты и ключи для безопасного удаления
 		prefix := []byte(userID + ":")
 		c := bUT.Cursor()
 
@@ -203,7 +203,7 @@ func (s *Store) DeleteUser(userID string) ([]string, error) {
 			keysToDelete = append(keysToDelete, bytes.Clone(k))
 		}
 
-		// 3. Безопасно удаляем привязки и уменьшаем счетчики ссылок
+		// Безопасное удаление привязок и уменьшение счетчиков ссылок
 		for _, k := range keysToDelete {
 			if err := bUT.Delete(k); err != nil {
 				return err
@@ -218,7 +218,7 @@ func (s *Store) DeleteUser(userID string) ([]string, error) {
 			}
 		}
 
-		// 4. Удаляем индексы и самого пользователя
+		// Удаление индексов и самого пользователя
 		_ = bNames.Delete([]byte(u.Username))
 		if u.APIToken != "" {
 			_ = bTokens.Delete([]byte(u.APIToken))
@@ -357,6 +357,17 @@ func (s *Store) SetFileViewedStatus(userID, hash string, fileIdx int, viewed boo
 		ut.UnmarkFileViewed(fileIdx)
 	}
 
+	return s.AddUserTorrent(ut)
+}
+
+// SetAllFilesViewedStatus отмечает или снимает отметку у всех файлов раздачи
+func (s *Store) SetAllFilesViewedStatus(userID, hash string, fileIdx []int, viewed bool) error {
+	ut, err := s.GetUserTorrent(userID, hash)
+	if err != nil {
+		return err
+	}
+
+	ut.SetAllFilesViewed(fileIdx, viewed)
 	return s.AddUserTorrent(ut)
 }
 

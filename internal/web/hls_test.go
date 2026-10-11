@@ -597,3 +597,47 @@ func TestHLSKeyIncludesFingerprint(t *testing.T) {
 		t.Error("different user must produce a different key")
 	}
 }
+
+// TestHLSSegmentMarksViewed проверяет, что отдача сегмента отмечает файл
+// просмотренным: раньше отметку ставил только прямой стрим.
+func TestHLSSegmentMarksViewed(t *testing.T) {
+	h := setupHLS(t)
+
+	// До просмотра отметок нет
+	before, err := h.env.server.userSvc.GetUserTorrent(h.env.owner.ID, h.env.hash)
+	if err != nil {
+		t.Fatalf("GetUserTorrent: %v", err)
+	}
+	if before.IsFileViewed(0) {
+		t.Fatal("file must not be marked viewed before playback")
+	}
+
+	segmentURL := h.startAndFirstSegment(t)
+
+	resp, err := http.Get(segmentURL)
+	if err != nil {
+		t.Fatalf("segment request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("segment status = %d, want 200", resp.StatusCode)
+	}
+	_, _ = io.Copy(io.Discard, resp.Body)
+
+	after, err := h.env.server.userSvc.GetUserTorrent(h.env.owner.ID, h.env.hash)
+	if err != nil {
+		t.Fatalf("GetUserTorrent after playback: %v", err)
+	}
+	if !after.IsFileViewed(0) {
+		t.Error("file 0 must be marked viewed after a segment was served")
+	}
+
+	// Отметка видна и в статусе раздачи, который получает интерфейс
+	status, err := h.env.server.torrentMgr.GetTorrentStatus(h.env.owner, h.env.hash)
+	if err != nil {
+		t.Fatalf("GetTorrentStatus: %v", err)
+	}
+	if len(status.ViewedFiles) != 1 || status.ViewedFiles[0] != 0 {
+		t.Errorf("status viewed_files = %v, want [0]", status.ViewedFiles)
+	}
+}

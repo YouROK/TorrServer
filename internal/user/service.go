@@ -57,7 +57,7 @@ func NewService(store *Store, cfg *config.Config) *Service {
 		if err := store.SaveUser(owner); err != nil {
 			log.Errorf("[User] Failed to save Owner profile to database: %v", err)
 		} else {
-			log.Infof("[User] Initialized Owner profile (API token: %s)", token)
+			log.Info("[User] Initialized Owner profile")
 		}
 	}
 	s.ownerU = owner
@@ -315,7 +315,7 @@ func (s *Service) DeleteUser(actor *User, targetID string) error {
 
 	// Сигнализируем движку выгрузить эти торренты из RAM памяти
 	for _, hash := range orphanedHashes {
-		log.Infof("[Torrent] Torrent '%s' has no owners left. Dropping from memory...", hash)
+		log.Infof("[Torrent] Torrent '%s' has no owners left, dropping from memory", hash)
 		s.bus.Emit("torrent:drop", hash)
 	}
 
@@ -381,7 +381,7 @@ func (s *Service) RemoveTorrent(u *User, hash string) error {
 
 	// Если этот торрент не держит больше ни один другой пользователь выгружаем из RAM
 	if isLastOwner {
-		log.Infof("[Torrent] Torrent '%s' has no owners left. Dropping from RAM cache...", hash)
+		log.Infof("[Torrent] Torrent '%s' has no owners left, dropping from RAM cache", hash)
 		s.bus.Emit("torrent:drop", hash)
 	}
 
@@ -401,6 +401,11 @@ func (s *Service) SetFileViewed(u *User, hash string, fileIdx int, viewed bool) 
 		"viewed":   viewed,
 	})
 	return nil
+}
+
+// SetAllFilesViewed отмечает или снимает отметку у всех файлов раздачи
+func (s *Service) SetAllFilesViewed(u *User, hash string, fileIdx []int, viewed bool) error {
+	return s.store.SetAllFilesViewedStatus(u.ID, hash, fileIdx, viewed)
 }
 
 // ListTorrents возвращает список торрентов пользователя

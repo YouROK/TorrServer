@@ -14,6 +14,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// markFileViewed отмечает файл просмотренным; сбой отметки не мешает отдаче.
+func (s *Server) markFileViewed(u *user.User, hashHex string, fileIdx int) {
+	if u == nil {
+		return
+	}
+	if err := s.torrentMgr.SetFileViewed(u, hashHex, fileIdx, true); err != nil {
+		log.Warnf("[Web] Failed to mark file %d as viewed: %v", fileIdx, err)
+	}
+}
+
 // handleStream реализует HTTP-стриминг видео с поддержкой Seek и DLNA
 func (s *Server) handleStream(c *gin.Context) {
 	hashHex := c.Param("hash")
@@ -43,9 +53,7 @@ func (s *Server) handleStream(c *gin.Context) {
 	// Гарантируем закрытие ридера и отметку о просмотре
 	defer func() {
 		_ = reader.Close()
-		if markErr := s.torrentMgr.SetFileViewed(currentUser, hashHex, fileIdx, true); markErr != nil {
-			log.Warnf("[Web] Failed to mark file %d as viewed: %v", fileIdx, markErr)
-		}
+		s.markFileViewed(currentUser, hashHex, fileIdx)
 	}()
 
 	// Определяем MIME-тип по расширению файла

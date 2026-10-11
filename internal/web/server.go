@@ -123,7 +123,7 @@ func (s *Server) SetPluginManager(pm *plugin.Manager) {
 		pm.I18n().SeedCore(enData, nil)
 		log.Warnf("[Web] Core i18n seeded: en only (ru error: %v)", ruErr)
 	} else {
-		log.Errorf("[Web] failed to read core lang files: en=%v, ru=%v", enErr, ruErr)
+		log.Errorf("[Web] Failed to read core lang files: en=%v, ru=%v", enErr, ruErr)
 	}
 
 	log.Info("[Web] Plugin manager linked successfully")
@@ -172,6 +172,7 @@ func (s *Server) registerRoutes() {
 		api.GET("/torrents/:hash/cache", s.handleGetCache)
 		api.GET("/torrents/:hash/peers", s.handleGetPeers)
 		api.POST("/torrents/:hash/files/:idx/viewed", s.handleSetFileViewed)
+		api.POST("/torrents/:hash/viewed", s.handleSetAllFilesViewed)
 		api.POST("/torrents/:hash/files/:idx/preload", s.handlePreloadTorrent)
 		api.POST("/torrents/:hash/wake", s.handleWakeTorrent)
 
@@ -308,7 +309,7 @@ func (s *Server) startStreamJanitor() {
 }
 
 func (s *Server) Stop(ctx context.Context) error {
-	log.Info("[Web] Stopping HTTP server...")
+	log.Info("[Web] Stopping HTTP server")
 	s.StopAllHLS()
 
 	// Фоновые задачи останавливаются после остановки сервера, но до освобождения ресурсов

@@ -80,6 +80,35 @@ func (ut *UserTorrent) UnmarkFileViewed(fileIdx int) {
 	ut.ViewedFiles = filtered
 }
 
+// SetAllFilesViewed отмечает или снимает отметку сразу у всех файлов.
+// fileIdx - индексы файлов раздачи, они берутся из метаданных.
+func (ut *UserTorrent) SetAllFilesViewed(fileIdx []int, viewed bool) {
+	if !viewed {
+		ut.ViewedFiles = []int{}
+		return
+	}
+
+	// Уже отмеченные сохраняются: индексы, которых нет в текущем списке файлов,
+	// не трогаем, иначе повторный вызов терял бы часть отметок
+	seen := make(map[int]bool, len(ut.ViewedFiles)+len(fileIdx))
+	merged := make([]int, 0, len(ut.ViewedFiles)+len(fileIdx))
+
+	for _, idx := range ut.ViewedFiles {
+		if !seen[idx] {
+			seen[idx] = true
+			merged = append(merged, idx)
+		}
+	}
+	for _, idx := range fileIdx {
+		if !seen[idx] {
+			seen[idx] = true
+			merged = append(merged, idx)
+		}
+	}
+
+	ut.ViewedFiles = merged
+}
+
 // IsFileViewed проверяет, просмотрен ли файл
 func (ut *UserTorrent) IsFileViewed(fileIdx int) bool {
 	for _, idx := range ut.ViewedFiles {

@@ -128,6 +128,8 @@ func (s *Server) handleTranscodeStream(c *gin.Context) {
 
 	// Доступ живёт до конца потока: ffmpeg читает файл раздачи всё это время
 	defer s.sourceRegistry.Release(lease.ID)
+
+	s.markFileViewed(currentUser, hashHex, fileIdx)
 	s.serveProgressiveStream(c, session)
 }
 

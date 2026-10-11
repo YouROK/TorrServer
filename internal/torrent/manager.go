@@ -64,14 +64,14 @@ func NewManager(engine *Engine, store *Store, userSvc *user.Service) *Manager {
 		},
 	}
 
-	// 1. Слушаем шину: если раздача больше никому не принадлежит, удаляем из БД и RAM
+	// Подписка на шину: раздача без владельцев удаляется из БД и RAM
 	m.bus.On("torrent:drop", func(payload any) {
 		if hashStr, ok := payload.(string); ok {
 			m.handleTorrentDrop(hashStr)
 		}
 	})
 
-	// 2. Запускаем фоновый воркер автозасыпания неактивных раздач
+	// Фоновый воркер автозасыпания неактивных раздач
 	m.tasks.Go(func(ctx context.Context) { m.startAutoSleepWorker(ctx) })
 
 	return m
@@ -244,6 +244,9 @@ func (m *Manager) WakeTorrent(u *user.User, hashHex string) error {
 func (m *Manager) GetTorrentStatus(u *user.User, hashHex string) (*TorrentStatus, error) {
 	hash := metainfo.NewHashFromHex(hashHex)
 
+	// Личные данные нужны в обеих ветках: название, постер и отметки просмотра
+	ut, _ := m.userSvc.GetUserTorrent(u.ID, hashHex)
+
 	// Если активен в RAM - отдаем живую статистику (она сама подтянет личные данные юзера)
 	sess, ok := m.engine.Get(hash)
 	if ok {
@@ -264,6 +267,9 @@ func (m *Manager) GetTorrentStatus(u *user.User, hashHex string) (*TorrentStatus
 		}
 		userTitle := sess.UserTitle(u.ID)
 		st.Title = ResolveTitle(userTitle, metaName, hashHex)
+		if ut != nil {
+			st.ViewedFiles = ut.ViewedFiles
+		}
 		// В torrs-ссылку техническое название не пишем: имя из метаданных есть у получателя
 		st.Torrs = packTorrs(hashHex, ResolveTitle(userTitle, metaName, ""), st.Poster, st.Category, st.TorrentSize, flattenTrackers(sess.Trackers()))
 		return st, nil
@@ -275,10 +281,8 @@ func (m *Manager) GetTorrentStatus(u *user.User, hashHex string) (*TorrentStatus
 		return nil, err
 	}
 
-	// И достаем личные данные пользователя (название, постер)
-	ut, err := m.userSvc.GetUserTorrent(u.ID, hashHex)
-	if err != nil {
-		// Если торрент есть в базе, но не принадлежит этому юзеру
+	// Торрент есть в базе, но не принадлежит этому юзеру
+	if ut == nil {
 		return nil, fmt.Errorf("torrent not found in your library")
 	}
 
@@ -295,6 +299,7 @@ func (m *Manager) GetTorrentStatus(u *user.User, hashHex string) (*TorrentStatus
 		TorrentSize: rec.Size,
 		FileStats:   rec.Files,
 		Timestamp:   rec.Timestamp,
+		ViewedFiles: ut.ViewedFiles,
 		Torrs:       packTorrs(rec.Hash, title, ut.Poster, ut.Category, rec.Size, rec.Trackers),
 	}, nil
 }
@@ -411,7 +416,7 @@ func (m *Manager) checkInactiveSessions() {
 	for _, sess := range sessions {
 		if sess.ActiveReaders() == 0 && now.Sub(sess.LastActive()) > m.inactivityTimeout {
 			hash := sess.Hash()
-			log.Infof("[Torrent Manager] Session %s inactive for %v. Putting to sleep (purging RAM)...", hash.HexString(), m.inactivityTimeout)
+			log.Infof("[Torrent Manager] Session %s inactive for %v, putting to sleep (purging RAM)", hash.HexString(), m.inactivityTimeout)
 
 			m.engine.Stop(hash)
 			m.bus.Emit("torrent:idle", hash.HexString())
@@ -437,7 +442,7 @@ func (m *Manager) Close() {
 }
 
 // ============================================================================
-// Torrents
+// Раздачи
 // ============================================================================
 
 // ListTorrents возвращает список всех раздач пользователя с их актуальными статусами
@@ -463,6 +468,22 @@ func (m *Manager) RemoveTorrent(u *user.User, hashHex string) error {
 
 func (m *Manager) SetFileViewed(u *user.User, hashHex string, fileIdx int, viewed bool) error {
 	return m.userSvc.SetFileViewed(u, hashHex, fileIdx, viewed)
+}
+
+// SetAllFilesViewed отмечает или снимает отметку у всех файлов раздачи.
+// Индексы берутся из статуса: он отдаёт файлы и для активной, и для спящей раздачи.
+func (m *Manager) SetAllFilesViewed(u *user.User, hashHex string, viewed bool) error {
+	st, err := m.GetTorrentStatus(u, hashHex)
+	if err != nil {
+		return err
+	}
+
+	fileIdx := make([]int, 0, len(st.FileStats))
+	for _, f := range st.FileStats {
+		fileIdx = append(fileIdx, f.Id)
+	}
+
+	return m.userSvc.SetAllFilesViewed(u, hashHex, fileIdx, viewed)
 }
 
 func (m *Manager) SetBlocklistText(text string) error {
@@ -614,7 +635,7 @@ func (m *Manager) ImportLibrary(u *user.User, lines []string) (int, error) {
 
 		th, err := torrshash.Unpack(line)
 		if err != nil {
-			log.Warnf("[Torrent Manager] import: failed to unpack line: %v", err)
+			log.Warnf("[Torrent Manager] Failed to unpack import line: %v", err)
 			continue
 		}
 
@@ -624,7 +645,7 @@ func (m *Manager) ImportLibrary(u *user.User, lines []string) (int, error) {
 		}
 
 		if err := m.userSvc.AddTorrent(u, th.Hash, th.Title(), th.Poster(), CategoryKey(th.Category())); err != nil {
-			log.Warnf("[Torrent Manager] import: failed to add %s: %v", th.Hash, err)
+			log.Warnf("[Torrent Manager] Failed to add imported torrent %s: %v", th.Hash, err)
 			continue
 		}
 

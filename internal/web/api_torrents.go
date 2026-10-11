@@ -334,6 +334,28 @@ func (s *Server) handleSetFileViewed(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "updated"})
 }
 
+// handleSetAllFilesViewed отмечает или снимает отметку у всех файлов раздачи
+func (s *Server) handleSetAllFilesViewed(c *gin.Context) {
+	val, _ := c.Get("user")
+	currentUser := val.(*user.User)
+	hashHex := c.Param("hash")
+
+	var req struct {
+		Viewed bool `json:"viewed"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request format"})
+		return
+	}
+
+	if err := s.torrentMgr.SetAllFilesViewed(currentUser, hashHex, req.Viewed); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "updated", "viewed": req.Viewed})
+}
+
 // handleWakeTorrent явно будит торрент в движок (только владелец карточки)
 func (s *Server) handleWakeTorrent(c *gin.Context) {
 	val, _ := c.Get("user")

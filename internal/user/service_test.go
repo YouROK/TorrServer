@@ -36,7 +36,7 @@ func setupTestEnv(t *testing.T, ownerPassword string) (*Service, func()) {
 }
 
 func TestOwnerBootstrap(t *testing.T) {
-	// 1. Тестируем режим БЕЗ пароля (свободный вход)
+	// Режим БЕЗ пароля (свободный вход)
 	svcNoAuth, cleanup := setupTestEnv(t, "")
 	defer cleanup()
 
@@ -49,7 +49,7 @@ func TestOwnerBootstrap(t *testing.T) {
 		t.Errorf("Expected user to be Owner, got rank: %d", u.Rank)
 	}
 
-	// 2. Тестируем режим С паролем
+	// Режим С паролем
 	svcWithAuth, cleanupAuth := setupTestEnv(t, "supersecret")
 	defer cleanupAuth()
 
@@ -160,19 +160,19 @@ func TestUserTorrentsAndViewedFiles(t *testing.T) {
 
 	hash := "abcd1234efgh"
 
-	// 1. Пользователь u1 добавляет раздачу со своим постером и названием (например, из Lampa)
+	// Пользователь u1 добавляет раздачу со своим постером и названием (например, из Lampa)
 	err := svc.AddTorrent(u1, hash, "[Lampa] Interstellar 4K", "http://lampa.jpg", "Movies")
 	if err != nil {
 		t.Fatalf("Failed to add torrent for u1: %v", err)
 	}
 
-	// 2. Пользователь u2 добавляет ТОТ ЖЕ САМЫЙ торрент со своим названием и постером (например, из NUM)
+	// Пользователь u2 добавляет ТОТ ЖЕ САМЫЙ торрент со своим названием и постером (например, из NUM)
 	err = svc.AddTorrent(u2, hash, "[NUM] Dune & Interstellar", "http://num.jpg", "Sci-Fi")
 	if err != nil {
 		t.Fatalf("Failed to add torrent for u2: %v", err)
 	}
 
-	// 3. Проверяем изоляцию метаданных через GetUserTorrent
+	// Изоляция метаданных через GetUserTorrent
 	ut1, err := svc.GetUserTorrent(u1.ID, hash)
 	if err != nil {
 		t.Fatalf("GetUserTorrent failed for u1: %v", err)
@@ -189,7 +189,7 @@ func TestUserTorrentsAndViewedFiles(t *testing.T) {
 		t.Errorf("Metadata mismatch for u2: %+v", ut2)
 	}
 
-	// 4. Пользователь u1 смотрит серию #0 и #2
+	// Пользователь u1 смотрит серию #0 и #2
 	_ = svc.SetFileViewed(u1, hash, 0, true)
 	_ = svc.SetFileViewed(u1, hash, 2, true)
 
@@ -208,7 +208,7 @@ func TestUserTorrentsAndViewedFiles(t *testing.T) {
 		t.Errorf("Expected 0 viewed files for u2, got %v", list2[0].ViewedFiles)
 	}
 
-	// 5. Удаление торрента и счетчик ссылок
+	// Удаление торрента и счетчик ссылок;
 	// u1 удаляет торрент - раздача должна остаться у u2
 	err = svc.RemoveTorrent(u1, hash)
 	if err != nil {
@@ -233,9 +233,8 @@ func TestUserTorrentsAndViewedFiles(t *testing.T) {
 	}
 }
 
-// Регрессия: после регенерации токена Owner логин обязан вернуть ЖИВОЙ токен.
-// Раньше Login отдавал копию из памяти (s.ownerU), из-за чего после смены
-// токена вход был "успешным", но выдавал мёртвый токен - бесконечная петля /login.
+// Проверяет, что после регенерации токена Owner логин отдаёт живой токен,
+// а не копию из памяти.
 func TestOwnerTokenStaysInSyncAfterRegenerate(t *testing.T) {
 	svc, cleanup := setupTestEnv(t, "supersecret")
 	defer cleanup()
@@ -415,5 +414,40 @@ func TestChangePasswordTooLong(t *testing.T) {
 	ok := strings.Repeat("y", 72)
 	if err := svc.ChangePassword(owner, bob.ID, ok); err != nil {
 		t.Errorf("72-byte password must be accepted, got: %v", err)
+	}
+}
+
+// TestUserTorrentSetAllFilesViewed проверяет массовую отметку на уровне модели:
+// повторный вызов не должен терять уже отмеченные файлы.
+func TestUserTorrentSetAllFilesViewed(t *testing.T) {
+	ut := &UserTorrent{ViewedFiles: []int{5}}
+
+	// Отмечаем файлы 0..2: индекс 5 не входит в список, но должен сохраниться
+	ut.SetAllFilesViewed([]int{0, 1, 2}, true)
+
+	want := map[int]bool{0: true, 1: true, 2: true, 5: true}
+	if len(ut.ViewedFiles) != len(want) {
+		t.Fatalf("ViewedFiles = %v, want %d элементов", ut.ViewedFiles, len(want))
+	}
+	for _, idx := range ut.ViewedFiles {
+		if !want[idx] {
+			t.Errorf("лишний индекс %d в %v", idx, ut.ViewedFiles)
+		}
+	}
+
+	// Повторный вызов не дублирует и не теряет
+	before := len(ut.ViewedFiles)
+	ut.SetAllFilesViewed([]int{0, 1, 2}, true)
+	if len(ut.ViewedFiles) != before {
+		t.Errorf("повторный вызов изменил список: %v", ut.ViewedFiles)
+	}
+	if !ut.IsFileViewed(5) {
+		t.Error("индекс 5 потерян при повторном вызове")
+	}
+
+	// Снятие очищает всё
+	ut.SetAllFilesViewed([]int{0, 1, 2}, false)
+	if len(ut.ViewedFiles) != 0 {
+		t.Errorf("после снятия ViewedFiles = %v, want пусто", ut.ViewedFiles)
 	}
 }

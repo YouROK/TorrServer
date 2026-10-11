@@ -52,7 +52,7 @@ func createSyntheticSpec(t *testing.T) *torrent.TorrentSpec {
 func setupManagerTest(t *testing.T) (*Manager, *user.Service, *Engine, *Store, *user.User) {
 	t.Helper()
 
-	// 1. Изолированная временная база данных bbolt
+	// Изолированная временная база данных bbolt
 	dbPath := filepath.Join(t.TempDir(), "test_manager.db")
 	db, err := database.Open(dbPath)
 	if err != nil {
@@ -60,7 +60,7 @@ func setupManagerTest(t *testing.T) (*Manager, *user.Service, *Engine, *Store, *
 	}
 	t.Cleanup(func() { _ = db.Close() })
 
-	// 2. Сервис пользователей
+	// Сервис пользователей
 	cfg := config.DefaultConfig()
 	userStore := user.NewStore(db)
 	userSvc := user.NewService(userStore, cfg)
@@ -71,7 +71,7 @@ func setupManagerTest(t *testing.T) (*Manager, *user.Service, *Engine, *Store, *
 		t.Fatalf("Failed to authenticate owner: %v", err)
 	}
 
-	// 3. Чистый движок
+	// Чистый движок
 	engineCfg := DefaultConfig()
 	engineCfg.ListenPort = 0
 	engineCfg.DisableDHT = true
@@ -88,7 +88,7 @@ func setupManagerTest(t *testing.T) (*Manager, *user.Service, *Engine, *Store, *
 	}
 	t.Cleanup(func() { _ = engine.Close() })
 
-	// 4. Менеджер торрентов
+	// Менеджер торрентов
 	tStore := NewStore(db)
 	mgr := NewManager(engine, tStore, userSvc)
 	t.Cleanup(func() { mgr.Close() })
@@ -104,7 +104,7 @@ func TestManager_TrackerPolicy(t *testing.T) {
 		Trackers: [][]string{{"udp://initial.tracker:1337/announce"}},
 	}
 
-	// 1. Режим Replace: заменяем трекеры
+	// Режим Replace: заменяем трекеры
 	mgr.SetTrackerPolicy(TrackerModeReplace, []string{"udp://custom.tracker:1337/announce"})
 	mgr.applyTrackerPolicy(spec)
 
@@ -112,7 +112,7 @@ func TestManager_TrackerPolicy(t *testing.T) {
 		t.Errorf("Expected replaced tracker, got: %v", spec.Trackers)
 	}
 
-	// 2. Режим Append: подмешиваем трекер
+	// Режим Append: подмешиваем трекер
 	mgr.SetTrackerPolicy(TrackerModeAppend, []string{"udp://second.tracker:1337/announce"})
 	mgr.applyTrackerPolicy(spec)
 
@@ -120,7 +120,7 @@ func TestManager_TrackerPolicy(t *testing.T) {
 		t.Errorf("Expected 2 trackers after append, got: %d", len(spec.Trackers))
 	}
 
-	// 3. Режим Remove: удаляем все трекеры (чистый DHT)
+	// Режим Remove: удаляем все трекеры (чистый DHT)
 	mgr.SetTrackerPolicy(TrackerModeRemove, nil)
 	mgr.applyTrackerPolicy(spec)
 
@@ -136,7 +136,7 @@ func TestManager_AddAndUnifiedStatus(t *testing.T) {
 	spec := createSyntheticSpec(t)
 	hashHex := spec.InfoHash.HexString()
 
-	// 1. Добавляем торрент с сохранением в базу (saveToDB = true)
+	// Добавляем торрент с сохранением в базу (saveToDB = true)
 	st, err := mgr.AddTorrent(owner, spec, "Test Series S01", "http://poster.jpg", "Series", true)
 	if err != nil {
 		t.Fatalf("AddTorrent failed: %v", err)
@@ -146,7 +146,7 @@ func TestManager_AddAndUnifiedStatus(t *testing.T) {
 		t.Errorf("Invalid status returned: %+v", st)
 	}
 
-	// 2. Проверяем, что торрент активен в оперативной памяти (Engine)
+	// Торрент активен в оперативной памяти (Engine)
 	if _, inRAM := engine.Get(spec.InfoHash); !inRAM {
 		t.Errorf("Session should be active in RAM engine")
 	}
@@ -154,7 +154,7 @@ func TestManager_AddAndUnifiedStatus(t *testing.T) {
 	// Даем 100 мс на сохранение метаданных в базу в фоновой горутине
 	time.Sleep(100 * time.Millisecond)
 
-	// 3. Проверяем, что физическая карточка создана в базе данных bbolt
+	// Физическая карточка создана в базе данных bbolt
 	rec, err := tStore.Get(hashHex)
 	if err != nil {
 		t.Fatalf("Torrent card missing from database: %v", err)
@@ -163,7 +163,7 @@ func TestManager_AddAndUnifiedStatus(t *testing.T) {
 		t.Errorf("Database record mismatch: %+v", rec)
 	}
 
-	// 4. ТЕСТ СНА: Усыпляем торрент (останавливаем только в Engine RAM)
+	// Сон: остановка только в Engine RAM
 	engine.Stop(spec.InfoHash)
 
 	// Убеждаемся, что в RAM его больше нет
@@ -171,7 +171,7 @@ func TestManager_AddAndUnifiedStatus(t *testing.T) {
 		t.Errorf("Session should not be in RAM after Stop")
 	}
 
-	// 5. ЕДИНЫЙ СТАТУС: Запрашиваем статус спящего торрента для Owner
+	// Единый статус спящего торрента для Owner
 	sleepSt, err := mgr.GetTorrentStatus(owner, hashHex)
 	if err != nil {
 		t.Fatalf("GetTorrentStatus failed for sleeping torrent: %v", err)
@@ -193,21 +193,21 @@ func TestManager_EphemeralTorrent(t *testing.T) {
 	spec := createSyntheticSpec(t)
 	hashHex := spec.InfoHash.HexString()
 
-	// 1. Добавляем торрент БЕЗ сохранения в базу (saveToDB = false)
+	// Торрент БЕЗ сохранения в базу (saveToDB = false)
 	_, err := mgr.AddTorrent(owner, spec, "Lampa Ephemeral Movie", "", "", false)
 	if err != nil {
 		t.Fatalf("AddTorrent failed: %v", err)
 	}
 
-	// 2. Проверяем, что он крутится в RAM
+	// Раздача крутится в RAM
 	if _, inRAM := engine.Get(spec.InfoHash); !inRAM {
 		t.Errorf("Ephemeral session should be active in RAM")
 	}
 
-	// 3. Останавливаем (симулируем выключение плеера и автозасыпание)
+	// Остановка (симуляция выключения плеера и автозасыпания)
 	engine.Stop(spec.InfoHash)
 
-	// 4. Проверяем базу данных: ТАМ ДОЛЖНО БЫТЬ ПУСТО!
+	// В базе данных должно быть пусто
 	_, err = tStore.Get(hashHex)
 	if err != ErrTorrentNotFound {
 		t.Errorf("Ephemeral torrent leaked into database! Expected ErrTorrentNotFound, got: %v", err)
@@ -221,20 +221,20 @@ func TestManager_WakeUpOnStream(t *testing.T) {
 	spec := createSyntheticSpec(t)
 	hashHex := spec.InfoHash.HexString()
 
-	// 1. Добавляем торрент и ждем сохранения (saveToDB = true)
+	// Добавляем торрент и ждем сохранения (saveToDB = true)
 	_, err := mgr.AddTorrent(owner, spec, "Wake Up Test", "", "", true)
 	if err != nil {
 		t.Fatalf("AddTorrent failed: %v", err)
 	}
 	time.Sleep(100 * time.Millisecond)
 
-	// 2. Усыпляем торрент (полная выгрузка из RAM)
+	// Сон торрента - полная выгрузка из RAM
 	engine.Stop(spec.InfoHash)
 	if _, inRAM := engine.Get(spec.InfoHash); inRAM {
 		t.Fatalf("Failed to stop session in RAM")
 	}
 
-	// 3. Плеер запрашивает стрим спящего файла: менеджер ДОЛЖЕН САМ ЕГО РАЗБУДИТЬ!
+	// Стрим спящего файла должен разбудить торрент
 	reader, fileStat, err := mgr.GetStreamReader(owner, hashHex, 0)
 	if err != nil {
 		t.Fatalf("GetStreamReader failed to wake up torrent: %v", err)
@@ -245,7 +245,7 @@ func TestManager_WakeUpOnStream(t *testing.T) {
 		t.Errorf("Invalid file returned: %+v", fileStat)
 	}
 
-	// 4. Проверяем: торрент снова проснулся и работает в оперативной памяти!
+	// Торрент снова работает в оперативной памяти
 	sess, inRAM := engine.Get(spec.InfoHash)
 	if !inRAM {
 		t.Errorf("Torrent should have been woken up into RAM engine")
@@ -256,7 +256,7 @@ func TestManager_WakeUpOnStream(t *testing.T) {
 		t.Errorf("Expected 1 active reader, got: %d", sess.ActiveReaders())
 	}
 
-	// 5. Закрываем ридер (плеер закончил просмотр)
+	// Закрытие ридера (плеер закончил просмотр)
 	reader.Close()
 	if sess.ActiveReaders() != 0 {
 		t.Errorf("Expected 0 active readers after Close, got: %d", sess.ActiveReaders())
@@ -271,7 +271,6 @@ func TestManager_AutoSleep(t *testing.T) {
 	mgr.inactivityTimeout = 50 * time.Millisecond
 
 	spec := createSyntheticSpec(t)
-	// saveToDB = true
 	_, err := mgr.AddTorrent(owner, spec, "Auto Sleep Test", "", "", true)
 	if err != nil {
 		t.Fatalf("AddTorrent failed: %v", err)
@@ -386,14 +385,142 @@ func TestManager_DropOnUserDelete(t *testing.T) {
 	// Даем шине 50 мс обработать событие
 	time.Sleep(50 * time.Millisecond)
 
-	// 1. Проверяем: раздача выгружена из памяти Engine
+	// Раздача выгружена из памяти Engine
 	if _, inRAM := engine.Get(spec.InfoHash); inRAM {
 		t.Errorf("Session should have been dropped from RAM engine")
 	}
 
-	// 2. Проверяем: карточка полностью удалена из базы bbolt
+	// Карточка полностью удалена из базы bbolt
 	_, err = tStore.Get(hashHex)
 	if err != ErrTorrentNotFound {
 		t.Errorf("Torrent record should have been deleted from database, got: %v", err)
 	}
+}
+
+// TestManager_ViewedFilesInStatus проверяет, что отметки просмотра попадают
+// в статус раздачи и в активной ветке, и в спящей.
+func TestManager_ViewedFilesInStatus(t *testing.T) {
+	mgr, _, engine, _, owner := setupManagerTest(t)
+
+	spec := createSyntheticSpec(t)
+	hashHex := spec.InfoHash.HexString()
+
+	if _, err := mgr.AddTorrent(owner, spec, "Viewed Test", "", "", true); err != nil {
+		t.Fatalf("AddTorrent failed: %v", err)
+	}
+
+	if err := mgr.SetFileViewed(owner, hashHex, 1, true); err != nil {
+		t.Fatalf("SetFileViewed failed: %v", err)
+	}
+	if err := mgr.SetFileViewed(owner, hashHex, 0, true); err != nil {
+		t.Fatalf("SetFileViewed failed: %v", err)
+	}
+	// Снятие отметки тоже должно отражаться в статусе
+	if err := mgr.SetFileViewed(owner, hashHex, 0, false); err != nil {
+		t.Fatalf("SetFileViewed(false) failed: %v", err)
+	}
+
+	// Активная ветка: раздача в RAM
+	live, err := mgr.GetTorrentStatus(owner, hashHex)
+	if err != nil {
+		t.Fatalf("GetTorrentStatus failed: %v", err)
+	}
+	if len(live.ViewedFiles) != 1 || live.ViewedFiles[0] != 1 {
+		t.Errorf("live viewed_files = %v, want [1]", live.ViewedFiles)
+	}
+
+	// Спящая ветка: раздача выгружена из RAM
+	engine.Stop(spec.InfoHash)
+
+	sleeping, err := mgr.GetTorrentStatus(owner, hashHex)
+	if err != nil {
+		t.Fatalf("GetTorrentStatus failed for sleeping torrent: %v", err)
+	}
+	if len(sleeping.ViewedFiles) != 1 || sleeping.ViewedFiles[0] != 1 {
+		t.Errorf("sleeping viewed_files = %v, want [1]", sleeping.ViewedFiles)
+	}
+
+	// Отметки одного пользователя не видны другому
+	other, _ := mgr.userSvc.CreateUser(owner, "viewer", "pass", user.RankUser, user.Limits{})
+	if err := mgr.userSvc.AddTorrent(other, hashHex, "Other Title", "", ""); err != nil {
+		t.Fatalf("AddTorrent for other user failed: %v", err)
+	}
+	otherSt, err := mgr.GetTorrentStatus(other, hashHex)
+	if err != nil {
+		t.Fatalf("GetTorrentStatus for other user failed: %v", err)
+	}
+	if len(otherSt.ViewedFiles) != 0 {
+		t.Errorf("other user viewed_files = %v, want empty", otherSt.ViewedFiles)
+	}
+}
+
+// TestManager_SetAllFilesViewed проверяет массовую отметку и снятие просмотра.
+func TestManager_SetAllFilesViewed(t *testing.T) {
+	mgr, userSvc, engine, _, owner := setupManagerTest(t)
+
+	spec := createSyntheticSpec(t)
+	hashHex := spec.InfoHash.HexString()
+
+	if _, err := mgr.AddTorrent(owner, spec, "Bulk Viewed", "", "", true); err != nil {
+		t.Fatalf("AddTorrent failed: %v", err)
+	}
+
+	// Метаданные сохраняются в базу фоновой горутиной, а индексы файлов
+	// для отметки берутся из статуса: ждём их появления
+	time.Sleep(100 * time.Millisecond)
+
+	// Отмечаем все файлы раздачи
+	if err := mgr.SetAllFilesViewed(owner, hashHex, true); err != nil {
+		t.Fatalf("SetAllFilesViewed(true) failed: %v", err)
+	}
+
+	st, err := mgr.GetTorrentStatus(owner, hashHex)
+	if err != nil {
+		t.Fatalf("GetTorrentStatus failed: %v", err)
+	}
+	if len(st.FileStats) == 0 {
+		t.Fatal("у раздачи нет файлов, проверка невозможна")
+	}
+	if len(st.ViewedFiles) != len(st.FileStats) {
+		t.Errorf("viewed_files = %v, want все %d файлов", st.ViewedFiles, len(st.FileStats))
+	}
+
+	// Снятие отметок у всех
+	if err := mgr.SetAllFilesViewed(owner, hashHex, false); err != nil {
+		t.Fatalf("SetAllFilesViewed(false) failed: %v", err)
+	}
+	st, err = mgr.GetTorrentStatus(owner, hashHex)
+	if err != nil {
+		t.Fatalf("GetTorrentStatus failed: %v", err)
+	}
+	if len(st.ViewedFiles) != 0 {
+		t.Errorf("viewed_files = %v, want пусто", st.ViewedFiles)
+	}
+
+	// Работает и для спящей раздачи: индексы берутся из базы
+	engine.Stop(spec.InfoHash)
+	if err := mgr.SetAllFilesViewed(owner, hashHex, true); err != nil {
+		t.Fatalf("SetAllFilesViewed for sleeping torrent failed: %v", err)
+	}
+	sleeping, err := mgr.GetTorrentStatus(owner, hashHex)
+	if err != nil {
+		t.Fatalf("GetTorrentStatus failed: %v", err)
+	}
+	if len(sleeping.ViewedFiles) != len(sleeping.FileStats) {
+		t.Errorf("sleeping viewed_files = %v, want все %d файлов", sleeping.ViewedFiles, len(sleeping.FileStats))
+	}
+
+	// Повторная отметка не дублирует индексы
+	if err := mgr.SetAllFilesViewed(owner, hashHex, true); err != nil {
+		t.Fatalf("повторная SetAllFilesViewed failed: %v", err)
+	}
+	again, err := mgr.GetTorrentStatus(owner, hashHex)
+	if err != nil {
+		t.Fatalf("GetTorrentStatus failed: %v", err)
+	}
+	if len(again.ViewedFiles) != len(sleeping.ViewedFiles) {
+		t.Errorf("повторная отметка изменила список: %v -> %v", sleeping.ViewedFiles, again.ViewedFiles)
+	}
+
+	_ = userSvc
 }

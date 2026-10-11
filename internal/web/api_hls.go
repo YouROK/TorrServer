@@ -54,6 +54,8 @@ type hlsSession struct {
 	startIndex int       // Номер сегмента, с которого запущен текущий процесс
 	lastAccess time.Time // Время последнего обращения плеера
 	stopped    bool
+
+	viewedMarked bool
 }
 
 // handleHLSMaster отдаёт главный плейлист, создавая сессию при необходимости.
@@ -183,6 +185,7 @@ func (s *Server) handleHLSSegment(c *gin.Context) {
 	}
 
 	session.markServed()
+	session.markViewedOnce(s)
 
 	// Плейлист скользит, поэтому сегменты не кэшируем
 	c.Header("Cache-Control", "no-store")
@@ -337,8 +340,7 @@ func (s *Server) hlsSessionFor(ctx context.Context, u *user.User, hash string, f
 		return nil, err
 	}
 
-	// Прежние сессии того же файла с другими настройками больше не нужны:
-	// пользователь сменил параметры, а старая сессия только занимает место
+	// Сессии того же файла с прежними настройками освобождают место
 	s.dropOtherSessions(u.ID, hash, fileIdx, key)
 
 	s.registry().Add(key, session)
@@ -441,6 +443,25 @@ func (h *hlsSession) markServed() {
 	if instance != nil {
 		instance.AddServedSegment()
 	}
+}
+
+// markViewedOnce отмечает просмотр при первом сегменте: плеер запрашивает их постоянно.
+func (h *hlsSession) markViewedOnce(s *Server) {
+	h.mu.Lock()
+	if h.viewedMarked {
+		h.mu.Unlock()
+		return
+	}
+	h.viewedMarked = true
+	userID, hash, fileIdx := h.UserID, h.Hash, h.FileIdx
+	h.mu.Unlock()
+
+	u, err := s.userSvc.GetUserByID(userID)
+	if err != nil {
+		log.Warnf("[Web] Cannot mark file %d as viewed: user %s not found: %v", fileIdx, userID, err)
+		return
+	}
+	s.markFileViewed(u, hash, fileIdx)
 }
 
 // touch отмечает обращение плеера к сессии.

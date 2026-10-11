@@ -82,6 +82,7 @@ type TorrentStatus struct {
 	BytesRead           int64              `json:"bytes_read"`
 	BytesReadUsefulData int64              `json:"bytes_read_useful_data"`
 	FileStats           []*TorrentFileStat `json:"file_stats,omitempty"`
+	ViewedFiles         []int              `json:"viewed_files,omitempty"`
 }
 
 // TorrentRecord - глобальная физическая карточка раздачи в базе (без личных данных!)
