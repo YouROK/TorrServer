@@ -34,6 +34,28 @@
         };
     }
 
+    // applyAttrs приводит атрибуты строки к заданному набору.
+    // Атрибут, которого нет в наборе или который равен null, снимается.
+    function applyAttrs(row, attrs) {
+        const next = attrs || {};
+        const prev = row.siloAttrs || {};
+
+        Object.keys(prev).forEach((name) => {
+            if (!(name in next)) row.removeAttribute(name);
+        });
+
+        Object.keys(next).forEach((name) => {
+            const value = next[name];
+            if (value === null || value === undefined) {
+                row.removeAttribute(name);
+            } else {
+                row.setAttribute(name, value);
+            }
+        });
+
+        row.siloAttrs = next;
+    }
+
     // restoreFocus возвращает фокус на прежнее место.
     function restoreFocus(host, mark) {
         if (!mark || mark.index < 0) return;
@@ -153,12 +175,15 @@
         // rows обновляет строки таблицы по ключу.
         // Неизменившиеся строки не трогаются, поэтому фокус и выделение в них живут.
         // options.key возвращает ключ строки, options.html - её разметку.
+        // options.attrs возвращает атрибуты самой строки (например draggable),
+        // их нужно задавать здесь: узел <tr> создаёт модуль, а не вызывающий код.
         rows(target, items, options) {
             const host = typeof target === 'string' ? document.getElementById(target) : target;
             if (!host) return null;
 
             const keyOf = options.key || ((item) => item.id);
             const htmlOf = options.html || ((item) => String(item));
+            const attrsOf = options.attrs || null;
 
             const mark = focusSignature(host);
             const existing = new Map();
@@ -173,6 +198,8 @@
             (items || []).forEach((item) => {
                 const key = String(keyOf(item));
                 const html = htmlOf(item);
+                const attrs = attrsOf ? attrsOf(item) : null;
+                const attrsJSON = attrs ? JSON.stringify(attrs) : '';
                 seen.add(key);
 
                 let row = existing.get(key);
@@ -180,12 +207,20 @@
                     row = document.createElement('tr');
                     row.setAttribute('data-row', key);
                     row.siloHtml = html;
+                    row.siloAttrsJSON = attrsJSON;
+                    applyAttrs(row, attrs);
                     row.innerHTML = html;
-                } else if (row.siloHtml !== html) {
-                    // Сравнивается исходная разметка, а не innerHTML:
-                    // браузер нормализует атрибуты и сравнение всегда давало бы различие
-                    row.siloHtml = html;
-                    row.innerHTML = html;
+                } else {
+                    if (row.siloAttrsJSON !== attrsJSON) {
+                        row.siloAttrsJSON = attrsJSON;
+                        applyAttrs(row, attrs);
+                    }
+                    if (row.siloHtml !== html) {
+                        // Сравнивается исходная разметка, а не innerHTML:
+                        // браузер нормализует атрибуты и сравнение всегда давало бы различие
+                        row.siloHtml = html;
+                        row.innerHTML = html;
+                    }
                 }
 
                 // Узел перемещается, только если стоит не на своём месте.

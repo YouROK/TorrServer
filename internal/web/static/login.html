@@ -38,17 +38,24 @@
     <p class="login-notice" id="login-notice" style="display:none"></p>
 </form>
 
-<div class="toast" id="toast"></div>
+<div class="toast-root" id="toast-root"></div>
 
 <script>
     const t = (key, def) => (typeof i18n !== 'undefined' && i18n.t) ? i18n.t(key, def) : key;
 
     function showToast(msg) {
-        const el = document.getElementById('toast');
-        if (!el) return;
+        const root = document.getElementById('toast-root');
+        if (!root) return;
+
+        const el = document.createElement('div');
+        el.className = 'toast';
         el.textContent = msg;
-        el.classList.add('show');
-        setTimeout(() => el.classList.remove('show'), 2500);
+        root.appendChild(el);
+        requestAnimationFrame(() => el.classList.add('toast-show'));
+        setTimeout(() => {
+            el.classList.remove('toast-show');
+            setTimeout(() => el.remove(), 300);
+        }, 2500);
     }
 
     // safeFrom защищает от open redirect: только относительные пути на этом же хосте.

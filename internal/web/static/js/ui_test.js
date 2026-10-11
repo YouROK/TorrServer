@@ -22,6 +22,8 @@ class El {
     set innerHTML(v) { this._html = v; this.children = parseFields(v); }
     setAttribute(k, v) { this.attributes[k] = v; }
     getAttribute(k) { return this.attributes[k] || null; }
+    removeAttribute(k) { delete this.attributes[k]; }
+    hasAttribute(k) { return k in this.attributes; }
     appendChild(c) { this.children.push(c); return c; }
     closest(sel) {
         if (sel === '[data-row]') return this.isRow ? this : null;
@@ -215,6 +217,38 @@ El.prototype.__defineGetter__('nextSibling', function () {
     ui.rows(tbody, [items[1], items[0]], opts);
     assert.strictEqual(tbody.children[0].attributes['data-row'], 'b', 'порядок изменился');
     assert.strictEqual(tbody.children[1].attributes['data-row'], 'a', 'порядок изменился');
+}
+
+{
+    // Атрибуты самой строки: их ставит модуль, потому что узел <tr> создаёт он
+    const tbody = makeTbody();
+    const items = [{ id: 'a', text: 'A' }, { id: 'b', text: 'B' }];
+    const opts = {
+        key: (x) => x.id,
+        html: (x) => '<td>' + x.text + '</td>',
+        attrs: (x) => ({ draggable: 'true', 'data-id': x.id }),
+    };
+
+    ui.rows(tbody, items, opts);
+    assert.strictEqual(tbody.children[0].getAttribute('draggable'), 'true', 'атрибут строки поставлен');
+    assert.strictEqual(tbody.children[0].getAttribute('data-id'), 'a', 'атрибут строки поставлен');
+
+    // Повторный вызов с теми же атрибутами не трогает их
+    const nodeA = tbody.children[0];
+    let writes = 0;
+    const originalSet = nodeA.setAttribute.bind(nodeA);
+    nodeA.setAttribute = (k, v) => {
+        if (k === 'draggable' || k === 'data-id') writes++;
+        return originalSet(k, v);
+    };
+    ui.rows(tbody, items, opts);
+    assert.strictEqual(writes, 0, 'неизменившиеся атрибуты не переписываются');
+
+    // Изменённый набор приводит атрибуты к новому виду
+    opts.attrs = (x) => ({ draggable: 'false' });
+    ui.rows(tbody, items, opts);
+    assert.strictEqual(nodeA.getAttribute('draggable'), 'false', 'атрибут обновился');
+    assert.strictEqual(nodeA.hasAttribute('data-id'), false, 'лишний атрибут снят');
 }
 
 console.log('ui.js rows: all checks passed');
