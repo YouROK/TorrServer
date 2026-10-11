@@ -51,6 +51,7 @@ allowing the cache size to be adjusted according to the system parameters and th
 - Optional DLNA server
 - Optional GStreamer HLS remuxing and transcoding (`-gst` builds from release 141.10)
 - Native [MCP](server/mcp/README.md) server for AI agents (OpenClaw, Hermes, and other MCP clients)
+- External subtitles (SRT/ASS/SSA/VTT to WebVTT) for web players and external players
 
 ## Getting Started
 
@@ -1044,6 +1045,20 @@ With all `Transcode*` options disabled, H.264, H.265/HEVC, AV1, and VP9 video is
 | `GET /gst/:hash/subs/:track/:segment.vtt` | WebVTT subtitle segment |
 | `GET /gst/:hash/heartbeat` | Keep the task and its torrent active; returns torrent state details |
 | `GET /gst/remove` | Dispose the task and drop the torrent cache (`hash` or `id` query) |
+
+## External subtitles
+
+TorrServer can find subtitle files that lie next to a video inside a torrent and serve them to clients, converted to WebVTT or in their original format. It works in all builds and needs no external tools.
+
+```
+GET /subs/{hash}/{id}                  list subtitle tracks for the video file {id}
+GET /subs/{hash}/{id}?track={index}    return one subtitle file (WebVTT by default)
+```
+
+Query parameters for `track`: `format` (`vtt` or `original`) and `encoding` (`utf8` or `windows-1251`).
+
+See [server/subs/README.md](server/subs/README.md) for the supported formats and encodings, and for the file layouts inside a torrent that are recognized.
+
 
 ## Donate
 

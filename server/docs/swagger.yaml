@@ -1525,6 +1525,44 @@ paths:
       summary: Multi usage endpoint
       tags:
       - API
+  /subs/{hash}/{id}:
+    get:
+      description: |-
+        Without "track": list external subtitle tracks found in the torrent for the given video file.
+        With "track": return that subtitle file, by default converted to WebVTT.
+        "format": "vtt" (default) or "original" (no conversion). "encoding": output charset, default utf8.
+      parameters:
+      - description: Torrent infohash
+        in: path
+        name: hash
+        required: true
+        type: string
+      - description: Video file index in torrent
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Subtitle file index (from the list)
+        in: query
+        name: track
+        type: integer
+      - description: vtt (default) or original
+        in: query
+        name: format
+        type: string
+      - description: 'Output encoding, default utf8 (also: windows-1251)'
+        in: query
+        name: encoding
+        type: string
+      produces:
+      - application/json
+      - text/vtt
+      responses:
+        "200":
+          description: List of tracks (JSON) or WebVTT
+      summary: External subtitles of a video file
+      tags:
+      - API
   /tmdb/settings:
     get:
       description: Get TMDB API configuration
