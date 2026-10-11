@@ -19,6 +19,7 @@ let player
 let controller
 let contextListeners
 let remoteListeners
+let mediaListeners
 let resolveLoad
 let rejectLoad
 let props
@@ -45,7 +46,10 @@ beforeEach(() => {
   document.body.appendChild(container)
   contextListeners = new Map()
   remoteListeners = new Map()
+  mediaListeners = new Map()
   session = {
+    addEventListener: (type, fn) => mediaListeners.set(type, fn),
+    removeEventListener: type => mediaListeners.delete(type),
     getMediaSession: jest.fn(() => session.media),
     loadMedia: jest.fn(request => {
       session.request = request
@@ -75,6 +79,7 @@ beforeEach(() => {
     framework: {
       CastContext: { getInstance: () => context },
       CastContextEventType: { CAST_STATE_CHANGED: 'cast', SESSION_STATE_CHANGED: 'session' },
+      SessionEventType: { MEDIA_SESSION: 'media_session' },
       CastState: { NO_DEVICES_AVAILABLE: 'NONE' },
       RemotePlayer: function RemotePlayer() {
         return player
@@ -115,6 +120,7 @@ afterEach(() => {
     ReactDOM.unmountComponentAtNode(container)
   })
   container.remove()
+  jest.useRealTimers()
 })
 
 const startLoad = async () => {
@@ -278,4 +284,57 @@ test('disconnect abandons a pending LOAD without letting its completion clear a 
   await acceptLoad()
   expect(current.busy).toBe(false)
   expect(props.video.pause).toHaveBeenCalledTimes(1)
+})
+
+test.each(['empty', 'old'])('waits for matching media_session after accepted LOAD with %s media', async previous => {
+  session.media = previous === 'old' ? { mediaSessionId: 7, media: { contentId: props.source } } : null
+  await startLoad()
+  await act(async () => resolveLoad())
+  expect(current.error).toBe('')
+  expect(current.busy).toBe(true)
+  expect(props.video.pause).not.toHaveBeenCalled()
+  session.media = { mediaSessionId: 8, media: session.request.media }
+  await act(async () => mediaListeners.get('media_session')({ mediaSession: session.media }))
+  expect(current.connected).toBe(true)
+  expect(current.busy).toBe(false)
+  expect(props.video.pause).toHaveBeenCalledTimes(1)
+  expect(mediaListeners.size).toBe(0)
+})
+
+test('media arriving before LOAD resolves cannot pause local playback until LOAD succeeds', async () => {
+  await startLoad()
+  session.media = { mediaSessionId: 8, media: session.request.media }
+  await act(async () => mediaListeners.get('media_session')({ mediaSession: session.media }))
+  expect(props.video.pause).not.toHaveBeenCalled()
+  await act(async () => resolveLoad())
+  expect(props.video.pause).toHaveBeenCalledTimes(1)
+})
+
+test('matching media event is accepted before getMediaSession catches up, without controlling old media', async () => {
+  await startLoad()
+  await act(async () => resolveLoad())
+  const delivered = { mediaSessionId: 8, media: session.request.media }
+  await act(async () => mediaListeners.get('media_session')({ mediaSession: delivered }))
+  expect(props.video.pause).toHaveBeenCalledTimes(1)
+  expect(current.connected).toBe(false)
+  session.media = delivered
+  act(emitRemote)
+  expect(current.connected).toBe(true)
+})
+
+test.each(['close', 'disconnect', 'timeout'])('cleans up an accepted LOAD waiting for media after %s', async reason => {
+  jest.useFakeTimers()
+  await startLoad()
+  await act(async () => resolveLoad())
+  expect(current.busy).toBe(true)
+  if (reason === 'close') await render({ active: false })
+  if (reason === 'disconnect') {
+    session = null
+    await act(async () => contextListeners.get('session')())
+  }
+  if (reason === 'timeout') await act(async () => jest.runOnlyPendingTimers())
+  expect(mediaListeners.size).toBe(0)
+  expect(current.busy).toBe(false)
+  expect(props.video.pause).not.toHaveBeenCalled()
+  expect(current.error).toBe(reason === 'timeout' ? 'Load' : '')
 })

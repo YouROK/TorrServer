@@ -6,6 +6,50 @@ import { castMedia, loadCastSdk } from './GoogleCast'
 let latestRequest = 0
 const initialState = { ready: false, available: false, busy: false, error: '', connected: false }
 
+// LOAD acknowledgement and media-session delivery are separate SDK events.
+const waitForMediaSession = (session, url, fresh) => {
+  const previousId = session.getMediaSession()?.mediaSessionId
+  const eventType = window.cast.framework.SessionEventType.MEDIA_SESSION
+  let acknowledge
+  let cancel
+  let check
+  const promise = new Promise(resolve => {
+    let accepted = false
+    let candidate
+    let timer
+    let settled = false
+    const finish = media => {
+      if (settled) return
+      settled = true
+      window.clearTimeout(timer)
+      session.removeEventListener(eventType, onMedia)
+      resolve(media)
+    }
+    check = () => {
+      if (!fresh()) {
+        finish(null)
+        return
+      }
+      const observed = session.getMediaSession()
+      const media = observed && observed.mediaSessionId !== previousId ? observed : candidate || observed
+      if (accepted && media?.media?.contentId === url && media.mediaSessionId !== previousId) finish(media)
+    }
+    const onMedia = event => {
+      const media = event.mediaSession
+      candidate = media?.media?.contentId === url && media.mediaSessionId !== previousId ? media : null
+      check()
+    }
+    session.addEventListener(eventType, onMedia)
+    acknowledge = () => {
+      accepted = true
+      timer = window.setTimeout(() => finish(null), 15000)
+      check()
+    }
+    cancel = () => finish(null)
+  })
+  return { promise, acknowledge, cancel, check, previousId }
+}
+
 const useGoogleCast = ({ active, source, base, hls, title, video }) => {
   const [state, setState] = useState(initialState)
   const api = useRef(null)
@@ -16,9 +60,11 @@ const useGoogleCast = ({ active, source, base, hls, title, video }) => {
     const owned = owner.current
     const session = api.current?.context.getCurrentSession()
     const media = session?.getMediaSession()
-    return Boolean(
+    const matches = Boolean(
       owned && session === owned.session && media?.mediaSessionId === owned.id && media?.media?.contentId === owned.url,
     )
+    if (matches) owned.waitingForStatus = false
+    return matches
   }
 
   useEffect(() => {
@@ -36,9 +82,16 @@ const useGoogleCast = ({ active, source, base, hls, title, video }) => {
         const controller = new framework.RemotePlayerController(player)
         const update = () => {
           if (disposed) return
+          api.current?.pendingMedia?.check()
           const owned = ownsMedia()
           const connected = owned && player.isConnected
-          if (!owned) owner.current = null
+          const pendingOwner = owner.current
+          const status = context.getCurrentSession()?.getMediaSession()
+          const waitingForStatus =
+            pendingOwner?.waitingForStatus &&
+            context.getCurrentSession() === pendingOwner.session &&
+            (!status || status.mediaSessionId === pendingOwner.previousId)
+          if (!owned && !waitingForStatus) owner.current = null
           setState(previous => ({
             ...previous,
             ready: true,
@@ -54,6 +107,8 @@ const useGoogleCast = ({ active, source, base, hls, title, video }) => {
         const sessionChanged = () => {
           if (api.current?.loadingSession && context.getCurrentSession() !== api.current.loadingSession) {
             generation.current += 1
+            api.current.pendingMedia?.cancel()
+            api.current.pendingMedia = null
             api.current.activeRequest = null
             api.current.loadingSession = null
             setState(previous => ({ ...previous, busy: false }))
@@ -78,6 +133,7 @@ const useGoogleCast = ({ active, source, base, hls, title, video }) => {
       disposed = true
       generation.current += 1
       owner.current = null
+      api.current?.pendingMedia?.cancel()
       api.current = null
       detach()
     }
@@ -112,11 +168,21 @@ const useGoogleCast = ({ active, source, base, hls, title, video }) => {
       const load = new window.chrome.cast.media.LoadRequest(media)
       load.currentTime = Number.isFinite(video?.currentTime) ? Math.max(0, video.currentTime) : 0
       load.autoplay = !video?.paused
+      const pendingMedia = waitForMediaSession(session, url, fresh)
+      currentApi.pendingMedia = pendingMedia
       await session.loadMedia(load)
       if (!fresh() || currentApi.context.getCurrentSession() !== session) return
-      const accepted = session.getMediaSession()
-      if (accepted?.media?.contentId !== url) throw new Error('Load')
-      owner.current = { session, id: accepted.mediaSessionId, url }
+      pendingMedia.acknowledge()
+      const accepted = await pendingMedia.promise
+      if (!fresh() || currentApi.context.getCurrentSession() !== session) return
+      if (!accepted) throw new Error('Load')
+      owner.current = {
+        session,
+        id: accepted.mediaSessionId,
+        url,
+        previousId: pendingMedia.previousId,
+        waitingForStatus: true,
+      }
       video?.pause()
       currentApi.update()
     } catch (error) {
@@ -136,6 +202,8 @@ const useGoogleCast = ({ active, source, base, hls, title, video }) => {
       }
     } finally {
       if (api.current === currentApi && currentApi.activeRequest === request) {
+        currentApi.pendingMedia?.cancel()
+        currentApi.pendingMedia = null
         currentApi.activeRequest = null
         currentApi.loadingSession = null
         setState(previous => ({ ...previous, busy: false }))

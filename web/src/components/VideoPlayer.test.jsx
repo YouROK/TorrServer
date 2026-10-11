@@ -33,6 +33,8 @@ beforeEach(() => {
   container = document.createElement('div')
   document.body.appendChild(container)
   session = {
+    addEventListener: () => {},
+    removeEventListener: () => {},
     getMediaSession: () => session.media,
     loadMedia: jest.fn(value => {
       request = value
@@ -56,6 +58,7 @@ beforeEach(() => {
     framework: {
       CastContext: { getInstance: () => context },
       CastContextEventType: { CAST_STATE_CHANGED: 'cast', SESSION_STATE_CHANGED: 'session' },
+      SessionEventType: { MEDIA_SESSION: 'media_session' },
       CastState: { NO_DEVICES_AVAILABLE: 'NONE' },
       RemotePlayer: function RemotePlayer() {
         return remote
