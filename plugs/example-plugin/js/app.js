@@ -130,7 +130,22 @@ function addBusEvent(topic, payload) {
     outEl.scrollTop = outEl.scrollHeight;
 }
 
-setInterval(pollEvents, 2000);
+// Ссылка на таймер опроса хранится рядом с запуском: без переменной
+// его нельзя остановить, и на странице остаётся лишний setInterval.
+var _pollTimer = null;
+
+function startEventPolling() {
+    if (_pollTimer) return;
+    _pollTimer = setInterval(pollEvents, 2000);
+}
+
+function stopEventPolling() {
+    if (!_pollTimer) return;
+    clearInterval(_pollTimer);
+    _pollTimer = null;
+}
+
+startEventPolling();
 
 // --- Section 4: ts.storage -------------------------------------
 
@@ -269,6 +284,50 @@ function bindTorrentSection() {
                     document.getElementById('torrent-magnet').value = '';
                 }
             })
+            .catch(function(e) { setOutput('out-torrent', e.message, true); });
+    });
+
+    document.getElementById('btn-torrent-viewed').addEventListener('click', function() {
+        var hash = document.getElementById('torrent-hash').value.trim();
+        if (!hash) { showToast(t('torrent_error_no_hash'), 'error'); return; }
+        var fileIdx = parseInt(document.getElementById('torrent-viewed-idx').value, 10) || 0;
+        setOutput('out-torrent', t('status_saving'), false);
+        fetch('api/torrent/set-viewed', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ hash: hash, file_idx: fileIdx, viewed: true })
+        })
+            .then(function(r) { return r.json(); })
+            .then(function(d) { setOutput('out-torrent', d, false); })
+            .catch(function(e) { setOutput('out-torrent', e.message, true); });
+    });
+
+    document.getElementById('btn-torrent-policy').addEventListener('click', function() {
+        var mode = document.getElementById('torrent-tracker-mode').value;
+        var raw  = document.getElementById('torrent-trackers').value.trim();
+        var trackers = raw ? raw.split(/[\s,]+/) : [];
+        setOutput('out-torrent', t('status_saving'), false);
+        fetch('api/torrent/tracker-policy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: mode, trackers: trackers })
+        })
+            .then(function(r) { return r.json(); })
+            .then(function(d) { setOutput('out-torrent', d, false); })
+            .catch(function(e) { setOutput('out-torrent', e.message, true); });
+    });
+
+    document.getElementById('btn-torrent-blocklist').addEventListener('click', function() {
+        var text = document.getElementById('torrent-blocklist').value.trim();
+        if (!text) { showToast(t('torrent_error_no_input'), 'error'); return; }
+        setOutput('out-torrent', t('status_saving'), false);
+        fetch('api/torrent/blocklist', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: text })
+        })
+            .then(function(r) { return r.json(); })
+            .then(function(d) { setOutput('out-torrent', d, false); })
             .catch(function(e) { setOutput('out-torrent', e.message, true); });
     });
 }
@@ -458,6 +517,84 @@ function bindTorrfsSection() {
     });
 }
 
+// --- Section 11: ts.vfs ----------------------------------------
+//
+// Reads the plugin's own files. Paths are relative to the plugin
+// root, so "info.yaml" and "i18n/en.json" work out of the box.
+function bindVfsSection() {
+    function callVfs(action, payload) {
+        setOutput('out-vfs', t('loading'), false);
+        fetch('api/vfs/' + action, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+            .then(function(r) { return r.json(); })
+            .then(function(d) { setOutput('out-vfs', d, false); })
+            .catch(function(e) { setOutput('out-vfs', e.message, true); });
+    }
+
+    function currentPath() {
+        return document.getElementById('vfs-path').value.trim();
+    }
+
+    document.getElementById('btn-vfs-read').addEventListener('click', function() {
+        callVfs('read', { path: currentPath() });
+    });
+
+    document.getElementById('btn-vfs-stat').addEventListener('click', function() {
+        callVfs('stat', { path: currentPath() });
+    });
+
+    document.getElementById('btn-vfs-list').addEventListener('click', function() {
+        callVfs('list', { path: currentPath() });
+    });
+}
+
+// --- Section 12: ts.transcode ----------------------------------
+//
+// State and session buttons are read-only. Probe reads a torrent file
+// over the network and may take a while, so the core limits it by timeout.
+function bindTranscodeSection() {
+    function callTranscode(url, opts) {
+        setOutput('out-transcode', t('loading'), false);
+        fetch(url, opts)
+            .then(function(r) { return r.json(); })
+            .then(function(d) { setOutput('out-transcode', d, false); })
+            .catch(function(e) { setOutput('out-transcode', e.message, true); });
+    }
+
+    document.getElementById('btn-transcode-info').addEventListener('click', function() {
+        callTranscode('api/transcode/module-info');
+    });
+
+    document.getElementById('btn-transcode-sessions').addEventListener('click', function() {
+        callTranscode('api/transcode/sessions');
+    });
+
+    document.getElementById('btn-transcode-profiles').addEventListener('click', function() {
+        callTranscode('api/transcode/profiles');
+    });
+
+    document.getElementById('btn-transcode-default').addEventListener('click', function() {
+        callTranscode('api/transcode/default-profile');
+    });
+
+    document.getElementById('btn-transcode-probe').addEventListener('click', function() {
+        var hash = document.getElementById('transcode-hash').value.trim();
+        if (!hash) { showToast(t('torrent_error_no_hash'), 'error'); return; }
+
+        callTranscode('api/transcode/probe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                hash: hash,
+                file_idx: parseInt(document.getElementById('transcode-file-idx').value, 10) || 0
+            })
+        });
+    });
+}
+
 // --- Modals ----------------------------------------------------
 
 function bindModals() {
@@ -494,6 +631,8 @@ function init() {
     bindI18nSection();
     bindCryptoSection();
     bindTorrfsSection();
+    bindVfsSection();
+    bindTranscodeSection();
     bindModals();
 
     pollEvents();

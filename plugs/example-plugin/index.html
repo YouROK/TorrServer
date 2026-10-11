@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="page_title_full">Plugin Showcase - Silo</title>
+    <!-- Общий стиль сервера, затем собственный стиль плагина.
+         Общий подключается по абсолютному пути: это роут самого сервера. -->
+    <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="css/style.css">
     <script src="/i18n.js"></script>
 
@@ -23,7 +26,7 @@
             </svg>
             <span class="brand-name">SILO</span>
         </div>
-        <nav class="section-nav">
+        <nav class="section-nav nav-list">
             <a class="nav-item" href="#sec-info" data-i18n="nav_info">System Info</a>
             <a class="nav-item" href="#sec-web" data-i18n="nav_web">Web Routes</a>
             <a class="nav-item" href="#sec-bus" data-i18n="nav_bus">Event Bus</a>
@@ -34,6 +37,8 @@
             <a class="nav-item" href="#sec-i18n" data-i18n="nav_i18n">i18n</a>
             <a class="nav-item" href="#sec-crypto" data-i18n="nav_crypto">Crypto</a>
             <a class="nav-item" href="#sec-torrfs" data-i18n="nav_torrfs">TorrFS</a>
+            <a class="nav-item" href="#sec-vfs" data-i18n="nav_vfs">Plugin VFS</a>
+            <a class="nav-item" href="#sec-transcode" data-i18n="nav_transcode">Transcoding</a>
             <a class="nav-item" href="#sec-manifest" data-i18n="nav_manifest">info.yaml Guide</a>
         </nav>
         <div class="sidebar-footer">
@@ -219,7 +224,16 @@ var status = ts.torrent.add("magnet:?xt=urn:btih:...", {
     category: "movies"
 });
 var info = ts.torrent.get("abc123hash...");
-ts.torrent.remove("abc123hash...");</code></pre>
+ts.torrent.remove("abc123hash...");
+
+// Mark a file as watched for a user
+ts.torrent.setViewed(hash, fileIdx, true, [userID]);
+
+// Global tracker policy: none | append | replace | remove
+ts.torrent.setTrackerPolicy({ mode: "append", trackers: ["udp://tracker:1337"] });
+
+// Load an IP blocklist in P2P format (one CIDR or range per line)
+ts.torrent.setBlocklist("1.2.3.0/24\n5.6.7.8-5.6.7.9");</code></pre>
 
             <div class="demo-row">
                 <button class="btn" id="btn-torrent-list" type="button" data-i18n="btn_torrent_list">List Torrents</button>
@@ -229,6 +243,25 @@ ts.torrent.remove("abc123hash...");</code></pre>
             <div class="demo-row">
                 <input class="input" id="torrent-magnet" type="text" placeholder="magnet link or hash" style="flex:1">
                 <button class="btn" id="btn-torrent-add" type="button" data-i18n="btn_torrent_add">Add Torrent</button>
+            </div>
+
+            <div class="demo-row">
+                <input class="input" id="torrent-viewed-idx" type="number" value="0" style="max-width:90px">
+                <button class="btn" id="btn-torrent-viewed" type="button" data-i18n="btn_torrent_viewed">Mark as Viewed</button>
+            </div>
+            <div class="demo-row">
+                <select class="input" id="torrent-tracker-mode" style="max-width:160px">
+                    <option value="none">none</option>
+                    <option value="append" selected>append</option>
+                    <option value="replace">replace</option>
+                    <option value="remove">remove</option>
+                </select>
+                <input class="input" id="torrent-trackers" type="text" placeholder="udp://tracker:1337/announce" style="flex:1">
+                <button class="btn" id="btn-torrent-policy" type="button" data-i18n="btn_torrent_policy">Apply Tracker Policy</button>
+            </div>
+            <div class="demo-row">
+                <input class="input" id="torrent-blocklist" type="text" placeholder="1.2.3.0/24" style="flex:1">
+                <button class="btn" id="btn-torrent-blocklist" type="button" data-i18n="btn_torrent_blocklist">Load Blocklist</button>
             </div>
             <div class="demo-output" id="out-torrent"></div>
         </section>
@@ -404,9 +437,97 @@ res.stream(h, "film.mkv");</code></pre>
             </div>
         </section>
 
-        <!-- S11: info.yaml Guide -->
+        <!-- S11: ts.vfs -->
+        <section class="section" id="sec-vfs">
+            <h2 data-i18n="sec_vfs_title">11. ts.vfs - Plugin's Own Files</h2>
+            <p data-i18n="sec_vfs_desc">Read-only access to the files shipped inside the plugin, isolated from the rest of the server. The VFS is bound to the plugin folder or ZIP archive, so paths are relative to the plugin root.</p>
+
+            <div class="explain-box">
+                <strong data-i18n="sec_vfs_why_title">Why not read files directly?</strong>
+                <p data-i18n="sec_vfs_why_desc">Plugin JavaScript has no filesystem access by design. ts.vfs is the only way to read your own files: it cannot reach outside the plugin root, so a buggy plugin cannot read server configs or user data.</p>
+            </div>
+
+            <pre class="code-block"><code>var html = ts.vfs.read("index.html");
+
+if (ts.vfs.exists("i18n/en.json")) {
+    var dict = JSON.parse(ts.vfs.read("i18n/en.json"));
+}
+
+var node = ts.vfs.stat("css/style.css");
+// { name: "style.css", size: 1234, is_dir: false,
+//   mode: "-rw-r--r--", mod_time: 1234567890 }
+
+var entries = ts.vfs.list("i18n");
+// [ { name: "en.json", size: 4096, is_dir: false }, ... ]
+// list() without arguments lists the plugin root</code></pre>
+
+            <div class="explain-box">
+                <strong data-i18n="sec_vfs_safe_title">Path safety:</strong>
+                <p data-i18n="sec_vfs_safe_desc">Paths that try to escape the plugin root are rejected, and backslashes are refused outright: on Windows the standard path check treats them as ordinary characters.</p>
+            </div>
+
+            <div class="demo-row">
+                <input class="input" id="vfs-path" type="text" value="info.yaml" placeholder="path inside plugin">
+                <button class="btn" id="btn-vfs-read" type="button" data-i18n="btn_vfs_read">Read</button>
+                <button class="btn" id="btn-vfs-stat" type="button" data-i18n="btn_vfs_stat">Stat</button>
+                <button class="btn" id="btn-vfs-list" type="button" data-i18n="btn_vfs_list">List</button>
+            </div>
+            <div class="demo-output" id="out-vfs"></div>
+        </section>
+
+        <!-- S12: ts.transcode -->
+        <section class="section" id="sec-transcode">
+            <h2 data-i18n="sec_transcode_title">12. ts.transcode - Transcoding and Profiles</h2>
+            <p data-i18n="sec_transcode_desc">Access to the transcoding module: its state, active sessions, media probing, and profile management. Profiles describe how a video is converted (codecs, resolution, HLS segments).</p>
+
+            <div class="explain-box">
+                <strong data-i18n="sec_transcode_roles_title">Permissions:</strong>
+                <p data-i18n="sec_transcode_roles_desc">Reading state and probing need no special rights. Creating, updating, and deleting profiles require admin or owner rank: the core checks the rank of the user whose ID you pass.</p>
+            </div>
+
+            <pre class="code-block"><code>var state = ts.transcode.info();
+// { enabled: true, version: "8.1", max_sessions: 4, ... }
+
+var sessions = ts.transcode.sessions();
+ts.transcode.stop(sessionID);
+
+// Read media info of a torrent file (network access, limited by timeout)
+var media = ts.transcode.probe(userID, hash, fileIdx);
+
+var list = ts.transcode.profiles(userID);
+var one  = ts.transcode.profile(userID, "default");
+var def  = ts.transcode.defaultProfile();
+
+var created = ts.transcode.createProfile(userID, {
+    name: "Mobile 720p",
+    protocol: "hls",
+    container: "ts",
+    video: { codec: "h264", crf: 23, max_height: 720 },
+    audio: { codec: "aac", bitrate_kbps: 128 },
+    hls:   { segment_length: 6, list_size: 0 }
+});
+
+ts.transcode.updateProfile(userID, created.id, { name: "Mobile 720p v2" });
+ts.transcode.deleteProfile(userID, created.id);</code></pre>
+
+            <div class="demo-row">
+                <button class="btn" id="btn-transcode-info" type="button" data-i18n="btn_transcode_info">Module State</button>
+                <button class="btn" id="btn-transcode-sessions" type="button" data-i18n="btn_transcode_sessions">Sessions</button>
+                <button class="btn" id="btn-transcode-profiles" type="button" data-i18n="btn_transcode_profiles">Profiles</button>
+                <button class="btn" id="btn-transcode-default" type="button" data-i18n="btn_transcode_default">Default Profile</button>
+            </div>
+
+            <div class="demo-row">
+                <input class="input" id="transcode-hash" type="text" placeholder="torrent hash">
+                <input class="input" id="transcode-file-idx" type="number" value="0" style="max-width:90px">
+                <button class="btn" id="btn-transcode-probe" type="button" data-i18n="btn_transcode_probe">Probe File</button>
+            </div>
+            <div class="demo-output" id="out-transcode"></div>
+        </section>
+
+        <!-- S13: info.yaml Guide -->
         <section class="section" id="sec-manifest">
-            <h2 data-i18n="sec_manifest_title">11. info.yaml - Manifest Reference</h2>
+            <h2 data-i18n="sec_manifest_title">13. info.yaml - Manifest Reference</h2>
             <p data-i18n="sec_manifest_desc">Every plugin has an info.yaml. Think of it as a contract: fields you declare grant permission to use those APIs. Undeclared routes or events are silently denied at runtime.</p>
 
             <table class="manifest-table">

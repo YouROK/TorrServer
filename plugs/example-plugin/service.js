@@ -174,6 +174,129 @@ ts.web.get("/api/torrent/get", function(req) {
     return { torrent: ts.torrent.get(hash) };
 });
 
+// POST /api/torrent/set-viewed - mark a file as watched
+ts.web.post("/api/torrent/set-viewed", function(req) {
+    var hash    = String(req.body.hash || "");
+    var fileIdx = parseInt(req.body.file_idx, 10) || 0;
+    var viewed  = req.body.viewed !== false;
+    var userID  = req.body.user_id || "owner";
+    if (!hash) return { error: "hash is required" };
+    ts.torrent.setViewed(hash, fileIdx, viewed, userID);
+    return { ok: true, hash: hash, file_idx: fileIdx, viewed: viewed };
+});
+
+// POST /api/torrent/tracker-policy - set the global tracker policy
+ts.web.post("/api/torrent/tracker-policy", function(req) {
+    var mode     = String(req.body.mode || "none");
+    var trackers = req.body.trackers || [];
+    if (["none", "append", "replace", "remove"].indexOf(mode) < 0) {
+        return { error: "mode must be one of: none, append, replace, remove" };
+    }
+    ts.torrent.setTrackerPolicy({ mode: mode, trackers: trackers });
+    return { ok: true, mode: mode, trackers: trackers };
+});
+
+// POST /api/torrent/blocklist - load an IP blocklist in P2P format
+ts.web.post("/api/torrent/blocklist", function(req) {
+    var text = String(req.body.text || "");
+    if (!text) return { error: "text is required" };
+    ts.torrent.setBlocklist(text);
+    return { ok: true, lines: text.split("\n").length };
+});
+
+// ===============================================================
+// ts.vfs - read-only access to the plugin's own files
+// ===============================================================
+//
+// The VFS is bound to the plugin folder or ZIP archive. Paths are
+// relative to the plugin root ("index.html", "i18n/en.json").
+//
+// Functions:
+//   ts.vfs.read(path)        -> file contents as string
+//   ts.vfs.exists(path)      -> bool (missing file or bad path = false)
+//   ts.vfs.stat(path)        -> {name, size, is_dir, mode, mod_time}
+//   ts.vfs.list([path="."])  -> [{name, size, is_dir}, ...]
+//
+// Security: the core rejects paths that escape the plugin root.
+// Backslashes are refused explicitly, because on Windows fs.ValidPath
+// treats them as ordinary characters and would let "..\\.." through.
+
+ts.web.post("/api/vfs/read", function(req) {
+    var file = String(req.body.path || "");
+    if (!file) return { error: "path is required" };
+    return { path: file, content: ts.vfs.read(file) };
+});
+
+ts.web.post("/api/vfs/exists", function(req) {
+    var file = String(req.body.path || "");
+    return { path: file, exists: ts.vfs.exists(file) };
+});
+
+ts.web.post("/api/vfs/stat", function(req) {
+    var file = String(req.body.path || "");
+    return { path: file, node: ts.vfs.stat(file) };
+});
+
+ts.web.post("/api/vfs/list", function(req) {
+    var path = String(req.body.path || ".");
+    return { path: path, nodes: ts.vfs.list(path) };
+});
+
+// ===============================================================
+// ts.transcode - transcoding module and profile management
+// ===============================================================
+//
+// Reading state needs no permissions, profile changes do:
+//   - list/get return profiles the user may see
+//   - create/update/delete require admin or owner rank
+//
+// Functions:
+//   ts.transcode.info()                          -> module state
+//   ts.transcode.sessions()                      -> active sessions
+//   ts.transcode.stop(sessionID)                 -> bool
+//   ts.transcode.probe(userID, hash, fileIdx)    -> media info
+//   ts.transcode.profiles(userID)                -> available profiles
+//   ts.transcode.profile(userID, id)             -> one profile
+//   ts.transcode.createProfile(userID, options)  -> created profile
+//   ts.transcode.updateProfile(userID, id, opts) -> updated profile
+//   ts.transcode.deleteProfile(userID, id)
+//   ts.transcode.defaultProfile()                -> built-in profile
+//
+// probe() reads the torrent over the network, so the core limits it
+// by a timeout (60s) and reports a failure as a JS exception.
+
+ts.web.get("/api/transcode/module-info", function(req) {
+    return { module: ts.transcode.info() };
+});
+
+ts.web.get("/api/transcode/sessions", function(req) {
+    return { sessions: ts.transcode.sessions() };
+});
+
+ts.web.get("/api/transcode/profiles", function(req) {
+    var userID = req.query.user_id || "owner";
+    return { profiles: ts.transcode.profiles(userID) };
+});
+
+ts.web.get("/api/transcode/profile", function(req) {
+    var userID = req.query.user_id || "owner";
+    var id = req.query.id;
+    if (!id) return { error: "id query param required" };
+    return { profile: ts.transcode.profile(userID, id) };
+});
+
+ts.web.get("/api/transcode/default-profile", function(req) {
+    return { profile: ts.transcode.defaultProfile() };
+});
+
+ts.web.post("/api/transcode/probe", function(req) {
+    var userID  = req.body.user_id || "owner";
+    var hash    = String(req.body.hash || "");
+    var fileIdx = parseInt(req.body.file_idx, 10) || 0;
+    if (!hash) return { error: "hash is required" };
+    return { hash: hash, file_idx: fileIdx, media: ts.transcode.probe(userID, hash, fileIdx) };
+});
+
 // GET /api/users/list - list all users
 ts.web.get("/api/users/list", function(req) {
     return { users: ts.users.list() };

@@ -43,8 +43,8 @@ entry: "service.js"
 
 # --- Icon -----------------------------------------------------
 # OPTIONAL. Icon for the plugin card in admin list.
-# Served from the plugin's own VFS (can be /img/icon.png).
-icon: "/img/logo.png"
+# Served from the plugin's own VFS (relative to the plugin root).
+icon: "/img/ico-showcase.svg"
 
 # --- Menu Entries ---------------------------------------------
 # OPTIONAL. Links added to the sidebar navigation.
@@ -54,6 +54,7 @@ menu:
   - title: "Showcase"
     route: "/"
     rank: 0
+    icon: "/img/ico-showcase.svg"
 
 # --- Bus Events -----------------------------------------------
 # WHITELIST of event topics this plugin is allowed to emit and listen to.
@@ -106,10 +107,27 @@ routes:
   - "/api/torrent/list"
   - "/api/torrent/get"
   - "/api/torrent/add"
+  - "/api/torrent/set-viewed"
+  - "/api/torrent/tracker-policy"
+  - "/api/torrent/blocklist"
 
   # ts.users
   - "/api/users/list"
   - "/api/users/get"
+
+  # ts.vfs
+  - "/api/vfs/read"
+  - "/api/vfs/exists"
+  - "/api/vfs/stat"
+  - "/api/vfs/list"
+
+  # ts.transcode
+  - "/api/transcode/module-info"
+  - "/api/transcode/sessions"
+  - "/api/transcode/profiles"
+  - "/api/transcode/profile"
+  - "/api/transcode/default-profile"
+  - "/api/transcode/probe"
 
   # ts.http
   - "/api/http-demo"

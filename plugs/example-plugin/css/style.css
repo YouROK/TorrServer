@@ -1,120 +1,16 @@
-/* ═══════════════════════════════════════════════════════════════
-   Plugin Showcase - Styles
-   ═══════════════════════════════════════════════════════════════ */
-:root {
-    --silo-bg: #14171a;
-    --silo-bg-raised: #1a1f23;
-    --silo-surface: #22282d;
-    --silo-surface-hover: #2a3138;
-    --silo-border: #333b42;
-    --silo-border-strong: #46505a;
-    --silo-steel: #b6bdc2;
-    --silo-steel-bright: #e3e7ea;
-    --silo-amber: #f0a832;
-    --silo-amber-bright: #ffc861;
-    --silo-amber-deep: #c07d18;
-    --silo-teal: #24504e;
-    --silo-teal-bright: #4e8f89;
-    --silo-danger: #cf5b3a;
-    --silo-text: #e7eaea;
-    --silo-text-muted: #98a2a9;
-    --silo-text-faint: #67717a;
-    --silo-sidebar-w: 220px;
-}
+/* ============================================================================
+   Plugin Showcase - стиль примера плагина.
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+   Общий вид (каркас, кнопки, поля, модальные окна, уведомления) берет
+   серверный /css/style.css. Здесь остается только то, что специфично
+   для страницы-документации: блоки кода, пояснения и таблица манифеста.
 
-body {
-    background: var(--silo-bg);
-    color: var(--silo-text);
-    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
-    font-size: 14px;
-    line-height: 1.5;
-}
+   Это пример для авторов плагинов: свои стили дополняют общий, а не
+   повторяют его. Подключать общий стиль нужно по абсолютному пути
+   /css/style.css - это роут сервера.
+   ============================================================================ */
 
-h1, h2, h3 {
-    color: var(--silo-steel-bright);
-    font-weight: 600;
-    letter-spacing: 0.02em;
-}
-
-.btn {
-    background: var(--silo-amber);
-    color: #14171a;
-    border: none;
-    border-radius: 6px;
-    padding: 8px 16px;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.btn:hover { background: var(--silo-amber-bright); }
-
-.btn-secondary {
-    background: transparent;
-    color: var(--silo-steel);
-    border: 1px solid var(--silo-border-strong);
-}
-
-.btn-secondary:hover {
-    color: var(--silo-steel-bright);
-    border-color: var(--silo-steel);
-}
-
-.btn-danger {
-    background: transparent;
-    color: var(--silo-danger);
-    border: 1px solid var(--silo-danger);
-}
-
-.btn-danger:hover { background: var(--silo-danger); color: #fff; }
-
-.btn-sm { padding: 4px 10px; font-size: 12px; }
-/* ─── Layout: sidebar + content ─────────────────────────────── */
-
-.layout {
-    display: flex;
-    min-height: 100vh;
-}
-
-.sidebar {
-    width: 200px;
-    flex-shrink: 0;
-    background: var(--silo-bg-secondary, #161922);
-    border-right: 1px solid var(--silo-border, #2a3040);
-    display: flex;
-    flex-direction: column;
-}
-
-.content {
-    flex: 1;
-    min-width: 0;
-    overflow-y: auto;
-    padding: 24px 32px;
-}
-
-/* ─── Sidebar: brand ──────────────────────────────────────────── */
-
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 16px;
-    border-bottom: 1px solid var(--silo-border, #2a3040);
-}
-
-.logo-mini {
-    flex-shrink: 0;
-}
-
-.brand-name {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--silo-text, #e8eaf0);
-    letter-spacing: 0.05em;
-}
-
-/* ─── Sidebar: navigation ────────────────────────────────────── */
+/* --- Sidebar: навигация по разделам --------------------------- */
 
 .section-nav {
     display: flex;
@@ -125,65 +21,29 @@ h1, h2, h3 {
 }
 
 .section-nav .nav-item {
-    display: block;
-    padding: 7px 12px;
-    color: var(--silo-text-muted, #8b919e);
     font-size: 12px;
-    text-decoration: none;
-    border-radius: 4px;
-    border-left: 2px solid transparent;
-    transition: background-color 0.15s, color 0.15s;
-}
-
-.section-nav .nav-item:hover {
-    background: var(--silo-surface-hover, #252a3a);
-    color: var(--silo-text, #e8eaf0);
-}
-
-.section-nav .nav-item.active {
-    background: var(--silo-surface-hover, #252a3a);
-    color: var(--silo-teal-bright, #2dd4bf);
-    border-left-color: var(--silo-teal, #1abc9c);
-}
-
-/* ─── Sidebar: footer ─────────────────────────────────────────── */
-
-.sidebar-footer {
-    padding: 12px 16px;
-    border-top: 1px solid var(--silo-border, #2a3040);
 }
 
 .sidebar-footnote {
     font-size: 10px;
-    color: var(--silo-text-faint, #4a5060);
+    color: var(--silo-text-faint);
     font-family: "JetBrains Mono", "Consolas", monospace;
 }
 
-/* ─── Topbar ──────────────────────────────────────────────────── */
-
-.topbar {
-    margin-bottom: 28px;
-}
-
-.topbar h1 {
-    margin: 0 0 4px 0;
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--silo-text, #e8eaf0);
-}
+/* --- Topbar: подзаголовок страницы ---------------------------- */
 
 .topbar-sub {
     font-size: 12px;
-    color: var(--silo-text-muted, #8b919e);
+    color: var(--silo-text-muted);
     font-weight: normal;
 }
 
-/* ─── Sections ─────────────────────────────────────────────────── */
+/* --- Sections -------------------------------------------------- */
 
 .section {
     margin-bottom: 40px;
     padding-bottom: 32px;
-    border-bottom: 1px solid var(--silo-border, #2a3040);
+    border-bottom: 1px solid var(--silo-border);
 }
 
 .section:last-child {
@@ -191,27 +51,27 @@ h1, h2, h3 {
 }
 
 .section h2 {
-    color: var(--silo-text, #e8eaf0);
+    color: var(--silo-text);
     font-size: 17px;
     font-weight: 600;
     margin: 0 0 8px 0;
 }
 
 .section > p {
-    color: var(--silo-text-muted, #8b919e);
+    color: var(--silo-text-muted);
     font-size: 13px;
     line-height: 1.6;
     margin: 0 0 16px 0;
 }
 
-/* ─── Code blocks ─────────────────────────────────────────────── */
+/* --- Code blocks ----------------------------------------------- */
 
 .code-block {
-    background: var(--silo-surface, #1c2030);
-    border: 1px solid var(--silo-border, #2a3040);
+    background: var(--silo-surface);
+    border: 1px solid var(--silo-border);
     border-radius: 6px;
     padding: 16px;
-    color: var(--silo-text, #e8eaf0);
+    color: var(--silo-text);
     font-family: "JetBrains Mono", "Consolas", "Monaco", monospace;
     font-size: 12px;
     line-height: 1.6;
@@ -237,16 +97,16 @@ h1, h2, h3 {
     margin-bottom: 2px;
 }
 
-/* ─── Explanation box ──────────────────────────────────────────── */
+/* --- Explanation box ------------------------------------------- */
 
 .explain-box {
-    background: var(--silo-surface, #1c2030);
-    border-left: 3px solid var(--silo-teal, #1abc9c);
+    background: var(--silo-surface);
+    border-left: 3px solid var(--silo-teal);
     border-radius: 4px;
     padding: 12px 16px;
     margin: 12px 0;
     font-size: 13px;
-    color: var(--silo-text, #e8eaf0);
+    color: var(--silo-text);
 }
 
 .explain-box + .explain-box {
@@ -254,7 +114,7 @@ h1, h2, h3 {
 }
 
 .explain-box strong {
-    color: var(--silo-teal-bright, #2dd4bf);
+    color: var(--silo-teal-bright);
     display: block;
     margin-bottom: 6px;
 }
@@ -266,28 +126,28 @@ h1, h2, h3 {
 
 .explain-box li {
     margin-bottom: 4px;
-    color: var(--silo-text-muted, #8b919e);
+    color: var(--silo-text-muted);
 }
 
 .explain-box li code {
-    background: var(--silo-surface-hover, #252a3a);
+    background: var(--silo-surface-hover);
     padding: 1px 5px;
     border-radius: 3px;
     font-family: "JetBrains Mono", monospace;
     font-size: 11px;
-    color: var(--silo-amber, #f59e0b);
+    color: var(--silo-amber);
 }
 
 .explain-box p {
     margin: 6px 0 0 0;
-    color: var(--silo-text-muted, #8b919e);
+    color: var(--silo-text-muted);
 }
 
 .explain-box p:first-child {
     margin-top: 0;
 }
 
-/* ─── Demo rows ────────────────────────────────────────────────── */
+/* --- Demo rows ------------------------------------------------- */
 
 .demo-row {
     display: flex;
@@ -301,25 +161,14 @@ h1, h2, h3 {
     max-width: 260px;
 }
 
-.input {
-    background: var(--silo-bg-raised);
-    color: var(--silo-text);
-    border: 1px solid var(--silo-border);
-    border-radius: 6px;
-    padding: 8px 12px;
-    outline: none;
-    width: 100%;
-}
-
-.input:focus { border-color: var(--silo-amber); }
-/* ─── Output area ─────────────────────────────────────────────── */
+/* --- Output area ----------------------------------------------- */
 
 .demo-output {
-    background: var(--silo-surface, #1c2030);
-    border: 1px solid var(--silo-border, #2a3040);
+    background: var(--silo-surface);
+    border: 1px solid var(--silo-border);
     border-radius: 4px;
     padding: 10px 14px;
-    color: var(--silo-teal-bright, #2dd4bf);
+    color: var(--silo-teal-bright);
     font-family: "JetBrains Mono", "Consolas", monospace;
     font-size: 12px;
     line-height: 1.5;
@@ -334,87 +183,26 @@ h1, h2, h3 {
 }
 
 .demo-output.is-error {
-    color: var(--silo-red, #ef4444);
+    color: var(--silo-danger);
 }
 
-/* ─── Modals ───────────────────────────────────────────────────── */
-
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    backdrop-filter: blur(4px);
-}
-
-.modal {
-    background: var(--silo-bg-secondary, #1c2030);
-    border: 1px solid var(--silo-border, #2a3040);
-    border-radius: 10px;
-    width: 100%;
-    max-width: 560px;
-    max-height: 80vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-}
+/* --- Modals: lists -------------------------------------------- */
 
 .modal-lg {
     max-width: 720px;
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--silo-border, #2a3040);
-    flex-shrink: 0;
-}
-
-.modal-header h2 {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--silo-text, #e8eaf0);
-}
-
-.modal-close {
-    background: none;
-    border: none;
-    color: var(--silo-text-muted, #8b919e);
-    font-size: 22px;
-    cursor: pointer;
-    padding: 0;
-    line-height: 1;
-    transition: color 0.15s;
-}
-
-.modal-close:hover {
-    color: var(--silo-text, #e8eaf0);
-}
-
-.modal-body {
-    padding: 16px 20px;
-    overflow-y: auto;
-    flex: 1;
 }
 
 .modal-list-item {
     padding: 10px 12px;
     border-radius: 6px;
     margin-bottom: 6px;
-    background: var(--silo-surface, #1c2030);
-    border: 1px solid var(--silo-border, #2a3040);
+    background: var(--silo-surface);
+    border: 1px solid var(--silo-border);
 }
 
 .modal-list-title {
     font-size: 13px;
-    color: var(--silo-text, #e8eaf0);
+    color: var(--silo-text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -422,7 +210,7 @@ h1, h2, h3 {
 
 .modal-list-meta {
     font-size: 11px;
-    color: var(--silo-text-muted, #8b919e);
+    color: var(--silo-text-muted);
     font-family: "JetBrains Mono", monospace;
     margin-top: 2px;
 }
@@ -431,62 +219,16 @@ h1, h2, h3 {
 .modal-loading,
 .modal-error {
     text-align: center;
-    color: var(--silo-text-muted, #8b919e);
+    color: var(--silo-text-muted);
     font-size: 13px;
     padding: 24px;
 }
 
 .modal-error {
-    color: var(--silo-red, #ef4444);
+    color: var(--silo-danger);
 }
 
-/* ─── Toast notifications ─────────────────────────────────────── */
-
-.toast-root {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    z-index: 2000;
-    display: flex;
-    flex-direction: column-reverse;
-    gap: 8px;
-    pointer-events: none;
-}
-
-.toast {
-    background: var(--silo-surface-hover, #252a3a);
-    border: 1px solid var(--silo-border, #2a3040);
-    border-radius: 8px;
-    padding: 12px 16px;
-    font-size: 13px;
-    color: var(--silo-text, #e8eaf0);
-    min-width: 200px;
-    max-width: 380px;
-    pointer-events: all;
-    opacity: 0;
-    transform: translateX(20px);
-    transition: opacity 0.3s ease, transform 0.3s ease;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-}
-
-.toast-show {
-    opacity: 1;
-    transform: translateX(0);
-}
-
-.toast-success {
-    border-left: 3px solid #22c55e;
-}
-
-.toast-error {
-    border-left: 3px solid var(--silo-red, #ef4444);
-}
-
-.toast-info {
-    border-left: 3px solid var(--silo-teal, #1abc9c);
-}
-
-/* ─── Manifest reference table ─────────────────────────────────── */
+/* --- Manifest reference table ---------------------------------- */
 
 .manifest-table {
     width: 100%;
@@ -498,16 +240,16 @@ h1, h2, h3 {
 .manifest-table th {
     text-align: left;
     padding: 10px 12px;
-    background: var(--silo-surface-hover, #252a3a);
-    color: var(--silo-text, #e8eaf0);
+    background: var(--silo-surface-hover);
+    color: var(--silo-text);
     font-weight: 600;
-    border-bottom: 1px solid var(--silo-border, #2a3040);
+    border-bottom: 1px solid var(--silo-border);
 }
 
 .manifest-table td {
     padding: 10px 12px;
-    border-bottom: 1px solid var(--silo-border, #2a3040);
-    color: var(--silo-text-muted, #8b919e);
+    border-bottom: 1px solid var(--silo-border);
+    color: var(--silo-text-muted);
     vertical-align: top;
 }
 
@@ -516,28 +258,28 @@ h1, h2, h3 {
 }
 
 .manifest-table tr:hover td {
-    background: var(--silo-surface, #1c2030);
+    background: var(--silo-surface);
 }
 
 .manifest-table code {
-    background: var(--silo-surface-hover, #252a3a);
+    background: var(--silo-surface-hover);
     padding: 2px 6px;
     border-radius: 3px;
     font-family: "JetBrains Mono", monospace;
     font-size: 11px;
-    color: var(--silo-amber, #f59e0b);
+    color: var(--silo-amber);
     white-space: nowrap;
 }
 
 .manifest-table td:first-child code {
-    color: var(--silo-teal-bright, #2dd4bf);
+    color: var(--silo-teal-bright);
 }
 
-/* ─── i18n demo ─────────────────────────────────────────────────── */
+/* --- i18n demo -------------------------------------------------- */
 
 .i18n-demo-result {
-    background: var(--silo-surface, #1c2030);
-    border: 1px solid var(--silo-border, #2a3040);
+    background: var(--silo-surface);
+    border: 1px solid var(--silo-border);
     border-radius: 6px;
     padding: 16px;
 }
@@ -551,22 +293,22 @@ h1, h2, h3 {
 
 .i18n-demo-key code,
 .i18n-demo-value code {
-    color: var(--silo-teal-bright, #2dd4bf);
+    color: var(--silo-teal-bright);
     font-family: "JetBrains Mono", monospace;
 }
 
 .i18n-demo-note {
-    color: var(--silo-text-muted, #8b919e);
+    color: var(--silo-text-muted);
     font-size: 12px;
 }
 
-/* ─── Global code ─────────────────────────────────────────────── */
+/* --- Code во всем тексте страницы ------------------------------ */
 
 code {
-    background: var(--silo-surface, #1c2030);
+    background: var(--silo-surface);
     padding: 2px 6px;
     border-radius: 4px;
     font-family: "JetBrains Mono", "Consolas", monospace;
     font-size: 12px;
-    color: var(--silo-amber, #f59e0b);
+    color: var(--silo-amber);
 }
