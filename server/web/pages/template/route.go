@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"mime"
+	"net/http"
 	"path/filepath"
 	"strings"
 
@@ -66,7 +67,21 @@ func writeWithCache(c *gin.Context, path string, data []byte, contentType string
 		c.Header("Cloudflare-CDN-Cache-Control", "no-store")
 	}
 	c.Header("ETag", etag)
-	c.Data(200, contentType, data)
+	if etagMatches(c.GetHeader("If-None-Match"), etag) {
+		c.Status(http.StatusNotModified)
+		return
+	}
+	c.Data(http.StatusOK, contentType, data)
+}
+
+func etagMatches(header, etag string) bool {
+	for _, tag := range strings.Split(header, ",") {
+		tag = strings.TrimSpace(tag)
+		if tag == "*" || strings.TrimPrefix(tag, "W/") == etag {
+			return true
+		}
+	}
+	return false
 }
 
 // index.html / SW / manifest must revalidate so releases are not stuck behind caches.
