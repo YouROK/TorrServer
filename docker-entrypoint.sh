@@ -21,8 +21,8 @@ if [ -n "$TS_TORR_ADDR" ]; then FLAGS="${FLAGS} --torrentaddr ${TS_TORR_ADDR}"; 
 if [ -n "$TS_PUBLIC_IPV4_ADDR" ]; then FLAGS="${FLAGS} --pubipv4 ${TS_PUBLIC_IPV4_ADDR}"; fi
 if [ -n "$TS_PUBLIC_IPV6_ADDR" ]; then FLAGS="${FLAGS} --pubipv6 ${TS_PUBLIC_IPV6_ADDR}"; fi
 if [ -n "$TS_MAX_SIZE" ]; then FLAGS="${FLAGS} --maxsize ${TS_MAX_SIZE}"; fi
-if [ -n "$TS_TELEGRAM_TOKEN" ]; then FLAGS="${FLAGS} --tg ${TS_TELEGRAM_TOKEN}"; fi
-if [ -n "$TS_FUSE_PATH" ]; then FLAGS="${FLAGS} --fuse ${TS_FUSE_PATH}"; fi
+if [ -n "$TS_TELEGRAM_TOKEN" ]; then FLAGS="${FLAGS} --tgtoken ${TS_TELEGRAM_TOKEN}"; fi
+if [ -n "$TS_FUSE_PATH" ]; then FLAGS="${FLAGS} --fusepath ${TS_FUSE_PATH}"; fi
 
 if [ ! -d "$TS_CONF_PATH" ]; then
   mkdir -p "$TS_CONF_PATH"

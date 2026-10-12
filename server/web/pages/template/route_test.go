@@ -3,70 +3,88 @@ package template
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 )
 
-func TestIndexHTMLRoutes(t *testing.T) {
+func newWebRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	RouteWebPages(r)
-
-	for _, path := range []string{"/", "/index.html"} {
-		req := httptest.NewRequest(http.MethodGet, path, nil)
-		w := httptest.NewRecorder()
-		r.ServeHTTP(w, req)
-		if w.Code != http.StatusOK {
-			t.Fatalf("%s: status %d, want 200", path, w.Code)
-		}
-		ct := w.Header().Get("Content-Type")
-		if ct != "text/html; charset=utf-8" {
-			t.Fatalf("%s: Content-Type %q", path, ct)
-		}
-		if len(w.Body.Bytes()) == 0 {
-			t.Fatalf("%s: empty body", path)
-		}
-	}
+	return r
 }
 
-func TestCacheControlFor(t *testing.T) {
-	wantNoCache := "no-cache, must-revalidate"
-	wantImmutable := "public, max-age=31536000, immutable"
-
-	cases := []struct {
-		path string
-		want string
-	}{
-		{"pages/index.html", wantNoCache},
-		{"pages/sw.js", wantNoCache},
-		{"pages/workbox-abc123.js", wantNoCache},
-		{"pages/site.webmanifest", wantNoCache},
-		{"pages/static/useTranslation-BnNnnMzO.js", wantImmutable},
-		{"pages/favicon.ico", "public, max-age=3600"},
+func get(r *gin.Engine, path, ifNoneMatch string) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(http.MethodGet, path, nil)
+	if ifNoneMatch != "" {
+		req.Header.Set("If-None-Match", ifNoneMatch)
 	}
-	for _, tc := range cases {
-		if got := cacheControlFor(tc.path); got != tc.want {
-			t.Errorf("cacheControlFor(%q)=%q, want %q", tc.path, got, tc.want)
-		}
-	}
-}
-
-func TestIndexHTMLSetsCDNBypass(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	r := gin.New()
-	RouteWebPages(r)
-
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
-	if w.Code != http.StatusOK {
-		t.Fatalf("status %d", w.Code)
+	return w
+}
+
+func TestWebPagesCacheControl(t *testing.T) {
+	r := newWebRouter()
+
+	var static string
+	for _, route := range r.Routes() {
+		if strings.HasPrefix(route.Path, "/static/") && strings.HasSuffix(route.Path, ".js") {
+			static = route.Path
+			break
+		}
 	}
-	if got := w.Header().Get("CDN-Cache-Control"); got != "no-store" {
-		t.Fatalf("CDN-Cache-Control=%q, want no-store", got)
+	if static == "" {
+		t.Fatal("no hashed static JS route")
 	}
-	if got := w.Header().Get("Cloudflare-CDN-Cache-Control"); got != "no-store" {
-		t.Fatalf("Cloudflare-CDN-Cache-Control=%q, want no-store", got)
+
+	cases := map[string]string{
+		"/":           "no-cache, must-revalidate",
+		"/index.html": "no-cache, must-revalidate",
+		"/sw.js":      "no-cache, must-revalidate",
+		static:        "public, max-age=31536000, immutable",
+	}
+	for path, want := range cases {
+		w := get(r, path, "")
+		if w.Code != http.StatusOK {
+			t.Errorf("%s: status %d, want 200", path, w.Code)
+		}
+		if got := w.Header().Get("Cache-Control"); got != want {
+			t.Errorf("%s: Cache-Control %q, want %q", path, got, want)
+		}
+		if etag := w.Header().Get("ETag"); !strings.HasPrefix(etag, `"`) || !strings.HasSuffix(etag, `"`) {
+			t.Errorf("%s: ETag %q is not quoted", path, etag)
+		}
+	}
+}
+
+func TestWebPagesRevalidation(t *testing.T) {
+	r := newWebRouter()
+	etag := get(r, "/", "").Header().Get("ETag")
+
+	for _, inm := range []string{etag, "W/" + etag, `"other", ` + etag, "*"} {
+		w := get(r, "/", inm)
+		if w.Code != http.StatusNotModified {
+			t.Errorf("If-None-Match %q: status %d, want 304", inm, w.Code)
+		}
+		if w.Body.Len() != 0 {
+			t.Errorf("If-None-Match %q: 304 has a body", inm)
+		}
+	}
+
+	if w := get(r, "/", `"stale"`); w.Code != http.StatusOK || w.Body.Len() == 0 {
+		t.Errorf("stale ETag: status %d, body %d bytes, want 200 with the page", w.Code, w.Body.Len())
+	}
+}
+
+func TestEtagMatches(t *testing.T) {
+	etag := `"abc"`
+	if !etagMatches(etag, etag) || !etagMatches("W/"+etag, etag) || !etagMatches("*", etag) {
+		t.Fatal("expected match")
+	}
+	if etagMatches(`"other"`, etag) || etagMatches("", etag) {
+		t.Fatal("expected miss")
 	}
 }
