@@ -1,1 +1,0 @@
-import{t as e}from"./createLucideIcon-BrMNLKI3.js";var t={name:`ellipsis`,size:24,node:[[`circle`,{cx:`12`,cy:`12`,r:`1`,key:`41hilf`}],[`circle`,{cx:`19`,cy:`12`,r:`1`,key:`1wjl8i`}],[`circle`,{cx:`5`,cy:`12`,r:`1`,key:`1pcz8c`}]],aliases:[`more-horizontal`]};t.node;var n=e(t);export{n as t};
