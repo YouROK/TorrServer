@@ -26,7 +26,6 @@ const NUMBER_FIELDS: readonly (keyof BTSets)[] = [
   'DownloadRateLimit',
   'UploadRateLimit',
   'TorrentDisconnectTimeout',
-  'SslPort',
 ]
 
 /** Protocol toggles, retracker mode, and connection/port tuning ("PRO mode"). */
@@ -50,8 +49,6 @@ export default function NetworkSettingsPanel({
         return t('SettingsDialog.UploadRateLimit')
       case 'TorrentDisconnectTimeout':
         return t('SettingsDialog.TorrentDisconnectTimeout')
-      case 'SslPort':
-        return t('SettingsDialog.SslPort')
       default:
         return String(key)
     }
@@ -68,8 +65,6 @@ export default function NetworkSettingsPanel({
         return t('SettingsDialog.RateLimitHint')
       case 'TorrentDisconnectTimeout':
         return t('Seconds')
-      case 'SslPort':
-        return t('SettingsDialog.SslPortHint')
       default:
         return undefined
     }
@@ -205,16 +200,6 @@ export default function NetworkSettingsPanel({
       </SettingsSection>
 
       <SettingsSection title={t('SettingsDialog.SectionSslTls')}>
-        <TextField value={settings.SslCert || ''} onChange={value => onUpdate('SslCert', value)}>
-          <Label>{t('SettingsDialog.SslCert')}</Label>
-          <Input placeholder='/etc/ssl/cert.pem' />
-          <Description>{t('SettingsDialog.SslCertHint')}</Description>
-        </TextField>
-        <TextField value={settings.SslKey || ''} onChange={value => onUpdate('SslKey', value)}>
-          <Label>{t('SettingsDialog.SslKey')}</Label>
-          <Input placeholder='/etc/ssl/key.pem' />
-          <Description>{t('SettingsDialog.SslKeyHint')}</Description>
-        </TextField>
         <HTTPSSettingsPanel onUpdate={onUpdate} />
       </SettingsSection>
     </div>
