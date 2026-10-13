@@ -72,5 +72,3 @@ export function useLocalJsonPref<T>(key: string, fallback: T): [T, (next: T) => 
 
   return [value, set]
 }
-
-export { LOCAL_PREF_EVENT }

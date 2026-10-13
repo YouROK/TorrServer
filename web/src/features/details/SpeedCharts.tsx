@@ -2,9 +2,14 @@ import { useEffect, useId, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { humanizeSpeed } from 'shared/lib/format'
 
-const HISTORY_LENGTH = 30
+const HISTORY_LENGTH = 60
 const CHART_WIDTH = 320
 const CHART_HEIGHT = 96
+
+function average(values: number[]): number {
+  if (values.length === 0) return 0
+  return values.reduce((sum, value) => sum + value, 0) / values.length
+}
 
 interface SpeedChartsProps {
   downloadSpeed?: number | null
@@ -74,9 +79,11 @@ export default function SpeedCharts({ downloadSpeed, uploadSpeed, compact = fals
     setUploadHistory(prev => [...prev.slice(1), ul])
   }, [downloadSpeed, uploadSpeed])
 
-  const peak = useMemo(() => Math.max(...downloadHistory, ...uploadHistory, 1), [downloadHistory, uploadHistory])
-  const downloadPath = useMemo(() => buildAreaPath(downloadHistory, peak), [downloadHistory, peak])
-  const uploadPath = useMemo(() => buildAreaPath(uploadHistory, peak), [uploadHistory, peak])
+  const scalePeak = useMemo(() => Math.max(...downloadHistory, ...uploadHistory, 1), [downloadHistory, uploadHistory])
+  const downloadPeak = useMemo(() => Math.max(...downloadHistory, 0), [downloadHistory])
+  const downloadAvg = useMemo(() => average(downloadHistory), [downloadHistory])
+  const downloadPath = useMemo(() => buildAreaPath(downloadHistory, scalePeak), [downloadHistory, scalePeak])
+  const uploadPath = useMemo(() => buildAreaPath(uploadHistory, scalePeak), [uploadHistory, scalePeak])
   const hasTraffic = useMemo(
     () =>
       downloadHistory.some(v => v > 0) ||
@@ -96,17 +103,31 @@ export default function SpeedCharts({ downloadSpeed, uploadSpeed, compact = fals
       }`}
     >
       {showInlineLive ? (
-        <div className='mb-2 flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1'>
-          <div className='flex items-center gap-2'>
-            <span className='size-2.5 rounded-full bg-accent' aria-hidden />
-            <span className='text-xs text-muted'>{t('DownloadSpeed')}</span>
-            <span className='text-sm font-bold tabular-nums text-foreground'>{humanizeSpeed(downloadSpeed)}</span>
+        <div className='mb-2 flex shrink-0 flex-col gap-1'>
+          <div className='flex flex-wrap items-center gap-x-4 gap-y-1'>
+            <div className='flex items-center gap-2'>
+              <span className='size-2.5 rounded-full bg-accent' aria-hidden />
+              <span className='text-xs text-muted'>{t('DownloadSpeed')}</span>
+              <span className='text-sm font-bold tabular-nums text-foreground'>{humanizeSpeed(downloadSpeed)}</span>
+            </div>
+            <div className='flex items-center gap-2'>
+              <span className='size-2.5 rounded-full bg-warning' aria-hidden />
+              <span className='text-xs text-muted'>{t('UploadSpeed')}</span>
+              <span className='text-sm font-bold tabular-nums text-foreground'>{humanizeSpeed(uploadSpeed)}</span>
+            </div>
           </div>
-          <div className='flex items-center gap-2'>
-            <span className='size-2.5 rounded-full bg-warning' aria-hidden />
-            <span className='text-xs text-muted'>{t('UploadSpeed')}</span>
-            <span className='text-sm font-bold tabular-nums text-foreground'>{humanizeSpeed(uploadSpeed)}</span>
-          </div>
+          {hasTraffic ? (
+            <div className='flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted'>
+              <span>
+                {t('Peak')}{' '}
+                <span className='font-semibold tabular-nums text-foreground'>{humanizeSpeed(downloadPeak)}</span>
+              </span>
+              <span>
+                {t('Average')}{' '}
+                <span className='font-semibold tabular-nums text-foreground'>{humanizeSpeed(downloadAvg)}</span>
+              </span>
+            </div>
+          ) : null}
         </div>
       ) : null}
 

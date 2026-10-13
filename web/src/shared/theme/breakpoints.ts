@@ -23,16 +23,8 @@ export const BP = {
 
 export type Breakpoint = keyof typeof BP
 
-export const bp = (name: Breakpoint): number => BP[name]
-
-/** CSS `@media` fragment for styled layers that cannot use JS `useMediaQuery`. */
-export const mediaMax = (name: Breakpoint): string => `@media (max-width: ${BP[name]}px)`
-
 /** MatchMedia query string for HeroUI `useMediaQuery` / `window.matchMedia`. */
 export const queryMax = (name: Breakpoint): string => `(max-width: ${BP[name]}px)`
-
-/** Min-width match — pair with `queryMax` for banded layouts (e.g. phone 4 vs 6 hero stats). */
-export const queryMin = (name: Breakpoint): string => `(min-width: ${BP[name]}px)`
 
 /** Short landscape phones / split-view: hide tall chrome that would crush content. */
 export const MEDIA_SHORT_VIEWPORT = '(max-height: 500px)'

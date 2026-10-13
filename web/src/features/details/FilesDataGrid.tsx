@@ -1,7 +1,7 @@
 import { CheckCircle2 } from 'lucide-react'
 import { memo, useCallback, useMemo, useState, type ReactNode } from 'react'
 import ptt from 'parse-torrent-title'
-import { Button, useMediaQuery } from '@heroui/react'
+import { useMediaQuery } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { streamHost } from 'shared/api/hosts'
@@ -9,11 +9,13 @@ import { authFetch } from 'shared/api/authCredentials'
 import type { PlayableFile, TorrentFileStat } from 'shared/api/types'
 import { remViewedFile, VIEWED_QUERY_KEY } from 'shared/api/viewed'
 import { shouldUseGStreamerPlayer, useGStreamerRuntime } from 'shared/lib/gstreamer'
-import { useExternalPlayers, type ExternalPlayerLink } from 'shared/lib/externalPlayers'
+import { copyToClipboard } from 'shared/lib/clipboard'
+import { useExternalPlayers } from 'shared/lib/externalPlayers'
 import { externalLink, useExternalMediaBase } from 'shared/lib/mediaBase'
 import { humanizeSize } from 'shared/lib/format'
 import { queryMax } from 'shared/theme/breakpoints'
 import { useOptionalAppToast } from 'shared/ui/Toast'
+import { useConfiguredPlayAction } from 'features/player/useConfiguredPlayAction'
 import { usePlayLauncher } from 'features/player/usePlayLauncher'
 
 import FileRowActions from './FileRowActions'
@@ -62,31 +64,27 @@ function episodeBadge(episode?: number): string | null {
 
 /**
  * Compact episode/file card used in the details Files list.
- * Mobile: badge + title | Play + …; Clear under subtitle; external players wrap below.
- * Desktop (`sm+`): denser inline viewed chip beside the title; players stay in actions.
+ * Mobile: badge + title | Play + … (players live in More).
+ * Desktop (`sm+`): player chips stay on the row.
  */
 function EpisodeRow({
   row,
   actions,
-  externalPlayers,
   onUnmarkViewed,
 }: {
   row: FileRow
   actions: ReactNode
-  externalPlayers?: ExternalPlayerLink[]
   onUnmarkViewed?: () => void
 }) {
   const { t } = useTranslation()
   const isMobile = useMediaQuery(queryMax('mobile'))
   const badge = episodeBadge(row.episode)
   const title = row.episode != null ? row.name.replace(/^E\d+\s*[·.-]\s*/i, '').trim() || row.name : row.name
-  const showMobilePlayers = isMobile && (externalPlayers?.length ?? 0) > 0
 
   return (
     <div
-      className={`flex flex-col gap-1.5 rounded-lg border border-border border-l-[3px] bg-surface px-2.5 py-2 sm:gap-0 sm:rounded-xl sm:px-3 sm:py-2 ${
-        row.viewed ? 'border-l-accent/40 opacity-80' : 'border-l-accent'
-      }`}
+      className={`flex flex-col gap-1.5 rounded-lg border border-border border-l-[3px] bg-surface px-2.5 py-2 sm:gap-0 sm:rounded-xl sm:px-3 sm:py-2 ${row.viewed ? 'border-l-accent/40 opacity-80' : 'border-l-accent'
+        }`}
     >
       <div className='flex items-start gap-2 sm:items-center sm:gap-3'>
         <div className='flex min-w-0 flex-1 items-center gap-2 sm:gap-3'>
@@ -133,24 +131,6 @@ function EpisodeRow({
         </div>
         <div className='shrink-0 self-start sm:self-center'>{actions}</div>
       </div>
-
-      {showMobilePlayers ? (
-        <div className='flex w-full items-center gap-1.5'>
-          {externalPlayers!.map(player => (
-            <Button
-              key={player.label}
-              variant='secondary'
-              size='sm'
-              className='min-h-11 min-w-0 flex-1 px-1.5 text-[11px] font-medium'
-              onPress={() => {
-                window.location.href = player.href
-              }}
-            >
-              <span className='truncate'>{player.label}</span>
-            </Button>
-          ))}
-        </div>
-      ) : null}
     </div>
   )
 }
@@ -190,6 +170,7 @@ const FilesDataGrid = memo(
       [knownPlayableFiles, gstRuntime],
     )
 
+    const { runConfiguredPlay } = useConfiguredPlayAction()
     const { playFile, isResolving, resolvingFileId, playerModals } = usePlayLauncher({
       hash,
       displayName: displayName || hash,
@@ -278,14 +259,29 @@ const FilesDataGrid = memo(
             <EpisodeRow
               key={row.id}
               row={row}
-              externalPlayers={externalPlayers}
               onUnmarkViewed={row.viewed ? () => void unmarkViewed(row.id) : undefined}
               actions={
                 <FileRowActions
                   preloadLabel={t('Preload')}
                   onPreload={() => preloadBuffer(row.id)}
                   playerSupported={!unsupportedPlayerKeys[row.playerKey]}
-                  onPlay={() => playFile(row.playable)}
+                  onPlay={() =>
+                    runConfiguredPlay({
+                      hash,
+                      displayName: displayName || hash,
+                      knownPlayableFiles: [row.playable],
+                      handlePlay: () => playFile(row.playable),
+                      resolvePlayableFile: onFile => onFile(row.playable),
+                      copyText: async text => {
+                        try {
+                          await copyToClipboard(text)
+                          toast?.showToast({ message: t('Copied'), severity: 'success' })
+                        } catch {
+                          toast?.showToast({ message: t('Error'), severity: 'error' })
+                        }
+                      },
+                    })
+                  }
                   isPlayPending={isResolving && resolvingFileId === row.id}
                   openLinkHref={row.link}
                   showOpenLink={shouldShowOpenLink}

@@ -591,5 +591,3 @@ export default function TorrentsPage({ sortABC, sortCategory, onAdd, onClearCate
     </>
   )
 }
-
-export { sortTorrents }

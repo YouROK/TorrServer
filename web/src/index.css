@@ -2311,8 +2311,8 @@ html.dark body {
 
 body[data-modal-open='true'] .ts-bottom-nav {
   pointer-events: none;
-  /* Keep in-flow height so the shell does not jump; modal covers the reserved band */
-  visibility: hidden;
+  /* Stay in flow and visible: menus and centered confirms do not cover the bar.
+     Fullscreen dialogs paint over it. The player hides it via data-immersive. */
 }
 
 body[data-immersive='true'] .ts-bottom-nav {
@@ -2346,6 +2346,16 @@ body[data-immersive='true'] .ts-bottom-nav {
   .modal__dialog--lg {
     min-width: 32rem;
   }
+}
+
+/* Details edit sits left of absolute Close on every width.
+   ≤960 and fullscreen rules below add the safe-area offset. */
+.modal__dialog.ts-details-modal .ts-details-edit-trigger {
+  position: absolute;
+  /* Match HeroUI close (top-4 / end-4, 1.5rem): sit just left of it. */
+  top: 1rem;
+  right: 3rem;
+  z-index: 20;
 }
 
 /**
@@ -2477,11 +2487,20 @@ body[data-immersive='true'] .ts-bottom-nav {
     place-items: center;
   }
 
-  /* Edit sits left of absolute Close — clear both 44px targets + gap. */
+  /* Edit sits left of absolute Close — same 44px box as `.modal__close-trigger`. */
   .modal__dialog.ts-details-modal .ts-details-edit-trigger {
     position: absolute;
     top: max(0.5rem, env(safe-area-inset-top, 0px));
     right: max(3.5rem, calc(3rem + env(safe-area-inset-right, 0px)));
+  }
+
+  .modal__dialog.ts-details-modal .ts-details-edit-trigger>button {
+    display: grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    place-items: center;
   }
 
   .modal__dialog>.modal__body.modal__body--scroll-inside,
@@ -2773,6 +2792,15 @@ body[data-immersive='true'] .ts-bottom-nav {
   right: max(3.5rem, calc(3rem + env(safe-area-inset-right, 0px)));
 }
 
+.modal__dialog--full.ts-details-modal .ts-details-edit-trigger>button {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  place-items: center;
+}
+
 .modal__dialog--full.ts-details-modal .ts-details-tabs {
   display: flex;
   flex-direction: column;
@@ -2856,6 +2884,19 @@ html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal .ts-details-hero {
   padding-right: max(6.75rem, calc(5.75rem + env(safe-area-inset-right, 0px)));
   padding-bottom: 0.5rem;
   padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+}
+
+/* Phone flow hero: only the first line reserves the button cluster (a float),
+   so the blanket right gutter must not indent the whole block. */
+html .modal__dialog.ts-details-modal .ts-details-hero.ts-details-hero-flow,
+.modal__dialog--full.ts-details-modal .ts-details-hero.ts-details-hero-flow {
+  padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+}
+
+.ts-details-hero-flow::after {
+  content: '';
+  display: block;
+  clear: both;
 }
 
 html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal .ts-details-edit-trigger {
@@ -3030,26 +3071,6 @@ html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal>.modal__body.modal
   --media-button-icon-width: 1.6rem;
   --media-button-icon-height: 1.6rem;
 }
-
-.ts-player-extra-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: var(--media-control-height, 2.75rem);
-  height: var(--media-control-height, 2.75rem);
-  padding: 0;
-  border: 0;
-  border-radius: 0.5rem;
-  color: #fff;
-  background: transparent;
-  cursor: pointer;
-}
-
-.ts-player-extra-btn:hover {
-  background: transparent;
-  filter: brightness(1.15);
-}
-
 
 /* Poster library density: ~2 cols on phone (~360+), denser on tablet+, roomier on desktop. */
 .torrent-poster-grid {

@@ -95,57 +95,6 @@ export function resolveSnakeSettings(mode: SnakeThemeMode, variant: SnakeVariant
 }
 
 /**
- * @deprecated Prefer {@link resolveSnakeSettings} so colors track `data-palette`.
- * Static forest snapshot for tests / rare callers — not palette-aware.
- */
-export const snakeSettings: Record<SnakeThemeMode, Record<SnakeVariant, SnakePieceSettings>> = {
-  dark: {
-    default: {
-      ...layoutDefaults.default,
-      borderColor: alphaCss(forestFallback.dark.accent, 0.28),
-      completeColor: forestFallback.dark.accent,
-      backgroundColor: forestFallback.dark.surfaceSecondary,
-      readerColor: '#050807',
-      readerHaloColor: alphaCss('#fff', 0.45),
-      rangeColor: '#c4a882',
-      rangeEmptyColor: alphaCss('#c4a882', 0.28),
-    },
-    mini: {
-      ...layoutDefaults.mini,
-      borderColor: alphaCss(forestFallback.dark.accent, 0.32),
-      completeColor: forestFallback.dark.accent,
-      backgroundColor: forestFallback.dark.surface,
-      readerColor: '#050807',
-      readerHaloColor: alphaCss('#fff', 0.4),
-      rangeColor: '#c4a882',
-      rangeEmptyColor: alphaCss('#c4a882', 0.3),
-    },
-  },
-  light: {
-    default: {
-      ...layoutDefaults.default,
-      borderColor: forestFallback.light.border,
-      completeColor: forestFallback.light.accent,
-      backgroundColor: forestFallback.light.surface,
-      readerColor: '#000',
-      readerHaloColor: alphaCss('#fff', 0.9),
-      rangeColor: '#6b8fd4',
-      rangeEmptyColor: alphaCss('#6b8fd4', 0.28),
-    },
-    mini: {
-      ...layoutDefaults.mini,
-      borderColor: '#b7d9c8',
-      completeColor: forestFallback.light.accent,
-      backgroundColor: forestFallback.light.surfaceSecondary,
-      readerColor: '#0a0a0a',
-      readerHaloColor: alphaCss('#fff', 0.9),
-      rangeColor: '#6b8fd4',
-      rangeEmptyColor: alphaCss('#6b8fd4', 0.32),
-    },
-  },
-}
-
-/**
  * Mini: keep cells large and readable (do not shrink to cram ~10 into a row).
  * Detailed: fixed ~20px.
  */

@@ -32,7 +32,7 @@ export interface RunConfiguredPlayArgs {
 
 /**
  * Shared Play-button preference (Settings → Players): built-in / copy link / external.
- * Used by library posters and the details Stats Play button.
+ * Used by library posters, the details Stats Play button, and each file-row Play.
  */
 export function useConfiguredPlayAction() {
   const isIOS = detectApplePlatform().isIOS

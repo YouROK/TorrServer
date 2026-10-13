@@ -55,10 +55,6 @@ export function needsTelegramSdk(): boolean {
   return needsTelegramSdkState(window.location.search, Boolean(getTelegramWebApp()))
 }
 
-export function isTelegramMiniApp(): boolean {
-  return Boolean(getTelegramInitData()) || hasTelegramMiniAppQuery()
-}
-
 function applyTelegramTheme(wa: TelegramWebApp): void {
   try {
     wa.ready()

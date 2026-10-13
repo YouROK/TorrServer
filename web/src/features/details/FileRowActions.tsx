@@ -1,4 +1,4 @@
-import { Button, ButtonGroup, Dropdown, Spinner, Tooltip, useMediaQuery, useOverlayState } from '@heroui/react'
+import { Button, Dropdown, Spinner, Tooltip, useMediaQuery, useOverlayState } from '@heroui/react'
 import { ArrowDownToLine, FileVideo, Link2, MoreHorizontal, Play, SquareArrowOutUpRight } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -23,7 +23,7 @@ export interface FileRowActionsProps {
   showOpenLink?: boolean
   /** Direct stream URL copied by "Copy link". */
   copyText: string
-  /** Deep links for Infuse / VLC / etc. — always visible; never buried in the More menu. */
+  /** Deep links for Infuse / VLC / etc. Desktop chips; mobile More menu. */
   externalPlayers: ExternalPlayerLink[]
   onProbeMedia?: () => void
 }
@@ -42,10 +42,8 @@ const moreBtn = `${iconBtn} text-muted hover-fine:text-foreground`
  *
  * Layout contract:
  * - Play is always primary and reachable (doctrine).
- * - External players stay on-screen (not only in a menu).
- * - Open / Copy / Preload / MediaInfo: one ghost ButtonGroup on desktop; `⋯` on mobile.
- * - Mobile: Play icon + More only — EpisodeRow wraps external chips under the meta line
- *   so titles keep horizontal room.
+ * - Desktop: external player chips stay on the row (film and series).
+ * - Mobile: Play + More only; players and utilities live in that menu.
  */
 export default function FileRowActions({
   preloadLabel,
@@ -130,13 +128,13 @@ export default function FileRowActions({
   )
 
   const secondaryDesktop = (
-    <ButtonGroup className='shrink-0'>
+    <div className='flex shrink-0 items-center gap-1.5'>
       {showOpenIcon
         ? utilityButton({
-            label: t('OpenLink'),
-            onPress: openExternal,
-            children: <SquareArrowOutUpRight {...actionIcon} />,
-          })
+          label: t('OpenLink'),
+          onPress: openExternal,
+          children: <SquareArrowOutUpRight {...actionIcon} />,
+        })
         : null}
       {utilityButton({
         label: t('CopyLink'),
@@ -150,12 +148,12 @@ export default function FileRowActions({
       })}
       {onProbeMedia
         ? utilityButton({
-            label: t('MediaInfo'),
-            onPress: onProbeMedia,
-            children: <FileVideo {...actionIcon} />,
-          })
+          label: t('MediaInfo'),
+          onPress: onProbeMedia,
+          children: <FileVideo {...actionIcon} />,
+        })
         : null}
-    </ButtonGroup>
+    </div>
   )
 
   const secondaryMobile = (
@@ -174,6 +172,19 @@ export default function FileRowActions({
         className='max-h-[min(70dvh,24rem)] min-w-[12rem] overflow-y-auto'
       >
         <Dropdown.Menu aria-label={t('Actions')}>
+          {externalPlayers.map(player => (
+            <Dropdown.Item
+              key={player.label}
+              className='min-h-11'
+              onPress={() => {
+                moreMenu.close()
+                window.location.href = player.href
+              }}
+            >
+              <SquareArrowOutUpRight {...menuIcon} />
+              {player.label}
+            </Dropdown.Item>
+          ))}
           {showOpenIcon ? (
             <Dropdown.Item
               className='min-h-11'

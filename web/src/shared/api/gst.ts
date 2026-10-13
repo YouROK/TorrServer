@@ -1,4 +1,4 @@
-import { gstEchoHost, gstSettingsHost } from 'shared/api/hosts'
+import { gstSettingsHost } from 'shared/api/hosts'
 import { authFetch } from 'shared/api/authCredentials'
 
 export interface GstSettingsResponse {
@@ -34,11 +34,4 @@ export const resetGstSettings = async (): Promise<GstSettingsResponse> => {
   if (!response.ok) throw new Error('Failed to reset GStreamer settings')
   // Server may return empty body — reload so UI gets defaults + current config.
   return getGstSettings()
-}
-
-/** Lightweight GST pipeline health probe (plain text body). */
-export const getGstEcho = async (signal?: AbortSignal): Promise<string> => {
-  const response = await authFetch(gstEchoHost(), { signal })
-  if (!response.ok) throw new Error('GStreamer echo failed')
-  return response.text()
 }

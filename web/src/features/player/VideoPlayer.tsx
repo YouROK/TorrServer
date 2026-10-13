@@ -10,9 +10,8 @@ import { useTorrentDetail } from 'shared/hooks/useTorrentDetail'
 import { formatCacheFilledLabel, humanizeSpeed } from 'shared/lib/format'
 import { gstreamerMasterUrl, gstreamerProbeUrl } from 'shared/lib/gstreamer'
 import { useDialogFullScreen } from 'shared/hooks/useDialogFullScreen'
-import { setNowPlaying } from 'shared/lib/nowPlaying'
 import { iconBtn } from 'shared/ui/controlClasses'
-import { PLAYER_DIALOG_EXPANDED, PLAYER_DIALOG_MOBILE, PLAYER_DIALOG_NORMAL } from 'shared/ui/dialogSizes'
+import { DIALOG_FULLSCREEN, PLAYER_DIALOG_EXPANDED, PLAYER_DIALOG_NORMAL } from 'shared/ui/dialogSizes'
 import { iconMenu, iconPlayerCompact } from 'shared/ui/iconProps'
 import { useModalOpen, useSyncModalOpen } from 'shared/ui/ModalOpenContext'
 
@@ -130,7 +129,7 @@ export default function VideoPlayer({
   const showCaptionsButton = hls ? subtitleTracks.length > 0 : Boolean(captionSrc)
 
   const dialogStyle: CSSProperties | undefined = isMobile
-    ? PLAYER_DIALOG_MOBILE
+    ? DIALOG_FULLSCREEN
     : expanded
       ? PLAYER_DIALOG_EXPANDED
       : PLAYER_DIALOG_NORMAL
@@ -207,16 +206,6 @@ export default function VideoPlayer({
     setImmersive(true)
     return () => setImmersive(false)
   }, [isMobile, open, setImmersive])
-
-  useEffect(() => {
-    if (!open) {
-      setNowPlaying(null)
-      return
-    }
-    // Suppress ambient Now Playing pill while the cinema modal is open (title is in OSD).
-    setNowPlaying(null)
-    return () => setNowPlaying(null)
-  }, [open])
 
   useEffect(() => {
     const probe = document.createElement('video')

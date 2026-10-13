@@ -166,7 +166,7 @@ export default function TorrentCard({
           <button
             type='button'
             className={`absolute left-2 z-20 inline-flex min-h-8 max-w-[calc(100%-1rem)] items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-xs font-medium text-white hover-fine:bg-black/85 ${
-              hoverFine ? 'bottom-2' : 'bottom-14'
+              hoverFine ? 'bottom-2' : 'bottom-16'
             }`}
             onClick={event => {
               event.stopPropagation()

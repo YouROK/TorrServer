@@ -7,7 +7,7 @@
  *   yarn build
  *   yarn screenshots:viewports
  *
- *   TORRSERVER_URL=http://127.0.0.1:5173 yarn screenshots:viewports   # against yarn dev
+ *   TORRSERVER_URL=http://127.0.0.1:3000 yarn screenshots:viewports   # against yarn dev
  *
  * Requires: playwright + chromium.
  */
@@ -52,7 +52,7 @@ async function main() {
   let server
   let origin = liveUrl
   if (!origin) {
-    ;({ server, origin } = await serveEmbedDir(embedPagesRoot()))
+    ; ({ server, origin } = await serveEmbedDir(embedPagesRoot()))
   }
 
   const browser = await chromium.launch({ headless: true })

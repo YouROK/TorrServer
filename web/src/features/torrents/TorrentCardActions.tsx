@@ -80,7 +80,7 @@ export default function TorrentCardActions({ torrent, onDetails, onEdit }: Torre
   const { buildExternalPlayers } = useExternalPlayers()
   const mediaBase = useExternalMediaBase()
 
-  useSyncModalOpen(confirmState.isOpen || dropdownState.isOpen)
+  useSyncModalOpen(confirmState.isOpen)
 
   /** Only offer app deep links when there's exactly one obvious file to hand off — otherwise Play's file picker covers it. */
   const externalPlayers = useMemo(() => {
@@ -145,11 +145,11 @@ export default function TorrentCardActions({ torrent, onDetails, onEdit }: Torre
   }
 
   const overlayButtonClass =
-    'inline-flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-full bg-black/55 p-0 text-white backdrop-blur-sm hover-fine:bg-accent [&_svg]:m-0 [&_svg]:block'
+    'inline-flex h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-full bg-black/55 p-0 text-white backdrop-blur-sm hover-fine:bg-accent [&_svg]:m-0 [&_svg]:block'
 
   return (
     <>
-      <div className='flex items-center justify-center gap-2' onClick={event => event.stopPropagation()}>
+      <div className='flex items-center justify-center gap-3' onClick={event => event.stopPropagation()}>
         <Tooltip>
           <Tooltip.Trigger>
             <Button
@@ -269,11 +269,11 @@ export default function TorrentCardActions({ torrent, onDetails, onEdit }: Torre
                 <Modal.Heading>{confirmKind === 'delete' ? t('DeleteTorrent?') : t('DropTorrent')}</Modal.Heading>
               </Modal.Header>
               <Modal.Body>{confirmKind === 'delete' ? t('ConfirmDeleteTorrent') : t('ConfirmDropTorrent')}</Modal.Body>
-              <Modal.Footer className='shrink-0 flex justify-end gap-2'>
-                <Button autoFocus variant='secondary' onPress={() => setConfirmKind(null)}>
+              <Modal.Footer className='flex w-full shrink-0 justify-center gap-2'>
+                <Button autoFocus variant='secondary' className='min-h-11 flex-1' onPress={() => setConfirmKind(null)}>
                   {t('Cancel')}
                 </Button>
-                <Button variant='danger' onPress={runConfirmedAction}>
+                <Button variant='danger' className='min-h-11 flex-1' onPress={runConfirmedAction}>
                   {t('OK')}
                 </Button>
               </Modal.Footer>

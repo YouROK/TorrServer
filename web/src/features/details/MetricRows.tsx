@@ -13,7 +13,7 @@ export interface MetricRowsProps {
   title?: string
   /** Dense multi-column definition list (mobile secondary/swarm). */
   columns?: 1 | 2
-  /** Tighter row padding for full Swarm tab. */
+  /** Tighter row padding for Stats detail rows. */
   dense?: boolean
   /** Wrap in a single bordered panel (default true). */
   framed?: boolean

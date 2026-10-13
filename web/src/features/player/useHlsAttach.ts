@@ -144,8 +144,3 @@ export function useHlsAttach({
 
   return hlsRef
 }
-
-export function switchHlsSubtitleTrack(hls: Hls | null, trackId: number): void {
-  if (!hls) return
-  hls.subtitleTrack = trackId
-}

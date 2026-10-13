@@ -77,6 +77,3 @@ export function installAppHeight(): () => void {
     window.visualViewport?.removeEventListener('scroll', onResize)
   }
 }
-
-/** @deprecated Prefer {@link installAppHeight} */
-export const startAppHeightSync = installAppHeight

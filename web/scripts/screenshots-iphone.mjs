@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * iPhone 16 Pro Max smoke screenshots for Details (Files/Stats/Swarm/Cache + ⋯ sheet).
+ * iPhone 16 Pro Max smoke screenshots for Details (Files/Stats/Cache + ⋯ sheet).
  *
  * Starts against Vite (or embedded UI) and mocks TorrServer APIs so layout can be
  * inspected without a live torrent library:
  *
  *   yarn dev   # terminal A
- *   TORRSERVER_URL=http://127.0.0.1:5173 yarn screenshots:iphone
+ *   TORRSERVER_URL=http://127.0.0.1:3000 yarn screenshots:iphone
  *
  * Set LIVE=1 to skip fixtures and use a real TorrServer (must have ≥1 torrent).
  *
@@ -19,7 +19,7 @@ import { chromium, devices } from 'playwright'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const outDir = path.resolve(__dirname, '../tmp/iphone16-promax')
-const baseURL = process.env.TORRSERVER_URL || process.env.WEB_URL || 'http://127.0.0.1:5173'
+const baseURL = process.env.TORRSERVER_URL || process.env.WEB_URL || 'http://127.0.0.1:3000'
 const live = process.env.LIVE === '1'
 
 const HASH = '0123456789abcdef0123456789abcdef01234567'
@@ -188,7 +188,7 @@ async function main() {
     )
   }
 
-  const tabIds = ['files', 'stats', 'swarm', 'cache']
+  const tabIds = ['files', 'stats', 'cache']
   for (let i = 0; i < tabIds.length; i++) {
     await page.locator('.ts-details-tabs [role="tab"]').nth(i).click()
     await page.waitForTimeout(500)
@@ -196,7 +196,7 @@ async function main() {
   }
 
   // Cache snake must fill the panel — regression guard for the 1-row collapse.
-  await page.locator('.ts-details-tabs [role="tab"]').nth(3).click()
+  await page.locator('.ts-details-tabs [role="tab"]').nth(2).click()
   await page.waitForTimeout(600)
   const snake = await page.locator('.ts-details-cache-snake').evaluate(el => {
     const rect = el.getBoundingClientRect()

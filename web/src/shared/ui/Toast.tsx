@@ -15,14 +15,6 @@ interface AppSnackbarContextValue {
 
 const AppSnackbarContext = createContext<AppSnackbarContextValue | null>(null)
 
-export function useAppToast() {
-  const ctx = useContext(AppSnackbarContext)
-  if (!ctx) {
-    throw new Error('useAppToast must be used within AppSnackbarProvider')
-  }
-  return ctx
-}
-
 export function useOptionalAppToast() {
   return useContext(AppSnackbarContext)
 }

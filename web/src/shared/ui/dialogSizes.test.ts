@@ -6,7 +6,6 @@ import {
   DIALOG_SHEET_L,
   DIALOG_SHEET_M,
   PLAYER_DIALOG_EXPANDED,
-  PLAYER_DIALOG_MOBILE,
   PLAYER_DIALOG_NORMAL,
 } from './dialogSizes'
 
@@ -33,6 +32,5 @@ describe('dialogSizes', () => {
     expect(DIALOG_FULLSCREEN.maxHeight).toBe('100%')
     expect(DIALOG_FULLSCREEN.minHeight).toBe('100%')
     expect(DIALOG_FULLSCREEN.width).toBe('100%')
-    expect(PLAYER_DIALOG_MOBILE).toBe(DIALOG_FULLSCREEN)
   })
 })

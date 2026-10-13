@@ -25,6 +25,23 @@ export const buildExternalPlayerHref = (player: ExternalPosterPlayAction, fullLi
   }
 }
 
+/** ponytail: Infuse scheme length cap. Longer season lists fall back to one m3u url. */
+export const INFUSE_PLAYLIST_HREF_LIMIT = 8000
+
+/**
+ * Infuse plays every `url` in order as a temporary playlist.
+ * Over {@link INFUSE_PLAYLIST_HREF_LIMIT} characters, one m3u `url` instead.
+ */
+export const buildInfusePlaylistHref = (episodes: { url: string; filename: string }[], m3uFallback: string): string => {
+  const href =
+    'infuse://x-callback-url/play?' +
+    episodes
+      .map(episode => `url=${encodeURIComponent(episode.url)}&filename=${encodeURIComponent(episode.filename)}`)
+      .join('&')
+  if (href.length > INFUSE_PLAYLIST_HREF_LIMIT) return buildExternalPlayerHref('infuse', m3uFallback)
+  return href
+}
+
 /**
  * Reads the user's configured mobile/desktop player preferences (Settings → App) and exposes a
  * builder for the matching deep-link scheme per direct-stream URL. Shared between the per-file
@@ -65,5 +82,20 @@ export function useExternalPlayers() {
     return links
   }
 
-  return { buildExternalPlayers, shouldShowOpenLink, hasAnyExternalPlayer, playerFlags }
+  /** Series footer: Infuse gets one url per episode; the others open the torrent m3u. */
+  const buildSeriesExternalPlayers = (
+    playlistUrl: string,
+    episodes: { url: string; filename: string }[],
+  ): ExternalPlayerLink[] => {
+    const links: ExternalPlayerLink[] = []
+    if (isApple && isInfuseUsed)
+      links.push({ label: t('Infuse'), href: buildInfusePlaylistHref(episodes, playlistUrl) })
+    if (isApple && isSenPlayerUsed)
+      links.push({ label: t('SenPlayer'), href: buildExternalPlayerHref('senPlayer', playlistUrl) })
+    if (isVlcUsed) links.push({ label: t('VLC'), href: buildExternalPlayerHref('vlc', playlistUrl) })
+    if (isMac && isIinaUsed) links.push({ label: t('IINA'), href: buildExternalPlayerHref('iina', playlistUrl) })
+    return links
+  }
+
+  return { buildExternalPlayers, buildSeriesExternalPlayers, shouldShowOpenLink, hasAnyExternalPlayer, playerFlags }
 }

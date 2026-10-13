@@ -34,11 +34,11 @@ export default function RemoveAllDialog({ open, onClose }: RemoveAllDialogProps)
         <Modal.CloseTrigger aria-label={t('Close')} />
       </Modal.Header>
       <Modal.Body>{t('ConfirmRemoveAll')}</Modal.Body>
-      <Modal.Footer className='shrink-0'>
-        <Button variant='secondary' onPress={onClose} autoFocus>
+      <Modal.Footer className='flex w-full shrink-0 justify-center gap-2'>
+        <Button variant='secondary' className='min-h-11 flex-1' onPress={onClose} autoFocus>
           {t('Cancel')}
         </Button>
-        <UnsafeButton variant='danger' onPress={() => void handleRemove()}>
+        <UnsafeButton variant='danger' className='min-h-11 flex-1' onPress={() => void handleRemove()}>
           <Trash2 {...iconMenu} aria-hidden />
           {t('OK')}
         </UnsafeButton>

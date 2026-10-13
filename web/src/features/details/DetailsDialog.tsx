@@ -1,6 +1,7 @@
 import { Button, Checkbox, Modal, Tabs, ToggleButton, ToggleButtonGroup, useMediaQuery } from '@heroui/react'
+import { closeButtonVariants } from '@heroui/styles'
 import { ImagePlus, Pencil, X } from 'lucide-react'
-import { useEffect, useMemo, useState, useCallback, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import ptt from 'parse-torrent-title'
 import { useTranslation } from 'react-i18next'
 import type { TorrentStat } from 'shared/api/types'
@@ -25,9 +26,8 @@ import { useSettingsQuery } from 'shared/hooks/useSettingsQuery'
 import { filesFromMetadata } from 'shared/torrent/fileMetadata'
 import { isFilePlayable } from 'shared/torrent/playable'
 import { CLOSED, GETTING_INFO, IN_DB, PRELOAD, WORKING } from 'shared/torrent/states'
-import { MEDIA_SHORT_VIEWPORT, queryMax, queryMin } from 'shared/theme/breakpoints'
+import { MEDIA_SHORT_VIEWPORT, queryMax } from 'shared/theme/breakpoints'
 import AppDialog from 'shared/ui/AppDialog'
-import { iconBtn } from 'shared/ui/controlClasses'
 import { DIALOG_DETAILS } from 'shared/ui/dialogSizes'
 import { iconChrome, iconEmpty } from 'shared/ui/iconProps'
 import { toPlayableFile } from 'shared/torrent/toPlayableFile'
@@ -35,8 +35,7 @@ import { toPlayableFile } from 'shared/torrent/toPlayableFile'
 import FileBrowser from './FileBrowser'
 import CacheMapDialog from './CacheMapDialog'
 import EditPosterDialog from './EditPosterDialog'
-import MetricRows from './MetricRows'
-import SwarmStatsPanel from './SwarmStatsPanel'
+import SwarmStatsPanel, { TorrentProgressStrip } from './SwarmStatsPanel'
 import SpeedCharts from './SpeedCharts'
 import TorrentActions from './TorrentActions'
 import TorrentCache from './TorrentCache'
@@ -51,7 +50,7 @@ export interface DetailsDialogProps {
   autoPlayTimecode?: number
 }
 
-type DetailsTab = 'files' | 'stats' | 'swarm' | 'cache'
+type DetailsTab = 'files' | 'stats' | 'cache'
 
 function StatWidget({
   label,
@@ -72,32 +71,29 @@ function StatWidget({
   hint?: string
 }) {
   const shown = value || '—'
+  const box = dense ? (tight ? 'w-full px-1.5 py-0.5' : 'w-full px-1.5 py-1') : 'w-full px-2.5 py-2 sm:px-3'
   return (
     <div
-      className={`min-w-0 rounded-md border border-border bg-surface-secondary text-center ${
-        dense ? (tight ? 'w-full px-1.5 py-0.5' : 'w-full px-1.5 py-1') : 'px-2.5 py-2 sm:min-w-[104px] sm:px-3'
-      }`}
+      className={`min-w-0 rounded-md border border-border bg-surface-secondary text-center ${box}`}
       title={hint || undefined}
     >
       <span
-        className={`block leading-tight text-muted ${
-          tight
-            ? 'truncate text-[11px]'
-            : compact
-              ? 'line-clamp-2 min-h-[1.75rem] text-[10px]'
-              : dense
-                ? 'truncate text-[11px]'
-                : 'truncate text-[11px] sm:text-xs'
-        }`}
+        className={`block leading-tight text-muted ${tight
+          ? 'truncate text-[11px]'
+          : compact
+            ? 'line-clamp-2 min-h-[1.75rem] text-[10px]'
+            : dense
+              ? 'truncate text-[11px]'
+              : 'truncate text-[11px] sm:text-xs'
+          }`}
         title={hint || label}
       >
         {label}
       </span>
       {/* Single-line value — long labels must not wrap and grow the hero. */}
       <span
-        className={`block truncate font-bold tabular-nums text-foreground ${
-          dense ? 'mt-0.5 h-3.5 text-[11px] leading-3.5' : 'mt-1 h-5 text-sm leading-5 sm:h-6 sm:text-base sm:leading-6'
-        }`}
+        className={`block truncate font-bold tabular-nums text-foreground ${dense ? 'mt-0.5 h-3.5 text-[11px] leading-3.5' : 'mt-1 h-5 text-sm leading-5 sm:h-6 sm:text-base sm:leading-6'
+          }`}
         title={shown}
       >
         {shown}
@@ -132,32 +128,20 @@ function buildDisplayTitle(name: string | undefined, title: string | undefined):
   return needsTrailingDot ? `${combined}.` : combined
 }
 
-function TitleRow({
-  title,
-  subtitle,
-  compact,
-  editControl,
-}: {
-  title: string
-  subtitle: string | null
-  compact: boolean
-  editControl?: ReactNode
-}) {
-  const { t } = useTranslation()
+function TitleRow({ title, subtitle, compact }: { title: string; subtitle: string | null; compact: boolean }) {
   const [expanded, setExpanded] = useState(false)
   /** Drop subtitle when it already appears inside the primary title (common after ptt parse). */
   const showSubtitle = !!subtitle && !title.toLocaleLowerCase().includes(subtitle.toLocaleLowerCase())
 
-  const titleClass = `min-w-0 flex-1 font-bold text-foreground ${
-    compact
-      ? expanded
-        ? 'text-[15px] leading-snug'
-        : 'line-clamp-3 text-[15px] leading-snug'
-      : 'line-clamp-2 text-lg leading-snug'
-  }`
+  const titleClass = `min-w-0 flex-1 font-bold text-foreground ${compact
+    ? expanded
+      ? 'text-[15px] leading-snug'
+      : 'line-clamp-6 text-[15px] leading-snug'
+    : 'line-clamp-2 text-lg leading-snug'
+    }`
 
   return (
-    <div className='min-w-0 flex-1'>
+    <div className='min-w-0'>
       <div className='flex items-start gap-1'>
         {compact ? (
           <button
@@ -175,17 +159,11 @@ function TitleRow({
             {title}
           </h2>
         )}
-        {editControl}
       </div>
       {showSubtitle ? (
         <p className={`mt-0.5 truncate text-muted ${compact ? 'text-xs' : 'text-sm'}`} title={subtitle!}>
           {subtitle}
         </p>
-      ) : null}
-      {compact ? (
-        <button type='button' className='mt-0.5 text-xs font-medium text-accent' onClick={() => setExpanded(v => !v)}>
-          {expanded ? t('ShowLess') : t('ShowMore')}
-        </button>
       ) : null}
     </div>
   )
@@ -204,13 +182,10 @@ export default function DetailsDialog({
   /** Equal-width Files/Stats/Cache segments — only needed below the phone breakpoint. */
   const isMobile = useMediaQuery(queryMax('mobile'))
   const isShortViewport = useMediaQuery(MEDIA_SHORT_VIEWPORT)
-  /** Wider phones (≥420px): hero can fit 6 chips including Cache + Status. */
-  const isPhoneWide = useMediaQuery(queryMin('phone'))
   /** Edge-to-edge sheet — AppDialog applies the same useDialogFullScreen policy. */
   const sheetFull = isFullScreen
   /** Compact chrome only on phone / short viewports — not force-fullscreen on a wide monitor. */
   const useCompactDetails = isMobile || isShortViewport
-  const showHeroSix = useCompactDetails && (isMobile ? isPhoneWide : true)
 
   const hash = initialTorrent.hash
   const { data: liveTorrent } = useTorrentDetail(hash, initialTorrent)
@@ -227,7 +202,6 @@ export default function DetailsDialog({
   const {
     poster,
     title,
-    category,
     name,
     stat,
     download_speed: downloadSpeed,
@@ -280,9 +254,9 @@ export default function DetailsDialog({
   useEffect(() => {
     const seasons = seasonsFingerprint
       ? seasonsFingerprint
-          .split(',')
-          .map(Number)
-          .filter(n => Number.isFinite(n) && n > 0)
+        .split(',')
+        .map(Number)
+        .filter(n => Number.isFinite(n) && n > 0)
       : []
     // eslint-disable-next-line react-hooks/set-state-in-effect -- keep season list/selection valid when file list changes
     setSeasonList(seasons)
@@ -328,9 +302,10 @@ export default function DetailsDialog({
 
   const displayTitle = buildDisplayTitle(name, title) || title || name || hash
   const subtitle = name && title !== name ? ptt.parse(name).title || name : null
-  // IN_DB torrents still carry a persisted file list in `data` — only block the UI while the
-  // live torrent is actively resolving metadata and we have nothing to show yet.
-  const isLoadingMetadata = stat === GETTING_INFO && playableFileList.length === 0
+  // IN_DB torrents still carry a persisted file list in `data`. With no list yet (In DB or
+  // getting info) keep one pending files view — don't claim the torrent has nothing to play.
+  const filesUnknown = playableFileList.length === 0 && (stat === GETTING_INFO || stat === IN_DB)
+  const isLoadingMetadata = stat === GETTING_INFO && filesUnknown
   const hasMultipleSeasons = (seasonList?.length ?? 0) > 1
 
   const cacheFilledValue = formatCacheFilledLabel(cache.Filled, cache.Capacity) ?? '—'
@@ -345,102 +320,54 @@ export default function DetailsDialog({
     autoPlayTimecode,
   })
 
-  /** Live pulse in the hero — primary on all sizes; secondary only on desktop hero. */
-  const primaryStats = (
+  /** Six hero tiles, 3×2. Pieces live on Stats; category stays off the hero. */
+  const heroStats = (
     <>
       <StatWidget
-        dense
+        dense={useCompactDetails}
         compact={useCompactDetails}
-        tight={useCompactDetails && !showHeroSix}
+        tight={useCompactDetails}
         label={t('DownloadSpeed')}
         value={humanizeSpeed(downloadSpeed)}
       />
       <StatWidget
-        dense
+        dense={useCompactDetails}
         compact={useCompactDetails}
-        tight={useCompactDetails && !showHeroSix}
+        tight={useCompactDetails}
         label={t('UploadSpeed')}
         value={humanizeSpeed(uploadSpeed)}
       />
       <StatWidget
-        dense
+        dense={useCompactDetails}
         compact={useCompactDetails}
-        tight={useCompactDetails && !showHeroSix}
-        label={t('Peers') + '·' + t('Seeders')}
+        tight={useCompactDetails}
+        label={t('Peers')}
         value={getPeerString(torrent) || '—'}
       />
       <StatWidget
-        dense
+        dense={useCompactDetails}
         compact={useCompactDetails}
-        tight={useCompactDetails && !showHeroSix}
+        tight={useCompactDetails}
         label={t('Size')}
         value={humanizeSize(torrentSize)}
       />
-    </>
-  )
-
-  const cacheStatusStats = (
-    <>
       <StatWidget
-        dense
+        dense={useCompactDetails}
         compact={useCompactDetails}
-        tight={useCompactDetails && !showHeroSix}
+        tight={useCompactDetails}
         label={t('CacheFilled')}
         value={cacheFilledValue}
         hint={t('CacheHint')}
       />
       <StatWidget
-        dense
+        dense={useCompactDetails}
         compact={useCompactDetails}
-        tight={useCompactDetails && !showHeroSix}
+        tight={useCompactDetails}
         label={t('Status')}
         value={statusLabel(stat)}
       />
     </>
   )
-
-  const secondaryStats = (
-    <>
-      {cacheStatusStats}
-      <StatWidget
-        dense
-        compact={useCompactDetails}
-        tight={useCompactDetails}
-        label={t('PiecesCount')}
-        value={cache.PiecesCount != null ? String(cache.PiecesCount) : '—'}
-      />
-      <StatWidget
-        dense
-        compact={useCompactDetails}
-        tight={useCompactDetails}
-        label={t('PiecesLength')}
-        value={cache.PiecesLength != null ? humanizeSize(cache.PiecesLength) : '—'}
-      />
-      <StatWidget
-        dense
-        compact={useCompactDetails}
-        tight={useCompactDetails}
-        label={t('Category')}
-        value={category || '—'}
-      />
-    </>
-  )
-
-  /** Stats-tab dense rows (mobile) — omit Cache/Status when already in the 6-chip hero. */
-  const secondaryMetricItems = [
-    ...(showHeroSix
-      ? []
-      : [
-          { label: t('CacheFilled'), value: cacheFilledValue, hint: t('CacheHint') },
-          { label: t('Status'), value: statusLabel(stat) },
-        ]),
-    { label: t('PiecesCount'), value: cache.PiecesCount != null ? String(cache.PiecesCount) : '—' },
-    {
-      label: t('PiecesLength'),
-      value: cache.PiecesLength != null ? humanizeSize(cache.PiecesLength) : '—',
-    },
-    { label: t('Category'), value: category || '—' },
-  ]
 
   const torrentActions = (
     <TorrentActions
@@ -458,24 +385,16 @@ export default function DetailsDialog({
     />
   )
 
-  const heroStats = (
-    <>
-      {primaryStats}
-      {secondaryStats}
-    </>
-  )
-
   const editControl =
     onEdit != null ? (
-      <Button
-        isIconOnly
-        variant='ghost'
-        className={`${iconBtn} shrink-0`}
+      <button
+        type='button'
+        className={closeButtonVariants()}
         aria-label={t('EditTorrent')}
-        onPress={() => onEdit(torrent)}
+        onClick={() => onEdit(torrent)}
       >
         <Pencil {...iconChrome} aria-hidden />
-      </Button>
+      </button>
     ) : null
 
   const tabClass = isMobile ? 'min-h-11 w-auto flex-1 basis-0' : 'min-h-9 w-auto shrink-0'
@@ -495,9 +414,7 @@ export default function DetailsDialog({
             On compact, edit sits in the top-right action cluster beside Close. */}
         <Modal.Header className='relative h-0 shrink-0 overflow-visible border-0 p-0'>
           <Modal.Heading className='sr-only'>{t('TorrentDetails')}</Modal.Heading>
-          {useCompactDetails && editControl ? (
-            <div className='ts-details-edit-trigger absolute z-20'>{editControl}</div>
-          ) : null}
+          {editControl ? <div className='ts-details-edit-trigger absolute z-20'>{editControl}</div> : null}
           <Modal.CloseTrigger aria-label={t('Close')} className='shrink-0'>
             <X {...iconChrome} aria-hidden />
           </Modal.CloseTrigger>
@@ -507,16 +424,15 @@ export default function DetailsDialog({
           className={`flex min-h-0 flex-1 flex-col gap-2 overflow-hidden sm:gap-3${sheetFull ? ' pt-0' : ' pt-1'}`}
         >
           {useCompactDetails ? (
-            /* Phone: flush hero on narrow CSS; rounded card only on wide desktop sheet.
-                   Fullscreen overrides radius via `.modal__dialog--full .ts-details-hero`. */
-            <div className='ts-details-hero shrink-0 space-y-2 rounded-xl bg-gradient-to-br from-accent-soft to-accent-soft/40 p-2 pr-[6.75rem]'>
+            /* Phone: poster beside the title, then one even 4×2 grid. */
+            <div className='ts-details-hero ts-details-hero-flow shrink-0 space-y-2 rounded-xl bg-gradient-to-br from-accent-soft to-accent-soft/40 p-2'>
               <div className='flex items-start gap-2'>
                 <button
                   type='button'
                   onClick={() => setPosterEditOpen(true)}
                   aria-label={t('AddDialog.AddPosterLinkInput')}
                   title={t('AddDialog.AddPosterLinkInput')}
-                  className='group relative grid h-12 min-h-11 w-11 min-w-11 shrink-0 place-items-center overflow-hidden rounded-md bg-surface-secondary outline-none ring-accent transition-shadow focus-visible:ring-2'
+                  className='grid aspect-[2/3] w-16 shrink-0 place-items-center overflow-hidden rounded-md bg-surface-secondary outline-none ring-accent transition-shadow focus-visible:ring-2'
                 >
                   {poster ? (
                     <img
@@ -531,26 +447,24 @@ export default function DetailsDialog({
                     <ImagePlus size={16} strokeWidth={1.75} className='text-muted' aria-hidden />
                   )}
                 </button>
-                <TitleRow title={displayTitle} subtitle={subtitle} compact />
+                <div className='min-w-0 flex-1 pr-[6.75rem]'>
+                  <TitleRow title={displayTitle} subtitle={subtitle} compact />
+                </div>
               </div>
-              <div className={`grid w-full gap-1 ${showHeroSix ? 'grid-cols-3' : 'grid-cols-2'}`}>
-                {primaryStats}
-                {showHeroSix ? cacheStatusStats : null}
-              </div>
+              <div className='grid grid-cols-3 gap-1'>{heroStats}</div>
             </div>
           ) : (
             /*
-                  Desktop: poster spans both rows; title on top-right; metrics sit under the title
-                  (raised beside the poster) and stretch across the remaining width.
-                  Fullscreen tablet: same flush hero + safe-area as phone (`.ts-details-hero`).
+                  Desktop: poster spans the title and one 3×2 metric grid.
+                  Button clearance is only on the title row — the grid stays full width.
                 */
-            <div className='ts-details-hero grid shrink-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-1.5 rounded-xl bg-gradient-to-br from-accent-soft to-accent-soft/40 p-2.5 pr-12'>
+            <div className='ts-details-hero grid shrink-0 grid-cols-[auto_minmax(0,1fr)] items-stretch gap-x-3 gap-y-2 rounded-xl bg-gradient-to-br from-accent-soft to-accent-soft/40 p-2.5'>
               <button
                 type='button'
                 onClick={() => setPosterEditOpen(true)}
                 aria-label={t('AddDialog.AddPosterLinkInput')}
                 title={t('AddDialog.AddPosterLinkInput')}
-                className='group relative col-start-1 row-span-2 row-start-1 grid aspect-[2/3] w-[72px] shrink-0 self-start place-items-center overflow-hidden rounded-lg bg-surface-secondary outline-none ring-accent transition-shadow focus-visible:ring-2'
+                className='group relative col-start-1 row-span-2 row-start-1 grid h-full min-h-0 w-36 shrink-0 self-stretch place-items-center overflow-hidden rounded-lg bg-surface-secondary outline-none ring-accent transition-shadow focus-visible:ring-2'
               >
                 {poster ? (
                   <img
@@ -569,11 +483,11 @@ export default function DetailsDialog({
                 </span>
               </button>
 
-              <div className='col-start-2 row-start-1 min-w-0'>
-                <TitleRow title={displayTitle} subtitle={subtitle} compact={false} editControl={editControl} />
+              <div className='col-start-2 row-start-1 min-h-12 min-w-0 pr-[6.75rem]'>
+                <TitleRow title={displayTitle} subtitle={subtitle} compact={false} />
               </div>
 
-              <div className='col-start-2 row-start-2 grid min-w-0 w-full grid-cols-9 gap-1'>{heroStats}</div>
+              <div className='col-start-2 row-start-2 grid min-w-0 w-full grid-cols-3 gap-1.5'>{heroStats}</div>
             </div>
           )}
 
@@ -598,10 +512,6 @@ export default function DetailsDialog({
                   {t('Stats')}
                   <Tabs.Indicator />
                 </Tabs.Tab>
-                <Tabs.Tab id='swarm' className={tabClass}>
-                  {t('SwarmStats')}
-                  <Tabs.Indicator />
-                </Tabs.Tab>
                 <Tabs.Tab id='cache' className={tabClass}>
                   {t('Cache')}
                   <Tabs.Indicator />
@@ -609,8 +519,8 @@ export default function DetailsDialog({
               </Tabs.List>
             </Tabs.ListContainer>
 
-            <Tabs.Panel id='files' className='min-h-0 flex-1 overflow-y-auto overscroll-contain pt-2 sm:pt-3'>
-              <div className='pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]'>
+            <Tabs.Panel id='files' className='flex min-h-0 flex-1 flex-col overflow-hidden pt-2 sm:pt-3'>
+              <div className='min-h-0 flex-1 overflow-y-auto overscroll-contain'>
                 {/* Reserve chip-row height while metadata loads or when multi-season — list won't jump. */}
                 {hasMultipleSeasons || isLoadingMetadata ? (
                   <div className='mb-2 min-h-11 sm:mb-3'>
@@ -634,12 +544,16 @@ export default function DetailsDialog({
                   </div>
                 ) : null}
 
-                {isLoadingMetadata ? (
-                  <div className='space-y-2' aria-busy aria-label={t('TorrentGettingInfo')}>
+                {filesUnknown ? (
+                  <div
+                    className='space-y-2'
+                    aria-busy={isLoadingMetadata || undefined}
+                    aria-label={isLoadingMetadata ? t('TorrentGettingInfo') : t('TorrentInDb')}
+                  >
                     {Array.from({ length: 4 }, (_, i) => (
                       <div
                         key={i}
-                        className='h-[4.5rem] animate-pulse rounded-xl border border-border bg-surface sm:h-[3.25rem]'
+                        className={`h-[4.5rem] rounded-xl border border-border bg-surface sm:h-[3.25rem] ${isLoadingMetadata ? 'animate-pulse' : ''}`}
                       />
                     ))}
                   </div>
@@ -655,68 +569,43 @@ export default function DetailsDialog({
                   />
                 )}
               </div>
+              <div className='shrink-0 border-t border-border bg-surface pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]'>
+                {torrentActions}
+              </div>
             </Tabs.Panel>
 
-            <Tabs.Panel
-              id='stats'
-              className={`flex min-h-0 flex-1 flex-col pt-3 ${
-                useCompactDetails ? 'overflow-hidden' : 'gap-3 overflow-y-auto overscroll-contain'
-              }`}
-            >
+            <Tabs.Panel id='stats' className='flex min-h-0 flex-1 flex-col overflow-hidden pt-3'>
               {useCompactDetails ? (
-                <>
-                  {/* Content-start: do not flex-stretch a void between cards and CTAs. */}
-                  <div className='min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain pb-2'>
-                    {secondaryMetricItems.length > 0 ? (
-                      <MetricRows title={t('Details')} items={secondaryMetricItems} columns={1} />
-                    ) : null}
-                    <SpeedCharts downloadSpeed={downloadSpeed} uploadSpeed={uploadSpeed} compact />
-                    <SwarmStatsPanel
-                      torrent={torrent}
-                      variant='summary'
-                      columns={2}
-                      showTitle={false}
-                      cache={cache}
-                      preloadCachePercent={preloadCachePercent}
-                    />
-                  </div>
-                  <div className='shrink-0 border-t border-border bg-surface/95 pt-2 backdrop-blur-sm'>
-                    {torrentActions}
-                  </div>
-                </>
+                <div className='min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]'>
+                  <TorrentProgressStrip torrent={torrent} cache={cache} preloadCachePercent={preloadCachePercent} />
+                  <SpeedCharts downloadSpeed={downloadSpeed} uploadSpeed={uploadSpeed} compact />
+                  <SwarmStatsPanel
+                    torrent={torrent}
+                    columns={2}
+                    cacheReaders={cache.Readers?.length ?? 0}
+                    cache={cache}
+                  />
+                </div>
               ) : (
-                <>
-                  <div className='grid min-h-[14rem] shrink-0 grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] items-stretch gap-3'>
+                <div className='flex min-h-0 flex-1 flex-col gap-3 pb-3'>
+                  <TorrentProgressStrip torrent={torrent} cache={cache} preloadCachePercent={preloadCachePercent} />
+                  <div className='grid min-h-0 flex-1 grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] items-stretch gap-3'>
                     <SpeedCharts downloadSpeed={downloadSpeed} uploadSpeed={uploadSpeed} compact fill />
                     <SwarmStatsPanel
                       torrent={torrent}
-                      variant='summary'
-                      stretch
+                      className='h-full min-h-0'
+                      cacheReaders={cache.Readers?.length ?? 0}
                       cache={cache}
-                      preloadCachePercent={preloadCachePercent}
                     />
                   </div>
-                  <div className='shrink-0'>{torrentActions}</div>
-                </>
+                </div>
               )}
             </Tabs.Panel>
 
-            <Tabs.Panel id='swarm' className='flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain pt-3'>
-              <SwarmStatsPanel
-                torrent={torrent}
-                variant='full'
-                className={
-                  useCompactDetails
-                    ? 'w-full shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]'
-                    : 'min-h-0 w-full flex-1 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]'
-                }
-                cacheReaders={cache.Readers?.length ?? 0}
-                cache={cache}
-                preloadCachePercent={preloadCachePercent}
-              />
-            </Tabs.Panel>
-
-            <Tabs.Panel id='cache' className='flex min-h-0 flex-1 flex-col gap-2 overflow-hidden pt-3 sm:gap-4 sm:pt-4'>
+            <Tabs.Panel
+              id='cache'
+              className='flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain pt-3 sm:gap-4 sm:pt-4'
+            >
               <div className='flex shrink-0 flex-col gap-2'>
                 <div className='flex items-center justify-between gap-2'>
                   {useCompactDetails ? null : (
@@ -787,8 +676,9 @@ export default function DetailsDialog({
                 </div>
               </div>
 
-              {/* flex-1 height chain required: detailed snake sizes rows via ResizeObserver height. */}
-              <div className='flex min-h-0 min-w-0 flex-1 flex-col'>
+              {/* flex-1 height chain required: detailed snake sizes rows via ResizeObserver height.
+                  min-h keeps at least ~4 rows when the 3×3 hero has already taken the sheet. */}
+              <div className='flex min-h-[12rem] min-w-0 flex-1 flex-col'>
                 <TorrentCache cache={cache} mode='detailed' isSnakeDebugMode={isSnakeDebugMode} hash={hash} />
               </div>
             </Tabs.Panel>
@@ -800,6 +690,7 @@ export default function DetailsDialog({
         open={cacheMapOpen}
         onClose={() => setCacheMapOpen(false)}
         cache={cache}
+        torrent={torrent}
         isSnakeDebugMode={isSnakeDebugMode}
         onSnakeDebugModeChange={setIsSnakeDebugMode}
         hash={hash}

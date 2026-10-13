@@ -9,6 +9,11 @@ import type { BTSets } from 'shared/api/types'
 
 const EXPIRING_SOON_MS = 30 * 24 * 60 * 60 * 1000
 
+/** Pure — pass a clock so render stays idempotent (react-hooks/purity). */
+function isExpiringSoon(expires: Date | null, nowMs: number): boolean {
+  return Boolean(expires && expires.getTime() - nowMs < EXPIRING_SOON_MS)
+}
+
 interface SSLCertInfo {
   source: 'none' | 'self-signed' | 'uploaded' | 'user'
   cert_file?: string
@@ -58,6 +63,8 @@ export default function HTTPSSettingsPanel({ onUpdate }: HTTPSSettingsPanelProps
   const [keyFile, setKeyFile] = useState<File | null>(null)
   const [inputKey, setInputKey] = useState(0)
   const [paths, setPaths] = useState({ cert: '', key: '' })
+  // Snapshot once — cert expiry is weeks out; remount refreshes the check.
+  const [nowMs] = useState(() => Date.now())
 
   const applyStatus = useCallback(
     (data: SSLStatus, syncPaths: boolean) => {
@@ -133,7 +140,7 @@ export default function HTTPSSettingsPanel({ onUpdate }: HTTPSSettingsPanelProps
   const { cert } = status
   const selfSigned = cert.source === 'self-signed'
   const expires = cert.not_after ? new Date(cert.not_after) : null
-  const expiringSoon = Boolean(expires && expires.getTime() - Date.now() < EXPIRING_SOON_MS)
+  const expiringSoon = isExpiringSoon(expires, nowMs)
   const names = [...(cert.dns_names || []), ...(cert.ips || [])]
   const locked = busy || status.read_only || status.cert_from_flags
   const { protocol, hostname } = window.location
@@ -218,7 +225,9 @@ export default function HTTPSSettingsPanel({ onUpdate }: HTTPSSettingsPanelProps
             size='sm'
             variant='secondary'
             isDisabled={locked}
-            onPress={() => void run(() => axios.post(`${sslHost()}/selfsigned`), t('HTTPSSettings.SwitchedToSelfSigned'))}
+            onPress={() =>
+              void run(() => axios.post(`${sslHost()}/selfsigned`), t('HTTPSSettings.SwitchedToSelfSigned'))
+            }
           >
             {t('HTTPSSettings.UseSelfSigned')}
           </Button>
@@ -249,7 +258,12 @@ export default function HTTPSSettingsPanel({ onUpdate }: HTTPSSettingsPanelProps
               onChange={e => setKeyFile(e.target.files?.[0] || null)}
             />
           </Button>
-          <Button size='sm' variant='primary' isDisabled={locked || !certFile || !keyFile} onPress={() => void upload()}>
+          <Button
+            size='sm'
+            variant='primary'
+            isDisabled={locked || !certFile || !keyFile}
+            onPress={() => void upload()}
+          >
             {t('HTTPSSettings.Upload')}
           </Button>
         </div>
@@ -257,11 +271,7 @@ export default function HTTPSSettingsPanel({ onUpdate }: HTTPSSettingsPanelProps
 
       <div className='space-y-2'>
         <p className='text-sm text-muted'>{t('HTTPSSettings.PathsHint')}</p>
-        <TextField
-          value={paths.cert}
-          onChange={value => setPaths({ ...paths, cert: value })}
-          isDisabled={locked}
-        >
+        <TextField value={paths.cert} onChange={value => setPaths({ ...paths, cert: value })} isDisabled={locked}>
           <Label>{t('HTTPSSettings.CertPath')}</Label>
           <Input placeholder={t('HTTPSSettings.CertPathExample')} />
         </TextField>
@@ -274,9 +284,7 @@ export default function HTTPSSettingsPanel({ onUpdate }: HTTPSSettingsPanelProps
             size='sm'
             variant='primary'
             isDisabled={locked || !paths.cert || !paths.key}
-            onPress={() =>
-              void run(() => axios.post(`${sslHost()}/paths`, paths), t('HTTPSSettings.PathsApplied'))
-            }
+            onPress={() => void run(() => axios.post(`${sslHost()}/paths`, paths), t('HTTPSSettings.PathsApplied'))}
           >
             {t('HTTPSSettings.UsePaths')}
           </Button>
