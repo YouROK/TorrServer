@@ -1,4 +1,4 @@
-import { Button, Checkbox, Modal, Tabs, ToggleButton, ToggleButtonGroup, useMediaQuery } from '@heroui/react'
+import { Button, Checkbox, Modal, Spinner, Tabs, ToggleButton, ToggleButtonGroup, useMediaQuery } from '@heroui/react'
 import { closeButtonVariants } from '@heroui/styles'
 import { ImagePlus, Pencil, X } from 'lucide-react'
 import { useEffect, useMemo, useState, useCallback } from 'react'
@@ -8,7 +8,6 @@ import type { TorrentStat } from 'shared/api/types'
 import { listViewedFiles } from 'shared/api/viewed'
 import { useUpdateCache } from 'shared/cache/useUpdateCache'
 import { useTorrentDetail } from 'shared/hooks/useTorrentDetail'
-import { useDialogFullScreen } from 'shared/hooks/useDialogFullScreen'
 import { useLocalBoolPref } from 'shared/hooks/useLocalPref'
 import {
   bufferAheadBytes,
@@ -178,12 +177,9 @@ export default function DetailsDialog({
   autoPlayTimecode,
 }: DetailsDialogProps) {
   const { t } = useTranslation()
-  const isFullScreen = useDialogFullScreen()
   /** Equal-width Files/Stats/Cache segments — only needed below the phone breakpoint. */
   const isMobile = useMediaQuery(queryMax('mobile'))
   const isShortViewport = useMediaQuery(MEDIA_SHORT_VIEWPORT)
-  /** Edge-to-edge sheet — AppDialog applies the same useDialogFullScreen policy. */
-  const sheetFull = isFullScreen
   /** Compact chrome only on phone / short viewports — not force-fullscreen on a wide monitor. */
   const useCompactDetails = isMobile || isShortViewport
 
@@ -421,11 +417,11 @@ export default function DetailsDialog({
         </Modal.Header>
 
         <Modal.Body
-          className={`flex min-h-0 flex-1 flex-col gap-2 overflow-hidden sm:gap-3${sheetFull ? ' pt-0' : ' pt-1'}`}
+          className='flex min-h-0 flex-1 flex-col gap-2 overflow-hidden pt-0 sm:gap-3'
         >
           {useCompactDetails ? (
             /* Phone: poster beside the title, then one even 4×2 grid. */
-            <div className='ts-details-hero ts-details-hero-flow shrink-0 space-y-2 rounded-xl bg-gradient-to-br from-accent-soft to-accent-soft/40 p-2'>
+            <div className='ts-details-hero ts-details-hero-flow shrink-0 space-y-2 bg-gradient-to-br from-accent-soft to-accent-soft/40'>
               <div className='flex items-start gap-2'>
                 <button
                   type='button'
@@ -521,41 +517,36 @@ export default function DetailsDialog({
 
             <Tabs.Panel id='files' className='flex min-h-0 flex-1 flex-col overflow-hidden pt-2 sm:pt-3'>
               <div className='min-h-0 flex-1 overflow-y-auto overscroll-contain'>
-                {/* Reserve chip-row height while metadata loads or when multi-season — list won't jump. */}
-                {hasMultipleSeasons || isLoadingMetadata ? (
+                {hasMultipleSeasons ? (
                   <div className='mb-2 min-h-11 sm:mb-3'>
-                    {hasMultipleSeasons ? (
-                      <ToggleButtonGroup
-                        selectionMode='single'
-                        selectedKeys={selectedSeason != null ? [String(selectedSeason)] : []}
-                        onSelectionChange={keys => {
-                          const value = [...keys][0]
-                          if (value != null) setSelectedSeason(Number(value))
-                        }}
-                        className='flex flex-wrap gap-2'
-                      >
-                        {seasonList!.map(season => (
-                          <ToggleButton key={season} id={String(season)}>
-                            {t('Season')} {season}
-                          </ToggleButton>
-                        ))}
-                      </ToggleButtonGroup>
-                    ) : null}
+                    <ToggleButtonGroup
+                      selectionMode='single'
+                      selectedKeys={selectedSeason != null ? [String(selectedSeason)] : []}
+                      onSelectionChange={keys => {
+                        const value = [...keys][0]
+                        if (value != null) setSelectedSeason(Number(value))
+                      }}
+                      className='flex flex-wrap gap-2'
+                    >
+                      {seasonList!.map(season => (
+                        <ToggleButton key={season} id={String(season)}>
+                          {t('Season')} {season}
+                        </ToggleButton>
+                      ))}
+                    </ToggleButtonGroup>
                   </div>
                 ) : null}
 
                 {filesUnknown ? (
                   <div
-                    className='space-y-2'
+                    className='flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-8 text-center'
                     aria-busy={isLoadingMetadata || undefined}
                     aria-label={isLoadingMetadata ? t('TorrentGettingInfo') : t('TorrentInDb')}
                   >
-                    {Array.from({ length: 4 }, (_, i) => (
-                      <div
-                        key={i}
-                        className={`h-[4.5rem] rounded-xl border border-border bg-surface sm:h-[3.25rem] ${isLoadingMetadata ? 'animate-pulse' : ''}`}
-                      />
-                    ))}
+                    {isLoadingMetadata ? <Spinner size='sm' /> : null}
+                    <p className='text-sm text-muted'>
+                      {isLoadingMetadata ? t('TorrentGettingInfo') : t('TorrentInDb')}
+                    </p>
                   </div>
                 ) : (
                   <FileBrowser
@@ -569,7 +560,7 @@ export default function DetailsDialog({
                   />
                 )}
               </div>
-              <div className='shrink-0 border-t border-border bg-surface pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]'>
+              <div className='shrink-0 border-t border-border bg-surface pt-1 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]'>
                 {torrentActions}
               </div>
             </Tabs.Panel>
@@ -587,7 +578,7 @@ export default function DetailsDialog({
                   />
                 </div>
               ) : (
-                <div className='flex min-h-0 flex-1 flex-col gap-3 pb-3'>
+                <div className='flex min-h-0 flex-1 flex-col gap-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]'>
                   <TorrentProgressStrip torrent={torrent} cache={cache} preloadCachePercent={preloadCachePercent} />
                   <div className='grid min-h-0 flex-1 grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] items-stretch gap-3'>
                     <SpeedCharts downloadSpeed={downloadSpeed} uploadSpeed={uploadSpeed} compact fill />
@@ -604,7 +595,7 @@ export default function DetailsDialog({
 
             <Tabs.Panel
               id='cache'
-              className='flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain pt-3 sm:gap-4 sm:pt-4'
+              className='flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:gap-4 sm:pt-4'
             >
               <div className='flex shrink-0 flex-col gap-2'>
                 <div className='flex items-center justify-between gap-2'>

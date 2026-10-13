@@ -20,9 +20,16 @@ import type { TorrentStat } from 'shared/api/types'
 import { torrsShareUrl } from 'shared/api/extras'
 import { dropTorrent, markTorrentsDroppedInList, removeTorrent, TORRENTS_QUERY_KEY } from 'shared/api/torrents'
 import { copyToClipboard } from 'shared/lib/clipboard'
-import { useExternalPlayers } from 'shared/lib/externalPlayers'
+import { playlistActionHref, useExternalPlayers } from 'shared/lib/externalPlayers'
+import { bindPlaylistButton, browserLinkAttrs } from 'shared/lib/openBrowser'
 import { externalLink, useExternalMediaBase } from 'shared/lib/mediaBase'
-import { magnetFromHash, streamPlayUrl, torrentPlaylistUrl } from 'shared/lib/posterPlay'
+import {
+  magnetFromHash,
+  playlistButtonLabelKey,
+  streamPlayUrl,
+  torrentPlaylistUrl,
+  usePlaylistButtonAction,
+} from 'shared/lib/posterPlay'
 import { filesFromMetadata } from 'shared/torrent/fileMetadata'
 import { isFilePlayable } from 'shared/torrent/playable'
 import { iconAction, iconMenu } from 'shared/ui/iconProps'
@@ -60,7 +67,6 @@ export default function TorrentCardActions({ torrent, onDetails, onEdit }: Torre
 
   const hash = torrent.hash
   const displayName = torrent.title || torrent.name || hash
-  const playlistHref = torrentPlaylistUrl(hash, displayName)
   const magnetHref = magnetFromHash(hash, displayName)
 
   const knownPlayableFiles = useMemo(() => {
@@ -77,8 +83,11 @@ export default function TorrentCardActions({ torrent, onDetails, onEdit }: Torre
   })
 
   const { runConfiguredPlay } = useConfiguredPlayAction()
-  const { buildExternalPlayers } = useExternalPlayers()
+  const { buildExternalPlayers, playerFlags } = useExternalPlayers()
+  const playlistButtonAction = usePlaylistButtonAction(playerFlags)
   const mediaBase = useExternalMediaBase()
+  const playlistHref = externalLink(torrentPlaylistUrl(hash, displayName), mediaBase).toString()
+  const playlistItemLabel = t(playlistButtonLabelKey(playlistButtonAction))
 
   useSyncModalOpen(confirmState.isOpen)
 
@@ -186,9 +195,19 @@ export default function TorrentCardActions({ torrent, onDetails, onEdit }: Torre
                 <Info {...iconMenu} />
                 {t('Details')}
               </Dropdown.Item>
-              <Dropdown.Item onPress={() => window.open(playlistHref, '_blank')}>
+              <Dropdown.Item
+                href={playlistHref}
+                {...browserLinkAttrs}
+                onClick={bindPlaylistButton(playlistButtonAction, playlistHref, playlistActionHref(playlistButtonAction, playlistHref), kind =>
+                  toast?.showToast({
+                    message: t(kind === 'copied' ? 'Copied' : 'Error'),
+                    severity: kind === 'copied' ? 'success' : 'error',
+                  }),
+                )}
+                textValue={playlistItemLabel}
+              >
                 <ListMusic {...iconMenu} />
-                {t('DownloadPlaylist')}
+                {playlistItemLabel}
               </Dropdown.Item>
               {onEdit ? (
                 <Dropdown.Item onPress={onEdit}>

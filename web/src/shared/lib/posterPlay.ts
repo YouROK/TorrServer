@@ -1,9 +1,16 @@
+import { useLocalJsonPref } from 'shared/hooks/useLocalPref'
 import { playlistTorrHost, streamHost } from 'shared/api/hosts'
 
 /** localStorage key for poster Play button behavior (Settings → Players). */
 export const POSTER_PLAY_ACTION_KEY = 'posterPlayAction'
 
+/** localStorage key for the Playlist button (Settings → Players). */
+export const PLAYLIST_BUTTON_ACTION_KEY = 'playlistButtonAction'
+
 export type PosterPlayAction = 'builtin' | 'copyLink' | 'vlc' | 'infuse' | 'senPlayer' | 'iina'
+
+/** `download` keeps the m3u link. A player opens that m3u in the app. */
+export type PlaylistButtonAction = 'download' | 'copyLink' | ExternalPosterPlayAction
 
 export type ExternalPosterPlayAction = Exclude<PosterPlayAction, 'builtin' | 'copyLink'>
 
@@ -56,6 +63,54 @@ export const coercePosterPlayAction = (
   if (!isPosterPlayAction(stored)) return fallback
   if (stored === 'builtin' || stored === 'copyLink') return stored
   return isExternalPosterPlayEnabled(stored, flags) ? stored : fallback
+}
+
+const PLAYLIST_ACTIONS = ['download', 'copyLink', 'vlc', 'infuse', 'senPlayer', 'iina'] as const
+
+export const isPlaylistButtonAction = (value: unknown): value is PlaylistButtonAction =>
+  typeof value === 'string' && (PLAYLIST_ACTIONS as readonly string[]).includes(value)
+
+/** i18n key for a playlist-button option or the player name on the button. */
+export const playlistButtonLabelKey = (action: PlaylistButtonAction): string => {
+  switch (action) {
+    case 'download':
+      return 'DownloadPlaylist'
+    case 'copyLink':
+      return 'CopyLink'
+    case 'vlc':
+      return 'VLC'
+    case 'infuse':
+      return 'Infuse'
+    case 'senPlayer':
+      return 'SenPlayer'
+    case 'iina':
+      return 'IINA'
+    default:
+      return 'DownloadPlaylist'
+  }
+}
+
+/** Disabled players fall back to download so the button stays a real playlist link. */
+export const coercePlaylistButtonAction = (stored: unknown, flags: PosterPlayPlayerFlags): PlaylistButtonAction => {
+  if (!isPlaylistButtonAction(stored)) return 'download'
+  if (stored === 'download' || stored === 'copyLink') return stored
+  return isExternalPosterPlayEnabled(stored, flags) ? stored : 'download'
+}
+
+/** Settings → Players value for the Playlist button, coerced when a player toggle is off. */
+export function usePlaylistButtonAction(flags: PosterPlayPlayerFlags): PlaylistButtonAction {
+  const [stored] = useLocalJsonPref<unknown>(PLAYLIST_BUTTON_ACTION_KEY, 'download')
+  return coercePlaylistButtonAction(stored, flags)
+}
+
+/** Download and copy, plus external players that are enabled for this platform. */
+export const availablePlaylistButtonActions = (flags: PosterPlayPlayerFlags): PlaylistButtonAction[] => {
+  const actions: PlaylistButtonAction[] = ['download', 'copyLink']
+  if (flags.isVlcUsed) actions.push('vlc')
+  if (flags.isApple && flags.isInfuseUsed) actions.push('infuse')
+  if (flags.isApple && flags.isSenPlayerUsed) actions.push('senPlayer')
+  if (flags.isMac && flags.isIinaUsed) actions.push('iina')
+  return actions
 }
 
 /** Options shown in Settings for the current platform + enabled player toggles. */

@@ -1,6 +1,8 @@
 import { useMemo, memo, useState } from 'react'
 import { Button, Dropdown, Modal, useMediaQuery, useOverlayState } from '@heroui/react'
+import { buttonVariants } from '@heroui/styles'
 import {
+  ChevronDown,
   EyeOff,
   Hash,
   Link2,
@@ -17,13 +19,19 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import type { PlayableFile, TorrentStat } from 'shared/api/types'
 import { torrsShareUrl } from 'shared/api/extras'
-import { playlistTorrHost } from 'shared/api/hosts'
 import { dropTorrent, markTorrentsDroppedInList, removeTorrent, TORRENTS_QUERY_KEY } from 'shared/api/torrents'
 import { clearViewedFiles } from 'shared/api/viewed'
-import { useExternalPlayers } from 'shared/lib/externalPlayers'
+import { playlistActionHref, useExternalPlayers } from 'shared/lib/externalPlayers'
 import { externalLink, useExternalMediaBase } from 'shared/lib/mediaBase'
 import { copyToClipboard } from 'shared/lib/clipboard'
-import { streamPlayUrl, torrentPlaylistUrl } from 'shared/lib/posterPlay'
+import { bindPlaylistButton, browserLinkAttrs } from 'shared/lib/openBrowser'
+import {
+  magnetFromHash,
+  playlistButtonLabelKey,
+  streamPlayUrl,
+  torrentPlaylistUrl,
+  usePlaylistButtonAction,
+} from 'shared/lib/posterPlay'
 import { requestOpenSettings } from 'shared/lib/settingsEvents'
 import { queryMax } from 'shared/theme/breakpoints'
 import { iconMenu } from 'shared/ui/iconProps'
@@ -78,6 +86,7 @@ function TorrentActions({
   const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm>(null)
   const shareState = useOverlayState()
   const playersState = useOverlayState()
+  const playlistState = useOverlayState()
   const confirmState = useOverlayState({
     isOpen: pendingConfirm != null,
     onOpenChange: open => {
@@ -93,9 +102,9 @@ function TorrentActions({
   const latestViewedFileInfo = latestViewedFilePath ? ptt.parse(latestViewedFilePath) : null
 
   const displayName = name || title || 'file'
-  const fullPlaylistLink = `${playlistTorrHost()}/${encodeURIComponent(displayName)}.m3u?link=${hash}&m3u`
+  const fullPlaylistLink = torrentPlaylistUrl(hash, displayName)
   const fromLatestPlaylistLink = `${fullPlaylistLink}&fromlast`
-  const magnetLink = `magnet:?xt=urn:btih:${hash}&dn=${encodeURIComponent(name || title || '')}`
+  const magnetLink = magnetFromHash(hash, displayName)
 
   /** Keep launcher mounted for Continue Watching autoplay + player modals. */
   const { playerModals } = usePlayLauncher({
@@ -108,7 +117,8 @@ function TorrentActions({
   })
 
   /** File row owns single-file players. Series footer opens the whole playlist. */
-  const { buildSeriesExternalPlayers, hasAnyExternalPlayer } = useExternalPlayers()
+  const { buildSeriesExternalPlayers, hasAnyExternalPlayer, playerFlags } = useExternalPlayers()
+  const playlistButtonAction = usePlaylistButtonAction(playerFlags)
   const mediaBase = useExternalMediaBase()
   const singleFileStream = useMemo(() => {
     if (playableFileList?.length !== 1) return null
@@ -205,7 +215,7 @@ function TorrentActions({
 
   const hasPartialProgress = isSeries && !!viewedFileList?.length
   const latestPlayed = hasPartialProgress ? (
-    <p className='truncate text-xs text-muted'>
+    <p className={`truncate text-xs text-muted${compact ? ' mb-1' : ''}`}>
       {t('LatestFilePlayed')}{' '}
       <strong className='text-foreground'>
         {latestViewedFileInfo?.title}
@@ -251,22 +261,76 @@ function TorrentActions({
   const slot = compact ? 'shrink-0' : 'flex min-w-0 flex-1 [&>*]:w-full [&>*]:min-w-0'
   const fillBtn = 'min-h-9 min-w-0 flex-1'
 
-  const playlistButtons = !isSeries || !hasPartialProgress ? (
-    <Button variant='primary' className={fillBtn} onPress={() => window.open(fullPlaylistLink, '_blank')}>
+  const playlistLabel =
+    playlistButtonAction === 'download'
+      ? compact
+        ? t('PlaylistShort')
+        : t('DownloadPlaylist')
+      : t(playlistButtonLabelKey(playlistButtonAction))
+  const playlistClick = (url: string) => {
+    const absolute = externalLink(url, mediaBase).toString()
+    return bindPlaylistButton(playlistButtonAction, absolute, playlistActionHref(playlistButtonAction, absolute), kind =>
+      toast?.showToast({
+        message: t(kind === 'copied' ? 'Copied' : 'Error'),
+        severity: kind === 'copied' ? 'success' : 'error',
+      }),
+    )
+  }
+  const playlistAnchor = (href: string, variant: 'primary' | 'outline', label: string, text: string) => (
+    <a
+      href={externalLink(href, mediaBase).toString()}
+      {...browserLinkAttrs}
+      onClick={playlistClick(href)}
+      title={label}
+      aria-label={label}
+      className={`${buttonVariants({ variant })} ${fillBtn}`}
+    >
       <ListMusic {...iconMenu} aria-hidden />
-      <span className='truncate'>{t('DownloadPlaylist')}</span>
-    </Button>
-  ) : (
-    <>
-      <Button variant='primary' className={fillBtn} onPress={() => window.open(fromLatestPlaylistLink, '_blank')}>
-        <ListMusic {...iconMenu} aria-hidden />
-        <span className='truncate'>{t('FromLatestFile')}</span>
-      </Button>
-      <Button variant='outline' className={fillBtn} onPress={() => window.open(fullPlaylistLink, '_blank')}>
-        <span className='truncate'>{t('DownloadPlaylist')}</span>
-      </Button>
-    </>
+      <span className='truncate'>{text}</span>
+    </a>
   )
+
+  const playlistButtons =
+    compact && isSeries && hasPartialProgress ? (
+      <Dropdown isOpen={playlistState.isOpen} onOpenChange={playlistState.setOpen}>
+        <Dropdown.Trigger className='min-w-0 flex-1'>
+          <Button variant='primary' className='min-h-9 w-full min-w-0' aria-label={playlistLabel}>
+            <ListMusic {...iconMenu} aria-hidden />
+            <span className='truncate'>{playlistLabel}</span>
+            <ChevronDown {...iconMenu} aria-hidden />
+          </Button>
+        </Dropdown.Trigger>
+        <Dropdown.Popover placement='top start'>
+          <Dropdown.Menu aria-label={playlistLabel}>
+            <Dropdown.Item
+              href={externalLink(fromLatestPlaylistLink, mediaBase).toString()}
+              {...browserLinkAttrs}
+              onClick={playlistClick(fromLatestPlaylistLink)}
+              textValue={t('FromLatestFile')}
+            >
+              <ListMusic {...iconMenu} />
+              {t('FromLatestFile')}
+            </Dropdown.Item>
+            <Dropdown.Item
+              href={externalLink(fullPlaylistLink, mediaBase).toString()}
+              {...browserLinkAttrs}
+              onClick={playlistClick(fullPlaylistLink)}
+              textValue={playlistLabel}
+            >
+              <ListMusic {...iconMenu} />
+              {playlistLabel}
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown.Popover>
+      </Dropdown>
+    ) : !isSeries || !hasPartialProgress ? (
+      playlistAnchor(fullPlaylistLink, 'primary', playlistLabel, playlistLabel)
+    ) : (
+      <>
+        {playlistAnchor(fromLatestPlaylistLink, 'primary', t('FromLatestFile'), t('FromLatestFile'))}
+        {playlistAnchor(fullPlaylistLink, 'outline', playlistLabel, playlistLabel)}
+      </>
+    )
 
   const playersMenu =
     seriesPlayers.length > 0 ? (
@@ -384,32 +448,34 @@ function TorrentActions({
   )
 
   return (
-    <div className='space-y-2'>
-      {showPlayerHint ? (
-        <button
-          type='button'
-          onClick={() => requestOpenSettings('app')}
-          className='flex items-center gap-1.5 text-xs text-muted transition-colors hover:text-accent'
-        >
-          <Settings size={14} strokeWidth={1.75} aria-hidden />
-          {t('ExternalPlayersHint')}
-        </button>
-      ) : null}
+    <>
+      <div className={compact ? undefined : 'space-y-2'}>
+        {showPlayerHint ? (
+          <button
+            type='button'
+            onClick={() => requestOpenSettings('app')}
+            className={`flex items-center gap-1.5 text-xs text-muted transition-colors hover:text-accent${compact ? ' mb-1' : ''}`}
+          >
+            <Settings size={14} strokeWidth={1.75} aria-hidden />
+            {t('ExternalPlayersHint')}
+          </button>
+        ) : null}
 
-      {latestPlayed}
+        {latestPlayed}
 
-      <div className='flex w-full items-stretch gap-2'>
-        {playlistButtons}
-        {playersMenu}
-        {shareMenu}
-        {clearButton}
-        {dropButton}
-        {deleteButton}
+        <div className='flex w-full items-stretch gap-2'>
+          {playlistButtons}
+          {playersMenu}
+          {shareMenu}
+          {clearButton}
+          {dropButton}
+          {deleteButton}
+        </div>
       </div>
 
       {playerModals}
       {confirmModal}
-    </div>
+    </>
   )
 }
 

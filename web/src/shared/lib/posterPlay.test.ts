@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 
-import { buildExternalPlayerHref, buildInfusePlaylistHref } from './externalPlayers'
+import { buildExternalPlayerHref, buildInfusePlaylistHref, playlistActionHref } from './externalPlayers'
 
 describe('buildExternalPlayerHref', () => {
   const stream = 'https://ts.example/stream/a.mkv?link=h&index=1&play'
@@ -10,6 +10,9 @@ describe('buildExternalPlayerHref', () => {
     expect(buildExternalPlayerHref('infuse', stream)).toBe(`infuse://x-callback-url/play?url=${encoded}`)
     expect(buildExternalPlayerHref('senPlayer', stream)).toBe(`senplayer://x-callback-url/play?url=${encoded}`)
     expect(buildExternalPlayerHref('vlc', stream)).toBe(`vlc://${stream}`)
+    expect(playlistActionHref('download', stream)).toBeNull()
+    expect(playlistActionHref('copyLink', stream)).toBeNull()
+    expect(playlistActionHref('vlc', stream)).toBe(`vlc://${stream}`)
     expect(buildExternalPlayerHref('iina', stream)).toBe(`iina://weblink?url=${encoded}`)
   })
 
@@ -22,9 +25,9 @@ describe('buildExternalPlayerHref', () => {
     const href = buildInfusePlaylistHref(episodes, m3u)
     expect(href).toBe(
       'infuse://x-callback-url/play?' +
-        episodes
-          .map(episode => `url=${encodeURIComponent(episode.url)}&filename=${encodeURIComponent(episode.filename)}`)
-          .join('&'),
+      episodes
+        .map(episode => `url=${encodeURIComponent(episode.url)}&filename=${encodeURIComponent(episode.filename)}`)
+        .join('&'),
     )
     expect(buildExternalPlayerHref('iina', m3u)).toBe(`iina://weblink?url=${encodeURIComponent(m3u)}`)
     expect(buildExternalPlayerHref('senPlayer', m3u)).toBe(
@@ -99,6 +102,28 @@ describe('posterPlay', () => {
     }
     expect(coercePosterPlayAction('builtin', base, true)).toBe('builtin')
     expect(coercePosterPlayAction('copyLink', base, false)).toBe('copyLink')
+  })
+
+  it('coerces playlist button prefs back to download when the player is off', async () => {
+    const { availablePlaylistButtonActions, coercePlaylistButtonAction } = await import('./posterPlay')
+    const base = {
+      isVlcUsed: false,
+      isInfuseUsed: false,
+      isSenPlayerUsed: false,
+      isIinaUsed: false,
+      isApple: false,
+      isMac: false,
+    }
+    expect(coercePlaylistButtonAction('garbage', base)).toBe('download')
+    expect(coercePlaylistButtonAction('vlc', base)).toBe('download')
+    expect(coercePlaylistButtonAction('copyLink', base)).toBe('copyLink')
+    expect(coercePlaylistButtonAction('vlc', { ...base, isVlcUsed: true })).toBe('vlc')
+    expect(coercePlaylistButtonAction('infuse', { ...base, isApple: true, isInfuseUsed: false })).toBe('download')
+    expect(availablePlaylistButtonActions({ ...base, isApple: true, isInfuseUsed: true })).toEqual([
+      'download',
+      'copyLink',
+      'infuse',
+    ])
   })
 
   it('lists only enabled platform-available externals in settings options', async () => {

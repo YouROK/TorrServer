@@ -2367,8 +2367,10 @@ body[data-immersive='true'] .ts-bottom-nav {
  * `!important` beats those inline width/height values.
  */
 @media (max-width: 960px) {
-  .modal__backdrop {
+  .modal__backdrop:not(:has(.ts-sheet-modal)):not(:has(.ts-compact-modal)) {
     --visual-viewport-height: var(--app-height, 100vh);
+    top: var(--app-vv-top, 0px);
+    left: var(--app-vv-left, 0px);
     width: 100%;
     max-width: 100%;
     min-width: 100%;
@@ -2398,6 +2400,8 @@ body[data-immersive='true'] .ts-bottom-nav {
   }
 
   .modal__container:not(:has(.ts-sheet-modal)):not(:has(.ts-compact-modal)) {
+    top: var(--app-vv-top, 0px) !important;
+    left: var(--app-vv-left, 0px) !important;
     width: 100% !important;
     max-width: 100% !important;
     min-width: 100% !important;
@@ -2488,9 +2492,14 @@ body[data-immersive='true'] .ts-bottom-nav {
   }
 
   /* Edit sits left of absolute Close — same 44px box as `.modal__close-trigger`. */
+  .modal__dialog.ts-details-modal>.modal__close-trigger,
+  .modal__dialog.ts-details-modal>.modal__header .modal__close-trigger,
+  .modal__dialog.ts-details-modal .ts-details-edit-trigger {
+    top: env(safe-area-inset-top, 0px);
+  }
+
   .modal__dialog.ts-details-modal .ts-details-edit-trigger {
     position: absolute;
-    top: max(0.5rem, env(safe-area-inset-top, 0px));
     right: max(3.5rem, calc(3rem + env(safe-area-inset-right, 0px)));
   }
 
@@ -2510,7 +2519,12 @@ body[data-immersive='true'] .ts-bottom-nav {
 
   /* Details: flush hero + safe-area even when size class is still `lg`. */
   .modal__dialog.ts-details-modal>.modal__header {
+    height: 0;
+    min-height: 0;
+    margin: 0;
     padding: 0;
+    border: 0 !important;
+    overflow: visible;
   }
 
   .modal__dialog.ts-details-modal>.modal__body {
@@ -2521,8 +2535,7 @@ body[data-immersive='true'] .ts-bottom-nav {
 
   .modal__dialog.ts-details-modal .ts-details-hero {
     border-radius: 0;
-    /* 1rem floor helps Safari-tab (safe-area-inset-top ≈ 0 under the URL bar). */
-    padding-top: max(1rem, env(safe-area-inset-top, 0px));
+    padding-top: calc(env(safe-area-inset-top, 0px) + 1.25rem);
     /* Close + edit cluster (~44+44+gap) must not sit on the title. */
     padding-right: max(6.75rem, calc(5.75rem + env(safe-area-inset-right, 0px)));
     padding-bottom: 0.5rem;
@@ -2723,7 +2736,7 @@ body[data-immersive='true'] .ts-bottom-nav {
 }
 
 .modal__dialog--full>.modal__header {
-  padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
+  padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
   padding-right: 3.5rem;
   /* clearance for absolute close */
   padding-bottom: 0.5rem;
@@ -2740,6 +2753,15 @@ body[data-immersive='true'] .ts-bottom-nav {
 .modal__dialog--full>.modal__body.modal__body--scroll-inside,
 .modal__dialog--full>.modal__body [role='tabpanel'] {
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+}
+
+/* Details footer already owns the home-indicator inset. HeroUI's
+   `.modal__header + .modal__body { margin-top: 0.5rem }` is the overlay
+   seam above the hero; body padding-bottom stacks a second safe-area
+   under the footer. Both lose to this rule. */
+.modal__dialog.ts-details-modal>.modal__body.modal__body--scroll-inside {
+  margin-top: 0;
+  padding-bottom: 0;
 }
 
 .modal__dialog--full>.modal__footer {
@@ -2768,8 +2790,19 @@ body[data-immersive='true'] .ts-bottom-nav {
   padding: 0;
 }
 
+.modal__dialog--full.ts-details-modal>.modal__close-trigger,
+.modal__dialog--full.ts-details-modal>.modal__header .modal__close-trigger,
+.modal__dialog--full.ts-details-modal .ts-details-edit-trigger {
+  top: env(safe-area-inset-top, 0px);
+}
+
 .modal__dialog--full.ts-details-modal>.modal__header {
+  height: 0;
+  min-height: 0;
+  margin: 0;
   padding: 0;
+  border: 0 !important;
+  overflow: visible;
 }
 
 .modal__dialog--full.ts-details-modal>.modal__body {
@@ -2780,7 +2813,7 @@ body[data-immersive='true'] .ts-bottom-nav {
 
 .modal__dialog--full.ts-details-modal .ts-details-hero {
   border-radius: 0;
-  padding-top: max(1rem, env(safe-area-inset-top, 0px));
+  padding-top: calc(env(safe-area-inset-top, 0px) + 1.25rem);
   padding-right: max(6.75rem, calc(5.75rem + env(safe-area-inset-right, 0px)));
   padding-bottom: 0.5rem;
   padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
@@ -2788,7 +2821,6 @@ body[data-immersive='true'] .ts-bottom-nav {
 
 .modal__dialog--full.ts-details-modal .ts-details-edit-trigger {
   position: absolute;
-  top: max(0.5rem, env(safe-area-inset-top, 0px));
   right: max(3.5rem, calc(3rem + env(safe-area-inset-right, 0px)));
 }
 
@@ -2837,6 +2869,13 @@ body[data-immersive='true'] .ts-bottom-nav {
  */
 html[data-dialogs-fullscreen] .modal__backdrop:has(.modal__dialog:not(.ts-sheet-modal):not(.ts-compact-modal)) {
   --visual-viewport-height: var(--app-height, 100vh);
+  top: var(--app-vv-top, 0px);
+  left: var(--app-vv-left, 0px);
+}
+
+html[data-dialogs-fullscreen] .modal__container:has(.modal__dialog:not(.ts-sheet-modal):not(.ts-compact-modal)) {
+  top: var(--app-vv-top, 0px) !important;
+  left: var(--app-vv-left, 0px) !important;
 }
 
 html[data-dialogs-fullscreen] .modal__backdrop:has(.modal__dialog:not(.ts-sheet-modal):not(.ts-compact-modal)),
@@ -2868,8 +2907,19 @@ html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal {
   padding: 0;
 }
 
+html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal>.modal__close-trigger,
+html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal>.modal__header .modal__close-trigger,
+html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal .ts-details-edit-trigger {
+  top: env(safe-area-inset-top, 0px);
+}
+
 html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal>.modal__header {
+  height: 0;
+  min-height: 0;
+  margin: 0;
   padding: 0;
+  border: 0 !important;
+  overflow: visible;
 }
 
 html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal>.modal__body {
@@ -2880,28 +2930,21 @@ html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal>.modal__body {
 
 html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal .ts-details-hero {
   border-radius: 0;
-  padding-top: max(1rem, env(safe-area-inset-top, 0px));
+  padding-top: calc(env(safe-area-inset-top, 0px) + 1.25rem);
   padding-right: max(6.75rem, calc(5.75rem + env(safe-area-inset-right, 0px)));
   padding-bottom: 0.5rem;
   padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
 }
 
-/* Phone flow hero: only the first line reserves the button cluster (a float),
-   so the blanket right gutter must not indent the whole block. */
+/* Phone flow hero: title row owns the close/edit gutter (`pr-[6.75rem]`),
+   so the blanket hero padding-right must not indent the stats grid. */
 html .modal__dialog.ts-details-modal .ts-details-hero.ts-details-hero-flow,
 .modal__dialog--full.ts-details-modal .ts-details-hero.ts-details-hero-flow {
   padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
 }
 
-.ts-details-hero-flow::after {
-  content: '';
-  display: block;
-  clear: both;
-}
-
 html[data-dialogs-fullscreen] .modal__dialog.ts-details-modal .ts-details-edit-trigger {
   position: absolute;
-  top: max(0.5rem, env(safe-area-inset-top, 0px));
   right: max(3.5rem, calc(3rem + env(safe-area-inset-right, 0px)));
 }
 

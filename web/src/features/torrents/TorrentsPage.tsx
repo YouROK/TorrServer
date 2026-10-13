@@ -32,6 +32,7 @@ import {
   OPEN_EXPORT_LIBRARY_EVENT,
   OPEN_IMPORT_LIBRARY_EVENT,
 } from 'shared/lib/libraryEvents'
+import { openPlaylistLink } from 'shared/lib/openBrowser'
 import { queryMax } from 'shared/theme/breakpoints'
 import { iconBtn } from 'shared/ui/controlClasses'
 import { iconEmpty, iconEmptyLg, iconMenu, iconNav } from 'shared/ui/iconProps'
@@ -120,7 +121,14 @@ export default function TorrentsPage({ sortABC, sortCategory, onAdd, onClearCate
     const onImport = () => setImportOpen(true)
     const onExport = () => setExportOpen(true)
     const onPlaylists = () => {
-      window.open(filteredPlaylistAllUrl(sortCategory, libraryQuery), '_blank')
+      void openPlaylistLink(filteredPlaylistAllUrl(sortCategory, libraryQuery)).then(kind => {
+        if (kind === 'copied' || kind === 'error') {
+          toast?.showToast({
+            message: t(kind === 'copied' ? 'Copied' : 'Error'),
+            severity: kind === 'copied' ? 'success' : 'error',
+          })
+        }
+      })
     }
     window.addEventListener(OPEN_IMPORT_LIBRARY_EVENT, onImport)
     window.addEventListener(OPEN_EXPORT_LIBRARY_EVENT, onExport)
@@ -130,7 +138,7 @@ export default function TorrentsPage({ sortABC, sortCategory, onAdd, onClearCate
       window.removeEventListener(OPEN_EXPORT_LIBRARY_EVENT, onExport)
       window.removeEventListener(DOWNLOAD_ALL_PLAYLISTS_EVENT, onPlaylists)
     }
-  }, [sortCategory, libraryQuery])
+  }, [sortCategory, libraryQuery, t, toast])
 
   const visibleTorrents = useMemo(() => {
     const sorted = torrents ? sortTorrents(torrents, sortABC, sortCategory) : []
@@ -540,9 +548,9 @@ export default function TorrentsPage({ sortABC, sortCategory, onAdd, onClearCate
                 onResume={
                   resumeEntry
                     ? () => {
-                        setResumePlay({ fileIndex: resumeEntry.fileIndex, timecode: resumeEntry.timecode })
-                        setDetailsTorrent(torrent)
-                      }
+                      setResumePlay({ fileIndex: resumeEntry.fileIndex, timecode: resumeEntry.timecode })
+                      setDetailsTorrent(torrent)
+                    }
                     : undefined
                 }
               />

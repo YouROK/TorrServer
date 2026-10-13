@@ -16,6 +16,18 @@ export function preferVisibleViewportHeight(inner: number, client: number, visua
   return Math.round(client) || 0
 }
 
+/** Browser chrome (Edge/Safari iOS) shifts visualViewport below the layout origin. Standalone already fills the screen. */
+export function preferVisibleViewportOffset(
+  standalone: boolean,
+  offsetTop: number,
+  offsetLeft: number,
+): { top: number; left: number } {
+  if (standalone) return { top: 0, left: 0 }
+  const top = Number.isFinite(offsetTop) ? Math.max(0, Math.round(offsetTop)) : 0
+  const left = Number.isFinite(offsetLeft) ? Math.max(0, Math.round(offsetLeft)) : 0
+  return { top, left }
+}
+
 /**
  * Measure the physical viewport height for layout.
  *
@@ -40,11 +52,15 @@ function readViewportHeightPx(): number {
 }
 
 function applyAppHeight() {
-  if (typeof document === 'undefined') return
+  if (typeof document === 'undefined' || typeof window === 'undefined') return
   const px = readViewportHeightPx()
   if (px > 0) {
     document.documentElement.style.setProperty(APP_HEIGHT_VAR, `${px}px`)
   }
+  const vv = window.visualViewport
+  const offset = preferVisibleViewportOffset(detectStandaloneApp(), vv?.offsetTop ?? 0, vv?.offsetLeft ?? 0)
+  document.documentElement.style.setProperty('--app-vv-top', `${offset.top}px`)
+  document.documentElement.style.setProperty('--app-vv-left', `${offset.left}px`)
 }
 
 /**

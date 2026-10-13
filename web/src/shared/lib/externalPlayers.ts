@@ -1,11 +1,17 @@
 import { useTranslation } from 'react-i18next'
 import { useLocalBoolPref } from 'shared/hooks/useLocalPref'
 import { detectStandaloneApp, isAppleDevice, isMacOS } from 'shared/lib/platform'
-import type { ExternalPosterPlayAction, PosterPlayPlayerFlags } from 'shared/lib/posterPlay'
+import type { ExternalPosterPlayAction, PlaylistButtonAction, PosterPlayPlayerFlags } from 'shared/lib/posterPlay'
 
 export interface ExternalPlayerLink {
   label: string
   href: string
+}
+
+/** Player deep link for the Playlist button. Download and copy stay on the page. */
+export const playlistActionHref = (action: PlaylistButtonAction, absoluteUrl: string): string | null => {
+  if (action === 'download' || action === 'copyLink') return null
+  return buildExternalPlayerHref(action, absoluteUrl)
 }
 
 /** Deep-link scheme for a single enabled external player and an absolute stream URL. */
@@ -97,5 +103,11 @@ export function useExternalPlayers() {
     return links
   }
 
-  return { buildExternalPlayers, buildSeriesExternalPlayers, shouldShowOpenLink, hasAnyExternalPlayer, playerFlags }
+  return {
+    buildExternalPlayers,
+    buildSeriesExternalPlayers,
+    shouldShowOpenLink,
+    hasAnyExternalPlayer,
+    playerFlags,
+  }
 }

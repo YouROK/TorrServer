@@ -6,10 +6,15 @@ import { useTranslation } from 'react-i18next'
 import { useLocalBoolPref, useLocalJsonPref } from 'shared/hooks/useLocalPref'
 import { isAppleDevice, isDesktop, isMacOS, detectApplePlatform } from 'shared/lib/platform'
 import {
+  availablePlaylistButtonActions,
   availablePosterPlayActions,
+  coercePlaylistButtonAction,
   coercePosterPlayAction,
   defaultPosterPlayAction,
+  PLAYLIST_BUTTON_ACTION_KEY,
+  playlistButtonLabelKey,
   POSTER_PLAY_ACTION_KEY,
+  type PlaylistButtonAction,
   type PosterPlayAction,
 } from 'shared/lib/posterPlay'
 
@@ -47,6 +52,10 @@ export default function MobilePlayersSection() {
   )
   const posterPlayAction = coercePosterPlayAction(posterPlayStored, playerFlags, isIOS)
   const posterPlayOptions = availablePosterPlayActions(playerFlags)
+
+  const [playlistStored, setPlaylistStored] = useLocalJsonPref<unknown>(PLAYLIST_BUTTON_ACTION_KEY, 'download')
+  const playlistButtonAction = coercePlaylistButtonAction(playlistStored, playerFlags)
+  const playlistOptions = availablePlaylistButtonActions(playerFlags)
 
   const posterPlayLabel = (action: PosterPlayAction): string => {
     switch (action) {
@@ -145,6 +154,34 @@ export default function MobilePlayersSection() {
           </Select.Popover>
         </Select>
         <p className='block text-sm leading-relaxed text-muted'>{t('SettingsDialog.TorrsProtocolHint')}</p>
+      </div>
+
+      <div className='space-y-1.5 pt-2'>
+        <p className='block text-sm font-medium leading-snug text-foreground'>
+          {t('SettingsDialog.PlaylistButtonAction')}
+        </p>
+        <p className='block text-sm leading-relaxed text-muted'>{t('SettingsDialog.PlaylistButtonActionHint')}</p>
+        <Select
+          selectedKey={playlistButtonAction}
+          onSelectionChange={key => {
+            if (key == null) return
+            setPlaylistStored(String(key) as PlaylistButtonAction)
+          }}
+        >
+          <Select.Trigger className='min-h-11 w-full'>
+            <Select.Value />
+            <Select.Indicator />
+          </Select.Trigger>
+          <Select.Popover>
+            <ListBox>
+              {playlistOptions.map(action => (
+                <ListBox.Item key={action} id={action} textValue={t(playlistButtonLabelKey(action))}>
+                  {t(playlistButtonLabelKey(action))}
+                </ListBox.Item>
+              ))}
+            </ListBox>
+          </Select.Popover>
+        </Select>
       </div>
     </SettingsSection>
   )
