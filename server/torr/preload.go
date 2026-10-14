@@ -95,7 +95,7 @@ func (t *Torrent) Preload(index int, size int64) {
 					utils2.Format(float64(t.PreloadedBytes)), " / ",
 					utils2.Format(float64(t.PreloadSize)), " Speed: ",
 					utils2.Format(t.DownloadSpeed), " Peers: ",
-					st.ActivePeers, "/",
+					st.ActivePeers, " / ",
 					st.TotalPeers, " [ Seeds: ",
 					st.ConnectedSeeders, " ]")
 				log.TLogln("Preload:", statStr)
