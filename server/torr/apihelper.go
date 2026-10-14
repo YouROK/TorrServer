@@ -109,7 +109,8 @@ func GetTorrent(hashHex string) *Torrent {
 
 	// A DB torrent is returned as is and loaded in the background, so request
 	// handlers never block on peers. Callers that need a working torrent check
-	// for state.TorrentInDB and load it themselves (AddTorrent/LoadTorrent).
+	// for state.TorrentInDB and load it themselves (AddTorrent/LoadTorrent);
+	// NewTorrent waits for the background load, so both end up with one torrent.
 	tr := GetTorrentDB(hash)
 	if tr != nil {
 		startLoadFromDB(tr)
@@ -132,18 +133,14 @@ func startLoadFromDB(dbTorr *Torrent) {
 		bts.mu.Unlock()
 		return
 	}
-	bts.loading[hash] = struct{}{}
+	added := make(chan struct{})
+	bts.loading[hash] = added
+	loading := bts.loading
 	bts.mu.Unlock()
 
 	go func() {
-		defer func() {
-			bts.mu.Lock()
-			delete(bts.loading, hash)
-			bts.mu.Unlock()
-		}()
-
 		log.TLogln("New torrent", dbTorr.Hash())
-		tr, _ := NewTorrent(dbTorr.TorrentSpec, bts)
+		tr, _ := newTorrent(dbTorr.TorrentSpec, bts)
 		if tr != nil {
 			tr.Title = dbTorr.Title
 			tr.Poster = dbTorr.Poster
@@ -151,9 +148,18 @@ func startLoadFromDB(dbTorr *Torrent) {
 			tr.Size = dbTorr.Size
 			tr.Timestamp = dbTorr.Timestamp
 			tr.Category = dbTorr.Category
-			if tr.GotInfo() {
-				syncMetainfoToDB(tr, dbTorr)
-			}
+		}
+		// callers waiting in NewTorrent now find the torrent registered and leave
+		// dbTorr.TorrentSpec alone
+		bts.mu.Lock()
+		if loading[hash] == added {
+			delete(loading, hash)
+		}
+		bts.mu.Unlock()
+		close(added)
+
+		if tr != nil && tr.GotInfo() {
+			syncMetainfoToDB(tr, dbTorr)
 		}
 	}()
 }

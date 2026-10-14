@@ -54,12 +54,42 @@ type Torrent struct {
 
 	expiredTime time.Time
 
+	// persistOnce saves the metainfo once per torrent, WaitInfo calls finishWaitInfo every time
+	persistOnce sync.Once
+
 	closed <-chan struct{}
 
 	progressTicker *time.Ticker
 }
 
+// loadWaitTimeout bounds how long NewTorrent waits for startLoadFromDB to add the
+// same torrent. Adding does not wait for peers, so it normally takes milliseconds.
+const loadWaitTimeout = 30 * time.Second
+
 func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
+	if bt == nil {
+		return nil, errors.New("BT client not connected")
+	}
+	if spec == nil {
+		return nil, errors.New("torrent spec is empty")
+	}
+	// GetTorrent starts loading a DB torrent in the background with the DB spec, and
+	// the caller usually passes that same spec right away. Wait for the background
+	// load to register the torrent instead of adding it twice on one shared spec.
+	bt.mu.RLock()
+	added := bt.loading[spec.InfoHash]
+	bt.mu.RUnlock()
+	if added != nil {
+		select {
+		case <-added:
+		case <-time.After(loadWaitTimeout):
+			log.TLogln("Timeout waiting for torrent to load from DB:", spec.InfoHash.HexString())
+		}
+	}
+	return newTorrent(spec, bt)
+}
+
+func newTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 	// https://github.com/anacrolix/torrent/issues/747
 	if bt == nil || bt.client == nil {
 		return nil, errors.New("BT client not connected")
@@ -181,7 +211,7 @@ func (t *Torrent) finishWaitInfo() bool {
 			cache.SetTorrent(t.Torrent)
 		}
 	}
-	t.persistMetainfo()
+	t.persistOnce.Do(t.persistMetainfo)
 	return t.Torrent.Info() != nil
 }
 
@@ -284,11 +314,9 @@ func (t *Torrent) progressEvent() {
 		if t.TorrentSpec != nil {
 			log.TLogln("Torrent close by timeout", t.TorrentSpec.InfoHash.HexString())
 		}
+		// the cached pieces stay on disk: in long-term mode the global LRU
+		// eviction (cleanGlobal) frees space when the quota is full
 		t.bt.RemoveTorrent(t.Hash())
-		// too little is cached to seed (see seedable): free the space now
-		if longTermCache() {
-			torrstor.RemoveDiskCache(t.Hash().HexString())
-		}
 		return
 	}
 

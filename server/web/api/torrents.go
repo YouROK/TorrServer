@@ -13,6 +13,7 @@ import (
 	set "server/settings"
 	"server/torr"
 	"server/torr/state"
+	"server/torr/storage/torrstor"
 	"server/web/api/utils"
 
 	"github.com/anacrolix/torrent"
@@ -257,7 +258,7 @@ func downloadTorrent(req torrReqJS, c *gin.Context, cancel bool) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "hash is empty"})
 		return
 	}
-	if !set.BTsets.LongTermCache || !set.BTsets.UseDisk {
+	if !torrstor.IsLongTermCache() {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": torr.ErrDownloadNeedsLongTermCache.Error()})
 		return
 	}
@@ -266,6 +267,8 @@ func downloadTorrent(req torrReqJS, c *gin.Context, cancel bool) {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "torrent not found"})
 		return
 	}
+	// GetTorrent has started loading a DB torrent in the background; AddTorrent
+	// waits for that load and returns the same torrent, as in stream and play
 	if tor.Stat == state.TorrentInDB {
 		var err error
 		tor, err = torr.AddTorrent(tor.TorrentSpec, tor.Title, tor.Poster, tor.Data, tor.Category)

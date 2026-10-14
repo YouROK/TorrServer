@@ -59,6 +59,9 @@ func (p *Piece) MarkComplete() error {
 
 func (p *Piece) MarkNotComplete() error {
 	p.Complete = false
+	if p.dPiece != nil {
+		p.dPiece.discardFailed()
+	}
 	return nil
 }
 

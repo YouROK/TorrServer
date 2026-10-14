@@ -547,13 +547,8 @@ func settingsCallback(c tele.Context, action string) error {
 			sets.LongTermCache = false
 		}
 	case "longterm":
+		// settings.SetBTSets turns UseDisk on and sets the default quota
 		sets.LongTermCache = !sets.LongTermCache
-		if sets.LongTermCache {
-			sets.UseDisk = true
-			if sets.DiskCacheSize <= 0 {
-				sets.DiskCacheSize = 50 * 1024 * 1024 * 1024
-			}
-		}
 	case "fsactive":
 		sets.ShowFSActiveTorr = !sets.ShowFSActiveTorr
 	case "storejson":

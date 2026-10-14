@@ -29,7 +29,9 @@ type BTServer struct {
 	storage *torrstor.Storage
 
 	torrents map[metainfo.Hash]*Torrent
-	loading  map[metainfo.Hash]struct{}
+	// loading holds the DB torrents startLoadFromDB is adding; the channel closes
+	// once the torrent is in torrents, see NewTorrent
+	loading map[metainfo.Hash]chan struct{}
 
 	mu sync.RWMutex
 }
@@ -58,7 +60,7 @@ func init() {
 func NewBTS() *BTServer {
 	bts := new(BTServer)
 	bts.torrents = make(map[metainfo.Hash]*Torrent)
-	bts.loading = make(map[metainfo.Hash]struct{})
+	bts.loading = make(map[metainfo.Hash]chan struct{})
 	return bts
 }
 
@@ -71,7 +73,7 @@ func (bt *BTServer) Connect() error {
 	bt.configure()
 	bt.client, err = torrent.NewClient(bt.config)
 	bt.torrents = make(map[metainfo.Hash]*Torrent)
-	bt.loading = make(map[metainfo.Hash]struct{})
+	bt.loading = make(map[metainfo.Hash]chan struct{})
 	InitApiHelper(bt)
 	if err == nil {
 		go ResumeCachedTorrents()

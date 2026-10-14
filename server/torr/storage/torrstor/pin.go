@@ -27,17 +27,30 @@ type PieceRange struct {
 	End   int `json:"end"`
 }
 
+// Lock order: muPrio -> client lock -> muPinned. The torrent client calls
+// Piece.MarkComplete -> pieceCompleted (muPinned) while holding its own lock, so
+// nothing may call into the client (PieceState, SetPriority) while holding muPinned.
+
 // PinPieces requests the incomplete pieces in r and keeps them pinned until they
 // are downloaded.
 func (c *Cache) PinPieces(r PieceRange) {
 	if c == nil || c.torrent == nil {
 		return
 	}
-	c.muPrio.Lock()
-	defer c.muPrio.Unlock()
-
 	r = PieceRange{Begin: max(r.Begin, 0), End: min(r.End, c.pieceCount)}
 	if r.Begin >= r.End {
+		return
+	}
+
+	c.muPrio.Lock()
+	incomplete := make([]int, 0, r.End-r.Begin)
+	for id := r.Begin; id < r.End; id++ {
+		if !c.torrent.PieceState(id).Complete {
+			incomplete = append(incomplete, id)
+		}
+	}
+	if len(incomplete) == 0 {
+		c.muPrio.Unlock()
 		return
 	}
 
@@ -45,19 +58,26 @@ func (c *Cache) PinPieces(r PieceRange) {
 	if c.pinned == nil {
 		c.pinned = make(map[int]struct{})
 	}
-	added := false
-	for id := r.Begin; id < r.End; id++ {
-		if c.torrent.PieceState(id).Complete {
-			continue
-		}
+	for _, id := range incomplete {
 		c.pinned[id] = struct{}{}
-		c.torrent.Piece(id).SetPriority(torrent.PiecePriorityNormal)
-		added = true
 	}
-	if added && !containsRange(c.pinJobs, r) {
+	if !containsRange(c.pinJobs, r) {
 		c.pinJobs = append(c.pinJobs, r)
 	}
 	c.muPinned.Unlock()
+
+	for _, id := range incomplete {
+		c.torrent.Piece(id).SetPriority(torrent.PiecePriorityNormal)
+	}
+	c.muPrio.Unlock()
+
+	// a piece that completed between the snapshot above and pinning it was not
+	// unpinned by pieceCompleted; do it now, or the job would never finish
+	for _, id := range incomplete {
+		if c.torrent.PieceState(id).Complete {
+			c.pieceCompleted(id)
+		}
+	}
 	c.savePins()
 }
 
@@ -70,8 +90,6 @@ func (c *Cache) UnpinPieces(r PieceRange) {
 	ranges := c.collectReaderRanges()
 
 	c.muPrio.Lock()
-	defer c.muPrio.Unlock()
-
 	c.muPinned.Lock()
 	jobs := c.pinJobs[:0]
 	for _, job := range c.pinJobs {
@@ -80,19 +98,27 @@ func (c *Cache) UnpinPieces(r PieceRange) {
 		}
 	}
 	c.pinJobs = jobs
+	unpinned := make([]int, 0)
 	for id := max(r.Begin, 0); id < min(r.End, c.pieceCount); id++ {
 		if _, ok := c.pinned[id]; !ok || inPieceRanges(c.pinJobs, id) {
 			continue
 		}
 		delete(c.pinned, id)
-		if c.torrent != nil && !inRanges(ranges, id) && !c.torrent.PieceState(id).Complete {
-			c.torrent.Piece(id).SetPriority(torrent.PiecePriorityNone)
-		}
+		unpinned = append(unpinned, id)
 	}
 	if len(c.pinned) == 0 {
 		c.pinJobs = nil
 	}
 	c.muPinned.Unlock()
+
+	if c.torrent != nil {
+		for _, id := range unpinned {
+			if !inRanges(ranges, id) && !c.torrent.PieceState(id).Complete {
+				c.torrent.Piece(id).SetPriority(torrent.PiecePriorityNone)
+			}
+		}
+	}
+	c.muPrio.Unlock()
 	c.savePins()
 }
 
@@ -160,6 +186,8 @@ func containsRange(ranges []PieceRange, r PieceRange) bool {
 }
 
 // pieceCompleted unpins a downloaded piece; the last one removes the pins file.
+// The client calls it holding its lock, so it only touches muPinned and leaves
+// the file to a goroutine.
 func (c *Cache) pieceCompleted(id int) {
 	c.muPinned.Lock()
 	_, ok := c.pinned[id]
@@ -173,7 +201,7 @@ func (c *Cache) pieceCompleted(id int) {
 	c.muPinned.Unlock()
 	if done {
 		log.TLogln("Download to cache complete:", c.hash.HexString())
-		c.savePins()
+		go c.savePins()
 	}
 }
 
@@ -190,10 +218,14 @@ func (c *Cache) pinnedRanges() []PieceRange {
 	return append([]PieceRange(nil), c.pinJobs...)
 }
 
+// savePins writes the current jobs. The snapshot is taken under muSavePins, so
+// whichever call writes last writes the latest state.
 func (c *Cache) savePins() {
-	if !isLongTermCache() {
+	if !IsLongTermCache() {
 		return
 	}
+	c.muSavePins.Lock()
+	defer c.muSavePins.Unlock()
 	path := pinsPath(c.hash.HexString())
 	ranges := c.pinnedRanges()
 	if len(ranges) == 0 {
@@ -217,7 +249,7 @@ func pinsPath(hashHex string) string {
 
 // LoadPins returns the unfinished download saved for a torrent.
 func LoadPins(hashHex string) []PieceRange {
-	if !isLongTermCache() {
+	if !IsLongTermCache() {
 		return nil
 	}
 	data, err := os.ReadFile(pinsPath(hashHex))

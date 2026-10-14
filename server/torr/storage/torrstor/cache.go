@@ -53,6 +53,11 @@ type Cache struct {
 	pinned   map[int]struct{}
 	pinJobs  []PieceRange
 	muPinned sync.Mutex
+	// muSavePins serializes writes of the pins file
+	muSavePins sync.Mutex
+
+	// muSetTorrent makes SetTorrent bind a torrent and restore its pins once
+	muSetTorrent sync.Mutex
 }
 
 func NewCache(capacity int64, storage *Storage) *Cache {
@@ -121,15 +126,20 @@ func (c *Cache) SetTorrent(torr *torrent.Torrent) {
 	if c == nil {
 		return
 	}
+	// WaitInfo calls this on every call. Pieces found on disk by NewDiskPiece need no
+	// help here: the client reads every piece's completion right after OpenTorrent
+	// (Torrent.onSetInfo), so only the first binding of a torrent does any work.
+	c.muSetTorrent.Lock()
+	if c.torrent == torr {
+		c.muSetTorrent.Unlock()
+		return
+	}
 	c.torrent = torr
+	c.muSetTorrent.Unlock()
 	if torr == nil {
 		return
 	}
-	// pieces found on disk by NewDiskPiece must be reported to the client as complete
-	for id := range c.getPieces() {
-		torr.Piece(id).UpdateCompletion()
-	}
-	if isLongTermCache() {
+	if IsLongTermCache() {
 		c.restorePins()
 	}
 }
@@ -175,7 +185,7 @@ func (c *Cache) Close() error {
 
 	c.storage.removeCache(c.hash)
 
-	if settings.BTsets.RemoveCacheOnDrop && !isLongTermCache() {
+	if settings.BTsets.RemoveCacheOnDrop && !IsLongTermCache() {
 		name := filepath.Join(settings.BTsets.TorrentsSavePath, c.hash.HexString())
 		if name != "" && name != "/" {
 			for _, v := range c.getPieces() {
@@ -215,7 +225,7 @@ func (c *Cache) AdjustRA(readahead int64) {
 	for _, r := range c.readersSnapshot() {
 		r.SetReadahead(readahead)
 	}
-	if isLongTermCache() {
+	if IsLongTermCache() {
 		c.refreshPriorities()
 	}
 }
@@ -267,7 +277,7 @@ func (c *Cache) cleanPieces() {
 		return
 	}
 
-	if isLongTermCache() {
+	if IsLongTermCache() {
 		c.storage.cleanGlobal()
 		c.refreshPriorities()
 		return
@@ -334,7 +344,7 @@ func (c *Cache) getRemPieces() []*Piece {
 	c.clearPriority()
 	c.setLoadPriority(ranges)
 
-	if isLongTermCache() {
+	if IsLongTermCache() {
 		// eviction is global across torrents, see Storage.cleanGlobal
 		c.filled = fill
 		return nil
@@ -367,9 +377,10 @@ func (c *Cache) setLoadPriority(ranges []Range) {
 	if count < 1 {
 		count = 1
 	}
-	if isLongTermCache() && settings.BTsets.DiskCacheSize > 0 && c.pieceLength > 0 {
-		// pieces are kept on disk, so let the reader load ahead as far as the quota allows
-		if avail := settings.BTsets.DiskCacheSize - diskCacheUsed(); avail > 0 {
+	if IsLongTermCache() && settings.BTsets.DiskCacheSize > 0 && c.pieceLength > 0 {
+		// pieces are kept on disk, so let the reader load ahead as far as the quota allows;
+		// the in-memory usage is enough here, cleanGlobal resyncs it with the disk
+		if avail := settings.BTsets.DiskCacheSize - diskUsed.Load(); avail > 0 {
 			if fromQuota := int(avail / c.pieceLength); fromQuota > count {
 				count = fromQuota
 			}
@@ -438,7 +449,7 @@ func (c *Cache) refreshPriorities() {
 	if c == nil || c.torrent == nil || c.isClosed.Load() || c.getPieces() == nil {
 		return
 	}
-	if !isLongTermCache() {
+	if !IsLongTermCache() {
 		c.clearPriority()
 	}
 	c.setLoadPriority(c.collectReaderRanges())
@@ -453,7 +464,7 @@ func (c *Cache) clearOutsideRanges(ranges []Range) {
 			if inRanges(ranges, id) {
 				continue
 			}
-		} else if isLongTermCache() {
+		} else if IsLongTermCache() {
 			continue
 		}
 		if c.isPinned(id) {

@@ -14,7 +14,8 @@ import (
 
 // Downloading a file or a whole torrent pins its pieces in the long-term disk cache
 // (see torrstor/pin.go). A torrent that has at least seedShare of one of its files
-// cached stays open to seed; one with less loses its cached pieces when it closes.
+// cached stays open to seed; one with less closes on timeout as usual, and its cached
+// pieces stay on disk until the global eviction needs the space.
 
 const (
 	seedShare = 0.5
@@ -29,14 +30,10 @@ var (
 	ErrDownloadFileNotFound       = errors.New("file not found in torrent")
 )
 
-func longTermCache() bool {
-	return settings.BTsets != nil && settings.BTsets.LongTermCache && settings.BTsets.UseDisk
-}
-
 // Download starts downloading the file with the given status id (FileStats[].Id)
 // in full, or the whole torrent when index <= 0.
 func (t *Torrent) Download(index int) error {
-	if !longTermCache() {
+	if !torrstor.IsLongTermCache() {
 		return ErrDownloadNeedsLongTermCache
 	}
 	cache := t.GetCache()
@@ -128,7 +125,7 @@ func (t *Torrent) pieceCompletion() []bool {
 // The caller holds muTorrent and has filled st.FileStats.
 func (t *Torrent) fillDownloadStatus(st *state.TorrentStatus) {
 	info := t.Torrent.Info()
-	if info == nil || !longTermCache() {
+	if info == nil || !torrstor.IsLongTermCache() {
 		return
 	}
 	complete := t.pieceCompletion()
@@ -154,7 +151,7 @@ func (t *Torrent) fillDownloadStatus(st *state.TorrentStatus) {
 
 // seedable reports whether enough of one file is cached to keep seeding it.
 func (t *Torrent) seedable() bool {
-	if !longTermCache() || t.Torrent == nil || t.Torrent.Info() == nil {
+	if !torrstor.IsLongTermCache() || t.Torrent == nil || t.Torrent.Info() == nil {
 		return false
 	}
 	info := t.Torrent.Info()
@@ -204,7 +201,7 @@ func seedableOnDisk(hashHex string, infoBytes []byte) bool {
 // ResumeCachedTorrents opens the torrents that have an unfinished download or
 // enough cached data to seed, so they keep downloading and seeding after a restart.
 func ResumeCachedTorrents() {
-	if !longTermCache() {
+	if !torrstor.IsLongTermCache() {
 		return
 	}
 	for _, tor := range ListTorrentsDB() {

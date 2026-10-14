@@ -52,7 +52,7 @@ func (p *DiskPiece) WriteAt(b []byte, off int64) (n int, err error) {
 	p.piece.Accessed = time.Now().Unix()
 	// the write itself bumps the file mtime that global eviction sorts by;
 	// check the quota once per piece, not on every chunk
-	if full := p.piece.cache.pieceSize(p.piece.Id); isLongTermCache() && before < full && p.piece.Size >= full {
+	if full := p.piece.cache.pieceSize(p.piece.Id); IsLongTermCache() && before < full && p.piece.Size >= full {
 		go p.piece.cache.storage.cleanGlobal()
 	}
 	return
@@ -77,7 +77,7 @@ func (p *DiskPiece) ReadAt(b []byte, off int64) (n int, err error) {
 	now := time.Now()
 	// global eviction sorts by file mtime; refresh it at most once a minute per piece
 	// instead of issuing a syscall on every read
-	if isLongTermCache() && now.Unix()-p.piece.Accessed >= 60 {
+	if IsLongTermCache() && now.Unix()-p.piece.Accessed >= 60 {
 		_ = os.Chtimes(p.name, now, now)
 	}
 	p.piece.Accessed = now.Unix()
@@ -98,4 +98,28 @@ func (p *DiskPiece) Release() {
 	if err := os.Remove(p.name); err == nil {
 		addDiskCacheUsed(-size)
 	}
+}
+
+// discardFailed removes a piece file that failed the hash check. The client
+// downloads all of its chunks again, but a full-size file left behind would be
+// taken for a complete piece by NewDiskPiece after a restart and never rechecked.
+// A partly written file is kept: its chunks are still marked as received.
+func (p *DiskPiece) discardFailed() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if p.piece.Size < p.piece.cache.pieceSize(p.piece.Id) {
+		return
+	}
+	err := os.Remove(p.name)
+	if err != nil && !os.IsNotExist(err) {
+		// Windows refuses to remove a file that is open elsewhere
+		err = os.Truncate(p.name, 0)
+	}
+	if err != nil && !os.IsNotExist(err) {
+		log.TLogln("Error remove failed piece:", err)
+		return
+	}
+	addDiskCacheUsed(-p.piece.Size)
+	p.piece.Size = 0
 }

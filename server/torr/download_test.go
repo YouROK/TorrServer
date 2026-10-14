@@ -2,6 +2,10 @@ package torr
 
 import (
 	"testing"
+	"time"
+
+	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/metainfo"
 
 	"server/torr/storage/torrstor"
 )
@@ -52,5 +56,32 @@ func TestSeedableShare(t *testing.T) {
 		if got := seedableShare(tt.length, tt.completed); got != tt.want {
 			t.Errorf("%s: seedableShare = %v, want %v", tt.name, got, tt.want)
 		}
+	}
+}
+
+// NewTorrent must not add a torrent that startLoadFromDB is still adding: both
+// would work on the same DB spec at once.
+func TestNewTorrentWaitsForDBLoad(t *testing.T) {
+	bt := NewBTS()
+	bt.client = nil
+	spec := &torrent.TorrentSpec{InfoHash: metainfo.NewHashFromHex("2e8e44068b254814ea1a7d4969a9af1d78e0f51f")}
+	added := make(chan struct{})
+	bt.loading[spec.InfoHash] = added
+
+	done := make(chan struct{})
+	go func() {
+		_, _ = NewTorrent(spec, bt)
+		close(done)
+	}()
+	select {
+	case <-done:
+		t.Fatal("NewTorrent returned while the background load was in progress")
+	case <-time.After(100 * time.Millisecond):
+	}
+	close(added)
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("NewTorrent did not return after the background load finished")
 	}
 }

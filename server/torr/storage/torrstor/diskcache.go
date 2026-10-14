@@ -42,7 +42,9 @@ const (
 	diskCacheHeadroomDiv = 50
 )
 
-func isLongTermCache() bool {
+// IsLongTermCache reports whether cached pieces are kept on disk until the global
+// quota DiskCacheSize is full.
+func IsLongTermCache() bool {
 	return settings.BTsets != nil && settings.BTsets.LongTermCache && settings.BTsets.UseDisk
 }
 
@@ -63,7 +65,7 @@ func addDiskCacheUsed(delta int64) {
 }
 
 func (s *Storage) cleanGlobal() {
-	if !isLongTermCache() || settings.BTsets.DiskCacheSize <= 0 {
+	if !IsLongTermCache() || settings.BTsets.DiskCacheSize <= 0 {
 		return
 	}
 	quota := settings.BTsets.DiskCacheSize
@@ -111,20 +113,16 @@ func (s *Storage) cleanGlobal() {
 		return evictable[i].accessed < evictable[j].accessed
 	})
 
+	// eviction only frees space: the torrent card, its metainfo and its pins stay
+	// until the user removes the torrent (RemTorrent deletes the whole directory)
 	var removed int64
-	affected := make(map[string]bool)
 	for _, ref := range evictable {
 		if removed >= toRemove {
 			break
 		}
 		if s.evictDiskPiece(ref) {
 			removed += ref.size
-			affected[ref.hash] = true
 		}
-	}
-
-	for hashHex := range affected {
-		s.onTorrentCacheChanged(hashHex)
 	}
 
 	if removed > 0 {
@@ -133,80 +131,58 @@ func (s *Storage) cleanGlobal() {
 }
 
 func diskCacheUsage() int64 {
-	path := settings.BTsets.TorrentsSavePath
-	if path == "" || path == "/" {
-		return 0
-	}
-
 	var total int64
-	entries, err := os.ReadDir(path)
-	if err != nil {
-		return 0
-	}
-
-	for _, entry := range entries {
-		if !entry.IsDir() || len(entry.Name()) != 40 {
-			continue
-		}
-		hashDir := filepath.Join(path, entry.Name())
-		files, err := os.ReadDir(hashDir)
-		if err != nil {
-			continue
-		}
-		for _, f := range files {
-			if f.IsDir() || isCacheMetaFile(f.Name()) {
-				continue
-			}
-			info, err := f.Info()
-			if err != nil {
-				continue
-			}
-			total += info.Size()
-		}
+	for _, ref := range scanDiskCachePieces() {
+		total += ref.size
 	}
 	return total
 }
 
+// scanDiskCachePieces lists the cached piece files of every torrent.
 func scanDiskCachePieces() []diskPieceRef {
 	path := settings.BTsets.TorrentsSavePath
 	if path == "" || path == "/" {
 		return nil
 	}
-
 	entries, err := os.ReadDir(path)
 	if err != nil {
 		return nil
 	}
-
 	refs := make([]diskPieceRef, 0)
 	for _, entry := range entries {
-		if !entry.IsDir() || len(entry.Name()) != 40 {
+		if !entry.IsDir() || !isInfoHashName(entry.Name()) {
 			continue
 		}
-		hashDir := filepath.Join(path, entry.Name())
-		files, err := os.ReadDir(hashDir)
-		if err != nil {
+		refs = appendHashDirPieces(refs, path, entry.Name())
+	}
+	return refs
+}
+
+// appendHashDirPieces appends the cached piece files of one torrent: files named by
+// a piece index (not the info and pins files) that hold data.
+func appendHashDirPieces(refs []diskPieceRef, path, hashHex string) []diskPieceRef {
+	files, err := os.ReadDir(filepath.Join(path, hashHex))
+	if err != nil {
+		return refs
+	}
+	for _, f := range files {
+		if f.IsDir() || isCacheMetaFile(f.Name()) {
 			continue
 		}
-		for _, f := range files {
-			if f.IsDir() || isCacheMetaFile(f.Name()) {
-				continue
-			}
-			pieceId, err := strconv.Atoi(f.Name())
-			if err != nil {
-				continue
-			}
-			info, err := f.Info()
-			if err != nil || info.Size() == 0 {
-				continue
-			}
-			refs = append(refs, diskPieceRef{
-				hash:     entry.Name(),
-				pieceId:  pieceId,
-				size:     info.Size(),
-				accessed: info.ModTime().Unix(),
-			})
+		pieceId, err := strconv.Atoi(f.Name())
+		if err != nil || pieceId < 0 {
+			continue
 		}
+		info, err := f.Info()
+		if err != nil || info.Size() <= 0 {
+			continue
+		}
+		refs = append(refs, diskPieceRef{
+			hash:     hashHex,
+			pieceId:  pieceId,
+			size:     info.Size(),
+			accessed: info.ModTime().Unix(),
+		})
 	}
 	return refs
 }
@@ -263,75 +239,15 @@ func (s *Storage) evictDiskPiece(ref diskPieceRef) bool {
 	return true
 }
 
-func (s *Storage) onTorrentCacheChanged(hashHex string) {
-	if !hasDiskCacheForHash(hashHex) {
-		settings.RemTorrent(metainfo.NewHashFromHex(hashHex))
-		hashDir := filepath.Join(settings.BTsets.TorrentsSavePath, hashHex)
-		_ = os.Remove(hashDir)
-		log.TLogln("Remove torrent card after cache eviction:", hashHex)
-	}
-}
-
-func hasDiskCacheForHash(hashHex string) bool {
-	hashDir := filepath.Join(settings.BTsets.TorrentsSavePath, hashHex)
-	entries, err := os.ReadDir(hashDir)
-	if err != nil {
-		return false
-	}
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		if isCacheMetaFile(entry.Name()) {
-			continue
-		}
-		info, err := entry.Info()
-		if err == nil && info.Size() > 0 {
-			return true
-		}
-	}
-	return false
-}
-
 // CachedPieceSizes returns the size of every cached piece file of a torrent.
 func CachedPieceSizes(hashHex string) map[int]int64 {
 	sizes := make(map[int]int64)
-	entries, err := os.ReadDir(filepath.Join(settings.BTsets.TorrentsSavePath, hashHex))
-	if err != nil {
+	path := settings.BTsets.TorrentsSavePath
+	if path == "" || path == "/" {
 		return sizes
 	}
-	for _, entry := range entries {
-		if entry.IsDir() || isCacheMetaFile(entry.Name()) {
-			continue
-		}
-		id, err := strconv.Atoi(entry.Name())
-		if err != nil {
-			continue
-		}
-		if info, err := entry.Info(); err == nil && info.Size() > 0 {
-			sizes[id] = info.Size()
-		}
+	for _, ref := range appendHashDirPieces(nil, path, hashHex) {
+		sizes[ref.pieceId] = ref.size
 	}
 	return sizes
-}
-
-// RemoveDiskCache deletes the cached pieces and the unfinished download of a
-// torrent that is no longer open, keeping its metainfo.
-func RemoveDiskCache(hashHex string) {
-	path := settings.BTsets.TorrentsSavePath
-	if path == "" || path == "/" || len(hashHex) != 40 {
-		return
-	}
-	dir := filepath.Join(path, hashHex)
-	var removed int64
-	for id, size := range CachedPieceSizes(hashHex) {
-		if err := os.Remove(filepath.Join(dir, strconv.Itoa(id))); err == nil {
-			removed += size
-		}
-	}
-	_ = os.Remove(pinsPath(hashHex))
-	addDiskCacheUsed(-removed)
-	if removed > 0 {
-		log.TLogln("Remove cache of sleeping torrent:", hashHex, removed, "bytes")
-	}
 }
