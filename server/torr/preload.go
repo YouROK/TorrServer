@@ -32,11 +32,13 @@ func (t *Torrent) Preload(index int, size int64) {
 	}
 
 	t.muTorrent.Lock()
-	if t.Stat != state.TorrentWorking {
+	if t.Stat != state.TorrentWorking || t.Torrent == nil {
 		t.muTorrent.Unlock()
 		return
 	}
-
+	// drop() (Close, "drop all torrents" in SetSettings) sets t.Torrent to nil at any moment,
+	// and "drop all torrents" leaves Stat as is. Use only this pointer below: it stays valid after Drop.
+	torrent := t.Torrent
 	t.Stat = state.TorrentPreload
 	t.muTorrent.Unlock()
 
@@ -51,16 +53,16 @@ func (t *Torrent) Preload(index int, size int64) {
 		t.DurationSeconds = 0
 	}()
 
-	file := t.findFileIndex(index)
+	file := t.findFileIndex(torrent, index)
 	if file == nil {
-		file = t.Files()[0]
+		file = torrent.Files()[0]
 	}
 
 	if size > file.Length() {
 		size = file.Length()
 	}
 
-	if t.Info() == nil {
+	if torrent.Info() == nil {
 		return
 	}
 
@@ -88,14 +90,14 @@ func (t *Torrent) Preload(index int, size int64) {
 				if stat != state.TorrentPreload {
 					return
 				}
-
+				st := torrent.Stats()
 				statStr := fmt.Sprint(file.Torrent().InfoHash().HexString(), " ",
-					utils2.Format(float64(t.PreloadedBytes)), "/",
-					utils2.Format(float64(t.PreloadSize)), " Speed:",
-					utils2.Format(t.DownloadSpeed), " Peers:",
-					t.Torrent.Stats().ActivePeers, "/",
-					t.Torrent.Stats().TotalPeers, " [Seeds:",
-					t.Torrent.Stats().ConnectedSeeders, "]")
+					utils2.Format(float64(t.PreloadedBytes)), " / ",
+					utils2.Format(float64(t.PreloadSize)), " Speed: ",
+					utils2.Format(t.DownloadSpeed), " Peers: ",
+					st.ActivePeers, "/",
+					st.TotalPeers, " [ Seeds: ",
+					st.ConnectedSeeders, " ]")
 				log.TLogln("Preload:", statStr)
 				t.AddExpiredTime(timeout)
 			case <-stopChan:
@@ -105,7 +107,7 @@ func (t *Torrent) Preload(index int, size int64) {
 	}(logStopChan)
 
 	if ffprobe.Exists() {
-		link := settings.LoopbackBaseURL() + "/play/" + t.Hash().HexString() + "/" + strconv.Itoa(index)
+		link := settings.LoopbackBaseURL() + "/play/" + torrent.InfoHash().HexString() + "/" + strconv.Itoa(index)
 		if data, err := ffprobe.ProbeUrl(link); err == nil {
 			t.BitRate = data.Format.BitRate
 			t.DurationSeconds = data.Format.DurationSeconds
@@ -123,7 +125,7 @@ func (t *Torrent) Preload(index int, size int64) {
 	}
 
 	// startend -> 8/16 MB
-	startend := t.Info().PieceLength
+	startend := torrent.Info().PieceLength
 	if startend < 8<<20 {
 		startend = 8 << 20
 	}
@@ -213,7 +215,7 @@ func (t *Torrent) Preload(index int, size int64) {
 	}
 
 	// Main preload section
-	pieceLength := t.Info().PieceLength
+	pieceLength := torrent.Info().PieceLength
 	readahead := pieceLength * 4
 	if readerStartEnd < readahead {
 		readahead = 0
@@ -262,14 +264,15 @@ func (t *Torrent) Preload(index int, size int64) {
 	t.muTorrent.Unlock()
 
 	if finalStat == state.TorrentPreload {
+		st := torrent.Stats()
 		log.TLogln("End preload:", file.Torrent().InfoHash().HexString(),
-			"Peers:", t.Torrent.Stats().ActivePeers, "/",
-			t.Torrent.Stats().TotalPeers, "[ Seeds:",
-			t.Torrent.Stats().ConnectedSeeders, "]")
+			"Peers:", st.ActivePeers, "/",
+			st.TotalPeers, "[ Seeds:",
+			st.ConnectedSeeders, "]")
 	}
 }
 
-func (t *Torrent) findFileIndex(index int) *torrent.File {
+func (t *Torrent) findFileIndex(torrent *torrent.Torrent, index int) *torrent.File {
 	st := t.Status()
 	var stFile *state.TorrentFileStat
 	for _, f := range st.FileStats {
@@ -281,7 +284,7 @@ func (t *Torrent) findFileIndex(index int) *torrent.File {
 	if stFile == nil {
 		return nil
 	}
-	for _, file := range t.Files() {
+	for _, file := range torrent.Files() {
 		if file.Path() == stFile.Path {
 			return file
 		}
