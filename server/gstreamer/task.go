@@ -45,6 +45,12 @@ type Task struct {
 	subtitleMu     sync.RWMutex
 	subtitleStores map[int]*subtitleStore
 
+	externalLoadMu   sync.Mutex
+	externalMu       sync.RWMutex
+	external         []externalSubtitle
+	externalLoaded   bool
+	externalAttempts int // failed loading attempts; guarded by externalLoadMu
+
 	disposed atomic.Bool
 }
 
