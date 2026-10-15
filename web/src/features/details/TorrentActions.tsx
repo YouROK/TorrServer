@@ -269,11 +269,15 @@ function TorrentActions({
       : t(playlistButtonLabelKey(playlistButtonAction))
   const playlistClick = (url: string) => {
     const absolute = externalLink(url, mediaBase).toString()
-    return bindPlaylistButton(playlistButtonAction, absolute, playlistActionHref(playlistButtonAction, absolute), kind =>
-      toast?.showToast({
-        message: t(kind === 'copied' ? 'Copied' : 'Error'),
-        severity: kind === 'copied' ? 'success' : 'error',
-      }),
+    return bindPlaylistButton(
+      playlistButtonAction,
+      absolute,
+      playlistActionHref(playlistButtonAction, absolute),
+      kind =>
+        toast?.showToast({
+          message: t(kind === 'copied' ? 'Copied' : 'Error'),
+          severity: kind === 'copied' ? 'success' : 'error',
+        }),
     )
   }
   const playlistAnchor = (href: string, variant: 'primary' | 'outline', label: string, text: string) => (

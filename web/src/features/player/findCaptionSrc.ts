@@ -14,11 +14,7 @@ export type SubTrack = {
  * Progressive-player caption URL via `GET /subs/{hash}/{id}` (server Match + WebVTT).
  * Empty string when none found or the request fails. HLS gets external subs from GST.
  */
-export const resolveCaptionSrc = async (
-  hash: string,
-  fileId: number,
-  preferLang?: string,
-): Promise<string> => {
+export const resolveCaptionSrc = async (hash: string, fileId: number, preferLang?: string): Promise<string> => {
   try {
     const res = await authFetch(subsHost(hash, fileId), { cache: 'no-store' })
     if (!res.ok) return ''

@@ -25,9 +25,9 @@ describe('buildExternalPlayerHref', () => {
     const href = buildInfusePlaylistHref(episodes, m3u)
     expect(href).toBe(
       'infuse://x-callback-url/play?' +
-      episodes
-        .map(episode => `url=${encodeURIComponent(episode.url)}&filename=${encodeURIComponent(episode.filename)}`)
-        .join('&'),
+        episodes
+          .map(episode => `url=${encodeURIComponent(episode.url)}&filename=${encodeURIComponent(episode.filename)}`)
+          .join('&'),
     )
     expect(buildExternalPlayerHref('iina', m3u)).toBe(`iina://weblink?url=${encodeURIComponent(m3u)}`)
     expect(buildExternalPlayerHref('senPlayer', m3u)).toBe(

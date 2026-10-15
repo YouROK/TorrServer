@@ -77,22 +77,24 @@ function StatWidget({
       title={hint || undefined}
     >
       <span
-        className={`block leading-tight text-muted ${tight
-          ? 'truncate text-[11px]'
-          : compact
-            ? 'line-clamp-2 min-h-[1.75rem] text-[10px]'
-            : dense
-              ? 'truncate text-[11px]'
-              : 'truncate text-[11px] sm:text-xs'
-          }`}
+        className={`block leading-tight text-muted ${
+          tight
+            ? 'truncate text-[11px]'
+            : compact
+              ? 'line-clamp-2 min-h-[1.75rem] text-[10px]'
+              : dense
+                ? 'truncate text-[11px]'
+                : 'truncate text-[11px] sm:text-xs'
+        }`}
         title={hint || label}
       >
         {label}
       </span>
       {/* Single-line value — long labels must not wrap and grow the hero. */}
       <span
-        className={`block truncate font-bold tabular-nums text-foreground ${dense ? 'mt-0.5 h-3.5 text-[11px] leading-3.5' : 'mt-1 h-5 text-sm leading-5 sm:h-6 sm:text-base sm:leading-6'
-          }`}
+        className={`block truncate font-bold tabular-nums text-foreground ${
+          dense ? 'mt-0.5 h-3.5 text-[11px] leading-3.5' : 'mt-1 h-5 text-sm leading-5 sm:h-6 sm:text-base sm:leading-6'
+        }`}
         title={shown}
       >
         {shown}
@@ -132,12 +134,13 @@ function TitleRow({ title, subtitle, compact }: { title: string; subtitle: strin
   /** Drop subtitle when it already appears inside the primary title (common after ptt parse). */
   const showSubtitle = !!subtitle && !title.toLocaleLowerCase().includes(subtitle.toLocaleLowerCase())
 
-  const titleClass = `min-w-0 flex-1 font-bold text-foreground ${compact
-    ? expanded
-      ? 'text-[15px] leading-snug'
-      : 'line-clamp-6 text-[15px] leading-snug'
-    : 'line-clamp-2 text-lg leading-snug'
-    }`
+  const titleClass = `min-w-0 flex-1 font-bold text-foreground ${
+    compact
+      ? expanded
+        ? 'text-[15px] leading-snug'
+        : 'line-clamp-6 text-[15px] leading-snug'
+      : 'line-clamp-2 text-lg leading-snug'
+  }`
 
   return (
     <div className='min-w-0'>
@@ -250,9 +253,9 @@ export default function DetailsDialog({
   useEffect(() => {
     const seasons = seasonsFingerprint
       ? seasonsFingerprint
-        .split(',')
-        .map(Number)
-        .filter(n => Number.isFinite(n) && n > 0)
+          .split(',')
+          .map(Number)
+          .filter(n => Number.isFinite(n) && n > 0)
       : []
     // eslint-disable-next-line react-hooks/set-state-in-effect -- keep season list/selection valid when file list changes
     setSeasonList(seasons)
@@ -416,9 +419,7 @@ export default function DetailsDialog({
           </Modal.CloseTrigger>
         </Modal.Header>
 
-        <Modal.Body
-          className='flex min-h-0 flex-1 flex-col gap-2 overflow-hidden pt-0 sm:gap-3'
-        >
+        <Modal.Body className='flex min-h-0 flex-1 flex-col gap-2 overflow-hidden pt-0 sm:gap-3'>
           {useCompactDetails ? (
             /* Phone: poster beside the title, then one even 4×2 grid. */
             <div className='ts-details-hero ts-details-hero-flow shrink-0 space-y-2 bg-gradient-to-br from-accent-soft to-accent-soft/40'>

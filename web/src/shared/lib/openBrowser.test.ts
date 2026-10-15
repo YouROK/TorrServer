@@ -23,7 +23,7 @@ describe('playlist in-app save', () => {
       location: { origin: 'http://127.0.0.1:8090' },
     })
     const preventDefault = vi.fn()
-    bindPlaylistClick('http://127.0.0.1:8090/stream/Show.m3u', () => { })({ preventDefault })
+    bindPlaylistClick('http://127.0.0.1:8090/stream/Show.m3u', () => {})({ preventDefault })
     expect(preventDefault).toHaveBeenCalledOnce()
   })
 
@@ -35,7 +35,7 @@ describe('playlist in-app save', () => {
       'vlc',
       'http://127.0.0.1:8090/stream/Show.m3u',
       'vlc://http://127.0.0.1:8090/stream/Show.m3u',
-      () => { },
+      () => {},
     )({
       preventDefault,
     })

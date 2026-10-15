@@ -46,7 +46,9 @@ export default function CacheMapDialog({
       dialogStyle={isFullScreen ? undefined : DIALOG_CACHE}
     >
       <Modal.Header className='flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 px-3 sm:px-0'>
-        <Modal.Heading className='min-w-0 shrink truncate sm:max-w-[40%]'>{t('DetailedCacheView.header')}</Modal.Heading>
+        <Modal.Heading className='min-w-0 shrink truncate sm:max-w-[40%]'>
+          {t('DetailedCacheView.header')}
+        </Modal.Heading>
         <div className='flex min-w-0 flex-1 flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs sm:text-sm'>
           <span className='inline-flex items-center gap-1.5 tabular-nums'>
             <span className='size-2 shrink-0 rounded-full bg-accent' aria-hidden />

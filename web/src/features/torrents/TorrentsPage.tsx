@@ -548,9 +548,9 @@ export default function TorrentsPage({ sortABC, sortCategory, onAdd, onClearCate
                 onResume={
                   resumeEntry
                     ? () => {
-                      setResumePlay({ fileIndex: resumeEntry.fileIndex, timecode: resumeEntry.timecode })
-                      setDetailsTorrent(torrent)
-                    }
+                        setResumePlay({ fileIndex: resumeEntry.fileIndex, timecode: resumeEntry.timecode })
+                        setDetailsTorrent(torrent)
+                      }
                     : undefined
                 }
               />

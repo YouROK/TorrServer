@@ -24,9 +24,7 @@ describe('resolveCaptionSrc', () => {
       }),
     }))
     const { resolveCaptionSrc } = await import('./findCaptionSrc')
-    expect(await resolveCaptionSrc('deadbeef', 1, 'ru-RU')).toBe(
-      'http://localhost:8090/subs/deadbeef/1?track=3',
-    )
+    expect(await resolveCaptionSrc('deadbeef', 1, 'ru-RU')).toBe('http://localhost:8090/subs/deadbeef/1?track=3')
   })
 
   it('returns empty string when API has no tracks', async () => {

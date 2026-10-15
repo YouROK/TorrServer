@@ -198,11 +198,15 @@ export default function TorrentCardActions({ torrent, onDetails, onEdit }: Torre
               <Dropdown.Item
                 href={playlistHref}
                 {...browserLinkAttrs}
-                onClick={bindPlaylistButton(playlistButtonAction, playlistHref, playlistActionHref(playlistButtonAction, playlistHref), kind =>
-                  toast?.showToast({
-                    message: t(kind === 'copied' ? 'Copied' : 'Error'),
-                    severity: kind === 'copied' ? 'success' : 'error',
-                  }),
+                onClick={bindPlaylistButton(
+                  playlistButtonAction,
+                  playlistHref,
+                  playlistActionHref(playlistButtonAction, playlistHref),
+                  kind =>
+                    toast?.showToast({
+                      message: t(kind === 'copied' ? 'Copied' : 'Error'),
+                      severity: kind === 'copied' ? 'success' : 'error',
+                    }),
                 )}
                 textValue={playlistItemLabel}
               >
