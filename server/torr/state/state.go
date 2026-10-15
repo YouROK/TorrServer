@@ -66,6 +66,10 @@ type TorrentStatus struct {
 	DurationSeconds     float64     `json:"duration_seconds,omitempty"`
 	BitRate             string      `json:"bit_rate,omitempty"`
 
+	// Downloading is set while a file or the whole torrent is being downloaded
+	// into the long-term disk cache
+	Downloading bool `json:"downloading,omitempty"`
+
 	FileStats []*TorrentFileStat `json:"file_stats,omitempty"`
 }
 
@@ -73,4 +77,7 @@ type TorrentFileStat struct {
 	Id     int    `json:"id,omitempty"`
 	Path   string `json:"path,omitempty"`
 	Length int64  `json:"length,omitempty"`
+	// Loaded and Downloading are reported in long-term disk cache mode only
+	Loaded      int64 `json:"loaded,omitempty"`
+	Downloading bool  `json:"downloading,omitempty"`
 }

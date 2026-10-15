@@ -29,6 +29,7 @@ type Cache struct {
 
 	pieceLength int64
 	pieceCount  int
+	totalLength int64
 
 	// pieces content is immutable after Init; muPieces guards the map
 	// reference itself (nilled in Close), so holders of a snapshot may
@@ -47,6 +48,11 @@ type Cache struct {
 	// freshly created reader has already set.
 	muPrio  sync.Mutex
 	torrent *torrent.Torrent
+
+	// pinned pieces are downloaded in full on request, see pin.go
+	pinned   map[int]struct{}
+	pinJobs  []PieceRange
+	muPinned sync.Mutex
 }
 
 func NewCache(capacity int64, storage *Storage) *Cache {
@@ -69,6 +75,7 @@ func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
 
 	c.pieceLength = info.PieceLength
 	c.pieceCount = info.NumPieces()
+	c.totalLength = info.TotalLength()
 	c.hash = hash
 
 	if settings.BTsets.UseDisk {
@@ -115,6 +122,24 @@ func (c *Cache) SetTorrent(torr *torrent.Torrent) {
 		return
 	}
 	c.torrent = torr
+	if torr == nil {
+		return
+	}
+	// pieces found on disk by NewDiskPiece must be reported to the client as complete
+	for id := range c.getPieces() {
+		torr.Piece(id).UpdateCompletion()
+	}
+	if isLongTermCache() {
+		c.restorePins()
+	}
+}
+
+// pieceSize is the full size of a piece: the last one is usually shorter.
+func (c *Cache) pieceSize(id int) int64 {
+	if c.totalLength <= 0 {
+		return c.pieceLength
+	}
+	return max(min(c.pieceLength, c.totalLength-int64(id)*c.pieceLength), 0)
 }
 
 func (c *Cache) getPieces() map[int]*Piece {
@@ -150,7 +175,7 @@ func (c *Cache) Close() error {
 
 	c.storage.removeCache(c.hash)
 
-	if settings.BTsets.RemoveCacheOnDrop {
+	if settings.BTsets.RemoveCacheOnDrop && !isLongTermCache() {
 		name := filepath.Join(settings.BTsets.TorrentsSavePath, c.hash.HexString())
 		if name != "" && name != "/" {
 			for _, v := range c.getPieces() {
@@ -189,6 +214,9 @@ func (c *Cache) AdjustRA(readahead int64) {
 	}
 	for _, r := range c.readersSnapshot() {
 		r.SetReadahead(readahead)
+	}
+	if isLongTermCache() {
+		c.refreshPriorities()
 	}
 }
 
@@ -236,6 +264,12 @@ func (c *Cache) GetState() *state.CacheState {
 
 func (c *Cache) cleanPieces() {
 	if c.isRemove.Load() || c.isClosed.Load() {
+		return
+	}
+
+	if isLongTermCache() {
+		c.storage.cleanGlobal()
+		c.refreshPriorities()
 		return
 	}
 
@@ -300,6 +334,12 @@ func (c *Cache) getRemPieces() []*Piece {
 	c.clearPriority()
 	c.setLoadPriority(ranges)
 
+	if isLongTermCache() {
+		// eviction is global across torrents, see Storage.cleanGlobal
+		c.filled = fill
+		return nil
+	}
+
 	// Complete pieces first, oldest first; a piece still downloading goes last. The torrent
 	// client never re-requests chunks it has received, so evicting their bytes makes a
 	// responsive reader that comes back to them read zeros.
@@ -317,11 +357,28 @@ func (c *Cache) getRemPieces() []*Piece {
 func (c *Cache) setLoadPriority(ranges []Range) {
 	readers := c.readersSnapshot()
 	pieces := c.getPieces()
-	if len(readers) == 0 || pieces == nil {
+	if len(readers) == 0 || pieces == nil || c.torrent == nil {
 		return
 	}
 	c.muPrio.Lock()
 	defer c.muPrio.Unlock()
+
+	count := settings.BTsets.ConnectionsLimit / len(readers) // max concurrent loading blocks
+	if count < 1 {
+		count = 1
+	}
+	if isLongTermCache() && settings.BTsets.DiskCacheSize > 0 && c.pieceLength > 0 {
+		// pieces are kept on disk, so let the reader load ahead as far as the quota allows
+		if avail := settings.BTsets.DiskCacheSize - diskCacheUsed(); avail > 0 {
+			if fromQuota := int(avail / c.pieceLength); fromQuota > count {
+				count = fromQuota
+			}
+		}
+		if count > 256 {
+			count = 256
+		}
+	}
+
 	for _, r := range readers {
 		if !r.isUse {
 			continue
@@ -332,25 +389,94 @@ func (c *Cache) setLoadPriority(ranges []Range) {
 		readerPos := r.getReaderPiece()
 		readerRAHPos := r.getReaderRAHPiece()
 		end := r.getPiecesRange().End
-		count := settings.BTsets.ConnectionsLimit / len(readers) // max concurrent loading blocks
 		limit := 0
 		for i := readerPos; i < end && limit < count; i++ {
-			if !pieces[i].Complete {
-				if i == readerPos {
-					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNow)
-				} else if i == readerPos+1 {
-					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNext)
-				} else if i > readerPos && i <= readerRAHPos {
-					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityReadahead)
-				} else if i > readerRAHPos && i <= readerRAHPos+5 && c.torrent.PieceState(i).Priority != torrent.PiecePriorityHigh {
-					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityHigh)
-				} else if i > readerRAHPos+5 && c.torrent.PieceState(i).Priority != torrent.PiecePriorityNormal {
-					c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNormal)
-				}
-				limit++
+			if c.torrent.PieceState(i).Complete {
+				continue
 			}
+			if i == readerPos {
+				c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNow)
+			} else if i == readerPos+1 {
+				c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNext)
+			} else if i > readerPos && i <= readerRAHPos {
+				c.torrent.Piece(i).SetPriority(torrent.PiecePriorityReadahead)
+			} else if i > readerRAHPos && i <= readerRAHPos+5 && c.torrent.PieceState(i).Priority != torrent.PiecePriorityHigh {
+				c.torrent.Piece(i).SetPriority(torrent.PiecePriorityHigh)
+			} else if i > readerRAHPos+5 && c.torrent.PieceState(i).Priority != torrent.PiecePriorityNormal {
+				c.torrent.Piece(i).SetPriority(torrent.PiecePriorityNormal)
+			}
+			limit++
 		}
 	}
+}
+
+// streamCapacity is the readahead window for streaming. In long-term mode the cache
+// capacity tracks the disk quota, so CacheSize keeps limiting readahead and preload.
+func (c *Cache) streamCapacity() int64 {
+	if settings.BTsets != nil && settings.BTsets.CacheSize > 0 {
+		return settings.BTsets.CacheSize
+	}
+	if c == nil {
+		return 0
+	}
+	return c.capacity
+}
+
+func (c *Cache) collectReaderRanges() []Range {
+	readers := c.readersSnapshot()
+	ranges := make([]Range, 0, len(readers))
+	for _, r := range readers {
+		r.checkReader()
+		if r.isUse {
+			ranges = append(ranges, r.getPiecesRange())
+		}
+	}
+	return mergeRange(ranges)
+}
+
+func (c *Cache) refreshPriorities() {
+	if c == nil || c.torrent == nil || c.isClosed.Load() || c.getPieces() == nil {
+		return
+	}
+	if !isLongTermCache() {
+		c.clearPriority()
+	}
+	c.setLoadPriority(c.collectReaderRanges())
+}
+
+// clearOutsideRanges resets the priority of pieces no reader needs. In long-term
+// mode pieces are left alone when there are no readers, so preload keeps going.
+// The caller must hold muPrio.
+func (c *Cache) clearOutsideRanges(ranges []Range) {
+	for id := range c.getPieces() {
+		if len(ranges) > 0 {
+			if inRanges(ranges, id) {
+				continue
+			}
+		} else if isLongTermCache() {
+			continue
+		}
+		if c.isPinned(id) {
+			continue
+		}
+		if c.torrent.PieceState(id).Priority != torrent.PiecePriorityNone {
+			c.torrent.Piece(id).SetPriority(torrent.PiecePriorityNone)
+		}
+	}
+}
+
+// getProtectedPieceIds returns the pieces global eviction must keep: those in
+// active reader ranges, the beginning and end of the files being read, and pieces
+// of an unfinished download.
+func (c *Cache) getProtectedPieceIds() map[int]bool {
+	protected := make(map[int]bool)
+	ranges := c.collectReaderRanges()
+	for id := range c.getPieces() {
+		if len(ranges) > 0 && inRanges(ranges, id) || c.isIdInFileBE(ranges, id) || c.inPinJob(id) {
+			protected[id] = true
+		}
+	}
+	return protected
 }
 
 func (c *Cache) isIdInFileBE(ranges []Range, id int) bool {
@@ -379,7 +505,9 @@ func (c *Cache) isIdInFileBE(ranges []Range, id int) bool {
 ////////
 
 func (c *Cache) NewReader(file *torrent.File) *Reader {
-	return newReader(file, c)
+	r := newReader(file, c)
+	go c.refreshPriorities()
+	return r
 }
 
 func (c *Cache) GetUseReaders() int {
@@ -425,28 +553,7 @@ func (c *Cache) clearPriority() {
 	// player. A mutex provides the same ordering without the race window.
 	c.muPrio.Lock()
 	defer c.muPrio.Unlock()
-	ranges := make([]Range, 0)
-	for _, r := range c.readersSnapshot() {
-		r.checkReader()
-		if r.isUse {
-			ranges = append(ranges, r.getPiecesRange())
-		}
-	}
-	ranges = mergeRange(ranges)
-
-	for id := range c.getPieces() {
-		if len(ranges) > 0 {
-			if !inRanges(ranges, id) {
-				if c.torrent.PieceState(id).Priority != torrent.PiecePriorityNone {
-					c.torrent.Piece(id).SetPriority(torrent.PiecePriorityNone)
-				}
-			}
-		} else {
-			if c.torrent.PieceState(id).Priority != torrent.PiecePriorityNone {
-				c.torrent.Piece(id).SetPriority(torrent.PiecePriorityNone)
-			}
-		}
-	}
+	c.clearOutsideRanges(c.collectReaderRanges())
 }
 
 func (c *Cache) GetCapacity() int64 {

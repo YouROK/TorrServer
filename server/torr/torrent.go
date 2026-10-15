@@ -12,6 +12,7 @@ import (
 	utils2 "server/utils"
 
 	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/bencode"
 	"github.com/anacrolix/torrent/metainfo"
 
 	"server/log"
@@ -63,6 +64,16 @@ func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 	if bt == nil || bt.client == nil {
 		return nil, errors.New("BT client not connected")
 	}
+
+	bt.mu.RLock()
+	tor, ok := bt.torrents[spec.InfoHash]
+	bt.mu.RUnlock()
+	if ok {
+		return tor, nil
+	}
+
+	torrstor.ApplyCachedMetainfo(spec)
+
 	switch settings.BTsets.RetrackersMode {
 	case 1:
 		spec.Trackers = append(spec.Trackers, [][]string{utils.GetDefTrackers()}...)
@@ -91,7 +102,7 @@ func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 		bt.mu.RUnlock()
 		return nil, errors.New("BT client not connected")
 	}
-	goTorrent, _, err := bt.client.AddTorrentSpec(spec)
+	goTorrent, isNew, err := bt.client.AddTorrentSpec(spec)
 	bt.mu.RUnlock()
 	if err != nil {
 		return nil, err
@@ -100,6 +111,12 @@ func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 	bt.mu.Lock()
 	defer bt.mu.Unlock()
 	if tor, ok := bt.torrents[spec.InfoHash]; ok {
+		// Another caller registered this hash while we were adding it. If the client
+		// already had the torrent, AddTorrentSpec returned that same live instance,
+		// so dropping it would close the torrent the existing entry is serving.
+		if isNew {
+			goTorrent.Drop()
+		}
 		return tor, nil
 	}
 
@@ -128,39 +145,44 @@ func (t *Torrent) WaitInfo() bool {
 	if t == nil || t.Torrent == nil {
 		return false
 	}
+	if t.Torrent.Info() != nil {
+		return t.finishWaitInfo()
+	}
 
 	// Close torrent if no info in 1 minute + TorrentDisconnectTimeout config option
 	tm := time.NewTimer(time.Minute + time.Second*time.Duration(settings.BTsets.TorrentDisconnectTimeout))
 
 	select {
 	case <-t.Torrent.GotInfo():
-		if t.TorrentSpec != nil && len(t.TorrentSpec.InfoBytes) == 0 {
-			t.TorrentSpec.InfoBytes = t.Torrent.Metainfo().InfoBytes
-		}
-		if t.bt != nil {
-			// bt.storage is replaced by Connect under bt.mu; snapshot it under the
-			// lock and use the snapshot afterwards, because the storage object keeps
-			// its own locking and is never closed. Reading the field unlocked was
-			// reported by -race and can tear the interface value.
-			t.bt.mu.RLock()
-			storage := t.bt.storage
-			t.bt.mu.RUnlock()
-			if storage != nil {
-				cache := storage.GetCache(t.Hash())
-				if cache == nil {
-					// torrent was dropped while waiting for info: CloseHash already removed the cache
-					return false
-				}
-				t.cache = cache
-				cache.SetTorrent(t.Torrent)
-			}
-		}
-		return true
+		return t.finishWaitInfo()
 	case <-t.closed:
 		return false
 	case <-tm.C:
 		return false
 	}
+}
+
+func (t *Torrent) finishWaitInfo() bool {
+	if t.bt != nil {
+		// bt.storage is replaced by Connect under bt.mu; snapshot it under the
+		// lock and use the snapshot afterwards, because the storage object keeps
+		// its own locking and is never closed. Reading the field unlocked was
+		// reported by -race and can tear the interface value.
+		t.bt.mu.RLock()
+		storage := t.bt.storage
+		t.bt.mu.RUnlock()
+		if storage != nil {
+			cache := storage.GetCache(t.Hash())
+			if cache == nil {
+				// torrent was dropped while waiting for info: CloseHash already removed the cache
+				return false
+			}
+			t.cache = cache
+			cache.SetTorrent(t.Torrent)
+		}
+	}
+	t.persistMetainfo()
+	return t.Torrent.Info() != nil
 }
 
 func (t *Torrent) GotInfo() bool {
@@ -216,6 +238,33 @@ func (t *Torrent) AddExpiredTime(duration time.Duration) {
 	t.muTorrent.Unlock()
 }
 
+func (t *Torrent) persistMetainfo() {
+	if t.Torrent == nil || t.TorrentSpec == nil {
+		return
+	}
+	mi := t.Torrent.Metainfo()
+	infoBytes := []byte(mi.InfoBytes)
+	if len(infoBytes) == 0 && t.Torrent.Info() != nil {
+		var err error
+		infoBytes, err = bencode.Marshal(t.Torrent.Info())
+		if err != nil {
+			return
+		}
+	}
+	if len(infoBytes) == 0 {
+		return
+	}
+	t.TorrentSpec.InfoBytes = infoBytes
+	if t.TorrentSpec.DisplayName == "" {
+		if info, err := mi.UnmarshalInfo(); err == nil {
+			t.TorrentSpec.DisplayName = info.Name
+		} else if info := t.Torrent.Info(); info != nil {
+			t.TorrentSpec.DisplayName = info.Name
+		}
+	}
+	torrstor.SaveMetainfo(t.Hash().HexString(), infoBytes)
+}
+
 func (t *Torrent) watch() {
 	t.progressTicker = time.NewTicker(time.Second)
 	defer t.progressTicker.Stop()
@@ -236,6 +285,10 @@ func (t *Torrent) progressEvent() {
 			log.TLogln("Torrent close by timeout", t.TorrentSpec.InfoHash.HexString())
 		}
 		t.bt.RemoveTorrent(t.Hash())
+		// too little is cached to seed (see seedable): free the space now
+		if longTermCache() {
+			torrstor.RemoveDiskCache(t.Hash().HexString())
+		}
 		return
 	}
 
@@ -280,7 +333,9 @@ func (t *Torrent) updateRA() {
 	// 	go t.cache.AdjustRA(adj)
 	// }
 	adj := int64(16 << 20) // 16 MB fixed RA
-	go t.cache.AdjustRA(adj)
+	if t.cache != nil {
+		go t.cache.AdjustRA(adj)
+	}
 }
 
 func (t *Torrent) expired() bool {
@@ -290,7 +345,17 @@ func (t *Torrent) expired() bool {
 	t.muTorrent.Lock()
 	stat, expiredTime := t.Stat, t.expiredTime
 	t.muTorrent.Unlock()
-	return t.cache.Readers() == 0 && expiredTime.Before(time.Now()) && (stat == state.TorrentWorking || stat == state.TorrentClosed)
+	if t.cache.Readers() > 0 || !expiredTime.Before(time.Now()) {
+		return false
+	}
+	if stat != state.TorrentWorking && stat != state.TorrentClosed {
+		return false
+	}
+	// keep downloading to the cache, and keep seeding what is mostly cached
+	if t.cache.HasPinned() || t.seedable() {
+		return false
+	}
+	return true
 }
 
 func (t *Torrent) Files() []*torrent.File {
@@ -436,6 +501,7 @@ func (t *Torrent) Status() *state.TorrentStatus {
 					Length: f.Length(),
 				})
 			}
+			t.fillDownloadStatus(st)
 
 			th := torrshash.New(st.Hash)
 			th.AddField(torrshash.TagTitle, st.Title)

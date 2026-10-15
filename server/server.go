@@ -14,6 +14,7 @@ import (
 	"server/log"
 	"server/netbind"
 	"server/settings"
+	"server/torr/storage/torrstor"
 	"server/torr/utils"
 	"server/web"
 )
@@ -74,6 +75,8 @@ func Start() error {
 			return errors.New(msg)
 		}
 	}
+	// finish deleting the cache of a disabled long-term cache before anything uses it
+	torrstor.ResumeDiskCachePurge()
 	// remove old disk caches
 	go cleanCache()
 	// set settings http and https ports. Start web server.
@@ -91,6 +94,11 @@ func Start() error {
 
 func cleanCache() {
 	if !settings.BTsets.UseDisk || settings.BTsets.TorrentsSavePath == "/" || settings.BTsets.TorrentsSavePath == "" {
+		return
+	}
+
+	if settings.BTsets.LongTermCache {
+		log.TLogln("Long-term disk cache enabled, skip startup cache cleanup")
 		return
 	}
 

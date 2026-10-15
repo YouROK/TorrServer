@@ -53,7 +53,7 @@ func sendSettingsMenuText(c tele.Context, uid int64, page string) string {
 	case "1c":
 		msg += " — " + tr(uid, "settings_section_other")
 		msg += "\n\n"
-		msg += fmt.Sprintf("CacheDrop %s · Responsive %s · UseDisk %s · FSActive %s", boolIcon(s.RemoveCacheOnDrop), boolIcon(s.ResponsiveMode), boolIcon(s.UseDisk), boolIcon(s.ShowFSActiveTorr))
+		msg += fmt.Sprintf("CacheDrop %s · Responsive %s · UseDisk %s · LongTerm %s · FSActive %s", boolIcon(s.RemoveCacheOnDrop), boolIcon(s.ResponsiveMode), boolIcon(s.UseDisk), boolIcon(s.LongTermCache), boolIcon(s.ShowFSActiveTorr))
 	case "2":
 		msg += " — " + tr(uid, "settings_page2")
 		msg += "\n\n"
@@ -202,6 +202,9 @@ func sendSettingsMenuKbd(uid int64, page string) *tele.ReplyMarkup {
 			},
 			{
 				{Text: toggleBtn("UseDisk", s.UseDisk), Unique: "fset", Data: "usedisk|1c"},
+				{Text: toggleBtn("LongTerm", s.LongTermCache), Unique: "fset", Data: "longterm|1c"},
+			},
+			{
 				{Text: toggleBtn("FSActive", s.ShowFSActiveTorr), Unique: "fset", Data: "fsactive|1c"},
 			},
 		}
@@ -540,6 +543,17 @@ func settingsCallback(c tele.Context, action string) error {
 		sets.ResponsiveMode = !sets.ResponsiveMode
 	case "usedisk":
 		sets.UseDisk = !sets.UseDisk
+		if !sets.UseDisk {
+			sets.LongTermCache = false
+		}
+	case "longterm":
+		sets.LongTermCache = !sets.LongTermCache
+		if sets.LongTermCache {
+			sets.UseDisk = true
+			if sets.DiskCacheSize <= 0 {
+				sets.DiskCacheSize = 50 * 1024 * 1024 * 1024
+			}
+		}
 	case "fsactive":
 		sets.ShowFSActiveTorr = !sets.ShowFSActiveTorr
 	case "storejson":

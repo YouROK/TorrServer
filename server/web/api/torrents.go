@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -29,16 +30,19 @@ type torrReqJS struct {
 	Poster   string `json:"poster,omitempty"`
 	Data     string `json:"data,omitempty"`
 	SaveToDB bool   `json:"save_to_db,omitempty"`
+	// Index is the file id (file_stats[].id) for download and cancel_download;
+	// 0 means the whole torrent
+	Index int `json:"index,omitempty"`
 }
 
 // torrents godoc
 //
 //	@Summary		Handle torrents informations
-//	@Description	Allow to list, add, remove, get, set, drop, wipe torrents on server. The action depends of what has been asked.
+//	@Description	Allow to list, add, remove, get, set, drop, wipe torrents on server, and download a file or a whole torrent into the long-term disk cache. The action depends of what has been asked.
 //
 //	@Tags			API
 //
-//	@Param			request	body	torrReqJS	true	"Torrent request. Available params for action: add, get, set, rem, list, drop, wipe. link required for add, hash required for get, set, rem, drop."
+//	@Param			request	body	torrReqJS	true	"Torrent request. Available params for action: add, get, set, rem, list, drop, wipe, download, cancel_download. link required for add, hash required for get, set, rem, drop, download, cancel_download; index selects the file for download and cancel_download (0 = whole torrent)."
 //
 //	@Accept			json
 //	@Produce		json
@@ -80,6 +84,14 @@ func torrents(c *gin.Context) {
 	case "wipe":
 		{
 			wipeTorrents(c)
+		}
+	case "download":
+		{
+			downloadTorrent(req, c, false)
+		}
+	case "cancel_download":
+		{
+			downloadTorrent(req, c, true)
 		}
 	default:
 		{
@@ -236,4 +248,50 @@ func wipeTorrents(c *gin.Context) {
 		dlna.Start()
 	}
 	c.Status(200)
+}
+
+// downloadTorrent starts or cancels downloading a file (req.Index) or the whole
+// torrent into the long-term disk cache, opening the torrent if it is only in the DB.
+func downloadTorrent(req torrReqJS, c *gin.Context, cancel bool) {
+	if req.Hash == "" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "hash is empty"})
+		return
+	}
+	if !set.BTsets.LongTermCache || !set.BTsets.UseDisk {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": torr.ErrDownloadNeedsLongTermCache.Error()})
+		return
+	}
+	tor := torr.GetTorrent(req.Hash)
+	if tor == nil {
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "torrent not found"})
+		return
+	}
+	if tor.Stat == state.TorrentInDB {
+		var err error
+		tor, err = torr.AddTorrent(tor.TorrentSpec, tor.Title, tor.Poster, tor.Data, tor.Category)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("error adding torrent: %v", err)})
+			return
+		}
+	}
+	if !tor.GotInfo() {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "torrent connection timeout"})
+		return
+	}
+
+	var err error
+	if cancel {
+		err = tor.CancelDownload(req.Index)
+	} else {
+		err = tor.Download(req.Index)
+	}
+	if err != nil {
+		status := http.StatusInternalServerError
+		if errors.Is(err, torr.ErrDownloadFileNotFound) {
+			status = http.StatusNotFound
+		}
+		c.AbortWithStatusJSON(status, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, tor.Status())
 }

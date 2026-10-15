@@ -4,6 +4,8 @@ import {
   UnfoldMore as UnfoldMoreIcon,
   PlayArrow as PlayArrowIcon,
   Close as CloseIcon,
+  CloudDone as CloudDoneIcon,
+  CloudDownload as CloudDownloadIcon,
   Delete as DeleteIcon,
 } from '@material-ui/icons'
 import { getPeerString, humanizeSize, humanizeSpeed, removeRedundantCharacters } from 'utils/Utils'
@@ -43,6 +45,7 @@ import {
   useGStreamerRuntime,
 } from 'utils/GStreamer'
 import { externalLink, useExternalMediaBase } from 'utils/MediaBase'
+import { cancelDownload, downloadErrorMessage, downloadToCache, loadedPercent, useLongTermCache } from 'utils/Download'
 
 import {
   StatusIndicators,
@@ -194,7 +197,26 @@ const Torrent = ({ torrent }) => {
     stat,
     data,
     file_stats: torrentFileList,
+    loaded_size: loadedSize,
+    downloading,
   } = torrent
+
+  const longTermCache = useLongTermCache()
+  const [isDownloadRequestPending, setIsDownloadRequestPending] = useState(false)
+  const [downloadError, setDownloadError] = useState('')
+  const downloadPercent = loadedPercent(loadedSize, torrentSize)
+  const isCached = torrentSize > 0 && loadedSize >= torrentSize
+  const toggleDownload = async () => {
+    setIsDownloadRequestPending(true)
+    setDownloadError('')
+    try {
+      await (downloading ? cancelDownload(hash) : downloadToCache(hash))
+    } catch (error) {
+      if (isMounted.current) setDownloadError(downloadErrorMessage(error))
+    } finally {
+      if (isMounted.current) setIsDownloadRequestPending(false)
+    }
+  }
 
   const dropTorrent = () => axios.post(torrentsHost(), { action: 'drop', hash })
   const deleteTorrent = () => axios.post(torrentsHost(), { action: 'rem', hash })
@@ -510,6 +532,36 @@ const Torrent = ({ torrent }) => {
               onClose={() => setSelectedPlayer(null)}
               onNotSupported={() => markPlayerUnsupported(selectedPlayer.key)}
             />
+          )}
+
+          {longTermCache && (
+            <StyledButton
+              disabled={isDownloadRequestPending}
+              aria-disabled={isCached && !downloading}
+              onClick={isCached && !downloading ? undefined : toggleDownload}
+              title={
+                downloadError || (downloading ? t('DownloadToCache.CancelHint') : t('DownloadToCache.TorrentHint'))
+              }
+            >
+              {isDownloadRequestPending ? (
+                <CircularProgress size={20} color='inherit' />
+              ) : isCached && !downloading ? (
+                <CloudDoneIcon />
+              ) : downloading ? (
+                <CircularProgress size={20} color='inherit' variant='determinate' value={downloadPercent} />
+              ) : (
+                <CloudDownloadIcon />
+              )}
+              <span>
+                {downloadError
+                  ? t('DownloadToCache.Error')
+                  : isCached && !downloading
+                  ? t('DownloadToCache.Cached')
+                  : downloading
+                  ? `${t('DownloadToCache.Cancel')} ${downloadPercent}%`
+                  : t('DownloadToCache.Torrent')}
+              </span>
+            </StyledButton>
           )}
 
           <StyledButton onClick={() => dropTorrent(torrent)}>

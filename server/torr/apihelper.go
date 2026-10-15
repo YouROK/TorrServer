@@ -13,6 +13,7 @@ import (
 
 	"server/log"
 	sets "server/settings"
+	"server/torr/storage/torrstor"
 	"server/torr/utils"
 )
 
@@ -106,24 +107,65 @@ func GetTorrent(hashHex string) *Torrent {
 		return tor
 	}
 
+	// A DB torrent is returned as is and loaded in the background, so request
+	// handlers never block on peers. Callers that need a working torrent check
+	// for state.TorrentInDB and load it themselves (AddTorrent/LoadTorrent).
 	tr := GetTorrentDB(hash)
 	if tr != nil {
-		tor = tr
-		go func() {
-			log.TLogln("New torrent", tor.Hash())
-			tr, _ := NewTorrent(tor.TorrentSpec, bts)
-			if tr != nil {
-				tr.Title = tor.Title
-				tr.Poster = tor.Poster
-				tr.Data = tor.Data
-				tr.Size = tor.Size
-				tr.Timestamp = tor.Timestamp
-				tr.Category = tor.Category
-				tr.GotInfo()
-			}
-		}()
+		startLoadFromDB(tr)
 	}
-	return tor
+	return tr
+}
+
+func startLoadFromDB(dbTorr *Torrent) {
+	if dbTorr == nil || dbTorr.TorrentSpec == nil {
+		return
+	}
+	hash := dbTorr.TorrentSpec.InfoHash
+
+	bts.mu.Lock()
+	if _, ok := bts.torrents[hash]; ok {
+		bts.mu.Unlock()
+		return
+	}
+	if _, ok := bts.loading[hash]; ok {
+		bts.mu.Unlock()
+		return
+	}
+	bts.loading[hash] = struct{}{}
+	bts.mu.Unlock()
+
+	go func() {
+		defer func() {
+			bts.mu.Lock()
+			delete(bts.loading, hash)
+			bts.mu.Unlock()
+		}()
+
+		log.TLogln("New torrent", dbTorr.Hash())
+		tr, _ := NewTorrent(dbTorr.TorrentSpec, bts)
+		if tr != nil {
+			tr.Title = dbTorr.Title
+			tr.Poster = dbTorr.Poster
+			tr.Data = dbTorr.Data
+			tr.Size = dbTorr.Size
+			tr.Timestamp = dbTorr.Timestamp
+			tr.Category = dbTorr.Category
+			if tr.GotInfo() {
+				syncMetainfoToDB(tr, dbTorr)
+			}
+		}
+	}()
+}
+
+func syncMetainfoToDB(tr, dbTorr *Torrent) {
+	if tr.TorrentSpec == nil || len(tr.TorrentSpec.InfoBytes) == 0 {
+		return
+	}
+	if dbTorr.TorrentSpec != nil && len(dbTorr.TorrentSpec.InfoBytes) > 0 {
+		return
+	}
+	SaveTorrentToDB(tr)
 }
 
 func SetTorrent(hashHex, title, poster, category string, data string) *Torrent {
@@ -249,6 +291,11 @@ func SetSettings(set *sets.BTSets) {
 		log.TLogln("API SetSettings: Read-only DB mode!")
 		return
 	}
+	wasLongTermCache := sets.BTsets != nil && sets.BTsets.LongTermCache
+	oldSavePath := ""
+	if sets.BTsets != nil {
+		oldSavePath = sets.BTsets.TorrentsSavePath
+	}
 	sets.SetBTSets(set)
 	utils.InvalidateTrackersCache()
 	log.TLogln("drop all torrents")
@@ -256,6 +303,12 @@ func SetSettings(set *sets.BTSets) {
 	time.Sleep(time.Second * 1)
 	log.TLogln("disconect")
 	bts.Disconnect()
+	// turning the long-term cache off deletes what it saved, while no torrent is open
+	if wasLongTermCache && !sets.BTsets.LongTermCache {
+		if err := torrstor.PurgeDiskCache(oldSavePath); err != nil {
+			log.TLogln("Error remove saved cache:", err)
+		}
+	}
 	log.TLogln("connect")
 	reconnect()
 	time.Sleep(time.Second * 1)

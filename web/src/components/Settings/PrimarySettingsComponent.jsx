@@ -1,6 +1,15 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { USBIcon, RAMIcon } from 'icons'
-import { FormControlLabel, Switch } from '@material-ui/core'
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  FormControlLabel,
+  Switch,
+} from '@material-ui/core'
 import TextField from '@material-ui/core/TextField'
 
 import {
@@ -41,7 +50,22 @@ export default function PrimarySettingsComponent({
   updateSettings,
 }) {
   const { t } = useTranslation()
-  const { UseDisk, TorrentsSavePath, RemoveCacheOnDrop } = settings || {}
+  const { UseDisk, TorrentsSavePath, RemoveCacheOnDrop, LongTermCache, DiskCacheSize } = settings || {}
+  const diskCacheSizeGB = DiskCacheSize ? Math.round(DiskCacheSize / (1024 * 1024 * 1024)) : 50
+  // turning the long-term cache off deletes everything it saved once the settings
+  // are saved, so ask first
+  const [pendingCacheDisable, setPendingCacheDisable] = useState(null)
+  const updateCacheSettings = update => {
+    if (LongTermCache && update.LongTermCache === false) {
+      setPendingCacheDisable(update)
+      return
+    }
+    updateSettings(update)
+  }
+  const confirmCacheDisable = () => {
+    updateSettings(pendingCacheDisable)
+    setPendingCacheDisable(null)
+  }
   const preloadCacheSize = Math.round((cacheSize / 100) * preloadCachePercentage)
 
   return (
@@ -112,7 +136,7 @@ export default function PrimarySettingsComponent({
           <CacheStorageLocationLabel />
 
           <div style={{ display: 'grid', gridAutoFlow: 'column' }}>
-            <StorageButton small onClick={() => updateSettings({ UseDisk: false })}>
+            <StorageButton small onClick={() => updateCacheSettings({ UseDisk: false, LongTermCache: false })}>
               <StorageIconWrapper small>
                 <RAMIcon color='#323637' />
               </StorageIconWrapper>
@@ -129,6 +153,37 @@ export default function PrimarySettingsComponent({
             </StorageButton>
           </div>
 
+          <FormControlLabel
+            control={
+              <Switch
+                checked={LongTermCache}
+                onChange={(_, checked) => updateCacheSettings({ LongTermCache: checked, UseDisk: true })}
+                color='secondary'
+              />
+            }
+            label={t('SettingsDialog.LongTermCache')}
+            labelPlacement='start'
+          />
+          <div>
+            <small>{t('SettingsDialog.LongTermCacheDesc')}</small>
+          </div>
+          {LongTermCache ? (
+            <>
+              <br />
+              <SliderInput
+                isProMode={isProMode}
+                title={t('SettingsDialog.DiskCacheSize')}
+                value={diskCacheSizeGB}
+                setValue={value => updateSettings({ DiskCacheSize: value * 1024 * 1024 * 1024 })}
+                sliderMin={10}
+                sliderMax={500}
+                inputMin={1}
+                inputMax={99999}
+                step={10}
+              />
+            </>
+          ) : null}
+          <br />
           <FormControlLabel
             control={
               <Switch checked={RemoveCacheOnDrop} onChange={inputForm} id='RemoveCacheOnDrop' color='secondary' />
@@ -163,7 +218,7 @@ export default function PrimarySettingsComponent({
             <div>{t('SettingsDialog.RAM')}</div>
           </StorageButton>
 
-          <StorageButton onClick={() => updateSettings({ UseDisk: true })}>
+          <StorageButton onClick={() => updateSettings({ UseDisk: true, LongTermCache: false })}>
             <StorageIconWrapper>
               <USBIcon color='#323637' />
             </StorageIconWrapper>
@@ -172,6 +227,20 @@ export default function PrimarySettingsComponent({
           </StorageButton>
         </CacheStorageSelector>
       )}
+
+      <Dialog open={!!pendingCacheDisable} onClose={() => setPendingCacheDisable(null)}>
+        <DialogContent>
+          <DialogContentText>{t('SettingsDialog.LongTermCacheDisableWarning')}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPendingCacheDisable(null)} color='secondary' variant='outlined' autoFocus>
+            {t('Cancel')}
+          </Button>
+          <Button onClick={confirmCacheDisable} color='secondary' variant='contained'>
+            {t('SettingsDialog.LongTermCacheDisableConfirm')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </MainSettingsContent>
   )
 }

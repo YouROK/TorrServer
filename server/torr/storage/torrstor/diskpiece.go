@@ -25,7 +25,7 @@ func NewDiskPiece(p *Piece) *DiskPiece {
 	ff, err := os.Stat(name)
 	if err == nil {
 		p.Size = ff.Size()
-		p.Complete = ff.Size() == p.cache.pieceLength
+		p.Complete = ff.Size() == p.cache.pieceSize(p.Id)
 		p.Accessed = ff.ModTime().Unix()
 	}
 	return &DiskPiece{piece: p, name: name}
@@ -43,11 +43,18 @@ func (p *DiskPiece) WriteAt(b []byte, off int64) (n int, err error) {
 	defer ff.Close()
 	n, err = ff.WriteAt(b, off)
 
+	before := p.piece.Size
 	p.piece.Size += int64(n)
 	if p.piece.Size > p.piece.cache.pieceLength {
 		p.piece.Size = p.piece.cache.pieceLength
 	}
+	addDiskCacheUsed(p.piece.Size - before)
 	p.piece.Accessed = time.Now().Unix()
+	// the write itself bumps the file mtime that global eviction sorts by;
+	// check the quota once per piece, not on every chunk
+	if full := p.piece.cache.pieceSize(p.piece.Id); isLongTermCache() && before < full && p.piece.Size >= full {
+		go p.piece.cache.storage.cleanGlobal()
+	}
 	return
 }
 
@@ -67,7 +74,13 @@ func (p *DiskPiece) ReadAt(b []byte, off int64) (n int, err error) {
 
 	n, err = ff.ReadAt(b, off)
 
-	p.piece.Accessed = time.Now().Unix()
+	now := time.Now()
+	// global eviction sorts by file mtime; refresh it at most once a minute per piece
+	// instead of issuing a syscall on every read
+	if isLongTermCache() && now.Unix()-p.piece.Accessed >= 60 {
+		_ = os.Chtimes(p.name, now, now)
+	}
+	p.piece.Accessed = now.Unix()
 	if int64(len(b))+off >= p.piece.Size {
 		go p.piece.cache.cleanPieces()
 	}
@@ -78,8 +91,11 @@ func (p *DiskPiece) Release() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
+	size := p.piece.Size
 	p.piece.Size = 0
 	p.piece.Complete = false
 
-	os.Remove(p.name)
+	if err := os.Remove(p.name); err == nil {
+		addDiskCacheUsed(-size)
+	}
 }

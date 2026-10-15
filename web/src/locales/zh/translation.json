@@ -328,7 +328,9 @@
     "UseVLCDesktopHintPrefix": "桌面端需要",
     "UseVLCHint": "将VLC播放器按钮添加到种子内容列表",
     "ViewedHistoryStorage": "查看历史存储：",
-    "ViewedStorageHint": "存储查看历史记录的位置"
+    "ViewedStorageHint": "存储查看历史记录的位置",
+    "LongTermCacheDisableWarning": "Turning this option off deletes all saved cache",
+    "LongTermCacheDisableConfirm": "Turn off"
   },
   "Size": "大小",
   "SpecialThanks": "特别感谢",
@@ -433,5 +435,16 @@
     "Warnings": "解析警告：",
     "Whitelist": "IP 白名单",
     "WhitelistHint": "留空以禁用白名单。例如：local:127.0.0.1 或 10.0.0.0/8"
+  },
+  "DownloadToCache": {
+    "Torrent": "Download",
+    "File": "Download",
+    "Cancel": "Cancel",
+    "Cached": "Cached",
+    "InCache": "Cached",
+    "Error": "Failed",
+    "TorrentHint": "Download the whole torrent into the server cache",
+    "FileHint": "Download the whole file into the server cache",
+    "CancelHint": "Stop downloading into the cache"
   }
 }

@@ -328,7 +328,9 @@
     "UseVLCDesktopHintPrefix": "Pe PC este necesar",
     "UseVLCHint": "Adăugați butonul VLC player la lista de conținut torrent",
     "ViewedHistoryStorage": "Istoricul vizualizărilor stocate:",
-    "ViewedStorageHint": "Alegeți unde să stocați istoricul vizualizat"
+    "ViewedStorageHint": "Alegeți unde să stocați istoricul vizualizat",
+    "LongTermCacheDisableWarning": "Turning this option off deletes all saved cache",
+    "LongTermCacheDisableConfirm": "Turn off"
   },
   "Size": "Mărime",
   "SpecialThanks": "Mulțumiri speciale",
@@ -433,5 +435,16 @@
     "Warnings": "Avertismente de parsare:",
     "Whitelist": "Listă albă IP",
     "WhitelistHint": "Lasă gol pentru dezactivare. Exemplu: local:127.0.0.1 sau 10.0.0.0/8"
+  },
+  "DownloadToCache": {
+    "Torrent": "Download",
+    "File": "Download",
+    "Cancel": "Cancel",
+    "Cached": "Cached",
+    "InCache": "Cached",
+    "Error": "Failed",
+    "TorrentHint": "Download the whole torrent into the server cache",
+    "FileHint": "Download the whole file into the server cache",
+    "CancelHint": "Stop downloading into the cache"
   }
 }
