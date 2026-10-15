@@ -6,7 +6,7 @@ import (
 
 func RouteWebPages(route gin.IRouter) {
 	route.GET("/", func(c *gin.Context) {
-		serve(c, Indexhtml, `"02569911277f34680a622452d733fd86"`, "text/html; charset=utf-8", false)
+		serve(c, Indexhtml, `"8e4d13e914d47cc63880dbd2b4178456"`, "text/html; charset=utf-8", false)
 	})
 
 	route.GET("/apple-splash-1125-2436.jpg", func(c *gin.Context) {
@@ -114,7 +114,7 @@ func RouteWebPages(route gin.IRouter) {
 	})
 
 	route.GET("/asset-manifest.json", func(c *gin.Context) {
-		serve(c, Assetmanifestjson, `"0dfada2c5434fd4e481917aff1cd6b4e"`, "application/json", false)
+		serve(c, Assetmanifestjson, `"38042b94237082f90ef03001ab32aabc"`, "application/json", false)
 	})
 
 	route.GET("/browserconfig.xml", func(c *gin.Context) {
@@ -146,7 +146,7 @@ func RouteWebPages(route gin.IRouter) {
 	})
 
 	route.GET("/index.html", func(c *gin.Context) {
-		serve(c, Indexhtml, `"02569911277f34680a622452d733fd86"`, "text/html; charset=utf-8", false)
+		serve(c, Indexhtml, `"8e4d13e914d47cc63880dbd2b4178456"`, "text/html; charset=utf-8", false)
 	})
 
 	route.GET("/logo.png", func(c *gin.Context) {
@@ -177,12 +177,12 @@ func RouteWebPages(route gin.IRouter) {
 		serve(c, Staticjs27a202c12chunkjsmap, `"ba6f3698e36620ac76c053fa00ab50ea"`, "application/json", true)
 	})
 
-	route.GET("/static/js/main.7648fda2.chunk.js", func(c *gin.Context) {
-		serve(c, Staticjsmain7648fda2chunkjs, `"d17b9cde280a61787a09484106d8ab22"`, "application/javascript; charset=utf-8", true)
+	route.GET("/static/js/main.245f0d9e.chunk.js", func(c *gin.Context) {
+		serve(c, Staticjsmain245f0d9echunkjs, `"ba69979acdde5056b9c52ab94218aa25"`, "application/javascript; charset=utf-8", true)
 	})
 
-	route.GET("/static/js/main.7648fda2.chunk.js.map", func(c *gin.Context) {
-		serve(c, Staticjsmain7648fda2chunkjsmap, `"c56c82d921a998a12cecdab6355d315b"`, "application/json", true)
+	route.GET("/static/js/main.245f0d9e.chunk.js.map", func(c *gin.Context) {
+		serve(c, Staticjsmain245f0d9echunkjsmap, `"4fbadc75304001165fae6299f4d5db6b"`, "application/json", true)
 	})
 
 	route.GET("/static/js/runtime-main.5ed86a79.js", func(c *gin.Context) {

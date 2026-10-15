@@ -1071,4 +1071,24 @@ With all `Transcode*` options disabled, H.264, H.265/HEVC, AV1, and VP9 video is
 - [butaford](https://github.com/butaford) Pavel for make docker file and scripts
 - [filimonic](https://github.com/filimonic) Alexey D. Filimonov
 - [leporel](https://github.com/leporel) Viacheslav Evseev
+- [VuzzyM](https://github.com/VuzzyM) Vuzzy
+- [GriefNorth](https://github.com/GriefNorth)
+- [nikita322](https://github.com/nikita322) Nikita
+- [staners2](https://github.com/staners2) Dima Aratin
+- [kostiavn](https://github.com/kostiavn)
+- [srgsf](https://github.com/srgsf)
+- [ngcores](https://github.com/ngcores) for GStreamer
+- [Cleste](https://github.com/Cleste) Kirill Pimenov
+- [Fikirsiz](https://github.com/Fikirsiz)
+- [kirill-782](https://github.com/kirill-782)
+- [nikitenich](https://github.com/nikitenich) Ilya Nikitenkov
+- [nicuvam](https://github.com/nicuvam) Nicu
+- [letov404-ai](https://github.com/letov404-ai)
+- [SHAREN](https://github.com/SHAREN) Renat Sharipov
+- [DrachenClon22](https://github.com/DrachenClon22) Artem
+- [nfvelten](https://github.com/nfvelten) Nicholas Velten
+- [uPagge](https://github.com/uPagge) Struchkov Mark
+- [LuckyRu](https://github.com/LuckyRu) Alexander
+- [ManSio](https://github.com/ManSio) Mikhail
+- [vladikshkwok](https://github.com/vladikshkwok)
 - and others
