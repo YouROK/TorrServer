@@ -48,4 +48,14 @@ tracks. An audio file is accepted when
 Companion subtitles of a voice-over (for example, "signs" in `Sound [Group]/ep01.ass`) are still
 not listed by `/subs`.
 
-The tracks are not yet offered in the HLS playlist of the GStreamer module.
+## Playback in the GStreamer HLS module
+
+The tracks of this list can be played through the GStreamer HLS module
+(`/gst/{hash}/master.m3u8?index={id}`). The `audio` parameter selects the track:
+`audio=1000` is the first track of the `/audio/{hash}/{id}` list, `1001` the second, and so
+on. Small values (`0`, `1`, ...) are still the audio tracks inside the video file.
+
+- The audio file is read from the torrent by a source of its own and re-encoded to AAC; the
+  video part of the pipeline is the same as for embedded tracks.
+- A seek restarts the pipeline, because both sources have to be repositioned together.
+- An `audio` value outside of the list is answered with 404.

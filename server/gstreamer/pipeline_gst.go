@@ -84,7 +84,7 @@ func newPipelineRunner(task *Task, audio int) (pipelineRunner, error) {
 
 	runner := &gstRunner{
 		task:       task,
-		audioIndex: validAudioIndex(task.Probe, audio),
+		audioIndex: resolveAudioIndex(task, audio),
 	}
 	runner.ensureTransientState()
 	runner.readySegment.index = -1
@@ -478,39 +478,16 @@ func (r *gstRunner) createPipelineArgs() string {
 		}
 	}
 
-	if audioTrack := probe.AudioTrack(r.audioIndex); audioTrack != nil {
+	if r.externalAudioActive() {
+		r.writeExternalAudioBranch(&sb, conf, gstVersion)
+	} else if audioTrack := probe.AudioTrack(r.audioIndex); audioTrack != nil {
 		sb.WriteString("d.audio_")
 		sb.WriteString(strconv.Itoa(audioTrack.Index))
 		sb.WriteString(" ! mq.sink_1 mq.src_1 ! ")
 		if audioTrack.IsBrowserAAC() {
 			sb.WriteString("aacparse ! audio/mpeg,mpegversion=4,stream-format=raw ! mux.audio_0 ")
 		} else {
-			aacChannels := effectiveAACChannels(conf, audioTrack)
-			aacSampleRate := effectiveAACSampleRate(conf, audioTrack)
-			aacBitrate := conf.AACBitrateKbps * 1000
-			if aacChannels > 2 {
-				aacBitrate *= 2
-			}
-
-			sb.WriteString("decodebin ! audioconvert dithering=none noise-shaping=none ! audioresample quality=2 sinc-filter-mode=full ! audio/x-raw,format=")
-			sb.WriteString(aacRawFormat())
-			sb.WriteString(",layout=interleaved,rate=")
-			sb.WriteString(strconv.Itoa(aacSampleRate))
-			sb.WriteString(",channels=")
-			sb.WriteString(strconv.Itoa(aacChannels))
-			if aacChannels == 6 {
-				// Normalize 5.1(side) decoders to the browser-compatible AAC 5.1 layout.
-				sb.WriteString(",channel-mask=(bitmask)0x000000000000003f")
-			}
-			sb.WriteString(" ! ")
-			sb.WriteString(r.aacEncoder())
-			sb.WriteString(" bitrate=")
-			sb.WriteString(strconv.Itoa(aacBitrate))
-			sb.WriteString(" ! aacparse ! audio/mpeg,mpegversion=4,stream-format=raw,rate=")
-			sb.WriteString(strconv.Itoa(aacSampleRate))
-			sb.WriteString(",channels=")
-			sb.WriteString(strconv.Itoa(aacChannels))
-			sb.WriteString(" ! mux.audio_0 ")
+			r.writeAudioReencode(&sb, conf, audioTrack, "")
 		}
 	}
 	r.writeSubtitleBranches(&sb, gstVersion)
@@ -868,7 +845,7 @@ func (r *gstRunner) EnsureInit(ctx context.Context, audio int, startIndex int) e
 		}
 	} else if !r.statePlaying {
 		r.statePlaying = true
-		r.audioIndex = validAudioIndex(r.task.Probe, audio)
+		r.audioIndex = resolveAudioIndex(r.task, audio)
 		if startSeconds > 0 {
 			r.reader.SeekReset(startSeconds)
 			r.positionSeekSeconds = startSeconds
@@ -937,7 +914,7 @@ func (r *gstRunner) GetSegment(ctx context.Context, index int, audio int) (Segme
 		}
 	} else if !r.statePlaying {
 		r.statePlaying = true
-		r.audioIndex = validAudioIndex(r.task.Probe, audio)
+		r.audioIndex = resolveAudioIndex(r.task, audio)
 		startSeconds := r.segmentStartSeconds(index)
 		if startSeconds > 0 {
 			r.reader.SeekReset(startSeconds)
