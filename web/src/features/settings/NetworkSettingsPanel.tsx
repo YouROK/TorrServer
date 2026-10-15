@@ -199,9 +199,7 @@ export default function NetworkSettingsPanel({
         </div>
       </SettingsSection>
 
-      <SettingsSection title={t('SettingsDialog.SectionSslTls')}>
-        <HTTPSSettingsPanel onUpdate={onUpdate} />
-      </SettingsSection>
+      <HTTPSSettingsPanel onUpdate={onUpdate} />
     </div>
   )
 }

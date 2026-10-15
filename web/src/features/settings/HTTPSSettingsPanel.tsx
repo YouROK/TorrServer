@@ -7,6 +7,8 @@ import { authFetch } from 'shared/api/authCredentials'
 import { sslHost } from 'shared/api/hosts'
 import type { BTSets } from 'shared/api/types'
 
+import SettingsSection from './SettingsSection'
+
 const EXPIRING_SOON_MS = 30 * 24 * 60 * 60 * 1000
 
 /** Pure — pass a clock so render stays idempotent (react-hooks/purity). */
@@ -152,151 +154,153 @@ export default function HTTPSSettingsPanel({ onUpdate }: HTTPSSettingsPanelProps
   else if (status.force_https) mode = t('HTTPSSettings.ModeForceHTTPS', { port: status.port })
 
   return (
-    <div className='space-y-4'>
-      <p className='text-sm font-medium'>{t('HTTPS')}</p>
-      <dl className='space-y-1 text-sm'>
-        <div className='flex justify-between gap-4'>
-          <dt className='text-muted'>{t('HTTPSSettings.Mode')}</dt>
-          <dd className='text-right'>{mode}</dd>
-        </div>
-        <div className='flex justify-between gap-4'>
-          <dt className='text-muted'>{t('HTTPSSettings.Certificate')}</dt>
-          <dd className='text-right'>{t(`HTTPSSettings.Source.${cert.source}`)}</dd>
-        </div>
-        {cert.subject ? (
+    <SettingsSection title={t('SettingsDialog.SectionSslTls')}>
+      <div className='space-y-4'>
+        <p className='text-sm font-medium'>{t('HTTPS')}</p>
+        <dl className='space-y-1 text-sm'>
           <div className='flex justify-between gap-4'>
-            <dt className='text-muted'>{t('HTTPSSettings.Subject')}</dt>
-            <dd className='text-right break-all'>{cert.subject}</dd>
+            <dt className='text-muted'>{t('HTTPSSettings.Mode')}</dt>
+            <dd className='text-right'>{mode}</dd>
           </div>
-        ) : null}
-        {cert.issuer && !selfSigned ? (
           <div className='flex justify-between gap-4'>
-            <dt className='text-muted'>{t('HTTPSSettings.Issuer')}</dt>
-            <dd className='text-right break-all'>{cert.issuer}</dd>
+            <dt className='text-muted'>{t('HTTPSSettings.Certificate')}</dt>
+            <dd className='text-right'>{t(`HTTPSSettings.Source.${cert.source}`)}</dd>
           </div>
+          {cert.subject ? (
+            <div className='flex justify-between gap-4'>
+              <dt className='text-muted'>{t('HTTPSSettings.Subject')}</dt>
+              <dd className='text-right break-all'>{cert.subject}</dd>
+            </div>
+          ) : null}
+          {cert.issuer && !selfSigned ? (
+            <div className='flex justify-between gap-4'>
+              <dt className='text-muted'>{t('HTTPSSettings.Issuer')}</dt>
+              <dd className='text-right break-all'>{cert.issuer}</dd>
+            </div>
+          ) : null}
+          {expires ? (
+            <div className='flex justify-between gap-4'>
+              <dt className='text-muted'>{t('HTTPSSettings.ValidUntil')}</dt>
+              <dd className={expiringSoon ? 'text-right text-danger' : 'text-right'}>{expires.toLocaleDateString()}</dd>
+            </div>
+          ) : null}
+          {cert.source !== 'none' ? (
+            <div className='flex justify-between gap-4'>
+              <dt className='text-muted'>{t('HTTPSSettings.Trusted')}</dt>
+              <dd className='text-right'>{cert.trusted ? t('HTTPSSettings.Yes') : t('HTTPSSettings.No')}</dd>
+            </div>
+          ) : null}
+        </dl>
+        {names.length > 0 ? (
+          <p className='text-sm text-muted'>
+            {t('HTTPSSettings.Names')}: {names.join(', ')}
+          </p>
         ) : null}
-        {expires ? (
-          <div className='flex justify-between gap-4'>
-            <dt className='text-muted'>{t('HTTPSSettings.ValidUntil')}</dt>
-            <dd className={expiringSoon ? 'text-right text-danger' : 'text-right'}>{expires.toLocaleDateString()}</dd>
-          </div>
+        {cert.cert_file ? (
+          <p className='text-sm break-all text-muted'>
+            {t('HTTPSSettings.CertFileInUse')}: {cert.cert_file}
+            <br />
+            {t('HTTPSSettings.KeyFileInUse')}: {cert.key_file}
+          </p>
         ) : null}
-        {cert.source !== 'none' ? (
-          <div className='flex justify-between gap-4'>
-            <dt className='text-muted'>{t('HTTPSSettings.Trusted')}</dt>
-            <dd className='text-right'>{cert.trusted ? t('HTTPSSettings.Yes') : t('HTTPSSettings.No')}</dd>
-          </div>
-        ) : null}
-      </dl>
-      {names.length > 0 ? (
-        <p className='text-sm text-muted'>
-          {t('HTTPSSettings.Names')}: {names.join(', ')}
-        </p>
-      ) : null}
-      {cert.cert_file ? (
-        <p className='text-sm break-all text-muted'>
-          {t('HTTPSSettings.CertFileInUse')}: {cert.cert_file}
-          <br />
-          {t('HTTPSSettings.KeyFileInUse')}: {cert.key_file}
-        </p>
-      ) : null}
-      {cert.error ? <Alert status='danger'>{cert.error}</Alert> : null}
-      <p className='text-sm text-muted'>{t('HTTPSSettings.ModeHint')}</p>
-      {selfSigned ? <p className='text-sm text-muted'>{t('HTTPSSettings.SelfSignedHint')}</p> : null}
-      {status.cert_from_flags ? <p className='text-sm text-muted'>{t('HTTPSSettings.FromFlagsHint')}</p> : null}
+        {cert.error ? <Alert status='danger'>{cert.error}</Alert> : null}
+        <p className='text-sm text-muted'>{t('HTTPSSettings.ModeHint')}</p>
+        {selfSigned ? <p className='text-sm text-muted'>{t('HTTPSSettings.SelfSignedHint')}</p> : null}
+        {status.cert_from_flags ? <p className='text-sm text-muted'>{t('HTTPSSettings.FromFlagsHint')}</p> : null}
 
-      <div className='flex flex-wrap gap-2'>
-        {cert.source !== 'none' ? (
-          <Button size='sm' variant='secondary' onPress={() => void downloadCert()}>
-            {t('HTTPSSettings.Download')}
-          </Button>
+        <div className='flex flex-wrap gap-2'>
+          {cert.source !== 'none' ? (
+            <Button size='sm' variant='secondary' onPress={() => void downloadCert()}>
+              {t('HTTPSSettings.Download')}
+            </Button>
+          ) : null}
+          {selfSigned ? (
+            <Button
+              size='sm'
+              variant='secondary'
+              isDisabled={locked}
+              onPress={() => void run(() => axios.post(`${sslHost()}/regenerate`), t('HTTPSSettings.Regenerated'))}
+            >
+              {t('HTTPSSettings.Regenerate')}
+            </Button>
+          ) : (
+            <Button
+              size='sm'
+              variant='secondary'
+              isDisabled={locked}
+              onPress={() =>
+                void run(() => axios.post(`${sslHost()}/selfsigned`), t('HTTPSSettings.SwitchedToSelfSigned'))
+              }
+            >
+              {t('HTTPSSettings.UseSelfSigned')}
+            </Button>
+          )}
+        </div>
+
+        <div className='space-y-2'>
+          <p className='text-sm text-muted'>{t('HTTPSSettings.UploadHint')}</p>
+          {plainHTTPPage ? <Alert status='warning'>{t('HTTPSSettings.PlainHTTPWarning')}</Alert> : null}
+          <div className='flex flex-wrap items-center gap-2' key={inputKey}>
+            <Button size='sm' variant='secondary' isDisabled={locked} className='relative'>
+              {certFile ? certFile.name : t('HTTPSSettings.ChooseCert')}
+              <input
+                type='file'
+                accept='.pem,.crt,.cer'
+                className='absolute inset-0 cursor-pointer opacity-0'
+                disabled={locked}
+                onChange={e => setCertFile(e.target.files?.[0] || null)}
+              />
+            </Button>
+            <Button size='sm' variant='secondary' isDisabled={locked} className='relative'>
+              {keyFile ? keyFile.name : t('HTTPSSettings.ChooseKey')}
+              <input
+                type='file'
+                accept='.pem,.key'
+                className='absolute inset-0 cursor-pointer opacity-0'
+                disabled={locked}
+                onChange={e => setKeyFile(e.target.files?.[0] || null)}
+              />
+            </Button>
+            <Button
+              size='sm'
+              variant='primary'
+              isDisabled={locked || !certFile || !keyFile}
+              onPress={() => void upload()}
+            >
+              {t('HTTPSSettings.Upload')}
+            </Button>
+          </div>
+        </div>
+
+        <div className='space-y-2'>
+          <p className='text-sm text-muted'>{t('HTTPSSettings.PathsHint')}</p>
+          <TextField value={paths.cert} onChange={value => setPaths({ ...paths, cert: value })} isDisabled={locked}>
+            <Label>{t('HTTPSSettings.CertPath')}</Label>
+            <Input placeholder={t('HTTPSSettings.CertPathExample')} />
+          </TextField>
+          <TextField value={paths.key} onChange={value => setPaths({ ...paths, key: value })} isDisabled={locked}>
+            <Label>{t('HTTPSSettings.KeyPath')}</Label>
+            <Input placeholder={t('HTTPSSettings.KeyPathExample')} />
+          </TextField>
+          <div className='flex items-center gap-2'>
+            <Button
+              size='sm'
+              variant='primary'
+              isDisabled={locked || !paths.cert || !paths.key}
+              onPress={() => void run(() => axios.post(`${sslHost()}/paths`, paths), t('HTTPSSettings.PathsApplied'))}
+            >
+              {t('HTTPSSettings.UsePaths')}
+            </Button>
+            {busy ? <Spinner size='sm' /> : null}
+          </div>
+        </div>
+
+        {message.text ? (
+          <Alert status={message.type === 'error' ? 'danger' : 'success'}>
+            <Alert.Description>{message.text}</Alert.Description>
+          </Alert>
         ) : null}
-        {selfSigned ? (
-          <Button
-            size='sm'
-            variant='secondary'
-            isDisabled={locked}
-            onPress={() => void run(() => axios.post(`${sslHost()}/regenerate`), t('HTTPSSettings.Regenerated'))}
-          >
-            {t('HTTPSSettings.Regenerate')}
-          </Button>
-        ) : (
-          <Button
-            size='sm'
-            variant='secondary'
-            isDisabled={locked}
-            onPress={() =>
-              void run(() => axios.post(`${sslHost()}/selfsigned`), t('HTTPSSettings.SwitchedToSelfSigned'))
-            }
-          >
-            {t('HTTPSSettings.UseSelfSigned')}
-          </Button>
-        )}
       </div>
-
-      <div className='space-y-2'>
-        <p className='text-sm text-muted'>{t('HTTPSSettings.UploadHint')}</p>
-        {plainHTTPPage ? <Alert status='warning'>{t('HTTPSSettings.PlainHTTPWarning')}</Alert> : null}
-        <div className='flex flex-wrap items-center gap-2' key={inputKey}>
-          <Button size='sm' variant='secondary' isDisabled={locked} className='relative'>
-            {certFile ? certFile.name : t('HTTPSSettings.ChooseCert')}
-            <input
-              type='file'
-              accept='.pem,.crt,.cer'
-              className='absolute inset-0 cursor-pointer opacity-0'
-              disabled={locked}
-              onChange={e => setCertFile(e.target.files?.[0] || null)}
-            />
-          </Button>
-          <Button size='sm' variant='secondary' isDisabled={locked} className='relative'>
-            {keyFile ? keyFile.name : t('HTTPSSettings.ChooseKey')}
-            <input
-              type='file'
-              accept='.pem,.key'
-              className='absolute inset-0 cursor-pointer opacity-0'
-              disabled={locked}
-              onChange={e => setKeyFile(e.target.files?.[0] || null)}
-            />
-          </Button>
-          <Button
-            size='sm'
-            variant='primary'
-            isDisabled={locked || !certFile || !keyFile}
-            onPress={() => void upload()}
-          >
-            {t('HTTPSSettings.Upload')}
-          </Button>
-        </div>
-      </div>
-
-      <div className='space-y-2'>
-        <p className='text-sm text-muted'>{t('HTTPSSettings.PathsHint')}</p>
-        <TextField value={paths.cert} onChange={value => setPaths({ ...paths, cert: value })} isDisabled={locked}>
-          <Label>{t('HTTPSSettings.CertPath')}</Label>
-          <Input placeholder={t('HTTPSSettings.CertPathExample')} />
-        </TextField>
-        <TextField value={paths.key} onChange={value => setPaths({ ...paths, key: value })} isDisabled={locked}>
-          <Label>{t('HTTPSSettings.KeyPath')}</Label>
-          <Input placeholder={t('HTTPSSettings.KeyPathExample')} />
-        </TextField>
-        <div className='flex items-center gap-2'>
-          <Button
-            size='sm'
-            variant='primary'
-            isDisabled={locked || !paths.cert || !paths.key}
-            onPress={() => void run(() => axios.post(`${sslHost()}/paths`, paths), t('HTTPSSettings.PathsApplied'))}
-          >
-            {t('HTTPSSettings.UsePaths')}
-          </Button>
-          {busy ? <Spinner size='sm' /> : null}
-        </div>
-      </div>
-
-      {message.text ? (
-        <Alert status={message.type === 'error' ? 'danger' : 'success'}>
-          <Alert.Description>{message.text}</Alert.Description>
-        </Alert>
-      ) : null}
-    </div>
+    </SettingsSection>
   )
 }
