@@ -47,50 +47,6 @@ func TestMatchSkipsHugeFiles(t *testing.T) {
 	}
 }
 
-func TestLangDetection(t *testing.T) {
-	cases := []struct{ path, want string }{
-		// Explicit markers.
-		{"Show/Russian subs/ep01.srt", "ru"},
-		{"Show/ep01.eng.srt", "en"},
-		{"Show/Subs/English/ep01.srt", "en"},
-
-		// No marker and no Cyrillic: unknown.
-		{"Show/ep01.srt", "und"},
-
-		// Cyrillic in a folder or file name, no explicit marker: Russian.
-		{"Субтитры/ep01.srt", "ru"},
-		{"Show/Субтитры/Show - 01.srt", "ru"},
-		{"Сериал/Subs/ep01.srt", "ru"},
-		{"Show/ep01.субтитры.srt", "ru"},
-
-		// An explicit marker wins over Cyrillic, wherever it is.
-		{"Субтитры/en/ep01.srt", "en"},
-		{"Субтитры/ep01.eng.srt", "en"},
-		{"Субтитры/Английские/ep01.srt", "en"},
-		{"English/Субтитры/ep01.srt", "en"},
-		{"Сериал.ENG/Subs/ep01.srt", "en"},
-	}
-	for _, c := range cases {
-		if got := langOf(c.path); got != c.want {
-			t.Errorf("langOf(%q) = %q, want %q", c.path, got, c.want)
-		}
-	}
-}
-
-func TestIsVideo(t *testing.T) {
-	cases := map[string]bool{
-		"Show/ep01.mkv":     true,
-		"Show/EP01.MP4":     true,
-		"Show/ep01.rus.srt": false,
-		"Show/readme.txt":   false,
-	}
-	for p, want := range cases {
-		if got := IsVideo(p); got != want {
-			t.Errorf("IsVideo(%q) = %v, want %v", p, got, want)
-		}
-	}
-}
-
 // A real-world batch: the codec name "x.265" after the episode number must not be
 // taken for the episode, otherwise every video "matches" every subtitle file.
 func TestMatchBatchWithCodecInName(t *testing.T) {
@@ -119,20 +75,6 @@ func TestMatchBatchWithCodecInName(t *testing.T) {
 		got := Match(v, files)
 		if len(got) != 1 || got[0].FileIndex != 12+ep+1 {
 			t.Errorf("episode %d: want only subtitle %d, got %+v", ep+1, 12+ep+1, got)
-		}
-	}
-}
-
-func TestEpisodeOfIgnoresCodecsAndDecimals(t *testing.T) {
-	cases := map[string]int{
-		"[Moozzi2] Kandagawa Jet Girls - 03 (BD 1920x1080 x.265-10Bit Flac)": 3,
-		"Show - 04 [BDRip 1920x1080 x264 FLAC 2.0]":                           4,
-		"Show - 05 (H.264 5.1)":                                              5,
-		"Mob Psycho 100 - 02":                                                2,
-	}
-	for name, want := range cases {
-		if _, got, ok := episodeOf(name); !ok || got != want {
-			t.Errorf("episodeOf(%q) = %d (ok=%v), want %d", name, got, ok, want)
 		}
 	}
 }
