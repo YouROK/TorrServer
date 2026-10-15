@@ -1,8 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { TorrentFileStat } from 'shared/api/types'
-
-describe('findCaptionSrc', () => {
+describe('resolveCaptionSrc', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.stubGlobal('window', {
@@ -12,31 +10,38 @@ describe('findCaptionSrc', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals()
+    vi.restoreAllMocks()
   })
 
-  it('returns a stream URL for a matching sidecar subtitle', async () => {
-    const { findCaptionSrc } = await import('./findCaptionSrc')
-    const video = { id: 0, path: 'Season 1/episode.mkv', length: 100 }
-    const files: TorrentFileStat[] = [video, { id: 1, path: 'Season 1/episode.en.srt', length: 1 }]
-
-    expect(findCaptionSrc(video, files, 'deadbeef')).toBe(
-      'http://localhost:8090/stream/episode.en.srt?link=deadbeef&index=1&play',
+  it('returns absolute /subs track URL preferring matching lang', async () => {
+    vi.doMock('shared/api/authCredentials', () => ({
+      authFetch: vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [
+          { index: 2, name: 'ep.en.srt', title: 'en', lang: 'en', format: 'srt', url: '/subs/deadbeef/1?track=2' },
+          { index: 3, name: 'ep.ru.ass', title: 'ru', lang: 'ru', format: 'ass', url: '/subs/deadbeef/1?track=3' },
+        ],
+      }),
+    }))
+    const { resolveCaptionSrc } = await import('./findCaptionSrc')
+    expect(await resolveCaptionSrc('deadbeef', 1, 'ru-RU')).toBe(
+      'http://localhost:8090/subs/deadbeef/1?track=3',
     )
   })
 
-  it('returns empty string when no caption file matches', async () => {
-    const { findCaptionSrc } = await import('./findCaptionSrc')
-    const video = { id: 0, path: 'movie.mkv', length: 100 }
-    const files: TorrentFileStat[] = [video, { id: 1, path: 'readme.txt', length: 1 }]
-
-    expect(findCaptionSrc(video, files, 'hash')).toBe('')
+  it('returns empty string when API has no tracks', async () => {
+    vi.doMock('shared/api/authCredentials', () => ({
+      authFetch: vi.fn().mockResolvedValue({ ok: true, json: async () => [] }),
+    }))
+    const { resolveCaptionSrc } = await import('./findCaptionSrc')
+    expect(await resolveCaptionSrc('hash', 0)).toBe('')
   })
 
-  it('accepts Path/Id field casing on torrent files', async () => {
-    const { findCaptionSrc } = await import('./findCaptionSrc')
-    const video = { Id: 2, Path: 'film.mp4', Length: 100 }
-    const files: TorrentFileStat[] = [video, { Id: 3, Path: 'film.vtt', Length: 1 }]
-
-    expect(findCaptionSrc({ id: 2, path: 'film.mp4', length: 100 }, files, 'abc')).toContain('film.vtt')
+  it('returns empty string on fetch failure', async () => {
+    vi.doMock('shared/api/authCredentials', () => ({
+      authFetch: vi.fn().mockRejectedValue(new Error('network')),
+    }))
+    const { resolveCaptionSrc } = await import('./findCaptionSrc')
+    expect(await resolveCaptionSrc('hash', 0)).toBe('')
   })
 })

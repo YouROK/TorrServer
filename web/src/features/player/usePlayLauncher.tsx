@@ -24,7 +24,7 @@ import { useSyncModalOpen } from 'shared/ui/ModalOpenContext'
 import { useOptionalAppToast } from 'shared/ui/Toast'
 
 import { extractAudioTracks, formatAudioTrackDisplay, type ProbeTrack } from './audioTrackLabel'
-import { findCaptionSrc } from './findCaptionSrc'
+import { resolveCaptionSrc } from './findCaptionSrc'
 import { waitForPlayableFiles } from './waitForPlayableFiles'
 
 /** Lazy: keeps hls.js out of the initial bundle — only fetched once a file is actually played. */
@@ -96,7 +96,7 @@ export function usePlayLauncher({
   autoPlayFileId,
   autoPlayTimecode,
 }: UsePlayLauncherArgs) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const toast = useOptionalAppToast()
   const queryClient = useQueryClient()
   const gstRuntime = useGStreamerRuntime()
@@ -187,8 +187,8 @@ export function usePlayLauncher({
     const trackTimecode = await ensureTrackTimecode()
     const useHls = shouldUseGStreamerPlayer(file.path, gstRuntime)
     const directStream = fileStreamUrl(hash, file)
-    const allFiles = await ensureAllTorrentFiles()
-    const captionSrc = findCaptionSrc(file, allFiles, hash)
+    // Progressive needs /subs (WebVTT + ASS/SSA). HLS external tracks come from GST.
+    const captionSrc = useHls ? '' : await resolveCaptionSrc(hash, file.id, i18n.language)
     const override = timecodeOverride ?? pendingTimecodeRef.current
     pendingTimecodeRef.current = undefined
     const initialTimecode = await resolveInitialTimecode(file.id, trackTimecode, override)

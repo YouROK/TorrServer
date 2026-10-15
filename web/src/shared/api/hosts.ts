@@ -20,6 +20,9 @@ export const cacheHost = () => `${torrserverHost}/cache`
 export const torrentUploadHost = () => `${torrserverHost}/torrent/upload`
 export const settingsHost = () => `${torrserverHost}/settings`
 export const streamHost = () => `${torrserverHost}/stream`
+/** External subtitle tracks for a video file (`GET /subs/{hash}/{id}`). */
+export const subsHost = (hash: string, id: number | string) =>
+  `${torrserverHost}/subs/${encodeURIComponent(hash)}/${id}`
 export const playlistAllHost = () => `${torrserverHost}/playlistall/all.m3u`
 export const ffpHost = (hash: string, id: number | string) => `${torrserverHost}/ffp/${hash}/${id}`
 export const downloadTestHost = (sizeMb: number) => `${torrserverHost}/download/${sizeMb}`

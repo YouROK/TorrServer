@@ -487,7 +487,13 @@ export default function VideoPlayer({
                       }}
                     >
                       {!hls && captionSrc ? (
-                        <track kind='captions' src={captionSrc} srcLang='und' label='Captions' default />
+                        <track
+                          kind='captions'
+                          src={withAuthMediaUrl(captionSrc)}
+                          srcLang='und'
+                          label='Captions'
+                          default
+                        />
                       ) : null}
                     </video>
                   </PlayerChrome>

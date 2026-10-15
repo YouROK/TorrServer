@@ -1,24 +1,34 @@
-import type { PlayableFile, TorrentFileStat } from 'shared/api/types'
-import { streamHost } from 'shared/api/hosts'
-import { toPlayableFile } from 'shared/torrent/toPlayableFile'
+import { authFetch } from 'shared/api/authCredentials'
+import { getTorrServerHost, subsHost } from 'shared/api/hosts'
 
-const fileBaseName = (path: string): string => path.split('\\').pop()?.split('/').pop() || path
-
-const fileStreamUrl = (hash: string, file: Pick<PlayableFile, 'id' | 'path'>): string =>
-  `${streamHost()}/${encodeURIComponent(fileBaseName(file.path))}?link=${hash}&index=${file.id}&play`
+export type SubTrack = {
+  index: number
+  name: string
+  title: string
+  lang: string
+  format: string
+  url: string
+}
 
 /**
- * Sidecar caption URL: same basename as the video plus `.srt` / `.vtt` elsewhere in the torrent.
- * Empty string when none found.
+ * Progressive-player caption URL via `GET /subs/{hash}/{id}` (server Match + WebVTT).
+ * Empty string when none found or the request fails. HLS gets external subs from GST.
  */
-export const findCaptionSrc = (file: PlayableFile, allFiles: TorrentFileStat[], hash: string): string => {
-  const base = file.path.replace(/\.[^/.]+$/, '')
-  const caption = allFiles.find(candidate => {
-    const path = candidate.path ?? candidate.Path ?? ''
-    const id = candidate.id ?? candidate.Id ?? -1
-    return id !== file.id && path.startsWith(base) && /\.(srt|vtt)$/i.test(path)
-  })
-  if (!caption) return ''
-  const captionFile = toPlayableFile(caption)
-  return fileStreamUrl(hash, captionFile)
+export const resolveCaptionSrc = async (
+  hash: string,
+  fileId: number,
+  preferLang?: string,
+): Promise<string> => {
+  try {
+    const res = await authFetch(subsHost(hash, fileId), { cache: 'no-store' })
+    if (!res.ok) return ''
+    const tracks = (await res.json()) as SubTrack[]
+    if (!Array.isArray(tracks) || tracks.length === 0) return ''
+    const lang = preferLang?.slice(0, 2).toLowerCase()
+    const pick = (lang && tracks.find(t => t.lang === lang)) || tracks[0]
+    if (!pick?.url) return ''
+    return pick.url.startsWith('http') ? pick.url : `${getTorrServerHost()}${pick.url}`
+  } catch {
+    return ''
+  }
 }

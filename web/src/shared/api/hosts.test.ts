@@ -20,6 +20,7 @@ describe('Hosts URL construction', () => {
     expect(hosts.getTorrServerHost()).toBe('https://ts.example:8443')
     expect(hosts.torrentsHost()).toBe('https://ts.example:8443/torrents')
     expect(hosts.streamHost()).toBe('https://ts.example:8443/stream')
+    expect(hosts.subsHost('abc', 2)).toBe('https://ts.example:8443/subs/abc/2')
     expect(hosts.playlistTorrHost).toBe(hosts.streamHost)
     expect(hosts.playlistTorrHost()).toBe(hosts.streamHost())
     expect(hosts.wafHost()).toBe('https://ts.example:8443/waf')
