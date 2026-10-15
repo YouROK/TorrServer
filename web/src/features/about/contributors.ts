@@ -39,4 +39,8 @@ export const CONTRIBUTORS: Contributor[] = [
   { name: 'Renat Sharipov', url: 'https://github.com/SHAREN' },
   { name: 'Artem', url: 'https://github.com/DrachenClon22' },
   { name: 'Nicholas Velten', url: 'https://github.com/nfvelten' },
+  { name: 'Struchkov Mark', url: 'https://github.com/uPagge' },
+  { name: 'Alexander', url: 'https://github.com/LuckyRu' },
+  { name: 'Mikhail', url: 'https://github.com/ManSio' },
+  { name: 'vladikshkwok', url: 'https://github.com/vladikshkwok' },
 ]

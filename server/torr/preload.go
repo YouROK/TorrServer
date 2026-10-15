@@ -131,6 +131,10 @@ func (t *Torrent) Preload(index int, size int64) {
 	}
 
 	readerStart := file.NewReader()
+	if readerStart == nil {
+		log.TLogln("End preload: null reader")
+		return
+	}
 	defer func() { _ = readerStart.Close() }()
 
 	readerStart.SetResponsive()
@@ -168,6 +172,11 @@ func (t *Torrent) Preload(index int, size int64) {
 			}
 
 			readerEnd := file.NewReader()
+			if readerEnd == nil {
+				log.TLogln("Err preload: null reader")
+				preloadErr = fmt.Errorf("null reader for end range")
+				return
+			}
 			defer func() { _ = readerEnd.Close() }() // Ensure reader is always closed
 
 			readerEnd.SetResponsive()

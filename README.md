@@ -51,6 +51,7 @@ allowing the cache size to be adjusted according to the system parameters and th
 - Optional DLNA server
 - Optional GStreamer HLS remuxing and transcoding (`-gst` builds from release 141.10)
 - Native [MCP](server/mcp/README.md) server for AI agents (OpenClaw, Hermes, and other MCP clients)
+- External subtitles (SRT/ASS/SSA/VTT to WebVTT) for web players and external players
 
 ## Getting Started
 
@@ -1107,6 +1108,20 @@ With all `Transcode*` options disabled, H.264, H.265/HEVC, AV1, and VP9 video is
 | `GET /gst/:hash/heartbeat` | Keep the task and its torrent active; returns torrent state details |
 | `GET /gst/remove` | Dispose the task and drop the torrent cache (`hash` or `id` query) |
 
+## External subtitles
+
+TorrServer can find subtitle files that lie next to a video inside a torrent and serve them to clients, converted to WebVTT or in their original format. It works in all builds and needs no external tools.
+
+```
+GET /subs/{hash}/{id}                  list subtitle tracks for the video file {id}
+GET /subs/{hash}/{id}?track={index}    return one subtitle file (WebVTT by default)
+```
+
+Query parameters for `track`: `format` (`vtt` or `original`) and `encoding` (`utf8` or `windows-1251`).
+
+See [server/subs/README.md](server/subs/README.md) for the supported formats and encodings, and for the file layouts inside a torrent that are recognized.
+
+
 ## Donate
 
 - [YooMoney](https://yoomoney.ru/to/410013733697114/200)
@@ -1133,4 +1148,24 @@ With all `Transcode*` options disabled, H.264, H.265/HEVC, AV1, and VP9 video is
 - [butaford](https://github.com/butaford) Pavel for make docker file and scripts
 - [filimonic](https://github.com/filimonic) Alexey D. Filimonov
 - [leporel](https://github.com/leporel) Viacheslav Evseev
+- [VuzzyM](https://github.com/VuzzyM) Vuzzy
+- [GriefNorth](https://github.com/GriefNorth)
+- [nikita322](https://github.com/nikita322) Nikita
+- [staners2](https://github.com/staners2) Dima Aratin
+- [kostiavn](https://github.com/kostiavn)
+- [srgsf](https://github.com/srgsf)
+- [ngcores](https://github.com/ngcores) for GStreamer
+- [Cleste](https://github.com/Cleste) Kirill Pimenov
+- [Fikirsiz](https://github.com/Fikirsiz)
+- [kirill-782](https://github.com/kirill-782)
+- [nikitenich](https://github.com/nikitenich) Ilya Nikitenkov
+- [nicuvam](https://github.com/nicuvam) Nicu
+- [letov404-ai](https://github.com/letov404-ai)
+- [SHAREN](https://github.com/SHAREN) Renat Sharipov
+- [DrachenClon22](https://github.com/DrachenClon22) Artem
+- [nfvelten](https://github.com/nfvelten) Nicholas Velten
+- [uPagge](https://github.com/uPagge) Struchkov Mark
+- [LuckyRu](https://github.com/LuckyRu) Alexander
+- [ManSio](https://github.com/ManSio) Mikhail
+- [vladikshkwok](https://github.com/vladikshkwok)
 - and others
