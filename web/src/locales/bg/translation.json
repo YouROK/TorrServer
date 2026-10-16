@@ -387,7 +387,8 @@
     "SortDescending": "Сортиране по низходящ ред",
     "Test": "Тест",
     "TorrentAddedSuccessfully": "Торентът е добавен успешно",
-    "TorznabHostURL": "URL адрес на Torznab сървъра"
+    "TorznabHostURL": "URL адрес на Torznab сървъра",
+    "TorznabHostURLHint": "Базов Torznab URL. Крайното /api е по избор — TorrServer го добавя, ако липсва."
   },
   "Tracker": "Тракер",
   "TurnOff": "Изключване",

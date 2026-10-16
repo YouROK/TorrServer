@@ -387,7 +387,8 @@
     "SortDescending": "降序排序",
     "Test": "测试",
     "TorrentAddedSuccessfully": "种子添加成功",
-    "TorznabHostURL": "Torznab主机URL"
+    "TorznabHostURL": "Torznab主机URL",
+    "TorznabHostURLHint": "Torznab 基础 URL。末尾的 /api 可选 — 若缺失，TorrServer 会自动添加。"
   },
   "Tracker": "Tracker",
   "TurnOff": "关闭",

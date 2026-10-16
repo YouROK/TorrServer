@@ -387,7 +387,8 @@
     "SortDescending": "За спаданням",
     "Test": "Тест",
     "TorrentAddedSuccessfully": "Торрент успішно додано",
-    "TorznabHostURL": "URL хосту Torznab"
+    "TorznabHostURL": "URL хосту Torznab",
+    "TorznabHostURLHint": "Базовий URL Torznab. Завершальний /api необов'язковий — TorrServer додасть його сам, якщо його немає."
   },
   "Tracker": "Трекер",
   "TurnOff": "Виключити",

@@ -387,7 +387,8 @@
     "SortDescending": "Sortare descrescătoare",
     "Test": "Test",
     "TorrentAddedSuccessfully": "Torrent adăugat cu succes",
-    "TorznabHostURL": "URL-ul serverului Torznab"
+    "TorznabHostURL": "URL-ul serverului Torznab",
+    "TorznabHostURLHint": "URL de bază Torznab. /api la final este opțional — TorrServer îl adaugă dacă lipsește."
   },
   "Tracker": "Tracker",
   "TurnOff": "Oprire",
