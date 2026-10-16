@@ -105,21 +105,18 @@ func statusFromSpec(tr *torr.Torrent) *state.TorrentStatus {
 	st.Title = tr.Title
 	st.Name = info.Name
 
-	files := info.UpvertedFiles()
-	sort.Slice(files, func(i, j int) bool {
-		return strings.Join(files[i].Path, "/") < strings.Join(files[j].Path, "/")
-	})
-
-	for i, f := range files {
-		path := strings.Join(f.Path, "/")
-		if path == "" {
-			path = info.Name
-		}
+	// same paths and order as Torrent.Status, so the ids match what /stream resolves
+	for _, f := range info.UpvertedFiles() {
 		st.FileStats = append(st.FileStats, &state.TorrentFileStat{
-			Id:     i + 1,
-			Path:   path,
+			Path:   strings.Join(append([]string{info.BestName()}, f.BestPath()...), "/"),
 			Length: f.Length,
 		})
+	}
+	sort.Slice(st.FileStats, func(i, j int) bool {
+		return utils.CompareStrings(st.FileStats[i].Path, st.FileStats[j].Path)
+	})
+	for i, f := range st.FileStats {
+		f.Id = i + 1
 	}
 
 	return st

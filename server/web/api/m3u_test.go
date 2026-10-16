@@ -8,10 +8,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/bencode"
+	"github.com/anacrolix/torrent/metainfo"
 	"github.com/gin-contrib/location/v2"
 	"github.com/gin-gonic/gin"
 
 	sets "server/settings"
+	"server/torr"
 	"server/web/sslcerts"
 )
 
@@ -138,5 +142,35 @@ func TestMediaBaseEndpoint(t *testing.T) {
 	sets.HttpAuth = true
 	if w := get(); w.Code != http.StatusUnauthorized {
 		t.Errorf("without credentials: %d, want 401", w.Code)
+	}
+}
+
+func TestStatusFromSpecMatchesTorrentFileIDs(t *testing.T) {
+	info := metainfo.Info{
+		Name:        "Show",
+		PieceLength: 16 << 10,
+		Files: []metainfo.FileInfo{
+			{Path: []string{"Episode 10.mp4"}, Length: 1},
+			{Path: []string{"Episode 2.mp4"}, Length: 1},
+			{Path: []string{"Episode 3.mp4"}, Length: 1},
+		},
+	}
+	infoBytes, err := bencode.Marshal(info)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tr := &torr.Torrent{TorrentSpec: &torrent.TorrentSpec{InfoBytes: infoBytes}}
+
+	// Status numbers files by their library path sorted with utils.CompareStrings,
+	// and stream links resolve index= against those ids.
+	want := []string{"Show/Episode 2.mp4", "Show/Episode 3.mp4", "Show/Episode 10.mp4"}
+	st := statusFromSpec(tr)
+	if st == nil || len(st.FileStats) != len(want) {
+		t.Fatalf("statusFromSpec = %+v", st)
+	}
+	for i, f := range st.FileStats {
+		if f.Id != i+1 || f.Path != want[i] {
+			t.Errorf("file %d = {Id: %d, Path: %q}, want {Id: %d, Path: %q}", i, f.Id, f.Path, i+1, want[i])
+		}
 	}
 }
