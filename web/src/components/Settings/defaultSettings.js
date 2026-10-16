@@ -5,6 +5,8 @@ export default {
   UseDisk: false,
   TorrentsSavePath: '',
   RemoveCacheOnDrop: false,
+  LongTermCache: false,
+  DiskCacheSize: 50 * 1024 * 1024 * 1024,
   ForceEncrypt: false,
   RetrackersMode: 1,
   TrackersListURL: '',

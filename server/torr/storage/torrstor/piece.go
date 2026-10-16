@@ -53,11 +53,15 @@ func (p *Piece) ReadAt(b []byte, off int64) (n int, err error) {
 
 func (p *Piece) MarkComplete() error {
 	p.Complete = true
+	p.cache.pieceCompleted(p.Id)
 	return nil
 }
 
 func (p *Piece) MarkNotComplete() error {
 	p.Complete = false
+	if p.dPiece != nil {
+		p.dPiece.discardFailed()
+	}
 	return nil
 }
 
@@ -74,8 +78,8 @@ func (p *Piece) Release() {
 	} else {
 		p.dPiece.Release()
 	}
-	// if !p.cache.isClosed {
-	p.cache.torrent.Piece(p.Id).SetPriority(torrent.PiecePriorityNone)
-	p.cache.torrent.Piece(p.Id).UpdateCompletion()
-	//}
+	if p.cache.torrent != nil {
+		p.cache.torrent.Piece(p.Id).SetPriority(torrent.PiecePriorityNone)
+		p.cache.torrent.Piece(p.Id).UpdateCompletion()
+	}
 }

@@ -328,7 +328,9 @@
     "UseVLCDesktopHintPrefix": "На ПК потрібен",
     "UseVLCHint": "Додати кнопку програвача VLC до списку торрент-контенту",
     "ViewedHistoryStorage": "Збереження історії переглядів:",
-    "ViewedStorageHint": "Виберіть місце збереження історії переглядів серій"
+    "ViewedStorageHint": "Виберіть місце збереження історії переглядів серій",
+    "LongTermCacheDisableWarning": "Після вимкнення опції весь збережений кеш буде видалено",
+    "LongTermCacheDisableConfirm": "Вимкнути"
   },
   "Size": "Розмір",
   "SpecialThanks": "Окрема подяка",
@@ -433,5 +435,16 @@
     "Warnings": "Попередження розбору:",
     "Whitelist": "Білий список IP",
     "WhitelistHint": "Порожній список вимикає whitelist. Приклад: local:127.0.0.1 або 10.0.0.0/8"
+  },
+  "DownloadToCache": {
+    "Torrent": "Завантажити",
+    "File": "Завантажити",
+    "Cancel": "Скасувати",
+    "Cached": "У кеші",
+    "InCache": "У кеші",
+    "Error": "Не вдалося",
+    "TorrentHint": "Завантажити весь торрент у кеш на сервері",
+    "FileHint": "Завантажити файл повністю у кеш на сервері",
+    "CancelHint": "Зупинити завантаження в кеш"
   }
 }

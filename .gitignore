@@ -44,3 +44,6 @@ toolchains/
 !/server/gstreamer/gst-libs/
 !/server/gstreamer/gst-libs/**/
 !/server/gstreamer/gst-libs/**
+
+# Local torrent disk cache (TorrentsSavePath)
+/server/cach/

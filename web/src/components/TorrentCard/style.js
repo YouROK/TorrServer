@@ -229,6 +229,19 @@ export const StyledButton = styled.button`
       opacity: 0.75;
     }
 
+    /* a finished state, not an action: keep it readable and don't react to hover */
+    &[aria-disabled='true'] {
+      cursor: default;
+
+      :hover {
+        background: ${buttonBGColor};
+      }
+
+      svg {
+        color: #4caf50;
+      }
+    }
+
     > :first-child {
       margin-right: 10px;
     }

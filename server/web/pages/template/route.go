@@ -6,7 +6,7 @@ import (
 
 func RouteWebPages(route gin.IRouter) {
 	route.GET("/", func(c *gin.Context) {
-		serve(c, Indexhtml, `"8e4d13e914d47cc63880dbd2b4178456"`, "text/html; charset=utf-8", false)
+		serve(c, Indexhtml, `"e90e765fb314516588c7f9a81cf3a133"`, "text/html; charset=utf-8", false)
 	})
 
 	route.GET("/apple-splash-1125-2436.jpg", func(c *gin.Context) {
@@ -114,11 +114,11 @@ func RouteWebPages(route gin.IRouter) {
 	})
 
 	route.GET("/asset-manifest.json", func(c *gin.Context) {
-		serve(c, Assetmanifestjson, `"38042b94237082f90ef03001ab32aabc"`, "application/json", false)
+		serve(c, Assetmanifestjson, `"f799e79e0771be605a93233bfbf640f6"`, "application/json", false)
 	})
 
 	route.GET("/browserconfig.xml", func(c *gin.Context) {
-		serve(c, Browserconfigxml, `"2192958eb6798cc05ecc87827dd6dc22"`, "application/xml; charset=utf-8", false)
+		serve(c, Browserconfigxml, `"4039260195c5eddab5b1eebb54eff86c"`, "text/xml; charset=utf-8", false)
 	})
 
 	route.GET("/dlnaicon-120.png", func(c *gin.Context) {
@@ -146,7 +146,7 @@ func RouteWebPages(route gin.IRouter) {
 	})
 
 	route.GET("/index.html", func(c *gin.Context) {
-		serve(c, Indexhtml, `"8e4d13e914d47cc63880dbd2b4178456"`, "text/html; charset=utf-8", false)
+		serve(c, Indexhtml, `"e90e765fb314516588c7f9a81cf3a133"`, "text/html; charset=utf-8", false)
 	})
 
 	route.GET("/logo.png", func(c *gin.Context) {
@@ -154,7 +154,7 @@ func RouteWebPages(route gin.IRouter) {
 	})
 
 	route.GET("/lord-icon-2.0.2.js", func(c *gin.Context) {
-		serve(c, Lordicon202js, `"c4f3c8819396edbaab975c9a6c9ed1d4"`, "application/javascript; charset=utf-8", false)
+		serve(c, Lordicon202js, `"93327477d0d3e06e1b998393867dec25"`, "application/javascript; charset=utf-8", false)
 	})
 
 	route.GET("/mstile-150x150.png", func(c *gin.Context) {
@@ -162,27 +162,27 @@ func RouteWebPages(route gin.IRouter) {
 	})
 
 	route.GET("/site.webmanifest", func(c *gin.Context) {
-		serve(c, Sitewebmanifest, `"e1cb30ce5123a7f926497f48075ad250"`, "application/manifest+json", false)
+		serve(c, Sitewebmanifest, `"2595fee830780b56d1ffa2372e163ccc"`, "application/manifest+json", false)
 	})
 
-	route.GET("/static/js/2.7a202c12.chunk.js", func(c *gin.Context) {
-		serve(c, Staticjs27a202c12chunkjs, `"0ad1c473f77e7e1d60620956fa2a10ab"`, "application/javascript; charset=utf-8", true)
+	route.GET("/static/js/2.06a4bddc.chunk.js", func(c *gin.Context) {
+		serve(c, Staticjs206a4bddcchunkjs, `"c9b868d3d2de0114452f3e3e3ee450a4"`, "application/javascript; charset=utf-8", true)
 	})
 
-	route.GET("/static/js/2.7a202c12.chunk.js.LICENSE.txt", func(c *gin.Context) {
-		serve(c, Staticjs27a202c12chunkjsLICENSEtxt, `"9c4a958bc09e18ebd8a6506ecc2d412e"`, "text/plain; charset=utf-8", true)
+	route.GET("/static/js/2.06a4bddc.chunk.js.LICENSE.txt", func(c *gin.Context) {
+		serve(c, Staticjs206a4bddcchunkjsLICENSEtxt, `"9c4a958bc09e18ebd8a6506ecc2d412e"`, "text/plain; charset=utf-8", true)
 	})
 
-	route.GET("/static/js/2.7a202c12.chunk.js.map", func(c *gin.Context) {
-		serve(c, Staticjs27a202c12chunkjsmap, `"ba6f3698e36620ac76c053fa00ab50ea"`, "application/json", true)
+	route.GET("/static/js/2.06a4bddc.chunk.js.map", func(c *gin.Context) {
+		serve(c, Staticjs206a4bddcchunkjsmap, `"ffd79475684dc47a28dc2e43fe8e3fe6"`, "application/json", true)
 	})
 
-	route.GET("/static/js/main.245f0d9e.chunk.js", func(c *gin.Context) {
-		serve(c, Staticjsmain245f0d9echunkjs, `"ba69979acdde5056b9c52ab94218aa25"`, "application/javascript; charset=utf-8", true)
+	route.GET("/static/js/main.5b9fcd17.chunk.js", func(c *gin.Context) {
+		serve(c, Staticjsmain5b9fcd17chunkjs, `"1c9a285ea33cb8afb7508b0d1320007b"`, "application/javascript; charset=utf-8", true)
 	})
 
-	route.GET("/static/js/main.245f0d9e.chunk.js.map", func(c *gin.Context) {
-		serve(c, Staticjsmain245f0d9echunkjsmap, `"4fbadc75304001165fae6299f4d5db6b"`, "application/json", true)
+	route.GET("/static/js/main.5b9fcd17.chunk.js.map", func(c *gin.Context) {
+		serve(c, Staticjsmain5b9fcd17chunkjsmap, `"a83cad731dadafe23408205784b2058f"`, "application/json", true)
 	})
 
 	route.GET("/static/js/runtime-main.5ed86a79.js", func(c *gin.Context) {

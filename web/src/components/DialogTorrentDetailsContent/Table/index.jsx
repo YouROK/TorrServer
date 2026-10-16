@@ -12,6 +12,7 @@ import {
   useGStreamerRuntime,
 } from 'utils/GStreamer'
 import { externalLink, useExternalMediaBase } from 'utils/MediaBase'
+import { cancelDownload, downloadErrorMessage, downloadToCache, loadedPercent, useLongTermCache } from 'utils/Download'
 
 import VideoPlayer from '../../VideoPlayer'
 import { TableStyle, ShortTableWrapper, ShortTable } from './style'
@@ -29,6 +30,9 @@ ptt.addHandler('season', /сезон[- |. ](\d{1,3})|(\d{1,3})[- |. ]сезон/
   type: 'integer',
 })
 
+// "Cached" is a finished state rather than an action: readable, not greyed out like a disabled button
+const cachedButtonStyle = { color: '#2e7d32', borderColor: '#2e7d32', cursor: 'default' }
+
 const Table = memo(
   ({ playableFileList, viewedFileList, selectedSeason, seasonAmount, hash }) => {
     const { t } = useTranslation()
@@ -36,6 +40,20 @@ const Table = memo(
     const gstRuntime = useGStreamerRuntime()
     const mediaBase = useExternalMediaBase()
     const preloadBuffer = fileId => fetch(`${streamHost()}?link=${hash}&index=${fileId}&preload`)
+    const longTermCache = useLongTermCache()
+    const [pendingDownloads, setPendingDownloads] = useState({})
+    const [downloadErrors, setDownloadErrors] = useState({})
+    const toggleFileDownload = async (fileId, downloading) => {
+      setPendingDownloads(current => ({ ...current, [fileId]: true }))
+      setDownloadErrors(current => ({ ...current, [fileId]: '' }))
+      try {
+        await (downloading ? cancelDownload(hash, fileId) : downloadToCache(hash, fileId))
+      } catch (error) {
+        setDownloadErrors(current => ({ ...current, [fileId]: downloadErrorMessage(error) }))
+      } finally {
+        setPendingDownloads(current => ({ ...current, [fileId]: false }))
+      }
+    }
     const getFileLink = (path, id) =>
       `${streamHost()}/${encodeURIComponent(path.split('\\').pop().split('/').pop())}?link=${hash}&index=${id}&play`
     const getPlayer = (path, id) => {
@@ -86,7 +104,7 @@ const Table = memo(
           </thead>
 
           <tbody>
-            {playableFileList.map(({ id, path, length }) => {
+            {playableFileList.map(({ id, path, length, loaded, downloading }) => {
               const { title, resolution, episode, season } = ptt.parse(path)
               const isViewed = viewedFileList?.includes(id)
               const link = getFileLink(path, id)
@@ -96,6 +114,8 @@ const Table = memo(
               const infuseLink = `infuse://x-callback-url/play?url=${encodeURIComponent(fullLink)}`
               const senPlayerLink = `senplayer://x-callback-url/play?url=${encodeURIComponent(fullLink)}`
               const iinaLink = `iina://weblink?url=${encodeURIComponent(fullLink)}`
+              const cachedPercent = loadedPercent(loaded, length)
+              const isCached = length > 0 && loaded >= length
 
               return (
                 (season === selectedSeason || !seasonAmount?.length) && (
@@ -105,12 +125,43 @@ const Table = memo(
                     {fileHasSeasonText && seasonAmount?.length === 1 && <td data-label='season'>{season}</td>}
                     {fileHasEpisodeText && <td data-label='episode'>{episode}</td>}
                     {fileHasResolutionText && <td data-label='resolution'>{resolution}</td>}
-                    <td data-label='size'>{humanizeSize(length)}</td>
+                    <td data-label='size'>
+                      {humanizeSize(length)}
+                      {longTermCache && cachedPercent > 0 && (
+                        <div title={t('DownloadToCache.InCache')}>
+                          {t('DownloadToCache.InCache')}: {cachedPercent}%
+                        </div>
+                      )}
+                    </td>
                     <td>
                       <div className='button-cell'>
                         <Button onClick={() => preloadBuffer(id)} variant='outlined' color='primary' size='small'>
                           {t('Preload')}
                         </Button>
+                        {longTermCache && (
+                          <Button
+                            onClick={isCached && !downloading ? undefined : () => toggleFileDownload(id, downloading)}
+                            disabled={!!pendingDownloads[id]}
+                            aria-disabled={isCached && !downloading}
+                            disableRipple={isCached && !downloading}
+                            style={isCached && !downloading ? cachedButtonStyle : undefined}
+                            title={
+                              downloadErrors[id] ||
+                              (downloading ? t('DownloadToCache.CancelHint') : t('DownloadToCache.FileHint'))
+                            }
+                            variant='outlined'
+                            color='primary'
+                            size='small'
+                          >
+                            {downloadErrors[id]
+                              ? t('DownloadToCache.Error')
+                              : isCached && !downloading
+                              ? t('DownloadToCache.Cached')
+                              : downloading
+                              ? `${t('DownloadToCache.Cancel')} ${cachedPercent}%`
+                              : t('DownloadToCache.File')}
+                          </Button>
+                        )}
                         {isApple && isInfuseUsed && (
                           <a style={{ textDecoration: 'none' }} href={infuseLink}>
                             <Button style={{ width: '100%' }} variant='outlined' color='primary' size='small'>
