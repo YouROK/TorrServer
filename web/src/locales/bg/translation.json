@@ -568,7 +568,7 @@
     "Category": "Категория",
     "ConnectionSuccessful": "Връзката е успешна",
     "EnableTorznabSearch": "Активирай Torznab търсене",
-    "HostHint": "Базов Torznab URL. Краен /api е по избор — TorrServer го добавя ако липсва. Jackett: …/torznab/ — Prowlarr: http://localhost:9696/1.",
+    "HostHint": "Базов Torznab URL; крайното /api е по избор. Jackett: …/indexers/all/results/torznab — Prowlarr: http://localhost:9696/1",
     "LabelAll": "Всички",
     "LabelDefault": "По подразбиране",
     "LabelManual": "Ръчно",

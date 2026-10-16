@@ -175,7 +175,7 @@ export default function TorznabSettingsPanel({ settings, onUpdate, footerButtonC
         </TextField>
         <TextField value={newHost} onChange={setNewHost}>
           <Label>{t('Torznab.TorznabHostURL')}</Label>
-          <Input placeholder='http://localhost:9117/torznab/api' />
+          <Input placeholder='http://localhost:9117/api/v2.0/indexers/all/results/torznab' />
           <Description>{t('Torznab.HostHint')}</Description>
         </TextField>
         <TextField value={newKey} onChange={setNewKey}>

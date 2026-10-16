@@ -568,7 +568,7 @@
     "Category": "分类",
     "ConnectionSuccessful": "连接成功",
     "EnableTorznabSearch": "启用Torznab搜索",
-    "HostHint": "Torznab base URL. A trailing /api is optional — TorrServer adds it if missing. Jackett: …/torznab/ — Prowlarr: http://localhost:9696/1.",
+    "HostHint": "Torznab 基础 URL；末尾 /api 可选。Jackett：…/indexers/all/results/torznab — Prowlarr：http://localhost:9696/1",
     "LabelAll": "全部",
     "LabelDefault": "默认",
     "LabelManual": "手动",
