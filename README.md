@@ -753,23 +753,22 @@ Configure it in the web UI: **Settings → Torznab**.
 
 Each Torznab indexer needs:
 
-- **Host URL**: full URL to the Torznab API endpoint.
-  - Jackett example:
+- **Host URL**: Torznab base URL. TorrServer always calls the `/api` endpoint and accepts Host with or without a trailing `/api` or `/api/` (it will not be doubled).
+  - Jackett example (either form works):
 
   ```shell
   http://192.168.1.10:9117/api/v2.0/indexers/all/results/torznab/
+  http://192.168.1.10:9117/api/v2.0/indexers/all/results/torznab/api
   ```
 
   - Prowlarr example:
-  
+
   ```shell
   http://localhost:9696/1
   ```
-  
-  - Make sure to include the correct trailing slash (`/`) in your indexer's URL,
-  as required by your Torznab provider. TorrServer will try to properly format the path,
-  but matching your indexer's expected format is best to avoid connection issues.
-  
+
+  - Other indexers often document the full endpoint with `/api` (e.g. `http://127.0.0.1:9117/torznab/api`). You can paste that as-is.
+
 - **API Key**: the key from your Torznab indexer manager.
 
 ### Enabling Torznab search

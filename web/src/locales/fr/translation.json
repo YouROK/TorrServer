@@ -381,7 +381,8 @@
     "SortDescending": "Trier par ordre décroissant",
     "Test": "Tester",
     "TorrentAddedSuccessfully": "Torrent ajouté avec succès",
-    "TorznabHostURL": "URL de l'hôte Torznab"
+    "TorznabHostURL": "URL de l'hôte Torznab",
+    "TorznabHostURLHint": "URL de base Torznab. Un /api final est facultatif — TorrServer l'ajoute s'il est absent."
   },
   "Tracker": "Tracker",
   "TurnOff": "Éteindre",

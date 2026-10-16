@@ -181,11 +181,12 @@ export default function TorznabSettings({ settings, inputForm, updateSettings, i
             label={t('Torznab.TorznabHostURL')}
             value={newHost}
             onChange={e => setNewHost(e.target.value)}
-            placeholder='http://localhost:9117'
+            placeholder='http://localhost:9117/torznab/api'
             variant='outlined'
             size='small'
             fullWidth
           />
+          <FormHelperText margin='none'>{t('Torznab.TorznabHostURLHint')}</FormHelperText>
           <TextField
             label={t('Torznab.APIKey')}
             value={newKey}
