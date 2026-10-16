@@ -27,7 +27,7 @@ Telegram bot for managing [TorrServer](https://github.com/YouROK/TorrServer) —
 Start TorrServer with a Telegram bot token:
 
 ```bash
-TorrServer --tg YOUR_BOT_TOKEN
+TorrServer --tgtoken YOUR_BOT_TOKEN
 ```
 
 Or use `-T`:

@@ -227,8 +227,8 @@ On FreeBSD (TrueNAS/FreeNAS) you can use this plugin: <https://github.com/filka9
 - `--pubipv6 PUBIPV6`, `-6 PUBIPV6` - set public IPv6 addr
 - `--searchwa`, `-s` - allow search without authentication
 - `--maxsize MAXSIZE`, `-m MAXSIZE` - max allowed stream size (in Bytes)
-- `--tg TGTOKEN`, `-T TGTOKEN` - [Telegram bot](server/tgbot/README.md) token
-- `--fuse FUSEPATH`, `-f FUSEPATH` - FUSE mount path
+- `--tgtoken TGTOKEN`, `-T TGTOKEN` - [Telegram bot](server/tgbot/README.md) token
+- `--fusepath FUSEPATH`, `-f FUSEPATH` - FUSE mount path
 - `--webdav` - enable WebDAV
 - `--proxyurl PROXYURL` - set proxy URL for BitTorrent traffic (HTTP, SOCKS4, SOCKS5, SOCKS5H), example: socks5h://user:password@example.com:2080
 - `--proxymode PROXYMODE` - set proxy mode: "tracker" (only HTTP trackers, default), "peers" (only peer connections), or "full" (all traffic)
@@ -238,7 +238,7 @@ On FreeBSD (TrueNAS/FreeNAS) you can use this plugin: <https://github.com/filka9
 Example:
 
 ```bash
-TorrServer-darwin-arm64 [--port PORT] [--ip IP ...] [--path PATH] [--logpath LOGPATH] [--weblogpath WEBLOGPATH] [--rdb] [--httpauth] [--dontkill] [--ui] [--torrentsdir TORRENTSDIR] [--torrentaddr TORRENTADDR] [--pubipv4 PUBIPV4] [--pubipv6 PUBIPV6] [--searchwa] [--maxsize MAXSIZE] [--tg TGTOKEN] [--fuse FUSEPATH] [--webdav] [--ssl] [--sslport PORT] [--sslcert PATH] [--sslkey PATH] [--force-https] [--http-media] [--https-only]
+TorrServer-darwin-arm64 [--port PORT] [--ip IP ...] [--path PATH] [--logpath LOGPATH] [--weblogpath WEBLOGPATH] [--rdb] [--httpauth] [--dontkill] [--ui] [--torrentsdir TORRENTSDIR] [--torrentaddr TORRENTADDR] [--pubipv4 PUBIPV4] [--pubipv6 PUBIPV6] [--searchwa] [--maxsize MAXSIZE] [--tgtoken TGTOKEN] [--fusepath FUSEPATH] [--webdav] [--ssl] [--sslport PORT] [--sslcert PATH] [--sslkey PATH] [--force-https] [--http-media] [--https-only]
 ```
 
 ### Running in Docker & Docker Compose
@@ -283,8 +283,8 @@ docker run --rm -d --name torrserver -v ~/ts:/opt/ts -p 8090:8090 ghcr.io/yourok
 - `TS_PUBLIC_IPV4_ADDR` – Sets the public IPv4 address using the `--pubipv4` flag.
 - `TS_PUBLIC_IPV6_ADDR` – Sets the public IPv6 address using the `--pubipv6` flag.
 - `TS_MAX_SIZE` – Defines the maximum allowed stream size (in bytes) via the `--maxsize` flag.
-- `TS_TELEGRAM_TOKEN` – Sets the Telegram bot token using the `--tg` flag.
-- `TS_FUSE_PATH` – Sets the FUSE mount point path using the `--fuse` flag.
+- `TS_TELEGRAM_TOKEN` – Sets the Telegram bot token using the `--tgtoken` flag.
+- `TS_FUSE_PATH` – Sets the FUSE mount point path using the `--fusepath` flag.
 - `TS_WEBDAV_ENABLE` – If set to `1`, enables WebDAV support via the `--webdav` flag.
 
 Example with full override command (on default values):
@@ -295,6 +295,8 @@ docker run --rm -d -e TS_PORT=5665 -e TS_DONTKILL=1 -e TS_HTTPAUTH=1 -e TS_RDB=1
 
 #### Docker Compose
 
+With `network_mode: host` (needed for DLNA), do not publish `ports:` — the container uses the host network directly. Use bridge networking and a `ports` mapping only when DLNA is not required.
+
 ```yml
 # docker-compose.yml
 
@@ -303,7 +305,7 @@ services:
     torrserver:
         image: ghcr.io/yourok/torrserver
         container_name: torrserver
-        network_mode: host    # to allow DLNA feature
+        network_mode: host    # to allow DLNA feature; omit ports: in this mode
         environment:
             - TS_PORT=5665
             - TS_DONTKILL=1
@@ -313,8 +315,6 @@ services:
         volumes:
             - './CACHE:/opt/ts/torrents'
             - './CONFIG:/opt/ts/config'
-        ports:
-            - '5665:5665'
         restart: unless-stopped
         
 
@@ -353,7 +353,7 @@ More info at <https://github.com/YouROK/TorrServer/tree/master/web#readme>
 
 #### Server
 
-- Install [Golang](https://golang.org/doc/install) 1.20+
+- Install [Golang](https://golang.org/doc/install) 1.25+
 - Go to the TorrServer source directory
 - Run build script under linux or macOS `build-all.sh`
 
@@ -770,6 +770,11 @@ Each Torznab indexer needs:
   - Other indexers often document the full endpoint with `/api` (e.g. `http://127.0.0.1:9117/torznab/api`). You can paste that as-is.
 
 - **API Key**: the key from your Torznab indexer manager.
+- **Name** (optional): label shown in the UI instead of the host URL.
+- **Categories** / **CatType** (optional, Pro mode in the UI):
+  - `default` — Movies and TV (`5000,2000`)
+  - `manual` — comma-separated Torznab category IDs
+  - `all` — no category filter
 
 ### Enabling Torznab search
 
@@ -799,7 +804,7 @@ cd server
 CGO_ENABLED=0 go build -tags="nosqlite gst" -trimpath -o TorrServer-gst ./cmd
 ```
 
-Supported gst targets are Windows amd64, Linux amd64/arm64, and macOS amd64/arm64. A Windows single-file build with an embedded runtime additionally uses the `embed_gstlib` tag and `server/gstreamer/gst-libs/win-x86_64`; see [BUILD_WINDOWS_GSTREAMER.md](BUILD_WINDOWS_GSTREAMER.md).
+Supported gst targets are Windows amd64, Linux amd64/arm64, and macOS amd64/arm64. A Windows single-file build with an embedded runtime additionally uses the `embed_gstlib` tag and `server/gstreamer/gst-libs/win-x86_64`; see [`.github/scripts/build-gst-windows.ps1`](.github/scripts/build-gst-windows.ps1).
 
 ### Runtime loading
 
@@ -866,7 +871,7 @@ Package roles:
 
 The selected repository must provide GStreamer 1.22 or newer.
 
-Hardware encoders are optional. They also require a compatible vendor driver and GStreamer encoder plugin; TorrServer tests the available candidates and falls back to `x264enc` when none can start.
+Hardware encoders are optional. They also require a compatible vendor driver and GStreamer encoder plugin; TorrServer tests the available candidates and falls back to `x264enc` when none can start. Candidates include NVENC, QSV, AMF, D3D11/MF, D3D12, and VAAPI (`vah264enc`) on Linux. On Linux, install something like `gstreamer1.0-vaapi` (or the distro equivalent) and a working GPU driver (`vainfo` is useful for checks); TorrServer probes what can start and uses `x264enc` if none succeed.
 
 **Fedora / RHEL / Rocky / AlmaLinux**
 
