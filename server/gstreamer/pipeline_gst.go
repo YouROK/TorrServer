@@ -685,6 +685,13 @@ func videoIsTranscoded(conf Config, probe ProbeInfo) bool {
 }
 
 func (r *gstRunner) Seek(seconds float64) bool {
+	if r.pipeline != 0 && r.externalAudioActive() {
+		// The audio comes from a source of its own, which has to be seeked together with
+		// the video. That is done by startPipeline, so instead of reusing the running
+		// pipeline it is restarted, the way it is after a freeze.
+		gstTaskDebugf(r.task, "seek requested=%.3fs: restarting the pipeline (external audio)", seconds)
+		r.freezeAtPosition(seconds)
+	}
 	r.ensureTransientState()
 	r.discardReadySegment()
 	r.resetSubtitleProgress(seconds)
@@ -723,6 +730,9 @@ func (r *gstRunner) Seek(seconds float64) bool {
 func (r *gstRunner) reusePipeline(seconds float64, accurate bool, waitTimeout time.Duration) (float64, error) {
 	if r.pipeline == 0 || r.bus == 0 || r.sink == 0 {
 		return 0, errors.New("pipeline cannot be reused")
+	}
+	if r.externalAudioActive() {
+		return 0, errors.New("pipeline with external audio cannot be reused")
 	}
 	r.stopBusWatch()
 	if err := r.setPipelineState(r.pipeline, r.bus, gstStatePaused); err != nil {
@@ -1341,6 +1351,19 @@ func (r *gstRunner) startPipeline(seconds float64) (float64, error) {
 			cleanup()
 			return 0, fmt.Errorf("gstreamer seek failed: %w", err)
 		}
+		// External audio is a separate source and must be seeked as well. With a cue
+		// timeline the segments start on keyframes, so the video starts exactly at seekNS
+		// and the audio can be seeked at once, as if both streams came from one demuxer.
+		// Without cues the keyframe the video snapped to is known only after the seek.
+		audioSeeked := false
+		if r.externalAudioActive() && r.task.Cue != nil {
+			if err := sendExternalAudioSeekEvent(pipeline, externalAudioSeekFlags, seekNS); err != nil {
+				cleanup()
+				return 0, fmt.Errorf("gstreamer external audio seek failed: %w", err)
+			}
+			audioSeeked = true
+			gstTaskDebugf(r.task, "external audio seek sent position=%.3fs", seconds)
+		}
 		asyncDone, err := gstRuntime.waitForSeekDone(bus, pipelineStateTimeout)
 		if err != nil {
 			cleanup()
@@ -1373,6 +1396,15 @@ func (r *gstRunner) startPipeline(seconds float64) (float64, error) {
 		}
 
 		actualStartSeconds = r.querySeekPosition(pipeline, seconds)
+
+		if r.externalAudioActive() && !audioSeeked {
+			audioNS := r.externalAudioStartNS(actualStartSeconds)
+			if err := r.seekExternalAudio(pipeline, bus, audioNS); err != nil {
+				cleanup()
+				return 0, fmt.Errorf("gstreamer external audio seek to %.3fs failed: %w", float64(audioNS)/1_000_000_000, err)
+			}
+			gstTaskDebugf(r.task, "external audio seeked position=%.3fs", float64(audioNS)/1_000_000_000)
+		}
 	}
 
 	if err := r.setPipelineState(pipeline, bus, gstStatePlaying); err != nil {

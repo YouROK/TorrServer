@@ -51,7 +51,7 @@ func TestPipelineEmbeddedAudioIsReencoded(t *testing.T) {
 			t.Errorf("pipeline lacks %q:\n%s", want, args)
 		}
 	}
-	if strings.Contains(args, externalAudioParseName) {
+	if strings.Contains(args, externalAudioSeekElement) {
 		t.Error("an embedded track must not get the name of the external branch")
 	}
 }
@@ -72,9 +72,9 @@ func TestPipelineExternalAudioHasOwnSource(t *testing.T) {
 
 	for _, want := range []string{
 		`souphttpsrc location="http://127.0.0.1:8090/stream/?link=h&index=7&play" is-live=false keep-alive=true timeout=60 retries=5 `,
-		"! decodebin ! audioconvert",
+		"! decodebin ! audioconvert name=" + externalAudioSeekElement + " dithering=none noise-shaping=none ! audioresample",
 		" ! avenc_aac bitrate=",
-		" ! aacparse name=" + externalAudioParseName + " ! audio/mpeg,mpegversion=4,stream-format=raw,rate=",
+		" ! aacparse ! audio/mpeg,mpegversion=4,stream-format=raw,rate=",
 		" ! mux.audio_0 ",
 	} {
 		if !strings.Contains(args, want) {
@@ -135,5 +135,40 @@ func TestResolveAudioIndex(t *testing.T) {
 		if got := resolveAudioIndex(test.task, test.requested); got != test.want {
 			t.Errorf("%s: resolveAudioIndex(%d) = %d, want %d", test.name, test.requested, got, test.want)
 		}
+	}
+}
+
+func TestExternalAudioSeekElementIsUnique(t *testing.T) {
+	task := pipelineTestTask(TrackInfo{Type: "audio", Index: 0, PadName: "audio_0", Codec: "FLAC", CapsName: "audio/x-flac", Channels: 2, Rate: 48000})
+	task.Audio = 1000
+	task.ExternalAudio = &ExternalAudio{SourceURL: "http://127.0.0.1:8090/stream/?link=h&index=7&play", Track: TrackInfo{Type: "audio", Codec: "Vorbis", CapsName: "audio/x-vorbis", Channels: 2, Rate: 44100}}
+	runner := &gstRunner{task: task, audioIndex: 1000}
+
+	args := runner.createPipelineArgs()
+	// The seek of the audio branch is sent to the element with this name, so it must exist exactly once.
+	if n := strings.Count(args, "name="+externalAudioSeekElement+" "); n != 1 {
+		t.Errorf("%d elements named %s, want 1:\n%s", n, externalAudioSeekElement, args)
+	}
+}
+
+func TestExternalAudioStartNSWithoutProbe(t *testing.T) {
+	runner := &gstRunner{}
+	if got := runner.externalAudioStartNS(12.5); got != 12_500_000_000 {
+		t.Errorf("externalAudioStartNS(12.5) = %d, want 12500000000", got)
+	}
+}
+
+func TestExternalAudioStartNSPrefersProbe(t *testing.T) {
+	state := &videoStartProbeState{}
+	state.actualNS.Store(34_000_000_000)
+	runner := &gstRunner{videoStartProbe: &gstPadProbeRegistration{state: state}}
+	if got := runner.externalAudioStartNS(12.5); got != 34_000_000_000 {
+		t.Errorf("externalAudioStartNS = %d, want the position the video probe saw", got)
+	}
+
+	// A probe that has not seen the start yet must not be trusted.
+	state.actualNS.Store(gstClockTimeNone)
+	if got := runner.externalAudioStartNS(12.5); got != 12_500_000_000 {
+		t.Errorf("externalAudioStartNS = %d, want the fallback", got)
 	}
 }
