@@ -48,7 +48,8 @@ func TestStatusForMergedM3U(t *testing.T) {
 		if st == nil || len(st.FileStats) != 1 {
 			t.Fatalf("got %#v", st)
 		}
-		if st.FileStats[0].Path != "from-spec.mp4" || st.FileStats[0].Id != 1 {
+		// Paths match Torrent.Status (BestName + BestPath), so /stream index= agrees.
+		if st.FileStats[0].Path != "from-spec/from-spec.mp4" || st.FileStats[0].Id != 1 {
 			t.Fatalf("spec files: %#v", st.FileStats[0])
 		}
 	})

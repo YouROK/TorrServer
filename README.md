@@ -313,6 +313,8 @@ docker run --rm -d --name torrserver \
 
 #### Docker Compose
 
+With `network_mode: host` (needed for DLNA), do not publish `ports:` — the container uses the host network directly. Use bridge networking and a `ports` mapping only when DLNA is not required.
+
 ```yml
 # docker-compose.yml
 
@@ -321,7 +323,7 @@ services:
     torrserver:
         image: ghcr.io/yourok/torrserver
         container_name: torrserver
-        network_mode: host    # to allow DLNA feature
+        network_mode: host    # to allow DLNA feature; omit ports: in this mode
         environment:
             - TS_PORT=5665
             - TS_DONTKILL=1
@@ -331,8 +333,6 @@ services:
         volumes:
             - './CACHE:/opt/ts/torrents'
             - './CONFIG:/opt/ts/config'
-        ports:
-            - '5665:5665'
         restart: unless-stopped
         
 
@@ -809,11 +809,12 @@ Configure it in the web UI: **Settings → Search**.
 
 Each Torznab indexer needs:
 
-- **Host URL**: full URL to the Torznab API endpoint (or indexer base that TorrServer can turn into `/api`).
-  - Jackett example:
+- **Host URL**: Torznab base URL. TorrServer always calls the `/api` endpoint and accepts Host with or without a trailing `/api` or `/api/` (it will not be doubled).
+  - Jackett example (either form works):
 
   ```shell
   http://192.168.1.10:9117/api/v2.0/indexers/all/results/torznab/
+  http://192.168.1.10:9117/api/v2.0/indexers/all/results/torznab/api
   ```
 
   TorrServer normalizes this to `…/torznab/api` when the path does not already end with `/api`.
@@ -826,9 +827,15 @@ Each Torznab indexer needs:
 
   That becomes `http://localhost:9696/1/api`.
 
-  - Matching your indexer's expected format is best to avoid connection issues. A missing `http://` / `https://` scheme is added automatically.
+  - Other indexers often document the full endpoint with `/api` (e.g. `http://127.0.0.1:9117/torznab/api`). You can paste that as-is.
+  - A missing `http://` / `https://` scheme is added automatically.
 
 - **API Key**: the key from your Torznab indexer manager.
+- **Name** (optional): label shown in the UI instead of the host URL.
+- **Categories** / **CatType** (optional, Pro mode in the UI):
+  - `default` — Movies and TV (`5000,2000`)
+  - `manual` — comma-separated Torznab category IDs
+  - `all` — no category filter
 
 Search requests are not limited to Movies/TV categories; results come from all categories the indexer returns.
 
@@ -862,7 +869,7 @@ cd server
 CGO_ENABLED=0 go build -tags="nosqlite gst" -trimpath -o TorrServer-gst ./cmd
 ```
 
-Supported gst targets are Windows amd64, Linux amd64/arm64, and macOS amd64/arm64. A Windows single-file build with an embedded runtime additionally uses the `embed_gstlib` tag and `server/gstreamer/gst-libs/win-x86_64`; see [BUILD_WINDOWS_GSTREAMER.md](BUILD_WINDOWS_GSTREAMER.md).
+Supported gst targets are Windows amd64, Linux amd64/arm64, and macOS amd64/arm64. A Windows single-file build with an embedded runtime additionally uses the `embed_gstlib` tag and `server/gstreamer/gst-libs/win-x86_64`; see [`.github/scripts/build-gst-windows.ps1`](.github/scripts/build-gst-windows.ps1).
 
 ### Runtime loading
 
@@ -929,7 +936,7 @@ Package roles:
 
 The selected repository must provide GStreamer 1.22 or newer.
 
-Hardware encoders are optional. They also require a compatible vendor driver and GStreamer encoder plugin; TorrServer tests the available candidates and falls back to `x264enc` when none can start.
+Hardware encoders are optional. They also require a compatible vendor driver and GStreamer encoder plugin; TorrServer tests the available candidates and falls back to `x264enc` when none can start. Candidates include NVENC, QSV, AMF, D3D11/MF, D3D12, and VAAPI (`vah264enc`) on Linux. On Linux, install something like `gstreamer1.0-vaapi` (or the distro equivalent) and a working GPU driver (`vainfo` is useful for checks); TorrServer probes what can start and uses `x264enc` if none succeed.
 
 **Fedora / RHEL / Rocky / AlmaLinux**
 
