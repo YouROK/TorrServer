@@ -1,8 +1,5 @@
 import type { CacheMapItem, CachePiece, CacheReader, TorrentCache } from 'shared/api/types'
 
-/** Soft caps for mini LOD view. */
-export const SNAKE_MAX_CELLS_DETAILED = 6000
-
 /** Detailed 1:1 window target rows; mini uses fewer. */
 export const SNAKE_FOCUS_TARGET_ROWS = 16
 export const SNAKE_FOCUS_TARGET_ROWS_MINI = 10
@@ -10,7 +7,7 @@ export const SNAKE_FOCUS_TARGET_ROWS_MINI = 10
 export interface CacheDrawModel {
   cells: CacheMapItem[]
   piecesCount: number
-  /** Pieces merged into one cell when > 1 (full-torrent LOD). */
+  /** Always 1: one cell per piece in the focus window. */
   bucketSize: number
   /** Inclusive piece range covered by cells[0]..cells[n-1]. */
   windowStart?: number
@@ -152,89 +149,6 @@ const cellFromPiece = (
     isReaderRange,
     pieceStart: id,
     pieceEnd: id,
-  }
-}
-
-/**
- * Full-torrent LOD snake model: always covers 0..PiecesCount-1.
- * If there are more pieces than maxCells, adjacent pieces are merged with
- * byte-accurate fill (Size/Length). Kept for tests / possible future overview —
- * production UI uses {@link buildFocusModel} only.
- */
-export const buildCacheDrawModel = (cache: TorrentCache, maxCells: number): CacheDrawModel => {
-  const piecesCount = cache.PiecesCount ?? 0
-  if (piecesCount <= 0 || maxCells < 1) {
-    return { cells: [], piecesCount, bucketSize: 1, windowStart: 0, windowEnd: -1 }
-  }
-
-  const budget = Math.max(1, Math.min(maxCells, SNAKE_MAX_CELLS_DETAILED))
-  const bucketSize = Math.max(1, Math.ceil(piecesCount / budget))
-  const numBuckets = Math.ceil(piecesCount / bucketSize)
-  const pieceLength = cache.PiecesLength || 0
-
-  const filled = new Float64Array(numBuckets)
-  const capacity = new Float64Array(numBuckets)
-  const priority = new Int16Array(numBuckets)
-  const readerBits = new Uint8Array(numBuckets)
-  const rangeBits = new Uint8Array(numBuckets)
-
-  if (pieceLength > 0) {
-    for (let b = 0; b < numBuckets; b++) {
-      const pieceStart = b * bucketSize
-      const pieceEnd = Math.min(pieceStart + bucketSize, piecesCount)
-      capacity[b] = (pieceEnd - pieceStart) * pieceLength
-    }
-  }
-
-  forEachPiece(cache.Pieces, (id, piece) => {
-    if (id < 0 || id >= piecesCount) return
-    const bucket = Math.floor(id / bucketSize)
-    const length = piece.Length || pieceLength || 0
-    const rawSize = piece.Size || 0
-    const size = length > 0 ? Math.min(rawSize, length) : rawSize
-    filled[bucket] += size
-
-    if (pieceLength <= 0 && length > 0) capacity[bucket] += length
-
-    const prio = piece.Priority || 0
-    if (prio > priority[bucket]) priority[bucket] = prio
-  })
-
-  for (const reader of cache.Readers || []) {
-    if (reader.Reader != null && reader.Reader >= 0 && reader.Reader < piecesCount) {
-      readerBits[Math.floor(reader.Reader / bucketSize)] = 1
-    }
-    forEachPieceInReaderRange(reader.Start, reader.End, piecesCount, id => {
-      rangeBits[Math.floor(id / bucketSize)] = 1
-    })
-  }
-
-  const cells: CacheMapItem[] = new Array(numBuckets)
-  for (let b = 0; b < numBuckets; b++) {
-    const cap = capacity[b]
-    let percentage = 0
-    if (cap > 0) percentage = Math.min(100, (filled[b] / cap) * 100)
-    const completed = cap > 0 && filled[b] >= cap - 0.5
-    const pieceStart = b * bucketSize
-    const pieceEnd = Math.min(pieceStart + bucketSize, piecesCount) - 1
-
-    cells[b] = {
-      percentage: completed ? 100 : percentage,
-      priority: priority[b],
-      completed,
-      isReader: Boolean(readerBits[b]),
-      isReaderRange: Boolean(rangeBits[b]),
-      pieceStart,
-      pieceEnd,
-    }
-  }
-
-  return {
-    cells,
-    piecesCount,
-    bucketSize,
-    windowStart: 0,
-    windowEnd: piecesCount - 1,
   }
 }
 

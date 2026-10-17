@@ -41,10 +41,6 @@ function isTorrentSource(source: string): boolean {
   )
 }
 
-function normalizeTorrsLink(value: string): string {
-  return toAddTorrentLink(value)
-}
-
 function hashFromLink(link: string): string | undefined {
   const match = link.match(BTIH_RE)
   if (match?.[1]) return match[1].toLowerCase()
@@ -67,7 +63,7 @@ function itemFromJsonRow(row: ExportJsonRow): LibraryImportItem | null {
   const timestamp = typeof row.timestamp === 'number' && row.timestamp > 0 ? row.timestamp : undefined
 
   if (row.torrs_hash?.trim()) {
-    const link = normalizeTorrsLink(row.torrs_hash)
+    const link = toAddTorrentLink(row.torrs_hash)
     return {
       link,
       title,
@@ -104,11 +100,11 @@ function itemFromLine(line: string): LibraryImportItem | null {
 
   const torrs = trimmed.match(TORRS_IN_LINE_RE)?.[0]
   if (torrs && isTorrentSource(torrs)) {
-    return { link: normalizeTorrsLink(torrs), hashHint: hashFromLink(torrs) }
+    return { link: toAddTorrentLink(torrs), hashHint: hashFromLink(torrs) }
   }
 
   if (isTorrentSource(trimmed)) {
-    const link = TORRS_RE.test(trimmed) ? normalizeTorrsLink(trimmed) : trimmed
+    const link = TORRS_RE.test(trimmed) ? toAddTorrentLink(trimmed) : trimmed
     return { link, hashHint: hashFromLink(trimmed) }
   }
 
