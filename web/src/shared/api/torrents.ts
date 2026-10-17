@@ -112,6 +112,8 @@ export interface AddTorrentInput {
   category?: string
   poster?: string
   save_to_db?: boolean
+  /** Unix seconds — restore source library order on import. */
+  timestamp?: number
 }
 
 export const addTorrent = async (input: AddTorrentInput): Promise<TorrentStat> => {
@@ -123,6 +125,7 @@ export const addTorrent = async (input: AddTorrentInput): Promise<TorrentStat> =
       category: input.category || undefined,
       poster: input.poster ?? '',
       save_to_db: input.save_to_db ?? true,
+      timestamp: input.timestamp && input.timestamp > 0 ? input.timestamp : undefined,
     })
     return data
   } catch (err) {

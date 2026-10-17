@@ -72,14 +72,16 @@ func (r *Reader) Seek(offset int64, whence int) (n int64, err error) {
 	case io.SeekCurrent:
 		r.offset += offset
 	case io.SeekEnd:
-		r.offset = r.fileLen() + offset
-		// ServeContent probes size with Seek(0, SeekEnd). Do not move the
-		// torrent download head to EOF on a 100GB+ file.
+		// ServeContent probes size with Seek(0, SeekEnd). Return the length but
+		// leave the logical playhead alone — otherwise the snake jumps to EOF
+		// until the following SeekStart, and we must not pull pieces from the
+		// tail of a 100GB+ file.
 		if offset == 0 {
 			r.readerOn()
 			r.lastAccess = time.Now().Unix()
-			return r.offset, nil
+			return r.fileLen(), nil
 		}
+		r.offset = r.fileLen() + offset
 	}
 	r.beginIO()
 	defer r.endIO()

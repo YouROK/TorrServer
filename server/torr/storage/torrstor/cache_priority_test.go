@@ -150,10 +150,12 @@ func TestGetStateWithActiveReaderDoesNotDeadlock(t *testing.T) {
 
 func TestSeekEndSizeProbeDoesNotForward(t *testing.T) {
 	const fileLen int64 = 193450314699
+	const playhead int64 = 12 << 20
 	stub := &seekRecordingReader{}
 	r := &Reader{
 		Reader:      stub,
 		overrideLen: fileLen,
+		offset:      playhead,
 		isUse:       true,
 		lastAccess:  time.Now().Unix(),
 	}
@@ -164,8 +166,8 @@ func TestSeekEndSizeProbeDoesNotForward(t *testing.T) {
 	if n != fileLen {
 		t.Fatalf("SeekEnd size probe: want %d, got %d", fileLen, n)
 	}
-	if r.offset != fileLen {
-		t.Fatalf("offset: want %d, got %d", fileLen, r.offset)
+	if r.offset != playhead {
+		t.Fatalf("size probe must not move playhead: want %d, got %d", playhead, r.offset)
 	}
 	if stub.seeks != 0 {
 		t.Fatalf("size probe must not Seek the torrent reader, got %d calls", stub.seeks)

@@ -56,6 +56,7 @@ export default function ExportLibraryDialog({ open, onClose, torrents }: ExportL
           poster: tr.poster,
           torrs_hash: tr.torrs_hash,
           torrent_size: tr.torrent_size,
+          timestamp: tr.timestamp,
         })),
         null,
         2,

@@ -2025,6 +2025,10 @@ const docTemplate = `{
                 "save_to_db": {
                     "type": "boolean"
                 },
+                "timestamp": {
+                    "description": "optional; preserve library order on import",
+                    "type": "integer"
+                },
                 "title": {
                     "type": "string"
                 }

@@ -11,9 +11,8 @@ describe('launchSource', () => {
   it('normalizes torrs protocol-handler payloads', () => {
     expect(normalizeTorrsLaunchParam('torrs://abc')).toBe('torrs://abc')
     expect(normalizeTorrsLaunchParam('web+torrs://abc')).toBe('torrs://abc')
-    expect(normalizeTorrsLaunchParam('2c864150aa1f5b60134257bf41eb651b8be1acb7')).toBe(
-      'torrs://2c864150aa1f5b60134257bf41eb651b8be1acb7',
-    )
+    const hash = '2c864150aa1f5b60134257bf41eb651b8be1acb7'
+    expect(normalizeTorrsLaunchParam(hash)).toBe(`magnet:?xt=urn:btih:${hash}&dn=${hash}`)
     expect(normalizeTorrsLaunchParam('/packedToken')).toBe('torrs://packedToken')
   })
 
@@ -24,9 +23,8 @@ describe('launchSource', () => {
   })
 
   it('reads ?torrs= ahead of magnet/url/text', () => {
-    expect(readLaunchSourceFromUrl('?torrs=2c864150aa1f5b60134257bf41eb651b8be1acb7&magnet=x')).toBe(
-      'torrs://2c864150aa1f5b60134257bf41eb651b8be1acb7',
-    )
+    const hash = '2c864150aa1f5b60134257bf41eb651b8be1acb7'
+    expect(readLaunchSourceFromUrl(`?torrs=${hash}&magnet=x`)).toBe(`magnet:?xt=urn:btih:${hash}&dn=${hash}`)
     expect(readLaunchSourceFromUrl('?magnet=magnet:?xt=urn:btih:aaa')).toBe('magnet:?xt=urn:btih:aaa')
     expect(readLaunchSourceFromUrl('?text=please%20add%20torrs://packedtoken')).toBe('torrs://packedtoken')
     expect(readLaunchSourceFromUrl('?url=https://example.com')).toBe('https://example.com')

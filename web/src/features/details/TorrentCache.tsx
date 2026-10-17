@@ -361,6 +361,14 @@ function TorrentCache({ cache, mode = 'detailed', isSnakeDebugMode, hash }: Torr
               {t('SnakeLegendRange')}
             </span>
           </p>
+          {isSnakeDebugMode ? (
+            <p className='flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 text-[10px] text-muted'>
+              <span>A · {t('SnakePriorityA')}</span>
+              <span>N · {t('SnakePriorityN')}</span>
+              <span>R · {t('SnakePriorityR')}</span>
+              <span>H · {t('SnakePriorityH')}</span>
+            </p>
+          ) : null}
         </div>
       ) : null}
     </div>

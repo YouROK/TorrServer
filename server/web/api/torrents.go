@@ -22,13 +22,14 @@ import (
 // Action: add, get, set, rem, list, drop
 type torrReqJS struct {
 	requestI
-	Link     string `json:"link,omitempty"`
-	Hash     string `json:"hash,omitempty"`
-	Title    string `json:"title,omitempty"`
-	Category string `json:"category,omitempty"`
-	Poster   string `json:"poster,omitempty"`
-	Data     string `json:"data,omitempty"`
-	SaveToDB bool   `json:"save_to_db,omitempty"`
+	Link      string `json:"link,omitempty"`
+	Hash      string `json:"hash,omitempty"`
+	Title     string `json:"title,omitempty"`
+	Category  string `json:"category,omitempty"`
+	Poster    string `json:"poster,omitempty"`
+	Data      string `json:"data,omitempty"`
+	SaveToDB  bool   `json:"save_to_db,omitempty"`
+	Timestamp int64  `json:"timestamp,omitempty"` // optional; preserve library order on import
 }
 
 // torrents godoc
@@ -131,6 +132,10 @@ func addTorrent(req torrReqJS, c *gin.Context) {
 		log.TLogln("error add torrent:", err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": errors.Errorf("error adding torrent: %v", err).Error()})
 		return
+	}
+	// Library import restores added-at from JSON (or synthetic line order).
+	if req.Timestamp > 0 {
+		tor.Timestamp = req.Timestamp
 	}
 
 	go func() {

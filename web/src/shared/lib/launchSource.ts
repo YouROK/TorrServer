@@ -1,17 +1,17 @@
-import { toApiTorrsLink } from './torrsLink'
+import { toAddTorrentLink, toApiTorrsLink } from './torrsLink'
 
 /**
- * Normalize a `?torrs=` protocol-handler payload into a full `torrs://…` link.
- * Chromium may pass the full URL, a bare token/hash, or a `web+torrs://` form.
+ * Normalize a `?torrs=` protocol-handler payload for Add.
+ * Packed tokens stay `torrs://`; bare infohash becomes magnet.
  */
 export function normalizeTorrsLaunchParam(raw: string): string {
-  return toApiTorrsLink(raw)
+  return toAddTorrentLink(toApiTorrsLink(raw))
 }
 
 /** Pull the first `torrs://…` / `web+torrs://…` token out of shared text / a free-form URL param. */
 export function extractTorrsFromText(text: string): string | null {
   const match = text.match(/(?:web\+)?torrs:\/\/[^\s]+/i)
-  return match ? toApiTorrsLink(match[0]) : null
+  return match ? toAddTorrentLink(match[0]) : null
 }
 
 /**

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -52,6 +53,10 @@ type Torrent struct {
 	BitRate         string
 
 	expiredTime time.Time
+
+	// Cached packed torrs:// token. Status() is polled every second; zlib pack is not free.
+	torrsHashToken string
+	torrsHashKey   string
 
 	closed <-chan struct{}
 
@@ -435,27 +440,76 @@ func (t *Torrent) Status() *state.TorrentStatus {
 				})
 			}
 
-			th := torrshash.New(st.Hash)
-			th.AddField(torrshash.TagTitle, st.Title)
-			th.AddField(torrshash.TagPoster, st.Poster)
-			th.AddField(torrshash.TagCategory, st.Category)
-			th.AddField(torrshash.TagSize, strconv.FormatInt(st.TorrentSize, 10))
-
-			if t.TorrentSpec != nil {
-				if len(t.Trackers) > 0 && len(t.Trackers[0]) > 0 {
-					for _, tr := range t.Trackers[0] {
-						th.AddField(torrshash.TagTracker, tr)
-					}
-				}
-			}
-			token, err := torrshash.Pack(th)
-			if err == nil {
-				st.TorrsHash = token
-			}
+			st.TorrsHash = t.cachedTorrsHash(st.Hash, st.Title, st.Poster, st.Category, st.TorrentSize, firstTrackerGroup(t.TorrentSpec))
 		}
 	}
 
+	// Idle library rows never hit the Info() branch; still expose a packed token
+	// so web+torrs export/import keeps title/poster instead of a bare infohash.
+	if st.TorrsHash == "" && st.Hash != "" {
+		st.TorrsHash = t.cachedTorrsHash(st.Hash, st.Title, st.Poster, st.Category, st.TorrentSize, allTrackers(t.TorrentSpec))
+	}
+
 	return st
+}
+
+func firstTrackerGroup(spec *torrent.TorrentSpec) []string {
+	if spec == nil || len(spec.Trackers) == 0 {
+		return nil
+	}
+	return spec.Trackers[0]
+}
+
+func allTrackers(spec *torrent.TorrentSpec) []string {
+	if spec == nil {
+		return nil
+	}
+	var out []string
+	for _, group := range spec.Trackers {
+		out = append(out, group...)
+	}
+	return out
+}
+
+func torrsHashFingerprint(hash, title, poster, category string, size int64, trackers []string) string {
+	var b strings.Builder
+	b.WriteString(hash)
+	b.WriteByte(0)
+	b.WriteString(title)
+	b.WriteByte(0)
+	b.WriteString(poster)
+	b.WriteByte(0)
+	b.WriteString(category)
+	b.WriteByte(0)
+	b.WriteString(strconv.FormatInt(size, 10))
+	for _, tr := range trackers {
+		b.WriteByte(0)
+		b.WriteString(tr)
+	}
+	return b.String()
+}
+
+// cachedTorrsHash packs once per fingerprint. Caller must hold muTorrent.
+func (t *Torrent) cachedTorrsHash(hash, title, poster, category string, size int64, trackers []string) string {
+	key := torrsHashFingerprint(hash, title, poster, category, size, trackers)
+	if t.torrsHashToken != "" && t.torrsHashKey == key {
+		return t.torrsHashToken
+	}
+	th := torrshash.New(hash)
+	th.AddField(torrshash.TagTitle, title)
+	th.AddField(torrshash.TagPoster, poster)
+	th.AddField(torrshash.TagCategory, category)
+	th.AddField(torrshash.TagSize, strconv.FormatInt(size, 10))
+	for _, tr := range trackers {
+		th.AddField(torrshash.TagTracker, tr)
+	}
+	token, err := torrshash.Pack(th)
+	if err != nil {
+		return ""
+	}
+	t.torrsHashToken = token
+	t.torrsHashKey = key
+	return token
 }
 
 func (t *Torrent) CacheState() *cacheSt.CacheState {

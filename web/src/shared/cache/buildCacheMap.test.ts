@@ -8,6 +8,7 @@ import {
   forEachPieceInReaderRange,
   pieceFillPercentage,
   priorityDebugLabel,
+  isLikelyEofMetadataProbe,
   resolveFocusWindow,
   resolveFocusWindowSize,
 } from './buildCacheMap'
@@ -250,6 +251,35 @@ describe('resolveFocusWindow / buildFocusModel', () => {
     expect(head?.isReaderIdle).toBe(false)
   })
 
+  it('does not jump the camera to a cold EOF metadata probe', () => {
+    // Matches the Loading Media screenshot: head on the last piece, cache nearly empty.
+    const cache: TorrentCache = {
+      PiecesCount: 10963,
+      PiecesLength: 8 << 20,
+      Capacity: 64 << 20,
+      Filled: 608 << 10,
+      Readers: [{ Reader: 10962, Start: 10900, End: 10962, Active: true }],
+    }
+    expect(isLikelyEofMetadataProbe(10962, 10963, cache.Filled, cache.Capacity)).toBe(true)
+    const window = resolveFocusWindow(cache, 400)!
+    expect(window.readerPiece).toBeNull()
+    expect(window.start).toBe(0)
+  })
+
+  it('still follows a warm playhead near EOF', () => {
+    const cache: TorrentCache = {
+      PiecesCount: 10963,
+      PiecesLength: 8 << 20,
+      Capacity: 64 << 20,
+      Filled: 60 << 20,
+      Readers: [{ Reader: 10900, Start: 10850, End: 10950, Active: true }],
+    }
+    expect(isLikelyEofMetadataProbe(10900, 10963, cache.Filled, cache.Capacity)).toBe(false)
+    const window = resolveFocusWindow(cache, 400)!
+    expect(window.readerPiece).toBe(10900)
+    expect(window.start).toBeGreaterThan(1000)
+  })
+
   it('treats a missing Active flag as active (older servers)', () => {
     const cache: TorrentCache = {
       PiecesCount: 200,
@@ -409,6 +439,7 @@ describe('resolveFocusWindow / buildFocusModel', () => {
     expect(priorityDebugLabel(4)).toBe('N')
     expect(priorityDebugLabel(3)).toBe('R')
     expect(priorityDebugLabel(2)).toBe('H')
+    expect(priorityDebugLabel(1)).toBe('')
   })
 
   it('keeps A on completed playhead for debug', () => {

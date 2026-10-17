@@ -1,10 +1,12 @@
-import { toApiTorrsLink } from './torrsLink'
+import { toAddTorrentLink } from './torrsLink'
 
 export interface LibraryImportItem {
   link: string
   title?: string
   category?: string
   poster?: string
+  /** Unix seconds — preserved from JSON export so list order matches the source server. */
+  timestamp?: number
   /** Lowercase infohash when known — used to skip torrents already in the library. */
   hashHint?: string
 }
@@ -16,6 +18,7 @@ interface ExportJsonRow {
   category?: string
   poster?: string
   torrs_hash?: string
+  timestamp?: number
 }
 
 const BTIH_RE = /(?:urn:)?btih:([a-fA-F0-9]{40}|[a-zA-Z2-7]{32})/i
@@ -39,13 +42,15 @@ function isTorrentSource(source: string): boolean {
 }
 
 function normalizeTorrsLink(value: string): string {
-  return toApiTorrsLink(value)
+  return toAddTorrentLink(value)
 }
 
 function hashFromLink(link: string): string | undefined {
   const match = link.match(BTIH_RE)
   if (match?.[1]) return match[1].toLowerCase()
   if (HASH_ONLY_RE.test(link.trim())) return link.trim().toLowerCase()
+  const bareTorrs = link.match(/^(?:web\+)?torrs:\/\/([0-9a-f]{40})$/i)
+  if (bareTorrs?.[1]) return bareTorrs[1].toLowerCase()
   return undefined
 }
 
@@ -59,9 +64,18 @@ function itemFromJsonRow(row: ExportJsonRow): LibraryImportItem | null {
   const category = row.category?.trim() || undefined
   const poster = row.poster?.trim() || undefined
 
+  const timestamp = typeof row.timestamp === 'number' && row.timestamp > 0 ? row.timestamp : undefined
+
   if (row.torrs_hash?.trim()) {
     const link = normalizeTorrsLink(row.torrs_hash)
-    return { link, title, category, poster, hashHint: row.hash?.trim().toLowerCase() || hashFromLink(link) }
+    return {
+      link,
+      title,
+      category,
+      poster,
+      timestamp,
+      hashHint: row.hash?.trim().toLowerCase() || hashFromLink(link),
+    }
   }
 
   const hash = row.hash?.trim()
@@ -71,6 +85,7 @@ function itemFromJsonRow(row: ExportJsonRow): LibraryImportItem | null {
       title,
       category,
       poster,
+      timestamp,
       hashHint: hash.toLowerCase(),
     }
   }
@@ -128,7 +143,7 @@ export function parseLibraryImportText(raw: string): LibraryImportItem[] {
         .filter((row): row is ExportJsonRow => row != null && typeof row === 'object')
         .map(row => itemFromJsonRow(row as ExportJsonRow))
         .filter((item): item is LibraryImportItem => item != null)
-      if (items.length) return dedupeItems(items)
+      if (items.length) return withImportTimestamps(dedupeItems(items))
     } catch {
       // Fall through to line parsing — user may have pasted non-JSON that starts with `[`.
     }
@@ -139,5 +154,19 @@ export function parseLibraryImportText(raw: string): LibraryImportItem[] {
     .map(itemFromLine)
     .filter((item): item is LibraryImportItem => item != null)
 
-  return dedupeItems(fromLines)
+  return withImportTimestamps(dedupeItems(fromLines))
+}
+
+/**
+ * Export list is newest-first. Fill missing timestamps so concurrent import
+ * still sorts the same way on the destination (item[0] = newest).
+ */
+export function withImportTimestamps(
+  items: LibraryImportItem[],
+  nowSec = Math.floor(Date.now() / 1000),
+): LibraryImportItem[] {
+  return items.map((item, i) => ({
+    ...item,
+    timestamp: item.timestamp && item.timestamp > 0 ? item.timestamp : nowSec - i,
+  }))
 }

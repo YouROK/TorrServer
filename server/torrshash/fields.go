@@ -115,15 +115,11 @@ func (f *Field) write(writer io.Writer) error {
 
 func isBinary(t Tag) bool {
 	switch t {
-	case TagTitle:
-	case TagPoster:
-	case TagTracker:
-	case TagCategory:
+	case TagTitle, TagPoster, TagTracker, TagCategory:
 		return false
 	case TagSize:
 		return true
 	default:
 		return false
 	}
-	return false
 }

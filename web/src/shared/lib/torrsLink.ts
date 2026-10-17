@@ -24,6 +24,25 @@ export function toApiTorrsLink(raw: string): string {
   return `torrs://${trimmed.replace(/^\/+/, '')}`
 }
 
+const BARE_INFOHASH_RE = /^[0-9a-f]{40}$/i
+
+/**
+ * Link for `addTorrent` / import: `web+torrs` → `torrs`, bare-infohash-as-torrs → magnet
+ * (idle export used to wrap a naked hash; packed tokens stay `torrs://`).
+ */
+export function toAddTorrentLink(raw: string): string {
+  const trimmed = raw.trim()
+  if (!trimmed) return trimmed
+  if (!isTorrsLink(trimmed)) return trimmed
+  const api = toApiTorrsLink(trimmed)
+  const token = api.replace(/^torrs:\/\//i, '')
+  if (BARE_INFOHASH_RE.test(token)) {
+    const hash = token.toLowerCase()
+    return `magnet:?xt=urn:btih:${hash}&dn=${encodeURIComponent(hash)}`
+  }
+  return api
+}
+
 /** Clipboard / export form that Chromium PWA protocol_handlers will open. */
 export function toShareTorrsLink(raw: string): string {
   const api = toApiTorrsLink(raw)

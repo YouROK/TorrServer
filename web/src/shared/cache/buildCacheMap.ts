@@ -112,7 +112,10 @@ export const resolveDisplayPriority = (
   return best > 0 ? best : apiPriority
 }
 
-/** Priority → debug letter (master convention). */
+/**
+ * anacrolix piecePriority shown on the snake: 2 High, 3 Readahead, 4 Next, 5 Now (drawn as A).
+ * Normal (1) is omitted — those pieces are either blank or raised into H/R/N/A.
+ */
 export const priorityDebugLabel = (priority: number): string => {
   if (priority === 2) return 'H'
   if (priority === 3) return 'R'
@@ -283,6 +286,29 @@ const resolveDrivingReaders = (cache: TorrentCache): { readers: CacheReader[]; r
 }
 
 /**
+ * Players often Seek to the file tail on open (MP4 moov, size probes) before the
+ * real playhead returns to the start — that painted a lone "A" at EOF and jumped
+ * the snake. Treat a head in the last ~2% with a still-cold cache as a probe.
+ */
+export const isLikelyEofMetadataProbe = (
+  readerPiece: number,
+  piecesCount: number,
+  filled: number | undefined,
+  capacity: number | undefined,
+): boolean => {
+  if (piecesCount < 50) return false
+  if (readerPiece < 0 || readerPiece >= piecesCount) return false
+  const tail = Math.max(4, Math.floor(piecesCount * 0.02))
+  if (readerPiece < piecesCount - tail) return false
+  const cap = capacity ?? 0
+  const fill = filled ?? 0
+  // Warm cache near EOF → user is actually watching the end.
+  if (cap > 0 && fill >= Math.min(cap * 0.15, 8 << 20)) return false
+  if (cap <= 0 && fill >= 8 << 20) return false
+  return true
+}
+
+/**
  * Inclusive span of pieces that still hold bytes. Server memory can keep a mid-file
  * buffer after every reader is gone — the camera uses this for a cold open.
  */
@@ -349,13 +375,18 @@ export const resolveFocusWindow = (
 
   // Idle readers still position the camera so the frozen head stays on screen.
   const { readers: drivingReaders, readerActive } = resolveDrivingReaders(cache)
+  // Drop cold EOF probes so the camera stays at the start during Loading Media.
+  const cameraReaders = drivingReaders.filter(r => {
+    if (r.Reader == null) return false
+    return !isLikelyEofMetadataProbe(r.Reader, piecesCount, cache.Filled, cache.Capacity)
+  })
 
   let readerPiece: number | null = null
-  if (drivingReaders.length > 0) {
+  if (cameraReaders.length > 0) {
     // Prefer the furthest-ahead reader so preload/stream progress drives the window
     // (min id stuck the view at piece 0 when dual preload readers exist).
     let bestReader = -1
-    for (const r of drivingReaders) {
+    for (const r of cameraReaders) {
       if (r.Reader != null && r.Reader >= 0 && r.Reader < piecesCount && r.Reader > bestReader) {
         bestReader = r.Reader
       }
@@ -363,7 +394,7 @@ export const resolveFocusWindow = (
     if (bestReader >= 0) readerPiece = bestReader
   }
 
-  const range = resolveReaderRangeSpan(drivingReaders, piecesCount)
+  const range = resolveReaderRangeSpan(cameraReaders, piecesCount)
   const windowSize = resolveWindowSize(visibleCells, piecesCount)
   const lastStart = options?.lastWindowStart
   const marginRatio = options?.edgeMarginRatio ?? 0.18
@@ -371,9 +402,13 @@ export const resolveFocusWindow = (
 
   // No playhead (player closed): sticky camera first — usually still overlaps the
   // server-held buffer. Cold open: frame remaining filled pieces, else piece 0.
+  // EOF probes only: stay at 0 — sticky would resurrect the previous jump.
   if (readerPiece == null) {
+    const eofProbeOnly = drivingReaders.length > 0 && cameraReaders.length === 0
     let preferred: number
-    if (lastStart != null) {
+    if (eofProbeOnly) {
+      preferred = 0
+    } else if (lastStart != null) {
       preferred = lastStart
     } else {
       const filled = resolveFilledSpan(cache, piecesCount)

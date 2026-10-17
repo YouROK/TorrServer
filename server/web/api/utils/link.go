@@ -97,9 +97,24 @@ func fromMagnet(link string) (*torrent.TorrentSpec, error) {
 }
 
 func ParseTorrsHash(token string) (*torrent.TorrentSpec, *torrshash.TorrsHash, error) {
-	token = strings.TrimPrefix(token, "torrs://")
+	token = strings.TrimSpace(token)
+	lower := strings.ToLower(token)
+	switch {
+	case strings.HasPrefix(lower, "web+torrs://"):
+		token = token[len("web+torrs://"):]
+	case strings.HasPrefix(lower, "torrs://"):
+		token = token[len("torrs://"):]
+	}
+	token = strings.TrimSpace(token)
+
 	th, err := torrshash.Unpack(token)
 	if err != nil {
+		// Export falls back to bare infohash when the torrent was idle (no packed token).
+		if isHexInfoHash(token) {
+			h := strings.ToLower(token)
+			th = torrshash.New(h)
+			return &torrent.TorrentSpec{InfoHash: metainfo.NewHashFromHex(h)}, th, nil
+		}
 		return nil, nil, err
 	}
 
@@ -114,6 +129,19 @@ func ParseTorrsHash(token string) (*torrent.TorrentSpec, *torrshash.TorrsHash, e
 		DisplayName: th.Title(),
 		InfoHash:    metainfo.NewHashFromHex(th.Hash),
 	}, th, nil
+}
+
+func isHexInfoHash(s string) bool {
+	if len(s) != 40 {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') && (c < 'A' || c > 'F') {
+			return false
+		}
+	}
+	return true
 }
 
 func fromHttp(link string) (*torrent.TorrentSpec, error) {

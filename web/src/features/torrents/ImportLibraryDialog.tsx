@@ -110,6 +110,7 @@ export default function ImportLibraryDialog({ open, onClose }: ImportLibraryDial
             category: item.category,
             poster: item.poster,
             save_to_db: saveToDb,
+            timestamp: item.timestamp,
           })
           added.push(torrent)
           upsertTorrentsInList(queryClient, torrent)
