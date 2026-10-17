@@ -230,7 +230,12 @@ export default function SettingsDialog({ handleClose }) {
               </TabPanel>
 
               <TabPanel value={selectedTab} index={tabAdditional} dir={direction}>
-                <SecondarySettingsComponent settings={settings} inputForm={inputForm} updateSettings={updateSettings} />
+                <SecondarySettingsComponent
+                  settings={settings}
+                  inputForm={inputForm}
+                  updateSettings={updateSettings}
+                  gstAvailable={gstAvailable}
+                />
               </TabPanel>
 
               <TabPanel value={selectedTab} index={tabSearch} dir={direction}>

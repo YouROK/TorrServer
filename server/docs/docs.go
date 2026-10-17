@@ -2190,6 +2190,14 @@ const docTemplate = `{
                     "description": "Torznab",
                     "type": "boolean"
                 },
+                "externalSubtitleAttempts": {
+                    "description": "how many times loading may be tried for tracks that failed for a temporary reason; 0 - default",
+                    "type": "integer"
+                },
+                "externalSubtitleTimeoutSec": {
+                    "description": "in seconds, time limit for loading the subtitle tracks of a video into HLS; 0 - default",
+                    "type": "integer"
+                },
                 "forceEncrypt": {
                     "description": "Torrent",
                     "type": "boolean"
@@ -2200,6 +2208,10 @@ const docTemplate = `{
                 },
                 "lpdipv6": {
                     "type": "boolean"
+                },
+                "maxSubtitleSizeMB": {
+                    "description": "External subtitles (/subs and the gstreamer HLS module)",
+                    "type": "integer"
                 },
                 "mergeAllM3U": {
                     "description": "M3U",
