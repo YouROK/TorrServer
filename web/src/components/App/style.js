@@ -37,6 +37,8 @@ export const AppWrapper = styled.div`
 export const CenteredGrid = styled.div`
   display: grid;
   place-items: center;
+  grid-area: content;
+  place-self: center;
 
   ${standaloneMedia(css`
     height: 100vh;

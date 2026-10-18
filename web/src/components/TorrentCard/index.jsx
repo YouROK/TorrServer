@@ -30,6 +30,7 @@ import { useTranslation } from 'react-i18next'
 import AddDialog from 'components/Add/AddDialog'
 import { StyledDialog } from 'style/CustomMaterialUiStyles'
 import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
+import { useBooleanPlayerPreference } from 'utils/PlayerPreferences'
 import { GETTING_INFO, IN_DB, CLOSED, PRELOAD, WORKING } from 'torrentStates'
 import { TORRENT_CATEGORIES } from 'components/categories'
 import VideoPlayer from 'components/VideoPlayer'
@@ -41,6 +42,7 @@ import {
   shouldUseGStreamerPlayer,
   useGStreamerRuntime,
 } from 'utils/GStreamer'
+import { externalLink, useExternalMediaBase } from 'utils/MediaBase'
 
 import {
   StatusIndicators,
@@ -158,10 +160,13 @@ const Torrent = ({ torrent }) => {
   const [audioMenuAnchor, setAudioMenuAnchor] = useState(null)
   const [audioMenuPlayer, setAudioMenuPlayer] = useState(null)
   const [isResolvingAudio, setIsResolvingAudio] = useState(false)
+  const isVlcUsed = useBooleanPlayerPreference('isVlcUsed')
+  const showQuickVlcButton = useBooleanPlayerPreference('showQuickVlcButton')
   const isMounted = useRef(true)
   const episodeButtonRef = useRef(null)
   const audioButtonRef = useRef(null)
   const gstRuntime = useGStreamerRuntime()
+  const mediaBase = useExternalMediaBase()
 
   useEffect(
     () => () => {
@@ -253,6 +258,12 @@ const Torrent = ({ torrent }) => {
   const availablePlayers = players.filter(player => !unsupportedPlayers[player.key])
   const singlePlayer = players.length === 1 ? players[0] : null
   const audioMenuTracks = audioMenuPlayer ? audioTracksByFile[audioMenuPlayer.id] || [] : []
+
+  const openSingleFileInVlc = () => {
+    if (!singlePlayer) return
+    const streamUrl = externalLink(singlePlayer.downloadSrc, mediaBase)
+    window.location.href = `vlc://${streamUrl}`
+  }
 
   const playerWithAudio = (player, audio) => ({
     ...player,
@@ -375,6 +386,13 @@ const Torrent = ({ torrent }) => {
             <UnfoldMoreIcon />
             <span>{t('Details')}</span>
           </StyledButton>
+
+          {isVlcUsed && showQuickVlcButton && singlePlayer && (
+            <StyledButton onClick={openSingleFileInVlc} title={t('SettingsDialog.UseVLC')}>
+              <PlayArrowIcon />
+              <span>VLC</span>
+            </StyledButton>
+          )}
 
           {singlePlayer && !unsupportedPlayers[singlePlayer.key] ? (
             singlePlayer.hls ? (

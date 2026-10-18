@@ -1,7 +1,6 @@
 package api
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -10,6 +9,26 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+type ffprobeStatusResponse struct {
+	Available bool `json:"available"`
+}
+
+// ffprobeStatus godoc
+//
+//	@Summary		ffprobe availability
+//	@Description	Reports whether the ffprobe binary is available. Features that need real
+//	@Description	media duration (e.g. saving playback position) are only usable when true.
+//
+//	@Tags			API
+//
+//	@Produce		json
+//	@Security		BasicAuth
+//	@Success		200	{object}	ffprobeStatusResponse
+//	@Router			/ffp/status [get]
+func ffprobeStatus(c *gin.Context) {
+	c.JSON(http.StatusOK, ffprobeStatusResponse{Available: ffprobe.Exists()})
+}
 
 // ffp godoc
 //
@@ -30,18 +49,20 @@ func ffp(c *gin.Context) {
 	indexStr := c.Param("id")
 
 	if hash == "" || indexStr == "" {
-		c.AbortWithError(http.StatusNotFound, errors.New("link should not be empty"))
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "link should not be empty"})
 		return
 	}
 
-	link := "http://127.0.0.1:" + sets.Port + "/play/" + hash + "/" + indexStr
-	if sets.Ssl {
-		link = "https://127.0.0.1:" + sets.SslPort + "/play/" + hash + "/" + indexStr
+	if !ffprobe.Exists() {
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "ffprobe binary not found"})
+		return
 	}
+
+	link := sets.LoopbackBaseURL() + "/play/" + hash + "/" + indexStr
 
 	data, err := ffprobe.ProbeUrl(link)
 	if err != nil {
-		c.AbortWithError(http.StatusBadRequest, fmt.Errorf("error getting data: %v", err))
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": fmt.Errorf("error getting data: %v", err).Error()})
 		return
 	}
 

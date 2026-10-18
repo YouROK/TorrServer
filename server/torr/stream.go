@@ -58,8 +58,13 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 			break
 		}
 	}
+	// The handler has already checked the request, so every failure from here on must
+	// still answer it: returning without a write made gin send an empty 200 OK, which
+	// players read as a zero-length file.
 	if stFile == nil {
-		return fmt.Errorf("file with id %v not found", fileID)
+		err := fmt.Errorf("file with id %v not found", fileID)
+		http.Error(resp, err.Error(), http.StatusNotFound)
+		return err
 	}
 	// Find the actual torrent file
 	files := t.Files()
@@ -71,7 +76,9 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 		}
 	}
 	if file == nil {
-		return fmt.Errorf("file with id %v not found", fileID)
+		err := fmt.Errorf("file with id %v not found", fileID)
+		http.Error(resp, err.Error(), http.StatusNotFound)
+		return err
 	}
 	// Check file size limit
 	if int64(sets.MaxSize) > 0 && file.Length() > int64(sets.MaxSize) {
@@ -83,7 +90,10 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 	// Create reader with context for timeout
 	reader := t.NewReader(file)
 	if reader == nil {
-		return errors.New("cannot create torrent reader")
+		// NewReader returns nil only for a torrent closed after the GotInfo check above
+		err := errors.New("cannot create torrent reader")
+		http.Error(resp, err.Error(), http.StatusServiceUnavailable)
+		return err
 	}
 	// Ensure reader is always closed
 	defer t.CloseReader(reader)
@@ -103,10 +113,18 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 		}
 	}
 
-	// Mark as viewed
+	// Mark as viewed without resetting existing TimeCode
+	var timecode float64
+	for _, v := range sets.ListViewed(t.Hash().HexString()) {
+		if v.FileIndex == fileID {
+			timecode = v.TimeCode
+			break
+		}
+	}
 	sets.SetViewed(&sets.Viewed{
 		Hash:      t.Hash().HexString(),
 		FileIndex: fileID,
+		TimeCode:  timecode,
 	})
 
 	// Set response headers
@@ -154,7 +172,7 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 	// }
 	// http.ServeContent(wrappedResp, req, file.Path(), time.Unix(t.Timestamp, 0), reader)
 
-	http.ServeContent(resp, req, file.Path(), time.Unix(t.Timestamp, 0), reader)
+	http.ServeContent(resp, req, file.Path(), time.Unix(t.Timestamp, 0), newBufferedStreamReader(reader, 1<<20))
 
 	if sets.BTsets.EnableDebug {
 		if clerr != nil {

@@ -128,11 +128,11 @@ func (f *roFile) Read(p []byte) (int, error) {
 	defer f.mu.Unlock()
 
 	if f.f == nil {
-		return 0, fs.ErrClosed
+		return 0, &fs.PathError{Op: "read", Path: f.name, Err: fs.ErrClosed}
 	}
 	r, ok := f.f.(io.Reader)
 	if !ok {
-		return 0, fs.ErrInvalid
+		return 0, &fs.PathError{Op: "read", Path: f.name, Err: fs.ErrInvalid}
 	}
 	return r.Read(p)
 }
@@ -160,7 +160,7 @@ func (f *roFile) Readdir(count int) ([]os.FileInfo, error) {
 	defer f.mu.Unlock()
 
 	if f.f == nil {
-		return nil, fs.ErrClosed
+		return nil, &fs.PathError{Op: "readdir", Path: f.name, Err: fs.ErrClosed}
 	}
 
 	fi, err := fs.Stat(f.fsys, f.name)
@@ -168,7 +168,7 @@ func (f *roFile) Readdir(count int) ([]os.FileInfo, error) {
 		return nil, err
 	}
 	if !fi.IsDir() {
-		return nil, fs.ErrInvalid
+		return nil, &fs.PathError{Op: "readdir", Path: f.name, Err: fs.ErrInvalid}
 	}
 
 	if f.dirList == nil {

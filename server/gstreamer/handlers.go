@@ -95,6 +95,9 @@ func (s *Service) master(c *gin.Context) {
 		return
 	}
 
+	// External subtitle files from the torrent (see subtitles_external.go).
+	task.ensureExternalSubtitles(c.Request.Context())
+
 	playlist := buildVariantPlaylist(task, audio, seconds)
 	c.Data(http.StatusOK, "application/vnd.apple.mpegurl; charset=utf-8", []byte(playlist))
 }
@@ -123,10 +126,7 @@ func buildVariantPlaylist(task *Task, audio int, seconds int) string {
 			}
 			hasSubtitles = true
 			language := hlsQuoted(firstNonEmpty(track.Language, "und"))
-			name := track.Title
-			if name == "" {
-				name = "Subtitle " + strconv.Itoa(track.Index)
-			}
+			name := embeddedSubtitleName(track)
 			playlist.WriteString("#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID=\"subs\",NAME=\"")
 			playlist.WriteString(hlsQuoted(name))
 			playlist.WriteString("\",LANGUAGE=\"")
@@ -136,6 +136,10 @@ func buildVariantPlaylist(task *Task, audio int, seconds int) string {
 			playlist.WriteString("/subs/")
 			playlist.WriteString(strconv.Itoa(track.Index))
 			playlist.WriteString(".m3u8\"\n")
+		}
+		for _, ext := range task.externalSubtitles() {
+			hasSubtitles = true
+			writeSubtitleMedia(&playlist, taskID, ext.Name, firstNonEmpty(ext.Language, "und"), ext.Index)
 		}
 		if hasSubtitles {
 			playlist.WriteByte('\n')
