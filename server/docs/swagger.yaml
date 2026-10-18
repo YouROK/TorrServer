@@ -1595,6 +1595,8 @@ paths:
       responses:
         "200":
           description: List of tracks (JSON) or WebVTT
+        "413":
+          description: Subtitle file is over the size limit
       summary: External subtitles of a video file
       tags:
       - API

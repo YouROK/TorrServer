@@ -38,6 +38,7 @@ type subTrackJS struct {
 //	@Produce		json
 //	@Produce		text/vtt
 //	@Success		200	"List of tracks (JSON) or WebVTT"
+//	@Failure		413	"Subtitle file is over the size limit"
 //	@Router			/subs/{hash}/{id} [get]
 func subsTracks(c *gin.Context) {
 	vc, ok := loadVideoContext(c)
@@ -80,6 +81,13 @@ func subsTracks(c *gin.Context) {
 		}
 	}
 	if track == nil {
+		// A file of this video that is over the size limit: say so instead of 404.
+		for _, t := range tooLarge {
+			if t.FileIndex == trackID {
+				c.AbortWithError(http.StatusRequestEntityTooLarge, errors.New("subtitle file is over the size limit (setting MaxSubtitleSizeMB)"))
+				return
+			}
+		}
 		c.AbortWithError(http.StatusNotFound, errors.New("subtitle track not found"))
 		return
 	}
