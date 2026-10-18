@@ -43,6 +43,8 @@ type BTSets struct {
 	UseDisk           bool
 	TorrentsSavePath  string
 	RemoveCacheOnDrop bool
+	LongTermCache     bool  // keep cached pieces on disk until global quota is full
+	DiskCacheSize     int64 // total disk cache quota in bytes (long-term mode)
 
 	// Torrent
 	ForceEncrypt             bool
@@ -165,6 +167,13 @@ func SetBTSets(sets *BTSets) {
 	}
 	if sets.PreloadCache > 100 {
 		sets.PreloadCache = 100
+	}
+
+	if sets.LongTermCache {
+		sets.UseDisk = true
+		if sets.DiskCacheSize <= 0 {
+			sets.DiskCacheSize = 50 * 1024 * 1024 * 1024 // 50 GB
+		}
 	}
 
 	if sets.TorrentsSavePath == "" {

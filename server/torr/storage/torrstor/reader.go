@@ -101,8 +101,10 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 }
 
 func (r *Reader) SetReadahead(length int64) {
-	if r.cache != nil && length > r.cache.capacity {
-		length = r.cache.capacity
+	if r.cache != nil {
+		if streamCap := r.cache.streamCapacity(); length > streamCap {
+			length = streamCap
+		}
 	}
 	if r.isUse {
 		r.Reader.SetReadahead(length)
@@ -152,8 +154,9 @@ func (r *Reader) getOffsetRange() (int64, int64) {
 		readers = 1
 	}
 
-	beginOffset := r.offset - (r.cache.capacity/readers)*(100-prc)/100
-	endOffset := r.offset + (r.cache.capacity/readers)*prc/100
+	streamCap := r.cache.streamCapacity()
+	beginOffset := r.offset - (streamCap/readers)*(100-prc)/100
+	endOffset := r.offset + (streamCap/readers)*prc/100
 
 	if beginOffset < 0 {
 		beginOffset = 0

@@ -328,7 +328,9 @@
     "UseVLCDesktopHintPrefix": "На компютър е необходим",
     "UseVLCHint": "Добави бутон към VLC плеъра за списъка с торенти",
     "ViewedHistoryStorage": "Съхранение на историята на прегледите:",
-    "ViewedStorageHint": "Изберете къде да съхранявате историята на прегледите"
+    "ViewedStorageHint": "Изберете къде да съхранявате историята на прегледите",
+    "LongTermCacheDisableWarning": "Turning this option off deletes all saved cache",
+    "LongTermCacheDisableConfirm": "Turn off"
   },
   "Size": "Размер",
   "SpecialThanks": "Специални благодарности",
@@ -434,5 +436,16 @@
     "Warnings": "Предупреждения при анализ:",
     "Whitelist": "Бял списък IP",
     "WhitelistHint": "Празен списък изключва whitelist. Пример: local:127.0.0.1 или 10.0.0.0/8"
+  },
+  "DownloadToCache": {
+    "Torrent": "Download",
+    "File": "Download",
+    "Cancel": "Cancel",
+    "Cached": "Cached",
+    "InCache": "Cached",
+    "Error": "Failed",
+    "TorrentHint": "Download the whole torrent into the server cache",
+    "FileHint": "Download the whole file into the server cache",
+    "CancelHint": "Stop downloading into the cache"
   }
 }
