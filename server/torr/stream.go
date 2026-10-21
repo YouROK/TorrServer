@@ -39,6 +39,15 @@ var activeStreams int32
 // }
 
 func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter) error {
+	// Fully downloaded offline torrents are served straight from disk
+	if t.OfflineReady() {
+		return t.streamOffline(fileID, req, resp)
+	}
+	// An offline torrent that is still being downloaded has no stream cache:
+	// it is played through the file reader of the BitTorrent client
+	if t.offStore != nil {
+		return t.streamOfflineLive(fileID, req, resp)
+	}
 	// Increment active streams counter
 	streamID := atomic.AddInt32(&activeStreams, 1)
 	defer atomic.AddInt32(&activeStreams, -1)

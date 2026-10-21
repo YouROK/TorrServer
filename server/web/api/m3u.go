@@ -150,7 +150,7 @@ func playList(c *gin.Context) {
 		return
 	}
 
-	if tor.Stat == state.TorrentInDB {
+	if tor.Stat == state.TorrentInDB && !tor.OfflineReady() {
 		tor = torr.LoadTorrent(tor)
 		if tor == nil {
 			c.AbortWithError(http.StatusInternalServerError, errors.New("error get torrent info"))
@@ -163,7 +163,7 @@ func playList(c *gin.Context) {
 	list = "#EXTM3U\n" + list
 	name := strings.ReplaceAll(c.Param("fname"), `/`, "") // strip starting / from param
 	if name == "" {
-		name = tor.Name() + ".m3u"
+		name = tor.Status().Name + ".m3u"
 	} else if !strings.HasSuffix(strings.ToLower(name), ".m3u") && !strings.HasSuffix(strings.ToLower(name), ".m3u8") {
 		name += ".m3u"
 	}

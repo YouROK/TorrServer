@@ -19,7 +19,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Action: add, get, set, rem, list, drop
+// Action: add, get, set, rem, list, drop, wipe, offline, offline_pause, offline_resume
 type torrReqJS struct {
 	requestI
 	Link     string `json:"link,omitempty"`
@@ -29,16 +29,19 @@ type torrReqJS struct {
 	Poster   string `json:"poster,omitempty"`
 	Data     string `json:"data,omitempty"`
 	SaveToDB bool   `json:"save_to_db,omitempty"`
+	// Enable is used by the "offline" action: true - download the torrent completely
+	// and serve it from disk, false - go back to the normal streaming mode.
+	Enable bool `json:"enable,omitempty"`
 }
 
 // torrents godoc
 //
 //	@Summary		Handle torrents informations
-//	@Description	Allow to list, add, remove, get, set, drop, wipe torrents on server. The action depends of what has been asked.
+//	@Description	Allow to list, add, remove, get, set, drop, wipe torrents on server and to manage the offline mode of a torrent (download it completely and serve it from disk). The action depends of what has been asked.
 //
 //	@Tags			API
 //
-//	@Param			request	body	torrReqJS	true	"Torrent request. Available params for action: add, get, set, rem, list, drop, wipe. link required for add, hash required for get, set, rem, drop."
+//	@Param			request	body	torrReqJS	true	"Torrent request. Available actions: add, get, set, rem, list, drop, wipe, offline, offline_pause, offline_resume. link required for add; hash required for get, set, rem, drop, offline, offline_pause, offline_resume; enable required for offline (true - download for offline viewing, false - remove the offline copy and go back to streaming)."
 //
 //	@Accept			json
 //	@Produce		json
@@ -80,6 +83,18 @@ func torrents(c *gin.Context) {
 	case "wipe":
 		{
 			wipeTorrents(c)
+		}
+	case "offline":
+		{
+			offlineTorrent(req, c)
+		}
+	case "offline_pause":
+		{
+			offlineControl(req, c, true)
+		}
+	case "offline_resume":
+		{
+			offlineControl(req, c, false)
 		}
 	default:
 		{
@@ -221,6 +236,52 @@ func dropTorrent(req torrReqJS, c *gin.Context) {
 	torr.DropTorrent(req.Hash)
 	gstreamer.Remove(req.Hash)
 	c.Status(200)
+}
+
+// offlineTorrent switches a torrent to (enable=true) or from (enable=false) the offline mode.
+func offlineTorrent(req torrReqJS, c *gin.Context) {
+	if req.Hash == "" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "hash is empty"})
+		return
+	}
+	var (
+		tor *torr.Torrent
+		err error
+	)
+	if req.Enable {
+		tor, err = torr.EnableOffline(req.Hash)
+	} else {
+		tor, err = torr.DisableOffline(req.Hash)
+	}
+	if err != nil {
+		log.TLogln("error offline:", err)
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, tor.Status())
+}
+
+// offlineControl pauses or resumes an offline download.
+func offlineControl(req torrReqJS, c *gin.Context, pause bool) {
+	if req.Hash == "" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "hash is empty"})
+		return
+	}
+	var (
+		tor *torr.Torrent
+		err error
+	)
+	if pause {
+		tor, err = torr.PauseOffline(req.Hash)
+	} else {
+		tor, err = torr.ResumeOfflineDownload(req.Hash)
+	}
+	if err != nil {
+		log.TLogln("error offline pause/resume:", err)
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, tor.Status())
 }
 
 func wipeTorrents(c *gin.Context) {
