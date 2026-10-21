@@ -53,7 +53,7 @@ func play(c *gin.Context) {
 		return
 	}
 
-	if tor.Stat == state.TorrentInDB {
+	if tor.Stat == state.TorrentInDB && !tor.OfflineReady() {
 		tor, err = torr.AddTorrent(spec, tor.Title, tor.Poster, tor.Data, tor.Category)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
@@ -68,7 +68,7 @@ func play(c *gin.Context) {
 
 	// find file
 	index := -1
-	if len(tor.Files()) == 1 {
+	if tor.FileCount() == 1 {
 		index = 1
 	} else {
 		ind, err := strconv.Atoi(indexStr)
