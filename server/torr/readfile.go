@@ -15,6 +15,12 @@ import (
 // Unlike Stream() it does not mark the file as viewed and does not write HTTP headers.
 // Files larger than maxSize are rejected. Reading is aborted when ctx is done.
 func (t *Torrent) ReadFile(ctx context.Context, fileID int, maxSize int64) ([]byte, error) {
+	if t.OfflineReady() {
+		return t.readOfflineFile(fileID, maxSize)
+	}
+	if t.offStore != nil { // offline download in progress: no stream cache, read through the client
+		return t.readOfflineLiveFile(ctx, fileID, maxSize)
+	}
 	if !t.GotInfo() {
 		return nil, errors.New("torrent doesn't have info yet")
 	}

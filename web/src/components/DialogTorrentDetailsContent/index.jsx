@@ -57,11 +57,18 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
     download_speed: downloadSpeed,
     upload_speed: uploadSpeed,
     torrent_size: torrentSize,
+    loaded_size: loadedSize,
+    offline_state: offlineState,
+    offline_error: offlineError,
     file_stats: torrentFileList,
   } = torrent
+  const isOfflineTorrent = !!offlineState
+  const zeroSize = `0 ${t('B')}`
+  const offlineProgressLabel = `${humanizeSize(loadedSize) || zeroSize} / ${humanizeSize(torrentSize) || zeroSize}`
 
-  const cache = useUpdateCache(hash)
-  const settings = useGetSettings(cache)
+  // An offline torrent has no stream cache: nothing to poll (the settings are fetched once for it)
+  const cache = useUpdateCache(isOfflineTorrent ? undefined : hash)
+  const settings = useGetSettings(isOfflineTorrent ? null : cache)
 
   const { Capacity, PiecesCount, PiecesLength, Filled } = cache
 
@@ -83,13 +90,18 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
     setPlayableFileList(torrentFileList?.filter(({ path }) => isFilePlayable(path)))
   }, [torrentFileList])
 
-  useEffect(() => {
-    const cacheLoaded = !!Object.entries(cache).length
-    const torrentLoaded = stat !== GETTING_INFO && stat !== IN_DB
+  // offline torrents have no stream cache and a ready one is never "working" (stat is IN_DB)
+  const cacheLoaded = isOfflineTorrent || !!Object.entries(cache).length
+  // A live offline torrent is shown as soon as its metadata (name and files) is known; a stored one
+  // (paused / ready, stat IN_DB) right away.
+  const torrentLoaded = isOfflineTorrent
+    ? stat === IN_DB || !!(name && torrentFileList)
+    : stat !== GETTING_INFO && stat !== IN_DB
 
+  useEffect(() => {
     if (!cacheLoaded && !isLoading) setIsLoading(true)
     if (cacheLoaded && isLoading && torrentLoaded) setIsLoading(false)
-  }, [stat, cache, isLoading])
+  }, [cacheLoaded, torrentLoaded, isLoading])
 
   useEffect(() => {
     // getting viewed file list
@@ -111,13 +123,13 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
     const torrentParsedName = name && ptt.parse(name)
 
     if (title !== name) {
-      newNameStringArr.push(removeRedundantCharacters(title))
+      newNameStringArr.push(removeRedundantCharacters(title || name || ''))
     } else if (torrentParsedName?.title) newNameStringArr.push(removeRedundantCharacters(torrentParsedName?.title))
 
     // These 2 checks are needed to get year and resolution from torrent name if title does not have this info
-    if (torrentParsedName?.year && !newNameStringArr[0].includes(torrentParsedName?.year))
+    if (torrentParsedName?.year && !newNameStringArr[0]?.includes(torrentParsedName?.year))
       newNameStringArr.push(torrentParsedName?.year)
-    if (torrentParsedName?.resolution && !newNameStringArr[0].includes(torrentParsedName?.resolution))
+    if (torrentParsedName?.resolution && !newNameStringArr[0]?.includes(torrentParsedName?.resolution))
       newNameStringArr.push(torrentParsedName?.resolution)
 
     const newNameString = newNameStringArr.join('. ')
@@ -144,7 +156,10 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
           ...(isDetailedCacheView && { display: 'flex', flexDirection: 'column' }),
         }}
       >
-        {isLoading ? (
+        {/* The loader is also shown while the torrent data is not complete yet, in the same render:
+            the state above is updated by an effect, one render too late (e.g. right after an offline
+            copy was removed the torrent is stored in the DB only and has no name). */}
+        {isLoading || !cacheLoaded || !torrentLoaded ? (
           <Loader />
         ) : isDetailedCacheView ? (
           <DetailedView
@@ -166,7 +181,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                 {title && name !== title ? (
                   getParsedTitle().length > 90 ? (
                     <>
-                      <SectionTitle>{ptt.parse(name).title}</SectionTitle>
+                      <SectionTitle>{ptt.parse(name || '').title}</SectionTitle>
                       <SectionSubName mb={20}>{getParsedTitle()}</SectionSubName>
                     </>
                   ) : (
@@ -197,32 +212,51 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                   name={name}
                   title={title}
                   setViewedFileList={setViewedFileList}
+                  offlineState={offlineState}
+                  offlineError={offlineError}
+                  loadedSize={loadedSize}
+                  torrentSize={torrentSize}
                 />
               </div>
             </MainSection>
 
             <CacheSection>
               <SectionHeader>
-                <SectionTitle mb={20}>{t('Buffer')}</SectionTitle>
-                {bufferSize <= 33554432 && <SectionSubName>{t('BufferNote')}</SectionSubName>}
-                <LoadingProgress
-                  value={Filled}
-                  style={{ marginTop: '5px' }}
-                  fullAmount={bufferSize}
-                  label={`${humanizeSize(bufferSize)} / ${humanizeSize(Filled) || `0 ${t('B')}`}`}
-                />
+                <SectionTitle mb={20}>
+                  {isOfflineTorrent ? t('OfflineStorage', 'Offline storage') : t('Buffer')}
+                </SectionTitle>
+                {!isOfflineTorrent && bufferSize <= 33554432 && <SectionSubName>{t('BufferNote')}</SectionSubName>}
+                {isOfflineTorrent ? (
+                  <LoadingProgress
+                    value={loadedSize || 0}
+                    style={{ marginTop: '5px' }}
+                    fullAmount={torrentSize || 0}
+                    label={offlineProgressLabel}
+                  />
+                ) : (
+                  <LoadingProgress
+                    value={Filled}
+                    style={{ marginTop: '5px' }}
+                    fullAmount={bufferSize}
+                    label={`${humanizeSize(bufferSize)} / ${humanizeSize(Filled) || `0 ${t('B')}`}`}
+                  />
+                )}
               </SectionHeader>
 
-              <TorrentCache isMini cache={cache} isSnakeDebugMode={isSnakeDebugMode} />
-              <Button
-                style={{ marginTop: '30px' }}
-                variant='contained'
-                color='primary'
-                size='large'
-                onClick={() => setIsDetailedCacheView(true)}
-              >
-                {t('DetailedCacheView.button')}
-              </Button>
+              {!isOfflineTorrent && (
+                <>
+                  <TorrentCache isMini cache={cache} isSnakeDebugMode={isSnakeDebugMode} />
+                  <Button
+                    style={{ marginTop: '30px' }}
+                    variant='contained'
+                    color='primary'
+                    size='large'
+                    onClick={() => setIsDetailedCacheView(true)}
+                  >
+                    {t('DetailedCacheView.button')}
+                  </Button>
+                </>
+              )}
             </CacheSection>
 
             <TorrentFilesSection>
@@ -249,13 +283,15 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                 </>
               )}
 
-              <Table
-                hash={hash}
-                playableFileList={playableFileList}
-                viewedFileList={viewedFileList}
-                selectedSeason={selectedSeason}
-                seasonAmount={seasonAmount}
-              />
+              {playableFileList && (
+                <Table
+                  hash={hash}
+                  playableFileList={playableFileList}
+                  viewedFileList={viewedFileList}
+                  selectedSeason={selectedSeason}
+                  seasonAmount={seasonAmount}
+                />
+              )}
             </TorrentFilesSection>
           </DialogContentGrid>
         )}

@@ -44,6 +44,10 @@ type BTSets struct {
 	TorrentsSavePath  string
 	RemoveCacheOnDrop bool
 
+	// Offline mode: directory for fully downloaded torrents.
+	// Empty = "offline" inside the database/config directory.
+	OfflineSavePath string
+
 	// Torrent
 	ForceEncrypt             bool
 	RetrackersMode           int    // 0 - don`t add, 1 - add retrackers (def), 2 - remove retrackers 3 - replace retrackers

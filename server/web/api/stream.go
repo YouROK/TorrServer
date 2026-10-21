@@ -144,7 +144,12 @@ func stream(c *gin.Context) {
 		data = tor.Data
 		category = tor.Category
 	}
-	if tor == nil || tor.Stat == state.TorrentInDB {
+	// A paused offline torrent goes through the normal path below: it is
+	// loaded into the client in the regular (streaming) mode and playback
+	// comes from the torrent network, not from the already downloaded part
+	// on disk (the disk data is used again once the download is resumed or
+	// finished). The UI shows a hint about this (OfflinePausedStreamHint).
+	if tor == nil || (tor.Stat == state.TorrentInDB && !tor.OfflineReady()) {
 		tor, err = torr.AddTorrent(spec, title, poster, data, category)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": fmt.Errorf("error adding torrent: %v", err).Error()})
@@ -158,7 +163,7 @@ func stream(c *gin.Context) {
 	}
 
 	if tor.Title == "" {
-		tor.Title = tor.Name()
+		tor.Title = tor.Status().Name
 	}
 
 	// save to db
@@ -169,7 +174,7 @@ func stream(c *gin.Context) {
 
 	// find file
 	index := -1
-	if len(tor.Files()) == 1 {
+	if tor.FileCount() == 1 {
 		index = 1
 	} else {
 		ind, err := strconv.Atoi(indexStr)
@@ -194,7 +199,7 @@ func stream(c *gin.Context) {
 	if m3u {
 		name := strings.ReplaceAll(c.Param("fname"), `/`, "") // strip starting / from param
 		if name == "" {
-			name = tor.Name() + ".m3u"
+			name = tor.Status().Name + ".m3u"
 		} else if !strings.HasSuffix(strings.ToLower(name), ".m3u") && !strings.HasSuffix(strings.ToLower(name), ".m3u8") {
 			name += ".m3u"
 		}
@@ -279,7 +284,7 @@ func streamNoAuth(c *gin.Context) {
 
 	data := tor.Data
 
-	if tor.Stat == state.TorrentInDB {
+	if tor.Stat == state.TorrentInDB && !tor.OfflineReady() {
 		tor, err = torr.AddTorrent(spec, title, poster, data, category)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": fmt.Errorf("error adding torrent: %v", err).Error()})
@@ -294,7 +299,7 @@ func streamNoAuth(c *gin.Context) {
 
 	// find file
 	index := -1
-	if len(tor.Files()) == 1 {
+	if tor.FileCount() == 1 {
 		index = 1
 	} else {
 		ind, err := strconv.Atoi(indexStr)
@@ -314,7 +319,7 @@ func streamNoAuth(c *gin.Context) {
 	if m3u {
 		name := strings.ReplaceAll(c.Param("fname"), `/`, "") // strip starting / from param
 		if name == "" {
-			name = tor.Name() + ".m3u"
+			name = tor.Status().Name + ".m3u"
 		} else if !strings.HasSuffix(strings.ToLower(name), ".m3u") && !strings.HasSuffix(strings.ToLower(name), ".m3u8") {
 			name += ".m3u"
 		}

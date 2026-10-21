@@ -18,6 +18,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { SecondarySettingsContent, SettingSectionLabel } from './style'
 import HTTPSSettings from './HTTPSSettings'
+import OfflineSettings from './OfflineSettings'
 
 // Create a styled status message component
 const StatusMessage = styled('div')(({ theme, severity }) => ({
@@ -465,6 +466,8 @@ export default function SecondarySettingsComponent({ settings, inputForm, update
           </StatusMessage>
         )}
       </Box>
+      {/* Watch Offline Mode Section */}
+      <OfflineSettings settings={settings} inputForm={inputForm} />
     </SecondarySettingsContent>
   )
 }

@@ -19,6 +19,12 @@ type TorrentDB struct {
 
 	Timestamp int64 `json:"timestamp,omitempty"`
 	Size      int64 `json:"size,omitempty"`
+
+	// OfflineState is "", "downloading", "paused" or "ready" (see server/torr/state).
+	OfflineState string `json:"offline_state,omitempty"`
+	// OfflineDir is the directory the offline data of this torrent was stored in
+	// (so changing the global setting does not orphan already downloaded torrents).
+	OfflineDir string `json:"offline_dir,omitempty"`
 }
 
 type File struct {
@@ -62,6 +68,11 @@ func ListTorrent() []*TorrentDB {
 	defer mu.Unlock()
 
 	var list []*TorrentDB
+	if tdb == nil {
+		// the DB is not open (e.g. the torrent client runs in tests without a
+		// DB): nothing is stored, so there is nothing to list
+		return nil
+	}
 	keys := tdb.List("Torrents")
 	for _, key := range keys {
 		buf := tdb.Get("Torrents", key)
