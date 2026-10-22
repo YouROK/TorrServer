@@ -188,9 +188,12 @@ func mostlyUTF8(b []byte) bool {
 	return good > 0 && bad*10 <= good
 }
 
-var cp1251Extra = map[byte]rune{
-	0x85: '…', 0x91: '‘', 0x92: '’', 0x93: '“', 0x94: '”',
-	0x96: '–', 0x97: '—', 0xA0: '\u00A0', 0xAB: '«', 0xBB: '»', 0xB9: '№',
+// cp1251High maps bytes 0x80..0xBF; 0 marks the one unassigned byte (0x98).
+var cp1251High = [64]rune{
+	'Ђ', 'Ѓ', '‚', 'ѓ', '„', '…', '†', '‡', '€', '‰', 'Љ', '‹', 'Њ', 'Ќ', 'Ћ', 'Џ', // 0x8_
+	'ђ', '‘', '’', '“', '”', '•', '–', '—', 0, '™', 'љ', '›', 'њ', 'ќ', 'ћ', 'џ', // 0x9_
+	'\u00A0', 'Ў', 'ў', 'Ј', '¤', 'Ґ', '¦', '§', 'Ё', '©', 'Є', '«', '¬', '\u00AD', '®', 'Ї', // 0xA_
+	'°', '±', 'І', 'і', 'ґ', 'µ', '¶', '·', 'ё', '№', 'є', '»', 'ј', 'Ѕ', 'ѕ', 'ї', // 0xB_
 }
 
 func cp1251ToUTF8(b []byte) string {
@@ -201,16 +204,10 @@ func cp1251ToUTF8(b []byte) string {
 			sb.WriteByte(c)
 		case c >= 0xC0: // Cyrillic letters (U+0410..U+044F)
 			sb.WriteRune(rune(c) - 0xC0 + 0x0410)
-		case c == 0xA8:
-			sb.WriteRune('Ё')
-		case c == 0xB8:
-			sb.WriteRune('ё')
+		case cp1251High[c-0x80] != 0:
+			sb.WriteRune(cp1251High[c-0x80])
 		default:
-			if r, ok := cp1251Extra[c]; ok {
-				sb.WriteRune(r)
-			} else {
-				sb.WriteRune('\uFFFD')
-			}
+			sb.WriteRune('\uFFFD')
 		}
 	}
 	return sb.String()
@@ -238,10 +235,10 @@ var cp1251Reverse = func() map[rune]byte {
 	for c := 0xC0; c <= 0xFF; c++ { // Cyrillic letters (U+0410..U+044F)
 		m[rune(c)-0xC0+0x0410] = byte(c)
 	}
-	m['Ё'] = 0xA8
-	m['ё'] = 0xB8
-	for c, r := range cp1251Extra {
-		m[r] = c
+	for i, r := range cp1251High {
+		if r != 0 {
+			m[r] = byte(0x80 + i)
+		}
 	}
 	return m
 }()
