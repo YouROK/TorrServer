@@ -18,7 +18,7 @@ permissions:
 jobs:
   lint:
     name: Lint (Go)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     defaults:
       run:
         working-directory: server
@@ -69,7 +69,7 @@ jobs:
 
   goreleaser-check:
     name: GoReleaser config
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -90,7 +90,7 @@ jobs:
 
   web:
     name: Web (typecheck lint test build)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     defaults:
       run:
         working-directory: web
@@ -101,7 +101,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: "22"
           cache: yarn
           cache-dependency-path: web/yarn.lock
 
@@ -130,7 +130,7 @@ jobs:
         run: yarn build
         env:
           # Ensure release-like embed build (no localhost API baked in)
-          VITE_SERVER_HOST: ''
+          VITE_SERVER_HOST: ""
 
   build:
     name: Build (linux amd64)
@@ -150,7 +150,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: "22"
           cache: yarn
           cache-dependency-path: web/yarn.lock
 

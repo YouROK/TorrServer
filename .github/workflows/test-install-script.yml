@@ -27,7 +27,7 @@ env:
 jobs:
   test-script-syntax:
     name: Test Script Syntax
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -46,7 +46,7 @@ jobs:
 
   test-install-script:
     name: Test on ${{ matrix.os }} (${{ matrix.test-user }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     strategy:
       fail-fast: false
       matrix:
