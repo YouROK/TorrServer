@@ -264,6 +264,8 @@
     "MergeAllM3U": "Combine M3U playlists",
     "MergeAllM3UHint": "Lists all files in one (http://host:port/playlistall/all.m3u) playlist instead of a separate playlist for each torrent.",
     "MobileAppSettings": "Players",
+    "OneCacheForAll": "Apply Cache Size for All Torrents' Caches",
+    "OneCacheForAllDesc": "If disabled Cache Size applies to individual torrents' caches",
     "PeersListenPort": "Peers Listen Port",
     "PeersListenPortHint": "1024 - 65535, 0 - random",
     "PreloadCache": "Preload Cache Before Play",
