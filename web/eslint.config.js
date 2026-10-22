@@ -1,6 +1,5 @@
 import js from '@eslint/js'
 import globals from 'globals'
-import react from 'eslint-plugin-react'
 import reactHooks from 'eslint-plugin-react-hooks'
 import prettier from 'eslint-plugin-prettier'
 import prettierConfig from 'eslint-config-prettier'
@@ -12,7 +11,7 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   prettierConfig,
   {
-    files: ['src/**/*.{js,jsx,ts,tsx}'],
+    files: ['src/**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'module',
@@ -24,15 +23,10 @@ export default tseslint.config(
       },
     },
     plugins: {
-      react,
       'react-hooks': reactHooks,
       prettier,
     },
-    settings: {
-      react: { version: '19' },
-    },
     rules: {
-      ...react.configs.recommended.rules,
       // Classic hooks (must-pass). React Compiler rules from hooks v7 are warn until
       // surfaces are migrated to React 19 compiler-friendly patterns.
       'react-hooks/rules-of-hooks': 'error',
@@ -63,10 +57,6 @@ export default tseslint.config(
           endOfLine: 'auto',
         },
       ],
-      'react/react-in-jsx-scope': 'off',
-      'react/prop-types': 'off',
-      'react/jsx-props-no-spreading': 'off',
-      'react/display-name': 'off',
       '@typescript-eslint/no-unused-expressions': 'off',
       'no-unused-expressions': 'off',
       '@typescript-eslint/no-unused-vars': [
@@ -80,7 +70,6 @@ export default tseslint.config(
           varsIgnorePattern: '^_',
         },
       ],
-      '@typescript-eslint/no-require-imports': 'off',
       'no-empty': ['error', { allowEmptyCatch: true }],
       '@typescript-eslint/no-explicit-any': 'off',
       'no-unused-vars': 'off',
