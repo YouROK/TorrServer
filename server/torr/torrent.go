@@ -130,7 +130,16 @@ func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 }
 
 func (t *Torrent) WaitInfo() bool {
-	if t == nil || t.Torrent == nil {
+	if t == nil {
+		return false
+	}
+	// drop() (Close, "drop all torrents") sets t.Torrent to nil at any moment, e.g. on
+	// "drop" from Lampa while stream requests wait here. Take the pointer once under
+	// muTorrent and use only it below: it stays valid after Drop, and t.closed fires.
+	t.muTorrent.Lock()
+	torrent := t.Torrent
+	t.muTorrent.Unlock()
+	if torrent == nil {
 		return false
 	}
 
@@ -138,9 +147,9 @@ func (t *Torrent) WaitInfo() bool {
 	tm := time.NewTimer(time.Minute + time.Second*time.Duration(settings.BTsets.TorrentDisconnectTimeout))
 
 	select {
-	case <-t.Torrent.GotInfo():
+	case <-torrent.GotInfo():
 		if t.TorrentSpec != nil && len(t.InfoBytes) == 0 {
-			t.InfoBytes = t.Torrent.Metainfo().InfoBytes
+			t.InfoBytes = torrent.Metainfo().InfoBytes
 		}
 		if t.bt != nil {
 			// bt.storage is replaced by Connect under bt.mu; snapshot it under the
@@ -157,7 +166,7 @@ func (t *Torrent) WaitInfo() bool {
 					return false
 				}
 				t.cache = cache
-				cache.SetTorrent(t.Torrent)
+				cache.SetTorrent(torrent)
 			}
 		}
 		return true
