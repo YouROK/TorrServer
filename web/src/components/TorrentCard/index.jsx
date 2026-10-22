@@ -53,6 +53,9 @@ import {
   TorrentCardPoster,
 } from './style'
 
+import OfflineControls from './OfflineControls'
+import OfflineProgressBar, { getOfflineSizeLabel } from './OfflineProgressBar'
+
 const Transition = forwardRef((props, ref) => <Slide direction='up' ref={ref} {...props} />)
 
 const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds))
@@ -515,6 +518,8 @@ const Torrent = ({ torrent }) => {
             />
           )}
 
+          <OfflineControls hash={hash} offlineState={offlineState} />
+
           <StyledButton onClick={() => dropTorrent(torrent)}>
             <CloseIcon />
             <span>{t('Drop')}</span>
@@ -534,13 +539,15 @@ const Torrent = ({ torrent }) => {
             <div className='description-torrent-title'>{parsedTitle}</div>
           </div>
 
-          <div className='description-statistics-wrapper'>
+          <div className={`description-statistics-wrapper${offlineState ? ' offline' : ''}`}>
             <div className='description-statistics-element-wrapper'>
               <div className='description-section-name'>
                 <StatusIndicator stat={stat} offlineState={offlineState} offlinePercent={offlinePercent} />
                 {t('Size')}
               </div>
-              <div className='description-statistics-element-value'>{torrentSize > 0 && humanizeSize(torrentSize)}</div>
+              <div className='description-statistics-element-value'>
+                {torrentSize > 0 && (offlineState ? getOfflineSizeLabel(torrent, t) : humanizeSize(torrentSize))}
+              </div>
             </div>
 
             <div className='description-statistics-element-wrapper'>
@@ -556,6 +563,7 @@ const Torrent = ({ torrent }) => {
             </div>
           </div>
         </TorrentCardDescription>
+        <OfflineProgressBar torrent={torrent} />
       </TorrentCard>
 
       <StyledDialog
