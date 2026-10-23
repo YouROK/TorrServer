@@ -329,17 +329,6 @@ func (s *Service) DeleteUser(actor *User, targetID string) error {
 
 // AddTorrent добавляет торрент в список пользователя
 func (s *Service) AddTorrent(u *User, hash, title, poster, category string) error {
-	// Проверяем лимиты пользователя (если заданы)
-	if u.Limits.MaxTorrents > 0 {
-		currentCount, err := s.store.CountUserTorrents(u.ID)
-		if err != nil {
-			return err
-		}
-		if currentCount >= u.Limits.MaxTorrents {
-			return fmt.Errorf("torrent limit reached for your account (max: %d)", u.Limits.MaxTorrents)
-		}
-	}
-
 	ut := &UserTorrent{
 		UserID:      u.ID,
 		TorrentHash: hash,
@@ -350,7 +339,9 @@ func (s *Service) AddTorrent(u *User, hash, title, poster, category string) erro
 		ViewedFiles: []int{},
 	}
 
-	if err := s.store.AddUserTorrent(ut); err != nil {
+	// Лимит проверяется в той же транзакции, что и запись: иначе
+	// параллельные добавления обходят MaxTorrents
+	if err := s.store.AddUserTorrentLimited(ut, u.Limits.MaxTorrents); err != nil {
 		return err
 	}
 
@@ -449,6 +440,13 @@ func (s *Service) SetRank(actor *User, targetID string, newRank RoleRank) error 
 		return ErrOwnerProtected
 	}
 
+	// Менять ранг можно только тому, кто выше цели: иначе любой пользователь
+	// понижает администратора, оставаясь на своём месте. Себе ранг понизить можно,
+	// повысить его всё равно не даст CanAssignRank
+	if actor.ID != target.ID && !actor.CanManage(target) {
+		return ErrPermissionDenied
+	}
+
 	if !actor.CanAssignRank(newRank) {
 		return ErrPermissionDenied
 	}
@@ -482,16 +480,9 @@ func (s *Service) AdminListTorrents(actor *User, targetID string) ([]*UserTorren
 
 // UpdateTorrentMeta изменяет личную карточку торрента (название, постер, категория)
 func (s *Service) UpdateTorrentMeta(u *User, hash, title, poster, category string) error {
-	ut, err := s.store.GetUserTorrent(u.ID, hash)
+	// Правка внутри транзакции: иначе она затирает параллельные отметки просмотра
+	err := s.store.UpdateUserTorrentMeta(u.ID, hash, title, poster, category)
 	if err != nil {
-		return err
-	}
-
-	ut.Title = title
-	ut.Poster = poster
-	ut.Category = category
-
-	if err := s.store.AddUserTorrent(ut); err != nil {
 		return err
 	}
 

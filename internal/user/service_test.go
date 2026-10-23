@@ -150,6 +150,58 @@ func TestRankHierarchy(t *testing.T) {
 	}
 }
 
+// TestSetRankPermissions проверяет, что ранг меняет только тот, кто выше цели:
+// иначе обычный пользователь понижает администратора.
+func TestSetRankPermissions(t *testing.T) {
+	svc, cleanup := setupTestEnv(t, "secret")
+	defer cleanup()
+
+	owner, _, _ := svc.Login("owner", "secret")
+
+	admin, err := svc.CreateUser(owner, "rank_admin", "pass", RankAdmin, Limits{})
+	if err != nil {
+		t.Fatalf("CreateUser admin failed: %v", err)
+	}
+	regular, err := svc.CreateUser(owner, "rank_user", "pass", RankUser, Limits{})
+	if err != nil {
+		t.Fatalf("CreateUser regular failed: %v", err)
+	}
+
+	// Пользователь не может понизить администратора
+	if err := svc.SetRank(regular, admin.ID, RankGuest); err != ErrPermissionDenied {
+		t.Errorf("regular demoting admin = %v, want %v", err, ErrPermissionDenied)
+	}
+
+	// Администратор не может тронуть равного себе
+	second, err := svc.CreateUser(owner, "rank_admin2", "pass", RankAdmin, Limits{})
+	if err != nil {
+		t.Fatalf("CreateUser second admin failed: %v", err)
+	}
+	if err := svc.SetRank(admin, second.ID, RankUser); err != ErrPermissionDenied {
+		t.Errorf("admin demoting equal admin = %v, want %v", err, ErrPermissionDenied)
+	}
+
+	// Владелец понижает администратора
+	if err := svc.SetRank(owner, admin.ID, RankUser); err != nil {
+		t.Errorf("owner demoting admin failed: %v", err)
+	}
+
+	// Себе ранг понизить можно
+	if err := svc.SetRank(admin, admin.ID, RankGuest); err != nil {
+		t.Errorf("self demotion failed: %v", err)
+	}
+
+	// Повысить себя нельзя
+	if err := svc.SetRank(regular, regular.ID, RankOwner); err != ErrPermissionDenied {
+		t.Errorf("self promotion = %v, want %v", err, ErrPermissionDenied)
+	}
+
+	// Ранг Owner неизменяем
+	if err := svc.SetRank(owner, owner.ID, RankUser); err != ErrOwnerProtected {
+		t.Errorf("owner rank change = %v, want %v", err, ErrOwnerProtected)
+	}
+}
+
 func TestUserTorrentsAndViewedFiles(t *testing.T) {
 	svc, cleanup := setupTestEnv(t, "secret")
 	defer cleanup()
