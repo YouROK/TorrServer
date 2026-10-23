@@ -5,9 +5,11 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -172,7 +174,7 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 	// }
 	// http.ServeContent(wrappedResp, req, file.Path(), time.Unix(t.Timestamp, 0), reader)
 
-	http.ServeContent(resp, req, file.Path(), time.Unix(t.Timestamp, 0), newBufferedStreamReader(reader, 1<<20))
+	ServeStreamContent(resp, req, file.Path(), time.Unix(t.Timestamp, 0), newBufferedStreamReader(reader, 1<<20))
 
 	if sets.BTsets.EnableDebug {
 		if clerr != nil {
@@ -182,6 +184,72 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 		}
 	}
 	return nil
+}
+
+// streamCopySize is the scratch buffer for one HTTP body copy. 64KiB keeps
+// 4K/remux Write calls down without pinning a piece-sized array in the copy.
+const streamCopySize = 64 << 10
+
+// *[streamCopySize]byte in the pool: Get/Put store a pointer, so the steady
+// state does not box a slice header.
+var streamCopyPool = sync.Pool{New: func() any { return new([streamCopySize]byte) }}
+
+// streamWriterPool recycles the ReaderFrom wrapper so ServeContent does not
+// allocate one per response. The inner ResponseWriter is cleared before Put
+// so a finished request is not pinned for the life of the pool.
+var streamWriterPool = sync.Pool{New: func() any { return new(streamCopyWriter) }}
+
+// streamCopyWriter implements io.ReaderFrom so io.CopyN inside ServeContent
+// reuses a pooled buffer. gin's writer does not implement ReaderFrom, and
+// CopyN's LimitedReader does not implement WriterTo, so without this each
+// /stream and /play response allocates a fresh scratch slice.
+type streamCopyWriter struct {
+	http.ResponseWriter
+}
+
+func (w *streamCopyWriter) ReadFrom(src io.Reader) (int64, error) {
+	bufp := streamCopyPool.Get().(*[streamCopySize]byte)
+	defer streamCopyPool.Put(bufp)
+	buf := bufp[:]
+	var written int64
+	for {
+		nr, er := src.Read(buf)
+		if nr > 0 {
+			// buf[:nr] must not escape: io.Writer.Write copies or finishes
+			// before it returns, then the next Read reuses the same array.
+			nw, ew := w.Write(buf[:nr])
+			if nw < 0 || nr < nw {
+				nw = 0
+				if ew == nil {
+					ew = io.ErrShortWrite
+				}
+			}
+			written += int64(nw)
+			if ew != nil {
+				return written, ew
+			}
+			if nr != nw {
+				return written, io.ErrShortWrite
+			}
+		}
+		if er != nil {
+			if er == io.EOF {
+				return written, nil
+			}
+			return written, er
+		}
+	}
+}
+
+// ServeStreamContent is the /stream and /play body path (range-aware).
+func ServeStreamContent(w http.ResponseWriter, req *http.Request, name string, modtime time.Time, content io.ReadSeeker) {
+	cw := streamWriterPool.Get().(*streamCopyWriter)
+	cw.ResponseWriter = w
+	defer func() {
+		cw.ResponseWriter = nil
+		streamWriterPool.Put(cw)
+	}()
+	http.ServeContent(cw, req, name, modtime, content)
 }
 
 // GetActiveStreams returns number of currently active streams

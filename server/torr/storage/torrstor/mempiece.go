@@ -11,6 +11,7 @@ type MemPiece struct {
 	piece *Piece
 
 	buffer []byte
+	slab   *pieceSlab
 	mu     sync.RWMutex
 }
 
@@ -29,7 +30,12 @@ func (p *MemPiece) WriteAt(b []byte, off int64) (n int, err error) {
 	}
 	if p.buffer == nil {
 		go p.piece.cache.cleanPieces()
-		p.buffer = make([]byte, p.piece.cache.pieceLength)
+		n := int(p.piece.cache.pieceLength)
+		if n <= 0 {
+			p.buffer = make([]byte, p.piece.cache.pieceLength)
+		} else {
+			p.buffer, p.slab = getPieceBuf(n)
+		}
 	}
 	n = copy(p.buffer[off:], b[:])
 	// Accumulate: chunks arrive out of order, so a high-water mark would count
@@ -81,11 +87,20 @@ func (p *MemPiece) ReadAt(b []byte, off int64) (n int, err error) {
 
 func (p *MemPiece) Release() {
 	p.mu.Lock()
-	defer p.mu.Unlock()
-	if p.buffer != nil {
-		p.buffer = nil
-	}
+	// Nil the slice before unlock so a ReadAt that was waiting cannot observe
+	// it, then recycle only after unlock so that ReadAt's copy happens-before
+	// the buffer is cleared and published to the pool.
+	slab := p.slab
+	p.buffer = nil
+	p.slab = nil
 	p.piece.Size = 0
 	p.piece.Complete = false
+	// Closed torrents drop the bytes instead of parking them in the pool,
+	// so FreeOSMem after Close can return the cache to the OS.
+	closed := p.piece.cache.isClosed.Load()
 	p.piece.cache.notePieceEmpty(p.piece.Id)
+	p.mu.Unlock()
+	if !closed {
+		putPieceBuf(slab)
+	}
 }
