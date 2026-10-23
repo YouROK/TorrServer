@@ -1097,6 +1097,7 @@ async function onPluginAction(e) {
             await api('/plugins/' + id, { method: 'DELETE' });
             toast(t('done'));
             loadPlugins();
+            loadCatalog();
         } else if (act === 'theme') {
             await setPluginAsTheme(id);
         }
