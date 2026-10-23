@@ -11,6 +11,39 @@
     },
     "basePath": "/",
     "paths": {
+        "/audio/{hash}/{id}": {
+            "get": {
+                "description": "List audio files found in the torrent that belong to the given video file\n(for example voice-overs in \"Sound [Group]/ep01.mka\"). \"url\" is the link to the file itself.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "External audio tracks of a video file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Torrent infohash",
+                        "name": "hash",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Video file index in torrent",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of tracks (JSON)"
+                    }
+                }
+            }
+        },
         "/cache": {
             "post": {
                 "security": [

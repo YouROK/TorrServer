@@ -217,7 +217,7 @@ func buildVariantPlaylist(task *Task, audio int, seconds int) string {
 
 func (t *Task) hlsBandwidth() (int64, int64) {
 	audio := int64(max(t.Config.AACBitrateKbps, 1) * 1000)
-	if track := t.Probe.AudioTrack(t.Audio); effectiveAACChannels(t.Config, track) > 2 {
+	if track := t.audioTrack(); effectiveAACChannels(t.Config, track) > 2 {
 		audio *= 2
 	}
 	if videoIsTranscoded(t.Config, t.Probe) {
@@ -253,7 +253,7 @@ func (t *Task) hlsCodecs() string {
 			videoCodec = "vp09.00.10.08"
 		}
 	}
-	if t.Probe.HasAudio() {
+	if t.hasAudio() {
 		return strings.Trim(videoCodec+",mp4a.40.2", ",")
 	}
 	return videoCodec
@@ -580,6 +580,10 @@ func startSegmentIndex(seconds int, segmentSeconds int, count int) int {
 func abortWithSourceError(c *gin.Context, err error) {
 	if errors.Is(err, context.DeadlineExceeded) {
 		c.String(http.StatusGatewayTimeout, err.Error())
+		return
+	}
+	if errors.Is(err, ErrAudioNotFound) {
+		c.String(http.StatusNotFound, err.Error())
 		return
 	}
 	c.String(http.StatusBadGateway, err.Error())
