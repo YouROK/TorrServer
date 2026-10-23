@@ -53,6 +53,7 @@ type args struct {
 	ForceHTTPS  bool     `arg:"--force-https" help:"redirect all HTTP requests to HTTPS (requires --ssl)"`
 	HTTPSOnly   bool     `arg:"--https-only" help:"with --ssl, don't open the plain HTTP port (--port): everything is served over HTTPS only. Players and TVs need a trusted certificate"`
 	HTTPMedia   bool     `arg:"--http-media" help:"with --force-https, keep serving media URLs (/stream, /play, playlists) over plain HTTP for players and TVs that can't use HTTPS. Stream URLs and Basic auth credentials then travel unencrypted: use on trusted networks only"`
+	Pprof       bool     `arg:"--pprof" help:"enable /debug/pprof (pair with -a; exposes heap)"`
 }
 
 func (args) Version() string {
@@ -180,6 +181,13 @@ func main() {
 		ForceHTTPS:  params.ForceHTTPS,
 		HTTPMedia:   params.HTTPMedia,
 		HTTPSOnly:   params.HTTPSOnly,
+		Pprof:       params.Pprof,
+	}
+
+	if params.Pprof {
+		runtime.SetBlockProfileRate(1)
+		runtime.SetMutexProfileFraction(5)
+		log.TLogln("pprof enabled at /debug/pprof/")
 	}
 
 	if params.ProxyURL != "" {

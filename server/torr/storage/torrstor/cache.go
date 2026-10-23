@@ -24,7 +24,7 @@ type Cache struct {
 	storage *Storage
 
 	capacity int64
-	filled   int64
+	filled   atomic.Int64
 	hash     metainfo.Hash
 
 	pieceLength int64
@@ -45,7 +45,6 @@ type Cache struct {
 	readers   map[*Reader]struct{}
 	muReaders sync.Mutex
 
-	isRemove bool
 	isClosed atomic.Bool
 	muRemove sync.Mutex
 	// muPrio serializes clearPriority and setLoadPriority so that the priority
@@ -58,7 +57,6 @@ type Cache struct {
 func NewCache(capacity int64, storage *Storage) *Cache {
 	ret := &Cache{
 		capacity:     capacity,
-		filled:       0,
 		pieces:       make(map[int]*Piece),
 		activePieces: make(map[int]struct{}),
 		prioPieces:   make(map[int]struct{}),
@@ -177,13 +175,33 @@ func (c *Cache) Close() error {
 		name := filepath.Join(settings.BTsets.TorrentsSavePath, c.hash.HexString())
 		if name != "" && name != "/" {
 			for _, v := range c.pieces {
-				if v.dPiece != nil {
+				if v != nil && v.dPiece != nil {
 					_ = os.Remove(v.dPiece.name)
 				}
 			}
 			_ = os.Remove(name)
 		}
 	}
+
+	// Drop piece buffers before FreeOSMem so rem/ffp churn can return RAM.
+	// MemPiece/DiskPiece.Release only — Piece.Release also touches the torrent client.
+	// Hold muRemove so cleanPieces cannot interleave removePiece with this release.
+	// Keep c.pieces (do not nil): getRemPieces/GetState may still read the field;
+	// buffers are already nil and isClosed blocks new allocs.
+	c.muRemove.Lock()
+	for _, p := range c.pieces {
+		if p == nil {
+			continue
+		}
+		if p.mPiece != nil {
+			p.mPiece.Release()
+		}
+		if p.dPiece != nil {
+			p.dPiece.Release()
+		}
+	}
+	c.filled.Store(0)
+	c.muRemove.Unlock()
 
 	c.muReaders.Lock()
 	c.readers = nil
@@ -197,8 +215,7 @@ func (c *Cache) Close() error {
 	c.prioPieces = nil
 	c.muPrio.Unlock()
 
-	// Do not nil c.pieces: GetState/cleanPieces may still look up the map.
-	utils.FreeOSMemGC()
+	utils.FreeOSMemGCThrottled()
 	return nil
 }
 
@@ -241,6 +258,9 @@ func (c *Cache) notePieceEmpty(id int) {
 
 func (c *Cache) GetState() *state.CacheState {
 	cState := new(state.CacheState)
+	if c == nil || c.isClosed.Load() {
+		return cState
+	}
 
 	piecesState := make(map[int]state.ItemState)
 	var fill int64
@@ -295,12 +315,20 @@ func (c *Cache) GetState() *state.CacheState {
 
 	stale := make([]int, 0)
 	for _, id := range activeIDs {
+		if c.isClosed.Load() {
+			return cState
+		}
 		p, ok := c.pieces[id]
-		if !ok || p == nil || p.Size <= 0 {
+		if !ok || p == nil {
 			stale = append(stale, id)
 			continue
 		}
-		fill += p.Size
+		sz, _, _ := p.snapshotStats()
+		if sz <= 0 {
+			stale = append(stale, id)
+			continue
+		}
+		fill += sz
 		priority := 0
 		if c.torrent != nil {
 			priority = int(c.torrent.PieceState(p.Id).Priority)
@@ -308,10 +336,10 @@ func (c *Cache) GetState() *state.CacheState {
 		plen := c.pieceByteLength(p.Id)
 		piecesState[p.Id] = state.ItemState{
 			Id:     p.Id,
-			Size:   p.Size,
+			Size:   sz,
 			Length: plen,
 			// Completed follows bytes present — not MarkComplete alone (avoids green empty cells).
-			Completed: plen > 0 && p.Size >= plen,
+			Completed: plen > 0 && sz >= plen,
 			Priority:  priority,
 		}
 	}
@@ -330,18 +358,21 @@ func (c *Cache) GetState() *state.CacheState {
 			if !ok || p == nil {
 				continue
 			}
+			sz, _, _ := p.snapshotStats()
 			plen := c.pieceByteLength(id)
 			piecesState[id] = state.ItemState{
 				Id:        id,
-				Size:      p.Size,
+				Size:      sz,
 				Length:    plen,
-				Completed: plen > 0 && p.Size >= plen,
+				Completed: plen > 0 && sz >= plen,
 				Priority:  int(c.torrent.PieceState(id).Priority),
 			}
 		}
 	}
 
-	c.filled = fill
+	if !c.isClosed.Load() {
+		c.filled.Store(fill)
+	}
 	cState.Capacity = c.capacity
 	cState.PiecesLength = c.pieceLength
 	cState.PiecesCount = c.pieceCount
@@ -353,27 +384,24 @@ func (c *Cache) GetState() *state.CacheState {
 }
 
 func (c *Cache) cleanPieces() {
-	if c.isRemove || c.isClosed.Load() {
+	if c.isClosed.Load() {
 		return
 	}
-
-	// Protection against concurrent deletion
+	// TryLock serializes eviction; Close takes the same muRemove around Release.
 	if !c.muRemove.TryLock() {
-		return // Cleanup is already in progress in another goroutine
+		return
 	}
 	defer c.muRemove.Unlock()
 
-	c.isRemove = true
-	defer func() { c.isRemove = false }()
-
 	remPieces := c.getRemPieces()
-	if c.filled > c.capacity {
-		rems := (c.filled-c.capacity)/c.pieceLength + 1
+	filled := c.filled.Load()
+	if filled > c.capacity {
+		rems := (filled-c.capacity)/c.pieceLength + 1
 		for _, p := range remPieces {
 			c.removePiece(p)
 			rems--
 			if rems <= 0 {
-				utils.FreeOSMemGC()
+				utils.FreeOSMemGCThrottled()
 				return
 			}
 		}
@@ -442,8 +470,9 @@ func (c *Cache) getRemPieces() []*Piece {
 		if !ok || p == nil {
 			continue
 		}
-		if p.Size > 0 {
-			fill += p.Size
+		sz, _, _ := p.snapshotStats()
+		if sz > 0 {
+			fill += sz
 		}
 		if c.pieceEvictable(p, ranges, prio) {
 			piecesRemove = append(piecesRemove, p)
@@ -457,13 +486,17 @@ func (c *Cache) getRemPieces() []*Piece {
 	// client never re-requests chunks it has received, so evicting their bytes makes a
 	// responsive reader that comes back to them read zeros.
 	sort.Slice(piecesRemove, func(i, j int) bool {
-		if piecesRemove[i].Complete != piecesRemove[j].Complete {
-			return piecesRemove[i].Complete
+		_, ci, ai := piecesRemove[i].snapshotStats()
+		_, cj, aj := piecesRemove[j].snapshotStats()
+		if ci != cj {
+			return ci
 		}
-		return piecesRemove[i].Accessed < piecesRemove[j].Accessed
+		return ai < aj
 	})
 
-	c.filled = fill
+	if !c.isClosed.Load() {
+		c.filled.Store(fill)
+	}
 	return piecesRemove
 }
 
@@ -472,11 +505,15 @@ func (c *Cache) getRemPieces() []*Piece {
 // ReadAt would then return a short copy and anacrolix logs
 // "unexpected error hashing piece ... %!s(<nil>)".
 func (c *Cache) pieceEvictable(p *Piece, ranges []Range, prio map[int]struct{}) bool {
-	if p == nil || p.Size <= 0 {
+	if p == nil {
+		return false
+	}
+	sz, complete, _ := p.snapshotStats()
+	if sz <= 0 {
 		return false
 	}
 	plen := c.pieceByteLength(p.Id)
-	if plen > 0 && p.Size >= plen && !p.Complete {
+	if plen > 0 && sz >= plen && !complete {
 		return false
 	}
 	if _, ok := prio[p.Id]; ok {
@@ -644,6 +681,10 @@ func (c *Cache) Readers() int {
 }
 
 func (c *Cache) CloseReader(r *Reader) {
+	// Uses r.cache (not c): safe with nil Cache receiver after Torrent.drop.
+	if r == nil || r.cache == nil {
+		return
+	}
 	r.cache.muReaders.Lock()
 	r.Close()
 	delete(r.cache.readers, r)
@@ -705,4 +746,25 @@ func (c *Cache) GetCapacity() int64 {
 		return 0
 	}
 	return c.capacity
+}
+
+func (c *Cache) FilledBytes() int64 {
+	if c == nil {
+		return 0
+	}
+	return c.filled.Load()
+}
+
+func (c *Cache) PieceCount() int {
+	if c == nil {
+		return 0
+	}
+	return c.pieceCount
+}
+
+func (c *Cache) IsClosed() bool {
+	if c == nil {
+		return true
+	}
+	return c.isClosed.Load()
 }

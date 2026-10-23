@@ -65,6 +65,11 @@ export default defineConfig(({ mode }) => {
             /^\/swagger/,
             /^\/stat/,
             /^\/magnets/,
+            // Same relative-base trap: /runtime/status → ./static → /runtime/static/*.js 404.
+            /^\/runtime/,
+            /^\/debug/,
+            /^\/ssl/,
+            /^\/mediabase/,
           ],
           cleanupOutdatedCaches: true,
           clientsClaim: true,
@@ -105,6 +110,10 @@ export default defineConfig(({ mode }) => {
         '/waf': proxyTarget,
         '/mcp': proxyTarget,
         '/playlistall': proxyTarget,
+        '/runtime': proxyTarget,
+        '/debug': proxyTarget,
+        '/ssl': proxyTarget,
+        '/mediabase': proxyTarget,
       },
     },
     build: {

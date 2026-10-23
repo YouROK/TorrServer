@@ -779,14 +779,14 @@
                         "BasicAuth": []
                     }
                 ],
-                "description": "Read-only flags for DLNA/Bonjour/WebDAV/FUSE plus structured BT stats (and raw /stat text).",
+                "description": "Read-only flags for DLNA/Bonjour/WebDAV/FUSE, MemStats + per-torrent cache filled, and structured BT stats.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "API"
                 ],
-                "summary": "Runtime integration + BitTorrent status",
+                "summary": "Runtime integration + BitTorrent + memory status",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1808,6 +1808,86 @@
         }
     },
     "definitions": {
+        "api.RuntimeMemory": {
+            "type": "object",
+            "properties": {
+                "cache_capacity": {
+                    "type": "integer"
+                },
+                "cache_count": {
+                    "type": "integer"
+                },
+                "cache_filled": {
+                    "type": "integer"
+                },
+                "frees": {
+                    "type": "integer"
+                },
+                "gc_cpu_fraction": {
+                    "type": "number"
+                },
+                "gc_pause_ns_last": {
+                    "type": "integer"
+                },
+                "gc_pause_total_ns": {
+                    "type": "integer"
+                },
+                "gomaxprocs": {
+                    "type": "integer"
+                },
+                "heap_alloc": {
+                    "type": "integer"
+                },
+                "heap_idle": {
+                    "type": "integer"
+                },
+                "heap_inuse": {
+                    "type": "integer"
+                },
+                "heap_objects": {
+                    "type": "integer"
+                },
+                "heap_released": {
+                    "type": "integer"
+                },
+                "heap_sys": {
+                    "type": "integer"
+                },
+                "last_gc_unix_ns": {
+                    "type": "integer"
+                },
+                "live_objects": {
+                    "type": "integer"
+                },
+                "mallocs": {
+                    "type": "integer"
+                },
+                "next_gc": {
+                    "type": "integer"
+                },
+                "num_forced_gc": {
+                    "type": "integer"
+                },
+                "num_gc": {
+                    "type": "integer"
+                },
+                "num_goroutine": {
+                    "type": "integer"
+                },
+                "stack_inuse": {
+                    "type": "integer"
+                },
+                "stack_sys": {
+                    "type": "integer"
+                },
+                "sys": {
+                    "type": "integer"
+                },
+                "total_alloc": {
+                    "type": "integer"
+                }
+            }
+        },
         "api.RuntimeStatus": {
             "type": "object",
             "properties": {
@@ -1822,6 +1902,12 @@
                         }
                     ]
                 },
+                "caches": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/torr.CacheRow"
+                    }
+                },
                 "dlna_enabled": {
                     "type": "boolean"
                 },
@@ -1833,6 +1919,9 @@
                 },
                 "fuse_path": {
                     "type": "string"
+                },
+                "memory": {
+                    "$ref": "#/definitions/api.RuntimeMemory"
                 },
                 "webdav_enabled": {
                     "type": "boolean"
@@ -2644,6 +2733,26 @@
                 },
                 "upload_speed": {
                     "type": "number"
+                }
+            }
+        },
+        "torr.CacheRow": {
+            "type": "object",
+            "properties": {
+                "capacity": {
+                    "type": "integer"
+                },
+                "closed": {
+                    "type": "boolean"
+                },
+                "filled": {
+                    "type": "integer"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "pieces": {
+                    "type": "integer"
                 }
             }
         },

@@ -43,11 +43,16 @@ export default function ServerStatusDialog({ open, onClose }: ServerStatusDialog
 
   const { data: btSettings } = useSettingsQuery({ enabled: open })
   const bt = data?.bt
+  const memory = data?.memory
+  const caches = data?.caches ?? []
   const torrents = bt?.torrents ?? []
   const openTorrents = torrents.filter(tr => isLiveTorrentStat(tr.stat))
   const cacheLabel =
     formatCacheFilledLabel(bt?.loaded_size ?? 0, btSettings?.CacheSize, { percent: 'always' }) ??
     humanizeSize(bt?.loaded_size)
+  const pieceCacheLabel =
+    formatCacheFilledLabel(memory?.cache_filled ?? 0, memory?.cache_capacity ?? 0, { percent: 'always' }) ??
+    humanizeSize(memory?.cache_filled)
 
   return (
     <AppDialog
@@ -118,6 +123,49 @@ export default function ServerStatusDialog({ open, onClose }: ServerStatusDialog
                 </p>
               ) : null}
             </section>
+
+            {memory ? (
+              <section>
+                <h3 className='mb-2 text-xs font-semibold tracking-wide text-muted uppercase'>
+                  {t('ServerStatusMemory')}
+                </h3>
+                <div className='grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4'>
+                  <StatCard label={t('ServerStatusHeapInuse')} value={humanizeSize(memory.heap_inuse)} />
+                  <StatCard label={t('ServerStatusHeapAlloc')} value={humanizeSize(memory.heap_alloc)} />
+                  <StatCard label={t('ServerStatusHeapReleased')} value={humanizeSize(memory.heap_released)} />
+                  <StatCard
+                    label={t('ServerStatusGoroutines')}
+                    value={memory.num_goroutine != null ? String(memory.num_goroutine) : '—'}
+                  />
+                  <StatCard label={t('ServerStatusPieceCache')} value={pieceCacheLabel} />
+                  <StatCard
+                    label={t('ServerStatusForcedGC')}
+                    value={memory.num_forced_gc != null ? String(memory.num_forced_gc) : '—'}
+                  />
+                </div>
+                {caches.length > 0 ? (
+                  <div className='mt-2 space-y-1.5'>
+                    {caches.map(row => {
+                      const label =
+                        formatCacheFilledLabel(row.filled ?? 0, row.capacity ?? 0, { percent: 'always' }) ??
+                        humanizeSize(row.filled)
+                      return (
+                        <div
+                          key={row.hash}
+                          className='flex items-center justify-between gap-2 rounded-lg border border-border bg-surface-secondary px-3 py-1.5 text-xs'
+                        >
+                          <span className='min-w-0 truncate font-mono text-muted' title={row.hash}>
+                            {row.hash.slice(0, 8)}…
+                            {row.closed ? ' · closed' : ''}
+                          </span>
+                          <span className='shrink-0 tabular-nums text-foreground'>{label}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : null}
+              </section>
+            ) : null}
 
             <section>
               <h3 className='mb-2 text-xs font-semibold tracking-wide text-muted uppercase'>

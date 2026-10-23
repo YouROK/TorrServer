@@ -296,6 +296,90 @@ func TestCloseIdempotent(t *testing.T) {
 	}
 }
 
+func TestCloseReleasesMemBuffers(t *testing.T) {
+	prev := settings.BTsets
+	settings.BTsets = &settings.BTSets{}
+	t.Cleanup(func() { settings.BTsets = prev })
+
+	stor := NewStorage(1 << 20)
+	c := NewCache(1<<20, stor)
+	c.pieceLength = 1024
+	c.pieceCount = 1
+	p := &Piece{Id: 0, cache: c, Size: 1024}
+	mp := NewMemPiece(p)
+	mp.buffer = make([]byte, 1024)
+	p.mPiece = mp
+	c.pieces = map[int]*Piece{0: p}
+	c.notePieceFilled(0)
+	c.filled.Store(1024)
+
+	if err := c.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if mp.buffer != nil {
+		t.Fatal("Close must nil MemPiece.buffer so FreeOSMemGC can reclaim")
+	}
+	// Keep pieces map (field race vs GetState); buffers already released.
+	if c.pieces == nil || c.pieces[0] != p {
+		t.Fatal("Close must keep pieces map after Release")
+	}
+	if c.filled.Load() != 0 {
+		t.Fatalf("filled: want 0, got %d", c.filled.Load())
+	}
+	if err := c.Close(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestWriteAtAfterCloseIsNotExist(t *testing.T) {
+	prev := settings.BTsets
+	settings.BTsets = &settings.BTSets{}
+	t.Cleanup(func() { settings.BTsets = prev })
+
+	stor := NewStorage(1 << 20)
+	c := NewCache(1<<20, stor)
+	c.pieceLength = 1024
+	c.pieceCount = 1
+	p := &Piece{Id: 0, cache: c}
+	mp := NewMemPiece(p)
+	p.mPiece = mp
+	c.pieces = map[int]*Piece{0: p}
+
+	if err := c.Close(); err != nil {
+		t.Fatal(err)
+	}
+	n, err := mp.WriteAt([]byte("x"), 0)
+	if n != 0 || !os.IsNotExist(err) {
+		t.Fatalf("want 0, os.ErrNotExist; got n=%d err=%v", n, err)
+	}
+	if mp.buffer != nil {
+		t.Fatal("WriteAt after Close must not allocate buffer")
+	}
+}
+
+func TestMarkNotCompleteReleasesBuffer(t *testing.T) {
+	c := &Cache{
+		pieceLength:  1024,
+		pieceCount:   1,
+		activePieces: make(map[int]struct{}),
+	}
+	p := &Piece{Id: 0, cache: c, Size: 512}
+	mp := NewMemPiece(p)
+	mp.buffer = make([]byte, 1024)
+	p.mPiece = mp
+	c.notePieceFilled(0)
+
+	if err := p.MarkNotComplete(); err != nil {
+		t.Fatal(err)
+	}
+	if mp.buffer != nil {
+		t.Fatal("MarkNotComplete must release MemPiece.buffer")
+	}
+	if p.Size != 0 {
+		t.Fatalf("Size: want 0, got %d", p.Size)
+	}
+}
+
 func TestReadAtNilBufferIsNotExist(t *testing.T) {
 	c := &Cache{pieceLength: 1024, pieceCount: 1, totalLength: 1024}
 	p := &Piece{Id: 0, cache: c}

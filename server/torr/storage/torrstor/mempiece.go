@@ -22,6 +22,11 @@ func (p *MemPiece) WriteAt(b []byte, off int64) (n int, err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
+	// isClosed under piece mu: Close sets isClosed before Release (same mu),
+	// so we either finish then Release nils buffer, or see closed and skip make.
+	if p.piece.cache.isClosed.Load() {
+		return 0, os.ErrNotExist
+	}
 	if p.buffer == nil {
 		go p.piece.cache.cleanPieces()
 		p.buffer = make([]byte, p.piece.cache.pieceLength)
@@ -42,11 +47,12 @@ func (p *MemPiece) WriteAt(b []byte, off int64) (n int, err error) {
 }
 
 func (p *MemPiece) ReadAt(b []byte, off int64) (n int, err error) {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
+	// Lock (not RLock): we write Accessed; concurrent ReadAt under RLock races.
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
-	if p.buffer == nil {
-		// Released while hashing: os.IsNotExist is the expected anacrolix path
+	if p.piece.cache.isClosed.Load() || p.buffer == nil {
+		// Closed / released while hashing: os.IsNotExist is the expected anacrolix path
 		// (io.Copy turns io.EOF into err=nil and logs "unexpected error hashing").
 		return 0, os.ErrNotExist
 	}

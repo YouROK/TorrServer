@@ -28,6 +28,7 @@ type ExecArgs struct {
 	ForceHTTPS  bool
 	HTTPMedia   bool
 	HTTPSOnly   bool
+	Pprof       bool
 }
 
 var Args *ExecArgs

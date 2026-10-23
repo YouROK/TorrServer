@@ -38,6 +38,10 @@ func (p *DiskPiece) WriteAt(b []byte, off int64) (n int, err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
+	// Same as MemPiece: isClosed under piece mu vs Close→Release.
+	if p.piece.cache.isClosed.Load() {
+		return 0, os.ErrNotExist
+	}
 	ff, err := os.OpenFile(p.name, os.O_RDWR|os.O_CREATE, 0o666)
 	if err != nil {
 		log.TLogln("Error open file:", err)
@@ -64,6 +68,9 @@ func (p *DiskPiece) ReadAt(b []byte, off int64) (n int, err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
+	if p.piece.cache.isClosed.Load() {
+		return 0, os.ErrNotExist
+	}
 	ff, err := os.OpenFile(p.name, os.O_RDONLY, 0o666)
 	if os.IsNotExist(err) {
 		return 0, err

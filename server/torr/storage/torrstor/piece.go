@@ -52,22 +52,58 @@ func (p *Piece) ReadAt(b []byte, off int64) (n int, err error) {
 	}
 }
 
+// snapshotStats reads Size/Complete/Accessed under the piece I/O mutex so
+// GetState/getRemPieces do not race Release/WriteAt.
+func (p *Piece) snapshotStats() (size int64, complete bool, accessed int64) {
+	if p == nil {
+		return 0, false, 0
+	}
+	switch {
+	case p.mPiece != nil:
+		p.mPiece.mu.RLock()
+		defer p.mPiece.mu.RUnlock()
+	case p.dPiece != nil:
+		p.dPiece.mu.RLock()
+		defer p.dPiece.mu.RUnlock()
+	}
+	return p.Size, p.Complete, p.Accessed
+}
+
 func (p *Piece) MarkComplete() error {
-	p.Complete = true
+	// Same mutex as snapshotStats/Release so GetState does not race Complete.
+	switch {
+	case p.mPiece != nil:
+		p.mPiece.mu.Lock()
+		p.Complete = true
+		p.mPiece.mu.Unlock()
+	case p.dPiece != nil:
+		p.dPiece.mu.Lock()
+		p.Complete = true
+		p.dPiece.mu.Unlock()
+	default:
+		p.Complete = true
+	}
 	return nil
 }
 
 func (p *Piece) MarkNotComplete() error {
-	p.Complete = false
-	// Hash check failed — the piece is re-downloaded from scratch, so the
-	// accumulated Size must not be counted twice.
-	p.Size = 0
+	// Hash fail: drop buffer so eviction does not orphan Size<=0 RAM/disk.
+	// Release clears Complete/Size under the piece mutex.
+	if p.mPiece != nil {
+		p.mPiece.Release()
+	} else if p.dPiece != nil {
+		p.dPiece.Release()
+	} else {
+		p.Complete = false
+		p.Size = 0
+	}
 	return nil
 }
 
 func (p *Piece) Completion() storage.Completion {
+	_, complete, _ := p.snapshotStats()
 	return storage.Completion{
-		Complete: p.Complete,
+		Complete: complete,
 		Ok:       true,
 	}
 }

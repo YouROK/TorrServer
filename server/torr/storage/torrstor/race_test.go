@@ -64,7 +64,7 @@ func TestStorageCachesConcurrentOpenClose(t *testing.T) {
 	wg.Wait()
 }
 
-// Cache.pieces: GetState/cleanPieces iterating while Close nils the map.
+// Cache.pieces: GetState/cleanPieces while Close Releases buffers (map kept).
 func TestCachePiecesConcurrentStateClose(t *testing.T) {
 	initTestSettings(t)
 

@@ -333,14 +333,14 @@ func (t *Torrent) Length() int64 {
 }
 
 func (t *Torrent) NewReader(file *torrent.File) *torrstor.Reader {
-	if t.Stat == state.TorrentClosed {
+	if t.Stat == state.TorrentClosed || t.cache == nil {
 		return nil
 	}
-	reader := t.cache.NewReader(file)
-	return reader
+	return t.cache.NewReader(file)
 }
 
 func (t *Torrent) CloseReader(reader *torrstor.Reader) {
+	// t.cache may be nil after drop(); CloseReader keys off reader.cache.
 	t.cache.CloseReader(reader)
 	t.AddExpiredTime(time.Second * time.Duration(settings.BTsets.TorrentDisconnectTimeout))
 }
@@ -356,6 +356,7 @@ func (t *Torrent) drop() {
 		t.Drop()
 		t.Torrent = nil
 	}
+	t.cache = nil
 }
 
 func (t *Torrent) Close() bool {

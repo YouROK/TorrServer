@@ -75,4 +75,8 @@ func SetupRoute(route gin.IRouter) {
 	authorized.GET("/ffp/:hash/:id", ffp)
 
 	authorized.GET("/runtime/status", runtimeStatus)
+
+	if config.Args != nil && config.Args.Pprof {
+		mountPprof(authorized)
+	}
 }
