@@ -524,3 +524,73 @@ func TestManager_SetAllFilesViewed(t *testing.T) {
 
 	_ = userSvc
 }
+
+// TestManager_StreamReaderRejectsForeignTorrent проверяет, что чужую раздачу
+// нельзя открыть по одному хэшу, минуя библиотеку пользователя.
+func TestManager_StreamReaderRejectsForeignTorrent(t *testing.T) {
+	mgr, userSvc, _, _, owner := setupManagerTest(t)
+
+	spec := createSyntheticSpec(t)
+	hashHex := spec.InfoHash.HexString()
+
+	if _, err := mgr.AddTorrent(owner, spec, "Owner Movie", "", "", true); err != nil {
+		t.Fatalf("AddTorrent failed: %v", err)
+	}
+	time.Sleep(100 * time.Millisecond)
+
+	other, err := userSvc.CreateUser(owner, "stranger", "pass", user.RankUser, user.Limits{})
+	if err != nil {
+		t.Fatalf("CreateUser failed: %v", err)
+	}
+
+	if _, _, err := mgr.GetStreamReader(other, hashHex, 0); err != ErrNotOwned {
+		t.Errorf("GetStreamReader for foreign torrent = %v, want %v", err, ErrNotOwned)
+	}
+
+	if _, err := mgr.GetTorrentStatus(other, hashHex); err != ErrNotOwned {
+		t.Errorf("GetTorrentStatus for foreign torrent = %v, want %v", err, ErrNotOwned)
+	}
+
+	if err := mgr.WakeTorrent(other, hashHex); err != ErrNotOwned {
+		t.Errorf("WakeTorrent for foreign torrent = %v, want %v", err, ErrNotOwned)
+	}
+
+	// Владелец по-прежнему получает доступ
+	reader, _, err := mgr.GetStreamReader(owner, hashHex, 0)
+	if err != nil {
+		t.Fatalf("GetStreamReader for owner failed: %v", err)
+	}
+	_ = reader.Close()
+}
+
+// TestManager_EphemeralTorrentStaysReadable проверяет, что временная раздача
+// (save_to_db = false) читается её владельцем: записи в библиотеке у неё нет.
+func TestManager_EphemeralTorrentStaysReadable(t *testing.T) {
+	mgr, _, _, tStore, owner := setupManagerTest(t)
+
+	spec := createSyntheticSpec(t)
+	hashHex := spec.InfoHash.HexString()
+
+	if _, err := mgr.AddTorrent(owner, spec, "Ephemeral", "", "", false); err != nil {
+		t.Fatalf("AddTorrent failed: %v", err)
+	}
+	time.Sleep(100 * time.Millisecond)
+
+	// Убеждаемся, что в библиотеке и базе записи действительно нет
+	if _, err := mgr.userSvc.GetUserTorrent(owner.ID, hashHex); err == nil {
+		t.Fatal("Ephemeral torrent must not be stored in the library")
+	}
+	if _, err := tStore.Get(hashHex); err != ErrTorrentNotFound {
+		t.Fatalf("Ephemeral torrent must not be in database, got %v", err)
+	}
+
+	reader, _, err := mgr.GetStreamReader(owner, hashHex, 0)
+	if err != nil {
+		t.Fatalf("GetStreamReader for own ephemeral torrent failed: %v", err)
+	}
+	_ = reader.Close()
+
+	if _, err := mgr.GetTorrentStatus(owner, hashHex); err != nil {
+		t.Fatalf("GetTorrentStatus for own ephemeral torrent failed: %v", err)
+	}
+}

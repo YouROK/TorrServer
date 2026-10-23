@@ -196,11 +196,19 @@ func (m *Manager) asyncFetchMetadata(ctx context.Context, sess *Session, rec *To
 	})
 }
 
-// WakeTorrent будит торрент из базы или продлевает его в движке
+// WakeTorrent будит торрент из базы или продлевает его в движке.
+// Будит только раздачи из библиотеки пользователя.
 func (m *Manager) WakeTorrent(u *user.User, hashHex string) error {
 	hash := metainfo.NewHashFromHex(hashHex)
 
-	if sess, ok := m.engine.Get(hash); ok {
+	sess, active := m.engine.Get(hash)
+
+	_, libErr := m.userSvc.GetUserTorrent(u.ID, hashHex)
+	if libErr != nil && !(active && sess.OwnedBy(u.ID)) {
+		return ErrNotOwned
+	}
+
+	if active {
 		sess.Touch()
 		return nil
 	}
@@ -228,7 +236,7 @@ func (m *Manager) WakeTorrent(u *user.User, hashHex string) error {
 	}
 	m.applyTrackerPolicy(spec)
 
-	sess, err := m.engine.Start(spec)
+	sess, err = m.engine.Start(spec)
 	if err != nil {
 		return fmt.Errorf("failed to wake up torrent: %w", err)
 	}
@@ -250,6 +258,12 @@ func (m *Manager) GetTorrentStatus(u *user.User, hashHex string) (*TorrentStatus
 	// Если активен в RAM - отдаем живую статистику (она сама подтянет личные данные юзера)
 	sess, ok := m.engine.Get(hash)
 	if ok {
+		// Раздача в RAM, но не принадлежит пользователю: без проверки по одному
+		// хэшу видны название, постер и список файлов чужой раздачи.
+		if ut == nil && !sess.OwnedBy(u.ID) {
+			return nil, ErrNotOwned
+		}
+
 		st := sess.Status(u.ID)
 		// при добавлении торрента нет данных о нем и нужно брать из базы данные файлы
 		rec, recErr := m.store.Get(hashHex)
@@ -323,11 +337,26 @@ func (sr *streamReader) Close() error {
 	return nil
 }
 
-// GetStreamReader обеспечивает воспроизведение файла (будит торрент из БД при необходимости)
+// GetStreamReader обеспечивает воспроизведение файла (будит торрент из БД при необходимости).
+// Отдаёт файл только владельцу карточки: без этого чужую раздачу можно
+// открыть по одному хэшу, минуя библиотеку пользователя.
 func (m *Manager) GetStreamReader(u *user.User, hashHex string, fileIdx int) (io.ReadSeekCloser, *TorrentFileStat, error) {
+	if u == nil {
+		return nil, nil, ErrNotOwned
+	}
+
 	hash := metainfo.NewHashFromHex(hashHex)
 
 	sess, ok := m.engine.Get(hash)
+
+	// Владелец в библиотеке либо в списке владельцев активной раздачи:
+	// временные раздачи (save_to_db = false) в библиотеку не попадают.
+	_, libErr := m.userSvc.GetUserTorrent(u.ID, hashHex)
+	owned := libErr == nil || (ok && sess.OwnedBy(u.ID))
+	if !owned {
+		return nil, nil, ErrNotOwned
+	}
+
 	if !ok {
 		// Торрент спит в базе! Будим его:
 		rec, err := m.store.Get(hashHex)
@@ -335,7 +364,6 @@ func (m *Manager) GetStreamReader(u *user.User, hashHex string, fileIdx int) (io
 			return nil, nil, fmt.Errorf("torrent not found in database: %w", err)
 		}
 
-		// Fallback-название (если вдруг юзер открыл торрент не из своей библиотеки)
 		title := ResolveTitle("", rec.Name, hashHex)
 		var poster, category string
 
@@ -490,14 +518,14 @@ func (m *Manager) SetBlocklistText(text string) error {
 	return m.engine.SetBlocklistText(text)
 }
 
-// EngineStats - живой снимок состояния движка и процесса для дашборда
+// EngineStats - живой снимок состояния движка и процесса для дашборда.
+// Хэши раздач не отдаются: по ним видно, что смотрят другие пользователи.
 type EngineStats struct {
-	ActiveSessions int      `json:"active_sessions"`
-	ActiveReaders  int      `json:"active_readers"`
-	SessionHashes  []string `json:"session_hashes"`
-	Goroutines     int      `json:"goroutines"`
-	MemAllocBytes  uint64   `json:"mem_alloc_bytes"`
-	MemSysBytes    uint64   `json:"mem_sys_bytes"`
+	ActiveSessions int    `json:"active_sessions"`
+	ActiveReaders  int    `json:"active_readers"`
+	Goroutines     int    `json:"goroutines"`
+	MemAllocBytes  uint64 `json:"mem_alloc_bytes"`
+	MemSysBytes    uint64 `json:"mem_sys_bytes"`
 }
 
 // Stats возвращает живую статистику для админ-дашборда
@@ -506,13 +534,11 @@ func (m *Manager) Stats() EngineStats {
 
 	st := EngineStats{
 		ActiveSessions: len(sessions),
-		SessionHashes:  make([]string, 0, len(sessions)),
 		Goroutines:     runtime.NumGoroutine(),
 	}
 
 	for _, sess := range sessions {
 		st.ActiveReaders += sess.ActiveReaders()
-		st.SessionHashes = append(st.SessionHashes, sess.Hash().HexString())
 	}
 
 	// Читаем память процесса
@@ -700,6 +726,9 @@ func (m *Manager) PreloadTorrent(u *user.User, hashHex string, fileIdx int) erro
 
 // ErrSessionNotInRAM возвращается, когда торрент есть в БД, но не активен.
 var ErrSessionNotInRAM = errors.New("torrent is not active in RAM")
+
+// ErrNotOwned возвращается при обращении к раздаче, которой нет в библиотеке пользователя.
+var ErrNotOwned = errors.New("torrent not found in your library")
 
 // GetCacheState возвращает снимок кэша и приоритеты всех кусков.
 func (m *Manager) GetCacheState(u *user.User, hashHex string) (*torrstor.CacheState, error) {

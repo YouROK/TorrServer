@@ -31,6 +31,9 @@ type Session struct {
 	// Личные метаданные пользователей, которые сейчас смотрят раздачу
 	userMeta map[string]EphemeralMeta
 
+	// Владельцы раздачи в RAM: нужны для временных раздач, которых нет в базе
+	owners map[string]struct{}
+
 	// Имя раздачи из полученных метаданных
 	metaName string
 
@@ -61,6 +64,7 @@ func newSession(t *torrent.Torrent, spec *torrent.TorrentSpec, stor *torrstor.St
 		stat:      TorrentAdded,
 		timestamp: time.Now().Unix(),
 		userMeta:  make(map[string]EphemeralMeta),
+		owners:    make(map[string]struct{}),
 		trackers:  spec.Trackers,
 		// Готовые info-байты несут имя сразу, без ожидания сети
 		metaName:      InfoName(spec.InfoBytes),
@@ -342,6 +346,15 @@ func (s *Session) SetUserMeta(userID, title, poster, category string) {
 		Poster:   poster,
 		Category: category,
 	}
+	s.owners[userID] = struct{}{}
+}
+
+// OwnedBy сообщает, числится ли пользователь владельцем раздачи в RAM
+func (s *Session) OwnedBy(userID string) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	_, ok := s.owners[userID]
+	return ok
 }
 
 // UserTitle возвращает личное название пользователя, без имени из метаданных
