@@ -3,9 +3,23 @@ package plugin
 import (
 	"fmt"
 	"io/fs"
+	"regexp"
 
 	"gopkg.in/yaml.v3"
 )
+
+// pluginIDRe задаёт допустимые идентификаторы плагинов: буквы, цифры, точка,
+// дефис, подчёркивание. ID попадает в пути на диске, поэтому разделители
+// пути и ".." в него не пропускаем.
+var pluginIDRe = regexp.MustCompile(`^[A-Za-z0-9._-]+$`)
+
+// ValidPluginID проверяет, что идентификатор пригоден для имени каталога.
+func ValidPluginID(id string) bool {
+	if id == "" || id == "." || id == ".." {
+		return false
+	}
+	return pluginIDRe.MatchString(id)
+}
 
 // MenuEntry - пункт меню, который плагин хочет добавить в веб-интерфейс
 type MenuEntry struct {
@@ -43,6 +57,9 @@ func LoadManifestFromFS(vfs fs.FS) (*Manifest, error) {
 
 	if m.ID == "" {
 		return nil, fmt.Errorf("plugin manifest missing 'id' field")
+	}
+	if !ValidPluginID(m.ID) {
+		return nil, fmt.Errorf("plugin manifest has invalid 'id' %q: allowed letters, digits, dot, dash and underscore", m.ID)
 	}
 	if m.Name == "" {
 		return nil, fmt.Errorf("plugin manifest missing 'name' field")

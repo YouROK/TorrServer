@@ -502,6 +502,11 @@ func (m *Manager) installPluginInternal(zipPath string, update bool) ([]string, 
 		if manifest.ID == "" {
 			return installed, fmt.Errorf("manifest in %s missing 'id' field", infoPath)
 		}
+		// ID задаёт имя каталога распаковки: разделители пути и ".." сломали бы
+		// и запись файлов, и проверку на выход за каталог ниже
+		if !ValidPluginID(manifest.ID) {
+			return installed, fmt.Errorf("manifest in %s has invalid 'id' %q", infoPath, manifest.ID)
+		}
 
 		if existing, ok := m.pluginExists(manifest.ID); ok {
 			_, isBuiltin := m.builtins[manifest.ID]
@@ -618,6 +623,11 @@ func (m *Manager) installPluginInternal(zipPath string, update bool) ([]string, 
 
 // UninstallPlugin удаляет плагин с диска и из базы данных
 func (m *Manager) UninstallPlugin(pluginID string) error {
+	// ID приходит из URL: без проверки ".." выводит RemoveAll за пределы каталога плагинов
+	if !ValidPluginID(pluginID) {
+		return fmt.Errorf("invalid plugin id %q", pluginID)
+	}
+
 	if _, isBuiltin := m.builtins[pluginID]; isBuiltin {
 		return fmt.Errorf("cannot uninstall built-in plugin '%s'", pluginID)
 	}
