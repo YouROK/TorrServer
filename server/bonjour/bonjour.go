@@ -26,6 +26,10 @@ const (
 var (
 	mu      sync.Mutex
 	servers []*zeroconf.Server
+	// listIfaces and addrsByIface are the host network lookups. Tests replace
+	// them; production uses anet.
+	listIfaces   = anet.Interfaces
+	addrsByIface = anet.InterfaceAddrsByInterface
 )
 
 // Start advertises TorrServer over mDNS (_torrserver, _http, and _https when TLS is on).
@@ -156,7 +160,7 @@ func stripLocalSuffix(s string) string {
 }
 
 func advertiseAddrs() ([]net.Interface, []string) {
-	ifaces, err := anet.Interfaces()
+	ifaces, err := listIfaces()
 	if err != nil {
 		log.TLogln("Bonjour: list interfaces:", err)
 		return nil, nil
@@ -201,7 +205,7 @@ func usableIface(i net.Interface) bool {
 }
 
 func addrsForIface(i net.Interface) (v4, v6 []net.IP) {
-	addrs, err := anet.InterfaceAddrsByInterface(&i)
+	addrs, err := addrsByIface(&i)
 	if err != nil {
 		return nil, nil
 	}

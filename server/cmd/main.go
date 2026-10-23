@@ -221,7 +221,9 @@ func main() {
 	os.Exit(0)
 }
 
-func watchTDir(dir string) {
+func watchTDir(dir string) { watchDir(dir, nil) }
+
+func watchDir(dir string, stop <-chan struct{}) {
 	path, err := filepath.Abs(dir) // Attempt to convert the provided dir path into an absolute (full) filesystem path.
 	if err != nil {
 		path = dir
@@ -243,6 +245,8 @@ func watchTDir(dir string) {
 	for { // Start of an infinite loop for continuous background monitoring using filesystem events.
 
 		select {
+		case <-stop:
+			return
 		case event, ok := <-watcher.Events:
 			if !ok {
 				return
