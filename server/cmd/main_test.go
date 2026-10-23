@@ -5,6 +5,7 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -142,6 +143,33 @@ func TestRunStartsAndStops(t *testing.T) {
 	_ = ln.Close()
 
 	dir := t.TempDir()
+	// DHT bootstrap and the default tracker-list mirrors resolve hostnames with
+	// net.DefaultResolver and do not stop when the client closes. Point this
+	// server at loopback so shutdown does not overlap that read.
+	tr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("udp://127.0.0.1:9/announce\n"))
+	}))
+	t.Cleanup(tr.Close)
+	settingsJSON := `{
+		"BitTorr": {
+			"CacheSize": 4194304,
+			"ReaderReadAHead": 5,
+			"DisableDHT": true,
+			"DisableUTP": true,
+			"DisableUPNP": true,
+			"DisablePEX": true,
+			"DisableTCP": false,
+			"EnableIPv6": false,
+			"EnableBonjour": false,
+			"EnableLPD": false,
+			"StoreSettingsInJson": true,
+			"DefaultTrackers": "udp://127.0.0.1:9/announce",
+			"TrackersListURL": "` + tr.URL + `"
+		}
+	}`
+	if err := os.WriteFile(filepath.Join(dir, "settings.json"), []byte(settingsJSON), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	done := make(chan int, 1)
 	go func() {
 		done <- run([]string{

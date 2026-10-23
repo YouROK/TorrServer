@@ -20,7 +20,7 @@ import (
 )
 
 // Prepare points settings at a temp DB and turns the BitTorrent client off the network.
-func Prepare(t *testing.T) {
+func Prepare(t testing.TB) {
 	t.Helper()
 	dir := t.TempDir()
 	oldPath, oldSets, oldArgs := settings.Path, settings.BTsets, settings.Args
@@ -92,7 +92,7 @@ type Show struct {
 }
 
 // WriteShow builds Season 1/episode1.mkv, a subtitle, and a poster with real piece hashes.
-func WriteShow(t *testing.T) *Show {
+func WriteShow(t testing.TB) *Show {
 	t.Helper()
 	root := filepath.Join(t.TempDir(), "Show")
 	files := map[string][]byte{
@@ -133,7 +133,7 @@ type Seeder struct {
 }
 
 // Seed starts a client bound to 127.0.0.1:0 and waits until the show is complete.
-func Seed(t *testing.T, show *Show) *Seeder {
+func Seed(t testing.TB, show *Show) *Seeder {
 	t.Helper()
 	cfg := torrent.NewDefaultClientConfig()
 	cfg.DefaultStorage = memStore{data: show.Data}
