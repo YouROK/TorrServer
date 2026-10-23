@@ -480,20 +480,31 @@ func (d *DNSChecker) LookupHostWithFallback(host string) ([]string, error) {
 	return addrs, err
 }
 
-// getFromCache retrieves DNS results from cache
+// getFromCache retrieves DNS results from cache.
+// Expired entries are dropped under the write lock: deleting from a map while
+// holding RLock races with every other reader that also sees an expiry.
 func (d *DNSChecker) getFromCache(host string) ([]string, bool) {
 	d.mu.RLock()
-	defer d.mu.RUnlock()
+	addrs, ok := d.cache[host]
+	fresh := ok && time.Since(d.cacheTime[host]) < d.config.CacheDuration
+	var out []string
+	if fresh {
+		out = append([]string(nil), addrs...)
+	}
+	d.mu.RUnlock()
+	if fresh {
+		return out, true
+	}
+	if !ok {
+		return nil, false
+	}
 
-	if addrs, ok := d.cache[host]; ok {
-		if time.Since(d.cacheTime[host]) < d.config.CacheDuration {
-			return addrs, true
-		}
-		// Expired, remove from cache
+	d.mu.Lock()
+	if t, still := d.cacheTime[host]; still && time.Since(t) >= d.config.CacheDuration {
 		delete(d.cache, host)
 		delete(d.cacheTime, host)
 	}
-
+	d.mu.Unlock()
 	return nil, false
 }
 
@@ -502,7 +513,7 @@ func (d *DNSChecker) addToCache(host string, addrs []string) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
-	d.cache[host] = addrs
+	d.cache[host] = append([]string(nil), addrs...)
 	d.cacheTime[host] = time.Now()
 }
 

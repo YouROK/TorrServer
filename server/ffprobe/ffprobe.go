@@ -11,7 +11,10 @@ import (
 	"gopkg.in/vansante/go-ffprobe.v2"
 )
 
-var binFile = "ffprobe"
+var (
+	binFile      = "ffprobe"
+	probeTimeout = time.Minute
+)
 
 func init() {
 	// Try to find ffprobe in PATH first
@@ -38,20 +41,17 @@ func Exists() bool {
 }
 
 func ProbeUrl(link string) (*ffprobe.ProbeData, error) {
-	data, err := ffprobe.ProbeURL(getCtx(), link)
-	return data, err
+	ctx, cancel := getCtx()
+	defer cancel()
+	return ffprobe.ProbeURL(ctx, link)
 }
 
 func ProbeReader(reader io.Reader) (*ffprobe.ProbeData, error) {
-	data, err := ffprobe.ProbeReader(getCtx(), reader)
-	return data, err
+	ctx, cancel := getCtx()
+	defer cancel()
+	return ffprobe.ProbeReader(ctx, reader)
 }
 
-func getCtx() context.Context {
-	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		time.Sleep(1 * time.Minute)
-		cancel()
-	}()
-	return ctx
+func getCtx() (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), probeTimeout)
 }

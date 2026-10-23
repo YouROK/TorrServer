@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 
 	"server/settings"
 	"server/torr"
@@ -20,7 +21,10 @@ import (
 
 const base, files = "tsmsx.yourok.ru", "media"
 
-var param = "menu:request:interaction:{SERVER}@{PREFIX}" + base + "/start.html"
+var (
+	paramMu sync.Mutex
+	param   = "menu:request:interaction:{SERVER}@{PREFIX}" + base + "/start.html"
+)
 
 func trn(h string) (st, sc string) {
 	if h := torr.GetTorrent(h); h != nil {
@@ -56,10 +60,13 @@ func SetupRoute(r gin.IRouter) {
 		rsp(c, r, e)
 	})
 	authorized.GET("/msx/start.json", func(c *gin.Context) {
+		paramMu.Lock()
+		parameter := param
+		paramMu.Unlock()
 		c.JSON(http.StatusOK, map[string]any{
 			"name":      "TorrServer",
 			"version":   version.Version,
-			"parameter": param,
+			"parameter": parameter,
 			"launcher": map[string]any{
 				"type":  "start",
 				"image": utils.GetScheme(c) + "://" + c.Request.Host + "/logo.png",
@@ -67,6 +74,8 @@ func SetupRoute(r gin.IRouter) {
 		})
 	})
 	authorized.POST("/msx/start.json", func(c *gin.Context) {
+		paramMu.Lock()
+		defer paramMu.Unlock()
 		if e := c.BindJSON(&param); e != nil {
 			_ = c.AbortWithError(http.StatusBadRequest, e)
 		}
