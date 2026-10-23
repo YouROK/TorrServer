@@ -28,9 +28,11 @@ func (s *Server) handleListUsers(c *gin.Context) {
 		return
 	}
 
-	// Скрываем хэши паролей из ответа API
+	// Хэши паролей и токены доступа в список не попадают: по токену
+	// из списка можно войти под его владельцем, включая Owner
 	for _, u := range users {
 		u.PasswordHash = ""
+		u.APIToken = ""
 	}
 
 	c.JSON(http.StatusOK, gin.H{"users": users})
@@ -59,7 +61,10 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 		return
 	}
 
+	// Токен выдаётся отдельно ручкой regenerate-token, в ответе на создание
+	// он не нужен
 	newUser.PasswordHash = ""
+	newUser.APIToken = ""
 	c.JSON(http.StatusCreated, newUser)
 }
 

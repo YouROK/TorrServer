@@ -54,5 +54,11 @@ func (s *Server) handleGetMe(c *gin.Context) {
 		return
 	}
 	currentUser := val.(*user.User)
-	c.JSON(http.StatusOK, currentUser)
+
+	// Копия: обнулять поля самого пользователя нельзя, он общий для запроса.
+	// Токен нужен клиенту для ссылок плееру, хэш пароля - нет.
+	safe := *currentUser
+	safe.PasswordHash = ""
+
+	c.JSON(http.StatusOK, &safe)
 }

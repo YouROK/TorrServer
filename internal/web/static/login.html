@@ -59,11 +59,14 @@
     }
 
     // safeFrom защищает от open redirect: только относительные пути на этом же хосте.
+    // Табы и переводы строк браузер вырезает из адреса, поэтому "/\t/evil.com"
+    // превратился бы в "//evil.com" - управляющие символы убираем до проверки.
     function safeFrom(raw) {
         if (!raw) return '/';
-        if (raw[0] !== '/') return '/';
-        if (raw[1] === '/' || raw[1] === '\\') return '/';
-        return raw;
+        const clean = raw.replace(/[\x00-\x20\x7f]/g, '');
+        if (clean[0] !== '/') return '/';
+        if (clean[1] === '/' || clean[1] === '\\') return '/';
+        return clean;
     }
 
     i18n.apply();
