@@ -101,3 +101,63 @@ func TestStartStopConcurrent(t *testing.T) {
 		t.Fatalf("servers = %#v after Stop", servers)
 	}
 }
+
+func TestAdvertiseMockInterfaces(t *testing.T) {
+	oldList, oldAddrs := listIfaces, addrsByIface
+	oldPort, oldSsl, oldSslPort, oldSets := settings.Port, settings.Ssl, settings.SslPort, settings.BTsets
+	t.Cleanup(func() {
+		listIfaces, addrsByIface = oldList, oldAddrs
+		settings.Port, settings.Ssl, settings.SslPort, settings.BTsets = oldPort, oldSsl, oldSslPort, oldSets
+		Stop()
+	})
+
+	en := net.Interface{Index: 2, Name: "en0", Flags: net.FlagUp | net.FlagMulticast}
+	listIfaces = func() ([]net.Interface, error) {
+		return []net.Interface{
+			{Index: 1, Name: "lo0", Flags: net.FlagUp | net.FlagLoopback | net.FlagMulticast},
+			{Index: 3, Name: "utun0", Flags: net.FlagUp | net.FlagMulticast},
+			en,
+		}, nil
+	}
+	addrsByIface = func(i *net.Interface) ([]net.Addr, error) {
+		if i.Name != "en0" {
+			return nil, nil
+		}
+		return []net.Addr{
+			&net.IPNet{IP: net.ParseIP("127.0.0.1"), Mask: net.CIDRMask(8, 32)},
+			&net.IPNet{IP: net.ParseIP("169.254.1.1"), Mask: net.CIDRMask(16, 32)},
+			&net.IPNet{IP: net.ParseIP("192.0.2.10"), Mask: net.CIDRMask(24, 32)},
+			&net.IPNet{IP: net.ParseIP("2001:db8::1"), Mask: net.CIDRMask(32, 128)},
+			&net.IPAddr{IP: net.ParseIP("192.0.2.11")},
+		}, nil
+	}
+	ifaces, ips := advertiseAddrs()
+	if len(ifaces) != 1 || ifaces[0].Name != "en0" {
+		t.Fatalf("ifaces %#v", ifaces)
+	}
+	if len(ips) != 3 {
+		t.Fatalf("ips %#v", ips)
+	}
+
+	listIfaces = func() ([]net.Interface, error) { return nil, errMock }
+	if ifs, ips := advertiseAddrs(); ifs != nil || ips != nil {
+		t.Fatalf("error path %#v %#v", ifs, ips)
+	}
+	listIfaces = func() ([]net.Interface, error) { return []net.Interface{en}, nil }
+
+	settings.Port = "8090"
+	settings.Ssl = true
+	settings.SslPort = "8091"
+	settings.BTsets = &settings.BTSets{FriendlyName: "Living Room.local"}
+	Start()
+	Stop()
+	if servers != nil {
+		t.Fatal("servers left registered")
+	}
+}
+
+var errMock = errString("mock")
+
+type errString string
+
+func (e errString) Error() string { return string(e) }

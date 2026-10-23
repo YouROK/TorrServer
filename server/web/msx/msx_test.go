@@ -1,8 +1,11 @@
 package msx
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -115,4 +118,127 @@ func TestMSXStartConcurrent(t *testing.T) {
 		}(i)
 	}
 	wg.Wait()
+}
+
+func TestMSXFilesAndTorrentStamp(t *testing.T) {
+	torr.InitApiHelper(torr.NewBTS())
+	oldSets := settings.BTsets
+	settings.BTsets = &settings.BTSets{}
+	t.Cleanup(func() { settings.BTsets = oldSets })
+	r := msxRouter(t)
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/files", nil))
+	if w.Code != http.StatusOK {
+		t.Fatalf("files get %d %s", w.Code, w.Body.String())
+	}
+
+	w = httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/files", strings.NewReader(`{`))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("bad files %d", w.Code)
+	}
+
+	file := filepath.Join(settings.Path, "note.txt")
+	if err := os.WriteFile(file, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	body, _ := json.Marshal(file)
+	w = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, "/files", strings.NewReader(string(body)))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("file not dir %d %s", w.Code, w.Body.String())
+	}
+
+	dir := t.TempDir()
+	body, _ = json.Marshal(dir)
+	w = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, "/files", strings.NewReader(string(body)))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("symlink %d %s", w.Code, w.Body.String())
+	}
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/files", nil))
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), dir) {
+		t.Fatalf("linked %d %s", w.Code, w.Body.String())
+	}
+
+	hash := strings.Repeat("ef", 20)
+	w = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, "/msx/trn", strings.NewReader(`{"Data":"`+hash+`"}`))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "stamp") {
+		t.Fatalf("stamp %d %s", w.Code, w.Body.String())
+	}
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodPost, "/msx/trn?hash="+hash, nil))
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "action") {
+		t.Fatalf("query stamp %d %s", w.Code, w.Body.String())
+	}
+
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("X-Test") != "1" {
+			http.Error(w, "missing header", http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = w.Write([]byte("proxied"))
+	}))
+	defer upstream.Close()
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/msx/proxy?url="+upstream.URL+"&header=X-Test:1&header=nocolon", nil))
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "proxied") {
+		t.Fatalf("proxy %d %s", w.Code, w.Body.String())
+	}
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/msx/proxy?url=http://127.0.0.1:1", nil))
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("proxy fail %d", w.Code)
+	}
+
+	link := filepath.Join(settings.Path, files)
+	if err := os.Remove(link); err != nil && !os.IsNotExist(err) {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(link, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/files", nil))
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("files not link %d %s", w.Code, w.Body.String())
+	}
+	w = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, "/files", strings.NewReader(`""`))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("clear files %d %s", w.Code, w.Body.String())
+	}
+	missing, _ := json.Marshal(filepath.Join(settings.Path, "no-such-dir"))
+	w = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, "/files", strings.NewReader(string(missing)))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("missing dir %d %s", w.Code, w.Body.String())
+	}
+	blocked := filepath.Join(settings.Path, files)
+	if err := os.MkdirAll(filepath.Join(blocked, "inner"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	w = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, "/files", strings.NewReader(`""`))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("remove dir %d %s", w.Code, w.Body.String())
+	}
 }
