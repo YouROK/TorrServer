@@ -233,30 +233,90 @@ func (s *Store) DeleteUser(userID string) ([]string, error) {
 // ПОЛЬЗОВАТЕЛЬСКИЕ ТОРРЕНТЫ (Связи и просмотры)
 // ============================================================================
 
-// AddUserTorrent связывает пользователя с торрентом и увеличивает счетчик ссылок
-func (s *Store) AddUserTorrent(ut *UserTorrent) error {
+// putUserTorrent записывает карточку и обновляет счетчик ссылок в текущей транзакции
+func putUserTorrent(tx *bolt.Tx, ut *UserTorrent) error {
+	bUT := tx.Bucket(database.BucketUserTorrents)
+	bRefs := tx.Bucket(database.BucketTorrentRefs)
+
+	key := []byte(fmt.Sprintf("%s:%s", ut.UserID, ut.TorrentHash))
+	isNew := bUT.Get(key) == nil
+
+	data, err := json.Marshal(ut)
+	if err != nil {
+		return err
+	}
+
+	if err := bUT.Put(key, data); err != nil {
+		return err
+	}
+
+	// Увеличиваем счетчик ссылок только при первом добавлении
+	if isNew {
+		incrementRef(bRefs, ut.TorrentHash)
+	}
+
+	return nil
+}
+
+// countUserTorrents считает карточки пользователя в готовом бакете
+func countUserTorrents(b *bolt.Bucket, userID string) int {
+	count := 0
+	prefix := []byte(userID + ":")
+
+	c := b.Cursor()
+	for k, _ := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, _ = c.Next() {
+		count++
+	}
+	return count
+}
+
+// AddUserTorrentLimited добавляет карточку с проверкой лимита.
+// Проверка идёт в той же транзакции, что и запись: иначе параллельные
+// добавления видят одно и то же число и обходят MaxTorrents.
+func (s *Store) AddUserTorrentLimited(ut *UserTorrent, maxTorrents int) error {
 	return s.db.GetRawConn().Update(func(tx *bolt.Tx) error {
-		bUT := tx.Bucket(database.BucketUserTorrents)
-		bRefs := tx.Bucket(database.BucketTorrentRefs)
+		if maxTorrents > 0 {
+			bUT := tx.Bucket(database.BucketUserTorrents)
+			key := []byte(fmt.Sprintf("%s:%s", ut.UserID, ut.TorrentHash))
 
-		key := []byte(fmt.Sprintf("%s:%s", ut.UserID, ut.TorrentHash))
-		isNew := bUT.Get(key) == nil
+			// Обновление существующей карточки лимит не расходует
+			if bUT.Get(key) == nil && countUserTorrents(bUT, ut.UserID) >= maxTorrents {
+				return fmt.Errorf("torrent limit reached for your account (max: %d)", maxTorrents)
+			}
+		}
 
-		data, err := json.Marshal(ut)
+		return putUserTorrent(tx, ut)
+	})
+}
+
+// updateUserTorrent меняет карточку внутри одной транзакции.
+// Чтение и запись отдельными транзакциями теряют параллельные правки:
+// обе стороны читают одно состояние и последняя запись затирает первую.
+func (s *Store) updateUserTorrent(userID, hash string, mutate func(ut *UserTorrent) error) error {
+	return s.db.GetRawConn().Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(database.BucketUserTorrents)
+		key := []byte(fmt.Sprintf("%s:%s", userID, hash))
+
+		data := b.Get(key)
+		if data == nil {
+			return ErrTorrentNotFound
+		}
+
+		var ut UserTorrent
+		if err := json.Unmarshal(data, &ut); err != nil {
+			return err
+		}
+
+		if err := mutate(&ut); err != nil {
+			return err
+		}
+
+		out, err := json.Marshal(&ut)
 		if err != nil {
 			return err
 		}
 
-		if err := bUT.Put(key, data); err != nil {
-			return err
-		}
-
-		// Увеличиваем счетчик ссылок только при первом добавлении
-		if isNew {
-			incrementRef(bRefs, ut.TorrentHash)
-		}
-
-		return nil
+		return b.Put(key, out)
 	})
 }
 
@@ -346,29 +406,32 @@ func (s *Store) RemoveUserTorrent(userID, hash string) (isLastOwner bool, err er
 
 // SetFileViewedStatus отмечает или снимает отметку просмотра с конкретного файла в торренте
 func (s *Store) SetFileViewedStatus(userID, hash string, fileIdx int, viewed bool) error {
-	ut, err := s.GetUserTorrent(userID, hash)
-	if err != nil {
-		return err
-	}
-
-	if viewed {
-		ut.MarkFileViewed(fileIdx)
-	} else {
-		ut.UnmarkFileViewed(fileIdx)
-	}
-
-	return s.AddUserTorrent(ut)
+	return s.updateUserTorrent(userID, hash, func(ut *UserTorrent) error {
+		if viewed {
+			ut.MarkFileViewed(fileIdx)
+		} else {
+			ut.UnmarkFileViewed(fileIdx)
+		}
+		return nil
+	})
 }
 
 // SetAllFilesViewedStatus отмечает или снимает отметку у всех файлов раздачи
 func (s *Store) SetAllFilesViewedStatus(userID, hash string, fileIdx []int, viewed bool) error {
-	ut, err := s.GetUserTorrent(userID, hash)
-	if err != nil {
-		return err
-	}
+	return s.updateUserTorrent(userID, hash, func(ut *UserTorrent) error {
+		ut.SetAllFilesViewed(fileIdx, viewed)
+		return nil
+	})
+}
 
-	ut.SetAllFilesViewed(fileIdx, viewed)
-	return s.AddUserTorrent(ut)
+// UpdateUserTorrentMeta правит личные данные карточки, не трогая отметки просмотра
+func (s *Store) UpdateUserTorrentMeta(userID, hash, title, poster, category string) error {
+	return s.updateUserTorrent(userID, hash, func(ut *UserTorrent) error {
+		ut.Title = title
+		ut.Poster = poster
+		ut.Category = category
+		return nil
+	})
 }
 
 // ============================================================================
