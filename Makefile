@@ -390,6 +390,16 @@ lint:
 
 lint-all: fmt-check lint
 
+# server/docs is generated swagger. ./torr reader bench blocks on GotInfo.
+TEST_PKGS = $(shell cd server && $(GO_BINARY) list ./... | grep -v '/docs$$')
+BENCH_PKGS := ./subs ./torr/storage/torrstor ./torrshash ./torrfs ./web/api
+
+test: ## Race tests; coverage profile at server/coverage.out
+	cd server && $(GO_BINARY) test -race -count=1 -timeout=10m -coverprofile=coverage.out -covermode=atomic $(TEST_PKGS)
+
+bench: ## In-process benches; results at server/bench.txt
+	cd server && $(GO_BINARY) test -run='^$$' -bench=. -benchmem -benchtime=200ms -count=1 $(BENCH_PKGS) | tee bench.txt
+
 healthcheck:
 	goreleaser healthcheck $(GR_CONFIG)
 
@@ -543,6 +553,8 @@ help:
 		tgt "fmt-check" "Check gofmt + golangci-lint fmt (CI)"; \
 		tgt "lint" "golangci-lint run ./server/..."; \
 		tgt "lint-all" "fmt-check + lint"; \
+		tgt "test" "Race tests + server/coverage.out"; \
+		tgt "bench" "Memory benches → server/bench.txt"; \
 		tgt "check" "Validate $(GORELEASER_CONFIG)"; \
 		tgt "check-release" "Validate $(GORELEASER_RELEASE_CONFIG)"; \
 		tgt "verify-linux-static" "Check static Linux ELF (id=binary)"; \
@@ -580,5 +592,5 @@ help:
         guard-docker-amd64 guard-goreleaser guard-upx guard-ndk guard-yarn guard-swag \
         build-host build-gst-host build-no-hooks release-snapshot release-no-docker release-no-docker-full \
         data-sync build-sync web-deps web-build web-embed install-tools install-goreleaser install-swag install-golangci-lint \
-        fmt fmt-check lint lint-all \
+        fmt fmt-check lint lint-all test bench \
         docker-image docker-image-amd64 docker-image-arm64 show-config show-config-release

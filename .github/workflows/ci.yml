@@ -67,6 +67,77 @@ jobs:
       - name: golangci-lint run
         run: golangci-lint run ./...
 
+  test:
+    name: Race Tests & Coverage
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Load toolchain versions
+        run: grep -v '^#' .github/versions.env >> "$GITHUB_ENV"
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: server/go.sum
+
+      - name: Run unit tests with race detector
+        run: make test
+
+      - name: Enforce coverage gate
+        uses: vladopajic/go-test-coverage@v2
+        with:
+          config: .testcoverage.yml
+
+      - name: Restore benchmark history
+        uses: actions/cache/restore@v6
+        with:
+          path: .cache/benchmark
+          key: go-bench-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-bench-
+
+      - name: Run memory and throughput benchmarks
+        run: |
+          mkdir -p .cache/benchmark
+          make bench
+
+      - name: Compare benchmarks
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: Go benchmarks
+          tool: go
+          output-file-path: server/bench.txt
+          external-data-json-path: .cache/benchmark/data.json
+          skip-fetch-gh-pages: true
+          alert-threshold: "200%"
+          fail-on-alert: true
+          summary-always: true
+
+      - name: Save benchmark history
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: actions/cache/save@v6
+        with:
+          path: .cache/benchmark
+          key: go-bench-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Upload coverage and benchmark reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-and-bench-reports
+          path: |
+            server/coverage.out
+            server/bench.txt
+          retention-days: 14
+          if-no-files-found: ignore
+
   goreleaser-check:
     name: GoReleaser config
     runs-on: ubuntu-26.04
@@ -135,7 +206,7 @@ jobs:
   build:
     name: Build (linux amd64)
     runs-on: ubuntu-22.04
-    needs: [lint, goreleaser-check, web]
+    needs: [lint, test, goreleaser-check, web]
     env:
       VITE_TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
     steps:
