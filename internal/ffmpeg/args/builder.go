@@ -591,9 +591,10 @@ func buildHLSArgs(o Options) []string {
 		a = append(a, "-start_number", strconv.Itoa(h.StartNumber))
 	}
 
-	// Метки времени входного файла не сдвигаются, иначе перемотка после перезапуска сбивается
-	a = append(a, "-copyts", "-avoid_negative_ts", "disabled")
-	a = append(a, "-start_at_zero")
+	// Метки времени не сдвигаются, иначе номер сегмента перестаёт
+	// соответствовать позиции и перемотка промахивается.
+	// muxdelay 0 убирает начальную задержку транспортного потока.
+	a = append(a, "-copyts", "-avoid_negative_ts", "disabled", "-muxdelay", "0")
 	return a
 }
 

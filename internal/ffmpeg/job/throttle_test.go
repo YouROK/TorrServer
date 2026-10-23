@@ -2,6 +2,7 @@ package job
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -215,4 +216,62 @@ func TestManagerThrottleResumesAfterServing(t *testing.T) {
 	}
 
 	t.Error("process did not resume after the player caught up")
+}
+
+// TestCountSegmentsFromSeek проверяет счёт сегментов от позиции перезапуска.
+// После перемотки в каталоге остаются файлы прошлых мест: если считать
+// их опережением, процесс встанет на паузу и сегмент не появится.
+func TestCountSegmentsFromSeek(t *testing.T) {
+	dir := t.TempDir()
+
+	// Остатки прошлой позиции и начало нового запуска
+	for _, n := range []int{0, 1, 2, 3, 4, 1200, 1201} {
+		if err := os.WriteFile(filepath.Join(dir, fmt.Sprintf("seg%d.ts", n)), []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if got := countSegmentsFrom(dir, 1200); got != 2 {
+		t.Errorf("segments from 1200 = %d, want 2", got)
+	}
+	if got := countSegmentsFrom(dir, 0); got != 7 {
+		t.Errorf("segments from 0 = %d, want 7", got)
+	}
+	// Служебные файлы не считаются
+	if err := os.WriteFile(filepath.Join(dir, "index.m3u8"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got := countSegmentsFrom(dir, 0); got != 7 {
+		t.Errorf("playlist must not be counted: %d", got)
+	}
+}
+
+func TestTrailingSegmentNumber(t *testing.T) {
+	cases := map[string]int{
+		"seg0.ts":    0,
+		"seg1200.ts": 1200,
+		"seg7.m4s":   7,
+	}
+	for name, want := range cases {
+		got, ok := trailingSegmentNumber(name)
+		if !ok || got != want {
+			t.Errorf("trailingSegmentNumber(%q) = %d, %v; want %d", name, got, ok, want)
+		}
+	}
+
+	if _, ok := trailingSegmentNumber("index.m3u8"); ok {
+		t.Error("playlist name must not produce a number")
+	}
+}
+
+func TestJobStartIndex(t *testing.T) {
+	j := &Job{ID: "seek", finished: make(chan struct{})}
+
+	if j.StartIndex() != 0 {
+		t.Errorf("initial index = %d, want 0", j.StartIndex())
+	}
+	j.SetStartIndex(1200)
+	if j.StartIndex() != 1200 {
+		t.Errorf("index = %d, want 1200", j.StartIndex())
+	}
 }

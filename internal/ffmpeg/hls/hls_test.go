@@ -359,3 +359,122 @@ func TestParseInitSegment(t *testing.T) {
 		}
 	}
 }
+
+func TestPlanSegments(t *testing.T) {
+	cases := []struct {
+		name     string
+		duration float64
+		length   int
+		want     int
+		last     float64
+	}{
+		{name: "even split", duration: 60, length: 4, want: 15, last: 4},
+		{name: "with remainder", duration: 62, length: 4, want: 16, last: 2},
+		{name: "shorter than segment", duration: 3, length: 4, want: 1, last: 3},
+		{name: "exact one segment", duration: 4, length: 4, want: 1, last: 4},
+		{name: "movie length", duration: 8888.299, length: 4, want: 2223, last: 0.299},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			plan := PlanSegments(c.duration, c.length)
+			if len(plan.Indexes) != c.want {
+				t.Fatalf("segments = %d, want %d", len(plan.Indexes), c.want)
+			}
+			if got := plan.Durations[len(plan.Durations)-1]; got < c.last-0.01 || got > c.last+0.01 {
+				t.Errorf("last segment = %.3f, want %.3f", got, c.last)
+			}
+		})
+	}
+}
+
+func TestPlanSegmentsEmptyDuration(t *testing.T) {
+	// Неизвестная длительность: полный плейлист невозможен,
+	// вызывающий код обязан вернуться к скользящему окну
+	plan := PlanSegments(0, 4)
+	if plan.Known {
+		t.Error("plan must report an unknown duration")
+	}
+	if len(plan.Indexes) != 0 {
+		t.Errorf("plan must be empty for an unknown duration, got %d", len(plan.Indexes))
+	}
+}
+
+func TestPlanSegmentsKnown(t *testing.T) {
+	if plan := PlanSegments(60, 4); !plan.Known {
+		t.Error("known duration must be reported")
+	}
+}
+
+func TestPlanSegmentsTotalDuration(t *testing.T) {
+	// Сумма длительностей совпадает с длительностью материала
+	for _, duration := range []float64{60, 62, 8888.299, 3.5} {
+		plan := PlanSegments(duration, 4)
+
+		sum := 0.0
+		for _, d := range plan.Durations {
+			sum += d
+		}
+		if sum < duration-0.01 || sum > duration+0.01 {
+			t.Errorf("duration %.3f: total %.3f", duration, sum)
+		}
+	}
+}
+
+func TestBuildStaticPlaylist(t *testing.T) {
+	plan := PlanSegments(12, 4)
+
+	out := BuildStatic(StaticOptions{
+		SegmentType: "mpegts",
+		Prefix:      "/api/transcode/hls/session/abc/segment/",
+		Suffix:      "?token=x",
+	}, plan)
+
+	// Признак конца обязателен: без него плеер не покажет перемотку
+	if !strings.Contains(out, "#EXT-X-ENDLIST") {
+		t.Errorf("playlist has no ENDLIST:\n%s", out)
+	}
+	if !strings.Contains(out, "#EXT-X-PLAYLIST-TYPE:VOD") {
+		t.Errorf("playlist is not VOD:\n%s", out)
+	}
+	if !strings.Contains(out, "#EXT-X-MEDIA-SEQUENCE:0") {
+		t.Errorf("playlist must start at zero:\n%s", out)
+	}
+
+	// Все три сегмента на месте, с токеном и абсолютным путём
+	for _, name := range []string{"seg0.ts", "seg1.ts", "seg2.ts"} {
+		want := "/api/transcode/hls/session/abc/segment/" + name + "?token=x"
+		if !strings.Contains(out, want) {
+			t.Errorf("playlist does not contain %q:\n%s", want, out)
+		}
+	}
+}
+
+func TestBuildStaticFmp4(t *testing.T) {
+	plan := PlanSegments(8, 4)
+
+	out := BuildStatic(StaticOptions{
+		SegmentType: "fmp4",
+		InitSegment: "init.mp4",
+		Prefix:      "/seg/",
+	}, plan)
+
+	if !strings.Contains(out, `#EXT-X-MAP:URI="/seg/init.mp4"`) {
+		t.Errorf("fmp4 playlist has no init segment:\n%s", out)
+	}
+	if !strings.Contains(out, "/seg/seg0.m4s") {
+		t.Errorf("fmp4 playlist has no m4s segments:\n%s", out)
+	}
+	if strings.Contains(out, ".ts") {
+		t.Errorf("fmp4 playlist must not reference mpegts:\n%s", out)
+	}
+}
+
+func TestSegmentName(t *testing.T) {
+	if got := SegmentName(5, "mpegts"); got != "seg5.ts" {
+		t.Errorf("mpegts name = %q", got)
+	}
+	if got := SegmentName(5, "fmp4"); got != "seg5.m4s" {
+		t.Errorf("fmp4 name = %q", got)
+	}
+}

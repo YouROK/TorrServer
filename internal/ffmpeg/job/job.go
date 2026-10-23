@@ -96,6 +96,9 @@ type Job struct {
 	throttled atomic.Bool
 	// segmentsServed считает сегменты, запрошенные плеером
 	segmentsServed atomic.Int64
+	// startIndex хранит номер первого сегмента этого запуска.
+	// Перезапуск с новой позиции меняет отсчёт сегментов.
+	startIndex atomic.Int64
 
 	// pauseOK хранит поддержку паузы сборкой ffmpeg
 	pauseOK atomic.Bool
@@ -346,6 +349,14 @@ func (j *Job) AddServedSegment() { j.segmentsServed.Add(1) }
 
 // SegmentsServed возвращает число отданных плееру сегментов.
 func (j *Job) SegmentsServed() int64 { return j.segmentsServed.Load() }
+
+// SetStartIndex задаёт номер первого сегмента запуска.
+// После перемотки нумерация начинается заново, и старые файлы
+// не должны считаться опережением.
+func (j *Job) SetStartIndex(index int) { j.startIndex.Store(int64(index)) }
+
+// StartIndex возвращает номер первого сегмента запуска.
+func (j *Job) StartIndex() int { return int(j.startIndex.Load()) }
 
 // markFinished фиксирует завершение процесса.
 func (j *Job) markFinished(err error, exitCode int, canceled bool) {

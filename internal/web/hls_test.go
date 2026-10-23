@@ -13,6 +13,7 @@ import (
 	"silo/internal/ffmpeg"
 	"silo/internal/ffmpeg/args"
 	"silo/internal/ffmpeg/profile"
+	"silo/internal/user"
 )
 
 // hlsEnv описывает окружение проверок HLS.
@@ -639,5 +640,194 @@ func TestHLSSegmentMarksViewed(t *testing.T) {
 	}
 	if len(status.ViewedFiles) != 1 || status.ViewedFiles[0] != 0 {
 		t.Errorf("status viewed_files = %v, want [0]", status.ViewedFiles)
+	}
+}
+
+// TestHLSSessionRejectsForeignUser проверяет, что чужую HLS-сессию нельзя
+// открыть по её идентификатору: ни плейлист, ни сегменты.
+// Проверка имеет смысл только с включённой авторизацией: в открытом режиме
+// любой запрос считается владельцем.
+func TestHLSSessionRejectsForeignUser(t *testing.T) {
+	h := setupHLS(t)
+	if !h.env.server.transcodeEnabled() {
+		t.Skip("transcoding is unavailable")
+	}
+
+	// Включаем проверку токенов: иначе посторонний получает права Owner
+	h.env.server.cfg.Auth.OwnerPassword = "secret"
+
+	// Владелец открывает сессию и получает её идентификатор
+	masterURL := h.env.url("/api/transcode/hls/"+h.env.hash+"/0/master.m3u8") +
+		"&protocol=hls&container=ts&video_codec=h264&audio_codec=aac&segment_length=2"
+
+	body, status, _ := h.env.get(t, masterURL, 90*time.Second)
+	if status != http.StatusOK {
+		t.Skipf("master status = %d, HLS is not available here", status)
+	}
+
+	sessionID := sessionIDFromVariant(t, body)
+	if sessionID == "" {
+		t.Fatalf("cannot extract session id from variant: %s", truncateText(body, 200))
+	}
+
+	// Посторонний пользователь не получает доступ к сессии владельца
+	stranger, err := h.env.server.userSvc.CreateUser(h.env.owner, "hls_stranger", "pass", user.RankUser, user.Limits{})
+	if err != nil {
+		t.Fatalf("CreateUser failed: %v", err)
+	}
+
+	playlistPath := "/api/transcode/hls/session/" + sessionID + "/main.m3u8"
+	playlistURL := h.env.baseURL + playlistPath + "?token=" + stranger.APIToken
+
+	_, code, _ := h.env.get(t, playlistURL, 10*time.Second)
+	if code != http.StatusNotFound {
+		t.Errorf("foreign playlist status = %d, want 404", code)
+	}
+
+	segmentURL := h.env.baseURL + "/api/transcode/hls/session/" + sessionID + "/segment/seg0.ts?token=" + stranger.APIToken
+	_, code, _ = h.env.get(t, segmentURL, 10*time.Second)
+	if code != http.StatusNotFound {
+		t.Errorf("foreign segment status = %d, want 404", code)
+	}
+
+	// Владелец по-прежнему получает свой плейлист
+	ownerURL := h.env.baseURL + playlistPath + "?token=" + h.env.owner.APIToken
+	_, code, _ = h.env.get(t, ownerURL, 30*time.Second)
+	if code != http.StatusOK {
+		t.Errorf("owner playlist status = %d, want 200", code)
+	}
+}
+
+// TestHLSPlaylistWaitsForFirstSegment проверяет, что первый запрос плейлиста
+// не отвечает отказом, пока ffmpeg готовит первый сегмент.
+func TestHLSPlaylistWaitsForFirstSegment(t *testing.T) {
+	h := setupHLS(t)
+
+	url := h.env.url("/api/transcode/hls/"+h.env.hash+"/0/master.m3u8") +
+		"&protocol=hls&video_codec=h264&audio_codec=aac&segment_length=4"
+
+	body, status, _ := h.env.get(t, url, 60*time.Second)
+	if status != http.StatusOK {
+		t.Fatalf("master status = %d", status)
+	}
+
+	variant := variantURI(t, body)
+	if variant == "" {
+		t.Fatal("no variant in the master playlist")
+	}
+
+	// Один запрос без повторов: именно его делает плеер сразу после главного
+	playlist, status, _ := h.env.get(t, h.env.baseURL+variant, 60*time.Second)
+	if status != http.StatusOK {
+		t.Fatalf("first playlist request = %d, want 200 without retries", status)
+	}
+	if !strings.Contains(playlist, "#EXTINF") {
+		t.Errorf("playlist has no segments: %s", truncateText(playlist, 200))
+	}
+}
+
+// TestHLSPlaylistIsStatic проверяет, что плейлист отдаётся сразу целиком:
+// только по полной длительности плеер показывает перемотку.
+func TestHLSPlaylistIsStatic(t *testing.T) {
+	h := setupHLS(t)
+
+	url := h.env.url("/api/transcode/hls/"+h.env.hash+"/0/master.m3u8") +
+		"&protocol=hls&video_codec=h264&audio_codec=aac&segment_length=2"
+
+	body, status, _ := h.env.get(t, url, 60*time.Second)
+	if status != http.StatusOK {
+		t.Fatalf("master status = %d", status)
+	}
+
+	variant := variantURI(t, body)
+	playlist, status, _ := h.env.get(t, h.env.baseURL+variant, 60*time.Second)
+	if status != http.StatusOK {
+		t.Fatalf("playlist status = %d, want 200", status)
+	}
+
+	t.Logf("playlist:\n%s", playlist)
+
+	// Признак конца и тип VOD обязательны для перемотки
+	if !strings.Contains(playlist, "#EXT-X-ENDLIST") {
+		t.Error("playlist has no ENDLIST: the player cannot seek")
+	}
+	if !strings.Contains(playlist, "#EXT-X-PLAYLIST-TYPE:VOD") {
+		t.Error("playlist is not VOD")
+	}
+
+	// Плейлист полный: тестовый файл 4 секунды при сегменте 2 даёт 2 сегмента
+	count := strings.Count(playlist, "#EXTINF")
+	if count < 2 {
+		t.Errorf("segments = %d, want the whole file", count)
+	}
+}
+
+// TestHLSSegmentFromPosition проверяет, что сегмент из середины отдаётся.
+// Это основа перемотки: плеер запрашивает сегмент по своему номеру.
+func TestHLSSegmentFromPosition(t *testing.T) {
+	h := setupHLS(t)
+
+	url := h.env.url("/api/transcode/hls/"+h.env.hash+"/0/master.m3u8") +
+		"&protocol=hls&video_codec=h264&audio_codec=aac&segment_length=1&max_height=120"
+
+	body, status, _ := h.env.get(t, url, 60*time.Second)
+	if status != http.StatusOK {
+		t.Fatalf("master status = %d", status)
+	}
+
+	variant := variantURI(t, body)
+	sessionID := sessionIDFromVariant(t, variant)
+	playlist, status, _ := h.env.get(t, h.env.baseURL+variant, 60*time.Second)
+	if status != http.StatusOK {
+		t.Fatalf("playlist status = %d", status)
+	}
+
+	// Считаем сегменты, чтобы взять последний: он кодируется позже всех
+	var names []string
+	for _, line := range strings.Split(playlist, "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "/api/") && strings.Contains(line, "/segment/") {
+			names = append(names, line)
+		}
+	}
+	if len(names) < 2 {
+		t.Fatalf("playlist has %d segments, need at least 2", len(names))
+	}
+
+	// Запрашиваем последний сегмент: он требует кодирования с его позиции
+	last := names[len(names)-1]
+	_, status, _ = h.env.get(t, h.env.baseURL+last, 90*time.Second)
+	if status != http.StatusOK {
+		t.Errorf("last segment %s = %d, want 200", last, status)
+	}
+	_ = sessionID
+}
+
+// TestHLSSegmentContentType проверяет тип отдаваемого сегмента.
+func TestHLSSegmentIsMpegts(t *testing.T) {
+	h := setupHLS(t)
+
+	url := h.env.url("/api/transcode/hls/"+h.env.hash+"/0/master.m3u8") +
+		"&protocol=hls&video_codec=h264&audio_codec=aac&segment_length=2"
+
+	body, status, _ := h.env.get(t, url, 60*time.Second)
+	if status != http.StatusOK {
+		t.Fatalf("master status = %d", status)
+	}
+
+	variant := variantURI(t, body)
+	playlist, _, _ := h.env.get(t, h.env.baseURL+variant, 60*time.Second)
+
+	first := firstSegmentURI(playlist)
+	if first == "" {
+		t.Fatal("no segments in the playlist")
+	}
+
+	_, status, header := h.env.get(t, h.env.baseURL+first, 60*time.Second)
+	if status != http.StatusOK {
+		t.Fatalf("segment status = %d", status)
+	}
+	if got := header.Get("Content-Type"); !strings.HasPrefix(got, "video/mp2t") {
+		t.Errorf("content type = %q, want video/mp2t", got)
 	}
 }

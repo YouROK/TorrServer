@@ -3,6 +3,7 @@ package job
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -62,9 +63,13 @@ func (t *throttler) run() {
 	}
 }
 
-// check сравнивает число готовых сегментов с востребованными плеером.
+// check сравнивает готовые сегменты с востребованными плеером.
+// Отсчёт ведётся от номера первого сегмента запуска: после перемотки
+// в каталоге остаются файлы прошлых позиций, и по ним опережение
+// считалось бы мгновенно, останавливая процесс на новом месте.
 func (t *throttler) check() {
-	produced := countSegments(t.job.WorkDir)
+	start := t.job.StartIndex()
+	produced := countSegmentsFrom(t.job.WorkDir, start)
 	served := int(t.job.SegmentsServed())
 	ahead := produced - served
 
@@ -89,6 +94,52 @@ func (t *throttler) shutdown() {
 		_ = t.job.Resume()
 		t.job.setThrottled(false)
 	}
+}
+
+// countSegmentsFrom считает сегменты начиная с указанного номера.
+func countSegmentsFrom(dir string, from int) int {
+	if dir == "" {
+		return 0
+	}
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return 0
+	}
+
+	count := 0
+	for _, e := range entries {
+		if e.IsDir() || strings.HasPrefix(e.Name(), ".") {
+			continue
+		}
+		switch strings.ToLower(filepath.Ext(e.Name())) {
+		case ".ts", ".m4s":
+			if num, ok := trailingSegmentNumber(e.Name()); ok && num >= from {
+				count++
+			}
+		}
+	}
+	return count
+}
+
+// trailingSegmentNumber извлекает номер из имени сегмента.
+func trailingSegmentNumber(name string) (int, bool) {
+	base := strings.TrimSuffix(name, filepath.Ext(name))
+	digits := ""
+	for i := len(base) - 1; i >= 0; i-- {
+		if base[i] < '0' || base[i] > '9' {
+			break
+		}
+		digits = string(base[i]) + digits
+	}
+	if digits == "" {
+		return 0, false
+	}
+	num, err := strconv.Atoi(digits)
+	if err != nil {
+		return 0, false
+	}
+	return num, true
 }
 
 // countSegments считает готовые сегменты в каталоге задания.

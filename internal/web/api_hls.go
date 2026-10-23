@@ -30,6 +30,8 @@ import (
 const (
 	// hlsForwardGap - на сколько сегментов вперёд ждём без перезапуска процесса
 	hlsForwardGap = 12
+	// hlsSegmentWait - сколько ждать сегмент, который процесс ещё кодирует
+	hlsSegmentWait = 15 * time.Second
 	// hlsIdleTimeout - сколько сессия живёт без запросов сегментов
 	hlsIdleTimeout = 2 * time.Minute
 )
@@ -98,9 +100,8 @@ func (s *Server) handleHLSMaster(c *gin.Context) {
 
 // handleHLSPlaylist отдаёт медиаплейлист сессии с путями наших сегментов.
 func (s *Server) handleHLSPlaylist(c *gin.Context) {
-	session, ok := s.registry().ByID(c.Param("sessionID"))
+	session, ok := s.hlsSessionForRequest(c)
 	if !ok {
-		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
 		return
 	}
 
@@ -115,29 +116,50 @@ func (s *Server) handleHLSPlaylist(c *gin.Context) {
 		suffix = "?token=" + token
 	}
 
-	p, err := hls.Parse(session.playlistPath(s))
-	if err != nil {
-		if errors.Is(err, hls.ErrNotReady) || errors.Is(err, hls.ErrNoSegments) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "playlist is not ready"})
-			return
-		}
-		log.Errorf("[Web] Failed to read playlist for %s: %v", session.ID, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to read playlist"})
-		return
-	}
-
+	// Сегменты вокруг курсора чистятся: держать весь фильм на диске нельзя
 	session.cleanup(s)
+
+	// Полный плейлист известной длительности отдаётся сразу:
+	// только с ним плеер показывает перемотку по всему фильму
+	playlist := session.staticPlaylist(s, prefix, suffix)
 
 	c.Header("Content-Type", "application/vnd.apple.mpegurl")
 	c.Header("Cache-Control", "no-store")
-	c.String(http.StatusOK, p.Rewrite(prefix, suffix))
+	c.String(http.StatusOK, playlist)
+}
+
+// staticPlaylist собирает плейлист по известной длительности материала.
+// Длительность неизвестна только у битого источника: тогда отдаётся
+// плейлист ffmpeg со скользящим окном.
+func (h *hlsSession) staticPlaylist(s *Server, prefix, suffix string) string {
+	if h.Info == nil || h.Info.Duration <= 0 {
+		if p, err := hls.Parse(h.playlistPath(s)); err == nil {
+			return p.Rewrite(prefix, suffix)
+		}
+		return "#EXTM3U\n#EXT-X-PLAYLIST-TYPE:EVENT\n"
+	}
+
+	plan := hls.PlanSegments(h.Info.Duration, h.segmentLength())
+	if !plan.Known {
+		if p, err := hls.Parse(h.playlistPath(s)); err == nil {
+			return p.Rewrite(prefix, suffix)
+		}
+	}
+
+	return hls.BuildStatic(hls.StaticOptions{
+		DurationSec:   h.Info.Duration,
+		SegmentLength: h.segmentLength(),
+		SegmentType:   h.Profile.HLS.SegmentType,
+		InitSegment:   h.initSegmentName(),
+		Prefix:        prefix,
+		Suffix:        suffix,
+	}, plan)
 }
 
 // handleHLSSegment отдаёт сегмент, дожидаясь его готовности.
 func (s *Server) handleHLSSegment(c *gin.Context) {
-	session, ok := s.registry().ByID(c.Param("sessionID"))
+	session, ok := s.hlsSessionForRequest(c)
 	if !ok {
-		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
 		return
 	}
 
@@ -202,7 +224,6 @@ func (h *hlsSession) ensure(ctx context.Context, s *Server, index int) error {
 		return nil
 	}
 
-	// Процесс отстал: запрошен сегмент до его начала или далеко впереди
 	h.mu.Lock()
 	start := h.startIndex
 	stopped := h.stopped
@@ -212,14 +233,33 @@ func (h *hlsSession) ensure(ctx context.Context, s *Server, index int) error {
 		return errors.New("session is stopped")
 	}
 
-	if index < start || index > start+hlsForwardGap {
-		if err := h.restart(ctx, s, index); err != nil {
-			return err
+	// Файла нет. Ждать есть смысл, только когда процесс уже подошёл к этому
+	// месту: он кодирует подряд от своей позиции. Если запрошен сегмент
+	// далеко впереди или позади, сам он не появится и нужен запуск с позиции.
+	//
+	// Ориентир - последний созданный сегмент, а не позиция запуска: при
+	// обычном просмотре процесс уходит вперёд, и позиция запуска не растёт.
+	done := h.done()
+	if done != nil {
+		last := lastSegmentIndex(dir)
+		if index >= start && index <= last+hlsForwardGap {
+			select {
+			case <-done:
+				// Процесс завершился и сегмент не появится
+			default:
+				if err := hls.WaitForSegment(h.playlistPath(s), dir, name, hlsSegmentWait, done); err == nil {
+					return nil
+				}
+			}
 		}
 	}
 
-	done := h.done()
-	return hls.WaitForSegment(h.playlistPath(s), dir, name, s.hlsWaitTimeout(), done)
+	// Сегмент удалён или далеко от текущего места: кодируем с его позиции
+	if err := h.restart(ctx, s, index); err != nil {
+		return err
+	}
+
+	return hls.WaitForSegment(h.playlistPath(s), dir, name, s.hlsWaitTimeout(), h.done())
 }
 
 // restart перезапускает процесс с сегмента, который запросил плеер.
@@ -259,6 +299,10 @@ func (h *hlsSession) start(ctx context.Context, s *Server, startAt float64, star
 	options.Seek = startAt
 	options.Output = ""
 
+	// Номер первого сегмента сообщает ffmpeg, с какого места начинается нарезка.
+	// Без него процесс всегда начинает с нуля, а плеер запрашивает свой номер.
+	options.HLS.StartNumber = startIndex
+
 	dir := h.workDir(s)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return fmt.Errorf("failed to create session dir: %w", err)
@@ -284,6 +328,10 @@ func (h *hlsSession) start(ctx context.Context, s *Server, startAt float64, star
 		return err
 	}
 
+	// Ограничитель скорости считает сегменты от позиции запуска:
+	// после перемотки файлы прошлых мест не должны считаться опережением
+	instance.SetStartIndex(startIndex)
+
 	h.mu.Lock()
 	h.job = instance
 	h.startIndex = startIndex
@@ -293,21 +341,33 @@ func (h *hlsSession) start(ctx context.Context, s *Server, startAt float64, star
 
 // handleHLSStop останавливает сессию по запросу клиента.
 func (s *Server) handleHLSStop(c *gin.Context) {
-	val, _ := c.Get("user")
-	currentUser := val.(*user.User)
-
-	session, ok := s.registry().ByID(c.Param("sessionID"))
+	session, ok := s.hlsSessionForRequest(c)
 	if !ok {
-		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
-		return
-	}
-	if session.UserID != currentUser.ID && currentUser.Rank < user.RankAdmin {
-		c.JSON(http.StatusForbidden, gin.H{"error": "permission denied"})
 		return
 	}
 
 	s.stopHLSSession(session)
 	c.JSON(http.StatusOK, gin.H{"status": "stopped"})
+}
+
+// hlsSessionForRequest находит сессию и проверяет право доступа к ней.
+// Отвечает клиенту сам: чужая сессия не отличается от несуществующей.
+func (s *Server) hlsSessionForRequest(c *gin.Context) (*hlsSession, bool) {
+	val, _ := c.Get("user")
+	currentUser, _ := val.(*user.User)
+
+	session, ok := s.registry().ByID(c.Param("sessionID"))
+	if !ok {
+		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
+		return nil, false
+	}
+
+	if currentUser == nil || (session.UserID != currentUser.ID && currentUser.Rank < user.RankAdmin) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
+		return nil, false
+	}
+
+	return session, true
 }
 
 // hlsSessionFor возвращает активную сессию для файла или создаёт новую.
@@ -508,34 +568,44 @@ func (h *hlsSession) done() <-chan struct{} {
 	return h.job.Done()
 }
 
-// cleanup удаляет сегменты, выпавшие из окна плейлиста.
+// cleanup удаляет сегменты, выпавшие из окна вокруг текущего места.
+// Окно считается от места, где сейчас кодирование: после перемотки назад
+// старые сегменты с большими номерами не должны вытеснять новые.
 func (h *hlsSession) cleanup(s *Server) {
+	h.mu.Lock()
+	current := h.startIndex
+	h.mu.Unlock()
+
 	entries, err := os.ReadDir(h.workDir(s))
 	if err != nil {
 		return
 	}
 
-	var indexes []int
+	// Границы: от текущего места назад на размер окна и вперёд на запас
+	low := current - s.segmentTail() + 1
+	if low < 0 {
+		low = 0
+	}
+	high := current + hlsForwardGap
+
+	var stale []int
 	for _, e := range entries {
 		if e.IsDir() || !isSegmentName(e.Name()) {
 			continue
 		}
-		if num, ok := hls.SegmentIndex(e.Name()); ok {
-			indexes = append(indexes, num)
+		num, ok := hls.SegmentIndex(e.Name())
+		if !ok {
+			continue
 		}
-	}
-	tail := s.segmentTail()
-	if len(indexes) <= tail {
-		return
+		// Сегменты прошлых позиций остаются после перемотки и только занимают место
+		if num < low || num > high {
+			stale = append(stale, num)
+		}
 	}
 
-	max := indexes[0]
-	for _, num := range indexes {
-		if num > max {
-			max = num
-		}
+	for _, num := range stale {
+		removeSegment(h.workDir(s), h.segmentName(num))
 	}
-	removeSegmentsBefore(h.workDir(s), max-tail+1)
 }
 
 // workDir возвращает каталог сессии.
@@ -665,6 +735,35 @@ func (h *hlsSession) isStopped() bool {
 	return h.stopped
 }
 
+// waitPlaylist ждёт готовности плейлиста: файла и хотя бы одного сегмента.
+// Ожидание обязательно: отказ на первом запросе ломает запуск у плеера.
+func (h *hlsSession) waitPlaylist(s *Server, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+
+	for {
+		if p, err := hls.Parse(h.playlistPath(s)); err == nil && len(p.Segments) > 0 {
+			return nil
+		}
+
+		// Завершённый процесс плейлист уже не дополнит
+		if done := h.done(); done != nil {
+			select {
+			case <-done:
+				if p, err := hls.Parse(h.playlistPath(s)); err == nil && len(p.Segments) > 0 {
+					return nil
+				}
+				return errors.New("playlist is not ready")
+			default:
+			}
+		}
+
+		if time.Now().After(deadline) {
+			return errors.New("playlist did not appear in time")
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
 // waitForFile ждёт появления файла.
 func waitForFile(path string, timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
@@ -689,8 +788,11 @@ func (s *Server) segmentTail() int {
 }
 
 // hlsWaitTimeout возвращает время ожидания готовности сегмента.
+// hlsWaitTimeout задаёт время ожидания сегмента.
+// Запас нужен для больших файлов: перезапуск ffmpeg с позиции
+// на удалённом участке занимает десятки секунд.
 func (s *Server) hlsWaitTimeout() time.Duration {
-	return 60 * time.Second
+	return 120 * time.Second
 }
 
 // removeSegments удаляет все сегменты в каталоге.
@@ -705,6 +807,35 @@ func removeSegments(dir string) {
 		}
 		_ = os.Remove(filepath.Join(dir, e.Name()))
 	}
+}
+
+// lastSegmentIndex возвращает наибольший номер готового сегмента.
+// Пустой каталог даёт -1, чтобы сравнение с окном работало предсказуемо.
+func lastSegmentIndex(dir string) int {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return -1
+	}
+
+	last := -1
+	for _, e := range entries {
+		if e.IsDir() || !isSegmentName(e.Name()) {
+			continue
+		}
+		if num, ok := hls.SegmentIndex(e.Name()); ok && num > last {
+			last = num
+		}
+	}
+	return last
+}
+
+// removeSegment удаляет один сегмент по имени.
+func removeSegment(dir, name string) {
+	path, err := hls.SafeSegmentPath(dir, name)
+	if err != nil {
+		return
+	}
+	_ = os.Remove(path)
 }
 
 // removeSegmentsBefore удаляет сегменты с номером меньше указанного.

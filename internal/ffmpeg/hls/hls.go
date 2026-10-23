@@ -334,3 +334,104 @@ func parseTagFloat(line string) float64 {
 	}
 	return v
 }
+
+// StaticOptions описывает полный плейлист известной длительности.
+type StaticOptions struct {
+	// DurationSec - длительность материала в секундах
+	DurationSec float64
+	// SegmentLength - желаемая длительность сегмента в секундах
+	SegmentLength int
+	// SegmentType задаёт расширение: mpegts даёт .ts, fmp4 даёт .m4s
+	SegmentType string
+	// InitSegment - имя начального сегмента fmp4
+	InitSegment string
+	// Prefix и Suffix подставляются в адрес каждого сегмента
+	Prefix string
+	Suffix string
+}
+
+// SegmentPlan описывает заранее вычисленную нарезку.
+type SegmentPlan struct {
+	// Indexes - номера сегментов по порядку
+	Indexes []int
+	// Durations - длительность каждого сегмента
+	Durations []float64
+	// Length - длительность одного сегмента, кроме последнего
+	Length int
+	// Known показывает, что длительность материала известна.
+	// При неизвестной длительности полный плейлист построить нельзя.
+	Known bool
+}
+
+// PlanSegments вычисляет нарезку заранее, не дожидаясь кодирования.
+// Плееру нужна полная длительность: иначе он не покажет перемотку.
+func PlanSegments(durationSec float64, segmentLength int) SegmentPlan {
+	if segmentLength <= 0 {
+		segmentLength = 4
+	}
+
+	plan := SegmentPlan{Length: segmentLength}
+	if durationSec <= 0 {
+		// Длительность неизвестна: полный плейлист не построить
+		return plan
+	}
+	plan.Known = true
+
+	whole := int(durationSec) / segmentLength
+	remainder := durationSec - float64(whole*segmentLength)
+
+	for i := 0; i < whole; i++ {
+		plan.Indexes = append(plan.Indexes, i)
+		plan.Durations = append(plan.Durations, float64(segmentLength))
+	}
+
+	// Последний сегмент короче остальных
+	if remainder > 0.001 {
+		plan.Indexes = append(plan.Indexes, whole)
+		plan.Durations = append(plan.Durations, remainder)
+	}
+
+	if len(plan.Indexes) == 0 {
+		plan.Indexes = append(plan.Indexes, 0)
+		plan.Durations = append(plan.Durations, durationSec)
+	}
+	return plan
+}
+
+// BuildStatic собирает полный плейлист с признаком конца.
+// Каждый сегмент содержит свою позицию: по ней сессия понимает,
+// с какого места запускать кодирование.
+func BuildStatic(o StaticOptions, plan SegmentPlan) string {
+	var b strings.Builder
+
+	b.WriteString("#EXTM3U\n")
+	b.WriteString("#EXT-X-VERSION:7\n")
+	b.WriteString("#EXT-X-PLAYLIST-TYPE:VOD\n")
+	fmt.Fprintf(&b, "#EXT-X-TARGETDURATION:%d\n", plan.Length)
+	b.WriteString("#EXT-X-MEDIA-SEQUENCE:0\n")
+
+	if o.SegmentType == "fmp4" && o.InitSegment != "" {
+		fmt.Fprintf(&b, "#EXT-X-MAP:URI=\"%s%s%s\"\n", o.Prefix, o.InitSegment, o.Suffix)
+	}
+
+	offset := 0.0
+	for i, index := range plan.Indexes {
+		fmt.Fprintf(&b, "#EXTINF:%.6f,\n", plan.Durations[i])
+
+		// Позиция сегмента во времени передаётся плееру и возвращается им же
+		name := SegmentName(index, o.SegmentType)
+		fmt.Fprintf(&b, "%s%s%s\n", o.Prefix, name, o.Suffix)
+		offset += plan.Durations[i]
+	}
+
+	b.WriteString("#EXT-X-ENDLIST\n")
+	return b.String()
+}
+
+// SegmentName собирает имя сегмента по номеру и типу контейнера.
+func SegmentName(index int, segmentType string) string {
+	if segmentType == "fmp4" {
+		return fmt.Sprintf("seg%d.m4s", index)
+	}
+	return fmt.Sprintf("seg%d.ts", index)
+}

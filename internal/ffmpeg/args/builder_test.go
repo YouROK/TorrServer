@@ -1107,3 +1107,77 @@ func TestBuildTonemapOffOverridesHDR(t *testing.T) {
 		t.Errorf("explicit off must disable tonemapping: %q", valueOf(got, "-vf"))
 	}
 }
+
+// TestHLSWithHardwareAndStartNumber проверяет, что перемотка совместима с ускорением.
+func TestHLSWithHardwareAndStartNumber(t *testing.T) {
+	for _, hw := range []string{"vaapi", "nvenc", "qsv", ""} {
+		o := DefaultOptions("http://127.0.0.1/source")
+		o.Protocol = ProtocolHLS
+		o.Video.Codec = "h264"
+		o.Video.HWAccel = hw
+		o.Video.Encoder = map[string]string{
+			"vaapi": "h264_vaapi", "nvenc": "h264_nvenc", "qsv": "h264_qsv", "": "libx264",
+		}[hw]
+		o.HLS.StartNumber = 1200
+		o.HLS.SegmentLength = 4
+		o.HLS.SegmentType = "mpegts"
+		o.Seek = 4800
+
+		got, err := Build(o, fakeSelector{})
+		if err != nil {
+			t.Fatalf("%s: Build: %v", hw, err)
+		}
+
+		cmd := strings.Join(got, " ")
+		if !strings.Contains(cmd, "-start_number 1200") {
+			t.Errorf("%s: start number is missing: %s", hw, cmd)
+		}
+		// 4800 секунд это 1:20:00
+		if !strings.Contains(cmd, "-ss 01:20:00") {
+			t.Errorf("%s: seek is missing: %s", hw, cmd)
+		}
+		// Метки времени должны быть абсолютными и без начальной задержки
+		if !strings.Contains(cmd, "-copyts") {
+			t.Errorf("%s: copyts is missing: %s", hw, cmd)
+		}
+		if !strings.Contains(cmd, "-muxdelay 0") {
+			t.Errorf("%s: muxdelay is missing: %s", hw, cmd)
+		}
+		if strings.Contains(cmd, "-start_at_zero") {
+			t.Errorf("%s: start_at_zero breaks segment numbering: %s", hw, cmd)
+		}
+		// Принудительные ключевые кадры обязательны для ровных границ
+		if !strings.Contains(cmd, "force_key_frames") {
+			t.Errorf("%s: forced keyframes are missing: %s", hw, cmd)
+		}
+	}
+}
+
+// TestHLSFmp4WithSeek проверяет перемотку для сегментов fmp4.
+func TestHLSFmp4WithSeek(t *testing.T) {
+	o := DefaultOptions("http://127.0.0.1/source")
+	o.Protocol = ProtocolHLS
+	o.Video.Codec = "h264"
+	o.Video.Encoder = "libx264"
+	o.HLS.StartNumber = 500
+	o.HLS.SegmentLength = 4
+	o.HLS.SegmentType = "fmp4"
+	o.HLS.InitFilename = "init.mp4"
+	o.Seek = 2000
+
+	got, err := Build(o, fakeSelector{})
+	if err != nil {
+		t.Fatalf("Build: %v", err)
+	}
+
+	cmd := strings.Join(got, " ")
+	if !strings.Contains(cmd, "-hls_segment_type fmp4") {
+		t.Errorf("segment type is missing: %s", cmd)
+	}
+	if !strings.Contains(cmd, "-hls_fmp4_init_filename init.mp4") {
+		t.Errorf("init segment is missing: %s", cmd)
+	}
+	if !strings.Contains(cmd, "-start_number 500") {
+		t.Errorf("start number is missing: %s", cmd)
+	}
+}
