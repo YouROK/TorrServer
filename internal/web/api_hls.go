@@ -788,9 +788,6 @@ func (s *Server) segmentTail() int {
 }
 
 // hlsWaitTimeout возвращает время ожидания готовности сегмента.
-// hlsWaitTimeout задаёт время ожидания сегмента.
-// Запас нужен для больших файлов: перезапуск ffmpeg с позиции
-// на удалённом участке занимает десятки секунд.
 func (s *Server) hlsWaitTimeout() time.Duration {
 	return 120 * time.Second
 }
