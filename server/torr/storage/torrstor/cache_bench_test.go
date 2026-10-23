@@ -46,6 +46,22 @@ func BenchmarkTorrstorPieceWriteRead(b *testing.B) {
 		}
 	})
 
+	b.Run("turnover", func(b *testing.B) {
+		// One piece, released every iteration: this is cache eviction, where
+		// the buffer used to be allocated and discarded on every miss.
+		p := c.pieces[0]
+		p.mPiece.Release()
+		b.ReportAllocs()
+		b.SetBytes(pieceLen)
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			if _, err := p.WriteAt(payload, 0); err != nil {
+				b.Fatal(err)
+			}
+			p.mPiece.Release()
+		}
+	})
+
 	b.Run("parallel", func(b *testing.B) {
 		b.ReportAllocs()
 		b.SetBytes(pieceLen)

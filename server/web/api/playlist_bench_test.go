@@ -3,11 +3,13 @@ package api
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"server/torr"
 	"server/torr/state"
 )
 
@@ -35,13 +37,18 @@ func BenchmarkPlaylistGeneration(b *testing.B) {
 
 func BenchmarkStreamRangeHeader(b *testing.B) {
 	body := bytes.Repeat([]byte("x"), 1<<20)
+	src := bytes.NewReader(body)
 	req := httptest.NewRequest(http.MethodGet, "/stream?play=1", nil)
 	req.Header.Set("Range", "bytes=4096-8191")
+	w := &discardRW{}
 	b.ReportAllocs()
 	b.SetBytes(4096)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		http.ServeContent(&discardRW{}, req, "movie.mkv", time.Unix(0, 0), bytes.NewReader(body))
+		if _, err := src.Seek(0, io.SeekStart); err != nil {
+			b.Fatal(err)
+		}
+		torr.ServeStreamContent(w, req, "movie.mkv", time.Unix(0, 0), src)
 	}
 }
 
