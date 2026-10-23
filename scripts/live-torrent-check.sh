@@ -7,7 +7,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PORT="${LIVE_PORT:-18091}"
 DATADIR="${DATA_DIR:-$ROOT/data}"
-HASH="${LIVE_TORRENT_HASH:-e5a5bdb8ff6152657a1e051024b618dd37d76957}"
+HASH="${LIVE_TORRENT_HASH:-b0e4e3cf193431debd67b54ad7936356c0e5c6a7}"
 export TORRSERVER_URL="${TORRSERVER_URL:-http://127.0.0.1:${PORT}}"
 export TS_USER="${TS_USER:-ts}"
 export TS_PASS="${TS_PASS:-ts}"
