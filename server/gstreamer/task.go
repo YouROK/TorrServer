@@ -30,6 +30,10 @@ type Task struct {
 	Cue       *CueTimeline
 	Config    Config
 
+	// ExternalAudio is set when Audio selects an external audio file (see audio_external.go).
+	// It never changes after the task is created.
+	ExternalAudio *ExternalAudio
+
 	LastSentSegment int
 
 	initMu  sync.RWMutex
@@ -54,7 +58,15 @@ type Task struct {
 	disposed atomic.Bool
 }
 
-func NewTask(id string, fileID string, audio int, sourceURL string, probe ProbeInfo, cue *CueTimeline, conf Config) (*Task, error) {
+// TaskOption changes a task before its pipeline runner is created.
+type TaskOption func(*Task)
+
+// WithExternalAudio makes the task take its audio from a separate file.
+func WithExternalAudio(audio *ExternalAudio) TaskOption {
+	return func(t *Task) { t.ExternalAudio = audio }
+}
+
+func NewTask(id string, fileID string, audio int, sourceURL string, probe ProbeInfo, cue *CueTimeline, conf Config, options ...TaskOption) (*Task, error) {
 	task := &Task{
 		ID:              id,
 		FileID:          fileID,
@@ -66,6 +78,9 @@ func NewTask(id string, fileID string, audio int, sourceURL string, probe ProbeI
 		LastSentSegment: -1,
 		lastActive:      time.Now().UTC(),
 	}
+	for _, option := range options {
+		option(task)
+	}
 
 	runner, err := newPipelineRunner(task, audio)
 	if err != nil {
@@ -73,6 +88,19 @@ func NewTask(id string, fileID string, audio int, sourceURL string, probe ProbeI
 	}
 	task.runner = runner
 	return task, nil
+}
+
+// audioTrack is the audio stream that ends up in the segments: the one of the external
+// file or the selected track of the video container.
+func (t *Task) audioTrack() *TrackInfo {
+	if t.ExternalAudio != nil {
+		return &t.ExternalAudio.Track
+	}
+	return t.Probe.AudioTrack(t.Audio)
+}
+
+func (t *Task) hasAudio() bool {
+	return t.ExternalAudio != nil || t.Probe.HasAudio()
 }
 
 func (t *Task) UpdateLastActive() {
