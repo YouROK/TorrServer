@@ -48,25 +48,29 @@ func settings(c *gin.Context) {
 		return
 	case "set":
 		torr.SetSettings(req.Sets)
-		dlna.Stop()
-		if req.Sets.EnableDLNA {
-			dlna.Start()
-		}
-		bonjour.Stop()
-		if req.Sets.EnableBonjour {
-			bonjour.Start()
-		}
-		rutor.Stop()
-		rutor.Start()
+		restartServices()
 		c.Status(200)
 		return
 	case "def":
 		torr.SetDefSettings()
-		dlna.Stop()
-		bonjour.Stop()
-		rutor.Stop()
+		restartServices()
 		c.Status(200)
 		return
 	}
 	_ = c.AbortWithError(http.StatusBadRequest, errors.New("action is empty"))
+}
+
+// restartServices applies the settings now in effect to DLNA, Bonjour and the
+// rutor search.
+func restartServices() {
+	dlna.Stop()
+	if sets.BTsets.EnableDLNA {
+		dlna.Start()
+	}
+	bonjour.Stop()
+	if sets.BTsets.EnableBonjour {
+		bonjour.Start()
+	}
+	rutor.Stop()
+	rutor.Start()
 }
