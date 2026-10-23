@@ -62,6 +62,8 @@ func (m *Manager) Start() {
 	m.working = make(map[int]*Worker)
 	m.stop = make(chan struct{})
 	m.done = make(chan struct{})
+	// Stop uses stopOnce; a second Start/Stop (bot restart, tests) must arm it again.
+	m.stopOnce = sync.Once{}
 	go func() {
 		m.work()
 		close(m.done)

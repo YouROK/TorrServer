@@ -41,6 +41,16 @@ func (t copyTextFixTransport) RoundTrip(req *http.Request) (*http.Response, erro
 	return base.RoundTrip(req)
 }
 
+func (t copyTextFixTransport) CloseIdleConnections() {
+	base := t.base
+	if base == nil {
+		base = http.DefaultTransport
+	}
+	if c, ok := base.(interface{ CloseIdleConnections() }); ok {
+		c.CloseIdleConnections()
+	}
+}
+
 func rewriteTelegramJSONBody(body []byte) []byte {
 	var root map[string]json.RawMessage
 	if err := json.Unmarshal(body, &root); err != nil {

@@ -46,7 +46,10 @@ type Cache struct {
 	muReaders sync.Mutex
 
 	isClosed atomic.Bool
-	muRemove sync.Mutex
+	// stopWatch wakes priorityWatchdog. A 5s sleep survived Close and kept one
+	// goroutine per dropped torrent.
+	stopWatch chan struct{}
+	muRemove  sync.Mutex
 	// muPrio serializes clearPriority and setLoadPriority so that the priority
 	// reset of a reader that has just closed cannot wipe the priorities a
 	// freshly created reader has already set.
@@ -63,6 +66,7 @@ func NewCache(capacity int64, storage *Storage) *Cache {
 		prioPieces:   make(map[int]struct{}),
 		storage:      storage,
 		readers:      make(map[*Reader]struct{}),
+		stopWatch:    make(chan struct{}),
 	}
 
 	return ret
@@ -91,7 +95,12 @@ func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
 		c.pieces[i] = NewPiece(i, c)
 	}
 
-	go c.priorityWatchdog()
+	if c.stopWatch == nil {
+		c.stopWatch = make(chan struct{})
+	}
+	if !c.isClosed.Load() {
+		go c.priorityWatchdog()
+	}
 }
 
 // priorityWatchdog re-arms piece priorities while readers are active.
@@ -104,17 +113,34 @@ func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
 // connected. Re-arming them periodically breaks that cycle regardless of how
 // the priorities were lost.
 func (c *Cache) priorityWatchdog() {
+	tick := time.NewTicker(5 * time.Second)
+	defer tick.Stop()
 	for {
-		time.Sleep(5 * time.Second)
 		if c.isClosed.Load() {
 			return
 		}
-		if c.torrentPtr() == nil {
+		select {
+		case <-c.stopWatch:
+			return
+		case <-tick.C:
+		}
+		if c.isClosed.Load() || c.torrentPtr() == nil {
 			continue
 		}
 		if c.GetUseReaders() > 0 {
 			c.getRemPieces()
 		}
+	}
+}
+
+func (c *Cache) stopWatchdog() {
+	if c.stopWatch == nil {
+		return
+	}
+	select {
+	case <-c.stopWatch:
+	default:
+		close(c.stopWatch)
 	}
 }
 
@@ -175,6 +201,7 @@ func (c *Cache) Close() error {
 	if !c.isClosed.CompareAndSwap(false, true) {
 		return nil
 	}
+	c.stopWatchdog()
 	if tor := c.torrentPtr(); tor != nil {
 		log.TLogln("Close cache for:", tor.Name(), c.hash)
 	} else {

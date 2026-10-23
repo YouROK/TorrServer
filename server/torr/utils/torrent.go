@@ -224,6 +224,8 @@ func fetchTrackersFromURLs(urls []string, local []string) ([]string, string, err
 
 func fetchTrackersFromURL(url string, local []string) ([]string, error) {
 	client := &http.Client{Timeout: trackersFetchTimeout}
+	// The transport keeps a read and a write goroutine until IdleConnTimeout.
+	defer client.CloseIdleConnections()
 	resp, err := client.Get(url)
 	if err != nil {
 		return nil, err

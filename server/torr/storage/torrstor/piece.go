@@ -114,8 +114,10 @@ func (p *Piece) Release() {
 	} else {
 		p.dPiece.Release()
 	}
-	// if !p.cache.isClosed {
-	p.cache.torrent.Piece(p.Id).SetPriority(torrent.PiecePriorityNone)
-	p.cache.torrent.Piece(p.Id).UpdateCompletion()
-	//}
+	// Eviction runs before SetTorrent and after the client is gone. The pointer
+	// is guarded by muTor; a bare field read raced Close and panicked on nil.
+	if tor := p.cache.torrentPtr(); tor != nil {
+		tor.Piece(p.Id).SetPriority(torrent.PiecePriorityNone)
+		tor.Piece(p.Id).UpdateCompletion()
+	}
 }
