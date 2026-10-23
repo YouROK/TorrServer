@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"os"
 	"path/filepath"
@@ -62,10 +63,35 @@ func (args) Version() string {
 
 var params args
 
+// exitFunc terminates the process. Tests replace it.
+var exitFunc = os.Exit
+
 func main() {
+	exitFunc(run(os.Args[1:]))
+}
+
+func run(argv []string) int {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	arg.MustParse(&params)
+	params = args{}
+	p, err := arg.NewParser(arg.Config{}, &params)
+	if err != nil {
+		_, _ = fmt.Fprintln(os.Stdout, err)
+		return 2
+	}
+	err = p.Parse(argv)
+	switch {
+	case err == arg.ErrHelp:
+		p.WriteHelp(os.Stdout)
+		return 0
+	case err == arg.ErrVersion:
+		_, _ = fmt.Fprintln(os.Stdout, params.Version())
+		return 0
+	case err != nil:
+		p.WriteUsage(os.Stdout)
+		_, _ = fmt.Fprintln(os.Stdout, "error:", err)
+		return 2
+	}
 
 	if params.Path == "" {
 		params.Path, _ = os.Getwd()
@@ -196,29 +222,29 @@ func main() {
 
 	if params.ForceHTTPS && !params.Ssl {
 		log.TLogln("Error: --force-https requires --ssl")
-		os.Exit(1)
+		return 1
 	}
 	if params.HTTPSOnly && !params.Ssl {
 		log.TLogln("Error: --https-only requires --ssl")
-		os.Exit(1)
+		return 1
 	}
 	if params.HTTPSOnly && params.HTTPMedia {
 		log.TLogln("Error: --https-only and --http-media can't be combined (--https-only doesn't open the HTTP port)")
-		os.Exit(1)
+		return 1
 	}
 	if params.HTTPMedia && !params.ForceHTTPS {
 		log.TLogln("Error: --http-media requires --force-https (without it, media is already served over HTTP)")
-		os.Exit(1)
+		return 1
 	}
 
 	if err := server.Start(); err != nil {
 		log.TLogln(err)
-		os.Exit(1)
+		return 1
 	}
 	log.TLogln(server.WaitServer())
 	log.Close()
 	time.Sleep(time.Second * 3)
-	os.Exit(0)
+	return 0
 }
 
 func watchTDir(dir string) { watchDir(dir, nil) }

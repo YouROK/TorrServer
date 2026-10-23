@@ -296,8 +296,22 @@ func Start(token string) error {
 
 	up.Start()
 
+	runningBot = b
 	go b.Start()
 	return nil
+}
+
+// runningBot is the process bot, so Stop can end long-polling.
+var runningBot *tele.Bot
+
+// Stop ends the bot started by Start. A second call does nothing.
+func Stop() {
+	up.Stop()
+	if runningBot == nil {
+		return
+	}
+	runningBot.Stop()
+	runningBot = nil
 }
 
 func setBotProfile(b *tele.Bot) {

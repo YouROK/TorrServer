@@ -209,8 +209,11 @@ func applySettingsInput(c tele.Context, setting, value string) {
 		bonjour.Start()
 	}
 	rutor.Stop()
-	rutor.Start()
+	startRutor()
 }
+
+// startRutor restarts the rutor index. Tests replace it.
+var startRutor = rutor.Start
 
 func valueOrClear(v string) string {
 	if v == "" {

@@ -165,7 +165,9 @@ func (t *Torrent) WaitInfo() bool {
 					// torrent was dropped while waiting for info: CloseHash already removed the cache
 					return false
 				}
+				t.muTorrent.Lock()
 				t.cache = cache
+				t.muTorrent.Unlock()
 				cache.SetTorrent(torrent)
 			}
 		}
@@ -293,18 +295,24 @@ func (t *Torrent) updateRA() {
 	// 	}
 	// 	go t.cache.AdjustRA(adj)
 	// }
+	t.muTorrent.Lock()
+	cache := t.cache
+	t.muTorrent.Unlock()
+	if cache == nil {
+		return
+	}
 	adj := int64(16 << 20) // 16 MB fixed RA
-	go t.cache.AdjustRA(adj)
+	go cache.AdjustRA(adj)
 }
 
 func (t *Torrent) expired() bool {
-	if t.cache == nil {
+	t.muTorrent.Lock()
+	cache, stat, expiredTime := t.cache, t.Stat, t.expiredTime
+	t.muTorrent.Unlock()
+	if cache == nil {
 		return false
 	}
-	t.muTorrent.Lock()
-	stat, expiredTime := t.Stat, t.expiredTime
-	t.muTorrent.Unlock()
-	return t.cache.Readers() == 0 && expiredTime.Before(time.Now()) && (stat == state.TorrentWorking || stat == state.TorrentClosed)
+	return cache.Readers() == 0 && expiredTime.Before(time.Now()) && (stat == state.TorrentWorking || stat == state.TorrentClosed)
 }
 
 func (t *Torrent) Files() []*torrent.File {

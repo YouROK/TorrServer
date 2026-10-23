@@ -9,11 +9,9 @@ import (
 	"time"
 
 	"server/log"
-	"server/rutor"
 	"server/rutor/models"
 	sets "server/settings"
 	"server/torr"
-	"server/torznab"
 
 	tele "gopkg.in/telebot.v4"
 )
@@ -290,10 +288,10 @@ func loadInlineSearch(uid int64, query string) []*models.TorrentDetails {
 
 	var list []*models.TorrentDetails
 	if sets.BTsets.EnableRutorSearch {
-		list = append(list, rutor.Search(query)...)
+		list = append(list, rutorSearch(query)...)
 	}
 	if sets.BTsets.EnableTorznabSearch {
-		list = append(list, torznab.Search(context.Background(), query, -1, "", 0, 0)...)
+		list = append(list, torznabSearch(context.Background(), query, -1, "", 0, 0)...)
 	}
 
 	inlineSearchMu.Lock()
