@@ -17,6 +17,7 @@ import (
 	"github.com/wlynxg/anet"
 
 	"server/settings"
+	"server/torr/offline"
 	"server/torr/storage/torrstor"
 	"server/torr/utils"
 	"server/version"
@@ -27,10 +28,14 @@ type BTServer struct {
 	client *torrent.Client
 
 	storage *torrstor.Storage
+	// offline holds the data of torrents in offline mode (see offline.go)
+	offline *offline.Storage
 
 	torrents map[metainfo.Hash]*Torrent
 
 	mu sync.RWMutex
+	// newMu makes NewTorrent a single step per client: check, AddTorrentSpec, registration.
+	newMu sync.Mutex
 }
 
 var privateIPBlocks []*net.IPNet
@@ -71,6 +76,10 @@ func (bt *BTServer) Connect() error {
 	bt.torrents = make(map[metainfo.Hash]*Torrent)
 	InitApiHelper(bt)
 
+	if err == nil {
+		// restart unfinished offline downloads (also after every settings change)
+		go ResumeOffline()
+	}
 	return err
 }
 
@@ -80,6 +89,9 @@ func (bt *BTServer) Disconnect() {
 	if bt.client != nil {
 		bt.client.Close()
 		bt.client = nil
+		if bt.offline != nil {
+			_ = bt.offline.Close()
+		}
 		utils.FreeOSMemGC()
 	}
 }
@@ -98,6 +110,7 @@ func (bt *BTServer) configure() {
 
 	bt.storage = torrstor.NewStorage(settings.BTsets.CacheSize)
 	bt.config.DefaultStorage = bt.storage
+	bt.offline = offline.NewStorage(offlineBaseDir())
 
 	userAgent := "qBittorrent/4.3.9"
 	peerID := "-qB4390-"

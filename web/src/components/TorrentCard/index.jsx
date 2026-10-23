@@ -53,6 +53,9 @@ import {
   TorrentCardPoster,
 } from './style'
 
+import OfflineControls from './OfflineControls'
+import OfflineProgressBar, { getOfflineSizeLabel } from './OfflineProgressBar'
+
 const Transition = forwardRef((props, ref) => <Slide direction='up' ref={ref} {...props} />)
 
 const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds))
@@ -193,8 +196,11 @@ const Torrent = ({ torrent }) => {
     hash,
     stat,
     data,
+    offline_state: offlineState,
+    loaded_size: loadedSize,
     file_stats: torrentFileList,
   } = torrent
+  const offlinePercent = torrentSize > 0 ? Math.min(100, Math.floor(((loadedSize || 0) * 100) / torrentSize)) : 0
 
   const dropTorrent = () => axios.post(torrentsHost(), { action: 'drop', hash })
   const deleteTorrent = () => axios.post(torrentsHost(), { action: 'rem', hash })
@@ -512,6 +518,8 @@ const Torrent = ({ torrent }) => {
             />
           )}
 
+          <OfflineControls hash={hash} offlineState={offlineState} />
+
           <StyledButton onClick={() => dropTorrent(torrent)}>
             <CloseIcon />
             <span>{t('Drop')}</span>
@@ -531,13 +539,15 @@ const Torrent = ({ torrent }) => {
             <div className='description-torrent-title'>{parsedTitle}</div>
           </div>
 
-          <div className='description-statistics-wrapper'>
+          <div className={`description-statistics-wrapper${offlineState ? ' offline' : ''}`}>
             <div className='description-statistics-element-wrapper'>
               <div className='description-section-name'>
-                <StatusIndicator stat={stat} />
+                <StatusIndicator stat={stat} offlineState={offlineState} offlinePercent={offlinePercent} />
                 {t('Size')}
               </div>
-              <div className='description-statistics-element-value'>{torrentSize > 0 && humanizeSize(torrentSize)}</div>
+              <div className='description-statistics-element-value'>
+                {torrentSize > 0 && (offlineState ? getOfflineSizeLabel(torrent, t) : humanizeSize(torrentSize))}
+              </div>
             </div>
 
             <div className='description-statistics-element-wrapper'>
@@ -553,6 +563,7 @@ const Torrent = ({ torrent }) => {
             </div>
           </div>
         </TorrentCardDescription>
+        <OfflineProgressBar torrent={torrent} />
       </TorrentCard>
 
       <StyledDialog
@@ -602,7 +613,7 @@ const Torrent = ({ torrent }) => {
   )
 }
 
-export const StatusIndicator = ({ stat }) => {
+export const StatusIndicator = ({ stat, offlineState, offlinePercent }) => {
   const { t } = useTranslation()
 
   const values = {
@@ -619,6 +630,19 @@ export const StatusIndicator = ({ stat }) => {
     [WORKING]: '#CDDC39',
     [CLOSED]: '#E57373',
     [IN_DB]: '#9E9E9E',
+  }
+
+  // Offline mode overrides the generic status: a ready torrent is "in DB" for the client,
+  // but it is stored completely on disk.
+  if (offlineState === 'ready') {
+    values[stat] = t('OfflineReadyShort', 'Offline: ready')
+    colors[stat] = '#4CAF50'
+  } else if (offlineState === 'downloading') {
+    values[stat] = `${t('OfflineDownloadingShort', 'Offline: downloading')} ${offlinePercent || 0}%`
+    colors[stat] = '#03A9F4'
+  } else if (offlineState === 'paused') {
+    values[stat] = `${t('OfflinePausedShort', 'Offline: paused')} ${offlinePercent || 0}%`
+    colors[stat] = '#FFA000'
   }
 
   return (
@@ -639,6 +663,8 @@ export default memo(Torrent, (prev, next) => {
     p.category === n.category &&
     p.stat === n.stat &&
     p.torrent_size === n.torrent_size &&
+    p.loaded_size === n.loaded_size &&
+    p.offline_state === n.offline_state &&
     p.download_speed === n.download_speed &&
     p.data === n.data &&
     sameFileList(p.file_stats, n.file_stats)
