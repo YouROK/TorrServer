@@ -12,6 +12,32 @@ import (
 
 const CookieTokenName = "silo_token"
 
+// MaxRequestBody - предел входящего тела запроса. Выше самого большого
+// из существующих лимитов (архив плагина 50 МБ), чтобы их не срезать.
+// На отдачу данных не влияет: стриминг и транскодирование - это ответ.
+const MaxRequestBody = 64 << 20
+
+// BodyLimitMiddleware ограничивает размер тела запроса. Чтение сверх лимита
+// завершается ошибкой, обработчик отвечает 400: без предела запрос
+// с большим телом вычитывается в память целиком.
+func BodyLimitMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.Request.Body != nil {
+			c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxRequestBody)
+		}
+		c.Next()
+	}
+}
+
+// RecoveryMiddleware перехватывает панику в обработчике: клиент получает 500,
+// а в лог со стеком попадает место падения, в том числе из плагинов.
+func RecoveryMiddleware() gin.HandlerFunc {
+	return gin.CustomRecoveryWithWriter(nil, func(c *gin.Context, r any) {
+		log.Panic("[Web] Handler panicked: "+c.Request.Method+" "+c.Request.URL.Path, r)
+		c.AbortWithStatus(http.StatusInternalServerError)
+	})
+}
+
 func AuthMiddleware(userSvc *user.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Токен из параметра URL: ?token=ts_xxx (для плееров)

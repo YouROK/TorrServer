@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
@@ -16,6 +17,9 @@ import (
 
 // LevelNone отключает абсолютно все логи
 const LevelNone = slog.Level(1000)
+
+// AttrStack - ключ атрибута со стеком паники: выводится отдельным блоком.
+const AttrStack = "stack"
 
 var (
 	defaultLogger *slog.Logger
@@ -128,6 +132,27 @@ func Infof(format string, args ...any)  { logMsg(slog.LevelInfo, fmt.Sprintf(for
 func Warnf(format string, args ...any)  { logMsg(slog.LevelWarn, fmt.Sprintf(format, args...)) }
 func Errorf(format string, args ...any) { logMsg(slog.LevelError, fmt.Sprintf(format, args...)) }
 
+// Panic пишет панику со стеком. Стек нужен на любом окружении:
+// по одному тексту ошибки место падения не найти.
+func Panic(msg string, r any) {
+	logPanic(fmt.Sprintf("%s: %v", msg, r), debug.Stack())
+}
+
+// logPanic выводит сообщение со стеком отдельным блоком, не пропуская
+// его через санитизацию: переносы строк в стеке значимы.
+func logPanic(msg string, stack []byte) {
+	if !defaultLogger.Enabled(context.Background(), slog.LevelError) {
+		return
+	}
+
+	var pcs [1]uintptr
+	runtime.Callers(3, pcs[:])
+
+	rec := slog.NewRecord(time.Now(), slog.LevelError, msg, pcs[0])
+	rec.Add(AttrStack, string(stack))
+	_ = defaultLogger.Handler().Handle(context.Background(), rec)
+}
+
 // ============================================================================
 // Форматтер
 // ============================================================================
@@ -170,12 +195,21 @@ func (h *customHandler) Handle(_ context.Context, r slog.Record) error {
 		buf.WriteString(callerStr)
 	}
 
-	// Сообщение
-	buf.WriteString(r.Message)
+	// Сообщение. Переводы строк заменяются: логин или название раздачи
+	// с \n иначе подделали бы строки в логе
+	buf.WriteString(sanitizeLine(r.Message))
 
 	// Дополнительные параметры
 	r.Attrs(func(a slog.Attr) bool {
-		buf.WriteString(fmt.Sprintf(" %s=%v", a.Key, a.Value))
+		// Стек паники выводим отдельным блоком: переносы строк в нём
+		// нужны для читаемости, а значение формирует сам рантайм
+		if a.Key == AttrStack {
+			buf.WriteByte('\n')
+			buf.WriteString(strings.TrimRight(a.Value.String(), "\n"))
+			buf.WriteByte('\n')
+			return true
+		}
+		buf.WriteString(sanitizeLine(fmt.Sprintf(" %s=%v", a.Key, a.Value)))
 		return true
 	})
 
@@ -185,6 +219,14 @@ func (h *customHandler) Handle(_ context.Context, r slog.Record) error {
 	defer h.mu.Unlock()
 	_, err := h.w.Write(buf.Bytes())
 	return err
+}
+
+// sanitizeLine убирает управляющие символы, ломающие формат строки лога.
+func sanitizeLine(s string) string {
+	if !strings.ContainsAny(s, "\r\n") {
+		return s
+	}
+	return strings.NewReplacer("\r\n", " ", "\n", " ", "\r", " ").Replace(s)
 }
 
 func (h *customHandler) WithAttrs(_ []slog.Attr) slog.Handler { return h }

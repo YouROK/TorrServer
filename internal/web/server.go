@@ -59,7 +59,8 @@ func NewServer(
 ) *Server {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.New()
-	engine.Use(gin.Recovery())
+	engine.Use(RecoveryMiddleware())
+	engine.Use(BodyLimitMiddleware())
 
 	plugRouter := NewPluginsRouter()
 

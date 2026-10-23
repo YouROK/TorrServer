@@ -144,12 +144,19 @@ func (rt *JSRuntime) ginHandler(handler goja.Callable) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		raw, _ := io.ReadAll(io.LimitReader(c.Request.Body, maxRequestBody))
 
-		rt.mu.Lock()
-		rt.pendingHandles = nil
-		res := rt.runWebHandler(handler, c, raw)
-		opened := rt.pendingHandles
-		rt.pendingHandles = nil
-		rt.mu.Unlock()
+		// Разблокировка в defer: паника внутри обработчика иначе оставит
+		// мьютекс рантайма захваченным и все запросы плагина повиснут
+		var res *webResponse
+		var opened []*torrfs.Handle
+		func() {
+			rt.mu.Lock()
+			defer rt.mu.Unlock()
+
+			rt.pendingHandles = nil
+			res = rt.runWebHandler(handler, c, raw)
+			opened = rt.pendingHandles
+			rt.pendingHandles = nil
+		}()
 
 		for k, v := range res.headers {
 			c.Header(k, v)

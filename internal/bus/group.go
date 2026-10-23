@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 	"time"
+
+	"silo/internal/log"
 )
 
 // Group запускает фоновые горутины владельца и завершает их вместе с ним.
@@ -43,6 +45,7 @@ func (g *Group) Go(fn func(ctx context.Context)) {
 
 	go func() {
 		defer g.wg.Done()
+		defer recoverTask()
 		fn(g.ctx)
 	}()
 }
@@ -65,6 +68,7 @@ func (g *Group) GoCtx(parent context.Context, fn func(ctx context.Context)) {
 			defer g.wg.Done()
 			defer stop()
 			defer cancel()
+			defer recoverTask()
 			fn(ctx)
 		}()
 		return
@@ -73,8 +77,19 @@ func (g *Group) GoCtx(parent context.Context, fn func(ctx context.Context)) {
 	go func() {
 		defer g.wg.Done()
 		defer cancel()
+		defer recoverTask()
 		fn(ctx)
 	}()
+}
+
+// recoverTask не даёт панике фоновой задачи уронить процесс.
+// Стек пишем всегда: без него по одному тексту паники не найти место.
+func recoverTask() {
+	r := recover()
+	if r == nil {
+		return
+	}
+	log.Panic("[Bus] Background task panicked", r)
 }
 
 // Wait ждет завершения горутин группы, не отменяя их.

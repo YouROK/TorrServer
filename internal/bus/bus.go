@@ -1,8 +1,11 @@
 package bus
 
 import (
+	"fmt"
 	"sync"
 	"sync/atomic"
+
+	"silo/internal/log"
 )
 
 type Handler func(payload any)
@@ -71,7 +74,17 @@ func (b *Bus) publish(topic string, payload any) {
 
 	for _, sub := range b.topics[topic] {
 		h := sub.handler
-		go h(payload)
+		owner := sub.owner
+		go func() {
+			// Паника подписчика не должна ронять процесс: обработчики
+			// приходят в том числе из плагинов
+			defer func() {
+				if r := recover(); r != nil {
+					log.Panic(fmt.Sprintf("[Bus] Subscriber '%s' panicked on topic '%s'", owner, topic), r)
+				}
+			}()
+			h(payload)
+		}()
 	}
 }
 
