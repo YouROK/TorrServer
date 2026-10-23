@@ -436,6 +436,57 @@ select.input {
     font-size: 12px;
 }
 
+/* ----------------------------------------------------------------------------
+   Отключенные элементы: без оформления блокировка незаметна и элемент
+   выглядит рабочим
+   ---------------------------------------------------------------------------- */
+.btn:disabled,
+.btn-secondary:disabled,
+.btn-danger:disabled,
+.btn-icon:disabled,
+.btn-sm-icon:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* Наведение на заблокированную кнопку ничего не меняет */
+.btn:disabled:hover {
+    background: var(--silo-amber);
+    color: #14171a;
+}
+
+.btn-secondary:disabled:hover,
+.btn-icon:disabled:hover,
+.btn-sm-icon:disabled:hover {
+    background: transparent;
+    border-color: var(--silo-border-strong);
+    color: var(--silo-steel);
+}
+
+.btn-danger:disabled:hover {
+    background: transparent;
+    color: var(--silo-danger);
+}
+
+.input:disabled,
+select.input:disabled,
+textarea.input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+input[type="checkbox"]:disabled,
+input[type="radio"]:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* Подпись заблокированного флажка не подсвечивается при наведении */
+label:has(input:disabled) {
+    cursor: not-allowed;
+    color: var(--silo-text-faint);
+}
+
 /* Круглая кнопка-подсказка */
 .btn-icon {
     width: 26px;
