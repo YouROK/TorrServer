@@ -8,6 +8,8 @@ import (
 	"silo/internal/database"
 	"silo/internal/ffmpeg"
 	"silo/internal/ffmpeg/profile"
+	"silo/internal/fusefs"
+	"silo/internal/log"
 	"silo/internal/torrent"
 	"silo/internal/user"
 
@@ -30,6 +32,8 @@ type JSRuntime struct {
 	i18n     *I18nRegistry
 	vm       *goja.Runtime
 	userSvc  *user.Service
+	torrFS   *torrfs.TorrFS
+	fuseMgr  *fusefs.Manager
 	mu       sync.Mutex
 
 	pendingHandles []*torrfs.Handle
@@ -55,6 +59,8 @@ func NewJSRuntime(
 		vm:       vm,
 		i18n:     i18nReg,
 		userSvc:  userSvc,
+		torrFS:   torrFS,
+		fuseMgr:  fusefs.NewManager(),
 	}
 
 	// Системная консоль (глобально)
@@ -74,6 +80,7 @@ func NewJSRuntime(
 	tsObj.Set("crypto", rt.createCryptoModule())
 	tsObj.Set("torrfs", rt.createTorrFSModule(torrFS, userSvc))
 	tsObj.Set("transcode", rt.createTranscodeModule(transcode, profilesSvc, prober))
+	tsObj.Set("fuse", rt.createFuseModule(rt.fuseMgr))
 
 	vm.Set("ts", tsObj)
 
@@ -87,8 +94,16 @@ func (rt *JSRuntime) Execute(code string) error {
 	return err
 }
 
+// Stop останавливает скрипт и снимает монтирование, если оно было.
 func (rt *JSRuntime) Stop() {
 	rt.vm.Interrupt("plugin unloaded")
+
+	if rt.fuseMgr == nil {
+		return
+	}
+	if err := rt.fuseMgr.Close(); err != nil {
+		log.Errorf("[Plugin:%s] Failed to unmount fuse filesystem: %v", rt.pluginID, err)
+	}
 }
 
 // removePendingHandle убирает handle из списка текущего запроса.
