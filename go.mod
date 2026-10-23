@@ -11,6 +11,7 @@ require (
 	github.com/anacrolix/torrent v1.59.1
 	github.com/dop251/goja v0.0.0-20260906210903-70ad66ec7ce4
 	github.com/gin-gonic/gin v1.11.0
+	github.com/hanwen/go-fuse/v2 v2.9.0
 	go.etcd.io/bbolt v1.4.3
 	golang.org/x/crypto v0.56.0
 	golang.org/x/time v0.15.0
