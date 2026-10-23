@@ -236,7 +236,9 @@ func (f *FFmpeg) Start(ctx context.Context, req StartRequest) (*job.Job, error) 
 		pattern := "seg%d.ts"
 		if req.Options.HLS.SegmentType == "fmp4" {
 			pattern = "seg%d.m4s"
-			if req.Options.HLS.InitFilename == "" {
+			// Имя начального сегмента задаёт профиль: подставляем значение
+			// по умолчанию, если оно пустое или ведёт за пределы каталога сессии
+			if !args.ValidSegmentName(req.Options.HLS.InitFilename) {
 				req.Options.HLS.InitFilename = args.DefaultInitSegment
 			}
 		}

@@ -309,3 +309,33 @@ func TestResolveTonemapOffKeepsCopy(t *testing.T) {
 		t.Errorf("video codec = %q, want copy when tonemapping is off", o.Video.Codec)
 	}
 }
+
+// TestValidateInitFilename проверяет, что имя начального сегмента не выводит
+// запись ffmpeg за пределы каталога сессии.
+func TestValidateInitFilename(t *testing.T) {
+	valid := []string{"init.mp4", "header.mp4", "init.1.mp4"}
+	for _, name := range valid {
+		p := Default()
+		p.HLS.SegmentType = "fmp4"
+		p.HLS.InitFilename = name
+		if err := p.Validate(); err != nil {
+			t.Errorf("Validate with init_filename %q = %v, want nil", name, err)
+		}
+	}
+
+	invalid := []string{
+		"../evil.mp4",
+		"../../outside/evil.mp4",
+		"sub/evil.mp4",
+		`..\evil.mp4`,
+		"..",
+	}
+	for _, name := range invalid {
+		p := Default()
+		p.HLS.SegmentType = "fmp4"
+		p.HLS.InitFilename = name
+		if err := p.Validate(); err == nil {
+			t.Errorf("Validate with init_filename %q = nil, want error", name)
+		}
+	}
+}

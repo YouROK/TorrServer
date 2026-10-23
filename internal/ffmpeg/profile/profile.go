@@ -119,6 +119,11 @@ func (p Profile) Validate() error {
 	if p.Protocol == args.ProtocolHLS && p.HLS.SegmentLength <= 0 {
 		return fmt.Errorf("segment length is required for hls")
 	}
+	// Имя начального сегмента уходит в ffmpeg как путь относительно каталога
+	// сессии: разделители и ".." позволили бы писать вне него
+	if p.HLS.InitFilename != "" && !args.ValidSegmentName(p.HLS.InitFilename) {
+		return fmt.Errorf("invalid init filename")
+	}
 	return nil
 }
 

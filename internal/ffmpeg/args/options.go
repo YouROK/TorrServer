@@ -68,6 +68,19 @@ type HLSOptions struct {
 // DefaultInitSegment - имя начального сегмента fmp4 по умолчанию.
 const DefaultInitSegment = "init.mp4"
 
+// ValidSegmentName проверяет, что имя пригодно как имя файла сегмента.
+// Имя уходит в ffmpeg как путь относительно каталога сессии, поэтому
+// разделители пути и переходы вверх недопустимы.
+func ValidSegmentName(name string) bool {
+	if name == "" || name == "." || name == ".." {
+		return false
+	}
+	if strings.ContainsAny(name, `/\`) || strings.Contains(name, "..") {
+		return false
+	}
+	return true
+}
+
 // Options описывает задание на транскодирование.
 type Options struct {
 	Protocol Protocol `json:"protocol"`
