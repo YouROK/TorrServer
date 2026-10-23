@@ -6,6 +6,7 @@ import (
 )
 
 func TestInitSharedLogPath(t *testing.T) {
+	withRestoredStdio(t)
 	dir := t.TempDir()
 	path := filepath.Join(dir, "combined.log")
 
@@ -24,6 +25,7 @@ func TestInitSharedLogPath(t *testing.T) {
 }
 
 func TestInitSeparateLogPaths(t *testing.T) {
+	withRestoredStdio(t)
 	dir := t.TempDir()
 	serverPath := filepath.Join(dir, "server.log")
 	webPath := filepath.Join(dir, "web.log")
@@ -40,6 +42,7 @@ func TestInitSeparateLogPaths(t *testing.T) {
 }
 
 func TestCloseSharedLogPathOnce(t *testing.T) {
+	withRestoredStdio(t)
 	dir := t.TempDir()
 	path := filepath.Join(dir, "combined.log")
 
