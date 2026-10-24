@@ -29,9 +29,12 @@ var (
 	// failure does not kill the test process.
 	exitFunc = os.Exit
 	// listenBind is the TCP listen used for the DLNA HTTP port.
-	listenBind  = netbind.Listen
-	currentUser = user.Current
-	hostname    = os.Hostname
+	listenBind = netbind.Listen
+	// notifyInterval is the SSDP announce period. dms sleeps this long inside
+	// Serve, and Close does not wake that sleep.
+	notifyInterval = 30 * time.Second
+	currentUser    = user.Current
+	hostname       = os.Hostname
 )
 
 func Start() {
@@ -103,7 +106,7 @@ func Start() {
 			},
 		},
 		LogHeaders:     settings.BTsets.EnableDebug,
-		NotifyInterval: 30 * time.Second,
+		NotifyInterval: notifyInterval,
 		AllowedIpNets: func() []*net.IPNet {
 			var nets []*net.IPNet
 			_, ipnet, _ := net.ParseCIDR("0.0.0.0/0")

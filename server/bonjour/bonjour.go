@@ -23,13 +23,23 @@ const (
 	serviceHTTPS      = "_https._tcp"
 )
 
+// announcer is the mDNS registration Stop shuts down. *zeroconf.Server in production.
+type announcer interface {
+	Shutdown()
+}
+
 var (
 	mu      sync.Mutex
-	servers []*zeroconf.Server
+	servers []announcer
 	// listIfaces and addrsByIface are the host network lookups. Tests replace
 	// them; production uses anet.
 	listIfaces   = anet.Interfaces
 	addrsByIface = anet.InterfaceAddrsByInterface
+	// newAnnouncer opens the UDP sockets. Tests replace it: zeroconf.Shutdown
+	// races its own recv goroutines, and -race fails the process for that.
+	newAnnouncer = func(name, service string, port int, host string, ips, txt []string, ifaces []net.Interface) (announcer, error) {
+		return zeroconf.RegisterProxy(name, service, "local.", port, host, ips, txt, ifaces)
+	}
 )
 
 // Start advertises TorrServer over mDNS (_torrserver, _http, and _https when TLS is on).
@@ -102,7 +112,7 @@ func baseTXT() []string {
 }
 
 func register(name, service string, port int, host string, ips []string, txt []string, ifaces []net.Interface) {
-	srv, err := zeroconf.RegisterProxy(name, service, "local.", port, host, ips, txt, ifaces)
+	srv, err := newAnnouncer(name, service, port, host, ips, txt, ifaces)
 	if err != nil {
 		log.TLogln("Bonjour: register", service, "failed:", err)
 		return

@@ -72,7 +72,17 @@ func TestBaseTXT(t *testing.T) {
 	}
 }
 
+type fakeAnnouncer struct{}
+
+func (fakeAnnouncer) Shutdown() {}
+
 func TestStartStopConcurrent(t *testing.T) {
+	oldNew := newAnnouncer
+	newAnnouncer = func(string, string, int, string, []string, []string, []net.Interface) (announcer, error) {
+		return fakeAnnouncer{}, nil
+	}
+	t.Cleanup(func() { newAnnouncer = oldNew })
+
 	oldPort, oldSsl, oldSslPort, oldSets := settings.Port, settings.Ssl, settings.SslPort, settings.BTsets
 	settings.Port = "8090"
 	settings.Ssl = true
