@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -469,6 +470,44 @@ func TestTrackersPeriodicRefresh(t *testing.T) {
 	}
 }
 
+func TestStaleTrackersFetchDoesNotCancelCurrent(t *testing.T) {
+	release := make(chan struct{})
+	var hits atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if hits.Add(1) == 1 {
+			select {
+			case <-release:
+			case <-r.Context().Done():
+				return
+			}
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("udp://remote.example:1/announce\n"))
+	}))
+	defer srv.Close()
+
+	setupTrackersTest(t, srv.URL, "udp://local.example:80/announce")
+	deadline := time.Now().Add(2 * time.Second)
+	for hits.Load() == 0 {
+		if time.Now().After(deadline) {
+			t.Fatal("prefetch did not reach the server")
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+
+	_, _, _, err := fetchTrackersFromURLs(context.Background(), trackersFetchGen.Load()-1, []string{srv.URL}, nil)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("stale fetch err = %v, want canceled", err)
+	}
+
+	close(release)
+	waitForTrackersFetch(t, 2*time.Second)
+	want := []string{"udp://remote.example:1/announce", "udp://local.example:80/announce"}
+	if got := GetDefTrackers(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %#v, want %#v", got, want)
+	}
+}
+
 func TestTrackersRefreshKeepsCacheOnFailure(t *testing.T) {
 	var failRefresh atomic.Bool
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -491,7 +530,7 @@ func TestTrackersRefreshKeepsCacheOnFailure(t *testing.T) {
 
 	failRefresh.Store(true)
 	local := configuredDefaultTrackers()
-	_, _, _, err := fetchTrackersFromURLs(context.Background(), []string{srv.URL}, local)
+	_, _, _, err := fetchTrackersFromURLs(context.Background(), trackersFetchGen.Load(), []string{srv.URL}, local)
 	if err == nil {
 		t.Fatal("expected refresh fetch to fail")
 	}
@@ -746,7 +785,7 @@ func TestFetchTrackersContextCancel(t *testing.T) {
 		cancel()
 	}()
 	start := time.Now()
-	_, _, _, err := fetchTrackersFromURLs(ctx, []string{srv.URL}, []string{"udp://local.example:1/announce"})
+	_, _, _, err := fetchTrackersFromURLs(ctx, trackersFetchGen.Load(), []string{srv.URL}, []string{"udp://local.example:1/announce"})
 	if err == nil {
 		t.Fatal("expected cancel error")
 	}

@@ -348,7 +348,7 @@ func setLoadedTrackers(gen uint64, trackers []string, logMsg string) {
 }
 
 func fetchTrackersAsync(ctx context.Context, gen uint64, urls []string, local []string) {
-	merged, usedURL, remoteCount, err := fetchTrackersFromURLs(ctx, urls, local)
+	merged, usedURL, remoteCount, err := fetchTrackersFromURLs(ctx, gen, urls, local)
 	if err != nil {
 		if ctx.Err() != nil || errors.Is(err, context.Canceled) {
 			return
@@ -359,12 +359,25 @@ func fetchTrackersAsync(ctx context.Context, gen uint64, urls []string, local []
 	setLoadedTrackers(gen, merged, fmt.Sprintf("trackerslist loaded from %s: %d remote + %d local", usedURL, remoteCount, len(merged)-remoteCount))
 }
 
-func fetchTrackersFromURLs(ctx context.Context, urls []string, local []string) ([]string, string, int, error) {
+func fetchTrackersFromURLs(ctx context.Context, gen uint64, urls []string, local []string) ([]string, string, int, error) {
 	if len(urls) == 0 {
 		return nil, "", 0, fmt.Errorf("no trackers list URLs")
 	}
+	if err := ctx.Err(); err != nil {
+		return nil, "", 0, err
+	}
 	ctx, cancel := context.WithCancel(ctx)
 	fetchMu.Lock()
+	// A superseded generation must not cancel the fetch that replaced it.
+	// Doing so dropped loadedTrackers until the next invalidate.
+	if err := ctx.Err(); err != nil || trackersFetchGen.Load() != gen {
+		fetchMu.Unlock()
+		cancel()
+		if err != nil {
+			return nil, "", 0, err
+		}
+		return nil, "", 0, context.Canceled
+	}
 	if fetchCancel != nil {
 		fetchCancel()
 	}
@@ -440,7 +453,7 @@ func refreshTrackers() {
 	gen := trackersFetchGen.Load()
 	local := configuredDefaultTrackers()
 	ctx := trackersContext()
-	merged, usedURL, remoteCount, err := fetchTrackersFromURLs(ctx, urls, local)
+	merged, usedURL, remoteCount, err := fetchTrackersFromURLs(ctx, gen, urls, local)
 	if err != nil {
 		if ctx.Err() == nil && !errors.Is(err, context.Canceled) {
 			log.TLogln("trackerslist refresh failed:", err.Error())
