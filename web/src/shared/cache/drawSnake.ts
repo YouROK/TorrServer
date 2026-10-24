@@ -22,33 +22,35 @@ const clamp01 = (n: number) => Math.max(0, Math.min(1, n))
 
 const fillProgress = (
   ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
   size: number,
   percentage: number,
   emptyColor: string,
   fillColor: string,
 ) => {
   ctx.fillStyle = emptyColor
-  ctx.fillRect(0, 0, size, size)
+  ctx.fillRect(x, y, size, size)
 
   const ratio = clamp01(percentage / 100)
   if (ratio <= 0) return
 
   if (ratio >= 1) {
     ctx.fillStyle = fillColor
-    ctx.fillRect(0, 0, size, size)
+    ctx.fillRect(x, y, size, size)
     return
   }
 
   const filledH = Math.max(2, Math.round(size * ratio))
   ctx.fillStyle = fillColor
-  ctx.fillRect(0, size - filledH, size, Math.min(filledH, size))
+  ctx.fillRect(x, y + size - filledH, size, Math.min(filledH, size))
 }
 
-const strokeCell = (ctx: CanvasRenderingContext2D, size: number, color: string, line: number) => {
+const strokeCell = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number, color: string, line: number) => {
   const inset = line / 2
   ctx.lineWidth = line / 1.25
   ctx.strokeStyle = color
-  ctx.strokeRect(inset, inset, size - line, size - line)
+  ctx.strokeRect(x + inset, y + inset, size - line, size - line)
 }
 
 /**
@@ -104,12 +106,11 @@ export const drawSnake = ({
     const x = startingX + col * (pieceSize + gap) + pixelAlign
     const y = row * (pieceSize + gap) + pixelAlign
 
-    ctx.save()
-    ctx.translate(x, y)
-
     const emptyColor = isReaderRange && !isCompleted && !inProgress ? rangeIdle : backgroundColor
     fillProgress(
       ctx,
+      x,
+      y,
       pieceSize,
       isCompleted ? 100 : percentage,
       emptyColor,
@@ -122,19 +123,19 @@ export const drawSnake = ({
       if (cell.isReaderIdle) {
         ctx.globalAlpha = 0.45
         ctx.setLineDash([headStroke * 2, headStroke * 1.5])
-        strokeCell(ctx, pieceSize, readerColor, headStroke * 0.75)
+        strokeCell(ctx, x, y, pieceSize, readerColor, headStroke * 0.75)
         ctx.setLineDash([])
         ctx.globalAlpha = 1
       } else {
-        if (readerHaloColor) strokeCell(ctx, pieceSize, readerHaloColor, headStroke * 1.6)
-        strokeCell(ctx, pieceSize, readerColor, headStroke)
+        if (readerHaloColor) strokeCell(ctx, x, y, pieceSize, readerHaloColor, headStroke * 1.6)
+        strokeCell(ctx, x, y, pieceSize, readerColor, headStroke)
       }
     } else if (inProgress || isCompleted) {
-      strokeCell(ctx, pieceSize, completeColor, Math.max(borderWidth, 2))
+      strokeCell(ctx, x, y, pieceSize, completeColor, Math.max(borderWidth, 2))
     } else if (isReaderRange) {
-      strokeCell(ctx, pieceSize, rangeColor, 2)
+      strokeCell(ctx, x, y, pieceSize, rangeColor, 2)
     } else {
-      strokeCell(ctx, pieceSize, borderColor, borderWidth)
+      strokeCell(ctx, x, y, pieceSize, borderColor, borderWidth)
     }
 
     if (isSnakeDebugMode) {
@@ -144,8 +145,8 @@ export const drawSnake = ({
         ctx.font = `bold ${fontSize}px ui-monospace, SFMono-Regular, Menlo, monospace`
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
-        const cx = pieceSize / 2
-        const cy = pieceSize / 1.85
+        const cx = x + pieceSize / 2
+        const cy = y + pieceSize / 1.85
         ctx.lineWidth = 1
         ctx.strokeStyle = isDark ? 'rgba(0,0,0,0.75)' : 'rgba(255,255,255,0.95)'
         ctx.strokeText(info, cx, cy)
@@ -153,8 +154,6 @@ export const drawSnake = ({
         ctx.fillText(info, cx, cy)
       }
     }
-
-    ctx.restore()
   }
 }
 
@@ -164,8 +163,14 @@ export const setupHiDpiCanvas = (
   cssHeight: number,
 ): CanvasRenderingContext2D | null => {
   const dpr = Math.min(window.devicePixelRatio || 1, 2)
-  canvas.width = Math.max(1, Math.round(cssWidth * dpr))
-  canvas.height = Math.max(1, Math.round(cssHeight * dpr))
+  const width = Math.max(1, Math.round(cssWidth * dpr))
+  const height = Math.max(1, Math.round(cssHeight * dpr))
+  // Assigning width/height allocates a new bitmap. Skip it when the pane did not resize
+  // so a 100ms cache poll does not realloc a 4K backing store.
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width
+    canvas.height = height
+  }
   canvas.style.width = `${cssWidth}px`
   canvas.style.height = `${cssHeight}px`
   const ctx = canvas.getContext('2d')

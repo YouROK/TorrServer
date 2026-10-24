@@ -1,11 +1,22 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 
-import { buildExternalPlayerHref, buildInfusePlaylistHref, playlistActionHref } from './externalPlayers'
-
 describe('buildExternalPlayerHref', () => {
   const stream = 'https://ts.example/stream/a.mkv?link=h&index=1&play'
 
-  it('builds Infuse / SenPlayer / VLC / IINA deep links', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    vi.stubGlobal('window', {
+      location: { protocol: 'https:', hostname: 'ts.example', port: '' },
+      navigator: { userAgent: '', maxTouchPoints: 0, platform: '' },
+    })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('builds Infuse / SenPlayer / VLC / IINA deep links', async () => {
+    const { buildExternalPlayerHref, playlistActionHref } = await import('./externalPlayers')
     const encoded = encodeURIComponent(stream)
     expect(buildExternalPlayerHref('infuse', stream)).toBe(`infuse://x-callback-url/play?url=${encoded}`)
     expect(buildExternalPlayerHref('senPlayer', stream)).toBe(`senplayer://x-callback-url/play?url=${encoded}`)
@@ -16,7 +27,8 @@ describe('buildExternalPlayerHref', () => {
     expect(buildExternalPlayerHref('iina', stream)).toBe(`iina://weblink?url=${encoded}`)
   })
 
-  it('builds an Infuse episode list and sends other players the m3u', () => {
+  it('builds an Infuse episode list and sends other players the m3u', async () => {
+    const { buildExternalPlayerHref, buildInfusePlaylistHref } = await import('./externalPlayers')
     const m3u = 'https://ts.example/stream/Show.m3u?link=h&m3u'
     const episodes = [
       { url: 'https://ts.example/stream/a.mkv?link=h&index=1&play', filename: 'a.mkv' },
@@ -25,9 +37,9 @@ describe('buildExternalPlayerHref', () => {
     const href = buildInfusePlaylistHref(episodes, m3u)
     expect(href).toBe(
       'infuse://x-callback-url/play?' +
-        episodes
-          .map(episode => `url=${encodeURIComponent(episode.url)}&filename=${encodeURIComponent(episode.filename)}`)
-          .join('&'),
+      episodes
+        .map(episode => `url=${encodeURIComponent(episode.url)}&filename=${encodeURIComponent(episode.filename)}`)
+        .join('&'),
     )
     expect(buildExternalPlayerHref('iina', m3u)).toBe(`iina://weblink?url=${encodeURIComponent(m3u)}`)
     expect(buildExternalPlayerHref('senPlayer', m3u)).toBe(

@@ -8,7 +8,7 @@ import {
   SNAKE_FOCUS_TARGET_ROWS,
   SNAKE_FOCUS_TARGET_ROWS_MINI,
 } from 'shared/cache/buildCacheMap'
-import { cheapPiecesFingerprint, cheapReadersFingerprint } from 'shared/cache/cacheFingerprint'
+import { cheapCellsFingerprint, cheapPiecesFingerprint, cheapReadersFingerprint } from 'shared/cache/cacheFingerprint'
 import { drawSnake, hitTestSnakeCell, setupHiDpiCanvas } from 'shared/cache/drawSnake'
 import { resolvePieceMetrics, resolveSnakeSettings, type SnakeThemeMode } from 'shared/cache/snakeSettings'
 import { snakeCameraKey } from 'shared/cache/snakeSession'
@@ -185,10 +185,7 @@ function TorrentCache({ cache, mode = 'detailed', isSnakeDebugMode, hash }: Torr
       isSnakeDebugMode ? 1 : 0,
       theme,
       palette,
-      cheapPiecesFingerprint(cache.Pieces),
-      cheapReadersFingerprint(cache.Readers),
-      drawCells.length,
-      footerStart ?? -1,
+      cheapCellsFingerprint(drawCells),
     ].join('|')
     if (drawKey === lastDrawKey.current) return
     lastDrawKey.current = drawKey
@@ -227,9 +224,6 @@ function TorrentCache({ cache, mode = 'detailed', isSnakeDebugMode, hash }: Torr
     theme,
     palette,
     isSnakeDebugMode,
-    cache.Pieces,
-    cache.Readers,
-    footerStart,
   ])
 
   const formatTooltipText = useCallback(

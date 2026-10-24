@@ -57,6 +57,15 @@ export const isAppleDevice = (): boolean => {
   return isMac || isIOS
 }
 
+/** Android Chrome / WebView. Used only to pick the view-intent scheme. */
+export const isAndroid = (): boolean => typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent || '')
+
+/** Snapshot for `buildExternalPlayerHref`. iOS wins over a stale Android token. */
+export const playerLinkPlatform = (): { ios: boolean; android: boolean } => {
+  const ios = detectApplePlatform().isIOS
+  return { ios, android: !ios && isAndroid() }
+}
+
 /** Desktop Mac only (excludes iPad masquerading as Macintosh). */
 export const isMacOS = (): boolean => {
   const { isMac, isIOS } = detectApplePlatform()

@@ -1,5 +1,6 @@
 import { useLocalJsonPref } from 'shared/hooks/useLocalPref'
-import { playlistTorrHost, streamHost } from 'shared/api/hosts'
+
+export { streamPlayUrl, streamPreloadUrl, torrentPlaylistUrl } from './streamLinks'
 
 /** localStorage key for poster Play button behavior (Settings → Players). */
 export const POSTER_PLAY_ACTION_KEY = 'posterPlayAction'
@@ -125,26 +126,3 @@ export const availablePosterPlayActions = (flags: PosterPlayPlayerFlags): Poster
 
 export const magnetFromHash = (hash: string, displayName: string): string =>
   `magnet:?xt=urn:btih:${hash}&dn=${encodeURIComponent(displayName)}`
-
-const fileBaseName = (path: string): string => path.split('\\').pop()?.split('/').pop() || path
-
-/** Query string for `/stream`. Flag keys (`play`, `m3u`) stay valueless — Gin `GetQuery` only checks presence. */
-const streamQuery = (hash: string, params: Record<string, string>, flags: readonly string[]): string => {
-  const query = new URLSearchParams({ link: hash, ...params }).toString()
-  return flags.length ? `${query}&${flags.join('&')}` : query
-}
-
-/** Direct play stream URL. Path segment and `link` are encoded (`#`, `?`, `&`, `%`, non-ASCII). */
-export const streamPlayUrl = (hash: string, file: { id: number; path: string }): string =>
-  `${streamHost()}/${encodeURIComponent(fileBaseName(file.path))}?${streamQuery(hash, { index: String(file.id) }, ['play'])}`
-
-/** Buffer a file without opening it (`GET /stream?…&preload`). */
-export const streamPreloadUrl = (hash: string, fileId: number): string =>
-  `${streamHost()}?${streamQuery(hash, { index: String(fileId) }, ['preload'])}`
-
-/**
- * M3U playlist URL for the whole torrent.
- * `fn=file.m3u` matches server `all.m3u` entries — ForkPlayer mishandles a link whose path ends in `.m3u`.
- */
-export const torrentPlaylistUrl = (hash: string, displayName: string): string =>
-  `${playlistTorrHost()}/${encodeURIComponent(displayName)}.m3u?${streamQuery(hash, {}, ['m3u', 'fn=file.m3u'])}`

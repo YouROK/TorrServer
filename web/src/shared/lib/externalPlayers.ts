@@ -1,51 +1,19 @@
 import { useTranslation } from 'react-i18next'
 import { useLocalBoolPref } from 'shared/hooks/useLocalPref'
-import { detectStandaloneApp, isAppleDevice, isMacOS } from 'shared/lib/platform'
-import type { ExternalPosterPlayAction, PlaylistButtonAction, PosterPlayPlayerFlags } from 'shared/lib/posterPlay'
+import { detectStandaloneApp, isAppleDevice, isMacOS, playerLinkPlatform } from 'shared/lib/platform'
+import type { PosterPlayPlayerFlags } from 'shared/lib/posterPlay'
+import { buildExternalPlayerHref, buildInfusePlaylistHref } from 'shared/lib/streamLinks'
+
+export {
+  buildExternalPlayerHref,
+  buildInfusePlaylistHref,
+  INFUSE_PLAYLIST_HREF_LIMIT,
+  playlistActionHref,
+} from 'shared/lib/streamLinks'
 
 export interface ExternalPlayerLink {
   label: string
   href: string
-}
-
-/** Player deep link for the Playlist button. Download and copy stay on the page. */
-export const playlistActionHref = (action: PlaylistButtonAction, absoluteUrl: string): string | null => {
-  if (action === 'download' || action === 'copyLink') return null
-  return buildExternalPlayerHref(action, absoluteUrl)
-}
-
-/** Deep-link scheme for a single enabled external player and an absolute stream URL. */
-export const buildExternalPlayerHref = (player: ExternalPosterPlayAction, fullLink: string): string => {
-  const encoded = encodeURIComponent(fullLink)
-  switch (player) {
-    case 'infuse':
-      return `infuse://x-callback-url/play?url=${encoded}`
-    case 'senPlayer':
-      return `senplayer://x-callback-url/play?url=${encoded}`
-    case 'vlc':
-      return `vlc://${fullLink}`
-    case 'iina':
-      return `iina://weblink?url=${encoded}`
-    default:
-      return fullLink
-  }
-}
-
-/** ponytail: Infuse scheme length cap. Longer season lists fall back to one m3u url. */
-export const INFUSE_PLAYLIST_HREF_LIMIT = 8000
-
-/**
- * Infuse plays every `url` in order as a temporary playlist.
- * Over {@link INFUSE_PLAYLIST_HREF_LIMIT} characters, one m3u `url` instead.
- */
-export const buildInfusePlaylistHref = (episodes: { url: string; filename: string }[], m3uFallback: string): string => {
-  const href =
-    'infuse://x-callback-url/play?' +
-    episodes
-      .map(episode => `url=${encodeURIComponent(episode.url)}&filename=${encodeURIComponent(episode.filename)}`)
-      .join('&')
-  if (href.length > INFUSE_PLAYLIST_HREF_LIMIT) return buildExternalPlayerHref('infuse', m3uFallback)
-  return href
 }
 
 /**
@@ -62,6 +30,7 @@ export function useExternalPlayers() {
   const isStandaloneApp = detectStandaloneApp()
   const isMac = isMacOS()
   const isApple = isAppleDevice()
+  const playerPlatform = playerLinkPlatform()
 
   const playerFlags: PosterPlayPlayerFlags = {
     isVlcUsed,
@@ -83,7 +52,7 @@ export function useExternalPlayers() {
     if (isApple && isInfuseUsed) links.push({ label: t('Infuse'), href: buildExternalPlayerHref('infuse', fullLink) })
     if (isApple && isSenPlayerUsed)
       links.push({ label: t('SenPlayer'), href: buildExternalPlayerHref('senPlayer', fullLink) })
-    if (isVlcUsed) links.push({ label: t('VLC'), href: buildExternalPlayerHref('vlc', fullLink) })
+    if (isVlcUsed) links.push({ label: t('VLC'), href: buildExternalPlayerHref('vlc', fullLink, playerPlatform) })
     if (isMac && isIinaUsed) links.push({ label: t('IINA'), href: buildExternalPlayerHref('iina', fullLink) })
     return links
   }
@@ -98,7 +67,7 @@ export function useExternalPlayers() {
       links.push({ label: t('Infuse'), href: buildInfusePlaylistHref(episodes, playlistUrl) })
     if (isApple && isSenPlayerUsed)
       links.push({ label: t('SenPlayer'), href: buildExternalPlayerHref('senPlayer', playlistUrl) })
-    if (isVlcUsed) links.push({ label: t('VLC'), href: buildExternalPlayerHref('vlc', playlistUrl) })
+    if (isVlcUsed) links.push({ label: t('VLC'), href: buildExternalPlayerHref('vlc', playlistUrl, playerPlatform) })
     if (isMac && isIinaUsed) links.push({ label: t('IINA'), href: buildExternalPlayerHref('iina', playlistUrl) })
     return links
   }
@@ -109,5 +78,6 @@ export function useExternalPlayers() {
     shouldShowOpenLink,
     hasAnyExternalPlayer,
     playerFlags,
+    playerPlatform,
   }
 }

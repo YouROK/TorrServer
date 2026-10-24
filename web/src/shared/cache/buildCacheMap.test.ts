@@ -73,6 +73,20 @@ describe('resolveFocusWindow / buildFocusModel', () => {
     expect(model.windowEnd).toBe(window!.end)
   })
 
+  it('keeps a 15k-piece reader range inside the drawable window', () => {
+    const cache: TorrentCache = {
+      PiecesCount: 15000,
+      PiecesLength: 4 * 1024 * 1024,
+      Readers: [{ Reader: 100, Start: 0, End: 14999, Active: true }],
+      Pieces: { 100: { Size: 100, Length: 100, Completed: true } },
+    }
+    const model = buildFocusModel(cache, 20)
+    expect(model.cells.length).toBeLessThanOrEqual(20)
+    expect(model.cells.every(cell => (cell.pieceStart ?? -1) >= (model.windowStart ?? 0))).toBe(true)
+    expect(model.cells.every(cell => (cell.pieceStart ?? -1) <= (model.windowEnd ?? -1))).toBe(true)
+    expect(model.cells.find(cell => cell.isReader)?.pieceStart).toBe(100)
+  })
+
   it('fills the full visibleCells budget with small piece cells', () => {
     const cache: TorrentCache = {
       PiecesCount: 5000,

@@ -86,7 +86,7 @@ A new string goes in `web/src/locales/{en,ru,ua,bg,fr,ro,zh}/translation.json` u
 | --- | --- | --- |
 | `useTorrentsQuery` | `POST /torrents` `action: list` | 500ms while any row is `GETTING_INFO`, else 1s |
 | `useTorrentDetail` | `POST /torrents` `action: get` | 500ms `GETTING_INFO`, 1s `PRELOAD`, else 2s |
-| `useUpdateCache` | `POST /cache` `action: get` | 100ms while the snake changes, else 1s. Timer is `setTimeout` after the response. AbortController on unmount. Stops while `document.hidden`. |
+| `useUpdateCache` | `POST /cache` `action: get` | 100ms while the snake changes, else 1s. Timer is `setTimeout` after the response. AbortController on unmount. Stops while `document.hidden`. Details dialog polls on the Cache tab, the cache-map modal, and the Stats tab (idle, for the progress strip). The Files tab does not poll. |
 | `ServerStatusDialog` | `GET /runtime/status` | 2.5s while the dialog is open |
 
 `web/src/index.tsx` sets `refetchOnWindowFocus: false`. TanStack Query's `refetchInterval` is a `setInterval`, but `query.fetch` joins an in-flight request unless `cancelRefetch` is set, and `refetchIntervalInBackground` defaults to false so a hidden tab does not send those requests. Pass `signal` into axios (`getTorrents`, `getTorrent`). Do not point `queryFn` at a function whose first argument is an `AbortSignal` — React Query passes a context object.
@@ -95,14 +95,14 @@ A new string goes in `web/src/locales/{en,ru,ua,bg,fr,ro,zh}/translation.json` u
 
 ## Stream and playlist URLs
 
-Build them in `web/src/shared/lib/posterPlay.ts` (`streamPlayUrl`, `streamPreloadUrl`, `torrentPlaylistUrl`). `usePlayLauncher` and `FilesDataGrid` call those. Do not interpolate `link=` by hand.
+Build them in `web/src/shared/lib/streamLinks.ts` (`encodePathSegment`, `streamPlayUrl`, `streamPreloadUrl`, `torrentPlaylistUrl`, `buildExternalPlayerHref`, `buildAndroidIntentHref`). `posterPlay.ts` re-exports the stream URLs. `usePlayLauncher` and `FilesDataGrid` call those. Do not interpolate `link=` by hand.
 
-- Filename is one path segment: `encodeURIComponent(baseName)`.
+- Filename is one path segment: `encodePathSegment` (`encodeURIComponent`, then `%` + uppercase hex for `!'()*`).
 - `link` and `index` go through `URLSearchParams` so `#`, `?`, `&`, `%` cannot split the query.
 - Play flag stays valueless: `&play`. Preload is `GET /stream?…&preload` (the route without `*fname` exists). Playlist is `&m3u&fn=file.m3u`. The `fn` flag is the ForkPlayer workaround also used by `server/web/api/m3u.go` `nestedPlaylistEntry`.
 - `externalLink` (`web/src/shared/lib/mediaBase.ts`) applies `GET /mediabase` (scheme, host, port) and then `withAuthMediaUrl`.
 - `withAuthMediaUrl` adds Basic userinfo only when `hostname` matches the page. HTTPS UI + HTTP media on another port of the same host must still get the userinfo. A different host must not.
-- VLC href is `vlc://${url}` unencoded. Infuse, SenPlayer, and IINA percent-encode the whole URL. Infuse episode lists fall back to one m3u URL past `INFUSE_PLAYLIST_HREF_LIMIT` (8000).
+- Desktop VLC href is `vlc://${url}` unencoded. iOS VLC is `vlc-x-callback://x-callback-url/stream?url=` with the absolute URL encoded. Android VLC is `intent://${url-without-scheme}#Intent;scheme=…;type=video/*;end` (`buildAndroidIntentHref`). Infuse, SenPlayer, and IINA percent-encode the whole URL. Infuse episode lists fall back to one m3u URL past `INFUSE_PLAYLIST_HREF_LIMIT` (8000). Clipboard copy is `copyToClipboard` (`navigator.clipboard`, then a textarea inside the open dialog).
 
 `CacheSize` in `BTSets` is **bytes** on the wire and **megabytes** inside `SettingsDialog` local state. `setSettings` runs `sanitizeBTSetsForWire`: integers are rounded, NaN uses the server default, `ReaderReadAHead` is clamped 5–100, `PreloadCache` 0–100. A JSON float into a Go `int` fails the entire `POST /settings` body. Read-only `set` and `def` return `403` and do not restart DLNA, Bonjour, or rutor. Nil `sets` returns `400` (`SetBTSets(nil)` would panic). Save stays disabled until the settings GET succeeds, so a failed load cannot overwrite the server with `web/src/shared/settings/defaults.ts`.
 
@@ -114,7 +114,7 @@ GStreamer integer fields are rounded in `setGstSettings`. `GSTVersion` is a floa
 
 Torrent titles and paths are rendered as React text. There is no `dangerouslySetInnerHTML` in `web/src`. Keep it that way.
 
-File rows and the play-file picker use `content-visibility: auto`. The piece map is a canvas (`TorrentCache` / `drawSnake`), not a DOM node per piece. `useUpdateCache` keeps at most 8 snake snapshots (`snakeSession.ts`).
+File rows and the play-file picker use `content-visibility: auto`. The piece map is one `<canvas>` (`TorrentCache` / `drawSnake`), sized to the pane (not one cell per piece in a 15k-piece remux). `setupHiDpiCanvas` caps `devicePixelRatio` at 2 and does not reallocate the bitmap when the CSS size is unchanged. `buildFocusModel` intersects reader ranges with that window. Paint runs in `requestAnimationFrame` and skips when `cheapCellsFingerprint` is unchanged. `useUpdateCache` keeps at most 8 snake snapshots (`snakeSession.ts`).
 
 ## Service worker and cache
 
