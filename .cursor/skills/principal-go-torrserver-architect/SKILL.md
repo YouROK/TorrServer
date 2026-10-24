@@ -39,7 +39,7 @@ Peer id prefix stays `-qB4390-` / `qBittorrent/4.3.9`. `UpnpID` stays `TorrServe
 
 `sync.RWMutex` is not reentrant. `RLock` then `Lock` on `BTServer.mu` deadlocks. `server/torr/clientrace_test.go` fails if `NewTorrent` holds the read lock across the write lock.
 
-Order when both are needed: `settings.dbMigrationLock` then `settings.mu`; `BTServer.mu`; `Torrent.muTorrent`; `torrstor.Storage.mu` released before `Cache.Close`; cache `muRemove` → `muReaders` → `muActive` → `muPrio`. `Reader.resume` drops `Reader.mu` around the anacrolix `Seek`.
+Order when both are needed: `settings.dbMigrationLock` then `settings.mu`; `BTServer.mu`; `Torrent.muTorrent`; `torrstor.Storage.mu` released before `Cache.Close`; cache `muRemove` → `muReaders` → `muActive`. `Reader.resume` drops `Reader.mu` around the anacrolix `Seek`. `applyZones` drops `muReaders` before `SetZones`.
 
 Snapshot `t.Torrent`, `t.cache`, and `bt.client` under the mutex that owns them. `drop` nils the first two at any time. `Cache.pieces` is read-only after `Init`. `MemPiece.ReadAt` uses `Lock` because it writes `Accessed`.
 
@@ -51,8 +51,8 @@ Do not hold those mutexes across tracker HTTP, DHT, `publicip.Get4/Get6`, or dis
 
 - Copy buffer is `streamCopyPool`: `*[64KiB]byte`, not a bare `[]byte`. Read-ahead is `newBufferedStreamReader(..., 1<<20)`. Nil the pooled `ResponseWriter` before `Put`. `buf[:nr]` must not escape.
 - Piece slabs are `*pieceSlab` pooled by exact length. `putPieceBuf` clears the full cap. `Release` does not recycle when `cache.isClosed`. Never keep a sub-slice after `Release`.
-- Do not evict a piece inside a merged reader range, the begin/end keep window (at least 8MiB), `prioPieces`, or a full piece whose `Complete` flag is still false.
-- Recalculate priorities when a reader is created, closed, parked, or crosses a piece. Not on every small `Read`. Do not add a second `clearPriority` after `Cache.CloseReader`.
+- Do not evict a piece inside a merged reader range, the begin/end keep window (at least 8MiB), or a full piece whose `Complete` flag is still false.
+- Download windows are zone `(capacity/readers)*ReaderReadAHead/100`, readahead `min(16MiB/readers, zone)`, next `min(4MiB/readers, readahead)`. Push them on reader create, close, and the 1s `updateRA` tick. Not on every small `Read`. Do not call `Piece.SetPriority` from the cache: it raises over those tiers. `Piece.Release` only calls `UpdateCompletion`.
 - Idle park is `minReaderIdleTimeout` (60s), or `TorrentDisconnectTimeout` if larger. `readerOff` must not `Seek` while `inFlight > 0`.
 - `Reader.Close` does not unregister. `Cache.CloseReader` does, and it is safe on a nil `*Cache`.
 - A handler that accepted the request must write a status. An empty return becomes `200` with an empty body.
