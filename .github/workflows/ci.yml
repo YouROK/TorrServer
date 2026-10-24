@@ -74,6 +74,7 @@ jobs:
     permissions:
       contents: read
       actions: write
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -119,9 +120,12 @@ jobs:
           tool: go
           output-file-path: server/bench.txt
           external-data-json-path: .cache/benchmark/data.json
+          github-token: ${{ github.token }}
           skip-fetch-gh-pages: true
           alert-threshold: "200%"
           fail-on-alert: true
+          comment-always: true
+          comment-on-alert: true
           summary-always: true
 
       - name: Save benchmark history
