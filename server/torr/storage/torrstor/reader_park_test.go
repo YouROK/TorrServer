@@ -8,12 +8,19 @@ import (
 
 // fakeTorrentReader stands in for the anacrolix reader: it only tracks the position the
 // torrstor reader moves it to.
-type fakeTorrentReader struct{ pos int64 }
+type fakeTorrentReader struct {
+	pos       int64
+	next      int64
+	readahead int64
+	zone      int64
+}
 
 func (f *fakeTorrentReader) Read([]byte) (int, error)                         { return 0, io.EOF }
 func (f *fakeTorrentReader) ReadContext(context.Context, []byte) (int, error) { return 0, io.EOF }
 func (f *fakeTorrentReader) Close() error                                     { return nil }
-func (f *fakeTorrentReader) SetReadahead(int64)                               {}
+func (f *fakeTorrentReader) SetReadahead(n int64)                             { f.readahead = n }
+func (f *fakeTorrentReader) SetNext(n int64)                                  { f.next = n }
+func (f *fakeTorrentReader) SetZone(n int64)                                  { f.zone = n }
 func (f *fakeTorrentReader) SetResponsive()                                   {}
 
 func (f *fakeTorrentReader) Seek(off int64, whence int) (int64, error) {
@@ -41,14 +48,24 @@ func TestReaderOffDoesNotParkAReaderWithIOInFlight(t *testing.T) {
 	}
 	r.endIO()
 
+	r.next, r.readahead, r.zone = 4<<20, 16<<20, 32<<20
 	r.readerOff()
 	if r.isUse || backend.pos != 0 {
 		t.Fatalf("an idle reader was not parked: isUse=%v position=%d", r.isUse, backend.pos)
+	}
+	if backend.next != 0 || backend.readahead != 0 || backend.zone != 0 {
+		t.Fatalf("parked reader kept a download window: next %d readahead %d zone %d", backend.next, backend.readahead, backend.zone)
+	}
+	if r.next != 4<<20 || r.readahead != 16<<20 || r.zone != 32<<20 {
+		t.Fatal("parking forgot the windows resume needs")
 	}
 
 	r.beginIO()
 	if !r.isUse || backend.pos != at {
 		t.Fatalf("the next read did not resume at the reader's position: isUse=%v position=%d, want %d", r.isUse, backend.pos, at)
+	}
+	if backend.next != 4<<20 || backend.readahead != 16<<20 || backend.zone != 32<<20 {
+		t.Fatalf("resume windows: next %d readahead %d zone %d", backend.next, backend.readahead, backend.zone)
 	}
 	r.endIO()
 }

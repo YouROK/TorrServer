@@ -314,8 +314,8 @@ func (t *Torrent) updateRA() {
 	if cache == nil {
 		return
 	}
-	adj := int64(16 << 20) // 16 MB fixed RA
-	go cache.AdjustRA(adj)
+	// 16MiB far window. AdjustRA splits it across readers and clamps it to the zone.
+	go cache.AdjustRA(torrstor.ReaderReadaheadBytes)
 }
 
 func (t *Torrent) expired() bool {

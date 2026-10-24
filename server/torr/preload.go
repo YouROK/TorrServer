@@ -137,9 +137,11 @@ func (t *Torrent) Preload(index int, size int64) {
 	}
 	defer func() { _ = readerStart.Close() }()
 
-	readerStart.SetResponsive()
-	readerStart.SetReadahead(0)
 	readerStartEnd, readerEndStart := preloadSpans(size, file.Length(), startend)
+	readerStart.SetResponsive()
+	readerStart.SetNext(0)
+	readerStart.SetReadahead(0)
+	readerStart.SetZone(readerStartEnd)
 	readerEndEnd := file.Length()
 
 	var wg sync.WaitGroup
@@ -170,6 +172,7 @@ func (t *Torrent) Preload(index int, size int64) {
 			defer func() { _ = readerEnd.Close() }() // Ensure reader is always closed
 
 			readerEnd.SetResponsive()
+			readerEnd.SetNext(0)
 			readerEnd.SetReadahead(0)
 
 			_, err := readerEnd.Seek(from, io.SeekStart)
@@ -178,6 +181,12 @@ func (t *Torrent) Preload(index int, size int64) {
 				preloadErr = err
 				return
 			}
+			// Zone is bytes ahead of the read position, so it has to be set after the seek.
+			zone := readerEndEnd - from
+			if zone < 0 {
+				zone = 0
+			}
+			readerEnd.SetZone(zone)
 
 			offset := from
 			buf := make([]byte, 32<<10)
@@ -214,7 +223,9 @@ func (t *Torrent) Preload(index int, size int64) {
 	if readerStartEnd < readahead {
 		readahead = 0
 	}
+	readerStart.SetNext(readahead)
 	readerStart.SetReadahead(readahead)
+	readerStart.SetZone(readerStartEnd)
 
 	offset := int64(0)
 	buf := make([]byte, 32<<10)
@@ -238,7 +249,13 @@ func (t *Torrent) Preload(index int, size int64) {
 
 		if readahead > 0 && readerStartEnd-offset < readahead {
 			readahead = 0
+			remain := readerStartEnd - offset
+			if remain < 0 {
+				remain = 0
+			}
+			readerStart.SetNext(0)
 			readerStart.SetReadahead(0)
+			readerStart.SetZone(remain)
 		}
 		if n == 0 || err != nil {
 			if err != nil && err != io.EOF {

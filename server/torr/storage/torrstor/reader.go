@@ -12,10 +12,20 @@ import (
 	"server/settings"
 )
 
+const (
+	// ReaderReadaheadBytes is the far window. AdjustRA splits it across active
+	// readers and clamps it to the download zone.
+	ReaderReadaheadBytes = 16 << 20
+	// readerNextBytes is the near window fetched before the rest of the readahead.
+	readerNextBytes = 4 << 20
+)
+
 type Reader struct {
 	torrent.Reader
 	offset    int64
+	next      int64
 	readahead int64
+	zone      int64
 	file      *torrent.File
 	// overrideLen is used by tests when file is nil (file.Length is unexported).
 	overrideLen int64
@@ -37,7 +47,6 @@ func newReader(file *torrent.File, cache *Cache) *Reader {
 	r.file = file
 	r.Reader = file.NewReader()
 
-	r.SetReadahead(0)
 	r.cache = cache
 	r.isUse = true
 	// Without this a fresh reader looks idle since epoch and is switched off at once.
@@ -46,6 +55,7 @@ func newReader(file *torrent.File, cache *Cache) *Reader {
 	cache.muReaders.Lock()
 	cache.readers[r] = struct{}{}
 	cache.muReaders.Unlock()
+	cache.AdjustRA(ReaderReadaheadBytes)
 	return r
 }
 
@@ -121,17 +131,61 @@ func (r *Reader) ReadContext(ctx context.Context, p []byte) (n int, err error) {
 }
 
 func (r *Reader) SetReadahead(length int64) {
+	if length < 0 {
+		length = 0
+	}
 	if r.cache != nil && length > r.cache.capacity {
 		length = r.cache.capacity
 	}
 	r.mu.Lock()
 	r.readahead = length
-	rd := r.Reader
-	use := r.isUse && rd != nil
-	r.mu.Unlock()
-	if use {
-		rd.SetReadahead(length)
+	if r.next > r.readahead {
+		r.next = r.readahead
 	}
+	next, rah, zone := r.next, r.readahead, r.zone
+	rd := r.Reader
+	on := r.isUse && rd != nil
+	r.mu.Unlock()
+	if on {
+		applyReaderWindows(rd, next, rah, zone)
+	}
+}
+
+// SetZones stores the three download windows and pushes them while the reader is active.
+// A parked reader keeps the values for resume and does not ask the client to fetch.
+func (r *Reader) SetZones(next, readahead, zone int64) {
+	if zone < 0 {
+		zone = 0
+	}
+	if r.cache != nil && r.cache.capacity > 0 && zone > r.cache.capacity {
+		zone = r.cache.capacity
+	}
+	if readahead > zone {
+		readahead = zone
+	}
+	if readahead < 0 {
+		readahead = 0
+	}
+	if next > readahead {
+		next = readahead
+	}
+	if next < 0 {
+		next = 0
+	}
+	r.mu.Lock()
+	r.next, r.readahead, r.zone = next, readahead, zone
+	rd := r.Reader
+	on := r.isUse && rd != nil
+	r.mu.Unlock()
+	if on {
+		applyReaderWindows(rd, next, readahead, zone)
+	}
+}
+
+func applyReaderWindows(rd torrent.Reader, next, rah, zone int64) {
+	rd.SetNext(next)
+	rd.SetReadahead(rah)
+	rd.SetZone(zone)
 }
 
 func (r *Reader) Offset() int64 {
@@ -169,22 +223,50 @@ func (r *Reader) getReaderPiece() int {
 	return r.getPieceNum(r.Offset())
 }
 
-func (r *Reader) getReaderRAHPiece() int {
-	r.mu.Lock()
-	off := r.offset + r.readahead
-	r.mu.Unlock()
-	return r.getPieceNum(off)
-}
-
 func (r *Reader) getPieceNum(offset int64) int {
 	return int((offset + r.fileOffset()) / r.cache.pieceLength)
 }
 
-func (r *Reader) getOffsetRange() (int64, int64) {
-	prc := int64(95)
-	if settings.BTsets != nil {
-		prc = int64(settings.BTsets.ReaderReadAHead)
+func readAheadPercent() int64 {
+	if settings.BTsets == nil {
+		return 95
 	}
+	return int64(settings.BTsets.ReaderReadAHead)
+}
+
+// readerWindows is the silo split: next, then readahead, then the rest of the zone.
+// The zone is the forward share of the cache. Readahead and next are clamped to it.
+func readerWindows(capacity int64, readers int, pct, readaheadBudget int64) (next, rah, zone int64) {
+	if readers < 1 {
+		readers = 1
+	}
+	if pct < 0 {
+		pct = 0
+	}
+	if capacity < 0 {
+		capacity = 0
+	}
+	n := int64(readers)
+	zone = (capacity / n) * pct / 100
+	rah = readaheadBudget / n
+	if rah > zone {
+		rah = zone
+	}
+	if rah < 0 {
+		rah = 0
+	}
+	next = readerNextBytes / n
+	if next > rah {
+		next = rah
+	}
+	if next < 0 {
+		next = 0
+	}
+	return next, rah, zone
+}
+
+func (r *Reader) getOffsetRange() (int64, int64) {
+	prc := readAheadPercent()
 	readers := int64(r.getUseReaders())
 	if readers == 0 {
 		readers = 1
@@ -285,7 +367,7 @@ func (r *Reader) resume() {
 	}
 	rd := r.Reader
 	off := r.offset
-	rah := r.readahead
+	next, rah, zone := r.next, r.readahead, r.zone
 	r.isUse = true
 	if rd == nil {
 		return
@@ -294,7 +376,7 @@ func (r *Reader) resume() {
 	if pos, err := rd.Seek(0, io.SeekCurrent); err == nil && pos == 0 {
 		_, _ = rd.Seek(off, io.SeekStart)
 	}
-	rd.SetReadahead(rah)
+	applyReaderWindows(rd, next, rah, zone)
 	r.mu.Lock()
 }
 
@@ -306,7 +388,6 @@ func (r *Reader) readerOff() {
 		r.mu.Unlock()
 		return
 	}
-	r.readahead = 0
 	r.isUse = false
 	off := r.offset
 	rd := r.Reader
@@ -314,7 +395,8 @@ func (r *Reader) readerOff() {
 	if rd == nil {
 		return
 	}
-	rd.SetReadahead(0)
+	// Drop the client's windows but keep next/readahead/zone so resume can put them back.
+	applyReaderWindows(rd, 0, 0, 0)
 	if off > 0 {
 		_, _ = rd.Seek(0, io.SeekStart)
 	}

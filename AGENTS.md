@@ -13,7 +13,7 @@ Out of scope unless the task names them: embedded JS, a plugin runtime, and an F
 ## Dependency forks
 
 ```
-github.com/anacrolix/torrent v1.59.1 => github.com/lampac-nextgen/torrent v1.2.35
+github.com/anacrolix/torrent v1.59.1 => github.com/lampac-nextgen/torrent v1.2.36
 github.com/anacrolix/upnp    v0.1.4  => github.com/tsynik/upnp v0.1.5
 github.com/anacrolix/utp     v0.2.0  => github.com/lampac-nextgen/utp v0.2.1
 ```

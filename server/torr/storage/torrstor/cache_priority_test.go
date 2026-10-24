@@ -86,33 +86,30 @@ func TestGetRemPiecesUsesActivePiecesOnly(t *testing.T) {
 	}
 }
 
-func TestSetLoadPriorityArmsFileStart(t *testing.T) {
-	testBTSets(t)
-	const pieceLen int64 = 2 << 20
-	c := &Cache{
-		pieces:       make(map[int]*Piece),
-		activePieces: make(map[int]struct{}),
-		prioPieces:   make(map[int]struct{}),
-		readers:      make(map[*Reader]struct{}),
-		pieceCount:   100,
-		pieceLength:  pieceLen,
-		capacity:     64 << 20,
+func TestReaderWindows(t *testing.T) {
+	const capacity int64 = 64 << 20
+	next, rah, zone := readerWindows(capacity, 1, 95, ReaderReadaheadBytes)
+	if zone != capacity*95/100 {
+		t.Fatalf("zone: got %d, want %d", zone, capacity*95/100)
 	}
-	for i := 0; i < 40; i++ {
-		c.pieces[i] = &Piece{Id: i, cache: c}
+	if rah != ReaderReadaheadBytes || next != readerNextBytes {
+		t.Fatalf("single reader: next %d readahead %d", next, rah)
 	}
-	r := &Reader{
-		cache:       c,
-		isUse:       true,
-		offset:      0,
-		overrideLen: 64 << 20,
-		lastAccess:  time.Now().Unix(),
-	}
-	c.readers[r] = struct{}{}
 
-	c.setLoadPriority(nil)
-	if _, ok := c.prioPieces[0]; !ok {
-		t.Fatal("reader at offset 0 must get PiecePriorityNow")
+	next, rah, zone = readerWindows(capacity, 2, 95, ReaderReadaheadBytes)
+	if next != readerNextBytes/2 || rah != ReaderReadaheadBytes/2 {
+		t.Fatalf("two readers: next %d readahead %d", next, rah)
+	}
+	if zone != (capacity/2)*95/100 {
+		t.Fatalf("split zone: got %d", zone)
+	}
+	if next > rah || rah > zone {
+		t.Fatalf("windows out of order: next %d readahead %d zone %d", next, rah, zone)
+	}
+
+	next, rah, zone = readerWindows(8<<20, 1, 50, ReaderReadaheadBytes)
+	if zone != 4<<20 || rah != zone || next != zone {
+		t.Fatalf("small cache: next %d readahead %d zone %d", next, rah, zone)
 	}
 }
 
@@ -201,6 +198,8 @@ func (s *seekRecordingReader) ReadContext(_ context.Context, _ []byte) (int, err
 	return 0, io.EOF
 }
 func (s *seekRecordingReader) SetReadahead(int64) {}
+func (s *seekRecordingReader) SetNext(int64)      {}
+func (s *seekRecordingReader) SetZone(int64)      {}
 func (s *seekRecordingReader) SetResponsive()     {}
 
 func TestFileEdgePieceIncludesFirstAndLast(t *testing.T) {
