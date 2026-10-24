@@ -46,6 +46,18 @@ describe('copyToClipboard', () => {
     expect(writeText).toHaveBeenCalledWith('magnet:?xt=urn:btih:abc')
   })
 
+  it('copies a LAN stream URL over plain HTTP when clipboard API is missing', async () => {
+    vi.stubGlobal('isSecureContext', false)
+    vi.stubGlobal('navigator', {})
+    const { textarea, doc } = installDom(true)
+    const url = 'http://192.168.1.50:8090/stream/фильм%20[1080p].mkv?link=ab&index=1&play'
+
+    await copyToClipboard(url)
+
+    expect(textarea.value).toBe(url)
+    expect(doc.execCommand).toHaveBeenCalledWith('copy')
+  })
+
   it('falls back to execCommand when clipboard API is unavailable', async () => {
     vi.stubGlobal('isSecureContext', false)
     vi.stubGlobal('navigator', {})

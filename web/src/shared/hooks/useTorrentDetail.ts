@@ -2,7 +2,8 @@ import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-q
 
 import { getTorrent, TORRENTS_QUERY_KEY, upsertTorrentsInList } from 'shared/api/torrents'
 import type { TorrentStat } from 'shared/api/types'
-import { GETTING_INFO, PRELOAD } from 'shared/torrent/states'
+
+import { torrentDetailRefetchIntervalMs } from './pollInterval'
 
 /**
  * Live torrent detail poll for the details sheet.
@@ -24,13 +25,7 @@ export function useTorrentDetail(hash: string | undefined, initial?: TorrentStat
     },
     enabled: Boolean(hash),
     initialData: initial,
-    refetchInterval: query => {
-      if (document.hidden) return 5000
-      const stat = query.state.data?.stat
-      if (stat === GETTING_INFO) return 500
-      if (stat === PRELOAD) return 1000
-      return 2000
-    },
+    refetchInterval: query => torrentDetailRefetchIntervalMs(document.hidden, query.state.data?.stat),
     retry: 1,
   })
 }

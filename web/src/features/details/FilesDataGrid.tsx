@@ -19,6 +19,7 @@ import { useConfiguredPlayAction } from 'features/player/useConfiguredPlayAction
 import { usePlayLauncher } from 'features/player/usePlayLauncher'
 
 import FileRowActions from './FileRowActions'
+import { filterFilesForSeason } from './fileSeason'
 import MediaInfoDialog from './MediaInfoDialog'
 
 /**
@@ -201,13 +202,10 @@ const FilesDataGrid = memo(
     const fileHasEpisodeText = !!playableFileList?.find(({ path }) => ptt.parse(path).episode)
     const shouldDisplayFullFileName = (playableFileList?.length ?? 0) > 1 && !fileHasEpisodeText
 
-    const filteredFiles = useMemo(() => {
-      if (!playableFileList?.length) return []
-      return playableFileList.filter(({ path }) => {
-        const { season } = ptt.parse(path)
-        return season == null || season === selectedSeason || !seasonAmount?.length
-      })
-    }, [playableFileList, selectedSeason, seasonAmount])
+    const filteredFiles = useMemo(
+      () => filterFilesForSeason(playableFileList, selectedSeason, seasonAmount),
+      [playableFileList, selectedSeason, seasonAmount],
+    )
 
     const rows = useMemo<FileRow[]>(
       () =>

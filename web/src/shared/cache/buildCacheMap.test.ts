@@ -401,4 +401,27 @@ describe('resolveFocusWindow / buildFocusModel', () => {
     expect(playhead?.priority).toBe(5)
     expect(priorityDebugLabel(playhead!.priority)).toBe('A')
   })
+
+  it('maps a 10000-piece reader window without drawing every piece', () => {
+    const pieces: Record<string, { Size: number; Length: number; Completed: boolean }> = {}
+    for (let id = 0; id < 10_000; id += 25) {
+      pieces[id] = { Size: 8, Length: 16, Completed: false }
+    }
+    pieces[5000] = { Size: 16, Length: 16, Completed: true }
+    const cache: TorrentCache = {
+      PiecesCount: 10_000,
+      PiecesLength: 16 * 1024,
+      Readers: [{ Reader: 5000, Start: 4900, End: 5200, Active: true }],
+      Pieces: pieces,
+    }
+    const model = buildFocusModel(cache, 40)
+    expect(model.piecesCount).toBe(10_000)
+    expect(model.cells.length).toBeLessThanOrEqual(40)
+    expect(model.windowStart).toBeLessThanOrEqual(5000)
+    expect(model.windowEnd).toBeGreaterThanOrEqual(5000)
+    const head = model.cells.find(cell => cell.isReader)
+    expect(head?.pieceStart).toBe(5000)
+    expect(head?.percentage).toBe(100)
+    expect(model.cells.some(cell => cell.isReaderRange)).toBe(true)
+  })
 })
