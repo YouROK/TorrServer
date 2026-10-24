@@ -123,6 +123,10 @@ jobs:
             printf '%s\n' '{"lastUpdate":0,"repoUrl":"","entries":{}}' > .cache/benchmark/data.json
           fi
           make bench
+          # The action scores every Go unit as smaller-is-better. MB/s is throughput,
+          # so a faster run looks like a regression and trips the 200% alert.
+          # ns/op, B/op, and allocs/op stay.
+          sed -Ei 's/[[:space:]]+[0-9.]+[[:space:]]+MB\/s//g' server/bench.txt
           # The benchmark action prints a comparison only when this file already has entries.
           if grep -Eq '"entries"[[:space:]]*:[[:space:]]*\{\}' .cache/benchmark/data.json; then
             echo "fresh=true" >> "$GITHUB_OUTPUT"
