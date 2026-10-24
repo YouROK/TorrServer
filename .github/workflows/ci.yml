@@ -92,9 +92,19 @@ jobs:
         run: make test
 
       - name: Enforce coverage gate
+        id: coverage
         uses: vladopajic/go-test-coverage@v2
         with:
           config: .testcoverage.yml
+
+      - name: Coverage summary
+        if: always() && steps.coverage.outputs.total-coverage != ''
+        run: |
+          {
+            echo "### Coverage"
+            echo
+            echo "${{ steps.coverage.outputs.total-coverage }}% · floor 70%"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Restore benchmark history
         uses: actions/cache/restore@v6
@@ -105,6 +115,7 @@ jobs:
             go-bench-
 
       - name: Run memory and throughput benchmarks
+        id: bench
         run: |
           mkdir -p .cache/benchmark
           # Cache miss on the first run. The benchmark action warns if this file is absent.
@@ -112,6 +123,12 @@ jobs:
             printf '%s\n' '{"lastUpdate":0,"repoUrl":"","entries":{}}' > .cache/benchmark/data.json
           fi
           make bench
+          # The benchmark action prints a comparison only when this file already has entries.
+          if grep -Eq '"entries"[[:space:]]*:[[:space:]]*\{\}' .cache/benchmark/data.json; then
+            echo "fresh=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "fresh=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Compare benchmarks
         uses: benchmark-action/github-action-benchmark@v1
@@ -128,8 +145,19 @@ jobs:
           comment-on-alert: true
           summary-always: true
 
+      - name: Benchmark summary
+        if: steps.bench.outputs.fresh == 'true'
+        run: |
+          {
+            echo "### Benchmarks"
+            echo
+            echo '```'
+            grep '^Benchmark' server/bench.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Save benchmark history
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: success()
         uses: actions/cache/save@v6
         with:
           path: .cache/benchmark
