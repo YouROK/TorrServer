@@ -106,6 +106,10 @@ jobs:
       - name: Run memory and throughput benchmarks
         run: |
           mkdir -p .cache/benchmark
+          # Cache miss on the first run. The benchmark action warns if this file is absent.
+          if [ ! -s .cache/benchmark/data.json ]; then
+            printf '%s\n' '{"lastUpdate":0,"repoUrl":"","entries":{}}' > .cache/benchmark/data.json
+          fi
           make bench
 
       - name: Compare benchmarks
