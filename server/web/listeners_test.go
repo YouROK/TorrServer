@@ -354,3 +354,11 @@ func TestStartServersHTTPSOnly(t *testing.T) {
 		t.Fatal("internal loopback listener not started")
 	}
 }
+
+func TestConnQueueAddr(t *testing.T) {
+	addr := &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 8090}
+	q := newConnQueue(addr, func() {})
+	if q.Addr().String() != addr.String() {
+		t.Fatalf("addr %s", q.Addr())
+	}
+}
