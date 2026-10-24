@@ -23,13 +23,15 @@ var (
 	cacheMaxSize  = 1000
 )
 
-func init() {
-	go searchCacheCleanup()
-}
-
-func searchCacheCleanup() {
+func searchCacheCleanup(stop <-chan struct{}) {
 	ticker := time.NewTicker(time.Minute)
-	for range ticker.C {
+	defer ticker.Stop()
+	for {
+		select {
+		case <-stop:
+			return
+		case <-ticker.C:
+		}
 		searchCacheMu.Lock()
 		now := time.Now()
 		for id, entry := range searchCache {

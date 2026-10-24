@@ -15,6 +15,13 @@ func newBufferedStreamReader(source io.ReadSeeker, size int) *bufferedStreamRead
 }
 
 func (r *bufferedStreamReader) Read(p []byte) (int, error) { return r.buffer.Read(p) }
+
+// WriteTo lets io.Copy drain the read-ahead buffer without a second scratch slice.
+// ServeContent uses CopyN, which does not see WriterTo; the writer-side ReadFrom
+// on ServeStreamContent covers that path.
+func (r *bufferedStreamReader) WriteTo(w io.Writer) (int64, error) {
+	return r.buffer.WriteTo(w)
+}
 func (r *bufferedStreamReader) Seek(offset int64, whence int) (int64, error) {
 	if whence == io.SeekCurrent {
 		// The source has advanced past unread buffered bytes.

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"sync"
 
 	"github.com/anacrolix/torrent"
 
@@ -23,6 +24,7 @@ type TorrFile struct {
 	wrk    *Worker
 	offset int64
 	size   int64
+	mu     sync.Mutex
 
 	reader *torrstor.Reader
 }
@@ -84,12 +86,22 @@ func (t *TorrFile) Read(p []byte) (n int, err error) {
 		return 0, ErrStopped
 	}
 	n, err = t.reader.Read(p)
+	t.mu.Lock()
 	t.offset += int64(n)
+	t.mu.Unlock()
 	return
 }
 
 func (t *TorrFile) Remaining() int64 {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	return t.size - t.offset
+}
+
+func (t *TorrFile) progress() (offset, size int64) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.offset, t.size
 }
 
 func (t *TorrFile) Close() {

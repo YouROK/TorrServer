@@ -1,0 +1,9 @@
+# Thresholds for vladopajic/go-test-coverage. Profile is produced by `make test`.
+# File and package floors stay at 0: several packages have no tests yet.
+# Generated swagger (server/docs) is not in the profile.
+profile: server/coverage.out
+
+threshold:
+  file: 0
+  package: 0
+  total: 70

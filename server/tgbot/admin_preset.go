@@ -27,20 +27,24 @@ var (
 	pendingPresets  = make(map[string]pendingPreset)
 )
 
-func init() {
-	go func() {
-		ticker := time.NewTicker(5 * time.Minute)
-		for range ticker.C {
-			pendingPresetMu.Lock()
-			now := time.Now()
-			for key, p := range pendingPresets {
-				if now.Sub(p.CreatedAt) > 30*time.Minute {
-					delete(pendingPresets, key)
-				}
-			}
-			pendingPresetMu.Unlock()
+func pendingPresetCleanup(stop <-chan struct{}) {
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-stop:
+			return
+		case <-ticker.C:
 		}
-	}()
+		pendingPresetMu.Lock()
+		now := time.Now()
+		for key, p := range pendingPresets {
+			if now.Sub(p.CreatedAt) > 30*time.Minute {
+				delete(pendingPresets, key)
+			}
+		}
+		pendingPresetMu.Unlock()
+	}
 }
 
 func cmdPreset(c tele.Context) error {

@@ -42,6 +42,10 @@ var (
 	waitChan = make(chan error)
 	// stopRenew stops the self-signed cert renewal loop.
 	stopRenew chan struct{}
+	// listIfaces and ifaceAddrs are the host lookups behind GetLocalIps.
+	// Tests replace them; production uses anet.
+	listIfaces = anet.Interfaces
+	ifaceAddrs = anet.InterfaceAddrsByInterface
 )
 
 //	@title			Swagger Torrserver API
@@ -293,14 +297,14 @@ func echo(c *gin.Context) {
 }
 
 func GetLocalIps() []string {
-	ifaces, err := anet.Interfaces()
+	ifaces, err := listIfaces()
 	if err != nil {
 		log.TLogln("Error get local IPs")
 		return nil
 	}
 	var list []string
 	for _, i := range ifaces {
-		addrs, _ := anet.InterfaceAddrsByInterface(&i)
+		addrs, _ := ifaceAddrs(&i)
 		if i.Flags&net.FlagUp == net.FlagUp {
 			for _, addr := range addrs {
 				var ip net.IP

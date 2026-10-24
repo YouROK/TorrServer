@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	tele "gopkg.in/telebot.v4"
@@ -52,12 +53,34 @@ type Manager struct {
 	working   map[int]*Worker
 	ids       int
 	queueLock sync.Mutex
+	stop      chan struct{}
+	done      chan struct{}
+	stopOnce  sync.Once
 }
 
 func (m *Manager) Start() {
 	m.working = make(map[int]*Worker)
-	go m.work()
+	m.stop = make(chan struct{})
+	m.done = make(chan struct{})
+	// Stop uses stopOnce; a second Start/Stop (bot restart, tests) must arm it again.
+	m.stopOnce = sync.Once{}
+	go func() {
+		m.work()
+		close(m.done)
+	}()
 }
+
+func (m *Manager) Stop() {
+	if m.stop == nil {
+		return
+	}
+	m.stopOnce.Do(func() { close(m.stop) })
+	if m.done != nil {
+		<-m.done
+	}
+}
+
+func Stop() { manager.Stop() }
 
 func (m *Manager) AddRange(c tele.Context, hash string, from, to int) {
 	m.queueLock.Lock()
@@ -159,16 +182,25 @@ func (m *Manager) Cancel(id int) {
 
 func (m *Manager) work() {
 	for {
+		select {
+		case <-m.stop:
+			return
+		default:
+		}
 		m.queueLock.Lock()
 		if len(m.working) > 0 {
 			m.queueLock.Unlock()
 			m.sendQueueStatus()
-			time.Sleep(time.Second)
+			if !m.sleep() {
+				return
+			}
 			continue
 		}
 		if len(m.queue) == 0 {
 			m.queueLock.Unlock()
-			time.Sleep(time.Second)
+			if !m.sleep() {
+				return
+			}
 			continue
 		}
 		wrk := m.queue[0]
@@ -183,6 +215,15 @@ func (m *Manager) work() {
 		m.queueLock.Lock()
 		delete(m.working, wrk.id)
 		m.queueLock.Unlock()
+	}
+}
+
+func (m *Manager) sleep() bool {
+	select {
+	case <-m.stop:
+		return false
+	case <-time.After(time.Second):
+		return true
 	}
 }
 
@@ -248,9 +289,9 @@ func uploadFile(wrk *Worker, file *state.TorrentFileStat, fi, fc int) error {
 
 	var wa sync.WaitGroup
 	wa.Add(1)
-	complete := false
+	var complete atomic.Bool
 	go func() {
-		for !complete {
+		for !complete.Load() {
 			updateLoadStatus(wrk, torrFile, fi, fc)
 			time.Sleep(1 * time.Second)
 		}
@@ -277,7 +318,7 @@ func uploadFile(wrk *Worker, file *state.TorrentFileStat, fi, fc int) error {
 		}
 	}
 
-	complete = true
+	complete.Store(true)
 	wa.Wait()
 	torrFile.Close()
 	if errors.Is(err, ErrStopped) {

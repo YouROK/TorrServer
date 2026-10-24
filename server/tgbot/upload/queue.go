@@ -81,10 +81,11 @@ func updateLoadStatus(wrk *Worker, file *TorrFile, fi, fc int) {
 		if ti.DownloadSpeed == 0 {
 			ti.DownloadSpeed = 1.0
 		}
+		off, size := file.progress()
 		wait := time.Duration(float64(file.Remaining())/ti.DownloadSpeed) * time.Second
 		speed := humanize.IBytes(uint64(ti.DownloadSpeed)) + "/sec"
 		peers := fmt.Sprintf("%v · %v/%v", ti.ConnectedSeeders, ti.ActivePeers, ti.TotalPeers)
-		prc := fmt.Sprintf("%.2f%% %v / %v", float64(file.offset)*100.0/float64(file.size), humanize.IBytes(uint64(file.offset)), humanize.IBytes(uint64(file.size)))
+		prc := fmt.Sprintf("%.2f%% %v / %v", float64(off)*100.0/float64(size), humanize.IBytes(uint64(off)), humanize.IBytes(uint64(size)))
 
 		name := file.name
 		if name == ti.Title {
@@ -98,7 +99,7 @@ func updateLoadStatus(wrk *Worker, file *TorrFile, fi, fc int) {
 			msg += "<i>" + escapeHtml(name) + "</i>\n"
 		}
 		msg += "<b>" + tr(uid, "upload_hash") + ":</b> <code>" + file.hash + "</code>\n"
-		if file.offset < file.size {
+		if off < size {
 			msg += "<b>" + tr(uid, "upload_speed") + ": </b>" + speed + "\n" +
 				"<b>" + tr(uid, "upload_remaining") + ": </b>" + wait.String() + "\n" +
 				"<b>" + tr(uid, "upload_peers") + ": </b>" + peers + "\n" +
@@ -107,7 +108,7 @@ func updateLoadStatus(wrk *Worker, file *TorrFile, fi, fc int) {
 		if fc > 1 {
 			msg += "\n<b>" + tr(uid, "upload_files") + ": </b>" + strconv.Itoa(fi) + "/" + strconv.Itoa(fc)
 		}
-		if file.offset >= file.size {
+		if off >= size {
 			msg += "\n<b>" + tr(uid, "upload_finishing") + "</b>"
 			_, _ = wrk.c.Bot().Edit(wrk.msg, msg)
 			return

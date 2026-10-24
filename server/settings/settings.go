@@ -510,5 +510,10 @@ func SetStoragePreferences(prefs map[string]interface{}) error {
 func CloseDB() {
 	if tdb != nil {
 		tdb.CloseDB()
+		tdb = nil
 	}
+	// Drop the process-wide handles so a later InitSets opens a new database.
+	// Leaving them set reused a closed bbolt after Stop/Start.
+	globalBboltDB = nil
+	globalJsonDB = nil
 }

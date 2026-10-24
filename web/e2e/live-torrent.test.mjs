@@ -15,7 +15,7 @@ import { JAC_RED_HOST, JAC_RED_KEY, JAC_RED_NAME, SEARCH_QUERIES } from './index
 const BASE = process.env.TORRSERVER_URL || ''
 const USER = process.env.TS_USER || 'ts'
 const PASS = process.env.TS_PASS || 'ts'
-const HASH = (process.env.LIVE_TORRENT_HASH || 'e5a5bdb8ff6152657a1e051024b618dd37d76957').toLowerCase()
+const HASH = (process.env.LIVE_TORRENT_HASH || 'b0e4e3cf193431debd67b54ad7936356c0e5c6a7').toLowerCase()
 const live = process.env.LIVE === '1' && BASE !== ''
 
 function authHeader() {

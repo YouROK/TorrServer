@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/anacrolix/dms/dlna/dms"
@@ -21,9 +22,28 @@ import (
 	"server/web/pages/template"
 )
 
-var dmsServer *dms.Server
+var (
+	dmsServer *dms.Server
+	dmsMu     sync.Mutex
+	// exitFunc is os.Exit in production. Tests replace it so a listen/init
+	// failure does not kill the test process.
+	exitFunc = os.Exit
+	// listenBind is the TCP listen used for the DLNA HTTP port.
+	listenBind = netbind.Listen
+	// notifyInterval is the SSDP announce period. dms sleeps this long inside
+	// Serve, and Close does not wake that sleep.
+	notifyInterval = 30 * time.Second
+	currentUser    = user.Current
+	hostname       = os.Hostname
+)
 
 func Start() {
+	dmsMu.Lock()
+	defer dmsMu.Unlock()
+	if dmsServer != nil {
+		_ = dmsServer.Close()
+		dmsServer = nil
+	}
 	logger := log.Default.WithNames("dlna")
 	dmsServer = &dms.Server{
 		Logger: logger.WithNames("dms", "server"),
@@ -54,13 +74,14 @@ func Start() {
 				port++
 			}
 			logger.Levelf(log.Info, "Set dlna port %d", port)
-			conn, err := netbind.Listen(settings.IPs, strconv.Itoa(port))
+			conn, err := listenBind(settings.IPs, strconv.Itoa(port))
 			if err != nil {
 				logger.Levelf(log.Error, "%v", err)
 				if settings.Embedded {
 					return nil
 				}
-				os.Exit(1)
+				exitFunc(1)
+				return nil
 			}
 			return conn
 		}(),
@@ -85,7 +106,7 @@ func Start() {
 			},
 		},
 		LogHeaders:     settings.BTsets.EnableDebug,
-		NotifyInterval: 30 * time.Second,
+		NotifyInterval: notifyInterval,
 		AllowedIpNets: func() []*net.IPNet {
 			var nets []*net.IPNet
 			_, ipnet, _ := net.ParseCIDR("0.0.0.0/0")
@@ -110,20 +131,24 @@ func Start() {
 		if settings.Embedded {
 			return
 		}
-		os.Exit(1)
+		exitFunc(1)
+		return
 	}
+	srv := dmsServer
 	go func() {
-		if err := dmsServer.Run(); err != nil {
+		if err := srv.Run(); err != nil {
 			logger.Levelf(log.Error, "%v", err)
 			if settings.Embedded {
 				return
 			}
-			os.Exit(1)
+			exitFunc(1)
 		}
 	}()
 }
 
 func Stop() {
+	dmsMu.Lock()
+	defer dmsMu.Unlock()
 	if dmsServer != nil {
 		_ = dmsServer.Close()
 		dmsServer = nil
@@ -166,13 +191,13 @@ func getDefaultFriendlyName() string {
 
 	ret := "TorrServer"
 	userName := ""
-	user, err := user.Current()
+	user, err := currentUser()
 	if err != nil {
 		logger.Printf("getDefaultFriendlyName could not get username: %s", err)
 	} else {
 		userName = user.Name
 	}
-	host, err := os.Hostname()
+	host, err := hostname()
 	if err != nil {
 		logger.Printf("getDefaultFriendlyName could not get hostname: %s", err)
 	}

@@ -70,16 +70,15 @@ func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 	}
 	switch settings.BTsets.RetrackersMode {
 	case 1:
-		spec.Trackers = append(spec.Trackers, [][]string{utils.GetDefTrackers()}...)
+		addExtraTrackers(spec, utils.GetTrackerFromFile(), utils.GetDefTrackers())
 	case 2:
 		spec.Trackers = nil
+		addExtraTrackers(spec, utils.GetTrackerFromFile())
 	case 3:
-		spec.Trackers = [][]string{utils.GetDefTrackers()}
-	}
-
-	trackers := utils.GetTrackerFromFile()
-	if len(trackers) > 0 {
-		spec.Trackers = append(spec.Trackers, [][]string{trackers}...)
+		spec.Trackers = nil
+		addExtraTrackers(spec, utils.GetTrackerFromFile(), utils.GetDefTrackers())
+	default:
+		addExtraTrackers(spec, utils.GetTrackerFromFile())
 	}
 
 	if len(spec.InfoBytes) == 0 {
@@ -129,6 +128,20 @@ func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 	return torr, nil
 }
 
+// addExtraTrackers appends one tier. An extra tier per URL would not slow
+// announces: this anacrolix fork starts a scraper for every URL in every tier.
+func addExtraTrackers(spec *torrent.TorrentSpec, lists ...[]string) {
+	var all []string
+	for _, list := range lists {
+		all = append(all, list...)
+	}
+	all = utils.SanitizeTrackers(all)
+	if len(all) == 0 {
+		return
+	}
+	spec.Trackers = append(spec.Trackers, all)
+}
+
 func (t *Torrent) WaitInfo() bool {
 	if t == nil {
 		return false
@@ -165,7 +178,9 @@ func (t *Torrent) WaitInfo() bool {
 					// torrent was dropped while waiting for info: CloseHash already removed the cache
 					return false
 				}
+				t.muTorrent.Lock()
 				t.cache = cache
+				t.muTorrent.Unlock()
 				cache.SetTorrent(torrent)
 			}
 		}
@@ -293,18 +308,24 @@ func (t *Torrent) updateRA() {
 	// 	}
 	// 	go t.cache.AdjustRA(adj)
 	// }
+	t.muTorrent.Lock()
+	cache := t.cache
+	t.muTorrent.Unlock()
+	if cache == nil {
+		return
+	}
 	adj := int64(16 << 20) // 16 MB fixed RA
-	go t.cache.AdjustRA(adj)
+	go cache.AdjustRA(adj)
 }
 
 func (t *Torrent) expired() bool {
-	if t.cache == nil {
+	t.muTorrent.Lock()
+	cache, stat, expiredTime := t.cache, t.Stat, t.expiredTime
+	t.muTorrent.Unlock()
+	if cache == nil {
 		return false
 	}
-	t.muTorrent.Lock()
-	stat, expiredTime := t.Stat, t.expiredTime
-	t.muTorrent.Unlock()
-	return t.cache.Readers() == 0 && expiredTime.Before(time.Now()) && (stat == state.TorrentWorking || stat == state.TorrentClosed)
+	return cache.Readers() == 0 && expiredTime.Before(time.Now()) && (stat == state.TorrentWorking || stat == state.TorrentClosed)
 }
 
 func (t *Torrent) Files() []*torrent.File {

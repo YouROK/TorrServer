@@ -1,13 +1,18 @@
 package utils
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base32"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -21,11 +26,28 @@ import (
 	"golang.org/x/time/rate"
 )
 
-const trackersFetchTimeout = 5 * time.Second
+const (
+	trackersFetchTimeout = 5 * time.Second
+	trackersBodyLimit    = 256 * 1024
+)
 
 // trackersRefreshInterval controls how often the remote trackers list is
 // re-fetched in the background. On refresh failure the existing cache is kept.
 var trackersRefreshInterval = 12 * time.Hour
+
+// Dedicated client: a Client with a nil Transport uses http.DefaultTransport,
+// and CloseIdleConnections on that closes every idle connection in the process.
+var trackersHTTPClient = &http.Client{
+	Timeout: trackersFetchTimeout,
+	Transport: &http.Transport{
+		Proxy:                 http.ProxyFromEnvironment,
+		DialContext:           (&net.Dialer{Timeout: 3 * time.Second, KeepAlive: 30 * time.Second}).DialContext,
+		TLSHandshakeTimeout:   3 * time.Second,
+		ResponseHeaderTimeout: 3 * time.Second,
+		IdleConnTimeout:       30 * time.Second,
+		MaxIdleConns:          4,
+	},
+}
 
 // defaultTrackersListURLs is the built-in mirror chain. Tests stub this to
 // avoid hitting the network when a custom URL fails or is empty.
@@ -41,7 +63,12 @@ var (
 	trackersFetchGen   atomic.Uint64
 	prefetchMu         sync.Mutex
 	prefetchStartedGen uint64 = ^uint64(0)
-	refreshLoopOnce    sync.Once
+
+	lifeMu      sync.Mutex
+	lifeCtx     context.Context
+	lifeCancel  context.CancelFunc
+	fetchMu     sync.Mutex
+	fetchCancel context.CancelFunc
 )
 
 func SetDefTrackers(trackers []string) {
@@ -56,20 +83,11 @@ func SetDefTrackers(trackers []string) {
 }
 
 func GetTrackerFromFile() []string {
-	name := filepath.Join(settings.Path, "trackers.txt")
-	buf, err := os.ReadFile(name)
-	if err == nil {
-		list := strings.Split(string(buf), "\n")
-		var ret []string
-		for _, l := range list {
-			l = strings.TrimSpace(l)
-			if strings.HasPrefix(l, "udp") || strings.HasPrefix(l, "http") {
-				ret = append(ret, l)
-			}
-		}
-		return ret
+	buf, err := os.ReadFile(filepath.Join(settings.Path, "trackers.txt"))
+	if err != nil {
+		return nil
 	}
-	return nil
+	return SanitizeTrackers(strings.Split(string(buf), "\n"))
 }
 
 // GetDefTrackers returns cached trackers when available, otherwise local
@@ -90,10 +108,35 @@ func GetDefTrackers() []string {
 // configured. Safe to call multiple times; duplicate fetches for the same
 // generation are deduplicated. Also starts the periodic refresh loop once.
 func PrefetchTrackers() {
+	startRefreshLoop()
 	startPrefetch()
-	refreshLoopOnce.Do(func() {
-		go trackersRefreshLoop()
-	})
+}
+
+// StopTrackers cancels the refresh loop and any in-flight list fetch.
+// The cached list is dropped; the next PrefetchTrackers starts a new fetch.
+func StopTrackers() {
+	lifeMu.Lock()
+	cancel := lifeCancel
+	lifeCtx, lifeCancel = nil, nil
+	lifeMu.Unlock()
+	if cancel != nil {
+		cancel()
+	}
+	fetchMu.Lock()
+	cancelFetch := fetchCancel
+	fetchCancel = nil
+	fetchMu.Unlock()
+	if cancelFetch != nil {
+		cancelFetch()
+	}
+	trackersFetchGen.Add(1)
+	prefetchMu.Lock()
+	prefetchStartedGen = ^uint64(0)
+	prefetchMu.Unlock()
+	trackersMu.Lock()
+	loadedTrackers = nil
+	trackersMu.Unlock()
+	trackersHTTPClient.CloseIdleConnections()
 }
 
 // InvalidateTrackersCache clears the remote list cache and starts a new
@@ -107,17 +150,106 @@ func InvalidateTrackersCache() {
 }
 
 func parseTrackerLines(text string) []string {
-	var ret []string
-	for _, s := range strings.Split(text, "\n") {
-		s = strings.TrimSpace(s)
-		if s == "" || strings.HasPrefix(s, "#") {
+	return SanitizeTrackers(strings.Split(text, "\n"))
+}
+
+// SanitizeTrackers drops malformed, unsupported, and raw-IP https/wss URLs
+// and collapses duplicates. It does not cap the list.
+func SanitizeTrackers(lines []string) []string {
+	return sanitizeTrackers(lines)
+}
+
+func sanitizeTrackers(lines []string) []string {
+	seen := make(map[string]struct{}, len(lines))
+	var out []string
+	for _, line := range lines {
+		stored, key, ok := acceptTracker(line)
+		if !ok {
 			continue
 		}
-		if strings.HasPrefix(s, "udp") || strings.HasPrefix(s, "http") || strings.HasPrefix(s, "wss") {
-			ret = append(ret, s)
+		if _, dup := seen[key]; dup {
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, stored)
+	}
+	return out
+}
+
+func acceptTracker(raw string) (stored, key string, ok bool) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || strings.HasPrefix(raw, "#") || len(raw) > 2048 {
+		return "", "", false
+	}
+	u, err := url.Parse(raw)
+	if err != nil || u.Hostname() == "" {
+		return "", "", false
+	}
+	scheme := strings.ToLower(u.Scheme)
+	switch scheme {
+	case "udp", "http", "https", "ws", "wss":
+	default:
+		return "", "", false
+	}
+	if port := u.Port(); port != "" {
+		n, convErr := strconv.Atoi(port)
+		if convErr != nil || n < 1 || n > 65535 {
+			return "", "", false
 		}
 	}
-	return ret
+	host := u.Hostname()
+	port := u.Port()
+	ip := net.ParseIP(host)
+	// Raw-IP https/wss has no usable SNI name. Dial+TLS to a dead address sits
+	// for the tracker client's 15s timeout, per torrent.
+	if ip != nil && (scheme == "https" || scheme == "wss") {
+		return "", "", false
+	}
+	if ip != nil {
+		host = ip.String()
+	} else {
+		host = strings.ToLower(host)
+	}
+	u.Scheme = scheme
+	u.Host = host
+	if port != "" {
+		u.Host = net.JoinHostPort(host, port)
+	}
+	u.Path = strings.TrimRight(u.Path, "/")
+	u.Fragment = ""
+	stored = u.String()
+	if ip != nil {
+		// ponytail: raw-IP trackers collapse on host:port. Split by path if one IP hosts two trackers.
+		key = "ip:" + host + ":" + u.Port()
+		return stored, key, true
+	}
+	return stored, stored, true
+}
+
+// mergeTrackers appends every remote URL that is not already in local, then
+// the local list. remoteCount is how many remote URLs were kept.
+func mergeTrackers(remote, local []string) (merged []string, remoteCount int) {
+	local = sanitizeTrackers(local)
+	remote = sanitizeTrackers(remote)
+	seen := make(map[string]struct{}, len(local)+len(remote))
+	for _, t := range local {
+		if _, key, ok := acceptTracker(t); ok {
+			seen[key] = struct{}{}
+		}
+	}
+	var head []string
+	for _, t := range remote {
+		_, key, ok := acceptTracker(t)
+		if !ok {
+			continue
+		}
+		if _, dup := seen[key]; dup {
+			continue
+		}
+		seen[key] = struct{}{}
+		head = append(head, t)
+	}
+	return append(head, local...), len(head)
 }
 
 func configuredDefaultTrackers() []string {
@@ -177,7 +309,26 @@ func startPrefetch() {
 		return
 	}
 
-	go fetchTrackersAsync(gen, urls, local)
+	go fetchTrackersAsync(trackersContext(), gen, urls, local)
+}
+
+func trackersContext() context.Context {
+	lifeMu.Lock()
+	defer lifeMu.Unlock()
+	if lifeCtx == nil {
+		return context.Background()
+	}
+	return lifeCtx
+}
+
+func startRefreshLoop() {
+	lifeMu.Lock()
+	defer lifeMu.Unlock()
+	if lifeCtx != nil {
+		return
+	}
+	lifeCtx, lifeCancel = context.WithCancel(context.Background())
+	go trackersRefreshLoop(lifeCtx)
 }
 
 func setLoadedTrackers(gen uint64, trackers []string, logMsg string) {
@@ -196,64 +347,98 @@ func setLoadedTrackers(gen uint64, trackers []string, logMsg string) {
 	}
 }
 
-func fetchTrackersAsync(gen uint64, urls []string, local []string) {
-	merged, usedURL, err := fetchTrackersFromURLs(urls, local)
+func fetchTrackersAsync(ctx context.Context, gen uint64, urls []string, local []string) {
+	merged, usedURL, remoteCount, err := fetchTrackersFromURLs(ctx, gen, urls, local)
 	if err != nil {
+		if ctx.Err() != nil || errors.Is(err, context.Canceled) {
+			return
+		}
 		setLoadedTrackers(gen, local, "trackerslist fetch failed, using DefaultTrackers: "+err.Error())
 		return
 	}
-	remoteCount := len(merged) - len(local)
-	setLoadedTrackers(gen, merged, fmt.Sprintf("trackerslist loaded from %s: %d remote + %d local", usedURL, remoteCount, len(local)))
+	setLoadedTrackers(gen, merged, fmt.Sprintf("trackerslist loaded from %s: %d remote + %d local", usedURL, remoteCount, len(merged)-remoteCount))
 }
 
-func fetchTrackersFromURLs(urls []string, local []string) ([]string, string, error) {
+func fetchTrackersFromURLs(ctx context.Context, gen uint64, urls []string, local []string) ([]string, string, int, error) {
 	if len(urls) == 0 {
-		return nil, "", fmt.Errorf("no trackers list URLs")
+		return nil, "", 0, fmt.Errorf("no trackers list URLs")
 	}
-	var errs []string
-	for _, url := range urls {
-		merged, err := fetchTrackersFromURL(url, local)
-		if err == nil {
-			return merged, url, nil
+	if err := ctx.Err(); err != nil {
+		return nil, "", 0, err
+	}
+	ctx, cancel := context.WithCancel(ctx)
+	fetchMu.Lock()
+	// A superseded generation must not cancel the fetch that replaced it.
+	// Doing so dropped loadedTrackers until the next invalidate.
+	if err := ctx.Err(); err != nil || trackersFetchGen.Load() != gen {
+		fetchMu.Unlock()
+		cancel()
+		if err != nil {
+			return nil, "", 0, err
 		}
-		log.TLogln("trackerslist fetch failed (" + url + "): " + err.Error())
-		errs = append(errs, url+": "+err.Error())
+		return nil, "", 0, context.Canceled
 	}
-	return nil, "", fmt.Errorf("all URLs failed: %s", strings.Join(errs, "; "))
+	if fetchCancel != nil {
+		fetchCancel()
+	}
+	fetchCancel = cancel
+	fetchMu.Unlock()
+	defer cancel()
+
+	var errs []string
+	for _, listURL := range urls {
+		if ctx.Err() != nil {
+			return nil, "", 0, ctx.Err()
+		}
+		merged, remoteCount, err := fetchTrackersFromURL(ctx, listURL, local)
+		if err == nil {
+			return merged, listURL, remoteCount, nil
+		}
+		if ctx.Err() != nil || errors.Is(err, context.Canceled) {
+			return nil, "", 0, err
+		}
+		log.TLogln("trackerslist fetch failed (" + listURL + "): " + err.Error())
+		errs = append(errs, listURL+": "+err.Error())
+	}
+	return nil, "", 0, fmt.Errorf("all URLs failed: %s", strings.Join(errs, "; "))
 }
 
-func fetchTrackersFromURL(url string, local []string) ([]string, error) {
-	client := &http.Client{Timeout: trackersFetchTimeout}
-	resp, err := client.Get(url)
+func fetchTrackersFromURL(ctx context.Context, listURL string, local []string) ([]string, int, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, listURL, nil)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+	resp, err := trackersHTTPClient.Do(req)
+	if err != nil {
+		return nil, 0, err
 	}
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status %d", resp.StatusCode)
+		return nil, 0, fmt.Errorf("status %d", resp.StatusCode)
 	}
-	buf, err := io.ReadAll(resp.Body)
+	buf, err := io.ReadAll(io.LimitReader(resp.Body, trackersBodyLimit))
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	var remote []string
-	for _, s := range strings.Split(string(buf), "\n") {
-		s = strings.TrimSpace(s)
-		if s == "" || strings.HasPrefix(s, "#") {
-			continue
-		}
-		remote = append(remote, s)
-	}
+	remote := sanitizeTrackers(strings.Split(string(buf), "\n"))
 	if len(remote) == 0 {
-		return nil, fmt.Errorf("empty list")
+		return nil, 0, fmt.Errorf("empty list")
 	}
-	return append(remote, local...), nil
+	merged, remoteCount := mergeTrackers(remote, local)
+	return merged, remoteCount, nil
 }
 
-func trackersRefreshLoop() {
+func trackersRefreshLoop(ctx context.Context) {
+	timer := time.NewTimer(trackersRefreshInterval)
+	defer timer.Stop()
 	for {
-		time.Sleep(trackersRefreshInterval)
-		refreshTrackers()
+		select {
+		case <-ctx.Done():
+			return
+		case <-timer.C:
+			refreshTrackers()
+			timer.Reset(trackersRefreshInterval)
+		}
 	}
 }
 
@@ -267,16 +452,18 @@ func refreshTrackers() {
 	}
 	gen := trackersFetchGen.Load()
 	local := configuredDefaultTrackers()
-	merged, usedURL, err := fetchTrackersFromURLs(urls, local)
+	ctx := trackersContext()
+	merged, usedURL, remoteCount, err := fetchTrackersFromURLs(ctx, gen, urls, local)
 	if err != nil {
-		log.TLogln("trackerslist refresh failed:", err.Error())
+		if ctx.Err() == nil && !errors.Is(err, context.Canceled) {
+			log.TLogln("trackerslist refresh failed:", err.Error())
+		}
 		return
 	}
 	if !updateLoadedTrackersIfCurrent(gen, merged) {
 		return
 	}
-	remoteCount := len(merged) - len(local)
-	log.TLogln(fmt.Sprintf("trackerslist refreshed from %s: %d remote + %d local", usedURL, remoteCount, len(local)))
+	log.TLogln(fmt.Sprintf("trackerslist refreshed from %s: %d remote + %d local", usedURL, remoteCount, len(merged)-remoteCount))
 }
 
 func updateLoadedTrackersIfCurrent(gen uint64, trackers []string) bool {

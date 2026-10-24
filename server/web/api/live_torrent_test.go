@@ -22,7 +22,7 @@ func TestLiveTorrentStreamStatPlayFFP(t *testing.T) {
 	}
 	hash := os.Getenv("LIVE_TORRENT_HASH")
 	if hash == "" {
-		hash = "e5a5bdb8ff6152657a1e051024b618dd37d76957"
+		hash = "b0e4e3cf193431debd67b54ad7936356c0e5c6a7"
 	}
 	user := getenv("TS_USER", "ts")
 	pass := getenv("TS_PASS", "ts")

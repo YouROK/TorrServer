@@ -32,13 +32,15 @@ var (
 	pendingInputs  = make(map[string]pendingInput)
 )
 
-func init() {
-	go pendingInputCleanup()
-}
-
-func pendingInputCleanup() {
+func pendingInputCleanup(stop <-chan struct{}) {
 	ticker := time.NewTicker(5 * time.Minute)
-	for range ticker.C {
+	defer ticker.Stop()
+	for {
+		select {
+		case <-stop:
+			return
+		case <-ticker.C:
+		}
 		pendingInputMu.Lock()
 		now := time.Now()
 		for key, p := range pendingInputs {
@@ -209,8 +211,11 @@ func applySettingsInput(c tele.Context, setting, value string) {
 		bonjour.Start()
 	}
 	rutor.Stop()
-	rutor.Start()
+	startRutor()
 }
+
+// startRutor restarts the rutor index. Tests replace it.
+var startRutor = rutor.Start
 
 func valueOrClear(v string) string {
 	if v == "" {

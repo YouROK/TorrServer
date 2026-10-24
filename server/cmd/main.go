@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"os"
 	"path/filepath"
@@ -62,10 +63,35 @@ func (args) Version() string {
 
 var params args
 
+// exitFunc terminates the process. Tests replace it.
+var exitFunc = os.Exit
+
 func main() {
+	exitFunc(run(os.Args[1:]))
+}
+
+func run(argv []string) int {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	arg.MustParse(&params)
+	params = args{}
+	p, err := arg.NewParser(arg.Config{}, &params)
+	if err != nil {
+		_, _ = fmt.Fprintln(os.Stdout, err)
+		return 2
+	}
+	err = p.Parse(argv)
+	switch {
+	case err == arg.ErrHelp:
+		p.WriteHelp(os.Stdout)
+		return 0
+	case err == arg.ErrVersion:
+		_, _ = fmt.Fprintln(os.Stdout, params.Version())
+		return 0
+	case err != nil:
+		p.WriteUsage(os.Stdout)
+		_, _ = fmt.Fprintln(os.Stdout, "error:", err)
+		return 2
+	}
 
 	if params.Path == "" {
 		params.Path, _ = os.Getwd()
@@ -196,32 +222,34 @@ func main() {
 
 	if params.ForceHTTPS && !params.Ssl {
 		log.TLogln("Error: --force-https requires --ssl")
-		os.Exit(1)
+		return 1
 	}
 	if params.HTTPSOnly && !params.Ssl {
 		log.TLogln("Error: --https-only requires --ssl")
-		os.Exit(1)
+		return 1
 	}
 	if params.HTTPSOnly && params.HTTPMedia {
 		log.TLogln("Error: --https-only and --http-media can't be combined (--https-only doesn't open the HTTP port)")
-		os.Exit(1)
+		return 1
 	}
 	if params.HTTPMedia && !params.ForceHTTPS {
 		log.TLogln("Error: --http-media requires --force-https (without it, media is already served over HTTP)")
-		os.Exit(1)
+		return 1
 	}
 
 	if err := server.Start(); err != nil {
 		log.TLogln(err)
-		os.Exit(1)
+		return 1
 	}
 	log.TLogln(server.WaitServer())
 	log.Close()
 	time.Sleep(time.Second * 3)
-	os.Exit(0)
+	return 0
 }
 
-func watchTDir(dir string) {
+func watchTDir(dir string) { watchDir(dir, nil) }
+
+func watchDir(dir string, stop <-chan struct{}) {
 	path, err := filepath.Abs(dir) // Attempt to convert the provided dir path into an absolute (full) filesystem path.
 	if err != nil {
 		path = dir
@@ -243,6 +271,8 @@ func watchTDir(dir string) {
 	for { // Start of an infinite loop for continuous background monitoring using filesystem events.
 
 		select {
+		case <-stop:
+			return
 		case event, ok := <-watcher.Events:
 			if !ok {
 				return
@@ -480,20 +510,31 @@ func (d *DNSChecker) LookupHostWithFallback(host string) ([]string, error) {
 	return addrs, err
 }
 
-// getFromCache retrieves DNS results from cache
+// getFromCache retrieves DNS results from cache.
+// Expired entries are dropped under the write lock: deleting from a map while
+// holding RLock races with every other reader that also sees an expiry.
 func (d *DNSChecker) getFromCache(host string) ([]string, bool) {
 	d.mu.RLock()
-	defer d.mu.RUnlock()
+	addrs, ok := d.cache[host]
+	fresh := ok && time.Since(d.cacheTime[host]) < d.config.CacheDuration
+	var out []string
+	if fresh {
+		out = append([]string(nil), addrs...)
+	}
+	d.mu.RUnlock()
+	if fresh {
+		return out, true
+	}
+	if !ok {
+		return nil, false
+	}
 
-	if addrs, ok := d.cache[host]; ok {
-		if time.Since(d.cacheTime[host]) < d.config.CacheDuration {
-			return addrs, true
-		}
-		// Expired, remove from cache
+	d.mu.Lock()
+	if t, still := d.cacheTime[host]; still && time.Since(t) >= d.config.CacheDuration {
 		delete(d.cache, host)
 		delete(d.cacheTime, host)
 	}
-
+	d.mu.Unlock()
 	return nil, false
 }
 
@@ -502,7 +543,7 @@ func (d *DNSChecker) addToCache(host string, addrs []string) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
-	d.cache[host] = addrs
+	d.cache[host] = append([]string(nil), addrs...)
 	d.cacheTime[host] = time.Now()
 }
 

@@ -14,6 +14,12 @@ import (
 	tele "gopkg.in/telebot.v4"
 )
 
+// rutorSearch and torznabSearch are the indexer backends. Tests replace them.
+var (
+	rutorSearch   = rutor.Search
+	torznabSearch = torznab.Search
+)
+
 func cmdSearch(c tele.Context) error {
 	args := c.Args()
 	if len(args) == 0 {
@@ -43,10 +49,10 @@ func runSearchQuery(c tele.Context, query string) error {
 	go func() {
 		var list []*models.TorrentDetails
 		if sets.BTsets != nil && sets.BTsets.EnableRutorSearch {
-			list = append(list, rutor.Search(query)...)
+			list = append(list, rutorSearch(query)...)
 		}
 		if sets.BTsets != nil && sets.BTsets.EnableTorznabSearch {
-			list = append(list, torznab.Search(context.Background(), query, -1, "", 0, 0)...)
+			list = append(list, torznabSearch(context.Background(), query, -1, "", 0, 0)...)
 		}
 		source := "RuTor+Torznab"
 		sendSearchResultsAsync(c.Bot(), c.Sender(), statusMsg, uid, query, list, source)
@@ -71,7 +77,7 @@ func cmdSearchRutor(c tele.Context) error {
 		return err
 	}
 	go func() {
-		list := rutor.Search(query)
+		list := rutorSearch(query)
 		sendSearchResultsAsync(c.Bot(), c.Sender(), statusMsg, uid, query, list, "RuTor")
 	}()
 	return nil
@@ -101,7 +107,7 @@ func cmdTorznab(c tele.Context) error {
 		return err
 	}
 	go func() {
-		list := torznab.Search(context.Background(), query, index, "", 0, 0)
+		list := torznabSearch(context.Background(), query, index, "", 0, 0)
 		sendSearchResultsAsync(c.Bot(), c.Sender(), statusMsg, uid, query, list, "Torznab")
 	}()
 	return nil

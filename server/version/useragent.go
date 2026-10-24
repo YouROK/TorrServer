@@ -52,6 +52,15 @@ func (t *userAgentTransport) RoundTrip(req *http.Request) (*http.Response, error
 	return t.base.RoundTrip(req)
 }
 
+// CloseIdleConnections forwards to the wrapped transport. http.Client checks
+// the outer RoundTripper; without this, idle conns (and their goroutines)
+// stay up for IdleConnTimeout.
+func (t *userAgentTransport) CloseIdleConnections() {
+	if c, ok := t.base.(interface{ CloseIdleConnections() }); ok {
+		c.CloseIdleConnections()
+	}
+}
+
 func replaceGoUserAgent(ua string) bool {
 	return ua == "" || strings.HasPrefix(ua, "Go-http-client/")
 }

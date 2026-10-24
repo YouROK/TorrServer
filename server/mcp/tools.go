@@ -178,6 +178,12 @@ type searchTorrentsOut struct {
 	Message string      `json:"message,omitempty"`
 }
 
+// rutorSearch and torznabSearch are the search backends. Tests replace them.
+var (
+	rutorSearch   = rutor.Search
+	torznabSearch = torznab.Search
+)
+
 func registerTools(server *mcpsdk.Server) {
 	mcpsdk.AddTool(server, &mcpsdk.Tool{
 		Name:        "get_server_info",
@@ -586,21 +592,21 @@ func searchTorrents(ctx context.Context, req *mcpsdk.CallToolRequest, in searchT
 		if !rutorOn {
 			return nil, searchTorrentsOut{Results: []searchHit{}, Message: "RuTor search is disabled"}, nil
 		}
-		list = rutor.Search(query)
+		list = rutorSearch(query)
 	case "torznab":
 		if !torznabOn {
 			return nil, searchTorrentsOut{Results: []searchHit{}, Message: "Torznab search is disabled"}, nil
 		}
-		list = torznab.Search(ctx, query, -1, "", 0, 0)
+		list = torznabSearch(ctx, query, -1, "", 0, 0)
 	case "all":
 		if !rutorOn && !torznabOn {
 			return nil, searchTorrentsOut{Results: []searchHit{}, Message: "search is disabled in settings"}, nil
 		}
 		if rutorOn {
-			list = append(list, rutor.Search(query)...)
+			list = append(list, rutorSearch(query)...)
 		}
 		if torznabOn {
-			list = append(list, torznab.Search(ctx, query, -1, "", 0, 0)...)
+			list = append(list, torznabSearch(ctx, query, -1, "", 0, 0)...)
 		}
 	default:
 		return nil, searchTorrentsOut{}, fmt.Errorf("source must be all, rutor, or torznab")

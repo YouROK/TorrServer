@@ -13,6 +13,40 @@ import (
 	"time"
 )
 
+func TestServeStreamContentMatchesServeContent(t *testing.T) {
+	data := bytes.Repeat([]byte("abcdefghijklmnopqrstuvwxyz"), 4000)
+	for _, rangeHeader := range []string{"", "bytes=13-512", "bytes=-19", "bytes=25000-", "bytes=100-20"} {
+		serve := func(fn func(http.ResponseWriter, *http.Request, io.ReadSeeker)) *httptest.ResponseRecorder {
+			req := httptest.NewRequest(http.MethodGet, "http://local/video.mkv", nil)
+			if rangeHeader != "" {
+				req.Header.Set("Range", rangeHeader)
+			}
+			resp := httptest.NewRecorder()
+			fn(resp, req, bytes.NewReader(data))
+			return resp
+		}
+		a := serve(func(w http.ResponseWriter, r *http.Request, body io.ReadSeeker) {
+			http.ServeContent(w, r, "video.mkv", time.Unix(1, 0), body)
+		})
+		b := serve(func(w http.ResponseWriter, r *http.Request, body io.ReadSeeker) {
+			ServeStreamContent(w, r, "video.mkv", time.Unix(1, 0), body)
+		})
+		if a.Code != b.Code || a.Header().Get("Content-Range") != b.Header().Get("Content-Range") || !bytes.Equal(a.Body.Bytes(), b.Body.Bytes()) {
+			t.Fatalf("%q code %d/%d", rangeHeader, a.Code, b.Code)
+		}
+	}
+}
+
+func TestBufferedStreamWriteTo(t *testing.T) {
+	data := bytes.Repeat([]byte("abcdefghijklmnopqrstuvwxyz"), 1000)
+	r := newBufferedStreamReader(bytes.NewReader(data), 128)
+	var dst bytes.Buffer
+	n, err := r.WriteTo(&dst)
+	if err != nil || n != int64(len(data)) || !bytes.Equal(dst.Bytes(), data) {
+		t.Fatalf("WriteTo n=%d err=%v len=%d", n, err, dst.Len())
+	}
+}
+
 func TestStreamBufferReadAndSeek(t *testing.T) {
 	data := bytes.Repeat([]byte("abcdefghijklmnopqrstuvwxyz"), 1000)
 	r := newBufferedStreamReader(bytes.NewReader(data), 4096)

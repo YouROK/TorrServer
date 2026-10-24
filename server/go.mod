@@ -3,13 +3,15 @@ module server
 go 1.25.7
 
 replace (
-	github.com/anacrolix/torrent v1.59.1 => github.com/tsynik/torrent v1.2.34
+	github.com/anacrolix/torrent v1.59.1 => github.com/lampac-nextgen/torrent v1.2.35
 	github.com/anacrolix/upnp v0.1.4 => github.com/tsynik/upnp v0.1.5
+	github.com/anacrolix/utp v0.2.0 => github.com/lampac-nextgen/utp v0.2.1
 )
 
 require (
 	github.com/agnivade/levenshtein v1.2.1
 	github.com/alexflint/go-arg v1.6.0
+	github.com/anacrolix/dht/v2 v2.24.0
 	github.com/anacrolix/dms v1.7.2
 	github.com/anacrolix/log v0.17.0
 	github.com/anacrolix/missinggo/v2 v2.10.0
@@ -52,7 +54,6 @@ require (
 	github.com/alecthomas/atomic v0.1.0-alpha2 // indirect
 	github.com/alexflint/go-scalar v1.2.0 // indirect
 	github.com/anacrolix/chansync v0.7.0 // indirect
-	github.com/anacrolix/dht/v2 v2.24.0 // indirect
 	github.com/anacrolix/envpprof v1.5.0 // indirect
 	github.com/anacrolix/ffprobe v1.1.0 // indirect
 	github.com/anacrolix/generics v0.2.0 // indirect

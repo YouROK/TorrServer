@@ -73,6 +73,7 @@ func Start(token string) error {
 	config.LoadConfig()
 	loadUserLangs()
 
+	httpClient := newTelegramHTTPClient()
 	pref := tele.Settings{
 		URL:   config.Cfg.HostTG,
 		Token: token,
@@ -86,7 +87,7 @@ func Start(token string) error {
 			},
 		},
 		ParseMode: tele.ModeHTML,
-		Client:    newTelegramHTTPClient(),
+		Client:    httpClient,
 	}
 
 	log.TLogln("tg bot starting")
@@ -294,10 +295,52 @@ func Start(token string) error {
 		return err
 	})
 
+	startBackgroundCleanups()
 	up.Start()
 
+	runningBot = b
+	botHTTP = httpClient
 	go b.Start()
 	return nil
+}
+
+// runningBot is the process bot, so Stop can end long-polling.
+var (
+	runningBot *tele.Bot
+	botHTTP    *http.Client
+	bgStop     chan struct{}
+)
+
+func startBackgroundCleanups() {
+	if bgStop != nil {
+		return
+	}
+	bgStop = make(chan struct{})
+	go searchCacheCleanup(bgStop)
+	go pendingInputCleanup(bgStop)
+	go pendingPresetCleanup(bgStop)
+}
+
+func stopBackgroundCleanups() {
+	if bgStop == nil {
+		return
+	}
+	close(bgStop)
+	bgStop = nil
+}
+
+// Stop ends the bot started by Start. A second call does nothing.
+func Stop() {
+	up.Stop()
+	stopBackgroundCleanups()
+	if runningBot != nil {
+		runningBot.Stop()
+		runningBot = nil
+	}
+	if botHTTP != nil {
+		botHTTP.CloseIdleConnections()
+		botHTTP = nil
+	}
 }
 
 func setBotProfile(b *tele.Bot) {

@@ -286,14 +286,16 @@ func isByteArraysEqualJson(a, b []byte) (bool, error) {
 	}
 	// Quick check: same length and byte equality
 	if len(a) == len(b) {
-		// Fast path: byte-by-byte comparison
+		identical := true
 		for i := range a {
 			if a[i] != b[i] {
-				break // Need to parse as JSON
+				identical = false
+				break
 			}
 		}
-		// If we get here, bytes are identical
-		return true, nil
+		if identical {
+			return true, nil
+		}
 	}
 	// Parse as JSON for structural comparison
 	var objectA, objectB interface{}

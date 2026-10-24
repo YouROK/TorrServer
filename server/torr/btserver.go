@@ -8,9 +8,13 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/anacrolix/dht/v2"
+	"github.com/anacrolix/dht/v2/krpc"
 	"github.com/anacrolix/publicip"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
@@ -29,8 +33,20 @@ type BTServer struct {
 
 	torrents map[metainfo.Hash]*Torrent
 
-	mu sync.RWMutex
+	mu        sync.RWMutex
+	dhtCtx    context.Context
+	dhtCancel context.CancelFunc
 }
+
+// dhtBootstrapHosts is resolved with a deadline in resolveDHTBootstrap.
+// Tests replace the slice. GlobalBootstrapAddrs is not used: it looks up with
+// context.Background and starts a refresher that never stops.
+var dhtBootstrapHosts = append([]string(nil), dht.DefaultGlobalBootstrapHostPorts...)
+
+const dhtBootstrapTimeout = 3 * time.Second
+
+// lookupDHTHost resolves one bootstrap name. Tests replace it.
+var lookupDHTHost = net.DefaultResolver.LookupIPAddr
 
 var privateIPBlocks []*net.IPNet
 
@@ -60,27 +76,47 @@ func NewBTS() *BTServer {
 }
 
 func (bt *BTServer) Connect() error {
-	utils.PrefetchTrackers()
-
 	bt.mu.Lock()
 	defer bt.mu.Unlock()
-	var err error
+	bt.shutdownLocked()
+	bt.dhtCtx, bt.dhtCancel = context.WithCancel(context.Background())
+	utils.PrefetchTrackers()
 	bt.configure()
-	bt.client, err = torrent.NewClient(bt.config)
+	client, err := torrent.NewClient(bt.config)
+	if err != nil {
+		bt.shutdownLocked()
+		return err
+	}
+	bt.client = client
 	bt.torrents = make(map[metainfo.Hash]*Torrent)
 	InitApiHelper(bt)
-
-	return err
+	return nil
 }
 
 func (bt *BTServer) Disconnect() {
 	bt.mu.Lock()
 	defer bt.mu.Unlock()
-	if bt.client != nil {
-		bt.client.Close()
-		bt.client = nil
-		utils.FreeOSMemGC()
+	bt.shutdownLocked()
+}
+
+func (bt *BTServer) shutdownLocked() {
+	utils.StopTrackers()
+	if bt.dhtCancel != nil {
+		bt.dhtCancel()
+		bt.dhtCancel = nil
+		bt.dhtCtx = nil
 	}
+	if bt.client == nil {
+		return
+	}
+	for _, s := range bt.client.DhtServers() {
+		if c, ok := s.(interface{ Close() }); ok {
+			c.Close()
+		}
+	}
+	bt.client.Close()
+	bt.client = nil
+	utils.FreeOSMemGC()
 }
 
 func (bt *BTServer) configure() {
@@ -112,6 +148,9 @@ func (bt *BTServer) configure() {
 	// bt.config.DisableWebseeds = false  //	NE
 	bt.config.NoDefaultPortForwarding = settings.BTsets.DisableUPNP
 	bt.config.NoDHT = settings.BTsets.DisableDHT
+	if !settings.BTsets.DisableDHT && bt.dhtCtx != nil {
+		bt.config.ConfigureAnacrolixDhtServer = bt.configureDHT
+	}
 	bt.config.DisablePEX = settings.BTsets.DisablePEX
 	bt.config.NoUpload = settings.BTsets.DisableUpload
 	bt.config.IPBlocklist = blocklist
@@ -287,6 +326,97 @@ func (bt *BTServer) RemoveTorrent(hash torrent.InfoHash) bool {
 		return torr.Close()
 	}
 	return false
+}
+
+func (bt *BTServer) configureDHT(cfg *dht.ServerConfig) {
+	want4, want6 := dhtSocketFamily(cfg.Conn)
+	if settings.BTsets == nil || !settings.BTsets.EnableIPv6 {
+		want6 = false
+	}
+	if !want4 && !want6 {
+		want4 = true
+	}
+	ctx := bt.dhtCtx
+	cfg.StartingNodes = func() ([]dht.Addr, error) {
+		addrs, err := resolveDHTBootstrap(ctx, dhtBootstrapHosts, want4, want6)
+		if err != nil || len(addrs) == 0 {
+			// Bootstrap returns before stopping its traversal when StartingNodes
+			// errors, which leaks that goroutine. One blackhole node lets it finish.
+			return []dht.Addr{dht.NewAddr(&net.UDPAddr{IP: net.IPv4(192, 0, 2, 1), Port: 1})}, nil
+		}
+		return addrs, nil
+	}
+	switch {
+	case want4 && !want6:
+		cfg.DefaultWant = []krpc.Want{krpc.WantNodes}
+	case want6 && !want4:
+		cfg.DefaultWant = []krpc.Want{krpc.WantNodes6}
+	}
+}
+
+func dhtSocketFamily(c net.PacketConn) (want4, want6 bool) {
+	if c == nil || c.LocalAddr() == nil {
+		return true, false
+	}
+	host, _, err := net.SplitHostPort(c.LocalAddr().String())
+	if err != nil {
+		return true, false
+	}
+	ip := net.ParseIP(host)
+	if ip == nil || ip.To4() != nil {
+		return true, false
+	}
+	return false, true
+}
+
+// resolveDHTBootstrap resolves bootstrap host:port pairs under ctx and one
+// extra deadline. want4/want6 drop the other family so an IPv4 socket does not
+// walk unreachable IPv6 routers.
+func resolveDHTBootstrap(ctx context.Context, hosts []string, want4, want6 bool) ([]dht.Addr, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(ctx, dhtBootstrapTimeout)
+	defer cancel()
+	// ponytail: sequential lookups share one deadline. Fan out if bootstrap latency matters.
+	var addrs []dht.Addr
+	for _, hp := range hosts {
+		if ctx.Err() != nil {
+			break
+		}
+		host, portStr, err := net.SplitHostPort(hp)
+		if err != nil {
+			continue
+		}
+		port, err := strconv.Atoi(portStr)
+		if err != nil || port < 1 || port > 65535 {
+			continue
+		}
+		if !want6 && strings.EqualFold(host, "router.silotis.us") {
+			continue
+		}
+		// One hung name must not consume the whole deadline.
+		hctx, hcancel := context.WithTimeout(ctx, time.Second)
+		ips, err := lookupDHTHost(hctx, host)
+		hcancel()
+		if err != nil {
+			continue
+		}
+		for _, ip := range ips {
+			is4 := ip.IP.To4() != nil
+			if (is4 && !want4) || (!is4 && !want6) {
+				continue
+			}
+			addrs = append(addrs, dht.NewAddr(&net.UDPAddr{IP: ip.IP, Port: port}))
+		}
+	}
+	if len(addrs) == 0 {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("no dht bootstrap nodes")
+	}
+	return addrs, nil
 }
 
 func isPrivateIP(ip net.IP) bool {
