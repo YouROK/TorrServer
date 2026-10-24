@@ -130,27 +130,6 @@ func (r *Reader) ReadContext(ctx context.Context, p []byte) (n int, err error) {
 	return
 }
 
-func (r *Reader) SetReadahead(length int64) {
-	if length < 0 {
-		length = 0
-	}
-	if r.cache != nil && length > r.cache.capacity {
-		length = r.cache.capacity
-	}
-	r.mu.Lock()
-	r.readahead = length
-	if r.next > r.readahead {
-		r.next = r.readahead
-	}
-	next, rah, zone := r.next, r.readahead, r.zone
-	rd := r.Reader
-	on := r.isUse && rd != nil
-	r.mu.Unlock()
-	if on {
-		applyReaderWindows(rd, next, rah, zone)
-	}
-}
-
 // SetZones stores the three download windows and pushes them while the reader is active.
 // A parked reader keeps the values for resume and does not ask the client to fetch.
 func (r *Reader) SetZones(next, readahead, zone int64) {

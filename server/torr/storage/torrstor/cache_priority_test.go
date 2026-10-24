@@ -16,35 +16,11 @@ func testBTSets(t *testing.T) {
 	t.Helper()
 	prev := settings.BTsets
 	settings.BTsets = &settings.BTSets{
-		ConnectionsLimit:         50,
 		ReaderReadAHead:          95,
 		TorrentDisconnectTimeout: 60,
 		CacheSize:                64 << 20,
 	}
 	t.Cleanup(func() { settings.BTsets = prev })
-}
-
-func TestPrioIDsToClearIsOAssigned(t *testing.T) {
-	const n = 50000
-	c := &Cache{
-		pieces:       make(map[int]*Piece, n),
-		activePieces: make(map[int]struct{}),
-		prioPieces:   map[int]struct{}{10: {}, 20: {}, 30: {}},
-		readers:      make(map[*Reader]struct{}),
-		pieceCount:   n,
-		pieceLength:  1 << 20,
-	}
-	for i := 0; i < n; i++ {
-		c.pieces[i] = &Piece{Id: i, cache: c}
-	}
-	ids := c.prioIDsToClear(nil)
-	if len(ids) != 3 {
-		t.Fatalf("clearPriority must visit assigned ids only, got %d", len(ids))
-	}
-	c.clearPriority()
-	if len(c.prioPieces) != 0 {
-		t.Fatalf("expected prioPieces cleared, got %d", len(c.prioPieces))
-	}
 }
 
 func TestGetRemPiecesUsesActivePiecesOnly(t *testing.T) {
@@ -53,7 +29,6 @@ func TestGetRemPiecesUsesActivePiecesOnly(t *testing.T) {
 	c := &Cache{
 		pieces:       make(map[int]*Piece, n),
 		activePieces: make(map[int]struct{}),
-		prioPieces:   make(map[int]struct{}),
 		readers:      make(map[*Reader]struct{}),
 		pieceCount:   n,
 		pieceLength:  1 << 20,
@@ -118,7 +93,6 @@ func TestGetStateWithActiveReaderDoesNotDeadlock(t *testing.T) {
 	c := &Cache{
 		pieces:       make(map[int]*Piece),
 		activePieces: make(map[int]struct{}),
-		prioPieces:   make(map[int]struct{}),
 		readers:      make(map[*Reader]struct{}),
 		pieceCount:   10,
 		pieceLength:  1024,
@@ -241,7 +215,6 @@ func TestEmptyRangesKeepFileStart(t *testing.T) {
 	c := &Cache{
 		pieces:       make(map[int]*Piece),
 		activePieces: make(map[int]struct{}),
-		prioPieces:   make(map[int]struct{}),
 		readers:      make(map[*Reader]struct{}),
 		pieceCount:   100,
 		pieceLength:  1 << 20,
@@ -271,7 +244,6 @@ func TestDoNotEvictHashPendingPiece(t *testing.T) {
 	c := &Cache{
 		pieces:       make(map[int]*Piece),
 		activePieces: make(map[int]struct{}),
-		prioPieces:   make(map[int]struct{}),
 		readers:      make(map[*Reader]struct{}),
 		pieceCount:   100,
 		pieceLength:  plen,
@@ -285,28 +257,6 @@ func TestDoNotEvictHashPendingPiece(t *testing.T) {
 	for _, p := range rem {
 		if p.Id == 50 {
 			t.Fatal("fully written incomplete piece must not be released during hash")
-		}
-	}
-}
-
-func TestDoNotEvictPrioPieces(t *testing.T) {
-	testBTSets(t)
-	c := &Cache{
-		pieces:       make(map[int]*Piece),
-		activePieces: make(map[int]struct{}),
-		prioPieces:   map[int]struct{}{50: {}},
-		readers:      make(map[*Reader]struct{}),
-		pieceCount:   100,
-		pieceLength:  1 << 20,
-		capacity:     64 << 20,
-	}
-	c.pieces[50] = &Piece{Id: 50, Size: 100, cache: c}
-	c.notePieceFilled(50)
-
-	rem := c.getRemPieces()
-	for _, p := range rem {
-		if p.Id == 50 {
-			t.Fatal("piece with assigned priority must not be evicted")
 		}
 	}
 }

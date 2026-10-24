@@ -38,10 +38,6 @@ type Cache struct {
 	activePieces map[int]struct{}
 	muActive     sync.Mutex
 
-	// prioPieces tracks ids we assigned a non-None priority so clearPriority
-	// is O(assigned) instead of O(pieceCount). Guarded by muPrio.
-	prioPieces map[int]struct{}
-
 	readers   map[*Reader]struct{}
 	muReaders sync.Mutex
 
@@ -50,11 +46,8 @@ type Cache struct {
 	// goroutine per dropped torrent.
 	stopWatch chan struct{}
 	muRemove  sync.Mutex
-	// muPrio serializes clearPriority so a closing reader cannot clear a piece
-	// another reader still has in its range.
-	muPrio  sync.Mutex
-	torrent *torrent.Torrent
-	muTor   sync.Mutex
+	torrent   *torrent.Torrent
+	muTor     sync.Mutex
 }
 
 func NewCache(capacity int64, storage *Storage) *Cache {
@@ -62,7 +55,6 @@ func NewCache(capacity int64, storage *Storage) *Cache {
 		capacity:     capacity,
 		pieces:       make(map[int]*Piece),
 		activePieces: make(map[int]struct{}),
-		prioPieces:   make(map[int]struct{}),
 		storage:      storage,
 		readers:      make(map[*Reader]struct{}),
 		stopWatch:    make(chan struct{}),
@@ -244,10 +236,6 @@ func (c *Cache) Close() error {
 	c.muActive.Lock()
 	c.activePieces = nil
 	c.muActive.Unlock()
-
-	c.muPrio.Lock()
-	c.prioPieces = nil
-	c.muPrio.Unlock()
 
 	utils.FreeOSMemGCThrottled()
 	return nil
@@ -502,13 +490,6 @@ func (c *Cache) getRemPieces() []*Piece {
 	}
 	c.muActive.Unlock()
 
-	c.muPrio.Lock()
-	prio := make(map[int]struct{}, len(c.prioPieces))
-	for id := range c.prioPieces {
-		prio[id] = struct{}{}
-	}
-	c.muPrio.Unlock()
-
 	piecesRemove := make([]*Piece, 0)
 	fill := int64(0)
 
@@ -525,12 +506,10 @@ func (c *Cache) getRemPieces() []*Piece {
 		if sz > 0 {
 			fill += sz
 		}
-		if c.pieceEvictable(p, ranges, prio) {
+		if c.pieceEvictable(p, ranges) {
 			piecesRemove = append(piecesRemove, p)
 		}
 	}
-
-	c.clearPriority()
 
 	// Complete pieces first, oldest first; a piece still downloading goes last. The torrent
 	// client never re-requests chunks it has received, so evicting their bytes makes a
@@ -554,7 +533,7 @@ func (c *Cache) getRemPieces() []*Piece {
 // Pieces being hashed (full Size, not yet Complete) must not be dropped —
 // ReadAt would then return a short copy and anacrolix logs
 // "unexpected error hashing piece ... %!s(<nil>)".
-func (c *Cache) pieceEvictable(p *Piece, ranges []Range, prio map[int]struct{}) bool {
+func (c *Cache) pieceEvictable(p *Piece, ranges []Range) bool {
 	if p == nil {
 		return false
 	}
@@ -564,9 +543,6 @@ func (c *Cache) pieceEvictable(p *Piece, ranges []Range, prio map[int]struct{}) 
 	}
 	plen := c.pieceByteLength(p.Id)
 	if plen > 0 && sz >= plen && !complete {
-		return false
-	}
-	if _, ok := prio[p.Id]; ok {
 		return false
 	}
 	if inRanges(ranges, p.Id) || c.isIdInKeepWindow(p.Id, ranges) {
@@ -696,52 +672,6 @@ func (c *Cache) CloseReader(r *Reader) {
 	r.cache.muReaders.Unlock()
 	// Reader.Close already runs getRemPieces. Rebalance the readers that remain.
 	r.cache.AdjustRA(ReaderReadaheadBytes)
-}
-
-func (c *Cache) clearPriority() {
-	if c.isClosed.Load() {
-		return
-	}
-	// Explicit None does not override a reader tier. This only drops priorities
-	// that were stored on the piece itself.
-	c.muPrio.Lock()
-	defer c.muPrio.Unlock()
-	ranges := make([]Range, 0)
-	for _, r := range c.snapshotReaders() {
-		if r.closed() {
-			continue
-		}
-		r.checkReader()
-		if r.using() {
-			ranges = append(ranges, r.getPiecesRange())
-		}
-	}
-	ranges = mergeRange(ranges)
-
-	ids := c.prioIDsToClear(ranges)
-	for _, id := range ids {
-		if c.isClosed.Load() {
-			return
-		}
-		if tor := c.torrentPtr(); tor != nil && tor.PieceState(id).Priority != torrent.PiecePriorityNone {
-			tor.Piece(id).SetPriority(torrent.PiecePriorityNone)
-		}
-		delete(c.prioPieces, id)
-	}
-}
-
-func (c *Cache) prioIDsToClear(ranges []Range) []int {
-	ids := make([]int, 0, len(c.prioPieces))
-	for id := range c.prioPieces {
-		if c.isClosed.Load() {
-			return nil
-		}
-		if len(ranges) > 0 && inRanges(ranges, id) {
-			continue
-		}
-		ids = append(ids, id)
-	}
-	return ids
 }
 
 func (c *Cache) GetCapacity() int64 {
