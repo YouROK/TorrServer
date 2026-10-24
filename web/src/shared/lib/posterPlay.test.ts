@@ -157,8 +157,11 @@ describe('posterPlay', () => {
     expect(streamPlayUrl('deadbeef', { id: 2, path: 'folder/video.mkv' })).toBe(
       'https://ts.example:8443/stream/video.mkv?link=deadbeef&index=2&play',
     )
+    expect(streamPlayUrl('ab&cd', { id: 1, path: 'a#b?.mkv' })).toBe(
+      'https://ts.example:8443/stream/a%23b%3F.mkv?link=ab%26cd&index=1&play',
+    )
     expect(torrentPlaylistUrl('deadbeef', 'My Show')).toBe(
-      'https://ts.example:8443/stream/My%20Show.m3u?link=deadbeef&m3u',
+      'https://ts.example:8443/stream/My%20Show.m3u?link=deadbeef&m3u&fn=file.m3u',
     )
   })
 })

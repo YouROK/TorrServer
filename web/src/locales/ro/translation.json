@@ -316,6 +316,7 @@
   "Save": "Salvați",
   "Saved": "Salvat",
   "SavedWithoutStorage": "Salvat (backend-urile de stocare neschimbate)",
+  "SettingsReadOnly": "Serverul este doar în citire. Setările nu au fost salvate.",
   "Search": {
     "AllTrackers": "Toate trackerele",
     "NoResults": "Niciun rezultat",

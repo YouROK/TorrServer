@@ -10,7 +10,7 @@ const isGettingInfo = (list: TorrentStat[] | undefined) => Boolean(list?.some(to
 export function useTorrentsQuery(options?: { enabled?: boolean }): UseQueryResult<TorrentStat[], Error> {
   return useQuery({
     queryKey: TORRENTS_QUERY_KEY,
-    queryFn: getTorrents,
+    queryFn: ({ signal }) => getTorrents(signal),
     retry: 1,
     enabled: options?.enabled ?? true,
     refetchInterval: query => {

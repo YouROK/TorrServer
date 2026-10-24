@@ -7,7 +7,7 @@ import ptt from 'parse-torrent-title'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import type { BTSets, PlayableFile, TorrentFileStat } from 'shared/api/types'
-import { streamHost } from 'shared/api/hosts'
+import { streamPlayUrl } from 'shared/lib/posterPlay'
 import { getSettings, SETTINGS_QUERY_KEY } from 'shared/api/settings'
 import { getTorrent } from 'shared/api/torrents'
 import { listViewedEntries, VIEWED_QUERY_KEY } from 'shared/api/viewed'
@@ -46,9 +46,6 @@ interface ActivePlayer {
 }
 
 const fileBaseName = (path: string): string => path.split('\\').pop()?.split('/').pop() || path
-
-const fileStreamUrl = (hash: string, file: Pick<PlayableFile, 'id' | 'path'>): string =>
-  `${streamHost()}/${encodeURIComponent(fileBaseName(file.path))}?link=${hash}&index=${file.id}&play`
 
 /** Parses a file's episode code ("S01E03") and title from its path, falling back to the raw name. */
 const fileEpisodeInfo = (path: string, index: number): { code: string; title: string } => {
@@ -186,7 +183,7 @@ export function usePlayLauncher({
   ) => {
     const trackTimecode = await ensureTrackTimecode()
     const useHls = shouldUseGStreamerPlayer(file.path, gstRuntime)
-    const directStream = fileStreamUrl(hash, file)
+    const directStream = streamPlayUrl(hash, file)
     // Progressive needs /subs (WebVTT + ASS/SSA). HLS external tracks come from GST.
     const captionSrc = useHls ? '' : await resolveCaptionSrc(hash, file.id, i18n.language)
     const override = timecodeOverride ?? pendingTimecodeRef.current
@@ -375,7 +372,7 @@ export function usePlayLauncher({
                       <Button
                         key={file.id}
                         variant='ghost'
-                        className='h-auto w-full flex-col items-start justify-start gap-0.5 px-3 py-2.5'
+                        className='h-auto w-full flex-col items-start justify-start gap-0.5 px-3 py-2.5 [content-visibility:auto] [contain-intrinsic-size:auto_3.25rem]'
                         isPending={pending}
                         onPress={() => pickFileFromList(file)}
                       >

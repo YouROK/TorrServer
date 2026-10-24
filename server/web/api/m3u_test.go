@@ -174,3 +174,15 @@ func TestStatusFromSpecMatchesTorrentFileIDs(t *testing.T) {
 		}
 	}
 }
+
+func TestSafeAttachmentName(t *testing.T) {
+	if got := safeAttachmentName("Show.m3u"); got != "Show.m3u" {
+		t.Fatalf("plain name %q", got)
+	}
+	if got := safeAttachmentName("a\"\r\nX: 1.m3u"); got != "aX: 1.m3u" {
+		t.Fatalf("stripped %q", got)
+	}
+	if got := safeAttachmentName("  \r\n"); got != "playlist.m3u" {
+		t.Fatalf("empty %q", got)
+	}
+}

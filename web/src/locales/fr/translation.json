@@ -316,6 +316,7 @@
   "Save": "Enregistrer",
   "Saved": "Enregistré",
   "SavedWithoutStorage": "Enregistré (backends de stockage inchangés)",
+  "SettingsReadOnly": "Le serveur est en lecture seule. Les paramètres n'ont pas été enregistrés.",
   "Search": {
     "AllTrackers": "Tous les trackers",
     "NoResults": "Aucun résultat",

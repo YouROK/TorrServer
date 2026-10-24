@@ -107,6 +107,7 @@ export interface BTSets {
   ShowFSActiveTorr?: boolean
   TrackTimecode?: boolean
   StoreSettingsInJson?: boolean
+  StoreViewedInJson?: boolean
   [key: string]: unknown
 }
 

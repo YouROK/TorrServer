@@ -128,10 +128,23 @@ export const magnetFromHash = (hash: string, displayName: string): string =>
 
 const fileBaseName = (path: string): string => path.split('\\').pop()?.split('/').pop() || path
 
-/** Direct play stream URL (relative to the current origin when used with `new URL(..., location)`). */
-export const streamPlayUrl = (hash: string, file: { id: number; path: string }): string =>
-  `${streamHost()}/${encodeURIComponent(fileBaseName(file.path))}?link=${hash}&index=${file.id}&play`
+/** Query string for `/stream`. Flag keys (`play`, `m3u`) stay valueless — Gin `GetQuery` only checks presence. */
+const streamQuery = (hash: string, params: Record<string, string>, flags: readonly string[]): string => {
+  const query = new URLSearchParams({ link: hash, ...params }).toString()
+  return flags.length ? `${query}&${flags.join('&')}` : query
+}
 
-/** M3U playlist URL for the whole torrent (same shape as Download playlist). */
+/** Direct play stream URL. Path segment and `link` are encoded (`#`, `?`, `&`, `%`, non-ASCII). */
+export const streamPlayUrl = (hash: string, file: { id: number; path: string }): string =>
+  `${streamHost()}/${encodeURIComponent(fileBaseName(file.path))}?${streamQuery(hash, { index: String(file.id) }, ['play'])}`
+
+/** Buffer a file without opening it (`GET /stream?…&preload`). */
+export const streamPreloadUrl = (hash: string, fileId: number): string =>
+  `${streamHost()}?${streamQuery(hash, { index: String(fileId) }, ['preload'])}`
+
+/**
+ * M3U playlist URL for the whole torrent.
+ * `fn=file.m3u` matches server `all.m3u` entries — ForkPlayer mishandles a link whose path ends in `.m3u`.
+ */
 export const torrentPlaylistUrl = (hash: string, displayName: string): string =>
-  `${playlistTorrHost()}/${encodeURIComponent(displayName)}.m3u?link=${hash}&m3u`
+  `${playlistTorrHost()}/${encodeURIComponent(displayName)}.m3u?${streamQuery(hash, {}, ['m3u', 'fn=file.m3u'])}`

@@ -66,14 +66,18 @@ export function applyAuthToAxios(): void {
   axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest'
 }
 
-/** Same-origin media URL with userinfo so `<video src>` sends Basic without native dialog. */
+/**
+ * Media URL with userinfo so `<video src>` and external players send Basic without a native dialog.
+ * Same hostname only (port and scheme may differ — HTTP media vs the HTTPS UI). Other hosts are left alone.
+ */
 export function withAuthMediaUrl(url: string): string {
   const creds = getStoredCredentials()
   if (!creds) return url
   try {
-    const origin = typeof window !== 'undefined' ? window.location.origin : undefined
-    const parsed = new URL(url, origin)
-    if (origin && parsed.origin !== origin) return url
+    const page = typeof window !== 'undefined' ? window.location : undefined
+    const parsed = new URL(url, page?.href)
+    if (!page?.hostname || parsed.hostname !== page.hostname) return url
+    if (parsed.username || parsed.password) return parsed.toString()
     parsed.username = creds.username
     parsed.password = creds.password
     return parsed.toString()

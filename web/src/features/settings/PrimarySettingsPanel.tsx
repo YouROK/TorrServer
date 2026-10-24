@@ -89,7 +89,10 @@ export default function PrimarySettingsPanel({
             minValue={CACHE_SIZE_MIN_MB}
             maxValue={CACHE_SIZE_SLIDER_MAX_MB}
             step={16}
-            onChange={value => onCacheSizeMb(Number(value))}
+            onChange={value => {
+              const n = Number(value)
+              if (Number.isFinite(n)) onCacheSizeMb(Math.round(n))
+            }}
           >
             <Slider.Track>
               <Slider.Fill className='bg-accent' />
@@ -110,7 +113,11 @@ export default function PrimarySettingsPanel({
             value={settings.ReaderReadAHead ?? 95}
             minValue={5}
             maxValue={100}
-            onChange={value => onUpdate('ReaderReadAHead', Number(value))}
+            step={1}
+            onChange={value => {
+              const n = Number(value)
+              if (Number.isFinite(n)) onUpdate('ReaderReadAHead', Math.round(n))
+            }}
           >
             <Slider.Track>
               <Slider.Fill className='bg-accent' />
@@ -130,7 +137,11 @@ export default function PrimarySettingsPanel({
             value={preloadPct}
             minValue={0}
             maxValue={100}
-            onChange={value => onUpdate('PreloadCache', Number(value))}
+            step={1}
+            onChange={value => {
+              const n = Number(value)
+              if (Number.isFinite(n)) onUpdate('PreloadCache', Math.round(n))
+            }}
           >
             <Slider.Track>
               <Slider.Fill className='bg-accent' />

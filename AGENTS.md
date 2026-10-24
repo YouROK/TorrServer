@@ -30,7 +30,34 @@ The React UI is `web/` (Yarn, Vite). The binary serves a generated copy under `s
 
 A new or changed string belongs in `web/src/locales`. `yarn i18n:check` requires the same flattened keys in `en`, `ru`, `ua`, `bg`, `fr`, `ro`, and `zh`, as nested objects.
 
-When `web/src` changes, CI runs `yarn typecheck`, `yarn lint`, `yarn test`, `yarn i18n:check`, `yarn test:e2e`, and `yarn build`.
+When `web/src` changes, CI runs `yarn typecheck`, `yarn lint`, `yarn test`, `yarn i18n:check`, `yarn test:e2e`, and `yarn build`. From `web/`: `yarn typecheck`, `yarn lint`, `yarn test`, `yarn i18n:check`. Embed with `make webgen` (`go run gen_web.go`) or `make webgen-clean` (deletes `web/build` first). Do not pass `VITE_SERVER_HOST` pointing at localhost into a production `yarn build` — `web/vite.config.ts` refuses it.
+
+Web client map (source of truth is `web/src`, not the embedded copy):
+
+| Path | Role |
+| --- | --- |
+| `web/src/shared/hooks/useTorrentsQuery.ts` | Library poll. `queryFn` must take React Query's `signal`. `refetchIntervalInBackground` stays default false, so a hidden tab does not hit `/torrents`. The `document.hidden` branch only matters after a recompute. |
+| `web/src/shared/hooks/useTorrentDetail.ts` | Details poll. Same signal rule. Mirrors rows into `TORRENTS_QUERY_KEY` via `upsertTorrentsInList`. |
+| `web/src/shared/cache/useUpdateCache.ts` | `/cache` snake poll. `setTimeout` after the response (not `setInterval`). Aborts on unmount. Pauses while `document.hidden`. Active 100ms, idle 1s. |
+| `web/src/shared/lib/posterPlay.ts` | `streamPlayUrl`, `streamPreloadUrl`, `torrentPlaylistUrl`. Path uses `encodeURIComponent`. `link` goes through `URLSearchParams`. Playlist query includes `m3u` and `fn=file.m3u` (ForkPlayer). |
+| `web/src/shared/lib/mediaBase.ts` | `externalLink` swaps scheme/host/port from `GET /mediabase`, then `withAuthMediaUrl`. |
+| `web/src/shared/api/authCredentials.ts` | `withAuthMediaUrl` adds Basic userinfo only when `hostname` matches the page (port and scheme may differ). Do not put the password on another host. |
+| `web/src/shared/api/settings.ts` | `sanitizeBTSetsForWire` before `POST /settings`. `CacheSize` is bytes on the wire. The dialog keeps megabytes in component state (`SettingsDialog`). |
+| `web/src/features/settings/SettingsDialog.tsx` | Save stays disabled until `GET /settings` succeeds. `403` is read-only. |
+| `web/src/features/details/FilesDataGrid.tsx` | File rows. `content-visibility: auto` so a 500-file pack does not lay out every row. |
+| `web/src/index.tsx` | `refetchOnWindowFocus: false` globally. Do not add a second poller. |
+
+API contracts the UI depends on:
+
+- `POST /settings` with `action: set` and a nil `sets` is `400`. Read-only `set` and `def` are `403` `{"error":"Read-only mode"}` and must not call `restartServices`. `CacheSize` `0` is rewritten to 64MiB in `SetBTSets`. Integer fields reject JSON floats (`encoding/json` into `int` fails the whole body).
+- `GET /stream` and `GET /stream/*fname` both exist. Preload is `/stream?link&index&preload` (no filename). Play is `/stream/<file>?link&index&play`. `link` is an infohash in the UI; a magnet in that query has to be encoded or `&dn` / `&tr` split it.
+- `GET /mediabase` is the external-player origin. In-page `<video>` stays on the page origin.
+- `BTSets.StoreViewedInJson` is not a settings-form control. Storage backend is `GET/POST /storage/settings` (`json` or `bbolt`). Round-trip the field if it arrived on `GET /settings`.
+- TMDB search URL is built in `web/src/shared/lib/torrentHelpers.ts` (`buildTmdbSearchUrl`). The server default `APIURL` is `https://api.themoviedb.org` without `/3`. The client appends `/3/search/multi`.
+- Service worker: `web/vite.config.ts` `navigateFallbackDenylist` must include every API prefix (`/stream`, `/torrents`, `/cache`, `/settings`, `/echo`, `/viewed`, `/gst`, `/ffp`, `/playlistall`, `/runtime`, `/ssl`, `/mediabase`, …). `server/web/pages/template/route.go` sends `no-cache` for `index.html`, `sw.js`, and `workbox-*`, and `immutable` for `/static/`.
+- MSX `/msx/proxy?url=` is an intentional open proxy (tests fetch `127.0.0.1`). Do not "close" it without an MSX replacement. `http.Client` only speaks http(s).
+
+`POST /torrents` actions the UI sends: `list`, `get`, `add`, `set`, `drop`, `rem`, `wipe`. `drop` keeps the DB row (`IN_DB`). An empty handler return is HTTP 200.
 
 ## Package map
 

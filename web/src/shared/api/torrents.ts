@@ -88,20 +88,26 @@ export const refreshTorrentsList = async (
 }
 
 /** List torrents; attaches HTTP `status` on the thrown Error for auth/offline UI. */
-export const getTorrents = async (): Promise<TorrentStat[]> => {
+const rethrowAbort = (err: unknown, signal?: AbortSignal): void => {
+  if (signal?.aborted || axios.isCancel(err)) throw err
+}
+
+export const getTorrents = async (signal?: AbortSignal): Promise<TorrentStat[]> => {
   try {
-    const { data } = await axios.post<TorrentStat[]>(torrentsHost(), { action: 'list' })
+    const { data } = await axios.post<TorrentStat[]>(torrentsHost(), { action: 'list' }, { signal })
     return data
   } catch (err) {
+    rethrowAbort(err, signal)
     throw torrentApiError(err, 'Failed to load torrents')
   }
 }
 
-export const getTorrent = async (hash: string): Promise<TorrentStat> => {
+export const getTorrent = async (hash: string, signal?: AbortSignal): Promise<TorrentStat> => {
   try {
-    const { data } = await axios.post<TorrentStat>(torrentsHost(), { action: 'get', hash })
+    const { data } = await axios.post<TorrentStat>(torrentsHost(), { action: 'get', hash }, { signal })
     return data
   } catch (err) {
+    rethrowAbort(err, signal)
     throw torrentApiError(err, 'Failed to get torrent')
   }
 }

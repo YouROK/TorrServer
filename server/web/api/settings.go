@@ -47,11 +47,23 @@ func settings(c *gin.Context) {
 		c.JSON(200, sets.BTsets)
 		return
 	case "set":
+		if sets.ReadOnly {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Read-only mode"})
+			return
+		}
+		if req.Sets == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "sets is empty"})
+			return
+		}
 		torr.SetSettings(req.Sets)
 		restartServices()
 		c.Status(200)
 		return
 	case "def":
+		if sets.ReadOnly {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Read-only mode"})
+			return
+		}
 		torr.SetDefSettings()
 		restartServices()
 		c.Status(200)

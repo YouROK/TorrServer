@@ -52,6 +52,7 @@ export const useUpdateCache = (hash?: string, options?: UseUpdateCacheOptions) =
     }
 
     let cancelled = false
+    let controller: AbortController | null = null
     // Per-run flag on purpose: a ref shared across runs left the chain dead when
     // the effect restarted (fast/hash change, StrictMode) while a request was in
     // flight — the new run skipped its fetch and the old run refused to reschedule.
@@ -67,8 +68,9 @@ export const useUpdateCache = (hash?: string, options?: UseUpdateCacheOptions) =
       if (cancelled || inFlight) return
       if (document.hidden) return
       inFlight = true
+      controller = new AbortController()
       axios
-        .post(cacheHost(), { action: 'get', hash })
+        .post(cacheHost(), { action: 'get', hash }, { signal: controller.signal })
         .then(({ data }) => {
           if (cancelled) return
           const next = (data || {}) as TorrentCache
@@ -87,8 +89,8 @@ export const useUpdateCache = (hash?: string, options?: UseUpdateCacheOptions) =
           writeSnakeCache(hash, next)
           setCache(next)
         })
-        .catch(() => {
-          if (cancelled) return
+        .catch((err: unknown) => {
+          if (cancelled || axios.isCancel(err)) return
           pollMs.current = CACHE_POLL_IDLE_MS
         })
         .finally(() => {
@@ -111,6 +113,7 @@ export const useUpdateCache = (hash?: string, options?: UseUpdateCacheOptions) =
 
     return () => {
       cancelled = true
+      controller?.abort()
       if (timerID.current) clearTimeout(timerID.current)
       document.removeEventListener('visibilitychange', onVisibility)
     }

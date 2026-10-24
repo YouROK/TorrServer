@@ -14,8 +14,8 @@ export function useTorrentDetail(hash: string | undefined, initial?: TorrentStat
 
   return useQuery({
     queryKey: ['torrent', hash],
-    queryFn: async () => {
-      const data = await getTorrent(hash!)
+    queryFn: async ({ signal }) => {
+      const data = await getTorrent(hash!, signal)
       // Keep library cards in lockstep while metadata resolves.
       if (queryClient.getQueryData(TORRENTS_QUERY_KEY)) {
         upsertTorrentsInList(queryClient, data)

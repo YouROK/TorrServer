@@ -4,7 +4,7 @@ import ptt from 'parse-torrent-title'
 import { useMediaQuery } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { streamHost } from 'shared/api/hosts'
+import { streamPlayUrl, streamPreloadUrl } from 'shared/lib/posterPlay'
 import { authFetch } from 'shared/api/authCredentials'
 import type { PlayableFile, TorrentFileStat } from 'shared/api/types'
 import { remViewedFile, VIEWED_QUERY_KEY } from 'shared/api/viewed'
@@ -83,9 +83,8 @@ function EpisodeRow({
 
   return (
     <div
-      className={`flex flex-col gap-1.5 rounded-lg border border-border border-l-[3px] bg-surface px-2.5 py-2 sm:gap-0 sm:rounded-xl sm:px-3 sm:py-2 ${
-        row.viewed ? 'border-l-accent/40 opacity-80' : 'border-l-accent'
-      }`}
+      className={`flex flex-col gap-1.5 rounded-lg border border-border border-l-[3px] bg-surface px-2.5 py-2 [content-visibility:auto] [contain-intrinsic-size:auto_3.25rem] sm:gap-0 sm:rounded-xl sm:px-3 sm:py-2 ${row.viewed ? 'border-l-accent/40 opacity-80' : 'border-l-accent'
+        }`}
     >
       <div className='flex items-start gap-2 sm:items-center sm:gap-3'>
         <div className='flex min-w-0 flex-1 items-center gap-2 sm:gap-3'>
@@ -196,12 +195,7 @@ const FilesDataGrid = memo(
       }
     }
 
-    const preloadBuffer = (fileId: number) => void authFetch(`${streamHost()}?link=${hash}&index=${fileId}&preload`)
-
-    const buildFileLink = (path: string, id: number) => {
-      const fileName = path.split('\\').pop()!.split('/').pop()!
-      return `${streamHost()}/${encodeURIComponent(fileName)}?link=${hash}&index=${id}&play`
-    }
+    const preloadBuffer = (fileId: number) => void authFetch(streamPreloadUrl(hash, fileId))
 
     const fileHasEpisodeText = !!playableFileList?.find(({ path }) => ptt.parse(path).episode)
     const shouldDisplayFullFileName = (playableFileList?.length ?? 0) > 1 && !fileHasEpisodeText
@@ -218,7 +212,7 @@ const FilesDataGrid = memo(
       () =>
         filteredFiles.map(file => {
           const parsed = ptt.parse(file.path)
-          const link = buildFileLink(file.path, file.id)
+          const link = streamPlayUrl(hash, file)
           const useGStreamer = shouldUseGStreamerPlayer(file.path, gstRuntime)
           const playerKey = `${file.id}:${useGStreamer ? 'gst' : 'stream'}`
           const fullLink = externalLink(link, mediaBase).toString()
@@ -244,7 +238,6 @@ const FilesDataGrid = memo(
             playable: file,
           }
         }),
-      // eslint-disable-next-line react-hooks/exhaustive-deps -- link builders close over hash/gstRuntime/mediaBase
       [filteredFiles, viewedFileList, shouldDisplayFullFileName, hash, gstRuntime, mediaBase],
     )
 

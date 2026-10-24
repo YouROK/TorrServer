@@ -26,7 +26,13 @@ describe('authCredentials', () => {
       clear: () => memory.clear(),
     })
     vi.stubGlobal('window', {
-      location: { origin: 'http://127.0.0.1:8090', protocol: 'http:', pathname: '/' },
+      location: {
+        origin: 'http://127.0.0.1:8090',
+        href: 'http://127.0.0.1:8090/',
+        protocol: 'http:',
+        hostname: '127.0.0.1',
+        pathname: '/',
+      },
       assign: vi.fn(),
     })
   })
@@ -51,6 +57,14 @@ describe('authCredentials', () => {
     setCredentials('u', 'p')
     const url = withAuthMediaUrl('http://127.0.0.1:8090/stream?link=abc&index=1&play')
     expect(url).toBe('http://u:p@127.0.0.1:8090/stream?link=abc&index=1&play')
+  })
+
+  it('injects userinfo when only the port differs and refuses another host', () => {
+    setCredentials('u', 'p')
+    expect(withAuthMediaUrl('https://127.0.0.1:8091/stream?link=abc&play')).toBe(
+      'https://u:p@127.0.0.1:8091/stream?link=abc&play',
+    )
+    expect(withAuthMediaUrl('http://evil.test/stream?link=abc&play')).toBe('http://evil.test/stream?link=abc&play')
   })
 
   it('applyAuthToAxios sets X-Requested-With without credentials', () => {

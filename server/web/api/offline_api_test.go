@@ -251,15 +251,16 @@ func TestOfflineAPI(t *testing.T) {
 		t.Fatal(w.Body)
 	}
 	set.ReadOnly = true
-	if w := do(http.MethodPost, "/settings", `{"action":"set","sets":`+do(http.MethodPost, "/settings", `{"action":"get"}`, nil).Body.String()+`}`, nil); w.Code != 200 {
-		t.Fatalf("set settings %d", w.Code)
+	if w := do(http.MethodPost, "/settings", `{"action":"set","sets":`+do(http.MethodPost, "/settings", `{"action":"get"}`, nil).Body.String()+`}`, nil); w.Code != http.StatusForbidden {
+		t.Fatalf("readonly set settings %d %s", w.Code, w.Body)
 	}
-	rutor.Stop()
-	if w := do(http.MethodPost, "/settings", `{"action":"def"}`, nil); w.Code != 200 {
-		t.Fatal("def")
+	if w := do(http.MethodPost, "/settings", `{"action":"def"}`, nil); w.Code != http.StatusForbidden {
+		t.Fatalf("readonly def settings %d %s", w.Code, w.Body)
 	}
-	rutor.Stop()
 	set.ReadOnly = false
+	if w := do(http.MethodPost, "/settings", `{"action":"set"}`, nil); w.Code != http.StatusBadRequest {
+		t.Fatalf("nil sets %d %s", w.Code, w.Body)
+	}
 	if w := do(http.MethodPost, "/settings", `{"action":""}`, nil); w.Code < 400 {
 		t.Fatal("empty settings")
 	}
