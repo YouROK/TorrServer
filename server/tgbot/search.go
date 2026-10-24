@@ -37,7 +37,10 @@ func runSearchQuery(c tele.Context, query string) error {
 	if query == "" {
 		return c.Send(tr(c.Sender().ID, "search_usage"))
 	}
-	if sets.BTsets == nil || (!sets.BTsets.EnableRutorSearch && !sets.BTsets.EnableTorznabSearch) {
+	// Snapshot before go. SetBTSets replaces BTsets while the search runs.
+	rutorOn := sets.BTsets != nil && sets.BTsets.EnableRutorSearch
+	torznabOn := sets.BTsets != nil && sets.BTsets.EnableTorznabSearch
+	if !rutorOn && !torznabOn {
 		return c.Send(tr(c.Sender().ID, "search_disabled_rutor"))
 	}
 	uid := c.Sender().ID
@@ -48,10 +51,10 @@ func runSearchQuery(c tele.Context, query string) error {
 	}
 	go func() {
 		var list []*models.TorrentDetails
-		if sets.BTsets != nil && sets.BTsets.EnableRutorSearch {
+		if rutorOn {
 			list = append(list, rutorSearch(query)...)
 		}
-		if sets.BTsets != nil && sets.BTsets.EnableTorznabSearch {
+		if torznabOn {
 			list = append(list, torznabSearch(context.Background(), query, -1, "", 0, 0)...)
 		}
 		source := "RuTor+Torznab"
