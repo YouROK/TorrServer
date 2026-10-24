@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
 	"net"
@@ -175,8 +176,9 @@ func sendM3U(c *gin.Context, name, hash string, m3u string) {
 	c.Header("Content-Type", "audio/x-mpegurl")
 	c.Header("Connection", "close")
 	if hash != "" {
-		etag := hex.EncodeToString([]byte(fmt.Sprintf("%s/%s", hash, name)))
-		c.Header("ETag", httptoo.EncodeQuotedString(etag))
+		// The list changes with titles, viewed files and settings, so the tag covers the body.
+		sum := sha1.Sum([]byte(hash + "/" + name + "\n" + m3u))
+		c.Header("ETag", httptoo.EncodeQuotedString(hex.EncodeToString(sum[:])))
 	}
 	if name == "" {
 		name = "playlist.m3u"
