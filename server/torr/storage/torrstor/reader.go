@@ -1,6 +1,7 @@
 package torrstor
 
 import (
+	"context"
 	"io"
 	"sync"
 	"time"
@@ -93,33 +94,22 @@ func (r *Reader) Seek(offset int64, whence int) (n int64, err error) {
 }
 
 func (r *Reader) Read(p []byte) (n int, err error) {
+	return r.ReadContext(context.Background(), p)
+}
+
+// ReadContext is Read, but it returns when ctx is canceled. anacrolix Reader.Read
+// waits on context.Background, and Reader.Close does not wake that wait, so a
+// client that has already gone away (ffprobe timeout, player stop) would pin the
+// reader and its piece window until the torrent produced bytes.
+func (r *Reader) ReadContext(ctx context.Context, p []byte) (n int, err error) {
 	err = io.EOF
 	if r.closed() {
 		return
 	}
-	if r.file.Torrent() != nil && r.file.Torrent().Info() != nil {
+	if r.file != nil && r.file.Torrent() != nil && r.file.Torrent().Info() != nil {
 		r.beginIO()
 		defer r.endIO()
-		n, err = r.Reader.Read(p)
-
-		// samsung tv fix xvid/divx
-		//if r.offset == 0 && len(p) >= 192 {
-		//	str := strings.ToLower(string(p[112:116]))
-		//	if str == "xvid" || str == "divx" {
-		//		p[112] = 0x4D // M
-		//		p[113] = 0x50 // P
-		//		p[114] = 0x34 // 4
-		//		p[115] = 0x56 // V
-		//	}
-		//	str = strings.ToLower(string(p[188:192]))
-		//	if str == "xvid" || str == "divx" {
-		//		p[188] = 0x4D // M
-		//		p[189] = 0x50 // P
-		//		p[190] = 0x34 // 4
-		//		p[191] = 0x56 // V
-		//	}
-		//}
-
+		n, err = r.Reader.ReadContext(ctx, p)
 		r.mu.Lock()
 		r.offset += int64(n)
 		r.lastAccess = time.Now().Unix()

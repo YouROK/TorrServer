@@ -1,7 +1,7 @@
 package torr
 
 import (
-	// "context"
+	"context"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -174,7 +174,11 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 	// }
 	// http.ServeContent(wrappedResp, req, file.Path(), time.Unix(t.Timestamp, 0), reader)
 
-	ServeStreamContent(resp, req, file.Path(), time.Unix(t.Timestamp, 0), newBufferedStreamReader(reader, 1<<20))
+	// bufio only calls Read. Bind the request context under the buffer so a
+	// blocked piece wait ends when the client (ffprobe included) hangs up,
+	// and the deferred CloseReader runs.
+	body := newBufferedStreamReader(bindStreamReadContext(req.Context(), reader), 1<<20)
+	ServeStreamContent(resp, req, file.Path(), time.Unix(t.Timestamp, 0), body)
 
 	if sets.BTsets.EnableDebug {
 		if clerr != nil {
@@ -239,6 +243,32 @@ func (w *streamCopyWriter) ReadFrom(src io.Reader) (int64, error) {
 			return written, er
 		}
 	}
+}
+
+// bindStreamReadContext makes Read honor ctx when the source can.
+// ServeContent and bufio only call Read; anacrolix Read does not see the client.
+func bindStreamReadContext(ctx context.Context, content io.ReadSeeker) io.ReadSeeker {
+	if ctx == nil || content == nil {
+		return content
+	}
+	if _, ok := content.(interface {
+		ReadContext(context.Context, []byte) (int, error)
+	}); !ok {
+		return content
+	}
+	return streamCtxReader{ReadSeeker: content, ctx: ctx}
+}
+
+type streamCtxReader struct {
+	io.ReadSeeker
+	ctx context.Context
+}
+
+func (r streamCtxReader) Read(p []byte) (int, error) {
+	rc := r.ReadSeeker.(interface {
+		ReadContext(context.Context, []byte) (int, error)
+	})
+	return rc.ReadContext(r.ctx, p)
 }
 
 // ServeStreamContent is the /stream and /play body path (range-aware).

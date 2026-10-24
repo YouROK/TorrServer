@@ -1,7 +1,8 @@
 package api
 
 import (
-	"fmt"
+	"context"
+	"errors"
 	"net/http"
 
 	"server/ffprobe"
@@ -60,9 +61,18 @@ func ffp(c *gin.Context) {
 
 	link := sets.LoopbackBaseURL() + "/play/" + hash + "/" + indexStr
 
-	data, err := ffprobe.ProbeUrl(link)
+	// No BTServer or Torrent lock is held across this call. ffprobe dials
+	// loopback /play on another goroutine; holding either lock here deadlocks it.
+	data, err := ffprobe.ProbeURLContext(c.Request.Context(), link)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": fmt.Errorf("error getting data: %v", err).Error()})
+		code := http.StatusBadRequest
+		switch {
+		case errors.Is(err, context.DeadlineExceeded):
+			code = http.StatusGatewayTimeout
+		case errors.Is(err, context.Canceled):
+			code = http.StatusRequestTimeout
+		}
+		c.AbortWithStatusJSON(code, gin.H{"error": "error getting data: " + err.Error()})
 		return
 	}
 

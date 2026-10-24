@@ -2,6 +2,7 @@ package ffprobe
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -64,6 +65,22 @@ func TestProbeURLMock(t *testing.T) {
 	}
 }
 
+func TestProbeURLPassesSocketTimeout(t *testing.T) {
+	out := filepath.Join(t.TempDir(), "args")
+	script := fmt.Sprintf("#!/bin/sh\nprintf '%%s\\n' \"$@\" > %q\nprintf '%%s' '{\"format\":{\"duration\":\"1.500000\",\"bit_rate\":\"1000\",\"size\":\"10\"}}'\n", out)
+	useMock(t, writeMock(t, script))
+	if _, err := ProbeUrl("http://127.0.0.1/media"); err != nil {
+		t.Fatal(err)
+	}
+	body, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(body), "-rw_timeout\n"+rwTimeoutArg) {
+		t.Fatalf("args missing socket timeout:\n%s", body)
+	}
+}
+
 func TestProbeReaderBadJSON(t *testing.T) {
 	useMock(t, writeMock(t, "#!/bin/sh\ncat >/dev/null\nprintf 'not-json'\n"))
 	if _, err := ProbeReader(bytes.NewReader(nil)); err == nil {
@@ -99,10 +116,12 @@ func TestExistsMissing(t *testing.T) {
 }
 
 func TestProbeReaderConcurrent(t *testing.T) {
-	useMock(t, writeMock(t, okScript))
+	useMock(t, writeMock(t, "#!/bin/sh\ncat >/dev/null\nsleep 0.3\nprintf '%s' '{\"format\":{\"duration\":\"1.500000\",\"bit_rate\":\"1000\",\"size\":\"10\"}}'\n"))
+	probeInFlightMax.Store(0)
+	const n = 30
 	var wg sync.WaitGroup
-	errCh := make(chan error, 30)
-	for i := 0; i < 30; i++ {
+	errCh := make(chan error, n)
+	for i := 0; i < n; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -115,5 +134,11 @@ func TestProbeReaderConcurrent(t *testing.T) {
 	close(errCh)
 	for err := range errCh {
 		t.Error(err)
+	}
+	if got := probeInFlightMax.Load(); got != int32(maxConcurrentProbes) {
+		t.Fatalf("peak ffprobe processes = %d, want %d", got, maxConcurrentProbes)
+	}
+	if got := probeInFlight.Load(); got != 0 {
+		t.Fatalf("ffprobe still in flight: %d", got)
 	}
 }
