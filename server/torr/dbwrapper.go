@@ -33,23 +33,41 @@ func FileStatsFromData(data string) []*state.TorrentFileStat {
 }
 
 func AddTorrentDB(torr *Torrent) {
-	t := new(settings.TorrentDB)
-	t.TorrentSpec = torr.TorrentSpec
-	t.Title = torr.Title
-	t.Category = torr.Category
-	if torr.Data == "" {
-		files := new(tsFiles)
-		files.TorrServer.Files = torr.Status().FileStats
-		buf, err := json.Marshal(files)
-		if err == nil {
-			t.Data = string(buf)
-			torr.Data = t.Data
-		}
-	} else {
-		t.Data = torr.Data
-	}
+	// Status() reads these fields under muTorrent. list can run while add's
+	// background save is still filling Data.
+	torr.muTorrent.Lock()
+	spec := torr.TorrentSpec
+	title := torr.Title
+	category := torr.Category
+	data := torr.Data
+	poster := torr.Poster
+	size := torr.Size
+	timestamp := torr.Timestamp
+	bt := torr.Torrent
+	torr.muTorrent.Unlock()
 
-	t.Poster = torr.Poster
+	t := new(settings.TorrentDB)
+	t.TorrentSpec = spec
+	t.Title = title
+	t.Category = category
+	if data == "" {
+		files := new(tsFiles)
+		// Status locks muTorrent itself. Do not hold it across this call.
+		files.TorrServer.Files = torr.Status().FileStats
+		if buf, err := json.Marshal(files); err == nil {
+			data = string(buf)
+			torr.muTorrent.Lock()
+			if torr.Data == "" {
+				torr.Data = data
+			} else {
+				data = torr.Data
+			}
+			torr.muTorrent.Unlock()
+		}
+	}
+	t.Data = data
+
+	t.Poster = poster
 	if t.Poster != "" {
 		var existing string
 		if db := GetTorrentDB(torr.Hash()); db != nil {
@@ -62,15 +80,15 @@ func AddTorrentDB(torr *Torrent) {
 			}
 		}
 	}
-	t.Size = torr.Size
-	if t.Size == 0 && torr.Torrent != nil {
-		t.Size = torr.Torrent.Length()
+	t.Size = size
+	if t.Size == 0 && bt != nil {
+		t.Size = bt.Length()
 	}
 	// don't override timestamp from DB on edit
 	if existing := GetTorrentDB(torr.Hash()); existing != nil && existing.Timestamp != 0 {
 		t.Timestamp = existing.Timestamp
 	} else {
-		t.Timestamp = torr.Timestamp
+		t.Timestamp = timestamp
 	}
 
 	settings.AddTorrent(t)
