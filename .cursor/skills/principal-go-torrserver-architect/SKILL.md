@@ -53,7 +53,7 @@ Do not hold those mutexes across tracker HTTP, DHT, `publicip.Get4/Get6`, or dis
 - Piece slabs are `*pieceSlab` pooled by exact length. `putPieceBuf` clears the full cap. `Release` does not recycle when `cache.isClosed`. Never keep a sub-slice after `Release`.
 - Do not evict a piece inside a merged reader range, the begin/end keep window (at least 8MiB), `prioPieces`, or a full piece whose `Complete` flag is still false.
 - Recalculate priorities when a reader is created, closed, parked, or crosses a piece. Not on every small `Read`. Do not add a second `clearPriority` after `Cache.CloseReader`.
-- Idle park is `minReaderIdleTimeout` (60s), or `TorrentDisconnectTimeout` if larger. Do not invent a 2–3s grace. `readerOff` must not `Seek` while `inFlight > 0`.
+- Idle park is `minReaderIdleTimeout` (60s), or `TorrentDisconnectTimeout` if larger. `readerOff` must not `Seek` while `inFlight > 0`.
 - `Reader.Close` does not unregister. `Cache.CloseReader` does, and it is safe on a nil `*Cache`.
 - A handler that accepted the request must write a status. An empty return becomes `200` with an empty body.
 - Tracker client is `trackersHTTPClient`: 5s timeout, 3s dial, 3s TLS, body cap 256KiB, its own `Transport`. Do not use `http.DefaultClient`. A failed refresh keeps the previous list and must not block startup.

@@ -10,8 +10,6 @@ TorrServer streams BitTorrent payloads over HTTP Range. The hot path is `GET/HEA
 
 Out of scope unless the task names them: embedded JS, a plugin runtime, and an FFmpeg transcode pipeline. Remux/transcode already lives behind the `gst` build tag in `server/gstreamer`.
 
-The React UI is `web/` (Yarn, Vite). The binary serves a generated copy under `server/web/pages/template/pages`. Edit `web/src`, then rebuild. Do not hand-edit the generated pages. `gen_web.go` is the embed step.
-
 ## Dependency forks
 
 ```
@@ -25,6 +23,14 @@ Import the upstream paths. The replace directives supply the forks.
 Comments marked `NE` are upstream APIs this fork does not have (`DisableWebtorrent`, `HeaderObfuscationPolicy`, storage `Capacity`, directory file storage). Comments marked `OE` are the behavior this fork actually runs. Do not call `NE` methods. The seeder in tests cannot use a directory backend; `server/torr/offlinetest` serves bytes from `memStore`.
 
 `configure()` in `server/torr/btserver.go` spoofs `qBittorrent/4.3.9` / peer id prefix `-qB4390-`. `UpnpID` stays `TorrServer/<version>`. `TotalHalfOpenConns` is hardcoded to 500. Do not "correct" the peer id to TorrServer's own name without a reason: swarms treat the qB prefix differently.
+
+## UI boundary
+
+The React UI is `web/` (Yarn, Vite). The binary serves a generated copy under `server/web/pages/template/pages`. Edit `web/src`, then rebuild (`gen_web.go`, `make webgen-clean`). Do not hand-edit the generated pages.
+
+A new or changed string belongs in `web/src/locales`. `yarn i18n:check` requires the same flattened keys in `en`, `ru`, `ua`, `bg`, `fr`, `ro`, and `zh`, as nested objects.
+
+When `web/src` changes, CI runs `yarn typecheck`, `yarn lint`, `yarn test`, `yarn i18n:check`, `yarn test:e2e`, and `yarn build`.
 
 ## Package map
 
@@ -63,7 +69,7 @@ Comments marked `NE` are upstream APIs this fork does not have (`DisableWebtorre
 
 Hold order when both are needed:
 
-1. `settings.dbMigrationLock` then `settings.mu` (`server/settings/torrent.go`). `ListTorrent` takes both. `AddTorrent` calls `ListTorrent` before it locks `mu`, then rewrites every torrent row while `mu` is held. Do not call `ListTorrent` or `AddTorrent` from code that already holds `mu`. Do not put network or disk walks under `mu`.
+1. `settings.dbMigrationLock` then `settings.mu` (`server/settings/torrent.go`). `mu` is a `sync.Mutex`. `ListTorrent` takes `dbMigrationLock.RLock`, then `mu`, and holds `mu` for the whole call, including the bbolt reads (`tdb.List` / `tdb.Get`). `AddTorrent` calls `ListTorrent` first — both locks drop before it returns — then locks `mu` and rewrites every `Torrents` row with `tdb.Set`. Each `Set` is a bbolt write transaction, so `mu` stays held across those database locks. Do not call `ListTorrent` or `AddTorrent` while `mu` is already held: `ListTorrent` locks `mu` again and deadlocks. Do not take `dbMigrationLock` while `mu` is held. Do not add network I/O under `mu`.
 2. `BTServer.mu` (`server/torr/btserver.go`). Guards `client`, `storage`, `torrents`, DHT cancel. `NewTorrent` drops `RLock` before `Lock`. `GetTorrent` / `ListTorrents` copy under `RLock` and return the copy. `WriteStatus` holds `RLock` for the whole `client.WriteStatus` call so `Disconnect` cannot nil the client underneath it.
 3. `Torrent.muTorrent`. Snapshot `t.Torrent` under the lock and use the local pointer after. `drop` nils `t.Torrent` and `t.cache` at any time (Lampa "drop" during a stream). `WaitInfo` already does this snapshot. `Close` sets `Stat`, unlocks, deletes from `bt.torrents`, then `drop`. Do not call `bt.mu.Lock` while `muTorrent` is held.
 4. `torrstor.Storage.mu`. Release it before `Cache.Close`. `CloseHash` deletes the map entry, unlocks, then closes. `Cache.Close` calls `removeCache`, which locks `Storage.mu` again.
@@ -119,7 +125,7 @@ Eviction (`Cache.cleanPieces` / `getRemPieces` / `pieceEvictable`):
 
 Reader window (`Reader.getOffsetRange`): capacity is split across active readers. `ReaderReadAHead` (default 95, clamped 5–100) is the forward fraction. `Seek(0, SeekEnd)` returns the length and does not move the playhead. ServeContent probes size that way; seeking to EOF would pull the tail of a huge file.
 
-Idle park is `minReaderIdleTimeout` (60s), or `TorrentDisconnectTimeout` if that is larger. It is not a 2–3s HTTP grace. `checkReader` parks by `SetReadahead(0)` and `Seek(0, SeekStart)` only when `inFlight == 0`. `beginIO` increments `inFlight` and `resume`s under `Reader.mu` before the anacrolix read. A blocked read must not be seeked.
+Idle park is `minReaderIdleTimeout` (60s), or `TorrentDisconnectTimeout` if that is larger. `checkReader` parks by `SetReadahead(0)` and `Seek(0, SeekStart)` only when `inFlight == 0`. `beginIO` increments `inFlight` and `resume`s under `Reader.mu` before the anacrolix read. A blocked read must not be seeked.
 
 `Torrent.Close` refuses while `ReadOnly` and `GetUseReaders() > 0`.
 
@@ -252,6 +258,7 @@ Run `make bench` when the diff touches `server/torr`, `server/torr/storage/torrs
 
 - `os.Exit` or `log.Fatal` in `settings`, `torr`, `torrstor`, `web`, `dlna`, `bonjour`, `mcp`.
 - Holding `bt.mu` as `RLock` and then `Lock` on the same goroutine.
+- Calling `settings.ListTorrent` or `settings.AddTorrent` while `settings.mu` is held.
 - `defer bt.mu.RUnlock()` across a branch that needs `bt.mu.Lock`.
 - Reading `t.Torrent`, `t.cache`, or `bt.client` without a snapshot under the mutex that owns them.
 - `Cache.Close` while `Storage.mu` is held.
