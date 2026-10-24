@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { Lock, Plug, Radio, ShieldCheck } from 'lucide-react'
 import { Description, Input, Label, ListBox, Select, TextArea, TextField } from '@heroui/react'
 import { useTranslation } from 'react-i18next'
@@ -18,6 +19,56 @@ export interface NetworkSettingsPanelProps {
 const NUMBER_FIELD_DEFAULTS: Partial<Record<keyof BTSets, number>> = {
   ConnectionsLimit: 25,
   TorrentDisconnectTimeout: 30,
+}
+
+function IntField({
+  value,
+  fallback,
+  label,
+  hint,
+  onCommit,
+}: {
+  value: number
+  fallback: number
+  label: string
+  hint?: string
+  onCommit: (next: number) => void
+}) {
+  const [text, setText] = useState(String(value))
+  const editingRef = useRef(false)
+
+  useEffect(() => {
+    if (!editingRef.current) setText(String(value))
+  }, [value])
+
+  const commit = (raw: string) => {
+    const n = Number(raw)
+    const next = raw.trim() === '' || !Number.isFinite(n) ? fallback : Math.round(n)
+    onCommit(next)
+    setText(String(next))
+  }
+
+  return (
+    <TextField
+      value={text}
+      onChange={next => {
+        setText(next)
+        const n = Number(next)
+        if (next.trim() !== '' && Number.isFinite(n)) onCommit(Math.round(n))
+      }}
+      onFocus={() => {
+        editingRef.current = true
+      }}
+      onBlur={() => {
+        editingRef.current = false
+        commit(text)
+      }}
+    >
+      <Label>{label}</Label>
+      <Input type='number' />
+      {hint ? <Description>{hint}</Description> : null}
+    </TextField>
+  )
 }
 
 const NUMBER_FIELDS: readonly (keyof BTSets)[] = [
@@ -155,7 +206,11 @@ export default function NetworkSettingsPanel({
       <SettingsSection icon={<ShieldCheck />} title={t('SettingsDialog.RetrackersMode')}>
         <Select
           selectedKey={settings.RetrackersMode == null ? '1' : String(settings.RetrackersMode)}
-          onSelectionChange={key => onUpdate('RetrackersMode', Number(key))}
+          onSelectionChange={key => {
+            if (key == null) return
+            const mode = Number(key)
+            if (Number.isFinite(mode)) onUpdate('RetrackersMode', mode)
+          }}
         >
           <Select.Trigger>
             <Select.Value />
@@ -186,15 +241,14 @@ export default function NetworkSettingsPanel({
       <SettingsSection icon={<Plug />} title={t('SettingsDialog.SectionConnection')}>
         <div className='grid gap-4 sm:grid-cols-2'>
           {NUMBER_FIELDS.map(key => (
-            <TextField
+            <IntField
               key={key}
-              value={String(settings[key] ?? NUMBER_FIELD_DEFAULTS[key] ?? 0)}
-              onChange={value => onUpdate(key, Number(value))}
-            >
-              <Label>{numberFieldLabel(key)}</Label>
-              <Input type='number' />
-              {numberFieldHint(key) ? <Description>{numberFieldHint(key)}</Description> : null}
-            </TextField>
+              value={Number(settings[key] ?? NUMBER_FIELD_DEFAULTS[key] ?? 0)}
+              fallback={NUMBER_FIELD_DEFAULTS[key] ?? 0}
+              label={numberFieldLabel(key)}
+              hint={numberFieldHint(key)}
+              onCommit={next => onUpdate(key, next)}
+            />
           ))}
         </div>
       </SettingsSection>

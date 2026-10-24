@@ -139,7 +139,7 @@ wss://tracker.openwebtorrent.com`
 var BTsets *BTSets
 
 func SetBTSets(sets *BTSets) {
-	if ReadOnly {
+	if ReadOnly || sets == nil {
 		return
 	}
 	// failsafe checks (use defaults)

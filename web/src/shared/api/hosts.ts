@@ -24,7 +24,8 @@ export const streamHost = () => `${torrserverHost}/stream`
 export const subsHost = (hash: string, id: number | string) =>
   `${torrserverHost}/subs/${encodeURIComponent(hash)}/${id}`
 export const playlistAllHost = () => `${torrserverHost}/playlistall/all.m3u`
-export const ffpHost = (hash: string, id: number | string) => `${torrserverHost}/ffp/${hash}/${id}`
+export const ffpHost = (hash: string, id: number | string) =>
+  `${torrserverHost}/ffp/${encodeURIComponent(hash)}/${encodeURIComponent(String(id))}`
 export const downloadTestHost = (sizeMb: number) => `${torrserverHost}/download/${sizeMb}`
 export const shutdownHost = () => `${torrserverHost}/shutdown`
 export const echoHost = () => `${torrserverHost}/echo`

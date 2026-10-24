@@ -15,11 +15,37 @@ export const getGstSettings = async (signal?: AbortSignal): Promise<GstSettingsR
   return (await response.json()) as GstSettingsResponse
 }
 
+const GST_INT_KEYS = [
+  'MaxTasks',
+  'InactiveMinutes',
+  'AACBitrateKbps',
+  'AACChannels',
+  'AACSamplerate',
+  'SegmentSeconds',
+  'SegmentDiff',
+  'VideoBitrate',
+] as const
+
+/** Go unmarshals these into `int`. A float fails the whole config; NaN becomes JSON null. */
+const sanitizeGstConfig = (config: Record<string, unknown>): Record<string, unknown> => {
+  const next = { ...config }
+  for (const key of GST_INT_KEYS) {
+    if (!(key in next)) continue
+    const n = Number(next[key])
+    next[key] = Number.isFinite(n) ? Math.round(n) : 0
+  }
+  if ('GSTVersion' in next) {
+    const version = Number(next.GSTVersion)
+    if (!Number.isFinite(version)) delete next.GSTVersion
+  }
+  return next
+}
+
 export const setGstSettings = async (config: Record<string, unknown>): Promise<void> => {
   const response = await authFetch(gstSettingsHost(), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'set', config }),
+    body: JSON.stringify({ action: 'set', config: sanitizeGstConfig(config) }),
   })
   if (!response.ok) throw new Error('Failed to save GStreamer settings')
 }

@@ -1,5 +1,6 @@
 import { useLocalJsonPref } from 'shared/hooks/useLocalPref'
-import { playlistTorrHost, streamHost } from 'shared/api/hosts'
+
+export { streamPlayUrl, streamPreloadUrl, torrentPlaylistUrl } from './streamLinks'
 
 /** localStorage key for poster Play button behavior (Settings → Players). */
 export const POSTER_PLAY_ACTION_KEY = 'posterPlayAction'
@@ -125,13 +126,3 @@ export const availablePosterPlayActions = (flags: PosterPlayPlayerFlags): Poster
 
 export const magnetFromHash = (hash: string, displayName: string): string =>
   `magnet:?xt=urn:btih:${hash}&dn=${encodeURIComponent(displayName)}`
-
-const fileBaseName = (path: string): string => path.split('\\').pop()?.split('/').pop() || path
-
-/** Direct play stream URL (relative to the current origin when used with `new URL(..., location)`). */
-export const streamPlayUrl = (hash: string, file: { id: number; path: string }): string =>
-  `${streamHost()}/${encodeURIComponent(fileBaseName(file.path))}?link=${hash}&index=${file.id}&play`
-
-/** M3U playlist URL for the whole torrent (same shape as Download playlist). */
-export const torrentPlaylistUrl = (hash: string, displayName: string): string =>
-  `${playlistTorrHost()}/${encodeURIComponent(displayName)}.m3u?link=${hash}&m3u`

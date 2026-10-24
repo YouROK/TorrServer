@@ -4,7 +4,7 @@ import type { PlayableFile } from 'shared/api/types'
 import { buildExternalPlayerHref, useExternalPlayers } from 'shared/lib/externalPlayers'
 import { useLocalJsonPref } from 'shared/hooks/useLocalPref'
 import { externalLink, useExternalMediaBase } from 'shared/lib/mediaBase'
-import { detectApplePlatform } from 'shared/lib/platform'
+import { detectApplePlatform, playerLinkPlatform } from 'shared/lib/platform'
 import {
   coercePosterPlayAction,
   defaultPosterPlayAction,
@@ -73,7 +73,7 @@ export function useConfiguredPlayAction() {
 
       resolvePlayableFile(file => {
         const fullLink = externalLink(streamPlayUrl(hash, file), mediaBase).toString()
-        window.location.href = buildExternalPlayerHref(playAction, fullLink)
+        window.location.href = buildExternalPlayerHref(playAction, fullLink, playerLinkPlatform())
       })
     },
     [playAction, mediaBase],

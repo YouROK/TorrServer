@@ -1,4 +1,4 @@
-import type { TorrentCache } from 'shared/api/types'
+import type { CacheMapItem, TorrentCache } from 'shared/api/types'
 
 /** Cheap FNV-ish mix for poll equality — avoids huge string concat on sparse piece maps. */
 const mix = (h: number, v: number) => {
@@ -47,6 +47,21 @@ export const cheapPiecesFingerprint = (pieces: TorrentCache['Pieces']): number =
     }
   }
   return mix(h, count)
+}
+
+/** Visible snake cells only — a fill outside the camera must not repaint the canvas. */
+export const cheapCellsFingerprint = (cells: readonly CacheMapItem[]): number => {
+  let h = 2166136261
+  for (const cell of cells) {
+    h = mix(h, cell.pieceStart ?? -1)
+    h = mix(h, Math.round(cell.percentage || 0))
+    h = mix(h, cell.completed ? 1 : 0)
+    h = mix(h, cell.isReader ? 1 : 0)
+    h = mix(h, cell.isReaderIdle ? 1 : 0)
+    h = mix(h, cell.isReaderRange ? 1 : 0)
+    h = mix(h, cell.priority || 0)
+  }
+  return mix(h, cells.length)
 }
 
 export const cacheVisualEqual = (a: TorrentCache, b: TorrentCache): boolean =>

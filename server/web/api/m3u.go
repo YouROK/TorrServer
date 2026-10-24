@@ -203,6 +203,22 @@ func playList(c *gin.Context) {
 	sendM3U(c, name, tor.Hash().HexString(), list)
 }
 
+// safeAttachmentName strips header-breaking characters from a playlist filename.
+// Torrent titles land in Content-Disposition quoted-string; a quote or CR/LF splits the header.
+func safeAttachmentName(name string) string {
+	name = strings.Map(func(r rune) rune {
+		if r < 0x20 || r == 0x7f || r == '"' || r == '\\' {
+			return -1
+		}
+		return r
+	}, name)
+	name = strings.TrimSpace(name)
+	if name == "" || name == "." || name == ".." {
+		return "playlist.m3u"
+	}
+	return name
+}
+
 func sendM3U(c *gin.Context, name, hash string, m3u string) {
 	c.Header("Content-Type", "audio/x-mpegurl")
 	c.Header("Connection", "close")
@@ -213,7 +229,7 @@ func sendM3U(c *gin.Context, name, hash string, m3u string) {
 	if name == "" {
 		name = "playlist.m3u"
 	}
-	c.Header("Content-Disposition", `attachment; filename="`+name+`"`)
+	c.Header("Content-Disposition", `attachment; filename="`+safeAttachmentName(name)+`"`)
 	http.ServeContent(c.Writer, c.Request, name, time.Now(), bytes.NewReader([]byte(m3u)))
 }
 

@@ -40,4 +40,29 @@ describe('externalLink', () => {
     const url = externalLink('/stream/x', 'not a url')
     expect(url.toString()).toBe('https://ui.example:8443/stream/x')
   })
+
+  it('adds basic userinfo for the page host and not for a different host', async () => {
+    const memory = new Map<string, string>()
+    vi.stubGlobal('sessionStorage', {
+      getItem: (key: string) => memory.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        memory.set(key, value)
+      },
+      removeItem: (key: string) => {
+        memory.delete(key)
+      },
+    })
+    const { setCredentials, clearCredentials } = await import('shared/api/authCredentials')
+    setCredentials('u', 'p@ss')
+    const { externalLink } = await import('./mediaBase')
+    const same = externalLink('/stream/file.mkv?link=abc&play', 'http://ui.example:8090')
+    expect(same.username).toBe('u')
+    expect(decodeURIComponent(same.password)).toBe('p@ss')
+    expect(same.href).not.toContain('%2540')
+    expect(same.host).toBe('ui.example:8090')
+    const other = externalLink('/stream/file.mkv?link=abc&play', 'http://192.168.1.2:8090')
+    expect(other.username).toBe('')
+    expect(other.host).toBe('192.168.1.2:8090')
+    clearCredentials()
+  })
 })

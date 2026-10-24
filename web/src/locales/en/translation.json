@@ -316,6 +316,7 @@
   "Save": "Save",
   "Saved": "Saved",
   "SavedWithoutStorage": "Saved (storage backends unchanged)",
+  "SettingsReadOnly": "Server is read-only. Settings were not saved.",
   "Search": {
     "AllTrackers": "All Trackers",
     "NoResults": "No results",

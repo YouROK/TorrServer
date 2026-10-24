@@ -1,18 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import axios from 'axios'
 import type { TorrentCache } from 'shared/api/types'
-import { cacheHost } from 'shared/api/hosts'
+import { getCache } from 'shared/api/cache'
 
 import { buildFocusModel, isReaderActive, type CacheDrawModel } from './buildCacheMap'
-import { cacheVisualEqual, cheapPiecesFingerprint, cheapReadersFingerprint } from './cacheFingerprint'
+import {
+  cachePollDelay,
+  cachePollPaused,
+  CACHE_POLL_ACTIVE_MS,
+  CACHE_POLL_IDLE_MS,
+  takeCacheSnapshot,
+} from './cachePoll'
+import { cheapPiecesFingerprint, cheapReadersFingerprint } from './cacheFingerprint'
 import { readSnakeCache, readSnakeCamera, writeSnakeCache, writeSnakeCamera } from './snakeSession'
-
-/** Active cadence while pieces/readers change — snake must track piece fill live. */
-const CACHE_POLL_ACTIVE_MS = 100
-/** Quiet cadence after no visual changes and no readers. */
-const CACHE_POLL_IDLE_MS = 1000
-/** Switch to idle after this many ms without visual changes (and no readers). */
-const CACHE_IDLE_AFTER_MS = 2000
 
 export interface UseUpdateCacheOptions {
   /** When false, polling stops. Defaults to true when hash is set. */
@@ -52,6 +52,7 @@ export const useUpdateCache = (hash?: string, options?: UseUpdateCacheOptions) =
     }
 
     let cancelled = false
+    let controller: AbortController | null = null
     // Per-run flag on purpose: a ref shared across runs left the chain dead when
     // the effect restarted (fast/hash change, StrictMode) while a request was in
     // flight — the new run skipped its fetch and the old run refused to reschedule.
@@ -65,42 +66,56 @@ export const useUpdateCache = (hash?: string, options?: UseUpdateCacheOptions) =
 
     const fetchCache = () => {
       if (cancelled || inFlight) return
-      if (document.hidden) return
+      if (cachePollPaused(document.hidden)) return
       inFlight = true
-      axios
-        .post(cacheHost(), { action: 'get', hash })
-        .then(({ data }) => {
-          if (cancelled) return
-          const next = (data || {}) as TorrentCache
-          // Idle readers stay in the payload, so only active ones justify fast polling.
-          const hasReaders = (next.Readers ?? []).some(isReaderActive)
-          if (cacheVisualEqual(cacheRef.current, next)) {
-            if (fast) {
-              const quiet = Date.now() - lastChangeAt.current >= CACHE_IDLE_AFTER_MS
-              pollMs.current = !hasReaders && quiet ? CACHE_POLL_IDLE_MS : CACHE_POLL_ACTIVE_MS
+      controller = new AbortController()
+      getCache(hash, controller.signal)
+        .then(next => {
+          const taken = takeCacheSnapshot(cancelled, cacheRef.current, next)
+          if (!taken) {
+            if (!cancelled && fast) {
+              pollMs.current = cachePollDelay({
+                fast: true,
+                changed: false,
+                hasActiveReaders: (next.Readers ?? []).some(isReaderActive),
+                quietForMs: Date.now() - lastChangeAt.current,
+                failed: false,
+              })
             }
             return
           }
           lastChangeAt.current = Date.now()
-          pollMs.current = fast ? CACHE_POLL_ACTIVE_MS : CACHE_POLL_IDLE_MS
-          cacheRef.current = next
-          writeSnakeCache(hash, next)
-          setCache(next)
+          pollMs.current = cachePollDelay({
+            fast,
+            changed: true,
+            hasActiveReaders: (taken.Readers ?? []).some(isReaderActive),
+            quietForMs: 0,
+            failed: false,
+          })
+          cacheRef.current = taken
+          writeSnakeCache(hash, taken)
+          setCache(taken)
         })
-        .catch(() => {
-          if (cancelled) return
-          pollMs.current = CACHE_POLL_IDLE_MS
+        .catch((err: unknown) => {
+          if (cancelled || axios.isCancel(err)) return
+          pollMs.current = cachePollDelay({
+            fast,
+            changed: false,
+            hasActiveReaders: false,
+            quietForMs: 0,
+            failed: true,
+          })
         })
         .finally(() => {
           inFlight = false
-          if (!document.hidden) scheduleNext()
+          if (!cachePollPaused(document.hidden)) scheduleNext()
         })
     }
 
     fetchCache()
 
     const onVisibility = () => {
-      if (document.hidden) {
+      if (cachePollPaused(document.hidden)) {
         if (timerID.current) clearTimeout(timerID.current)
         return
       }
@@ -111,6 +126,7 @@ export const useUpdateCache = (hash?: string, options?: UseUpdateCacheOptions) =
 
     return () => {
       cancelled = true
+      controller?.abort()
       if (timerID.current) clearTimeout(timerID.current)
       document.removeEventListener('visibilitychange', onVisibility)
     }

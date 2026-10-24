@@ -560,3 +560,27 @@ func TestMergeIPsIsBounded(t *testing.T) {
 		t.Fatalf("most recent old IP not kept first: %v", got)
 	}
 }
+
+func TestSelfSignedPathsFollowConfigDir(t *testing.T) {
+	dir := withTempPath(t)
+	cert, key := SelfSignedPaths()
+	if cert != filepath.Join(dir, certFileName) || key != filepath.Join(dir, keyFileName) {
+		t.Fatalf("paths %s %s", cert, key)
+	}
+}
+
+func TestRenewLoopStopsAndSkipsEmptyPaths(t *testing.T) {
+	stop := make(chan struct{})
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		RenewLoop(stop, time.Millisecond, func() (string, string) { return "", "" }, func() []string { return nil })
+	}()
+	time.Sleep(15 * time.Millisecond)
+	close(stop)
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("renew loop did not stop")
+	}
+}

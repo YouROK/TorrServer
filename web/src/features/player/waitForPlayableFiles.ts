@@ -65,7 +65,7 @@ export async function waitForPlayableFiles(
   const started = Date.now()
 
   const tryDetail = async (): Promise<WaitForPlayableFilesResult | null> => {
-    const detail = await getTorrent(hash)
+    const detail = await getTorrent(hash, signal)
     const live = playableFromStats(detail.file_stats)
     if (live.length) {
       return { playable: live, allFiles: detail.file_stats || [] }

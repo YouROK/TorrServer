@@ -73,6 +73,20 @@ describe('resolveFocusWindow / buildFocusModel', () => {
     expect(model.windowEnd).toBe(window!.end)
   })
 
+  it('keeps a 15k-piece reader range inside the drawable window', () => {
+    const cache: TorrentCache = {
+      PiecesCount: 15000,
+      PiecesLength: 4 * 1024 * 1024,
+      Readers: [{ Reader: 100, Start: 0, End: 14999, Active: true }],
+      Pieces: { 100: { Size: 100, Length: 100, Completed: true } },
+    }
+    const model = buildFocusModel(cache, 20)
+    expect(model.cells.length).toBeLessThanOrEqual(20)
+    expect(model.cells.every(cell => (cell.pieceStart ?? -1) >= (model.windowStart ?? 0))).toBe(true)
+    expect(model.cells.every(cell => (cell.pieceStart ?? -1) <= (model.windowEnd ?? -1))).toBe(true)
+    expect(model.cells.find(cell => cell.isReader)?.pieceStart).toBe(100)
+  })
+
   it('fills the full visibleCells budget with small piece cells', () => {
     const cache: TorrentCache = {
       PiecesCount: 5000,
@@ -386,5 +400,28 @@ describe('resolveFocusWindow / buildFocusModel', () => {
     const playhead = model.cells.find(c => c.isReader)
     expect(playhead?.priority).toBe(5)
     expect(priorityDebugLabel(playhead!.priority)).toBe('A')
+  })
+
+  it('maps a 10000-piece reader window without drawing every piece', () => {
+    const pieces: Record<string, { Size: number; Length: number; Completed: boolean }> = {}
+    for (let id = 0; id < 10_000; id += 25) {
+      pieces[id] = { Size: 8, Length: 16, Completed: false }
+    }
+    pieces[5000] = { Size: 16, Length: 16, Completed: true }
+    const cache: TorrentCache = {
+      PiecesCount: 10_000,
+      PiecesLength: 16 * 1024,
+      Readers: [{ Reader: 5000, Start: 4900, End: 5200, Active: true }],
+      Pieces: pieces,
+    }
+    const model = buildFocusModel(cache, 40)
+    expect(model.piecesCount).toBe(10_000)
+    expect(model.cells.length).toBeLessThanOrEqual(40)
+    expect(model.windowStart).toBeLessThanOrEqual(5000)
+    expect(model.windowEnd).toBeGreaterThanOrEqual(5000)
+    const head = model.cells.find(cell => cell.isReader)
+    expect(head?.pieceStart).toBe(5000)
+    expect(head?.percentage).toBe(100)
+    expect(model.cells.some(cell => cell.isReaderRange)).toBe(true)
   })
 })

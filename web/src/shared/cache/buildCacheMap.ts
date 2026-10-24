@@ -390,9 +390,21 @@ export const buildFocusModel = (
   const pieceLength = cache.PiecesLength || 0
   const readers = cache.Readers || []
   const pieceById = new Map<number, CachePiece>()
-  forEachPiece(cache.Pieces, (id, piece) => {
-    if (id >= window.start && id <= window.end) pieceById.set(id, piece)
-  })
+  const pieces = cache.Pieces
+  if (Array.isArray(pieces)) {
+    const from = Math.max(0, window.start)
+    const to = Math.min(pieces.length - 1, window.end)
+    for (let id = from; id <= to; id++) {
+      const piece = pieces[id]
+      if (piece) pieceById.set(id, piece)
+    }
+  } else if (pieces) {
+    for (const [key, piece] of Object.entries(pieces)) {
+      if (!piece) continue
+      const id = Number(key)
+      if (id >= window.start && id <= window.end) pieceById.set(id, piece)
+    }
+  }
 
   const readerSet = new Set<number>()
   const activeReaderSet = new Set<number>()
@@ -402,9 +414,12 @@ export const buildFocusModel = (
       readerSet.add(reader.Reader)
       if (isReaderActive(reader)) activeReaderSet.add(reader.Reader)
     }
-    forEachPieceInReaderRange(reader.Start, reader.End, piecesCount, id => {
-      if (id >= window.start && id <= window.end) rangeSet.add(id)
-    })
+    // Intersect with the drawable window. A reader range of 0..15000 must not walk every id.
+    const range = clampReaderRangeInclusive(reader.Start, reader.End, piecesCount)
+    if (!range) continue
+    const from = Math.max(range.start, window.start)
+    const to = Math.min(range.end, window.end)
+    for (let id = from; id <= to; id++) rangeSet.add(id)
   }
   // A piece shared by an active and an idle reader counts as active.
   const isIdleHead = (id: number) => readerSet.has(id) && !activeReaderSet.has(id)

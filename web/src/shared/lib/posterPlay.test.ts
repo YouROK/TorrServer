@@ -1,11 +1,22 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 
-import { buildExternalPlayerHref, buildInfusePlaylistHref, playlistActionHref } from './externalPlayers'
-
 describe('buildExternalPlayerHref', () => {
   const stream = 'https://ts.example/stream/a.mkv?link=h&index=1&play'
 
-  it('builds Infuse / SenPlayer / VLC / IINA deep links', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    vi.stubGlobal('window', {
+      location: { protocol: 'https:', hostname: 'ts.example', port: '' },
+      navigator: { userAgent: '', maxTouchPoints: 0, platform: '' },
+    })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('builds Infuse / SenPlayer / VLC / IINA deep links', async () => {
+    const { buildExternalPlayerHref, playlistActionHref } = await import('./externalPlayers')
     const encoded = encodeURIComponent(stream)
     expect(buildExternalPlayerHref('infuse', stream)).toBe(`infuse://x-callback-url/play?url=${encoded}`)
     expect(buildExternalPlayerHref('senPlayer', stream)).toBe(`senplayer://x-callback-url/play?url=${encoded}`)
@@ -16,7 +27,8 @@ describe('buildExternalPlayerHref', () => {
     expect(buildExternalPlayerHref('iina', stream)).toBe(`iina://weblink?url=${encoded}`)
   })
 
-  it('builds an Infuse episode list and sends other players the m3u', () => {
+  it('builds an Infuse episode list and sends other players the m3u', async () => {
+    const { buildExternalPlayerHref, buildInfusePlaylistHref } = await import('./externalPlayers')
     const m3u = 'https://ts.example/stream/Show.m3u?link=h&m3u'
     const episodes = [
       { url: 'https://ts.example/stream/a.mkv?link=h&index=1&play', filename: 'a.mkv' },
@@ -157,8 +169,11 @@ describe('posterPlay', () => {
     expect(streamPlayUrl('deadbeef', { id: 2, path: 'folder/video.mkv' })).toBe(
       'https://ts.example:8443/stream/video.mkv?link=deadbeef&index=2&play',
     )
+    expect(streamPlayUrl('ab&cd', { id: 1, path: 'a#b?.mkv' })).toBe(
+      'https://ts.example:8443/stream/a%23b%3F.mkv?link=ab%26cd&index=1&play',
+    )
     expect(torrentPlaylistUrl('deadbeef', 'My Show')).toBe(
-      'https://ts.example:8443/stream/My%20Show.m3u?link=deadbeef&m3u',
+      'https://ts.example:8443/stream/My%20Show.m3u?link=deadbeef&m3u&fn=file.m3u',
     )
   })
 })

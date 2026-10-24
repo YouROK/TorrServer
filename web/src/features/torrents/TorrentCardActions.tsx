@@ -83,7 +83,7 @@ export default function TorrentCardActions({ torrent, onDetails, onEdit }: Torre
   })
 
   const { runConfiguredPlay } = useConfiguredPlayAction()
-  const { buildExternalPlayers, playerFlags } = useExternalPlayers()
+  const { buildExternalPlayers, playerFlags, playerPlatform } = useExternalPlayers()
   const playlistButtonAction = usePlaylistButtonAction(playerFlags)
   const mediaBase = useExternalMediaBase()
   const playlistHref = externalLink(torrentPlaylistUrl(hash, displayName), mediaBase).toString()
@@ -201,7 +201,7 @@ export default function TorrentCardActions({ torrent, onDetails, onEdit }: Torre
                 onClick={bindPlaylistButton(
                   playlistButtonAction,
                   playlistHref,
-                  playlistActionHref(playlistButtonAction, playlistHref),
+                  playlistActionHref(playlistButtonAction, playlistHref, playerPlatform),
                   kind =>
                     toast?.showToast({
                       message: t(kind === 'copied' ? 'Copied' : 'Error'),

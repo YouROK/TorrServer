@@ -1,0 +1,1 @@
+function e(e,t){return e?1e4:t?.some(e=>e.stat===1)?500:1e3}function t(e,t){return e?5e3:t===1?500:t===2?1e3:2e3}export{e as n,t};

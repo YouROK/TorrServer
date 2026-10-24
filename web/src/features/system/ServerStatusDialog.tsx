@@ -155,8 +155,7 @@ export default function ServerStatusDialog({ open, onClose }: ServerStatusDialog
                           className='flex items-center justify-between gap-2 rounded-lg border border-border bg-surface-secondary px-3 py-1.5 text-xs'
                         >
                           <span className='min-w-0 truncate font-mono text-muted' title={row.hash}>
-                            {row.hash.slice(0, 8)}…
-                            {row.closed ? ' · closed' : ''}
+                            {row.hash.slice(0, 8)}…{row.closed ? ' · closed' : ''}
                           </span>
                           <span className='shrink-0 tabular-nums text-foreground'>{label}</span>
                         </div>

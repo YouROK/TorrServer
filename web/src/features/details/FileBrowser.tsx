@@ -7,6 +7,13 @@ import type { PlayableFile, TorrentFileStat } from 'shared/api/types'
 import { queryMax } from 'shared/theme/breakpoints'
 
 import FilesDataGrid from './FilesDataGrid'
+import {
+  buildDirectoryTree,
+  directoryTreeIsUseful,
+  filesInSelectedFolder,
+  flattenFolders,
+  type DirectoryNode,
+} from './fileTree'
 
 interface FileBrowserProps {
   playableFileList: PlayableFile[]
@@ -16,59 +23,6 @@ interface FileBrowserProps {
   hash: string
   allFileStats?: TorrentFileStat[]
   onViewedChange?: () => void
-}
-
-interface DirectoryNode {
-  id: string
-  label: string
-  children: Map<string, DirectoryNode>
-  files: PlayableFile[]
-}
-
-function buildDirectoryTree(files: PlayableFile[]): DirectoryNode {
-  const root: DirectoryNode = { id: 'root', label: '/', children: new Map(), files: [] }
-  for (const file of files) {
-    const segments = file.path.replace(/\\/g, '/').split('/').filter(Boolean)
-    if (segments.length <= 1) {
-      root.files.push(file)
-      continue
-    }
-    let node = root
-    for (let i = 0; i < segments.length - 1; i++) {
-      const segment = segments[i]
-      const id = `${node.id}/${segment}`
-      if (!node.children.has(segment)) {
-        node.children.set(segment, { id, label: segment, children: new Map(), files: [] })
-      }
-      node = node.children.get(segment)!
-    }
-    node.files.push(file)
-  }
-  return root
-}
-
-function collectFilesRecursively(node: DirectoryNode): PlayableFile[] {
-  const collected = [...node.files]
-  for (const child of node.children.values()) collected.push(...collectFilesRecursively(child))
-  return collected
-}
-
-function findNodeById(node: DirectoryNode, id: string): DirectoryNode | null {
-  if (node.id === id) return node
-  for (const child of node.children.values()) {
-    const found = findNodeById(child, id)
-    if (found) return found
-  }
-  return null
-}
-
-function flattenFolders(node: DirectoryNode, depth = 0): { id: string; label: string; depth: number }[] {
-  const rows: { id: string; label: string; depth: number }[] = []
-  for (const child of node.children.values()) {
-    rows.push({ id: child.id, label: child.label, depth })
-    rows.push(...flattenFolders(child, depth + 1))
-  }
-  return rows
 }
 
 function DirectoryTreeList({
@@ -125,17 +79,14 @@ export default function FileBrowser({
   const tree = useMemo(() => buildDirectoryTree(playableFileList), [playableFileList])
   // A single release folder (common for series packs) isn't worth a sidebar — only show the
   // tree when there are multiple folders or nested structure to navigate.
-  const folderCount = tree.children.size
-  const hasUsefulFolders =
-    folderCount > 1 || [...tree.children.values()].some(child => child.children.size > 0 || child.files.length === 0)
+  const hasUsefulFolders = directoryTreeIsUseful(tree)
   const [selectedFolderId, setSelectedFolderId] = useState('root')
   const folderOptions = useMemo(() => flattenFolders(tree), [tree])
 
-  const filesInSelectedFolder = useMemo(() => {
-    if (!hasUsefulFolders || selectedFolderId === 'root') return playableFileList
-    const node = findNodeById(tree, selectedFolderId)
-    return node ? collectFilesRecursively(node) : playableFileList
-  }, [selectedFolderId, tree, playableFileList, hasUsefulFolders])
+  const visibleFiles = useMemo(
+    () => filesInSelectedFolder(playableFileList, tree, selectedFolderId),
+    [selectedFolderId, tree, playableFileList],
+  )
 
   return (
     <div className={`grid min-h-[200px] w-full gap-3 ${hasUsefulFolders ? 'md:grid-cols-[200px_1fr]' : 'grid-cols-1'}`}>
@@ -184,7 +135,7 @@ export default function FileBrowser({
       ) : null}
 
       <FilesDataGrid
-        playableFileList={filesInSelectedFolder}
+        playableFileList={visibleFiles}
         viewedFileList={viewedFileList}
         selectedSeason={selectedSeason}
         seasonAmount={seasonAmount}

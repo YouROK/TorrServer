@@ -117,7 +117,7 @@ function TorrentActions({
   })
 
   /** File row owns single-file players. Series footer opens the whole playlist. */
-  const { buildSeriesExternalPlayers, hasAnyExternalPlayer, playerFlags } = useExternalPlayers()
+  const { buildSeriesExternalPlayers, hasAnyExternalPlayer, playerFlags, playerPlatform } = useExternalPlayers()
   const playlistButtonAction = usePlaylistButtonAction(playerFlags)
   const mediaBase = useExternalMediaBase()
   const singleFileStream = useMemo(() => {
@@ -272,7 +272,7 @@ function TorrentActions({
     return bindPlaylistButton(
       playlistButtonAction,
       absolute,
-      playlistActionHref(playlistButtonAction, absolute),
+      playlistActionHref(playlistButtonAction, absolute, playerPlatform),
       kind =>
         toast?.showToast({
           message: t(kind === 'copied' ? 'Copied' : 'Error'),

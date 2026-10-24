@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"sync"
 	"testing"
 
@@ -28,6 +29,22 @@ func withTestWAFDB(t *testing.T, fn func(dir string)) {
 		settings.ReadOnly = oldReadOnly
 	})
 	fn(dir)
+}
+
+func TestRangeStringDefaultsAndReload(t *testing.T) {
+	r := Range{First: net.ParseIP("10.0.0.1").To4(), Last: net.ParseIP("10.0.0.2").To4(), Description: "lan"}
+	if !strings.Contains(r.String(), "10.0.0.1") || !strings.Contains(r.String(), "lan") {
+		t.Fatal(r.String())
+	}
+	if len(DefaultReferers()) == 0 {
+		t.Fatal("empty default referers")
+	}
+	withTestWAFDB(t, func(string) {
+		Reload()
+		if len(GetSnapshot().Referers) == 0 {
+			t.Fatal("reload dropped default referers")
+		}
+	})
 }
 
 func TestParseLine(t *testing.T) {

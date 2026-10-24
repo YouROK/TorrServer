@@ -217,9 +217,11 @@ export default function DetailsDialog({
 
   const resolvedTab = activeTab
 
+  const snakeLive = resolvedTab === 'cache' || cacheMapOpen
   const cache = useUpdateCache(hash, {
-    // Fast snake on Cache tab or while the large map dialog is open.
-    fast: resolvedTab === 'cache' || cacheMapOpen,
+    // Files tab does not read the piece map. Stats keeps the idle cadence for the progress strip.
+    enabled: snakeLive || resolvedTab === 'stats',
+    fast: snakeLive,
   })
   const { data: btSettings } = useSettingsQuery()
   const preloadCachePercent = btSettings?.PreloadCache ?? 50

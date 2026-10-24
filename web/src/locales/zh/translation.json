@@ -316,6 +316,7 @@
   "Save": "保存",
   "Saved": "已保存",
   "SavedWithoutStorage": "已保存（存储后端未更改）",
+  "SettingsReadOnly": "服务器为只读模式，设置未保存。",
   "Search": {
     "AllTrackers": "所有 Tracker",
     "NoResults": "无结果",
