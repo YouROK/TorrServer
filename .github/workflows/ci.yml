@@ -145,10 +145,12 @@ jobs:
           skip-fetch-gh-pages: true
           alert-threshold: "200%"
           # 200ms benches on a shared runner cross 200% with no code change.
-          # The comment stays; the job does not.
+          # The comparison still lands in the job summary. A PR comment uses
+          # pull-requests:write. A push to master has no PR, and the commit
+          # comment API needs contents:write — that 403 fails the job.
           fail-on-alert: false
-          comment-always: true
-          comment-on-alert: true
+          comment-always: ${{ github.event_name == 'pull_request' }}
+          comment-on-alert: ${{ github.event_name == 'pull_request' }}
           summary-always: true
 
       - name: Benchmark summary
