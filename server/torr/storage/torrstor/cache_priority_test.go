@@ -203,6 +203,40 @@ func (s *seekRecordingReader) ReadContext(_ context.Context, _ []byte) (int, err
 func (s *seekRecordingReader) SetReadahead(int64) {}
 func (s *seekRecordingReader) SetResponsive()     {}
 
+func TestFileEdgePieceIncludesFirstAndLast(t *testing.T) {
+	const piece int64 = 16 << 20
+	const fileLen = 100 * piece
+	// Piece length is the keep window. The last real piece must stay.
+	if !fileEdgePiece(0, 0, fileLen, piece, piece) {
+		t.Fatal("first piece")
+	}
+	if !fileEdgePiece(99, 0, fileLen, piece, piece) {
+		t.Fatal("last piece")
+	}
+	if fileEdgePiece(50, 0, fileLen, piece, piece) {
+		t.Fatal("middle piece")
+	}
+	if fileEdgePiece(100, 0, fileLen, piece, piece) {
+		t.Fatal("piece past the file")
+	}
+
+	const piece4 int64 = 4 << 20
+	const keep8 int64 = 8 << 20
+	const len10 = 10 * piece4
+	if !fileEdgePiece(0, 0, len10, piece4, keep8) || !fileEdgePiece(1, 0, len10, piece4, keep8) {
+		t.Fatal("head window")
+	}
+	if fileEdgePiece(2, 0, len10, piece4, keep8) {
+		t.Fatal("piece 2 is outside the head window")
+	}
+	if !fileEdgePiece(8, 0, len10, piece4, keep8) || !fileEdgePiece(9, 0, len10, piece4, keep8) {
+		t.Fatal("tail window")
+	}
+	if fileEdgePiece(7, 0, len10, piece4, keep8) {
+		t.Fatal("piece 7 is outside the tail window")
+	}
+}
+
 func TestEmptyRangesKeepFileStart(t *testing.T) {
 	testBTSets(t)
 	c := &Cache{

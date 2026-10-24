@@ -139,27 +139,17 @@ func (t *Torrent) Preload(index int, size int64) {
 
 	readerStart.SetResponsive()
 	readerStart.SetReadahead(0)
-	readerStartEnd := size - startend
-
-	if readerStartEnd < 0 {
-		// Если конец начального ридера оказался за началом
-		readerStartEnd = size
-	}
-	if readerStartEnd > file.Length() {
-		// Если конец начального ридера оказался после конца файла
-		readerStartEnd = file.Length()
-	}
-
-	readerEndStart := file.Length() - startend
+	readerStartEnd, readerEndStart := preloadSpans(size, file.Length(), startend)
 	readerEndEnd := file.Length()
 
 	var wg sync.WaitGroup
 	var preloadErr error
 
-	// Start end range preload if needed
-	if readerEndStart > readerStartEnd {
+	// Tail covers bytes the head does not. Overlap used to skip the end
+	// (or, when the budget equalled the window, swap which end was read).
+	if readerEndStart < readerEndEnd {
 		wg.Add(1)
-		go func() {
+		go func(from int64) {
 			defer wg.Done()
 
 			// Check if we should still preload
@@ -182,25 +172,29 @@ func (t *Torrent) Preload(index int, size int64) {
 			readerEnd.SetResponsive()
 			readerEnd.SetReadahead(0)
 
-			_, err := readerEnd.Seek(readerEndStart, io.SeekStart)
+			_, err := readerEnd.Seek(from, io.SeekStart)
 			if err != nil {
 				log.TLogln("Err preload seek:", err)
 				preloadErr = err
 				return
 			}
 
-			offset := readerEndStart
-			tmp := make([]byte, 32768)
-			for offset+int64(len(tmp)) < readerEndEnd {
+			offset := from
+			buf := make([]byte, 32<<10)
+			for offset < readerEndEnd {
+				tmp := buf
+				if remain := readerEndEnd - offset; remain < int64(len(buf)) {
+					tmp = buf[:remain]
+				}
 				n, err := readerEnd.Read(tmp)
-				if err != nil {
-					if err != io.EOF {
+				offset += int64(n)
+				if n == 0 || err != nil {
+					if err != nil && err != io.EOF {
 						log.TLogln("Err preload read:", err)
 						preloadErr = err
 					}
 					break
 				}
-				offset += int64(n)
 
 				// Check if we should continue
 				t.muTorrent.Lock()
@@ -211,7 +205,7 @@ func (t *Torrent) Preload(index int, size int64) {
 					break
 				}
 			}
-		}()
+		}(readerEndStart)
 	}
 
 	// Main preload section
@@ -223,8 +217,8 @@ func (t *Torrent) Preload(index int, size int64) {
 	readerStart.SetReadahead(readahead)
 
 	offset := int64(0)
-	tmp := make([]byte, 32768)
-	for offset+int64(len(tmp)) < readerStartEnd {
+	buf := make([]byte, 32<<10)
+	for offset < readerStartEnd {
 		// Check if we should continue
 		t.muTorrent.Lock()
 		shouldContinue := t.Stat == state.TorrentPreload
@@ -235,18 +229,22 @@ func (t *Torrent) Preload(index int, size int64) {
 			break
 		}
 
+		tmp := buf
+		if remain := readerStartEnd - offset; remain < int64(len(buf)) {
+			tmp = buf[:remain]
+		}
 		n, err := readerStart.Read(tmp)
-		if err != nil {
-			if err != io.EOF {
+		offset += int64(n)
+
+		if readahead > 0 && readerStartEnd-offset < readahead {
+			readahead = 0
+			readerStart.SetReadahead(0)
+		}
+		if n == 0 || err != nil {
+			if err != nil && err != io.EOF {
 				log.TLogln("Error preload:", err)
 			}
 			break
-		}
-		offset += int64(n)
-
-		if readahead > 0 && readerStartEnd-(offset+int64(len(tmp))) < readahead {
-			readahead = 0
-			readerStart.SetReadahead(0)
 		}
 	}
 
@@ -270,6 +268,34 @@ func (t *Torrent) Preload(index int, size int64) {
 			st.TotalPeers, "[ Seeds:",
 			st.ConnectedSeeders, "]")
 	}
+}
+
+// preloadSpans splits a preload into [0, head) and [tail, fileLen).
+// tail == fileLen means the head already reaches the end.
+// When the windows overlap, tail starts where the head stopped, so both
+// edges are read and the shared bytes are read once.
+func preloadSpans(size, fileLen, edge int64) (head, tail int64) {
+	if fileLen < 0 {
+		fileLen = 0
+	}
+	if size > fileLen {
+		size = fileLen
+	}
+	if size < 0 {
+		size = 0
+	}
+	head = size - edge
+	if head <= 0 {
+		head = size
+	}
+	if head > fileLen {
+		head = fileLen
+	}
+	tail = fileLen - edge
+	if tail < head {
+		tail = head
+	}
+	return head, tail
 }
 
 func (t *Torrent) findFileIndex(torrent *torrent.Torrent, index int) *torrent.File {

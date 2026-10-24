@@ -19,6 +19,11 @@ import (
 
 func connectShow(t *testing.T) (*Torrent, *offlinetest.Seeder) {
 	t.Helper()
+	return connectSeeded(t, offlinetest.WriteShow(t))
+}
+
+func connectSeeded(t *testing.T, show *offlinetest.Show) (*Torrent, *offlinetest.Seeder) {
+	t.Helper()
 	offlinetest.Prepare(t)
 	bt := NewBTS()
 	InitApiHelper(bt)
@@ -27,7 +32,6 @@ func connectShow(t *testing.T) (*Torrent, *offlinetest.Seeder) {
 	}
 	t.Cleanup(bt.Disconnect)
 
-	show := offlinetest.WriteShow(t)
 	seed := offlinetest.Seed(t, show)
 	tor, err := AddTorrent(show.Spec, "Show", "", "", "tv")
 	if err != nil {
@@ -216,6 +220,94 @@ func TestOfflineReadersConcurrent(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+}
+
+func TestPreloadReadsFirstAndLastPiece(t *testing.T) {
+	tor, _ := connectShow(t)
+	var id int
+	var file *torrent.File
+	for _, f := range tor.Status().FileStats {
+		if strings.HasSuffix(f.Path, "episode1.mkv") {
+			id = f.Id
+			break
+		}
+	}
+	for _, f := range tor.Files() {
+		if strings.HasSuffix(f.Path(), "episode1.mkv") {
+			file = f
+			break
+		}
+	}
+	if file == nil || id == 0 {
+		t.Fatal("mkv")
+	}
+	tor.Preload(id, file.Length())
+	cache := tor.GetCache()
+	if cache == nil {
+		t.Fatal("cache")
+	}
+	// A piece fully inside the file and inside the last 32KiB used to stay
+	// empty: the preload loop stopped one buffer short of the end.
+	pl := file.Torrent().Info().PieceLength
+	fileOff := file.Offset()
+	fileEnd := fileOff + file.Length()
+	tailFrom := fileEnd - 32<<10
+	headPiece, tailPiece := -1, -1
+	for p := int(fileOff / pl); p <= int((fileEnd-1)/pl); p++ {
+		p0 := int64(p) * pl
+		p1 := p0 + pl
+		if p0 < fileOff || p1 > fileEnd {
+			continue
+		}
+		if headPiece < 0 && p1 <= fileOff+32<<10 {
+			headPiece = p
+		}
+		if tailPiece < 0 && p0 >= tailFrom {
+			tailPiece = p
+		}
+	}
+	if headPiece < 0 || tailPiece < 0 {
+		t.Fatalf("fixture has no whole piece in the head/tail, head=%d tail=%d", headPiece, tailPiece)
+	}
+	pieces := cache.GetState().Pieces
+	for _, pid := range []int{headPiece, tailPiece} {
+		it, ok := pieces[pid]
+		if !ok || !it.Completed || it.Size < it.Length {
+			t.Fatalf("piece %d after preload: ok=%v %+v", pid, ok, it)
+		}
+	}
+}
+
+// A file longer than the preload budget used to skip its tail: the head stopped
+// one window early and the tail reader did not start, or it stopped 32KiB short.
+// 48MiB file, 32MiB budget, 8MiB edge, 1MiB pieces: head is pieces 0..23,
+// tail is pieces 40..47, piece 32 sits in the gap and must stay empty.
+func TestPreloadReadsTailPastBudget(t *testing.T) {
+	const (
+		piece   int64 = 1 << 20
+		fileLen int64 = 48 << 20
+		budget  int64 = 32 << 20
+	)
+	show := offlinetest.WriteSized(t, "movie.mkv", fileLen, piece)
+	tor, _ := connectSeeded(t, show)
+	if len(tor.Files()) != 1 {
+		t.Fatalf("files %d", len(tor.Files()))
+	}
+	tor.Preload(1, budget)
+	cache := tor.GetCache()
+	if cache == nil {
+		t.Fatal("cache")
+	}
+	pieces := cache.GetState().Pieces
+	for _, id := range []int{0, 23, 47} {
+		it, ok := pieces[id]
+		if !ok || !it.Completed || it.Size < it.Length {
+			t.Fatalf("piece %d: ok=%v %+v", id, ok, it)
+		}
+	}
+	if it, ok := pieces[32]; ok && it.Completed {
+		t.Fatalf("gap piece 32 was loaded: %+v", it)
+	}
 }
 
 func TestPreloadZeroAndClosed(t *testing.T) {

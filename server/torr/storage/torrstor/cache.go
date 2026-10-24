@@ -669,22 +669,41 @@ func (c *Cache) isIdInFileBE(ranges []Range, id int) bool {
 	if FileRangeNotDelete < 8<<20 {
 		FileRangeNotDelete = 8 << 20
 	}
+	if c.pieceLength <= 0 {
+		return false
+	}
 
 	for _, rng := range ranges {
 		if rng.File == nil {
 			continue
 		}
-		ss := int(rng.File.Offset() / c.pieceLength)
-		se := int((rng.File.Offset() + FileRangeNotDelete) / c.pieceLength)
-
-		es := int((rng.File.Offset() + rng.File.Length() - FileRangeNotDelete) / c.pieceLength)
-		ee := int((rng.File.Offset() + rng.File.Length()) / c.pieceLength)
-
-		if id >= ss && id < se || id > es && id <= ee {
+		if fileEdgePiece(id, rng.File.Offset(), rng.File.Length(), c.pieceLength, FileRangeNotDelete) {
 			return true
 		}
 	}
 	return false
+}
+
+// fileEdgePiece reports whether piece id overlaps the first or last keep bytes of a file.
+// The tail check is inclusive of the last piece: an exclusive end dropped that piece
+// whenever the file ended on a piece boundary and the keep window was a single piece.
+func fileEdgePiece(id int, fileOff, fileLen, pieceLen, keep int64) bool {
+	if id < 0 || fileLen <= 0 || pieceLen <= 0 || keep <= 0 {
+		return false
+	}
+	if keep > fileLen {
+		keep = fileLen
+	}
+	end := fileOff + fileLen
+	return pieceOverlaps(id, fileOff, fileOff+keep, pieceLen) || pieceOverlaps(id, end-keep, end, pieceLen)
+}
+
+func pieceOverlaps(id int, start, end, pieceLen int64) bool {
+	if end <= start || pieceLen <= 0 {
+		return false
+	}
+	p0 := int64(id) * pieceLen
+	return p0 < end && p0+pieceLen > start
 }
 
 //////////////////

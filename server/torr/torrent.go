@@ -337,13 +337,18 @@ func (t *Torrent) Files() []*torrent.File {
 }
 
 func (t *Torrent) Hash() metainfo.Hash {
-	if t.Torrent != nil {
-		return t.Torrent.InfoHash()
+	// drop nils t.Torrent under muTorrent while a background save still reads it.
+	t.muTorrent.Lock()
+	tor := t.Torrent
+	spec := t.TorrentSpec
+	t.muTorrent.Unlock()
+	if tor != nil {
+		return tor.InfoHash()
 	}
-	if t.TorrentSpec != nil {
-		return t.TorrentSpec.InfoHash
+	if spec != nil {
+		return spec.InfoHash
 	}
-	return [20]byte{}
+	return metainfo.Hash{}
 }
 
 func (t *Torrent) Length() int64 {

@@ -91,6 +91,23 @@ type Show struct {
 	Data []byte
 }
 
+// WriteSized builds a single-file torrent of length bytes. length must be a multiple of pieceLen.
+func WriteSized(t testing.TB, name string, length, pieceLen int64) *Show {
+	t.Helper()
+	if length <= 0 || pieceLen <= 0 || length%pieceLen != 0 {
+		t.Fatalf("bad torrent size %d / %d", length, pieceLen)
+	}
+	data := bytes.Repeat([]byte("M"), int(length))
+	info := metainfo.Info{Name: name, Length: length, PieceLength: pieceLen}
+	if err := info.GeneratePieces(func(metainfo.FileInfo) (io.ReadCloser, error) {
+		return io.NopCloser(bytes.NewReader(data)), nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	mi := &metainfo.MetaInfo{InfoBytes: bencode.MustMarshal(info)}
+	return &Show{Meta: mi, Spec: torrent.TorrentSpecFromMetaInfo(mi), Data: data}
+}
+
 // WriteShow builds Season 1/episode1.mkv, a subtitle, and a poster with real piece hashes.
 func WriteShow(t testing.TB) *Show {
 	t.Helper()
