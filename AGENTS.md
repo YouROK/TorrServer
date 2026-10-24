@@ -13,7 +13,7 @@ Out of scope unless the task names them: embedded JS, a plugin runtime, and an F
 ## Dependency forks
 
 ```
-github.com/anacrolix/torrent v1.59.1 => github.com/lampac-nextgen/torrent v1.2.35
+github.com/anacrolix/torrent v1.59.1 => github.com/lampac-nextgen/torrent v1.2.36
 github.com/anacrolix/upnp    v0.1.4  => github.com/tsynik/upnp v0.1.5
 github.com/anacrolix/utp     v0.2.0  => github.com/lampac-nextgen/utp v0.2.1
 ```
@@ -100,14 +100,14 @@ Hold order when both are needed:
 2. `BTServer.mu` (`server/torr/btserver.go`). Guards `client`, `storage`, `torrents`, DHT cancel. `NewTorrent` drops `RLock` before `Lock`. `GetTorrent` / `ListTorrents` copy under `RLock` and return the copy. `WriteStatus` holds `RLock` for the whole `client.WriteStatus` call so `Disconnect` cannot nil the client underneath it.
 3. `Torrent.muTorrent`. Snapshot `t.Torrent` under the lock and use the local pointer after. `drop` nils `t.Torrent` and `t.cache` at any time (Lampa "drop" during a stream). `WaitInfo` already does this snapshot. `Close` sets `Stat`, unlocks, deletes from `bt.torrents`, then `drop`. Do not call `bt.mu.Lock` while `muTorrent` is held.
 4. `torrstor.Storage.mu`. Release it before `Cache.Close`. `CloseHash` deletes the map entry, unlocks, then closes. `Cache.Close` calls `removeCache`, which locks `Storage.mu` again.
-5. Cache locks, never nested in the opposite direction: `muRemove` (evict/close) → `muReaders` → `muActive` → `muPrio`. `muTor` is only the `*torrent.Torrent` pointer. `filled` is `atomic.Int64`. `isClosed` is `atomic.Bool`.
+5. Cache locks, never nested in the opposite direction: `muRemove` (evict/close) → `muReaders` → `muActive`. `muTor` is only the `*torrent.Torrent` pointer. `filled` is `atomic.Int64`. `isClosed` is `atomic.Bool`.
 6. `Reader.mu`. `resume` drops it around the anacrolix `Seek` because that seek runs cache cleanup, which locks `Reader.mu` again. Copy the fields you need, unlock, seek, relock. `readerOff` refuses to `Seek(0)` while `inFlight > 0` (`reader_park_test.go`).
 
-`Cache.pieces` is filled in `Init` and then read. Do not insert or delete keys after `Init`. `Close` leaves the map in place so `GetState` can still walk it; buffers are nil and `isClosed` blocks new allocs. `activePieces` and `prioPieces` have their own mutexes so `GetState` stays O(active), not O(piece count).
+`Cache.pieces` is filled in `Init` and then read. Do not insert or delete keys after `Init`. `Close` leaves the map in place so `GetState` can still walk it; buffers are nil and `isClosed` blocks new allocs. `activePieces` has its own mutex so `GetState` stays O(active), not O(piece count).
 
 `MemPiece.ReadAt` takes `Lock`, not `RLock`: it writes `Accessed`. `Release` nils the slice under the lock, unlocks, then `putPieceBuf`, so a `ReadAt` that was waiting finishes its copy before the slab is cleared and published.
 
-`Cache.CloseReader` is safe on a nil `*Cache`: it uses `r.cache`. `Torrent.CloseReader` relies on that. `Reader.Close` alone does not unregister; only `Cache.CloseReader` deletes from `readers`, and it holds `muReaders` across `Reader.Close`. A second `clearPriority` after that raced a new reader's priorities. Do not add one.
+`Cache.CloseReader` is safe on a nil `*Cache`: it uses `r.cache`. `Torrent.CloseReader` relies on that. `Reader.Close` alone does not unregister; only `Cache.CloseReader` deletes from `readers`, and it holds `muReaders` across `Reader.Close`. After that unlock it calls `AdjustRA` so the readers that remain take the freed share. Do not call `Piece.SetPriority` from the cache: the client raises a stored priority over `SetNext` / `SetReadahead` / `SetZone`, and one write flattens those tiers. `Piece.Release` only calls `UpdateCompletion`.
 
 Do not hold `BTServer.mu`, `Torrent.muTorrent`, `Storage.mu`, or `Cache.muRemove` across tracker HTTP, DHT lookup, `publicip.Get4/Get6`, disk flush, or `os.MkdirAll`. `Connect` already holds `bt.mu` across `torrent.NewClient`; do not add more I/O there.
 
@@ -143,16 +143,16 @@ Piece buffers (`server/torr/storage/torrstor/piecebuf.go`):
 Eviction (`Cache.cleanPieces` / `getRemPieces` / `pieceEvictable`):
 
 - `cleanPieces` uses `muRemove.TryLock`. `Close` holds `muRemove` across `Release`. A failed try skips this pass.
-- A piece is not evictable when it sits in a merged reader range, in the begin/end keep window, in `prioPieces`, or when `Size >= piece length` but `Complete` is still false (hash in progress). Evicting that last case makes anacrolix hash a short `ReadAt` and log `unexpected error hashing piece`.
+- A piece is not evictable when it sits in a merged reader range, in the begin/end keep window, or when `Size >= piece length` but `Complete` is still false (hash in progress). Evicting that last case makes anacrolix hash a short `ReadAt` and log `unexpected error hashing piece`.
 - Reader ranges are closed intervals. `mergeRange` merges only when `End >= next.Start`.
 - Keep window is at least 8MiB at the start and end of the torrent when no reader range is active (`isIdInKeepWindow`). `isIdInFileBE` keeps the ends of each open file.
 - Evict complete pieces first, oldest `Accessed` first. The client does not re-request chunks it already has; evicting a partial piece makes a responsive reader read zeros.
-- Priorities change in `getRemPieces` / `clearPriority` / `setLoadPriority`, guarded by `muPrio`. Recalculate when a reader is created, closed, parked, or crosses a piece. Do not do it on every small `Read`.
+- Download windows are `readerWindows`: zone is `(capacity/readers)*ReaderReadAHead/100`, readahead is `min(16MiB/readers, zone)`, next is `min(4MiB/readers, readahead)`. `AdjustRA` pushes them when a reader is created, when one is closed, and on the 1s `updateRA` tick. `applyZones` drops `muReaders` before `SetZones`, because those calls take the client lock. Do not recompute them on every small `Read`.
 - `priorityWatchdog` re-arms every 5s while `GetUseReaders() > 0`, and exits on `stopWatch` or `isClosed`. A `time.Sleep` instead of `select` on `stopWatch` leaks one goroutine per dropped torrent.
 
 Reader window (`Reader.getOffsetRange`): capacity is split across active readers. `ReaderReadAHead` (default 95, clamped 5–100) is the forward fraction. `Seek(0, SeekEnd)` returns the length and does not move the playhead. ServeContent probes size that way; seeking to EOF would pull the tail of a huge file.
 
-Idle park is `minReaderIdleTimeout` (60s), or `TorrentDisconnectTimeout` if that is larger. `checkReader` parks by `SetReadahead(0)` and `Seek(0, SeekStart)` only when `inFlight == 0`. `beginIO` increments `inFlight` and `resume`s under `Reader.mu` before the anacrolix read. A blocked read must not be seeked.
+Idle park is `minReaderIdleTimeout` (60s), or `TorrentDisconnectTimeout` if that is larger. `checkReader` parks by pushing `SetNext` / `SetReadahead` / `SetZone` of 0 and `Seek(0, SeekStart)` only when `inFlight == 0`. Stored windows stay so `resume` can put them back. `beginIO` increments `inFlight` and `resume`s under `Reader.mu` before the anacrolix read. A blocked read must not be seeked.
 
 `Torrent.Close` refuses while `ReadOnly` and `GetUseReaders() > 0`.
 
@@ -289,7 +289,7 @@ Run `make bench` when the diff touches `server/torr`, `server/torr/storage/torrs
 - `defer bt.mu.RUnlock()` across a branch that needs `bt.mu.Lock`.
 - Reading `t.Torrent`, `t.cache`, or `bt.client` without a snapshot under the mutex that owns them.
 - `Cache.Close` while `Storage.mu` is held.
-- `clearPriority` not under `muPrio`, or a sleep "so the new reader can win".
+- `Piece.SetPriority` from the cache, or a sleep "so the new reader can win".
 - Evicting a full piece whose `Complete` flag is still false.
 - `Put` of a piece slab after `isClosed`, or `Put` of a sub-slice.
 - A fresh `[]byte` per `Read` on `/stream` or `/play`.

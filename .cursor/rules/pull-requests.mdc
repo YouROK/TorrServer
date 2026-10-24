@@ -1,0 +1,17 @@
+---
+description: Open pull requests on lampac-nextgen/TorrServer, not the YouROK upstream
+alwaysApply: true
+---
+
+# Pull requests
+
+`origin` is `lampac-nextgen/TorrServer`. GitHub still treats that repo as a fork of `YouROK/TorrServer`, so `gh pr create` with no `--repo` opens the PR on YouROK.
+
+- Push the branch to `origin` (`git@github.com:lampac-nextgen/TorrServer`).
+- Create and update PRs with `--repo lampac-nextgen/TorrServer`. Base is `master` unless the user names another branch.
+- Do not open, push to, or comment on `YouROK/TorrServer` unless the user explicitly asks to send the change upstream.
+
+```bash
+git push -u origin HEAD
+gh pr create --repo lampac-nextgen/TorrServer --base master --head "$(git branch --show-current)" --title "..." --body "..."
+```

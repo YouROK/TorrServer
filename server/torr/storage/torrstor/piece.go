@@ -3,7 +3,6 @@ package torrstor
 import (
 	"server/settings"
 
-	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/storage"
 )
 
@@ -117,7 +116,6 @@ func (p *Piece) Release() {
 	// Eviction runs before SetTorrent and after the client is gone. The pointer
 	// is guarded by muTor; a bare field read raced Close and panicked on nil.
 	if tor := p.cache.torrentPtr(); tor != nil {
-		tor.Piece(p.Id).SetPriority(torrent.PiecePriorityNone)
 		tor.Piece(p.Id).UpdateCompletion()
 	}
 }
