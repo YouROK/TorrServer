@@ -144,7 +144,9 @@ jobs:
           github-token: ${{ github.token }}
           skip-fetch-gh-pages: true
           alert-threshold: "200%"
-          fail-on-alert: true
+          # 200ms benches on a shared runner cross 200% with no code change.
+          # The comment stays; the job does not.
+          fail-on-alert: false
           comment-always: true
           comment-on-alert: true
           summary-always: true

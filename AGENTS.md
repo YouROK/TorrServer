@@ -221,7 +221,7 @@ cd server && go test -race -count=1 -timeout=10m -coverprofile=coverage.out -cov
 
 That is `TEST_PKGS` in the Makefile. It excludes generated Swagger only. `rutor` is included. GStreamer CGo is not: those files are `//go:build gst`, and default tests compile `server/gstreamer/bridge/bridge_stub.go`. Do not pass `-tags gst` in the default gate. Do not add a test that needs a real kernel FUSE mount, a real `ffprobe`, or the network.
 
-Coverage (`/.testcoverage.yml`): total 70% on `server/coverage.out`. File and package floors are 0. Do not fail a change for a single package under 70%, and do not lower the total. `make bench` is not the whole module. It is `./subs ./torr/storage/torrstor ./torrshash ./torrfs ./web/api` at `-benchtime=200ms`. The `torr` reader bench blocks on `GotInfo` and is excluded on purpose. CI fails a benchmark that regresses past 200%.
+Coverage (`/.testcoverage.yml`): total 70% on `server/coverage.out`. File and package floors are 0. Do not fail a change for a single package under 70%, and do not lower the total. `make bench` is not the whole module. It is `./subs ./torr/storage/torrstor ./torrshash ./torrfs ./web/api` at `-benchtime=200ms`. The `torr` reader bench blocks on `GotInfo` and is excluded on purpose. A benchmark swing past 200% is commented on the PR and does not fail CI: `-benchtime=200ms` on a shared runner moves that much.
 
 `make lint` is `golangci-lint run ./...` in `server/`. Config is v2, `default: standard`, `max-issues-per-linter: 0`, `max-same-issues: 0`. Format is `gofmt -s` and `goimports` (`make fmt`, `make fmt-check`). CI runs both format checks before the linter. `make lint-all` is the local equivalent.
 
