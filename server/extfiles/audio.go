@@ -83,7 +83,7 @@ func MatchAudio(video FileInfo, files []FileInfo) []AudioTrack {
 // singleVideoAudio decides whether an audio file belongs to the only video of the torrent.
 func (v Video) singleVideoAudio(filePath string) bool {
 	dir := path.Dir(filePath)
-	if strings.HasPrefix(strings.ToLower(stripExt(path.Base(filePath))), strings.ToLower(v.base)) {
+	if hasNamePrefix(stripExt(path.Base(filePath)), v.base) {
 		return true
 	}
 	if dir == v.dir {

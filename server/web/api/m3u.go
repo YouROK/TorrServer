@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
 	"net"
@@ -12,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/anacrolix/missinggo/v2/httptoo"
 	"github.com/anacrolix/torrent/bencode"
@@ -175,8 +178,9 @@ func sendM3U(c *gin.Context, name, hash string, m3u string) {
 	c.Header("Content-Type", "audio/x-mpegurl")
 	c.Header("Connection", "close")
 	if hash != "" {
-		etag := hex.EncodeToString([]byte(fmt.Sprintf("%s/%s", hash, name)))
-		c.Header("ETag", httptoo.EncodeQuotedString(etag))
+		// The list changes with titles, viewed files and settings, so the tag covers the body.
+		sum := sha1.Sum([]byte(hash + "/" + name + "\n" + m3u))
+		c.Header("ETag", httptoo.EncodeQuotedString(hex.EncodeToString(sum[:])))
 	}
 	if name == "" {
 		name = "playlist.m3u"
@@ -234,13 +238,30 @@ func findFileNamesakes(files []*state.TorrentFileStat, file *state.TorrentFileSt
 	name := filepath.Base(strings.TrimSuffix(file.Path, filepath.Ext(file.Path)))
 	var namesakes []*state.TorrentFileStat
 	for _, f := range files {
-		if strings.Contains(f.Path, name) { // external tracks always include name of videofile
+		if containsName(f.Path, name) { // external tracks always include name of videofile
 			if f != file { // exclude itself
 				namesakes = append(namesakes, f)
 			}
 		}
 	}
 	return namesakes
+}
+
+// containsName reports whether name appears in path as a whole word at its
+// end, so "Show S01E1" matches "Show S01E1.rus.mka" but not "Show S01E10.mkv".
+func containsName(path, name string) bool {
+	for i := 0; ; {
+		j := strings.Index(path[i:], name)
+		if j < 0 {
+			return false
+		}
+		end := i + j + len(name)
+		next, _ := utf8.DecodeRuneInString(path[end:])
+		if end == len(path) || !(unicode.IsLetter(next) || unicode.IsDigit(next)) {
+			return true
+		}
+		i += j + 1
+	}
 }
 
 func searchLastPlayed(tor *state.TorrentStatus) int {
