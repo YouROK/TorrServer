@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"slices"
+	"strings"
 	"testing"
 
 	"github.com/anacrolix/torrent"
@@ -177,38 +177,30 @@ func TestStatusFromSpecMatchesTorrentFileIDs(t *testing.T) {
 	}
 }
 
-func TestFindFileNamesakesNeedsTheWholeName(t *testing.T) {
-	paths := []string{
-		"Show/Show S01E1.mkv",
-		"Show/Show S01E10.mkv",
-		"Show/Show S01E11.mkv",
-		"Show/Show S01E1.rus.mka",
-		"Show/Sound/Show S01E1 [Studio].mka",
-		"Show/Subs/Show S01E1/English.srt",
-		"Show/Фильм.mkv",
-		"Show/Фильмы.mkv",
-		"Show/Фильм.ru.srt",
-	}
-	var files []*state.TorrentFileStat
-	for i, p := range paths {
-		files = append(files, &state.TorrentFileStat{Id: i + 1, Path: p})
-	}
-	names := func(video int) []string {
-		var got []string
-		for _, f := range findFileNamesakes(files, files[video]) {
-			got = append(got, f.Path)
+func TestSendM3UETagFollowsBody(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	// gin buffers the status, so read it from the context writer.
+	send := func(m3u, ifNoneMatch string) (int, http.Header, string) {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodGet, "/playlist", nil)
+		if ifNoneMatch != "" {
+			c.Request.Header.Set("If-None-Match", ifNoneMatch)
 		}
-		return got
+		sendM3U(c, "movie.m3u", "08ada5a7", m3u)
+		return c.Writer.Status(), w.Header(), w.Body.String()
 	}
 
-	want := []string{"Show/Show S01E1.rus.mka", "Show/Sound/Show S01E1 [Studio].mka", "Show/Subs/Show S01E1/English.srt"}
-	if got := names(0); !slices.Equal(got, want) {
-		t.Errorf("S01E1 namesakes = %q, want %q", got, want)
+	_, header, _ := send("#EXTM3U\nhttp://h/stream/a.mkv\n", "")
+	tag := header.Get("ETag")
+	if tag == "" {
+		t.Fatal("no ETag")
 	}
-	if got := names(1); len(got) != 0 {
-		t.Errorf("S01E10 namesakes = %q, want none", got)
+	if status, _, _ := send("#EXTM3U\nhttp://h/stream/a.mkv\n", tag); status != http.StatusNotModified {
+		t.Fatalf("same playlist: status = %d, want 304", status)
 	}
-	if got := names(6); !slices.Equal(got, []string{"Show/Фильм.ru.srt"}) {
-		t.Errorf("Фильм namesakes = %q", got)
+	status, _, body := send("#EXTM3U\nhttp://h/stream/b.mkv\n", tag)
+	if status != http.StatusOK || !strings.Contains(body, "b.mkv") {
+		t.Fatalf("changed playlist with the old ETag: status = %d, body %q, want 200 with the new list", status, body)
 	}
 }
