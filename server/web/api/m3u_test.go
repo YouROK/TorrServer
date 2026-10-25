@@ -17,6 +17,7 @@ import (
 
 	sets "server/settings"
 	"server/torr"
+	"server/torr/state"
 	"server/web/sslcerts"
 )
 

@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 )
 
 // FileInfo describes a torrent file. Index must match the file index
@@ -168,7 +169,7 @@ func related(a, b string) bool {
 // sameEpisode reports whether the subtitle file belongs to the video: its name starts
 // with the video name, or (when byNumber is set) both names carry the same episode number.
 func sameEpisode(videoBase, subBase string, byNumber bool) bool {
-	if strings.HasPrefix(strings.ToLower(subBase), strings.ToLower(videoBase)) {
+	if hasNamePrefix(subBase, videoBase) {
 		return true
 	}
 	if !byNumber {
@@ -177,6 +178,23 @@ func sameEpisode(videoBase, subBase string, byNumber bool) bool {
 	vs, ve, ok1 := episodeOf(videoBase)
 	ss, se, ok2 := episodeOf(subBase)
 	return ok1 && ok2 && sameEpisodeNumber(vs, ve, ss, se)
+}
+
+// hasNamePrefix reports whether name starts with prefix (case-insensitive) and the
+// prefix ends at a word boundary: "ep01.rus" starts with "ep01", but "Show - 10"
+// does not start with "Show - 1" and "Aliens" does not start with "Alien".
+func hasNamePrefix(name, prefix string) bool {
+	name, prefix = strings.ToLower(name), strings.ToLower(prefix)
+	if !strings.HasPrefix(name, prefix) {
+		return false
+	}
+	last, _ := utf8.DecodeLastRuneInString(prefix)
+	next, _ := utf8.DecodeRuneInString(name[len(prefix):])
+	return len(name) == len(prefix) || !isWordRune(last) || !isWordRune(next)
+}
+
+func isWordRune(r rune) bool {
+	return unicode.IsLetter(r) || unicode.IsDigit(r)
 }
 
 // sameEpisodeNumber compares (season, episode) pairs; an unknown season (-1) matches any.
