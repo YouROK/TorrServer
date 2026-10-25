@@ -30,6 +30,8 @@ export const useOfflineActions = hash => {
   const enable = () => post({ action: 'offline', enable: true })
   const pause = () => post({ action: 'offline_pause' })
   const resume = () => post({ action: 'offline_resume' })
+  // a pinned copy is never removed by the disk quota rotation
+  const pin = enable => post({ action: 'offline_pin', enable })
   // removing deletes files from the disk - ask first
   const remove = () => {
     setConfirmText(t('OfflineRemoveConfirm', 'Delete the offline copy of this torrent from the disk?'))
@@ -76,5 +78,5 @@ export const useOfflineActions = hash => {
     </>
   )
 
-  return { busy, enable, pause, resume, remove, dialogs }
+  return { busy, enable, pause, resume, pin, remove, dialogs }
 }

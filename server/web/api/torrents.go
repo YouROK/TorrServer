@@ -19,7 +19,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Action: add, get, set, rem, list, drop, wipe, offline, offline_pause, offline_resume
+// Action: add, get, set, rem, list, drop, wipe, offline, offline_pause, offline_resume, offline_quota, offline_pin
 type torrReqJS struct {
 	requestI
 	Link     string `json:"link,omitempty"`
@@ -41,7 +41,7 @@ type torrReqJS struct {
 //
 //	@Tags			API
 //
-//	@Param			request	body	torrReqJS	true	"Torrent request. Available actions: add, get, set, rem, list, drop, wipe, offline, offline_pause, offline_resume. link required for add; hash required for get, set, rem, drop, offline, offline_pause, offline_resume; enable required for offline (true - download for offline viewing, false - remove the offline copy and go back to streaming)."
+//	@Param			request	body	torrReqJS	true	"Torrent request. Available actions: add, get, set, rem, list, drop, wipe, offline, offline_pause, offline_resume, offline_quota, offline_pin. link required for add; hash required for get, set, rem, drop, offline, offline_pause, offline_resume; enable required for offline (true - download for offline viewing, false - remove the offline copy and go back to streaming). offline_pin sets (enable true) or clears the protection of the offline copy from the quota rotation. offline_quota returns the state of the offline disk quotas (limits, used, free)."
 //
 //	@Accept			json
 //	@Produce		json
@@ -95,6 +95,14 @@ func torrents(c *gin.Context) {
 	case "offline_resume":
 		{
 			offlineControl(req, c, false)
+		}
+	case "offline_pin":
+		{
+			offlinePin(req, c)
+		}
+	case "offline_quota":
+		{
+			c.JSON(200, torr.GetOfflineQuotaInfo())
 		}
 	default:
 		{
@@ -278,6 +286,21 @@ func offlineControl(req torrReqJS, c *gin.Context, pause bool) {
 	}
 	if err != nil {
 		log.TLogln("error offline pause/resume:", err)
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, tor.Status())
+}
+
+// offlinePin protects (enable=true) or releases an offline copy from the quota rotation.
+func offlinePin(req torrReqJS, c *gin.Context) {
+	if req.Hash == "" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "hash is empty"})
+		return
+	}
+	tor, err := torr.SetOfflinePinned(req.Hash, req.Enable)
+	if err != nil {
+		log.TLogln("error offline pin:", err)
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}

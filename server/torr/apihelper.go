@@ -136,6 +136,7 @@ func GetTorrent(hashHex string) *Torrent {
 				tr.Size = tor.Size
 				tr.Timestamp = tor.Timestamp
 				tr.Category = tor.Category
+				tr.setOfflinePinned(tor.OfflinePinned())
 				// An offline download waits for its metadata in runOffline, without a
 				// timeout (a rare torrent may take as long as it takes). Blocking here
 				// too would leak this goroutine together with the loadingTorrents

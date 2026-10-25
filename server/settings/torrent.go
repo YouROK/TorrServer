@@ -25,6 +25,11 @@ type TorrentDB struct {
 	// OfflineDir is the directory the offline data of this torrent was stored in
 	// (so changing the global setting does not orphan already downloaded torrents).
 	OfflineDir string `json:"offline_dir,omitempty"`
+	// OfflineUsedAt is the unix time the offline copy was last watched (or finished);
+	// the rotation removes the least recently used copies first.
+	OfflineUsedAt int64 `json:"offline_used_at,omitempty"`
+	// OfflinePinned protects the offline copy from the quota rotation.
+	OfflinePinned bool `json:"offline_pinned,omitempty"`
 }
 
 type File struct {
@@ -54,6 +59,32 @@ func AddTorrent(torr *TorrentDB) {
 		return
 	}
 	tdb.Set("Torrents", torr.InfoHash.HexString(), buf)
+}
+
+// SetOfflinePinned changes only the pin flag of the stored record (a read-modify-write of
+// ONE record under the lock, so it cannot resurrect stale fields). It reports whether the
+// record exists.
+func SetOfflinePinned(hash metainfo.Hash, pinned bool) bool {
+	mu.Lock()
+	defer mu.Unlock()
+	if tdb == nil {
+		return false
+	}
+	buf := tdb.Get("Torrents", hash.HexString())
+	if len(buf) == 0 {
+		return false
+	}
+	var torr TorrentDB
+	if err := json.Unmarshal(buf, &torr); err != nil || torr.TorrentSpec == nil {
+		return false
+	}
+	torr.OfflinePinned = pinned
+	out, err := json.Marshal(&torr)
+	if err != nil {
+		return false
+	}
+	tdb.Set("Torrents", hash.HexString(), out)
+	return true
 }
 
 func ListTorrent() []*TorrentDB {

@@ -164,7 +164,11 @@ func (t *Torrent) recheckOfflineSpace(gt *torrent.Torrent) error {
 			verified = b
 		}
 	}
-	return checkOfflineSpace(t.offlineBase(), gt.Length()-verified)
+	// the quotas (and the rotation) apply as soon as the size is known
+	unlockQuota := lockOfflineQuota()
+	defer unlockQuota()
+	return ensureOfflineRoom(offlineRoom{self: t.Hash(), dir: t.offlineBase(),
+		total: gt.Length(), remaining: gt.Length() - verified})
 }
 
 // offlineTotalLength returns the full payload size of the torrent, 0 when the
@@ -336,6 +340,9 @@ func (t *Torrent) streamOffline(fileID int, req *http.Request, resp http.Respons
 	}
 	defer fh.Close()
 
+	// the copy is in use: the rotation must not remove it (see offline_quota.go)
+	defer offlineBeginUse(t.Hash())()
+
 	t.prepareStreamResponse(resp, req, fileID, file.Path)
 	http.ServeContent(resp, req, file.Path, time.Unix(t.Timestamp, 0), fh)
 	return nil
@@ -359,6 +366,7 @@ func (t *Torrent) readOfflineFile(fileID int, maxSize int64) ([]byte, error) {
 		return nil, err
 	}
 	defer fh.Close()
+	defer offlineBeginUse(t.Hash())()
 	buf := make([]byte, file.Length)
 	if _, err := io.ReadFull(fh, buf); err != nil {
 		return nil, err
@@ -701,6 +709,9 @@ func (t *Torrent) finishOffline() bool {
 	}
 
 	t.setOfflineState(state.OfflineReady)
+	now := time.Now().Unix()
+	t.setOfflineUsedAt(now) // a fresh copy is the youngest one for the rotation
+	markOfflineFinished(hash, now)
 	clearOfflineError(hash)
 	AddTorrentDB(t) // persists the ready state together with the metadata
 	log.TLogln("offline: ready", hash.HexString(), title)
@@ -734,6 +745,8 @@ func startOffline(db *Torrent) (*Torrent, error) {
 		tr.Category = db.Category
 		tr.Data = db.Data
 		tr.Size = db.Size
+		tr.setOfflineUsedAt(db.offlineUsedAt())
+		tr.setOfflinePinned(db.OfflinePinned())
 		if db.Timestamp != 0 {
 			tr.Timestamp = db.Timestamp
 		}
@@ -755,6 +768,7 @@ func closeAndWait(t *Torrent) {
 
 func removeOfflineData(hash metainfo.Hash, dir string) {
 	offlineLayouts.Delete(hash)
+	offlineUses.Delete(hash)
 	clearOfflineError(hash)
 	if bts != nil {
 		bts.mu.RLock()
@@ -790,12 +804,17 @@ func restartOfflineDownload(db *Torrent, hash metainfo.Hash) (*Torrent, error) {
 	// unlock() here would unlock an already unlocked mutex, which is a fatal,
 	// unrecoverable runtime error (and, if another goroutine took the lock in
 	// between, would release the lock of that goroutine).
-	if err := checkOfflineSpace(db.offlineBase(), offlineTotalLength(db)); err != nil {
+	// The quotas apply as well; the quota lock is held until the new state is saved.
+	total := offlineTotalLength(db)
+	unlockQuota := lockOfflineQuota()
+	if err := ensureOfflineRoom(offlineRoom{self: hash, dir: db.offlineBase(), total: total, remaining: total}); err != nil {
+		unlockQuota()
 		return nil, err
 	}
 	removeOfflineData(hash, db.offlineBase()) // removes the sidecar, the layout cache and the files
 	db.setOfflineState(state.OfflineDownloading)
 	AddTorrentDB(db)
+	unlockQuota()
 	return startOffline(db)
 }
 
@@ -874,7 +893,12 @@ func EnableOffline(hashHex string) (*Torrent, error) {
 	// A fresh offline download needs room for the whole torrent: refuse the
 	// switch before the state is written and the client is reloaded, so the
 	// user gets a clear error instead of a download that dies on ENOSPC.
-	if err := checkOfflineSpace(dir, offlineTotalLength(db)); err != nil {
+	// The quotas (maximum size, free space reserve) apply here as well, and the
+	// rotation may remove old copies; the quota lock is held until the new state is saved.
+	total := offlineTotalLength(db)
+	unlockQuota := lockOfflineQuota()
+	if err := ensureOfflineRoom(offlineRoom{self: hash, dir: dir, total: total, remaining: total}); err != nil {
+		unlockQuota()
 		unlock()
 		return nil, err
 	}
@@ -885,6 +909,7 @@ func EnableOffline(hashHex string) (*Torrent, error) {
 	db.setOfflineDir(dir)
 	db.setOfflineState(state.OfflineDownloading)
 	AddTorrentDB(db)
+	unlockQuota()
 	unlock()
 
 	// The storage of a torrent cannot be replaced while it is loaded: reload it.
@@ -975,7 +1000,10 @@ func ResumeOfflineDownload(hashHex string) (*Torrent, error) {
 	// Only the still-missing part counts: a half-downloaded torrent resumed on
 	// a full disk must fail with a clear message instead of ENOSPC halfway
 	// through a write.
-	if err := checkOfflineSpace(db.offlineBase(), offlineRemainingBytes(db, hash)); err != nil {
+	unlockQuota := lockOfflineQuota()
+	if err := ensureOfflineRoom(offlineRoom{self: hash, dir: db.offlineBase(),
+		total: offlineTotalLength(db), remaining: offlineRemainingBytes(db, hash)}); err != nil {
+		unlockQuota()
 		unlock()
 		return nil, err
 	}
@@ -983,6 +1011,7 @@ func ResumeOfflineDownload(hashHex string) (*Torrent, error) {
 	clearOfflineError(hash)
 	db.setOfflineState(state.OfflineDownloading)
 	AddTorrentDB(db)
+	unlockQuota()
 	unlock()
 	if live != nil {
 		closeAndWait(live)
@@ -998,7 +1027,12 @@ func DisableOffline(hashHex string) (*Torrent, error) {
 		return nil, errors.New("read-only DB mode")
 	}
 	hash := metainfo.NewHashFromHex(hashHex)
-	unlock := lockOfflineTransition(hash)
+	return disableOffline(hash, lockOfflineTransition(hash))
+}
+
+// disableOffline is DisableOffline for a caller that already holds the transition
+// lock of the torrent (the rotation takes it with a try-lock); unlock is called here.
+func disableOffline(hash metainfo.Hash, unlock func()) (*Torrent, error) {
 	db := GetTorrentDB(hash)
 	if db == nil {
 		unlock()

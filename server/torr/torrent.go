@@ -61,6 +61,8 @@ type Torrent struct {
 	// offline mode ("", state.OfflineDownloading, state.OfflineReady)
 	offlineState string
 	offlineDir   string // base directory of the offline data ("" = current default)
+	offlineUsed  int64  // unix time of the last use of the offline copy (muOffline)
+	offlinePin   bool   // the offline copy is protected from the rotation (muOffline)
 	muOffline    sync.RWMutex
 	offStore     *offline.Storage // set for torrents that are downloaded in offline mode
 }
@@ -467,6 +469,7 @@ func (t *Torrent) Status() *state.TorrentStatus {
 	st.Stat = t.Stat
 	st.StatString = t.Stat.String()
 	st.OfflineState = t.OfflineState()
+	st.OfflinePinned = t.OfflinePinned()
 	st.Title = t.Title
 	st.Category = t.Category
 	st.Poster = t.Poster

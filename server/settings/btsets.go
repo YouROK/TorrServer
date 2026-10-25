@@ -47,6 +47,10 @@ type BTSets struct {
 	// Offline mode: directory for fully downloaded torrents.
 	// Empty = "offline" inside the database/config directory.
 	OfflineSavePath string
+	// Offline disk quotas (see server/torr/offline_quota.go). 0 = disabled.
+	OfflineMaxSize      int64 // max total size of all offline torrents, bytes
+	OfflineMinFreeSpace int64 // free space (bytes) that must stay on the offline disk
+	OfflineRotation     bool  // free the space by removing the least recently used ready offline copies
 
 	// Torrent
 	ForceEncrypt             bool
@@ -155,6 +159,13 @@ func SetBTSets(sets *BTSets) {
 	}
 	if sets.TorrentDisconnectTimeout == 0 {
 		sets.TorrentDisconnectTimeout = 30
+	}
+
+	if sets.OfflineMaxSize < 0 {
+		sets.OfflineMaxSize = 0
+	}
+	if sets.OfflineMinFreeSpace < 0 {
+		sets.OfflineMinFreeSpace = 0
 	}
 
 	if sets.ReaderReadAHead < 5 {

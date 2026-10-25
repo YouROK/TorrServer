@@ -19,12 +19,15 @@ const TorrentFunctions = memo(
     setViewedFileList,
     offlineState,
     offlineError,
+    offlinePinned,
     loadedSize,
     torrentSize,
   }) => {
     const { t } = useTranslation()
     const [offline, setOffline] = useState(offlineState || '')
     const [offlineBusy, setOfflineBusy] = useState(false)
+    const [pinned, setPinned] = useState(!!offlinePinned)
+    useEffect(() => setPinned(!!offlinePinned), [offlinePinned])
     const [confirmState, setConfirmState] = useState(null)
     const [errorText, setErrorText] = useState('')
     useEffect(() => setOffline(offlineState || ''), [offlineState])
@@ -36,7 +39,10 @@ const TorrentFunctions = memo(
         setOfflineBusy(true)
         axios
           .post(torrentsHost(), { hash, ...body })
-          .then(({ data }) => setOffline(data?.offline_state || ''))
+          .then(({ data }) => {
+            setOffline(data?.offline_state || '')
+            setPinned(!!data?.offline_pinned)
+          })
           .catch(e => setErrorText(e?.response?.data?.error || e.message))
           .finally(() => setOfflineBusy(false))
       }
@@ -54,6 +60,8 @@ const TorrentFunctions = memo(
       )
     const pauseOffline = () => callOffline({ action: 'offline_pause' })
     const resumeOffline = () => callOffline({ action: 'offline_resume' })
+    // a pinned copy is never removed by the disk quota rotation
+    const togglePin = () => callOffline({ action: 'offline_pin', enable: !pinned })
     const latestViewedFileId = viewedFileList?.[viewedFileList?.length - 1]
     const latestViewedFile = playableFileList?.find(({ id }) => id === latestViewedFileId)?.path
     const isOnlyOnePlayableFile = playableFileList?.length === 1
@@ -144,6 +152,13 @@ const TorrentFunctions = memo(
               size='large'
             >
               {t('OfflineResume', 'Resume offline download')}
+            </Button>
+          )}
+          {!!offline && (
+            <Button disabled={offlineBusy} onClick={togglePin} variant='contained' color='primary' size='large'>
+              {pinned
+                ? t('OfflineUnpin', 'Unpin: allow rotation to remove')
+                : t('OfflinePin', 'Pin: never remove automatically')}
             </Button>
           )}
           {!!offline && (

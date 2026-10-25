@@ -54,6 +54,17 @@ func AddTorrentDB(torr *Torrent) {
 	t.Timestamp = torr.Timestamp // time.Now().Unix()
 	t.OfflineState = torr.OfflineState()
 	t.OfflineDir = torr.offlineDirRaw()
+	t.OfflineUsedAt = torr.offlineUsedAt()
+	if t.OfflineState != "" {
+		// A live torrent object does not carry these: keep the stored values. The pin is
+		// changed only by SetOfflinePinned, never by saving the torrent.
+		if old := GetTorrentDB(torr.Hash()); old != nil {
+			t.OfflinePinned = old.OfflinePinned()
+			if t.OfflineUsedAt == 0 {
+				t.OfflineUsedAt = old.offlineUsedAt()
+			}
+		}
+	}
 
 	settings.AddTorrent(t)
 }
@@ -72,6 +83,8 @@ func GetTorrentDB(hash metainfo.Hash) *Torrent {
 			torr.Data = db.Data
 			torr.setOfflineState(db.OfflineState)
 			torr.setOfflineDir(db.OfflineDir)
+			torr.setOfflineUsedAt(db.OfflineUsedAt)
+			torr.setOfflinePinned(db.OfflinePinned)
 			torr.Stat = state.TorrentInDB
 			return torr
 		}
@@ -97,6 +110,8 @@ func ListTorrentsDB() map[metainfo.Hash]*Torrent {
 		torr.Data = db.Data
 		torr.setOfflineState(db.OfflineState)
 		torr.setOfflineDir(db.OfflineDir)
+		torr.setOfflineUsedAt(db.OfflineUsedAt)
+		torr.setOfflinePinned(db.OfflinePinned)
 		torr.Stat = state.TorrentInDB
 		ret[torr.TorrentSpec.InfoHash] = torr
 	}

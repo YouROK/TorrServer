@@ -60,6 +60,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
     loaded_size: loadedSize,
     offline_state: offlineState,
     offline_error: offlineError,
+    offline_pinned: offlinePinned,
     file_stats: torrentFileList,
   } = torrent
   const isOfflineTorrent = !!offlineState
@@ -214,6 +215,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
                   setViewedFileList={setViewedFileList}
                   offlineState={offlineState}
                   offlineError={offlineError}
+                  offlinePinned={offlinePinned}
                   loadedSize={loadedSize}
                   torrentSize={torrentSize}
                 />
