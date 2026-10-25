@@ -6,6 +6,8 @@ import PauseCircleOutlineIcon from '@material-ui/icons/PauseCircleOutline'
 import PauseIcon from '@material-ui/icons/Pause'
 import PlayArrowIcon from '@material-ui/icons/PlayArrow'
 import DeleteOutlineIcon from '@material-ui/icons/DeleteOutline'
+import LockIcon from '@material-ui/icons/Lock'
+import LockOpenIcon from '@material-ui/icons/LockOpen'
 import { useTranslation } from 'react-i18next'
 import { OFFLINE_DOWNLOADING, OFFLINE_PAUSED, OFFLINE_READY } from 'utils/offline'
 
@@ -18,9 +20,10 @@ import { useOfflineActions } from './useOfflineActions'
 //   downloading -> pause, cancel
 //   paused      -> resume, cancel
 //   ready       -> remove the offline copy
-const OfflineControls = ({ hash, offlineState }) => {
+// Any offline state also offers pin/unpin: a pinned copy is skipped by the disk quota rotation.
+const OfflineControls = ({ hash, offlineState, pinned }) => {
   const { t } = useTranslation()
-  const { busy, enable, pause, resume, remove, dialogs } = useOfflineActions(hash)
+  const { busy, enable, pause, resume, pin, remove, dialogs } = useOfflineActions(hash)
   const [anchor, setAnchor] = useState(null)
 
   const closeMenu = () => setAnchor(null)
@@ -54,6 +57,7 @@ const OfflineControls = ({ hash, offlineState }) => {
       >
         {icon}
         <span>{t('OfflineSummaryOffline', 'Offline')}</span>
+        {pinned && <LockIcon style={{ fontSize: 14, marginLeft: 4 }} titleAccess={t('OfflinePinned', 'Pinned')} />}
       </StyledButton>
 
       <Menu
@@ -71,6 +75,10 @@ const OfflineControls = ({ hash, offlineState }) => {
           item(t('OfflinePause', 'Pause offline download'), pause, <PauseIcon fontSize='small' />)}
         {offlineState === OFFLINE_PAUSED &&
           item(t('OfflineResume', 'Resume offline download'), resume, <PlayArrowIcon fontSize='small' />)}
+        {!!offlineState &&
+          (pinned
+            ? item(t('OfflineUnpin', 'Unpin: allow rotation to remove'), () => pin(false), <LockOpenIcon fontSize='small' />)
+            : item(t('OfflinePin', 'Pin: never remove automatically'), () => pin(true), <LockIcon fontSize='small' />))}
         {!!offlineState &&
           item(
             offlineState === OFFLINE_READY
