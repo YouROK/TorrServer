@@ -108,10 +108,35 @@ func (p *Piece) Completion() storage.Completion {
 }
 
 func (p *Piece) Release() {
+	p.releaseBuffers()
+	updatePieceCompletion(p)
+}
+
+func (p *Piece) releaseBuffers() {
+	if p == nil {
+		return
+	}
 	if !settings.BTsets.UseDisk {
-		p.mPiece.Release()
-	} else {
+		if p.mPiece != nil {
+			p.mPiece.Release()
+		}
+		return
+	}
+	if p.dPiece != nil {
 		p.dPiece.Release()
+	}
+}
+
+// updatePieceCompletion tells the torrent client the piece bytes are gone.
+// Must not run while holding Cache.muRemove: Client.Close holds the client lock
+// and then Cache.Close waits on muRemove (see cleanPieces).
+func updatePieceCompletion(p *Piece) {
+	if p == nil || p.cache == nil || p.cache.isClosed.Load() {
+		return
+	}
+	if pieceCompletionUpdater != nil {
+		pieceCompletionUpdater(p)
+		return
 	}
 	// Eviction runs before SetTorrent and after the client is gone. The pointer
 	// is guarded by muTor; a bare field read raced Close and panicked on nil.
@@ -119,3 +144,6 @@ func (p *Piece) Release() {
 		tor.Piece(p.Id).UpdateCompletion()
 	}
 }
+
+// pieceCompletionUpdater overrides the client UpdateCompletion call in tests.
+var pieceCompletionUpdater func(*Piece)

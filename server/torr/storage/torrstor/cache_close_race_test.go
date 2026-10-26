@@ -237,6 +237,62 @@ func TestCompletionConcurrentWithMarkComplete(t *testing.T) {
 	wg.Wait()
 }
 
+// cleanPieces must drop muRemove before UpdateCompletion. Client.Close holds the
+// client lock then Cache.Close waits on muRemove — the preload teardown hang.
+func TestCleanPiecesUnlocksBeforeCompletion(t *testing.T) {
+	prev := settings.BTsets
+	settings.BTsets = &settings.BTSets{}
+	t.Cleanup(func() { settings.BTsets = prev })
+
+	var clientMu sync.Mutex
+	old := pieceCompletionUpdater
+	pieceCompletionUpdater = func(*Piece) {
+		clientMu.Lock()
+		clientMu.Unlock()
+	}
+	t.Cleanup(func() { pieceCompletionUpdater = old })
+
+	const plen int64 = 8 << 20
+	stor := NewStorage(plen)
+	c := NewCache(plen, stor) // capacity = one piece; three filled → eviction
+	c.pieceLength = plen
+	c.pieceCount = 3
+	c.pieces = make(map[int]*Piece, 3)
+	c.activePieces = make(map[int]struct{})
+	for id := 0; id < 3; id++ {
+		p := &Piece{Id: id, cache: c, Size: plen, Complete: true, Accessed: int64(id)}
+		mp := NewMemPiece(p)
+		mp.buffer = make([]byte, plen)
+		p.mPiece = mp
+		c.pieces[id] = p
+		c.notePieceFilled(id)
+	}
+	c.filled.Store(3 * plen)
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		clientMu.Lock()
+		evictDone := make(chan struct{})
+		go func() {
+			defer close(evictDone)
+			c.cleanPieces()
+		}()
+		// Old bug: cleanPieces held muRemove across completion (waits clientMu),
+		// Close blocked on muRemove → deadlock. Sleep so eviction reaches completion.
+		time.Sleep(20 * time.Millisecond)
+		_ = c.Close()
+		clientMu.Unlock()
+		<-evictDone // before test cleanup clears pieceCompletionUpdater
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(10 * time.Second):
+		t.Fatal("deadlock: muRemove held across completion while Close held client lock")
+	}
+}
+
 // Close holds muRemove → piece.mu → muActive; cleanPieces TryLock(muRemove).
 // Hang = lock-order regression.
 func TestCloseCleanPiecesNoDeadlock(t *testing.T) {

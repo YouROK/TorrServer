@@ -210,8 +210,8 @@ func (c *Cache) Close() error {
 	}
 
 	// Drop piece buffers before FreeOSMem so rem/ffp churn can return RAM.
-	// MemPiece/DiskPiece.Release only — Piece.Release also touches the torrent client.
-	// Hold muRemove so cleanPieces cannot interleave removePiece with this release.
+	// MemPiece/DiskPiece.Release only — UpdateCompletion also touches the torrent client.
+	// Hold muRemove so cleanPieces cannot interleave buffer release with this pass.
 	// Keep c.pieces (do not nil): getRemPieces/GetState may still read the field;
 	// buffers are already nil and isClosed blocks new allocs.
 	c.muRemove.Lock()
@@ -239,12 +239,6 @@ func (c *Cache) Close() error {
 
 	utils.FreeOSMemGCThrottled()
 	return nil
-}
-
-func (c *Cache) removePiece(piece *Piece) {
-	if !c.isClosed.Load() {
-		piece.Release()
-	}
 }
 
 func (c *Cache) AdjustRA(readahead int64) {
@@ -426,25 +420,40 @@ func (c *Cache) cleanPieces() {
 	if c.isClosed.Load() {
 		return
 	}
-	// TryLock serializes eviction; Close takes the same muRemove around Release.
+	// TryLock serializes eviction; Close takes the same muRemove around buffer release.
 	if !c.muRemove.TryLock() {
 		return
 	}
-	defer c.muRemove.Unlock()
 
 	remPieces := c.getRemPieces()
 	filled := c.filled.Load()
+	var evicted []*Piece
 	if filled > c.capacity {
 		rems := (filled-c.capacity)/c.pieceLength + 1
 		for _, p := range remPieces {
-			c.removePiece(p)
+			if c.isClosed.Load() {
+				break
+			}
+			// Buffers only under muRemove. UpdateCompletion takes the torrent
+			// client lock; Client.Close holds that lock while Cache.Close waits
+			// on muRemove — holding both is a deadlock (preload teardown flake).
+			p.releaseBuffers()
+			evicted = append(evicted, p)
 			rems--
 			if rems <= 0 {
-				utils.FreeOSMemGCThrottled()
-				return
+				break
 			}
 		}
 	}
+	c.muRemove.Unlock()
+
+	if len(evicted) == 0 {
+		return
+	}
+	for _, p := range evicted {
+		updatePieceCompletion(p)
+	}
+	utils.FreeOSMemGCThrottled()
 }
 
 func (c *Cache) snapshotReaders() []*Reader {
