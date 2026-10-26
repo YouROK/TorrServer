@@ -493,6 +493,8 @@ github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0
 github.com/kylelemons/godebug v1.1.0/go.mod h1:9/0rRGxNHcop5bhtWyNeEfOS8JIWk580+fNqagV/RAw=
 github.com/lampac-nextgen/torrent v1.2.36 h1:KZOMsEYggQ/dIWm6C31HONTbtcSzlBKJj8Dbiaxhuo8=
 github.com/lampac-nextgen/torrent v1.2.36/go.mod h1:yz3J10YJmUfiFfylHgIzr9cuhmXHHmf5xsHDgsqEnFg=
+github.com/lampac-nextgen/upnp v0.1.5 h1:ZYHnioh9XU4PR8px3maSE1xhK/cJpN5G3AAil5beg7E=
+github.com/lampac-nextgen/upnp v0.1.5/go.mod h1:AK5Kz71NGb39UK7iYw6N7SXV/GIj/A82UCeZBh7PR30=
 github.com/lampac-nextgen/utp v0.2.1 h1:pk4TxMje39qL9ZagpA4aYstquD9ykd8XrwCccpGlLVk=
 github.com/lampac-nextgen/utp v0.2.1/go.mod h1:HGk4GYQw1O/3T1+yhqT/F6EcBd+AAwlo9dYErNy7mj8=
 github.com/ledongthuc/pdf v0.0.0-20220302134840-0c2507a12d80/go.mod h1:imJHygn/1yfhB7XSJJKlFZKl/J+dCPAknuiaGOshXAs=
@@ -657,8 +659,6 @@ github.com/swaggo/swag v1.16.6/go.mod h1:ngP2etMK5a0P3QBizic5MEwpRmluJZPHjXcMoj4
 github.com/tinylib/msgp v1.0.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tinylib/msgp v1.1.0/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tinylib/msgp v1.1.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
-github.com/tsynik/upnp v0.1.5 h1:2KXGBtY6MZHxq17p/N372Kr/0MJX3ADAimfvPcTpap8=
-github.com/tsynik/upnp v0.1.5/go.mod h1:NiwP/o2sXNehx/4DbRT78Itii9F13d7NUrdHcVlpPPs=
 github.com/tv42/httpunix v0.0.0-20150427012821-b75d8614f926/go.mod h1:9ESjWnEqriFuLhtthL60Sar/7RFoluCcXsuvEwTV5KM=
 github.com/twitchyliquid64/golang-asm v0.15.1 h1:SU5vSMR7hnwNxj24w34ZyCi/FmDZTkS4MhqMhdFk5YI=
 github.com/twitchyliquid64/golang-asm v0.15.1/go.mod h1:a1lVb/DtPvCB8fslRZhAngC2+aY1QWCk3Cedj/Gdt08=

@@ -69,7 +69,6 @@ require (
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
-	github.com/kljensen/snowball v0.10.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/miekg/dns v1.1.41 // indirect
@@ -108,12 +107,12 @@ require (
 	golang.org/x/time v0.15.0 // indirect
 	golang.org/x/tools v0.49.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
-	gopkg.in/telebot.v4 v4.0.0-beta.7 // indirect
+	gopkg.in/telebot.v4 v4.0.0-beta.10 // indirect
 	gopkg.in/vansante/go-ffprobe.v2 v2.3.1 // indirect
 )
 
 replace (
 	github.com/anacrolix/torrent v1.59.1 => github.com/tsynik/torrent v1.2.31
-	github.com/anacrolix/upnp v0.1.4 => github.com/tsynik/upnp v0.1.5
+	github.com/anacrolix/upnp v0.1.4 => github.com/lampac-nextgen/upnp v0.1.5
 	server => ../..
 )
