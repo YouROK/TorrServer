@@ -94,8 +94,24 @@ func SaveTorrentToDB(torr *Torrent) {
 	AddTorrentDB(torr)
 }
 
+// parseHash reads a hash that came with a request: /torrents, /cache, /playlist and /msx/trn pass it
+// on unchecked. Only 40 hex digits are a hash here, and metainfo.NewHashFromHex panics on anything
+// else - for example on the 32-character base32 btih of a magnet link, which ParseLink accepts.
+// A malformed hash is an unknown torrent.
+func parseHash(hashHex string) (metainfo.Hash, bool) {
+	var hash metainfo.Hash
+	if err := hash.FromHexString(hashHex); err != nil {
+		log.TLogln("bad torrent hash", fmt.Sprintf("%.64q:", hashHex), err)
+		return hash, false
+	}
+	return hash, true
+}
+
 func GetTorrent(hashHex string) *Torrent {
-	hash := metainfo.NewHashFromHex(hashHex)
+	hash, ok := parseHash(hashHex)
+	if !ok {
+		return nil
+	}
 	timeout := time.Second * time.Duration(sets.BTsets.TorrentDisconnectTimeout)
 	if timeout > time.Minute {
 		timeout = time.Minute
@@ -127,7 +143,10 @@ func GetTorrent(hashHex string) *Torrent {
 }
 
 func SetTorrent(hashHex, title, poster, category string, data string) *Torrent {
-	hash := metainfo.NewHashFromHex(hashHex)
+	hash, ok := parseHash(hashHex)
+	if !ok {
+		return nil
+	}
 	torr := bts.GetTorrent(hash)
 	torrDb := GetTorrentDB(hash)
 
@@ -172,7 +191,10 @@ func RemTorrent(hashHex string) {
 		log.TLogln("API RemTorrent: Read-only DB mode!", hashHex)
 		return
 	}
-	hash := metainfo.NewHashFromHex(hashHex)
+	hash, ok := parseHash(hashHex)
+	if !ok {
+		return
+	}
 
 	// Download the torrent before deleting it to get the "closed" status
 	torr := bts.GetTorrent(hash)
@@ -255,7 +277,10 @@ func sortTorrentsByAdded(ret []*Torrent, db map[metainfo.Hash]*Torrent) {
 }
 
 func DropTorrent(hashHex string) {
-	hash := metainfo.NewHashFromHex(hashHex)
+	hash, ok := parseHash(hashHex)
+	if !ok {
+		return
+	}
 	bts.RemoveTorrent(hash)
 }
 
