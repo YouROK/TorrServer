@@ -514,18 +514,22 @@ type OfflineQuotaInfo struct {
 	Used         int64  `json:"used"` // occupied or reserved by offline torrents
 	Free         int64  `json:"free"` // free space of the offline disk, -1 = unknown
 	Dir          string `json:"dir"`
+	// Available is how much a NEW offline download may still take right now (without the
+	// rotation): the smaller of what is left of OfflineMaxSize and of the free space of the
+	// disk after the reserve and the bytes running downloads still have to write.
+	// -1 = no limit is known. LimitedBy is the limit that decides: "quota" or "disk".
+	Available int64  `json:"available"`
+	LimitedBy string `json:"limited_by,omitempty"`
 }
 
 func GetOfflineQuotaInfo() OfflineQuotaInfo {
 	q := currentOfflineQuota()
 	dir := offlineBaseDir()
-	info := OfflineQuotaInfo{MaxSize: q.maxSize, MinFreeSpace: q.minFree, Rotation: q.rotation, Free: -1, Dir: dir}
+	info := OfflineQuotaInfo{MaxSize: q.maxSize, MinFreeSpace: q.minFree, Rotation: q.rotation, Free: -1, Dir: dir, Available: -1}
+	var reserved int64
 	if bts != nil && sets.IsDBOpen() {
-		for hash, db := range ListTorrentsDB() {
-			if db.OfflineState() != "" {
-				info.Used += offlineCommitted(db, hash)
-			}
-		}
+		// no torrent is excluded: the zero hash matches none
+		info.Used, reserved = offlineUsageOthers(metainfo.Hash{}, dir)
 	}
 	// the directory may not exist yet: ask the nearest existing parent
 	probe := dir
@@ -541,6 +545,25 @@ func GetOfflineQuotaInfo() OfflineQuotaInfo {
 			break
 		}
 		probe = parent
+	}
+
+	var avail int64
+	known := false
+	if q.maxSize > 0 {
+		avail, known = q.maxSize-info.Used, true
+		info.LimitedBy = "quota"
+	}
+	if info.Free >= 0 {
+		if disk := info.Free - reserved - q.minFree - offlineSpaceMargin; !known || disk < avail {
+			avail, known = disk, true
+			info.LimitedBy = "disk"
+		}
+	}
+	if known {
+		if avail < 0 {
+			avail = 0 // over the limit: nothing is available
+		}
+		info.Available = avail
 	}
 	return info
 }

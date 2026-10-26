@@ -18,7 +18,7 @@ import ExpandLessIcon from '@material-ui/icons/ExpandLess'
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from 'react-query'
-import { humanizeSpeed } from 'utils/Utils'
+import { humanizeSize, humanizeSpeed } from 'utils/Utils'
 import {
   FILTER_ALL,
   FILTER_DOWNLOADING,
@@ -30,6 +30,7 @@ import {
 } from 'utils/offline'
 
 import { pauseAllOffline, resumeAllOffline } from './bulkActions'
+import { OFFLINE_QUOTA_KEY, useOfflineQuota } from './useOfflineQuota'
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -85,6 +86,8 @@ const OfflineToolbar = ({ torrents, summary, filter, onFilterChange }) => {
   const [busy, setBusy] = useState(false)
   const [errors, setErrors] = useState([])
   const [collapsed, setCollapsed] = useState(readCollapsed)
+  // hooks go before the early return below; nothing is requested while the panel is hidden
+  const quota = useOfflineQuota(!!summary && summary.offline > 0)
 
   if (!summary || summary.offline === 0) return null
 
@@ -102,6 +105,7 @@ const OfflineToolbar = ({ torrents, summary, filter, onFilterChange }) => {
       const getFresh = () => queryClient.refetchQueries('torrents').then(() => queryClient.getQueryData('torrents'))
       const failed = await action(torrents, getFresh)
       await getFresh()
+      queryClient.invalidateQueries(OFFLINE_QUOTA_KEY)
       if (failed.length) setErrors(failed)
     } finally {
       setBusy(false)
@@ -109,6 +113,17 @@ const OfflineToolbar = ({ torrents, summary, filter, onFilterChange }) => {
   }
 
   const activeFilter = FILTERS.find(([value]) => value === filter)
+
+  const size = bytes => humanizeSize(bytes) || '0'
+  // Used by the offline torrents (of the quota, if one is set) and what a new download may still
+  // take: the smaller of what is left of the quota and of the free disk space (after the reserve).
+  const usedText = quota ? (quota.max_size > 0 ? `${size(quota.used)} / ${size(quota.max_size)}` : size(quota.used)) : '---'
+  const availableText = quota && quota.available >= 0 ? size(quota.available) : '---'
+  const limitHint = quota?.limited_by
+    ? t(quota.limited_by === 'quota' ? 'OfflineAvailableByQuota' : 'OfflineAvailableByDisk', {
+        defaultValue: quota.limited_by === 'quota' ? 'Limited by the offline size quota' : 'Limited by the free disk space',
+      })
+    : t('OfflineAvailableNoLimit', 'No limit is known')
 
   const errorDialog = (
     <Dialog open={errors.length > 0} onClose={() => setErrors([])}>
@@ -138,6 +153,17 @@ const OfflineToolbar = ({ torrents, summary, filter, onFilterChange }) => {
           <div className={classes.stat}>
             <span className={classes.statLabel}>{t('OfflineSummaryOffline', 'Offline')}:</span>
             <span className={classes.statValue}>{summary.offline}</span>
+          </div>
+          <div className={classes.stat} title={t('OfflineStorageUsedHint', 'Space taken by the offline torrents')}>
+            <span className={classes.statLabel}>{t('OfflineStorageUsed', 'Used')}:</span>
+            <span className={classes.statValue}>{usedText}</span>
+          </div>
+          <div
+            className={classes.stat}
+            title={`${t('OfflineStorageAvailableHint', 'Space left for new offline downloads')} - ${limitHint}`}
+          >
+            <span className={classes.statLabel}>{t('OfflineStorageAvailable', 'Available')}:</span>
+            <span className={classes.statValue}>{availableText}</span>
           </div>
           <div className={classes.stat} title={t('OfflineSummaryDownloadSpeed', 'Total download speed')}>
             <ArrowDownwardIcon className={classes.speedIcon} />
