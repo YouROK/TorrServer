@@ -831,3 +831,41 @@ func TestHLSSegmentIsMpegts(t *testing.T) {
 		t.Errorf("content type = %q, want video/mp2t", got)
 	}
 }
+
+// TestHLSCleanupKeepsWindowAroundLastRequest проверяет, что очистка идёт
+// от последнего запрошенного сегмента, а не от позиции запуска ffmpeg.
+func TestHLSCleanupKeepsWindowAroundLastRequest(t *testing.T) {
+	h := setupHLS(t)
+	s := h.env.server
+	s.cfg.FFmpeg.CacheSegments = 6
+
+	sess := &hlsSession{
+		ID:            "cleanup-last-requested",
+		startIndex:    0,
+		lastRequested: 20,
+	}
+
+	dir := sess.workDir(s)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i <= 30; i++ {
+		if err := os.WriteFile(filepath.Join(dir, sess.segmentName(i)), []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	sess.cleanup(s)
+
+	// Окно: 6 сегментов назад и hlsForwardGap вперёд от запрошенного
+	for i := 0; i <= 30; i++ {
+		_, err := os.Stat(filepath.Join(dir, sess.segmentName(i)))
+		wantKept := i >= 15 && i <= 20+hlsForwardGap
+		if wantKept && err != nil {
+			t.Errorf("segment %d was removed, want kept", i)
+		}
+		if !wantKept && err == nil {
+			t.Errorf("segment %d was kept, want removed", i)
+		}
+	}
+}

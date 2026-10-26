@@ -51,11 +51,12 @@ type hlsSession struct {
 	Info    *media.MediaInfo
 	LeaseID string
 
-	mu         sync.Mutex
-	job        *job.Job
-	startIndex int       // Номер сегмента, с которого запущен текущий процесс
-	lastAccess time.Time // Время последнего обращения плеера
-	stopped    bool
+	mu            sync.Mutex
+	job           *job.Job
+	startIndex    int       // Номер сегмента, с которого запущен текущий процесс
+	lastRequested int       // Номер последнего запрошенного плеером сегмента
+	lastAccess    time.Time // Время последнего обращения плеера
+	stopped       bool
 
 	viewedMarked bool
 }
@@ -196,6 +197,7 @@ func (s *Server) handleHLSSegment(c *gin.Context) {
 	}
 
 	session.touch()
+	session.markRequested(index)
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), s.hlsWaitTimeout())
 	defer cancel()
@@ -247,8 +249,11 @@ func (h *hlsSession) ensure(ctx context.Context, s *Server, index int) error {
 			case <-done:
 				// Процесс завершился и сегмент не появится
 			default:
-				if err := hls.WaitForSegment(h.playlistPath(s), dir, name, hlsSegmentWait, done); err == nil {
-					return nil
+				// Сегмент уже был произведён и удалён: ждать нечего
+				if index > last {
+					if err := h.waitProduced(s, dir, name, done); err == nil {
+						return nil
+					}
 				}
 			}
 		}
@@ -260,6 +265,42 @@ func (h *hlsSession) ensure(ctx context.Context, s *Server, index int) error {
 	}
 
 	return hls.WaitForSegment(h.playlistPath(s), dir, name, s.hlsWaitTimeout(), h.done())
+}
+
+// waitProduced ждёт, пока работающий процесс дойдёт до сегмента.
+// Перезапуск нужен только когда процесс встал: пока он выпускает новые
+// сегменты, ожидание продолжается в пределах общего таймаута.
+func (h *hlsSession) waitProduced(s *Server, dir, name string, done <-chan struct{}) error {
+	deadline := time.Now().Add(s.hlsWaitTimeout())
+	last := lastSegmentIndex(dir)
+
+	for {
+		wait := hlsSegmentWait
+		if remaining := time.Until(deadline); remaining < wait {
+			wait = remaining
+		}
+		if wait <= 0 {
+			return errors.New("segment did not appear in time")
+		}
+
+		if err := hls.WaitForSegment(h.playlistPath(s), dir, name, wait, done); err == nil {
+			return nil
+		}
+
+		if done != nil {
+			select {
+			case <-done:
+				return errors.New("process finished before the segment appeared")
+			default:
+			}
+		}
+
+		next := lastSegmentIndex(dir)
+		if next <= last {
+			return errors.New("process stopped producing segments")
+		}
+		last = next
+	}
 }
 
 // restart перезапускает процесс с сегмента, который запросил плеер.
@@ -531,6 +572,13 @@ func (h *hlsSession) touch() {
 	h.mu.Unlock()
 }
 
+// markRequested запоминает позицию плеера для очистки сегментов.
+func (h *hlsSession) markRequested(index int) {
+	h.mu.Lock()
+	h.lastRequested = index
+	h.mu.Unlock()
+}
+
 // idleFor возвращает время с последнего обращения.
 func (h *hlsSession) idleFor() time.Duration {
 	h.mu.Lock()
@@ -569,11 +617,14 @@ func (h *hlsSession) done() <-chan struct{} {
 }
 
 // cleanup удаляет сегменты, выпавшие из окна вокруг текущего места.
-// Окно считается от места, где сейчас кодирование: после перемотки назад
-// старые сегменты с большими номерами не должны вытеснять новые.
+// Окно считается от последнего запрошенного сегмента: позиция запуска
+// ffmpeg стоит на месте и не отражает, где сейчас плеер.
 func (h *hlsSession) cleanup(s *Server) {
 	h.mu.Lock()
 	current := h.startIndex
+	if h.lastRequested > current {
+		current = h.lastRequested
+	}
 	h.mu.Unlock()
 
 	entries, err := os.ReadDir(h.workDir(s))
