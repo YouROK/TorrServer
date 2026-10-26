@@ -246,6 +246,37 @@ func TestCountSegmentsFromSeek(t *testing.T) {
 	}
 }
 
+// TestProducedFromSlidingWindow проверяет счёт сделанных сегментов, когда
+// ffmpeg удаляет старые (скользящее окно) и после перемотки назад.
+func TestProducedFromSlidingWindow(t *testing.T) {
+	cases := []struct {
+		nums       []int
+		from, want int
+	}{
+		{nil, 0, 0},
+		{[]int{0, 1, 2}, 0, 3},
+		// ffmpeg уже удалил 0..16: сделано 24, а файлов только 7
+		{[]int{17, 18, 19, 20, 21, 22, 23}, 0, 24},
+		// Перемотка назад на 100: 1200 и 1201 остались от прошлого места
+		{[]int{100, 101, 1200, 1201}, 100, 2},
+		{[]int{0, 1, 2, 3, 4, 1200, 1201}, 1200, 2},
+	}
+	for _, c := range cases {
+		dir := t.TempDir()
+		for _, n := range c.nums {
+			if err := os.WriteFile(filepath.Join(dir, fmt.Sprintf("seg%d.ts", n)), []byte("x"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if err := os.WriteFile(filepath.Join(dir, "index.m3u8"), []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if got := producedFrom(dir, c.from); got != c.want {
+			t.Errorf("%v from %d = %d, want %d", c.nums, c.from, got, c.want)
+		}
+	}
+}
+
 func TestTrailingSegmentNumber(t *testing.T) {
 	cases := map[string]int{
 		"seg0.ts":    0,

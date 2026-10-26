@@ -3,6 +3,7 @@ package job
 import (
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -69,7 +70,7 @@ func (t *throttler) run() {
 // считалось бы мгновенно, останавливая процесс на новом месте.
 func (t *throttler) check() {
 	start := t.job.StartIndex()
-	produced := countSegmentsFrom(t.job.WorkDir, start)
+	produced := producedFrom(t.job.WorkDir, start)
 	served := int(t.job.SegmentsServed())
 	ahead := produced - served
 
@@ -94,6 +95,55 @@ func (t *throttler) shutdown() {
 		_ = t.job.Resume()
 		t.job.setThrottled(false)
 	}
+}
+
+// producedFrom возвращает, сколько сегментов ffmpeg сделал от позиции
+// запуска: конец непрерывной цепочки номеров от неё минус from плюс один.
+//
+// Число файлов для этого не годится: без playlist_type ffmpeg работает со
+// скользящим окном (-hls_flags delete_segments) и держит на диске только
+// последние list_size+delete_threshold файлов. Счёт файлов перестаёт расти,
+// отданные растут дальше, опережение уходит в минус, и пауза больше не
+// включается: ffmpeg убегает вперёд и удаляет сегменты, которые плеер ещё
+// не забрал.
+//
+// Считается только непрерывная цепочка: после перемотки назад в каталоге
+// остаются сегменты прошлого места с большими номерами.
+func producedFrom(dir string, from int) int {
+	if dir == "" {
+		return 0
+	}
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return 0
+	}
+
+	var nums []int
+	for _, e := range entries {
+		if e.IsDir() || strings.HasPrefix(e.Name(), ".") {
+			continue
+		}
+		switch strings.ToLower(filepath.Ext(e.Name())) {
+		case ".ts", ".m4s":
+			if num, ok := trailingSegmentNumber(e.Name()); ok && num >= from {
+				nums = append(nums, num)
+			}
+		}
+	}
+	if len(nums) == 0 {
+		return 0
+	}
+
+	sort.Ints(nums)
+	end := nums[0]
+	for _, n := range nums[1:] {
+		if n != end+1 {
+			break
+		}
+		end = n
+	}
+	return end - from + 1
 }
 
 // countSegmentsFrom считает сегменты начиная с указанного номера.
