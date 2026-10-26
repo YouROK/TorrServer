@@ -22,7 +22,7 @@ Import upstream paths. `server/go.mod` replaces them:
 
 - `github.com/anacrolix/torrent` → `github.com/lampac-nextgen/torrent`
 - `github.com/anacrolix/utp` → `github.com/lampac-nextgen/utp`
-- `github.com/anacrolix/upnp` → `github.com/tsynik/upnp`
+- `github.com/anacrolix/upnp` → `github.com/lampac-nextgen/upnp`
 
 `NE` comments are APIs this fork does not have (directory file storage, `DisableWebtorrent`, `HeaderObfuscationPolicy`, storage `Capacity`). Do not call them. `OE` comments are the live behavior.
 
