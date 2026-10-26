@@ -1,6 +1,8 @@
 package torrstor
 
 import (
+	"os"
+
 	"server/settings"
 
 	"github.com/anacrolix/torrent/storage"
@@ -108,23 +110,29 @@ func (p *Piece) Completion() storage.Completion {
 }
 
 func (p *Piece) Release() {
-	p.releaseBuffers()
+	if path := p.releaseBuffers(); path != "" {
+		_ = os.Remove(path)
+	}
 	updatePieceCompletion(p)
 }
 
-func (p *Piece) releaseBuffers() {
+// releaseBuffers clears piece bytes under the piece mutex.
+// For disk pieces it returns the file path so the caller can os.Remove after
+// dropping muRemove (Close/cleanPieces must not delete under that lock).
+func (p *Piece) releaseBuffers() (diskPath string) {
 	if p == nil {
-		return
+		return ""
 	}
 	if !settings.BTsets.UseDisk {
 		if p.mPiece != nil {
 			p.mPiece.Release()
 		}
-		return
+		return ""
 	}
 	if p.dPiece != nil {
-		p.dPiece.Release()
+		return p.dPiece.releaseState()
 	}
+	return ""
 }
 
 // updatePieceCompletion tells the torrent client the piece bytes are gone.

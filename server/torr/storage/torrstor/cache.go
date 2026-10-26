@@ -95,10 +95,10 @@ func (c *Cache) Init(info *metainfo.Info, hash metainfo.Hash) {
 }
 
 // priorityWatchdog parks idle readers while a torrent stays open.
-// Piece reads also reach checkReader through getRemPieces, but a paused
-// player does not read, so without this sweep the reader would keep its
-// download zone. Piece priorities themselves come from the torrent client's
-// reader tiers, not from this sweep.
+// A paused player does not read, so without this sweep the reader would keep
+// its download zone. Parking must not run under muRemove (anacrolix Seek/SetZone
+// takes the client lock; Client.Close holds that lock then waits on muRemove).
+// Piece priorities themselves come from the torrent client's reader tiers.
 func (c *Cache) priorityWatchdog() {
 	tick := time.NewTicker(5 * time.Second)
 	defer tick.Stop()
@@ -115,8 +115,21 @@ func (c *Cache) priorityWatchdog() {
 			continue
 		}
 		if c.GetUseReaders() > 0 {
-			c.getRemPieces()
+			c.parkIdleReaders()
 		}
+	}
+}
+
+// parkIdleReaders runs checkReader without holding muRemove.
+func (c *Cache) parkIdleReaders() {
+	if c == nil || c.isClosed.Load() {
+		return
+	}
+	for _, r := range c.snapshotReaders() {
+		if r == nil || r.closed() {
+			continue
+		}
+		r.checkReader()
 	}
 }
 
@@ -210,24 +223,25 @@ func (c *Cache) Close() error {
 	}
 
 	// Drop piece buffers before FreeOSMem so rem/ffp churn can return RAM.
-	// MemPiece/DiskPiece.Release only — UpdateCompletion also touches the torrent client.
-	// Hold muRemove so cleanPieces cannot interleave buffer release with this pass.
+	// Buffer state only under muRemove — UpdateCompletion and os.Remove must not
+	// run while it is held (Client.Close / AGENTS disk rule).
 	// Keep c.pieces (do not nil): getRemPieces/GetState may still read the field;
 	// buffers are already nil and isClosed blocks new allocs.
 	c.muRemove.Lock()
+	var diskPaths []string
 	for _, p := range c.pieces {
 		if p == nil {
 			continue
 		}
-		if p.mPiece != nil {
-			p.mPiece.Release()
-		}
-		if p.dPiece != nil {
-			p.dPiece.Release()
+		if path := p.releaseBuffers(); path != "" {
+			diskPaths = append(diskPaths, path)
 		}
 	}
 	c.filled.Store(0)
 	c.muRemove.Unlock()
+	for _, path := range diskPaths {
+		_ = os.Remove(path)
+	}
 
 	c.muReaders.Lock()
 	c.readers = nil
@@ -428,6 +442,7 @@ func (c *Cache) cleanPieces() {
 	remPieces := c.getRemPieces()
 	filled := c.filled.Load()
 	var evicted []*Piece
+	var diskPaths []string
 	if filled > c.capacity {
 		rems := (filled-c.capacity)/c.pieceLength + 1
 		for _, p := range remPieces {
@@ -437,7 +452,10 @@ func (c *Cache) cleanPieces() {
 			// Buffers only under muRemove. UpdateCompletion takes the torrent
 			// client lock; Client.Close holds that lock while Cache.Close waits
 			// on muRemove — holding both is a deadlock (preload teardown flake).
-			p.releaseBuffers()
+			// Disk os.Remove is deferred until after unlock (AGENTS).
+			if path := p.releaseBuffers(); path != "" {
+				diskPaths = append(diskPaths, path)
+			}
 			evicted = append(evicted, p)
 			rems--
 			if rems <= 0 {
@@ -447,6 +465,9 @@ func (c *Cache) cleanPieces() {
 	}
 	c.muRemove.Unlock()
 
+	for _, path := range diskPaths {
+		_ = os.Remove(path)
+	}
 	if len(evicted) == 0 {
 		return
 	}
@@ -479,13 +500,15 @@ func (c *Cache) getRemPieces() []*Piece {
 
 	readers := c.snapshotReaders()
 
-	// Collect read ranges from active readers
+	// Collect read ranges from readers that are currently using.
+	// Do not checkReader/park here: cleanPieces holds muRemove, and park takes
+	// the anacrolix client lock via Seek/SetZone. Idle parking is parkIdleReaders
+	// (watchdog) and GetState.
 	ranges := make([]Range, 0)
 	for _, r := range readers {
 		if r.closed() {
 			continue
 		}
-		r.checkReader()
 		if r.using() {
 			ranges = append(ranges, r.getPiecesRange())
 		}

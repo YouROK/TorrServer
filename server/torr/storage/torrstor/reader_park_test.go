@@ -69,3 +69,63 @@ func TestReaderOffDoesNotParkAReaderWithIOInFlight(t *testing.T) {
 	}
 	r.endIO()
 }
+
+// getRemPieces must not park: cleanPieces holds muRemove and park takes the client lock.
+func TestGetRemPiecesDoesNotParkReaders(t *testing.T) {
+	backend := &fakeTorrentReader{pos: 1 << 20, next: 4 << 20, readahead: 16 << 20, zone: 32 << 20}
+	c := &Cache{
+		pieces:       make(map[int]*Piece),
+		activePieces: make(map[int]struct{}),
+		readers:      make(map[*Reader]struct{}),
+		pieceLength:  1024,
+		pieceCount:   4,
+		capacity:     1 << 30,
+	}
+	r := &Reader{
+		Reader:      backend,
+		cache:       c,
+		isUse:       true,
+		offset:      1 << 20,
+		overrideLen: 4 << 20,
+		lastAccess:  1, // long idle vs minReaderIdleTimeout
+		next:        4 << 20,
+		readahead:   16 << 20,
+		zone:        32 << 20,
+	}
+	c.readers[r] = struct{}{}
+
+	_ = c.getRemPieces()
+	if !r.using() {
+		t.Fatal("getRemPieces parked an idle-expired reader")
+	}
+	if backend.pos != 1<<20 || backend.next != 4<<20 {
+		t.Fatalf("getRemPieces touched anacrolix windows: pos=%d next=%d", backend.pos, backend.next)
+	}
+}
+
+func TestParkIdleReadersParks(t *testing.T) {
+	backend := &fakeTorrentReader{pos: 1 << 20, next: 4 << 20, readahead: 16 << 20, zone: 32 << 20}
+	c := &Cache{
+		readers: make(map[*Reader]struct{}),
+	}
+	r := &Reader{
+		Reader:      backend,
+		cache:       c,
+		isUse:       true,
+		offset:      1 << 20,
+		overrideLen: 4 << 20,
+		lastAccess:  1,
+		next:        4 << 20,
+		readahead:   16 << 20,
+		zone:        32 << 20,
+	}
+	c.readers[r] = struct{}{}
+
+	c.parkIdleReaders()
+	if r.using() {
+		t.Fatal("parkIdleReaders left idle reader active")
+	}
+	if backend.pos != 0 || backend.next != 0 || backend.readahead != 0 || backend.zone != 0 {
+		t.Fatalf("park windows: pos=%d next=%d rah=%d zone=%d", backend.pos, backend.next, backend.readahead, backend.zone)
+	}
+}

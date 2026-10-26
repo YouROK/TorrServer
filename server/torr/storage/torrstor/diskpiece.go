@@ -90,13 +90,22 @@ func (p *DiskPiece) ReadAt(b []byte, off int64) (n int, err error) {
 	return n, err
 }
 
-func (p *DiskPiece) Release() {
+// releaseState clears Size/Complete and returns the on-disk path.
+// Callers that hold Cache.muRemove must os.Remove only after unlocking.
+func (p *DiskPiece) releaseState() string {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
+	name := p.name
 	p.piece.Size = 0
 	p.piece.Complete = false
 	p.piece.cache.notePieceEmpty(p.piece.Id)
+	return name
+}
 
-	_ = os.Remove(p.name)
+func (p *DiskPiece) Release() {
+	name := p.releaseState()
+	if name != "" {
+		_ = os.Remove(name)
+	}
 }

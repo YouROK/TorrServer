@@ -3,6 +3,7 @@ package torrstor
 import (
 	"os"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -245,9 +246,11 @@ func TestCleanPiecesUnlocksBeforeCompletion(t *testing.T) {
 	t.Cleanup(func() { settings.BTsets = prev })
 
 	var clientMu sync.Mutex
+	var completionSawLock atomic.Bool
 	old := pieceCompletionUpdater
 	pieceCompletionUpdater = func(*Piece) {
 		clientMu.Lock()
+		completionSawLock.Store(true)
 		clientMu.Unlock()
 	}
 	t.Cleanup(func() { pieceCompletionUpdater = old })
