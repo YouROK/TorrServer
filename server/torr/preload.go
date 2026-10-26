@@ -18,7 +18,7 @@ import (
 )
 
 func (t *Torrent) Preload(index int, size int64) {
-	if size <= 0 {
+	if size <= 0 || t.offStore != nil {
 		return
 	}
 	t.PreloadSize = size

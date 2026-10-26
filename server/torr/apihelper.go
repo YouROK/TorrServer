@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/anacrolix/torrent"
@@ -13,20 +14,24 @@ import (
 
 	"server/log"
 	sets "server/settings"
+	"server/torr/state"
 	"server/torr/utils"
 )
 
 var bts *BTServer
 
-// bts is read by request handlers without any synchronisation of their own, so it
-// must be written exactly once. Connect calls this on every settings save with the
-// same receiver, and the repeated assignment was reported by -race as a data race
-// against every /stat request.
+// initApiHelperOnce makes InitApiHelper a one-shot write. bts is read by request
+// handlers without any synchronisation of their own, so it must be written
+// exactly once: Connect calls this on every settings save, and the repeated
+// assignment was reported by -race as a data race against every /stat request.
+// The receiver is always the same BTServer instance (created once at startup),
+// so keeping the first one is enough.
+var initApiHelperOnce sync.Once
+
 func InitApiHelper(bt *BTServer) {
-	if bts == bt {
-		return
-	}
-	bts = bt
+	initApiHelperOnce.Do(func() {
+		bts = bt
+	})
 }
 
 func LoadTorrent(tor *Torrent) *Torrent {
@@ -94,6 +99,9 @@ func SaveTorrentToDB(torr *Torrent) {
 	AddTorrentDB(torr)
 }
 
+// loadingTorrents holds the hashes that GetTorrent is loading from the DB right now.
+var loadingTorrents sync.Map
+
 func GetTorrent(hashHex string) *Torrent {
 	hash := metainfo.NewHashFromHex(hashHex)
 	timeout := time.Second * time.Duration(sets.BTsets.TorrentDisconnectTimeout)
@@ -109,7 +117,16 @@ func GetTorrent(hashHex string) *Torrent {
 	tr := GetTorrentDB(hash)
 	if tr != nil {
 		tor = tr
+		if tr.OfflineReady() || tr.OfflineState() == state.OfflinePaused {
+			// served from disk / paused: must not be added to the torrent client by a status request
+			return tr
+		}
+		// Status requests (the web UI polls them) must not start a loader per request.
+		if _, busy := loadingTorrents.LoadOrStore(hash, struct{}{}); busy {
+			return tor
+		}
 		go func() {
+			defer loadingTorrents.Delete(hash)
 			log.TLogln("New torrent", tor.Hash())
 			tr, _ := NewTorrent(tor.TorrentSpec, bts)
 			if tr != nil {
@@ -119,7 +136,14 @@ func GetTorrent(hashHex string) *Torrent {
 				tr.Size = tor.Size
 				tr.Timestamp = tor.Timestamp
 				tr.Category = tor.Category
-				tr.GotInfo()
+				tr.setOfflinePinned(tor.OfflinePinned())
+				// An offline download waits for its metadata in runOffline, without a
+				// timeout (a rare torrent may take as long as it takes). Blocking here
+				// too would leak this goroutine together with the loadingTorrents
+				// entry for a torrent whose metadata never arrives (review remark S-2).
+				if tr.OfflineState() != state.OfflineDownloading {
+					tr.GotInfo()
+				}
 			}
 		}()
 	}
@@ -173,6 +197,7 @@ func RemTorrent(hashHex string) {
 		return
 	}
 	hash := metainfo.NewHashFromHex(hashHex)
+	defer removeOfflineData(hash, offlineDirOf(hash)) // the dir must be read before the DB entry is removed
 
 	// Download the torrent before deleting it to get the "closed" status
 	torr := bts.GetTorrent(hash)
@@ -241,6 +266,10 @@ func ListTorrent() []*Torrent {
 
 func DropTorrent(hashHex string) {
 	hash := metainfo.NewHashFromHex(hashHex)
+	if t := bts.GetTorrent(hash); t != nil && t.OfflineState() == state.OfflineDownloading {
+		log.TLogln("Offline download is running, torrent is not dropped:", hashHex)
+		return
+	}
 	bts.RemoveTorrent(hash)
 }
 

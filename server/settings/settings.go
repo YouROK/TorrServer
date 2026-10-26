@@ -497,6 +497,13 @@ func SetStoragePreferences(prefs map[string]interface{}) error {
 	return nil
 }
 
+// IsDBOpen reports whether the settings DB is open. The torrent client can be
+// connected without a DB (e.g. in tests); ResumeOffline uses this to skip the
+// DB scan instead of panicking.
+func IsDBOpen() bool {
+	return tdb != nil
+}
+
 func CloseDB() {
 	if tdb != nil {
 		tdb.CloseDB()

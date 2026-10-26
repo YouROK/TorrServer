@@ -19,6 +19,17 @@ type TorrentDB struct {
 
 	Timestamp int64 `json:"timestamp,omitempty"`
 	Size      int64 `json:"size,omitempty"`
+
+	// OfflineState is "", "downloading", "paused" or "ready" (see server/torr/state).
+	OfflineState string `json:"offline_state,omitempty"`
+	// OfflineDir is the directory the offline data of this torrent was stored in
+	// (so changing the global setting does not orphan already downloaded torrents).
+	OfflineDir string `json:"offline_dir,omitempty"`
+	// OfflineUsedAt is the unix time the offline copy was last watched (or finished);
+	// the rotation removes the least recently used copies first.
+	OfflineUsedAt int64 `json:"offline_used_at,omitempty"`
+	// OfflinePinned protects the offline copy from the quota rotation.
+	OfflinePinned bool `json:"offline_pinned,omitempty"`
 }
 
 type File struct {
@@ -29,28 +40,51 @@ type File struct {
 
 var mu sync.Mutex
 
+// AddTorrent stores (creates or replaces) ONE torrent record.
+//
+// It used to read the whole list first (outside the lock) and then write EVERY torrent back
+// from that snapshot. Two concurrent calls for different torrents therefore overwrote each
+// other: the second call re-wrote the first torrent with the stale state it had read before
+// the first call finished (for example an offline torrent that had just been paused came back
+// as "downloading"). A removal racing with an add could resurrect the removed torrent in the
+// same way. Only the record being added is written now.
 func AddTorrent(torr *TorrentDB) {
-	list := ListTorrent()
+	buf, err := json.Marshal(torr)
+	if err != nil {
+		return
+	}
 	mu.Lock()
-	find := -1
-	for i, db := range list {
-		if db.InfoHash.HexString() == torr.InfoHash.HexString() {
-			find = i
-			break
-		}
+	defer mu.Unlock()
+	if tdb == nil {
+		return
 	}
-	if find != -1 {
-		list[find] = torr
-	} else {
-		list = append(list, torr)
+	tdb.Set("Torrents", torr.InfoHash.HexString(), buf)
+}
+
+// SetOfflinePinned changes only the pin flag of the stored record (a read-modify-write of
+// ONE record under the lock, so it cannot resurrect stale fields). It reports whether the
+// record exists.
+func SetOfflinePinned(hash metainfo.Hash, pinned bool) bool {
+	mu.Lock()
+	defer mu.Unlock()
+	if tdb == nil {
+		return false
 	}
-	for _, db := range list {
-		buf, err := json.Marshal(db)
-		if err == nil {
-			tdb.Set("Torrents", db.InfoHash.HexString(), buf)
-		}
+	buf := tdb.Get("Torrents", hash.HexString())
+	if len(buf) == 0 {
+		return false
 	}
-	mu.Unlock()
+	var torr TorrentDB
+	if err := json.Unmarshal(buf, &torr); err != nil || torr.TorrentSpec == nil {
+		return false
+	}
+	torr.OfflinePinned = pinned
+	out, err := json.Marshal(&torr)
+	if err != nil {
+		return false
+	}
+	tdb.Set("Torrents", hash.HexString(), out)
+	return true
 }
 
 func ListTorrent() []*TorrentDB {
@@ -62,6 +96,11 @@ func ListTorrent() []*TorrentDB {
 	defer mu.Unlock()
 
 	var list []*TorrentDB
+	if tdb == nil {
+		// the DB is not open (e.g. the torrent client runs in tests without a
+		// DB): nothing is stored, so there is nothing to list
+		return nil
+	}
 	keys := tdb.List("Torrents")
 	for _, key := range keys {
 		buf := tdb.Get("Torrents", key)
