@@ -25,6 +25,13 @@ func connectShow(t *testing.T) (*Torrent, *offlinetest.Seeder) {
 func connectSeeded(t *testing.T, show *offlinetest.Show) (*Torrent, *offlinetest.Seeder) {
 	t.Helper()
 	offlinetest.Prepare(t)
+	return connectPrepared(t, show)
+}
+
+// connectPrepared assumes offlinetest.Prepare already ran so the caller can
+// tweak BTsets (e.g. CacheSize) before Connect snapshots storage capacity.
+func connectPrepared(t *testing.T, show *offlinetest.Show) (*Torrent, *offlinetest.Seeder) {
+	t.Helper()
 	bt := NewBTS()
 	InitApiHelper(bt)
 	if err := bt.Connect(); err != nil {
@@ -289,7 +296,12 @@ func TestPreloadReadsTailPastBudget(t *testing.T) {
 		budget  int64 = 32 << 20
 	)
 	show := offlinetest.WriteSized(t, "movie.mkv", fileLen, piece)
-	tor, _ := connectSeeded(t, show)
+	offlinetest.Prepare(t)
+	// Head+tail ≈ budget. offlinetest defaults CacheSize to budget, so
+	// cleanPieces can drop mid-head (piece 23 is past the 8MiB keep window).
+	// Preload uses anacrolix readers, which never pin Cache.readers ranges.
+	settings.BTsets.CacheSize = budget + 16<<20
+	tor, _ := connectPrepared(t, show)
 	if len(tor.Files()) != 1 {
 		t.Fatalf("files %d", len(tor.Files()))
 	}
