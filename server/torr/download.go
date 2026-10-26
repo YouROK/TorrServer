@@ -1,15 +1,21 @@
 package torr
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
+	"time"
 
+	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 
 	"server/log"
 	"server/settings"
 	"server/torr/state"
 	"server/torr/storage/torrstor"
+	utils2 "server/utils"
 )
 
 // Downloading a file or a whole torrent pins its pieces in the long-term disk cache
@@ -49,7 +55,27 @@ func (t *Torrent) Download(index int) error {
 	}
 	log.TLogln("Download to cache:", t.Hash().HexString(), "index", index)
 	cache.PinPieces(r)
+	t.keepInDB()
 	return nil
+}
+
+// keepInDB saves a torrent that has data in the long-term cache, so that its card
+// stays with its cache. A torrent added without saving (a stream or play link from
+// an external player) lives only in memory, and a settings change or a restart
+// closes every torrent and reopens the DB ones only: without this its card would
+// vanish while its cached pieces stay on disk. Called once a torrent has written
+// its first piece (progressEvent) and when a download to the cache starts.
+func (t *Torrent) keepInDB() {
+	if settings.ReadOnly || t.Torrent == nil || t.inDB.Load() {
+		return
+	}
+	if GetTorrentDB(t.Hash()) == nil {
+		if t.Title == "" {
+			t.Title = t.Torrent.Name()
+		}
+		SaveTorrentToDB(t)
+	}
+	t.inDB.Store(true)
 }
 
 // CancelDownload stops a download started by Download with the same index.
@@ -204,7 +230,9 @@ func ResumeCachedTorrents() {
 	if !torrstor.IsLongTermCache() {
 		return
 	}
-	for _, tor := range ListTorrentsDB() {
+	dbTorrs := ListTorrentsDB()
+	adoptCachedTorrents(dbTorrs)
+	for _, tor := range dbTorrs {
 		hashHex := tor.Hash().HexString()
 		var infoBytes []byte
 		if tor.TorrentSpec != nil {
@@ -215,4 +243,74 @@ func ResumeCachedTorrents() {
 			startLoadFromDB(tor)
 		}
 	}
+}
+
+// adoptCachedTorrents adds to the DB the torrents that have cached pieces or an
+// unfinished download but no DB entry (cached by a build that did not keep them,
+// see keepInDB), so their cards come back. The new entries are added to dbTorrs.
+func adoptCachedTorrents(dbTorrs map[metainfo.Hash]*Torrent) {
+	if settings.ReadOnly {
+		return
+	}
+	for _, hashHex := range torrstor.CachedTorrents() {
+		hash := metainfo.NewHashFromHex(hashHex)
+		if _, ok := dbTorrs[hash]; ok {
+			continue
+		}
+		if len(torrstor.CachedPieceSizes(hashHex)) == 0 && !torrstor.HasPins(hashHex) {
+			continue
+		}
+		tor := cachedTorrent(hash)
+		if tor == nil {
+			continue
+		}
+		log.TLogln("Add cached torrent to DB:", hashHex)
+		AddTorrentDB(tor)
+		dbTorrs[hash] = tor
+	}
+}
+
+// cachedTorrent builds a DB torrent from the metainfo saved in its cache directory.
+func cachedTorrent(hash metainfo.Hash) *Torrent {
+	infoBytes := torrstor.LoadMetainfo(hash.HexString())
+	if len(infoBytes) == 0 {
+		return nil
+	}
+	mi := metainfo.MetaInfo{InfoBytes: infoBytes}
+	info, err := mi.UnmarshalInfo()
+	if err != nil {
+		return nil
+	}
+	tor := &Torrent{
+		TorrentSpec: &torrent.TorrentSpec{InfoHash: hash, InfoBytes: infoBytes, DisplayName: info.BestName()},
+		Title:       info.BestName(),
+		Size:        info.TotalLength(),
+		Stat:        state.TorrentInDB,
+		Timestamp:   time.Now().Unix(),
+	}
+	files := new(tsFiles)
+	files.TorrServer.Files = fileStatsFromInfo(&info)
+	if buf, err := json.Marshal(files); err == nil {
+		tor.Data = string(buf)
+	}
+	return tor
+}
+
+// fileStatsFromInfo lists the files of a torrent as Status does for a loaded one:
+// the same paths, the same order, and so the same ids.
+func fileStatsFromInfo(info *metainfo.Info) []*state.TorrentFileStat {
+	files := make([]*state.TorrentFileStat, 0, len(info.UpvertedFiles()))
+	for _, fi := range info.UpvertedFiles() {
+		files = append(files, &state.TorrentFileStat{
+			Path:   strings.Join(append([]string{info.BestName()}, fi.BestPath()...), "/"),
+			Length: fi.Length,
+		})
+	}
+	sort.Slice(files, func(i, j int) bool {
+		return utils2.CompareStrings(files[i].Path, files[j].Path)
+	})
+	for i, f := range files {
+		f.Id = i + 1
+	}
+	return files
 }

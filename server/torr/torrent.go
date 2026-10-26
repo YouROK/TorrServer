@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"server/torrshash"
@@ -56,6 +57,8 @@ type Torrent struct {
 
 	// persistOnce saves the metainfo once per torrent, WaitInfo calls finishWaitInfo every time
 	persistOnce sync.Once
+	// inDB is set once keepInDB has made sure the torrent is in the DB
+	inDB atomic.Bool
 
 	closed <-chan struct{}
 
@@ -340,7 +343,14 @@ func (t *Torrent) progressEvent() {
 		t.DownloadSpeed = 0
 		t.UploadSpeed = 0
 	}
+	filled := t.PreloadedBytes
 	t.muTorrent.Unlock()
+
+	// a torrent with data in the long-term cache keeps a card (keepInDB takes
+	// muTorrent through Status, so it runs after the unlock)
+	if filled > 0 && torrstor.IsLongTermCache() {
+		t.keepInDB()
+	}
 
 	t.lastTimeSpeed = time.Now()
 	t.updateRA()

@@ -85,3 +85,31 @@ func TestNewTorrentWaitsForDBLoad(t *testing.T) {
 		t.Fatal("NewTorrent did not return after the background load finished")
 	}
 }
+
+func TestFileStatsFromInfoMatchesStatusOrder(t *testing.T) {
+	info := &metainfo.Info{
+		Name:        "Show",
+		PieceLength: 1,
+		Files: []metainfo.FileInfo{
+			{Path: []string{"s01", "e10.mkv"}, Length: 10},
+			{Path: []string{"s01", "e02.mkv"}, Length: 2},
+			{Path: []string{"cover.jpg"}, Length: 1},
+		},
+	}
+	files := fileStatsFromInfo(info)
+	if len(files) != 3 {
+		t.Fatalf("got %d files, want 3", len(files))
+	}
+	want := []string{"Show/cover.jpg", "Show/s01/e02.mkv", "Show/s01/e10.mkv"}
+	for i, f := range files {
+		if f.Path != want[i] || f.Id != i+1 {
+			t.Errorf("file %d = %q id %d, want %q id %d", i, f.Path, f.Id, want[i], i+1)
+		}
+	}
+
+	single := &metainfo.Info{Name: "movie.mkv", Length: 5, PieceLength: 1}
+	files = fileStatsFromInfo(single)
+	if len(files) != 1 || files[0].Path != "movie.mkv" || files[0].Length != 5 {
+		t.Fatalf("single file torrent: %+v", files[0])
+	}
+}

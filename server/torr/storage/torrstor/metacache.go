@@ -59,6 +59,31 @@ func SaveMetainfo(hashHex string, infoBytes []byte) {
 	}
 }
 
+// CachedTorrents lists the torrents whose metainfo is saved in the cache directory.
+func CachedTorrents() []string {
+	if settings.BTsets == nil || !settings.BTsets.UseDisk {
+		return nil
+	}
+	path := settings.BTsets.TorrentsSavePath
+	if path == "" || path == "/" {
+		return nil
+	}
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return nil
+	}
+	var hashes []string
+	for _, entry := range entries {
+		if !entry.IsDir() || !isInfoHashName(entry.Name()) {
+			continue
+		}
+		if _, err := os.Stat(metainfoPath(entry.Name())); err == nil {
+			hashes = append(hashes, entry.Name())
+		}
+	}
+	return hashes
+}
+
 func LoadMetainfo(hashHex string) []byte {
 	if settings.BTsets == nil || !settings.BTsets.UseDisk {
 		return nil
