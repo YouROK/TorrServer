@@ -107,9 +107,9 @@ Hold order when both are needed:
 
 `MemPiece.ReadAt` takes `Lock`, not `RLock`: it writes `Accessed`. `Release` nils the slice under the lock, unlocks, then `putPieceBuf`, so a `ReadAt` that was waiting finishes its copy before the slab is cleared and published.
 
-`Cache.CloseReader` is safe on a nil `*Cache`: it uses `r.cache`. `Torrent.CloseReader` relies on that. `Reader.Close` alone does not unregister; only `Cache.CloseReader` deletes from `readers`, and it holds `muReaders` across `Reader.Close`. After that unlock it calls `AdjustRA` so the readers that remain take the freed share. Do not call `Piece.SetPriority` from the cache: the client raises a stored priority over `SetNext` / `SetReadahead` / `SetZone`, and one write flattens those tiers. `Piece.Release` only calls `UpdateCompletion`.
+`Cache.CloseReader` is safe on a nil `*Cache`: it uses `r.cache`. `Torrent.CloseReader` relies on that. `Reader.Close` alone does not unregister; only `Cache.CloseReader` deletes from `readers`, and it holds `muReaders` across `Reader.Close`. After that unlock it calls `AdjustRA` so the readers that remain take the freed share. Do not call `Piece.SetPriority` from the cache: the client raises a stored priority over `SetNext` / `SetReadahead` / `SetZone`, and one write flattens those tiers. Eviction clears buffers under `muRemove` (`releaseBuffers`), then calls `UpdateCompletion` only after unlocking — `Client.Close` holds the client lock while `Cache.Close` waits on `muRemove`. Never run `UpdateCompletion` or park readers (anacrolix `Seek`/`SetZone`) while holding `muRemove`.
 
-Do not hold `BTServer.mu`, `Torrent.muTorrent`, `Storage.mu`, or `Cache.muRemove` across tracker HTTP, DHT lookup, `publicip.Get4/Get6`, disk flush, or `os.MkdirAll`. `Connect` already holds `bt.mu` across `torrent.NewClient`; do not add more I/O there.
+Do not hold `BTServer.mu`, `Torrent.muTorrent`, `Storage.mu`, or `Cache.muRemove` across tracker HTTP, DHT lookup, `publicip.Get4/Get6`, disk flush, `os.Remove`, or `os.MkdirAll`. `Connect` already holds `bt.mu` across `torrent.NewClient`; do not add more I/O there.
 
 `SetBTSets` starts a goroutine that walks `TorrentsSavePath` looking for a `.tsc` directory and mutates `BTsets` later. Do not assume the save path is stable the moment `SetBTSets` returns.
 
@@ -142,17 +142,18 @@ Piece buffers (`server/torr/storage/torrstor/piecebuf.go`):
 
 Eviction (`Cache.cleanPieces` / `getRemPieces` / `pieceEvictable`):
 
-- `cleanPieces` uses `muRemove.TryLock`. `Close` holds `muRemove` across `Release`. A failed try skips this pass.
+- `cleanPieces` uses `muRemove.TryLock`. `Close` and eviction hold `muRemove` across **buffer** release only (`releaseBuffers` / `MemPiece.Release` / `DiskPiece.releaseState`). `UpdateCompletion` and disk `os.Remove` run after unlock. A failed try skips this pass.
+- `getRemPieces` must not call `checkReader` / park readers (no Client.lock under `muRemove`). It observes current `using()` ranges only.
 - A piece is not evictable when it sits in a merged reader range, in the begin/end keep window, or when `Size >= piece length` but `Complete` is still false (hash in progress). Evicting that last case makes anacrolix hash a short `ReadAt` and log `unexpected error hashing piece`.
 - Reader ranges are closed intervals. `mergeRange` merges only when `End >= next.Start`.
 - Keep window is at least 8MiB at the start and end of the torrent when no reader range is active (`isIdInKeepWindow`). `isIdInFileBE` keeps the ends of each open file.
 - Evict complete pieces first, oldest `Accessed` first. The client does not re-request chunks it already has; evicting a partial piece makes a responsive reader read zeros.
 - Download windows are `readerWindows`: zone is `(capacity/readers)*ReaderReadAHead/100`, readahead is `min(16MiB/readers, zone)`, next is `min(4MiB/readers, readahead)`. `AdjustRA` pushes them when a reader is created, when one is closed, and on the 1s `updateRA` tick. `applyZones` drops `muReaders` before `SetZones`, because those calls take the client lock. Do not recompute them on every small `Read`.
-- `priorityWatchdog` re-arms every 5s while `GetUseReaders() > 0`, and exits on `stopWatch` or `isClosed`. A `time.Sleep` instead of `select` on `stopWatch` leaks one goroutine per dropped torrent.
+- `priorityWatchdog` re-arms every 5s while `GetUseReaders() > 0`, calls `parkIdleReaders` (not `getRemPieces`), and exits on `stopWatch` or `isClosed`. A `time.Sleep` instead of `select` on `stopWatch` leaks one goroutine per dropped torrent.
 
 Reader window (`Reader.getOffsetRange`): capacity is split across active readers. `ReaderReadAHead` (default 95, clamped 5–100) is the forward fraction. `Seek(0, SeekEnd)` returns the length and does not move the playhead. ServeContent probes size that way; seeking to EOF would pull the tail of a huge file.
 
-Idle park is `minReaderIdleTimeout` (60s), or `TorrentDisconnectTimeout` if that is larger. `checkReader` parks by pushing `SetNext` / `SetReadahead` / `SetZone` of 0 and `Seek(0, SeekStart)` only when `inFlight == 0`. Stored windows stay so `resume` can put them back. `beginIO` increments `inFlight` and `resume`s under `Reader.mu` before the anacrolix read. A blocked read must not be seeked.
+Idle park is `minReaderIdleTimeout` (60s), or `TorrentDisconnectTimeout` if that is larger. Parking is `parkIdleReaders` / `GetState` via `checkReader` (not `getRemPieces`). `checkReader` parks by pushing `SetNext` / `SetReadahead` / `SetZone` of 0 and `Seek(0, SeekStart)` only when `inFlight == 0`. Stored windows stay so `resume` can put them back. `beginIO` increments `inFlight` and `resume`s under `Reader.mu` before the anacrolix read. A blocked read must not be seeked.
 
 `Torrent.Close` refuses while `ReadOnly` and `GetUseReaders() > 0`.
 
