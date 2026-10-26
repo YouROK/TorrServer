@@ -56,3 +56,38 @@ func TestTorrentsRejectionsCarryJSONBody(t *testing.T) {
 		})
 	}
 }
+
+// A hash that is not 40 hex digits used to panic in metainfo.NewHashFromHex,
+// which gin turned into an empty 500.
+func TestMalformedHashIsNotFound(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	cases := []struct {
+		name string
+		path string
+		body string
+		want int
+	}{
+		{"get", "/torrents", `{"action":"get","hash":"zz"}`, http.StatusNotFound},
+		{"get, 39 digits", "/torrents", `{"action":"get","hash":"0123456789abcdef0123456789abcdef0123456"}`, http.StatusNotFound},
+		{"set", "/torrents", `{"action":"set","hash":"zz","title":"x"}`, http.StatusOK},
+		{"drop", "/torrents", `{"action":"drop","hash":"zz"}`, http.StatusOK},
+		{"cache", "/cache", `{"action":"get","hash":"zz"}`, http.StatusNotFound},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			router := gin.New()
+			router.POST("/torrents", torrents)
+			router.POST("/cache", cache)
+
+			req := httptest.NewRequest(http.MethodPost, tc.path, strings.NewReader(tc.body))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			if w.Code != tc.want {
+				t.Fatalf("status = %d, want %d", w.Code, tc.want)
+			}
+		})
+	}
+}
