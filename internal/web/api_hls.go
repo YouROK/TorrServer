@@ -315,6 +315,13 @@ func (h *hlsSession) restart(ctx context.Context, s *Server, index int) error {
 		<-instance.Done()
 	}
 
+	// Сегменты с этого номера и дальше остались от другого места фильма
+	// (плеер был там до перемотки). ensure() считает самый большой номер в
+	// каталоге тем, докуда дошёл процесс: с оставшимся seg330 запуск с 120
+	// делает запрос 121 «уже сделанным и удалённым», процесс перезапускается
+	// на 121, 122, 123... Новый процесс всё равно запишет эти номера заново.
+	removeSegmentsFrom(h.workDir(s), index)
+
 	startAt := float64(index) * float64(h.segmentLength())
 	if h.Info != nil && h.Info.Duration > 0 && startAt > h.Info.Duration {
 		startAt = h.Info.Duration
@@ -901,6 +908,22 @@ func removeSegmentsBefore(dir string, index int) {
 			continue
 		}
 		_ = os.Remove(filepath.Join(dir, e.Name()))
+	}
+}
+
+// removeSegmentsFrom удаляет сегменты с номером не меньше указанного.
+func removeSegmentsFrom(dir string, index int) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return
+	}
+	for _, e := range entries {
+		if e.IsDir() || !isSegmentName(e.Name()) {
+			continue
+		}
+		if num, ok := hls.SegmentIndex(e.Name()); ok && num >= index {
+			removeSegment(dir, e.Name())
+		}
 	}
 }
 

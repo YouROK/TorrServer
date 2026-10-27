@@ -269,6 +269,34 @@ func TestRemoveSegmentsBefore(t *testing.T) {
 	}
 }
 
+// TestRemoveSegmentsFrom проверяет очистку перед запуском с позиции:
+// сегменты другого места фильма с большими номерами не должны оставаться.
+func TestRemoveSegmentsFrom(t *testing.T) {
+	dir := t.TempDir()
+
+	for _, name := range []string{"seg30.ts", "seg31.ts", "seg120.ts", "seg330.ts", "index.m3u8"} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	removeSegmentsFrom(dir, 120)
+
+	for _, name := range []string{"seg120.ts", "seg330.ts"} {
+		if _, err := os.Stat(filepath.Join(dir, name)); err == nil {
+			t.Errorf("%s must be removed", name)
+		}
+	}
+	for _, name := range []string{"seg30.ts", "seg31.ts", "index.m3u8"} {
+		if _, err := os.Stat(filepath.Join(dir, name)); err != nil {
+			t.Errorf("%s must stay: %v", name, err)
+		}
+	}
+	if got := lastSegmentIndex(dir); got != 31 {
+		t.Errorf("last segment after cleanup = %d, want 31", got)
+	}
+}
+
 func TestRemoveAllSegments(t *testing.T) {
 	dir := t.TempDir()
 
