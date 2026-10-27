@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"strings"
 	"unicode"
+
+	"golang.org/x/net/idna"
 )
 
 // defaultBlockedReferers is always enforced for Referer/Origin checks.
@@ -136,6 +138,11 @@ func normalizeRefererRule(value string) (string, bool) {
 			}
 		}
 	}
+	// Browsers send Referer and Origin hosts in punycode.
+	host, err := idna.Punycode.ToASCII(host)
+	if err != nil {
+		return "", false
+	}
 	return host, true
 }
 
@@ -151,6 +158,9 @@ func hostFromHeader(value string) string {
 	host := strings.ToLower(strings.TrimSuffix(u.Hostname(), "."))
 	if host == "" {
 		return ""
+	}
+	if ascii, err := idna.Punycode.ToASCII(host); err == nil {
+		host = ascii
 	}
 	return host
 }
