@@ -17,7 +17,7 @@
     "axios": "^1.20.0",
     "gsap": "^3.15.0",
     "hls.js": "1.7.3",
-    "i18next": "^26.5.8",
+    "i18next": "^26.5.10",
     "i18next-browser-languagedetector": "^8.2.2",
     "lucide-react": "^1.61.0",
     "media-chrome": "^4.19.4",
@@ -28,7 +28,7 @@
     "react-aria-components": "^1.22.1",
     "react-dom": "^19.3.1",
     "react-dropzone": "^20.1.4",
-    "react-i18next": "^17.1.6",
+    "react-i18next": "^17.1.8",
     "sonner": "^2.0.8"
   },
   "scripts": {
