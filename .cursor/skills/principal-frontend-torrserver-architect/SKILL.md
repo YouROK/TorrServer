@@ -86,7 +86,7 @@ A new string goes in `web/src/locales/{en,ru,ua,bg,fr,ro,zh}/translation.json` u
 | --- | --- | --- |
 | `useTorrentsQuery` | `POST /torrents` `action: list` | 500ms while any row is `GETTING_INFO`, else 1s |
 | `useTorrentDetail` | `POST /torrents` `action: get` | 500ms `GETTING_INFO`, 1s `PRELOAD`, else 2s |
-| `useUpdateCache` | `POST /cache` `action: get` | 100ms while the snake changes, else 1s. Timer is `setTimeout` after the response. AbortController on unmount. Stops while `document.hidden`. Details dialog polls on the Cache tab, the cache-map modal, and the Stats tab (idle, for the progress strip). The Files tab does not poll. |
+| `useUpdateCache` | `POST /cache` `action: get` | 100ms while the snake changes, else 1s. Timer is `setTimeout` after the response. AbortController on unmount. Stops while `document.hidden`. Details dialog polls on every tab (the hero cache tile is always visible): fast on the Cache tab and the cache-map modal, idle on Files and Stats. |
 | `ServerStatusDialog` | `GET /runtime/status` | 2.5s while the dialog is open |
 
 `web/src/index.tsx` sets `refetchOnWindowFocus: false`. TanStack Query's `refetchInterval` is a `setInterval`, but `query.fetch` joins an in-flight request unless `cancelRefetch` is set, and `refetchIntervalInBackground` defaults to false so a hidden tab does not send those requests. Pass `signal` into axios (`getTorrents`, `getTorrent`). Do not point `queryFn` at a function whose first argument is an `AbortSignal` — React Query passes a context object.

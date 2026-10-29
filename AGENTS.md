@@ -38,7 +38,7 @@ Web client map (source of truth is `web/src`, not the embedded copy):
 | --- | --- |
 | `web/src/shared/hooks/useTorrentsQuery.ts` | Library poll. `queryFn` must take React Query's `signal`. `refetchIntervalInBackground` stays default false, so a hidden tab does not hit `/torrents`. The `document.hidden` branch only matters after a recompute. |
 | `web/src/shared/hooks/useTorrentDetail.ts` | Details poll. Same signal rule. Mirrors rows into `TORRENTS_QUERY_KEY` via `upsertTorrentsInList`. |
-| `web/src/shared/cache/useUpdateCache.ts` | `/cache` snake poll. `setTimeout` after the response (not `setInterval`). Aborts on unmount. Pauses while `document.hidden`. Active 100ms, idle 1s. Details polls on the Cache tab, the cache-map modal, and Stats (idle). The Files tab does not. |
+| `web/src/shared/cache/useUpdateCache.ts` | `/cache` snake poll. `setTimeout` after the response (not `setInterval`). Aborts on unmount. Pauses while `document.hidden`. Active 100ms, idle 1s. Details polls on every tab because the hero cache tile is always visible: fast on the Cache tab and the cache-map modal, idle on Files and Stats. |
 | `web/src/shared/lib/posterPlay.ts` | Re-exports `streamPlayUrl`, `streamPreloadUrl`, `torrentPlaylistUrl` from `streamLinks.ts`. |
 | `web/src/shared/lib/mediaBase.ts` | `externalLink` swaps scheme/host/port from `GET /mediabase`, then `withAuthMediaUrl`. |
 | `web/src/shared/api/authCredentials.ts` | `withAuthMediaUrl` adds Basic userinfo only when `hostname` matches the page (port and scheme may differ). Do not put the password on another host. |

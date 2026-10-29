@@ -33,7 +33,6 @@ import { toPlayableFile } from 'shared/torrent/toPlayableFile'
 
 import FileBrowser from './FileBrowser'
 import CacheMapDialog from './CacheMapDialog'
-import { heroCacheFill } from './heroCacheFill'
 import EditPosterDialog from './EditPosterDialog'
 import SwarmStatsPanel, { TorrentProgressStrip } from './SwarmStatsPanel'
 import SpeedCharts from './SpeedCharts'
@@ -79,12 +78,12 @@ function StatWidget({
     >
       <span
         className={`block leading-tight text-muted ${tight
-            ? 'truncate text-[11px]'
-            : compact
-              ? 'line-clamp-2 min-h-[1.75rem] text-[10px]'
-              : dense
-                ? 'truncate text-[11px]'
-                : 'truncate text-[11px] sm:text-xs'
+          ? 'truncate text-[11px]'
+          : compact
+            ? 'line-clamp-2 min-h-[1.75rem] text-[10px]'
+            : dense
+              ? 'truncate text-[11px]'
+              : 'truncate text-[11px] sm:text-xs'
           }`}
         title={hint || label}
       >
@@ -134,10 +133,10 @@ function TitleRow({ title, subtitle, compact }: { title: string; subtitle: strin
   const showSubtitle = !!subtitle && !title.toLocaleLowerCase().includes(subtitle.toLocaleLowerCase())
 
   const titleClass = `min-w-0 flex-1 font-bold text-foreground ${compact
-      ? expanded
-        ? 'text-[15px] leading-snug'
-        : 'line-clamp-6 text-[15px] leading-snug'
-      : 'line-clamp-2 text-lg leading-snug'
+    ? expanded
+      ? 'text-[15px] leading-snug'
+      : 'line-clamp-6 text-[15px] leading-snug'
+    : 'line-clamp-2 text-lg leading-snug'
     }`
 
   return (
@@ -216,14 +215,9 @@ export default function DetailsDialog({
   const resolvedTab = activeTab
 
   const snakeLive = resolvedTab === 'cache' || cacheMapOpen
-  const cachePolling = snakeLive || resolvedTab === 'stats'
-  const cache = useUpdateCache(hash, {
-    // Files tab does not read the piece map. Stats keeps the idle cadence for the progress strip.
-    enabled: cachePolling,
-    fast: snakeLive,
-  })
+  // The hero cache tile is on every tab, so /cache always polls; the fast cadence is for the snake only.
+  const cache = useUpdateCache(hash, { fast: snakeLive })
   const { data: btSettings } = useSettingsQuery()
-  const heroCache = heroCacheFill(cache, torrent, cachePolling, btSettings?.CacheSize)
   const preloadCachePercent = btSettings?.PreloadCache ?? 50
   const bufferTarget = resolveBufferTargetBytes(cache.Capacity, preloadCachePercent)
   // Streaming → playable ahead (null only when no active reader). Idle → preload progress.
@@ -240,7 +234,7 @@ export default function DetailsDialog({
     ? (formatBufferAheadLabel(bufferAhead) ?? '—')
     : (formatBufferFilledLabel(bufferValue, bufferTarget, { percent: 'always' }) ?? '—')
   const bufferPct = bufferFillPercent(bufferValue, bufferTarget)
-  const cacheOccupiedPct = bufferFillPercent(heroCache.filled, heroCache.capacity)
+  const cacheOccupiedPct = bufferFillPercent(cache.Filled, cache.Capacity)
 
   const seasonsFingerprint = useMemo(() => {
     const seasons: number[] = []
@@ -309,7 +303,7 @@ export default function DetailsDialog({
   const isLoadingMetadata = stat === GETTING_INFO && filesUnknown
   const hasMultipleSeasons = (seasonList?.length ?? 0) > 1
 
-  const cacheFilledValue = formatCacheFilledLabel(heroCache.filled, heroCache.capacity) ?? '—'
+  const cacheFilledValue = formatCacheFilledLabel(cache.Filled, cache.Capacity) ?? '—'
 
   // Continue Watching must not wait for the Stats tab — Files is the default surface.
   const { playerModals: autoPlayModals } = usePlayLauncher({
