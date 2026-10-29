@@ -156,6 +156,12 @@ func TestClientIPIPv6(t *testing.T) {
 	if ip == nil || ip.String() != "2001:db8::2" {
 		t.Fatalf("clientIP without port = %v, want 2001:db8::2", ip)
 	}
+
+	c.Request.RemoteAddr = "[fe80::1%eth0]:12345"
+	ip = clientIP(c)
+	if ip == nil || ip.String() != "fe80::1" {
+		t.Fatalf("clientIP with zone = %v, want fe80::1", ip)
+	}
 }
 
 func TestMiddlewareBanStatus(t *testing.T) {
