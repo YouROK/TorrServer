@@ -156,5 +156,28 @@ func updatePieceCompletion(p *Piece) {
 	}
 }
 
+// evictPartial releases a piece that is still downloading. Releasing it first and
+// forgetting after left a window: a chunk written in between, or a hash already
+// queued, finished the piece over zeros and dropped the peer. Piece.Evict does both
+// under the client lock and skips the piece while a write or hash is in flight;
+// the next cleanPieces pass retries it. Client.Close closes the cache under the
+// same client lock, so isClosed checked inside release cannot race Close.
+func evictPartial(p *Piece) {
+	tor := p.cache.torrentPtr()
+	if tor == nil || pieceCompletionUpdater != nil {
+		p.Release()
+		return
+	}
+	var path string
+	tor.Piece(p.Id).Evict(func() {
+		if !p.cache.isClosed.Load() {
+			path = p.releaseBuffers()
+		}
+	})
+	if path != "" {
+		_ = os.Remove(path)
+	}
+}
+
 // pieceCompletionUpdater overrides the client Forget call in tests.
 var pieceCompletionUpdater func(*Piece)

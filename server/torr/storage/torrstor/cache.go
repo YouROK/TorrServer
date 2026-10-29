@@ -259,7 +259,7 @@ func (c *Cache) Close() error {
 var freeOSMem = utils.FreeOSMemGCThrottled
 
 func (c *Cache) AdjustRA(readahead int64) {
-	if c == nil {
+	if c == nil || c.isClosed.Load() {
 		return
 	}
 	if settings.BTsets != nil && settings.BTsets.CacheSize == 0 {
@@ -444,7 +444,7 @@ func (c *Cache) cleanPieces() {
 
 	remPieces := c.getRemPieces()
 	filled := c.filled.Load()
-	var evicted []*Piece
+	var evicted, partial []*Piece
 	var diskPaths []string
 	if filled > c.capacity {
 		rems := (filled-c.capacity)/c.pieceLength + 1
@@ -452,14 +452,18 @@ func (c *Cache) cleanPieces() {
 			if c.isClosed.Load() {
 				break
 			}
-			// Buffers only under muRemove. UpdateCompletion takes the torrent
-			// client lock; Client.Close holds that lock while Cache.Close waits
-			// on muRemove — holding both is a deadlock (preload teardown flake).
-			// Disk os.Remove is deferred until after unlock (AGENTS).
-			if path := p.releaseBuffers(); path != "" {
-				diskPaths = append(diskPaths, path)
+			// A partial piece is released by evictPartial after unlock: the client
+			// lock it needs must not be taken under muRemove (Client.Close holds
+			// that lock while Cache.Close waits on muRemove).
+			if _, complete, _ := p.snapshotStats(); !complete {
+				partial = append(partial, p)
+			} else {
+				// Disk os.Remove is deferred until after unlock (AGENTS).
+				if path := p.releaseBuffers(); path != "" {
+					diskPaths = append(diskPaths, path)
+				}
+				evicted = append(evicted, p)
 			}
-			evicted = append(evicted, p)
 			rems--
 			if rems <= 0 {
 				break
@@ -471,11 +475,11 @@ func (c *Cache) cleanPieces() {
 	for _, path := range diskPaths {
 		_ = os.Remove(path)
 	}
-	if len(evicted) == 0 {
-		return
-	}
 	for _, p := range evicted {
 		updatePieceCompletion(p)
+	}
+	for _, p := range partial {
+		evictPartial(p)
 	}
 	// No FreeOSMem here: evicted slabs go back to piecePools for the next piece,
 	// and a forced GC would only empty the pools while the cache stays full.

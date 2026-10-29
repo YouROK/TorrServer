@@ -4,20 +4,27 @@ import (
 	"bytes"
 	"io"
 	"math/rand"
+	"runtime"
 	"testing"
 	"time"
 
 	"github.com/anacrolix/torrent"
 
+	"server/leakcheck"
 	"server/settings"
 	"server/torr/offlinetest"
 )
 
 // Random seeks through a cache much smaller than the torrent evict partial
-// pieces. Without Piece.Forget the client finished them over zeroed buffers,
-// failed the hash and dropped the only seeder.
+// pieces. Without Piece.Evict the client finished them over zeroed buffers,
+// failed the hash and dropped the only seeder. The race needs a loaded CPU:
+// run several copies at once with GOMAXPROCS=2 to reproduce it locally.
 func TestEvictedPartialPiecesDoNotFailHash(t *testing.T) {
+	baseG := runtime.NumGoroutine()
 	offlinetest.Prepare(t)
+	// Stray cleanPieces and AdjustRA goroutines read settings.BTsets; let them
+	// exit before Prepare's cleanup restores it.
+	t.Cleanup(func() { leakcheck.AssertNoGoroutineLeak(t, baseG) })
 	settings.BTsets.CacheSize = 8 << 20
 	show := offlinetest.WriteSized(t, "seek.mkv", 64<<20, 256<<10)
 	seed := offlinetest.Seed(t, show)
