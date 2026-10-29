@@ -113,10 +113,15 @@ func TestStartStopConcurrent(t *testing.T) {
 }
 
 func TestAdvertiseMockInterfaces(t *testing.T) {
-	oldList, oldAddrs := listIfaces, addrsByIface
+	oldList, oldAddrs, oldNew := listIfaces, addrsByIface, newAnnouncer
 	oldPort, oldSsl, oldSslPort, oldSets := settings.Port, settings.Ssl, settings.SslPort, settings.BTsets
+	var registered []string
+	newAnnouncer = func(_, service string, _ int, _ string, _, _ []string, _ []net.Interface) (announcer, error) {
+		registered = append(registered, service)
+		return fakeAnnouncer{}, nil
+	}
 	t.Cleanup(func() {
-		listIfaces, addrsByIface = oldList, oldAddrs
+		listIfaces, addrsByIface, newAnnouncer = oldList, oldAddrs, oldNew
 		settings.Port, settings.Ssl, settings.SslPort, settings.BTsets = oldPort, oldSsl, oldSslPort, oldSets
 		Stop()
 	})
@@ -160,6 +165,9 @@ func TestAdvertiseMockInterfaces(t *testing.T) {
 	settings.SslPort = "8091"
 	settings.BTsets = &settings.BTSets{FriendlyName: "Living Room.local"}
 	Start()
+	if want := []string{serviceTorrServer, serviceHTTP, serviceHTTPS}; !slices.Equal(registered, want) {
+		t.Fatalf("registered %v, want %v", registered, want)
+	}
 	Stop()
 	if servers != nil {
 		t.Fatal("servers left registered")

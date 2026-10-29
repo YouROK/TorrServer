@@ -136,6 +136,9 @@ func (p *Piece) releaseBuffers() (diskPath string) {
 }
 
 // updatePieceCompletion tells the torrent client the piece bytes are gone.
+// Forget, not UpdateCompletion: an evicted partial piece keeps its received
+// chunks marked in the client, which then finishes it over zeros, fails the
+// hash and drops a good peer.
 // Must not run while holding Cache.muRemove: Client.Close holds the client lock
 // and then Cache.Close waits on muRemove (see cleanPieces).
 func updatePieceCompletion(p *Piece) {
@@ -149,9 +152,9 @@ func updatePieceCompletion(p *Piece) {
 	// Eviction runs before SetTorrent and after the client is gone. The pointer
 	// is guarded by muTor; a bare field read raced Close and panicked on nil.
 	if tor := p.cache.torrentPtr(); tor != nil {
-		tor.Piece(p.Id).UpdateCompletion()
+		tor.Piece(p.Id).Forget()
 	}
 }
 
-// pieceCompletionUpdater overrides the client UpdateCompletion call in tests.
+// pieceCompletionUpdater overrides the client Forget call in tests.
 var pieceCompletionUpdater func(*Piece)

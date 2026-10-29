@@ -21,6 +21,9 @@ func TestStartStopNoGoroutineLeak(t *testing.T) {
 
 	base := runtime.NumGoroutine()
 	Start()
+	// zeroconf's recv goroutines call shutdownEnd.Add after they start, so a
+	// Shutdown before that races Add with Wait under -race. Let them start.
+	time.Sleep(200 * time.Millisecond)
 	Stop()
 	// zeroconf's probe announces on uninterruptible 1s then 2s sleeps and does
 	// not watch Shutdown. Wait that out, then the helper must see them gone.

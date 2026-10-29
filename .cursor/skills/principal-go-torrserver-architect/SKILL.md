@@ -52,7 +52,7 @@ Do not hold those mutexes across tracker HTTP, DHT, `publicip.Get4/Get6`, or dis
 - Copy buffer is `streamCopyPool`: `*[64KiB]byte`, not a bare `[]byte`. Read-ahead is `newBufferedStreamReader(..., 1<<20)`. Nil the pooled `ResponseWriter` before `Put`. `buf[:nr]` must not escape.
 - Piece slabs are `*pieceSlab` pooled by exact length. `putPieceBuf` clears the full cap. `Release` does not recycle when `cache.isClosed`. Never keep a sub-slice after `Release`.
 - Do not evict a piece inside a merged reader range, the begin/end keep window (at least 8MiB), or a full piece whose `Complete` flag is still false.
-- Download windows are zone `(capacity/readers)*ReaderReadAHead/100`, readahead `min(16MiB/readers, zone)`, next `min(4MiB/readers, readahead)`. Push them on reader create, close, and the 1s `updateRA` tick. Not on every small `Read`. Do not call `Piece.SetPriority` from the cache: it raises over those tiers. `Piece.Release` only calls `UpdateCompletion`.
+- Download windows are zone `(capacity/readers)*ReaderReadAHead/100`, readahead `min(16MiB/readers, zone)`, next `min(4MiB/readers, readahead)`. Push them on reader create, close, and the 1s `updateRA` tick. Not on every small `Read`. Do not call `Piece.SetPriority` from the cache: it raises over those tiers. Evicted pieces call `Piece.Forget` (fork v1.2.42), not `UpdateCompletion`, so the client re-requests their chunks.
 - Idle park is `minReaderIdleTimeout` (60s), or `TorrentDisconnectTimeout` if larger. `readerOff` must not `Seek` while `inFlight > 0`.
 - `Reader.Close` does not unregister. `Cache.CloseReader` does, and it is safe on a nil `*Cache`.
 - A handler that accepted the request must write a status. An empty return becomes `200` with an empty body.

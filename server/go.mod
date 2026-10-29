@@ -3,7 +3,7 @@ module server
 go 1.25.7
 
 replace (
-	github.com/anacrolix/torrent v1.59.1 => github.com/lampac-nextgen/torrent v1.2.41
+	github.com/anacrolix/torrent v1.59.1 => github.com/lampac-nextgen/torrent v1.2.42
 	github.com/anacrolix/upnp v0.1.4 => github.com/lampac-nextgen/upnp v0.1.5
 	github.com/anacrolix/utp v0.2.0 => github.com/lampac-nextgen/utp v0.2.1
 )

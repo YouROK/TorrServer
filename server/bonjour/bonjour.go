@@ -35,8 +35,9 @@ var (
 	// them; production uses anet.
 	listIfaces   = anet.Interfaces
 	addrsByIface = anet.InterfaceAddrsByInterface
-	// newAnnouncer opens the UDP sockets. Tests replace it: zeroconf.Shutdown
-	// races its own recv goroutines, and -race fails the process for that.
+	// newAnnouncer opens the UDP sockets. Tests replace it: zeroconf's recv
+	// goroutines call shutdownEnd.Add after they start, so an immediate Shutdown
+	// races Add with Wait and -race fails the process. Harmless in production.
 	newAnnouncer = func(name, service string, port int, host string, ips, txt []string, ifaces []net.Interface) (announcer, error) {
 		return zeroconf.RegisterProxy(name, service, "local.", port, host, ips, txt, ifaces)
 	}
