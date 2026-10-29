@@ -3,15 +3,41 @@ package torr
 import (
 	"bufio"
 	"io"
+	"sync"
 )
+
+// streamBufSize is the /stream read-ahead. Only this size is pooled: every
+// player seek is a new request, and a fresh 1MiB per request was the largest
+// TorrServer-owned allocator in a rapid-seek heap profile.
+const streamBufSize = 1 << 20
+
+var streamBufPool = sync.Pool{New: func() any { return bufio.NewReaderSize(nil, streamBufSize) }}
 
 type bufferedStreamReader struct {
 	source io.ReadSeeker
 	buffer *bufio.Reader
+	pooled bool
 }
 
 func newBufferedStreamReader(source io.ReadSeeker, size int) *bufferedStreamReader {
-	return &bufferedStreamReader{source: source, buffer: bufio.NewReaderSize(source, size)}
+	if size != streamBufSize {
+		return &bufferedStreamReader{source: source, buffer: bufio.NewReaderSize(source, size)}
+	}
+	b := streamBufPool.Get().(*bufio.Reader)
+	b.Reset(source)
+	return &bufferedStreamReader{source: source, buffer: b, pooled: true}
+}
+
+// release returns a pooled buffer. The reader must not be used afterwards.
+func (r *bufferedStreamReader) release() {
+	if !r.pooled {
+		return
+	}
+	r.pooled = false
+	// Drop the source so the pool does not pin the torrent reader.
+	r.buffer.Reset(nil)
+	streamBufPool.Put(r.buffer)
+	r.buffer = nil
 }
 
 func (r *bufferedStreamReader) Read(p []byte) (int, error) { return r.buffer.Read(p) }

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -87,6 +88,33 @@ func TestStreamBufferFailedSeekKeepsUnreadData(t *testing.T) {
 	}
 	if _, err := io.ReadFull(r, p); err != nil || !bytes.Equal(p, data[17:34]) {
 		t.Fatalf("failed seek discarded unread data: %v", err)
+	}
+}
+
+func TestStreamBufferPooled(t *testing.T) {
+	first := newBufferedStreamReader(bytes.NewReader([]byte("old data")), streamBufSize)
+	if _, err := first.Read(make([]byte, 3)); err != nil {
+		t.Fatal(err)
+	}
+	first.release()
+	// A reused buffer must not replay bytes buffered for the previous request.
+	next := newBufferedStreamReader(bytes.NewReader([]byte("new")), streamBufSize)
+	if got, err := io.ReadAll(next); err != nil || string(got) != "new" {
+		t.Fatalf("reused buffer read %q, %v", got, err)
+	}
+	next.release()
+
+	const n = 100
+	var before, after runtime.MemStats
+	runtime.ReadMemStats(&before)
+	for range n {
+		newBufferedStreamReader(bytes.NewReader(nil), streamBufSize).release()
+	}
+	runtime.ReadMemStats(&after)
+	// Unpooled is n MiB. -race drops a quarter of Pool.Put on purpose, so the
+	// ceiling is half of that rather than ~0.
+	if got := after.TotalAlloc - before.TotalAlloc; got > n*streamBufSize/2 {
+		t.Fatalf("%d seeks allocated %d MiB: stream buffer is not pooled", n, got>>20)
 	}
 }
 

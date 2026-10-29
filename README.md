@@ -293,6 +293,11 @@ docker run --rm -d --name torrserver \
 - `TS_FUSE_PATH` – Sets the FUSE mount point path using the `--fusepath` flag.
 - `TS_WEBDAV_ENABLE` – If set to `1`, enables WebDAV support via the `--webdav` flag.
 
+Go runtime variables (read by the Go runtime, not by the entrypoint):
+
+- `GODEBUG` – The image sets `madvdontneed=1`, so piece cache RAM released after a torrent closes goes back to the OS right away.
+- `GOMEMLIMIT` – Unset by default. A soft heap limit, for example `GOMEMLIMIT=200MiB`. While a torrent plays, memory sits well above the cache size: with the default 64 MiB cache the process grew from about 29 MiB idle to about 127 MiB. That is the cache, the 8 MiB windows at the start and end of each open file that are never evicted, BitTorrent client state, and garbage between collections (Go lets the heap grow to about twice the live data before it collects). With a limit set, the GC runs more often as the heap approaches it. Use it on routers and NAS boxes with little RAM. Keep it well above the cache size plus about 64 MiB: a limit below what the cache holds makes the GC run constantly and burns CPU without freeing anything.
+
 Example with full override command (on default values):
 
 ```bash

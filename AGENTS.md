@@ -130,6 +130,7 @@ Copy path, do not add a third buffer:
 - `streamCopyWriter.ReadFrom` is what `http.ServeContent` actually hits. gin's writer has no `ReaderFrom`, and `io.CopyN`'s `LimitedReader` has no `WriterTo`.
 - `buf[:nr]` passed to `Write` must not escape. The pool reuses the same array on the next read.
 - `ServeStreamContent` nils `ResponseWriter` before `Put` so the pool does not pin the request.
+- The 1MiB read-ahead (`streamBufSize`) comes from `streamBufPool`; `Stream` calls `body.release()` after `ServeStreamContent`. Every player seek is a new request, so unpooled it was the largest TorrServer-owned allocator under seeks. Other sizes (tests) are not pooled.
 - `bufferedStreamReader.Seek` subtracts `buffer.Buffered()` on `SeekCurrent`, then `Reset`. Skipping that seeks to the wrong byte.
 
 Piece buffers (`server/torr/storage/torrstor/piecebuf.go`):
@@ -137,6 +138,7 @@ Piece buffers (`server/torr/storage/torrstor/piecebuf.go`):
 - One `sync.Pool` per exact length, stored as `*pieceSlab` in a `sync.Map`.
 - `putPieceBuf` clears the full cap before publish.
 - `MemPiece.Release` does not recycle when `cache.isClosed` is set, so `FreeOSMem` after drop can return the RAM. Do not "simplify" that to always `Put`.
+- Only `Cache.Close` forces `FreeOSMem` (via the `freeOSMem` var). `cleanPieces` must not: evicted slabs are pooled for the next piece, and a forced GC every 4s under load only empties the pools (`TestPieceCacheEvictionHeapCeiling` counts the calls).
 - Never retain a sub-slice of a slab after `Release`. The next tenant of that pool owns the backing array.
 - `ponytail:` on the global map is intentional. Split pools per cache only if a profile shows the map.
 
@@ -189,6 +191,7 @@ Process env read by Go:
 - `TS_SETTINGS_STORAGE=json|bbolt` and `TS_VIEWED_STORAGE=json|bbolt` apply only when no settings row exists yet. Defaults: settings JSON, viewed bbolt.
 - `SSL_CERT_FILE` / `SSL_CERT_DIR` on Linux. `configureCARoots` will not override a value the user already set.
 - `GODEBUG=madvdontneed=1` is the container default so dropped piece RAM returns to the OS.
+- `GOMEMLIMIT` is unset by default and passed through Compose. Playback with a 64MiB cache measured ~127MiB vs ~29MiB idle; the limit makes GC run sooner. It is documentation, not a code default: a limit below the live cache makes GC spin.
 
 `docker-entrypoint.sh` maps `TS_*` onto flags. It enables TLS from `TS_SSL_ENABLE=1`. `docker-compose.yml` and `.env.example` publish `TS_EN_SSL`. Those names are not the same variable. Wiring TLS through Compose requires the entrypoint to see `TS_SSL_ENABLE`, or the flag is never passed. README documents `TS_SSL_ENABLE`.
 

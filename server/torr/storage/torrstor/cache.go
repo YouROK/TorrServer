@@ -251,9 +251,12 @@ func (c *Cache) Close() error {
 	c.activePieces = nil
 	c.muActive.Unlock()
 
-	utils.FreeOSMemGCThrottled()
+	freeOSMem()
 	return nil
 }
+
+// freeOSMem is replaced in tests.
+var freeOSMem = utils.FreeOSMemGCThrottled
 
 func (c *Cache) AdjustRA(readahead int64) {
 	if c == nil {
@@ -474,7 +477,8 @@ func (c *Cache) cleanPieces() {
 	for _, p := range evicted {
 		updatePieceCompletion(p)
 	}
-	utils.FreeOSMemGCThrottled()
+	// No FreeOSMem here: evicted slabs go back to piecePools for the next piece,
+	// and a forced GC would only empty the pools while the cache stays full.
 }
 
 func (c *Cache) snapshotReaders() []*Reader {

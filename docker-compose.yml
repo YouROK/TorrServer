@@ -34,6 +34,8 @@ services:
 
       # Go runtime (from Dockerfile)
       GODEBUG: ${GODEBUG:-madvdontneed=1}
+      # Empty means no limit
+      GOMEMLIMIT: ${GOMEMLIMIT:-}
 
       # Bind address inside the container (optional; passed as `-i` to torrserver)
       TS_IP: ${TS_IP:-}

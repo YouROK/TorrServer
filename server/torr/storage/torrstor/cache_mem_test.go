@@ -3,6 +3,7 @@ package torrstor
 import (
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -26,6 +27,11 @@ func TestPieceCacheEvictionHeapCeiling(t *testing.T) {
 		total    = 50 << 20
 	)
 	nPieces := total / pieceLen
+
+	var reclaims atomic.Int32
+	prevFree := freeOSMem
+	freeOSMem = func() { reclaims.Add(1) }
+	t.Cleanup(func() { freeOSMem = prevFree })
 
 	baseG := runtime.NumGoroutine()
 	before := leakcheck.Heap()
@@ -117,8 +123,15 @@ func TestPieceCacheEvictionHeapCeiling(t *testing.T) {
 		t.Fatalf("readers still registered: %d", c.Readers())
 	}
 
+	// Eviction keeps slabs pooled; only Close returns RAM to the OS.
+	if n := reclaims.Load(); n != 0 {
+		t.Fatalf("eviction forced %d OS reclaims", n)
+	}
 	if err := stor.Close(); err != nil {
 		t.Fatal(err)
+	}
+	if n := reclaims.Load(); n != 1 {
+		t.Fatalf("Close forced %d OS reclaims, want 1", n)
 	}
 	if n, b := livePieceBuffers(c); n != 0 || b != 0 {
 		t.Fatalf("closed cache retained %d buffers (%d bytes)", n, b)

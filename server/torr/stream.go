@@ -177,8 +177,9 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 	// bufio only calls Read. Bind the request context under the buffer so a
 	// blocked piece wait ends when the client (ffprobe included) hangs up,
 	// and the deferred CloseReader runs.
-	body := newBufferedStreamReader(bindStreamReadContext(req.Context(), reader), 1<<20)
+	body := newBufferedStreamReader(bindStreamReadContext(req.Context(), reader), streamBufSize)
 	ServeStreamContent(resp, req, file.Path(), time.Unix(t.Timestamp, 0), body)
+	body.release()
 
 	if sets.BTsets.EnableDebug {
 		if clerr != nil {

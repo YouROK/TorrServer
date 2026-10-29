@@ -7,7 +7,13 @@ import (
 	"time"
 )
 
-var lastFreeOSMemGC atomic.Int64
+var (
+	lastFreeOSMemGC    atomic.Int64
+	freeOSMemGCPending atomic.Bool
+
+	freeOSMemGCInterval = 4 * time.Second
+	freeOSMemGCFunc     = FreeOSMemGC
+)
 
 func FreeOSMem() {
 	debug.FreeOSMemory()
@@ -19,15 +25,17 @@ func FreeOSMemGC() {
 	debug.FreeOSMemory()
 }
 
-// FreeOSMemGCThrottled coalesces burst rem/Close reclaim (≥4s, async).
+// FreeOSMemGCThrottled coalesces burst rem/Close reclaim: at most one async GC
+// per interval. A call inside the window runs at its end instead of being
+// dropped, otherwise Cache.Close right after an eviction never returns the cache.
 func FreeOSMemGCThrottled() {
-	now := time.Now().UnixNano()
-	last := lastFreeOSMemGC.Load()
-	if now-last < 4*int64(time.Second) {
+	if !freeOSMemGCPending.CompareAndSwap(false, true) {
 		return
 	}
-	if !lastFreeOSMemGC.CompareAndSwap(last, now) {
-		return
-	}
-	go FreeOSMemGC()
+	wait := time.Duration(lastFreeOSMemGC.Load() + int64(freeOSMemGCInterval) - time.Now().UnixNano())
+	time.AfterFunc(max(wait, 0), func() {
+		lastFreeOSMemGC.Store(time.Now().UnixNano())
+		freeOSMemGCPending.Store(false)
+		freeOSMemGCFunc()
+	})
 }
