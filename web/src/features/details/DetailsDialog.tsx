@@ -33,6 +33,7 @@ import { toPlayableFile } from 'shared/torrent/toPlayableFile'
 
 import FileBrowser from './FileBrowser'
 import CacheMapDialog from './CacheMapDialog'
+import { heroCacheFill } from './heroCacheFill'
 import EditPosterDialog from './EditPosterDialog'
 import SwarmStatsPanel, { TorrentProgressStrip } from './SwarmStatsPanel'
 import SpeedCharts from './SpeedCharts'
@@ -77,24 +78,22 @@ function StatWidget({
       title={hint || undefined}
     >
       <span
-        className={`block leading-tight text-muted ${
-          tight
+        className={`block leading-tight text-muted ${tight
             ? 'truncate text-[11px]'
             : compact
               ? 'line-clamp-2 min-h-[1.75rem] text-[10px]'
               : dense
                 ? 'truncate text-[11px]'
                 : 'truncate text-[11px] sm:text-xs'
-        }`}
+          }`}
         title={hint || label}
       >
         {label}
       </span>
       {/* Single-line value — long labels must not wrap and grow the hero. */}
       <span
-        className={`block truncate font-bold tabular-nums text-foreground ${
-          dense ? 'mt-0.5 h-3.5 text-[11px] leading-3.5' : 'mt-1 h-5 text-sm leading-5 sm:h-6 sm:text-base sm:leading-6'
-        }`}
+        className={`block truncate font-bold tabular-nums text-foreground ${dense ? 'mt-0.5 h-3.5 text-[11px] leading-3.5' : 'mt-1 h-5 text-sm leading-5 sm:h-6 sm:text-base sm:leading-6'
+          }`}
         title={shown}
       >
         {shown}
@@ -134,13 +133,12 @@ function TitleRow({ title, subtitle, compact }: { title: string; subtitle: strin
   /** Drop subtitle when it already appears inside the primary title (common after ptt parse). */
   const showSubtitle = !!subtitle && !title.toLocaleLowerCase().includes(subtitle.toLocaleLowerCase())
 
-  const titleClass = `min-w-0 flex-1 font-bold text-foreground ${
-    compact
+  const titleClass = `min-w-0 flex-1 font-bold text-foreground ${compact
       ? expanded
         ? 'text-[15px] leading-snug'
         : 'line-clamp-6 text-[15px] leading-snug'
       : 'line-clamp-2 text-lg leading-snug'
-  }`
+    }`
 
   return (
     <div className='min-w-0'>
@@ -218,12 +216,14 @@ export default function DetailsDialog({
   const resolvedTab = activeTab
 
   const snakeLive = resolvedTab === 'cache' || cacheMapOpen
+  const cachePolling = snakeLive || resolvedTab === 'stats'
   const cache = useUpdateCache(hash, {
     // Files tab does not read the piece map. Stats keeps the idle cadence for the progress strip.
-    enabled: snakeLive || resolvedTab === 'stats',
+    enabled: cachePolling,
     fast: snakeLive,
   })
   const { data: btSettings } = useSettingsQuery()
+  const heroCache = heroCacheFill(cache, torrent, cachePolling, btSettings?.CacheSize)
   const preloadCachePercent = btSettings?.PreloadCache ?? 50
   const bufferTarget = resolveBufferTargetBytes(cache.Capacity, preloadCachePercent)
   // Streaming → playable ahead (null only when no active reader). Idle → preload progress.
@@ -240,7 +240,7 @@ export default function DetailsDialog({
     ? (formatBufferAheadLabel(bufferAhead) ?? '—')
     : (formatBufferFilledLabel(bufferValue, bufferTarget, { percent: 'always' }) ?? '—')
   const bufferPct = bufferFillPercent(bufferValue, bufferTarget)
-  const cacheOccupiedPct = bufferFillPercent(cache.Filled, cache.Capacity)
+  const cacheOccupiedPct = bufferFillPercent(heroCache.filled, heroCache.capacity)
 
   const seasonsFingerprint = useMemo(() => {
     const seasons: number[] = []
@@ -255,9 +255,9 @@ export default function DetailsDialog({
   useEffect(() => {
     const seasons = seasonsFingerprint
       ? seasonsFingerprint
-          .split(',')
-          .map(Number)
-          .filter(n => Number.isFinite(n) && n > 0)
+        .split(',')
+        .map(Number)
+        .filter(n => Number.isFinite(n) && n > 0)
       : []
     // eslint-disable-next-line react-hooks/set-state-in-effect -- keep season list/selection valid when file list changes
     setSeasonList(seasons)
@@ -309,7 +309,7 @@ export default function DetailsDialog({
   const isLoadingMetadata = stat === GETTING_INFO && filesUnknown
   const hasMultipleSeasons = (seasonList?.length ?? 0) > 1
 
-  const cacheFilledValue = formatCacheFilledLabel(cache.Filled, cache.Capacity) ?? '—'
+  const cacheFilledValue = formatCacheFilledLabel(heroCache.filled, heroCache.capacity) ?? '—'
 
   // Continue Watching must not wait for the Stats tab — Files is the default surface.
   const { playerModals: autoPlayModals } = usePlayLauncher({

@@ -36,6 +36,13 @@ describe('parseLibraryImportText', () => {
     expect(items[1].timestamp).toBe(1700000001)
   })
 
+  it('prefixes the bare packed token that export JSON writes', () => {
+    const [item] = parseLibraryImportText(
+      JSON.stringify([{ hash: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', torrs_hash: 'mxVr89hf4L1iikR5d5Vr0P3l8q' }]),
+    )
+    expect(item.link).toBe('torrs://mxVr89hf4L1iikR5d5Vr0P3l8q')
+  })
+
   it('parses magnets and torrs lines, skipping blanks and comments', () => {
     const items = parseLibraryImportText(`
 # header

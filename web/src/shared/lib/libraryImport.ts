@@ -1,4 +1,4 @@
-import { toAddTorrentLink } from './torrsLink'
+import { toAddTorrentLink, toApiTorrsLink } from './torrsLink'
 
 export interface LibraryImportItem {
   link: string
@@ -63,7 +63,8 @@ function itemFromJsonRow(row: ExportJsonRow): LibraryImportItem | null {
   const timestamp = typeof row.timestamp === 'number' && row.timestamp > 0 ? row.timestamp : undefined
 
   if (row.torrs_hash?.trim()) {
-    const link = toAddTorrentLink(row.torrs_hash)
+    // Export writes the bare packed token, without `torrs://`.
+    const link = toAddTorrentLink(toApiTorrsLink(row.torrs_hash))
     return {
       link,
       title,
