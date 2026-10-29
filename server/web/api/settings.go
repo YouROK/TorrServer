@@ -46,6 +46,10 @@ func settings(c *gin.Context) {
 		c.JSON(200, sets.BTsets)
 		return
 	} else if req.Action == "set" {
+		if req.Sets == nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "sets is empty"})
+			return
+		}
 		torr.SetSettings(req.Sets)
 		restartServices()
 		c.Status(200)
