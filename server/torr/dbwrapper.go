@@ -2,6 +2,7 @@ package torr
 
 import (
 	"encoding/json"
+	"sync"
 
 	"server/settings"
 	"server/torr/state"
@@ -9,6 +10,50 @@ import (
 
 	"github.com/anacrolix/torrent/metainfo"
 )
+
+func init() {
+	settings.OnTorrentsChanged = invalidateDBRows
+}
+
+// Decoded settings rows, so a /torrents list poll does not unmarshal every row.
+// The rows are read-only: callers get a new *Torrent from torrentFromDB each time,
+// because GotInfo, Close and NewTorrent mutate the Torrent and its TorrentSpec.
+var (
+	dbRowsMu sync.Mutex
+	dbRows   []*settings.TorrentDB
+)
+
+func invalidateDBRows() {
+	dbRowsMu.Lock()
+	dbRows = nil
+	dbRowsMu.Unlock()
+}
+
+// listDBRows holds dbRowsMu across settings.ListTorrent so a mutation hook cannot
+// clear the cache between the read and the store. nil (closed or empty DB) is not cached.
+func listDBRows() []*settings.TorrentDB {
+	dbRowsMu.Lock()
+	defer dbRowsMu.Unlock()
+	if dbRows == nil {
+		dbRows = settings.ListTorrent()
+	}
+	return dbRows
+}
+
+func torrentFromDB(db *settings.TorrentDB) *Torrent {
+	spec := *db.TorrentSpec
+	spec.Trackers = append([][]string(nil), spec.Trackers...)
+	torr := new(Torrent)
+	torr.TorrentSpec = &spec
+	torr.Title = db.Title
+	torr.Poster = db.Poster
+	torr.Category = db.Category
+	torr.Timestamp = db.Timestamp
+	torr.Size = db.Size
+	torr.Data = db.Data
+	torr.Stat = state.TorrentInDB
+	return torr
+}
 
 type tsFiles struct {
 	TorrServer struct {
@@ -95,19 +140,9 @@ func AddTorrentDB(torr *Torrent) {
 }
 
 func GetTorrentDB(hash metainfo.Hash) *Torrent {
-	list := settings.ListTorrent()
-	for _, db := range list {
-		if hash == db.InfoHash {
-			torr := new(Torrent)
-			torr.TorrentSpec = db.TorrentSpec
-			torr.Title = db.Title
-			torr.Poster = db.Poster
-			torr.Category = db.Category
-			torr.Timestamp = db.Timestamp
-			torr.Size = db.Size
-			torr.Data = db.Data
-			torr.Stat = state.TorrentInDB
-			return torr
+	for _, db := range listDBRows() {
+		if db != nil && db.TorrentSpec != nil && db.InfoHash == hash {
+			return torrentFromDB(db)
 		}
 	}
 	return nil
@@ -118,19 +153,12 @@ func RemTorrentDB(hash metainfo.Hash) {
 }
 
 func ListTorrentsDB() map[metainfo.Hash]*Torrent {
-	ret := make(map[metainfo.Hash]*Torrent)
-	list := settings.ListTorrent()
-	for _, db := range list {
-		torr := new(Torrent)
-		torr.TorrentSpec = db.TorrentSpec
-		torr.Title = db.Title
-		torr.Poster = db.Poster
-		torr.Category = db.Category
-		torr.Timestamp = db.Timestamp
-		torr.Size = db.Size
-		torr.Data = db.Data
-		torr.Stat = state.TorrentInDB
-		ret[torr.TorrentSpec.InfoHash] = torr
+	rows := listDBRows()
+	ret := make(map[metainfo.Hash]*Torrent, len(rows))
+	for _, db := range rows {
+		if db != nil && db.TorrentSpec != nil {
+			ret[db.InfoHash] = torrentFromDB(db)
+		}
 	}
 	return ret
 }

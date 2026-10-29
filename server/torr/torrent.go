@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"server/torrshash"
@@ -53,10 +54,9 @@ type Torrent struct {
 	BitRate         string
 
 	expiredTime time.Time
-
-	// Cached packed torrs:// token. Status() is polled every second; zlib pack is not free.
-	torrsHashToken string
-	torrsHashKey   string
+	// WaitInfo calls in progress. expired() leaves the torrent alone while one waits:
+	// WaitInfo has its own longer deadline and its callers close or retry on failure.
+	infoWaiters atomic.Int32
 
 	closed <-chan struct{}
 
@@ -155,6 +155,8 @@ func (t *Torrent) WaitInfo() bool {
 	if torrent == nil {
 		return false
 	}
+	t.infoWaiters.Add(1)
+	defer t.infoWaiters.Add(-1)
 
 	// Close torrent if no info in 1 minute + TorrentDisconnectTimeout config option
 	tm := time.NewTimer(time.Minute + time.Second*time.Duration(settings.BTsets.TorrentDisconnectTimeout))
@@ -322,10 +324,14 @@ func (t *Torrent) expired() bool {
 	t.muTorrent.Lock()
 	cache, stat, expiredTime := t.cache, t.Stat, t.expiredTime
 	t.muTorrent.Unlock()
-	if cache == nil {
+	if stat == state.TorrentPreload || t.infoWaiters.Load() > 0 {
 		return false
 	}
-	return cache.Readers() == 0 && expiredTime.Before(time.Now()) && (stat == state.TorrentWorking || stat == state.TorrentClosed)
+	readers := 0
+	if cache != nil {
+		readers = cache.Readers()
+	}
+	return readers == 0 && expiredTime.Before(time.Now())
 }
 
 func (t *Torrent) Files() []*torrent.File {
@@ -525,11 +531,26 @@ func torrsHashFingerprint(hash, title, poster, category string, size int64, trac
 	return b.String()
 }
 
-// cachedTorrsHash packs once per fingerprint. Caller must hold muTorrent.
+type torrsHashEntry struct{ key, token string }
+
+// Packed torrs:// tokens by infohash. Process-wide because ListTorrentsDB builds a new
+// *Torrent for every library row on every /torrents poll.
+// ponytail: cleared wholesale at torrsHashCacheMax hashes; one repack per row after that. LRU if it shows in a profile.
+var (
+	torrsHashMu     sync.Mutex
+	torrsHashTokens = map[string]torrsHashEntry{}
+)
+
+const torrsHashCacheMax = 4096
+
+// cachedTorrsHash packs once per fingerprint and infohash. Caller must hold muTorrent.
 func (t *Torrent) cachedTorrsHash(hash, title, poster, category string, size int64, trackers []string) string {
 	key := torrsHashFingerprint(hash, title, poster, category, size, trackers)
-	if t.torrsHashToken != "" && t.torrsHashKey == key {
-		return t.torrsHashToken
+	torrsHashMu.Lock()
+	e, ok := torrsHashTokens[hash]
+	torrsHashMu.Unlock()
+	if ok && e.key == key {
+		return e.token
 	}
 	th := torrshash.New(hash)
 	th.AddField(torrshash.TagTitle, title)
@@ -543,8 +564,12 @@ func (t *Torrent) cachedTorrsHash(hash, title, poster, category string, size int
 	if err != nil {
 		return ""
 	}
-	t.torrsHashToken = token
-	t.torrsHashKey = key
+	torrsHashMu.Lock()
+	if len(torrsHashTokens) >= torrsHashCacheMax {
+		clear(torrsHashTokens)
+	}
+	torrsHashTokens[hash] = torrsHashEntry{key, token}
+	torrsHashMu.Unlock()
 	return token
 }
 

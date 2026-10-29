@@ -25,15 +25,13 @@ func TestTorrentChurnHeapAndGoroutines(t *testing.T) {
 	t.Cleanup(srv.Close)
 	settings.BTsets.TrackersListURL = srv.URL
 
+	baseG := runtime.NumGoroutine()
 	show := offlinetest.WriteShow(t)
 	seed := offlinetest.Seed(t, show)
 	peer := seed.Peer()
 	if peer.Port == 0 {
 		t.Fatal("seeder has no port")
 	}
-	// Seeder and the tracker server stay up for the whole test. Disconnect
-	// stops the tracker refresh loop Connect started.
-	baseG := runtime.NumGoroutine()
 	bt := NewBTS()
 	InitApiHelper(bt)
 	if err := bt.Connect(); err != nil {
@@ -70,6 +68,7 @@ func TestTorrentChurnHeapAndGoroutines(t *testing.T) {
 
 	connected := runtime.NumGoroutine()
 	bt.Disconnect()
+	seed.Client.Close()
 	leakcheck.AssertNoGoroutineLeak(t, baseG)
 	if connected < baseG {
 		t.Fatalf("connected goroutines %d < baseline %d", connected, baseG)

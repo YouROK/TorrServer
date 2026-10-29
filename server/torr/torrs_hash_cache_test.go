@@ -33,8 +33,11 @@ func TestCachedTorrsHashReusesTokenUntilMetaChanges(t *testing.T) {
 	if second.TorrsHash != first.TorrsHash {
 		t.Fatal("unchanged meta must reuse the packed token")
 	}
-	if tor.torrsHashKey == "" {
-		t.Fatal("expected fingerprint stored")
+	torrsHashMu.Lock()
+	e := torrsHashTokens[hex]
+	torrsHashMu.Unlock()
+	if e.key == "" || e.token != first.TorrsHash {
+		t.Fatal("expected fingerprint and token stored for the hash")
 	}
 
 	tor.Title = "Show B"

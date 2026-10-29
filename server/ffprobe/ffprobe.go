@@ -52,6 +52,17 @@ func Exists() bool {
 	return !os.IsNotExist(err)
 }
 
+// SetBinPath sets the binary path and updates goffprobe. Returns a restore func.
+func SetBinPath(path string) func() {
+	oldBin := binFile
+	binFile = path
+	goffprobe.SetFFProbeBinPath(path)
+	return func() {
+		binFile = oldBin
+		goffprobe.SetFFProbeBinPath(oldBin)
+	}
+}
+
 func ProbeUrl(link string) (*goffprobe.ProbeData, error) {
 	return ProbeURLContext(context.Background(), link)
 }

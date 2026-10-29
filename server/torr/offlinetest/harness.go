@@ -16,6 +16,7 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/anacrolix/torrent/storage"
 
+	"server/ffprobe"
 	"server/settings"
 )
 
@@ -23,11 +24,13 @@ import (
 func Prepare(t testing.TB) {
 	t.Helper()
 	dir := t.TempDir()
+	restoreFF := ffprobe.SetBinPath(filepath.Join(dir, "no-ffprobe"))
 	oldPath, oldSets, oldArgs := settings.Path, settings.BTsets, settings.Args
 	oldRO, oldAuth, oldWA := settings.ReadOnly, settings.HttpAuth, settings.SearchWA
 	oldIP4, oldIP6, oldTor := settings.PubIPv4, settings.PubIPv6, settings.TorAddr
 	oldEmb, oldStop := settings.Embedded, settings.EmbeddedStop
 	t.Cleanup(func() {
+		restoreFF()
 		settings.CloseDB()
 		settings.Path, settings.BTsets, settings.Args = oldPath, oldSets, oldArgs
 		settings.ReadOnly, settings.HttpAuth, settings.SearchWA = oldRO, oldAuth, oldWA

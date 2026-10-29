@@ -51,6 +51,7 @@ func AddTorrent(torr *TorrentDB) {
 		}
 	}
 	mu.Unlock()
+	OnTorrentsChanged()
 }
 
 func ListTorrent() []*TorrentDB {
@@ -86,4 +87,5 @@ func RemTorrent(hash metainfo.Hash) {
 	mu.Lock()
 	tdb.Rem("Torrents", hash.HexString())
 	mu.Unlock()
+	OnTorrentsChanged()
 }
