@@ -75,6 +75,8 @@ func NewBTS() *BTServer {
 	return bts
 }
 
+// Connect does not log the config: reconnect calls it once a second while the
+// old uTP socket still holds the port. Callers log it once.
 func (bt *BTServer) Connect() error {
 	bt.mu.Lock()
 	defer bt.mu.Unlock()
@@ -193,8 +195,6 @@ func (bt *BTServer) configure() {
 	if err := bt.configureProxy(); err != nil {
 		log.Println("Proxy configuration error:", err)
 	}
-
-	log.Println("Client config:", settings.BTsets)
 
 	var err error
 

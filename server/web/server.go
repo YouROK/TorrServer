@@ -78,6 +78,7 @@ func Start() error {
 			settings.SetBTSets(settings.BTsets)
 		}
 	}
+	log.TLogln("Client config:", settings.BTsets)
 	err := BTS.Connect()
 	if err != nil {
 		log.TLogln("BTS.Connect() error!", err)

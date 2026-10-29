@@ -3,7 +3,7 @@ module server
 go 1.25.7
 
 replace (
-	github.com/anacrolix/torrent v1.59.1 => github.com/lampac-nextgen/torrent v1.2.37
+	github.com/anacrolix/torrent v1.59.1 => github.com/lampac-nextgen/torrent v1.2.39
 	github.com/anacrolix/upnp v0.1.4 => github.com/lampac-nextgen/upnp v0.1.5
 	github.com/anacrolix/utp v0.2.0 => github.com/lampac-nextgen/utp v0.2.1
 )
@@ -17,6 +17,7 @@ require (
 	github.com/anacrolix/missinggo/v2 v2.10.0
 	github.com/anacrolix/publicip v0.3.1
 	github.com/anacrolix/torrent v1.59.1
+	github.com/anacrolix/utp v0.2.0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/ebitengine/purego v0.10.1
 	github.com/fsnotify/fsnotify v1.10.1
@@ -63,7 +64,6 @@ require (
 	github.com/anacrolix/stm v0.5.0 // indirect
 	github.com/anacrolix/sync v0.6.0 // indirect
 	github.com/anacrolix/upnp v0.1.4 // indirect
-	github.com/anacrolix/utp v0.2.0 // indirect
 	github.com/benbjohnson/immutable v0.4.3 // indirect
 	github.com/bits-and-blooms/bitset v1.24.4 // indirect
 	github.com/bradfitz/iter v0.0.0-20191230175014-e8f45d346db8 // indirect

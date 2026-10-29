@@ -307,6 +307,7 @@ func SetSettings(set *sets.BTSets) {
 // PeersListenPort is busy: "listen udp4 :port: bind: address already in use".
 // A failed Connect would leave bts.client nil until restart.
 func reconnect() {
+	log.TLogln("Client config:", sets.BTsets)
 	var err error
 	for i := 0; i < 30; i++ {
 		if err = bts.Connect(); err == nil {

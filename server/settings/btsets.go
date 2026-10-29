@@ -108,8 +108,20 @@ type BTSets struct {
 	MergeAllM3U bool // merge all torrents files into a single all.m3u playlist
 }
 
+// String is the log form. API keys are masked: the client config is logged on
+// every BT client start and log files end up in screenshots and bug reports.
 func (v *BTSets) String() string {
-	buf, _ := json.Marshal(v)
+	c := *v
+	if c.TMDBSettings.APIKey != "" {
+		c.TMDBSettings.APIKey = "***"
+	}
+	c.TorznabUrls = append([]TorznabConfig(nil), v.TorznabUrls...)
+	for i := range c.TorznabUrls {
+		if c.TorznabUrls[i].Key != "" {
+			c.TorznabUrls[i].Key = "***"
+		}
+	}
+	buf, _ := json.Marshal(&c)
 	return string(buf)
 }
 
