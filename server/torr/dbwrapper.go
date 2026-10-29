@@ -2,6 +2,8 @@ package torr
 
 import (
 	"encoding/json"
+	"slices"
+	"sort"
 	"sync"
 
 	"server/settings"
@@ -13,31 +15,73 @@ import (
 
 func init() {
 	settings.OnTorrentsChanged = invalidateDBRows
+	settings.OnTorrentChanged = patchDBRow
 }
 
 // Decoded settings rows, so a /torrents list poll does not unmarshal every row.
-// The rows are read-only: callers get a new *Torrent from torrentFromDB each time,
-// because GotInfo, Close and NewTorrent mutate the Torrent and its TorrentSpec.
+// The rows and the slice are read-only: a change builds a new slice, and callers
+// get a new *Torrent from torrentFromDB each time, because GotInfo, Close and
+// NewTorrent mutate the Torrent and its TorrentSpec.
 var (
-	dbRowsMu sync.Mutex
-	dbRows   []*settings.TorrentDB
+	dbRowsMu  sync.Mutex
+	dbRows    []*settings.TorrentDB
+	dbRowsGen uint64
 )
 
 func invalidateDBRows() {
 	dbRowsMu.Lock()
 	dbRows = nil
+	dbRowsGen++
 	dbRowsMu.Unlock()
 }
 
-// listDBRows holds dbRowsMu across settings.ListTorrent so a mutation hook cannot
-// clear the cache between the read and the store. nil (closed or empty DB) is not cached.
-func listDBRows() []*settings.TorrentDB {
+// patchDBRow replaces, adds or (row nil) drops one cached row, so a single add
+// or edit does not re-decode the whole library. It runs under settings.mu.
+func patchDBRow(hash metainfo.Hash, row []byte) {
+	var db *settings.TorrentDB
+	if row != nil {
+		if err := json.Unmarshal(row, &db); err != nil || db == nil || db.TorrentSpec == nil {
+			invalidateDBRows()
+			return
+		}
+	}
 	dbRowsMu.Lock()
 	defer dbRowsMu.Unlock()
+	dbRowsGen++
 	if dbRows == nil {
-		dbRows = settings.ListTorrent()
+		return
 	}
-	return dbRows
+	rows := make([]*settings.TorrentDB, 0, len(dbRows)+1)
+	for _, r := range dbRows {
+		if r != nil && r.TorrentSpec != nil && r.InfoHash == hash {
+			continue
+		}
+		rows = append(rows, r)
+	}
+	if db != nil {
+		i := sort.Search(len(rows), func(i int) bool { return rows[i].Timestamp <= db.Timestamp })
+		rows = slices.Insert(rows, i, db)
+	}
+	dbRows = rows
+}
+
+// listDBRows reads outside dbRowsMu: patchDBRow takes it under settings.mu, and
+// ListTorrent takes settings.mu. A change during the read bumps dbRowsGen and the
+// stale result is returned but not stored. nil (closed or empty DB) is not cached.
+func listDBRows() []*settings.TorrentDB {
+	dbRowsMu.Lock()
+	rows, gen := dbRows, dbRowsGen
+	dbRowsMu.Unlock()
+	if rows != nil {
+		return rows
+	}
+	rows = settings.ListTorrent()
+	dbRowsMu.Lock()
+	if dbRowsGen == gen {
+		dbRows = rows
+	}
+	dbRowsMu.Unlock()
+	return rows
 }
 
 func torrentFromDB(db *settings.TorrentDB) *Torrent {

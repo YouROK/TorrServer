@@ -30,9 +30,20 @@ func (v *DBReadCache) CloseDB() {
 	v.dataCache = nil
 }
 
+// uncachedData is the bucket whose values are not kept here. Torrents rows carry
+// base64 InfoBytes (tens of MB for a large library); package torr already keeps
+// them decoded, so a second raw copy only doubled the resident set.
+const uncachedData = "Torrents"
+
 func (v *DBReadCache) Get(xPath, name string) []byte {
 	if v.dataCache == nil {
 		return nil // или panic, или возвращаем ошибку
+	}
+	if xPath == uncachedData {
+		if v.db == nil {
+			return nil
+		}
+		return v.db.Get(xPath, name)
 	}
 	cacheKey := v.makeDataCacheKey(xPath, name)
 
@@ -73,11 +84,13 @@ func (v *DBReadCache) Set(xPath, name string, value []byte) {
 
 	cacheKey := v.makeDataCacheKey(xPath, name)
 
-	v.dataCacheMutex.Lock()
-	if v.dataCache != nil { // Двойная проверка
-		v.dataCache[cacheKey] = value
+	if xPath != uncachedData {
+		v.dataCacheMutex.Lock()
+		if v.dataCache != nil { // Двойная проверка
+			v.dataCache[cacheKey] = value
+		}
+		v.dataCacheMutex.Unlock()
 	}
-	v.dataCacheMutex.Unlock()
 
 	v.listCacheMutex.Lock()
 	if v.listCache != nil {

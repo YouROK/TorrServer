@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"server/settings"
 	"server/torr/offlinetest"
 	"server/torr/state"
 
@@ -128,5 +129,43 @@ func TestExpiredWaitsForPendingInfo(t *testing.T) {
 	tor.muTorrent.Unlock()
 	if tor.expired() {
 		t.Fatal("preloading torrent must not expire")
+	}
+}
+
+// One add or remove patches the cached rows instead of decoding the library again,
+// and the cache stays equal to what settings.ListTorrent reads from the DB.
+func TestDBRowsPatchedInPlace(t *testing.T) {
+	offlinetest.Prepare(t)
+	row := func(b byte, ts int64) *settings.TorrentDB {
+		return &settings.TorrentDB{TorrentSpec: &torrent.TorrentSpec{InfoHash: metainfo.Hash{b}}, Title: string('a' + b), Timestamp: ts}
+	}
+	settings.AddTorrent(row(1, 10))
+	settings.AddTorrent(row(2, 30))
+	before := listDBRows()
+	if len(before) != 2 {
+		t.Fatalf("rows %d, want 2", len(before))
+	}
+
+	settings.AddTorrent(row(3, 20))
+	edited := row(1, 10)
+	edited.Title = "edited"
+	settings.AddTorrent(edited)
+	after := listDBRows()
+	if after[0] != before[0] {
+		t.Fatal("an untouched row was decoded again")
+	}
+	want := settings.ListTorrent()
+	if len(after) != len(want) {
+		t.Fatalf("cache has %d rows, DB has %d", len(after), len(want))
+	}
+	for i := range want {
+		if after[i].InfoHash != want[i].InfoHash || after[i].Title != want[i].Title {
+			t.Fatalf("row %d: cache %v %q, DB %v %q", i, after[i].InfoHash, after[i].Title, want[i].InfoHash, want[i].Title)
+		}
+	}
+
+	settings.RemTorrent(metainfo.Hash{2})
+	if got := ListTorrentsDB(); len(got) != 2 || got[metainfo.Hash{2}] != nil {
+		t.Fatalf("removed row still listed: %d rows", len(got))
 	}
 }

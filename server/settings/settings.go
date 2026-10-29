@@ -507,8 +507,8 @@ func SetStoragePreferences(prefs map[string]interface{}) error {
 	return nil
 }
 
-// OnTorrentsChanged runs after a Torrents write and after CloseDB, with no settings
-// lock held. Package torr sets it in init to drop its decoded-row cache.
+// OnTorrentsChanged runs after CloseDB, with no settings lock held. Package torr
+// sets it in init to drop its decoded-row cache.
 var OnTorrentsChanged = func() {}
 
 func CloseDB() {

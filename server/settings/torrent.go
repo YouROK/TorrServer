@@ -29,29 +29,27 @@ type File struct {
 
 var mu sync.Mutex
 
+// OnTorrentChanged runs under mu after one Torrents row is written (row is its
+// JSON) or removed (row is nil), so hooks see writes in DB order. It must not
+// call back into settings. Package torr patches its decoded-row cache.
+var OnTorrentChanged = func(metainfo.Hash, []byte) {}
+
+// AddTorrent writes one row. It used to rewrite every row, one bbolt write
+// transaction and a full JSON re-encode of InfoBytes each, on every add or edit.
 func AddTorrent(torr *TorrentDB) {
-	list := ListTorrent()
+	if tdb == nil {
+		return
+	}
+	buf, err := json.Marshal(torr)
+	if err != nil {
+		return
+	}
+	dbMigrationLock.RLock()
+	defer dbMigrationLock.RUnlock()
 	mu.Lock()
-	find := -1
-	for i, db := range list {
-		if db.InfoHash.HexString() == torr.InfoHash.HexString() {
-			find = i
-			break
-		}
-	}
-	if find != -1 {
-		list[find] = torr
-	} else {
-		list = append(list, torr)
-	}
-	for _, db := range list {
-		buf, err := json.Marshal(db)
-		if err == nil {
-			tdb.Set("Torrents", db.InfoHash.HexString(), buf)
-		}
-	}
-	mu.Unlock()
-	OnTorrentsChanged()
+	defer mu.Unlock()
+	tdb.Set("Torrents", torr.InfoHash.HexString(), buf)
+	OnTorrentChanged(torr.InfoHash, buf)
 }
 
 func ListTorrent() []*TorrentDB {
@@ -84,8 +82,11 @@ func ListTorrent() []*TorrentDB {
 }
 
 func RemTorrent(hash metainfo.Hash) {
+	if tdb == nil {
+		return
+	}
 	mu.Lock()
+	defer mu.Unlock()
 	tdb.Rem("Torrents", hash.HexString())
-	mu.Unlock()
-	OnTorrentsChanged()
+	OnTorrentChanged(hash, nil)
 }
