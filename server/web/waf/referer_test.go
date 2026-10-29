@@ -47,6 +47,18 @@ func TestIsBlockedReferer(t *testing.T) {
 	}
 }
 
+// Browsers send IDN hosts in punycode, so a rule written in Unicode must match that form.
+func TestIsBlockedRefererIDN(t *testing.T) {
+	blocked := blockedReferersFromConfig([]byte("пример.рф\n"))
+
+	if _, ok := isBlockedReferer("http://xn--e1afmkfd.xn--p1ai/", "", blocked); !ok {
+		t.Fatal("expected punycode referer to be blocked")
+	}
+	if _, ok := isBlockedReferer("", "http://пример.рф", blocked); !ok {
+		t.Fatal("expected unicode origin to be blocked")
+	}
+}
+
 func TestBlockedReferersFromConfig(t *testing.T) {
 	got := blockedReferersFromConfig([]byte("example.com\nbylampa.online\n"))
 	want := append(append([]string(nil), defaultBlockedReferers...), "example.com")
