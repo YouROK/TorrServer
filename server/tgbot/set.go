@@ -89,8 +89,8 @@ func sendCategoryPicker(c tele.Context, hash string) error {
 	uid := c.Sender().ID
 	t := torr.GetTorrent(hash)
 	title := hash
-	if t != nil && t.Title != "" {
-		title = t.Title
+	if t != nil && torrentTitle(t) != "" {
+		title = torrentTitle(t)
 	}
 	m := &tele.ReplyMarkup{}
 	rows := categoryButtonRows(m, uid, hash)

@@ -115,8 +115,8 @@ func handleStart(c tele.Context, payload string) error {
 			}
 			t := torr.GetTorrent(h)
 			title := h
-			if t != nil && t.Title != "" {
-				title = t.Title
+			if t != nil && torrentTitle(t) != "" {
+				title = torrentTitle(t)
 			}
 			fmt.Fprintf(&b, "• <code>%s</code> %s\n", h, escapeHtml(title))
 		}

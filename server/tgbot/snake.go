@@ -419,7 +419,7 @@ func callbackSnakeStop(c tele.Context, data string) error {
 	hash, cols, rows := parseSnakeData(data)
 	if hash != "" {
 		if t := torr.GetTorrent(hash); t != nil {
-			log.TLogln("tg snake stop", logUserID(uid), logSafeStr(t.Title, 40), hash)
+			log.TLogln("tg snake stop", logUserID(uid), logSafeStr(torrentTitle(t), 40), hash)
 		}
 	}
 	if c.Callback().Message != nil {

@@ -55,7 +55,7 @@ func cmdStatus(c tele.Context) error {
 		if t == nil {
 			return c.Send(tr(c.Sender().ID, "torrent_not_found") + ":\n<code>" + hash + "</code>")
 		}
-		log.TLogln("tg status cmd", logUser(c.Sender()), logSafeStr(t.Title, 40), hash)
+		log.TLogln("tg status cmd", logUser(c.Sender()), logSafeStr(torrentTitle(t), 40), hash)
 		if !t.WaitInfo() {
 			msg, err := c.Bot().Send(c.Sender(), tr(c.Sender().ID, "status_waiting"))
 			if err != nil {
@@ -158,7 +158,7 @@ func sendStatus(c tele.Context, t *torr.Torrent) error {
 	uid := c.Sender().ID
 	txt := formatTorrentStatus(uid, t)
 	if txt == "" && t != nil {
-		txt = "<b>" + escapeHtml(t.Title) + "</b>\n" + tr(uid, "status_label") + ": " + t.Stat.String()
+		txt = "<b>" + escapeHtml(torrentTitle(t)) + "</b>\n" + tr(uid, "status_label") + ": " + t.Stat.String()
 	}
 	hash := ""
 	if t != nil {
@@ -170,7 +170,7 @@ func sendStatus(c tele.Context, t *torr.Torrent) error {
 		return err
 	}
 	if t != nil {
-		log.TLogln("tg status sent", logUserID(uid), logSafeStr(t.Title, 40), hash)
+		log.TLogln("tg status sent", logUserID(uid), logSafeStr(torrentTitle(t), 40), hash)
 		go refreshStatusLoop(c.Bot(), msg, hash, uid)
 	}
 	return nil
@@ -220,7 +220,7 @@ func refreshStatusLoop(api tele.API, msg *tele.Message, hash string, uid int64) 
 				if t != nil {
 					txt = formatTorrentStatus(uid, t)
 					if txt == "" {
-						txt = "<b>" + escapeHtml(t.Title) + "</b>\n" + tr(uid, "status_label") + ": " + t.Stat.String()
+						txt = "<b>" + escapeHtml(torrentTitle(t)) + "</b>\n" + tr(uid, "status_label") + ": " + t.Stat.String()
 					}
 					txt += "\n\n" + tr(uid, "status_auto_ended")
 				} else {
@@ -237,7 +237,7 @@ func refreshStatusLoop(api tele.API, msg *tele.Message, hash string, uid int64) 
 			}
 			txt := formatTorrentStatus(uid, t)
 			if txt == "" {
-				txt = "<b>" + escapeHtml(t.Title) + "</b>\n" + tr(uid, "status_label") + ": " + t.Stat.String()
+				txt = "<b>" + escapeHtml(torrentTitle(t)) + "</b>\n" + tr(uid, "status_label") + ": " + t.Stat.String()
 			}
 			if _, err := api.Edit(msg, txt, statusKeyboard(uid, hash, true), tele.ModeHTML); err != nil {
 				errStr := err.Error()
@@ -290,7 +290,7 @@ func waitForInfoAndUpdateStatus(api tele.API, msg *tele.Message, hash string, ui
 	}
 	txt := formatTorrentStatus(uid, t)
 	if txt == "" {
-		txt = "<b>" + escapeHtml(t.Title) + "</b>\n" + tr(uid, "status_label") + ": " + t.Stat.String()
+		txt = "<b>" + escapeHtml(torrentTitle(t)) + "</b>\n" + tr(uid, "status_label") + ": " + t.Stat.String()
 	}
 	if _, err := api.Edit(msg, txt, statusKeyboard(uid, hash, true), tele.ModeHTML); err != nil {
 		log.TLogln("tg status wait edit err", err)
@@ -306,7 +306,7 @@ func callbackStatusRefresh(c tele.Context, hash string) error {
 	}
 	t := torr.GetTorrent(hash)
 	if t != nil {
-		log.TLogln("tg status refresh", logUserID(uid), logSafeStr(t.Title, 40), hash)
+		log.TLogln("tg status refresh", logUserID(uid), logSafeStr(torrentTitle(t), 40), hash)
 	}
 	if t == nil {
 		return c.Respond(&tele.CallbackResponse{Text: tr(uid, "torrent_not_found")})
@@ -323,7 +323,7 @@ func callbackStatusStop(c tele.Context, hash string) error {
 	uid := c.Sender().ID
 	if hash != "" {
 		if t := torr.GetTorrent(hash); t != nil {
-			log.TLogln("tg status stop", logUserID(uid), logSafeStr(t.Title, 40), hash)
+			log.TLogln("tg status stop", logUserID(uid), logSafeStr(torrentTitle(t), 40), hash)
 		}
 	}
 	if c.Callback().Message != nil {
@@ -335,7 +335,7 @@ func callbackStatusStop(c tele.Context, hash string) error {
 			if t != nil {
 				txt = formatTorrentStatus(uid, t)
 				if txt == "" {
-					txt = "<b>" + escapeHtml(t.Title) + "</b>\n" + tr(uid, "status_label") + ": " + t.Stat.String()
+					txt = "<b>" + escapeHtml(torrentTitle(t)) + "</b>\n" + tr(uid, "status_label") + ": " + t.Stat.String()
 				}
 			} else {
 				txt = "<code>" + hash + "</code>"
@@ -371,7 +371,7 @@ func formatTorrentStatus(uid int64, t *torr.Torrent) string {
 	}
 	st := t.Status()
 	if st == nil {
-		return "<b>" + escapeHtml(t.Title) + "</b>\n" + tr(uid, "status_label") + ": " + t.Stat.String()
+		return "<b>" + escapeHtml(torrentTitle(t)) + "</b>\n" + tr(uid, "status_label") + ": " + t.Stat.String()
 	}
 
 	// For streaming: size + cache info (progress is misleading — we stream, not download sequentially)

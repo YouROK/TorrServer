@@ -25,7 +25,7 @@ func cmdExport(c tele.Context) error {
 	var magnets strings.Builder
 	for _, t := range torrents {
 		hash := t.Hash().HexString()
-		title := t.Title
+		title := torrentTitle(t)
 		if title == "" {
 			title = t.Name()
 		}
@@ -72,7 +72,7 @@ func sendExportPage(c tele.Context, page int) error {
 	fmt.Fprintf(&hashes, "📁 <b>%s</b> (%d)\n\n", tr(uid, "export_title"), len(torrents))
 	for i, t := range pageTorrents {
 		hash := t.Hash().HexString()
-		title := t.Title
+		title := torrentTitle(t)
 		if title == "" {
 			title = t.Name()
 		}

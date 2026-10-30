@@ -18,7 +18,7 @@ func cmdCategories(c tele.Context) error {
 	uid := c.Sender().ID
 	catCount := make(map[string]int)
 	for _, t := range torrents {
-		cat := t.Category
+		_, _, cat, _ := t.Meta()
 		if cat == "" {
 			cat = "uncategorized"
 		}

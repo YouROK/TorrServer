@@ -182,7 +182,7 @@ func inlineLibrary(offset int) (tele.Results, string) {
 	var results tele.Results
 	for i, t := range torrents[offset:end] {
 		hash := t.Hash().HexString()
-		title := t.Title
+		title, poster, _, _ := t.Meta()
 		if title == "" {
 			title = hash[:8]
 		}
@@ -190,7 +190,7 @@ func inlineLibrary(offset int) (tele.Results, string) {
 			title = string([]rune(title)[:57]) + "..."
 		}
 		id := fmt.Sprintf("l%d", offset+i)
-		item := inlineLibraryArticle(id, hash, title, t.Poster)
+		item := inlineLibraryArticle(id, hash, title, poster)
 		results = append(results, item)
 	}
 	next := ""

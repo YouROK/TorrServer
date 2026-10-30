@@ -133,7 +133,7 @@ func sendHashPage(c tele.Context, page int) error {
 	sb.WriteString("🔑 <b>" + tr(uid, "hash_title") + "</b> (" + strconv.Itoa(len(torrents)) + ")\n\n")
 	for i, t := range pageTorrents {
 		sb.WriteString(strconv.Itoa(start+i+1) + ". <code>" + t.Hash().HexString() + "</code>\n")
-		sb.WriteString("   " + escapeHtml(t.Title) + "\n\n")
+		sb.WriteString("   " + escapeHtml(torrentTitle(t)) + "\n\n")
 	}
 	msg := strings.TrimSuffix(sb.String(), "\n\n")
 

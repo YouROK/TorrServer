@@ -36,7 +36,8 @@ func categoryName(category string) string {
 }
 
 func torrentName(t *torr.Torrent) string {
-	name := SanitizeName(t.Title)
+	title, _, _, _ := t.Meta()
+	name := SanitizeName(title)
 	if name == "" {
 		name = t.Hash().String()
 	}
@@ -69,7 +70,7 @@ func (d *CategoryDir) ReadDir(n int) ([]fs.DirEntry, error) {
 	nodes := []fs.DirEntry{}
 	var torrs []*torr.Torrent
 	for _, t := range torr.ListTorrent() {
-		if categoryName(t.Category) != d.Name() {
+		if _, _, category, _ := t.Meta(); categoryName(category) != d.Name() {
 			continue
 		}
 		if settings.BTsets.ShowFSActiveTorr && !t.GotInfo() {

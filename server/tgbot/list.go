@@ -44,7 +44,7 @@ func filterLibrary(cat string) []*torr.Torrent {
 	}
 	var out []*torr.Torrent
 	for _, t := range all {
-		if library.MatchCategory(t.Category, cat) {
+		if _, _, category, _ := t.Meta(); library.MatchCategory(category, cat) {
 			out = append(out, t)
 		}
 	}
@@ -110,7 +110,7 @@ func sendListHub(c tele.Context, page int, cat string, edit bool) error {
 	}
 	for i, t := range pageTorrents {
 		n := start + i + 1
-		title := t.Title
+		title, _, category, _ := t.Meta()
 		if title == "" {
 			title = t.Hash().HexString()
 		}
@@ -119,8 +119,8 @@ func sendListHub(c tele.Context, page int, cat string, edit bool) error {
 			size = " <i>" + humanize.IBytes(uint64(t.Size)) + "</i>"
 		}
 		catMark := ""
-		if t.Category != "" {
-			catMark = " <i>[" + escapeHtml(t.Category) + "]</i>"
+		if category != "" {
+			catMark = " <i>[" + escapeHtml(category) + "]</i>"
 		}
 		fmt.Fprintf(&b, "<b>%d.</b> %s%s%s\n", n, escapeHtml(shortListTitle(title)), catMark, size)
 	}
@@ -131,7 +131,7 @@ func sendListHub(c tele.Context, page int, cat string, edit bool) error {
 	for i, t := range pageTorrents {
 		n := start + i + 1
 		hash := t.Hash().HexString()
-		title := t.Title
+		title := torrentTitle(t)
 		if title == "" {
 			title = hash[:8] + "…"
 		}
@@ -221,7 +221,8 @@ func showTorrentCard(c tele.Context, hash string, nav string, edit bool) error {
 		}
 		return c.Send(tr(uid, "torrent_not_found"))
 	}
-	title := escapeHtml(t.Title)
+	metaTitle, poster, category, _ := t.Meta()
+	title := escapeHtml(metaTitle)
 	if title == "" {
 		title = hash
 	}
@@ -229,7 +230,7 @@ func showTorrentCard(c tele.Context, hash string, nav string, edit bool) error {
 	if t.Size > 0 {
 		msg += " <i>" + humanize.IBytes(uint64(t.Size)) + "</i>"
 	}
-	msg += "\n" + tr(uid, "card_category") + ": <i>" + escapeHtml(categoryLabel(uid, t.Category)) + "</i>"
+	msg += "\n" + tr(uid, "card_category") + ": <i>" + escapeHtml(categoryLabel(uid, category)) + "</i>"
 	msg += "\n<code>" + hash + "</code>"
 
 	m := &tele.ReplyMarkup{}
@@ -264,8 +265,8 @@ func showTorrentCard(c tele.Context, hash string, nav string, edit bool) error {
 		_, err := c.Bot().Edit(cbMsg, msg, m, tele.ModeHTML)
 		return err
 	}
-	if !edit && isPosterURL(t.Poster) {
-		photo := &tele.Photo{File: tele.FromURL(t.Poster), Caption: msg}
+	if !edit && isPosterURL(poster) {
+		photo := &tele.Photo{File: tele.FromURL(poster), Caption: msg}
 		if err := c.Send(photo, m, tele.ModeHTML); err != nil {
 			log.TLogln("tg poster send err", err)
 		} else {

@@ -22,6 +22,13 @@ func mergeTorrentMeta(cur torrentMeta, title, poster, category *string) torrentM
 	return cur
 }
 
+// torrentTitle reads a torrent's title under its lock; a bare t.Title races with
+// a rename or the add handler filling it.
+func torrentTitle(t *torr.Torrent) string {
+	title, _, _, _ := t.Meta()
+	return title
+}
+
 func currentTorrentMeta(hash string) (torrentMeta, bool) {
 	t := torr.GetTorrent(hash)
 	if t == nil {

@@ -68,7 +68,8 @@ func getTorrentCategories() (ret []interface{}) {
 
 	catCounts := make(map[string]int)
 	for _, t := range torrs {
-		cat := normalizeCategory(t.Category)
+		_, _, category, _ := t.Meta()
+		cat := normalizeCategory(category)
 		catCounts[cat]++
 	}
 
@@ -136,7 +137,7 @@ func getTorrentsByCategory(path string) (ret []interface{}) {
 	torrs := torr.ListTorrent()
 	filtered := make([]*torr.Torrent, 0, len(torrs))
 	for _, t := range torrs {
-		if normalizeCategory(t.Category) == cat {
+		if _, _, category, _ := t.Meta(); normalizeCategory(category) == cat {
 			filtered = append(filtered, t)
 		}
 	}
@@ -160,14 +161,15 @@ func getTorrentsByCategory(path string) (ret []interface{}) {
 	}
 
 	for _, t := range filtered {
+		title, poster, _, _ := t.Meta()
 		obj := upnpav.Object{
 			ID:          "%2F" + t.TorrentSpec.InfoHash.HexString(),
 			ParentID:    parentID,
 			Restricted:  1,
-			Title:       strings.ReplaceAll(t.Title, "/", "|"),
+			Title:       strings.ReplaceAll(title, "/", "|"),
 			Class:       "object.container.storageFolder",
-			Icon:        t.Poster,
-			AlbumArtURI: t.Poster,
+			Icon:        poster,
+			AlbumArtURI: poster,
 			Date:        upnpav.Timestamp{Time: time.Unix(t.Timestamp, 0)},
 		}
 		cnt := upnpav.Container{Object: obj, ChildCount: 1}
@@ -233,7 +235,7 @@ func getTorrentMeta(path, host string) (ret interface{}) {
 
 		vol := 0
 		for _, t := range torr.ListTorrent() {
-			if normalizeCategory(t.Category) == cat {
+			if _, _, category, _ := t.Meta(); normalizeCategory(category) == cat {
 				vol++
 			}
 		}
@@ -278,11 +280,12 @@ func getTorrentMeta(path, host string) (ret interface{}) {
 			return nil
 		}
 		// hash object meta
+		title, _, _, _ := torr.Meta()
 		obj := upnpav.Object{
 			ID:         "%2F" + torr.TorrentSpec.InfoHash.HexString(),
 			ParentID:   "%2FTR",
 			Restricted: 1,
-			Title:      torr.Title,
+			Title:      title,
 			Date:       upnpav.Timestamp{Time: time.Unix(torr.Timestamp, 0)}, // time.Now()
 		}
 		meta := upnpav.Container{Object: obj, ChildCount: 1}

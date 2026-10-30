@@ -90,12 +90,13 @@ func allPlayList(c *gin.Context) {
 }
 
 func nestedPlaylistEntry(tr *torr.Torrent, host string) string {
+	title, poster, _, _ := tr.Meta()
 	list := "#EXTINF:0"
-	if tr.Poster != "" {
-		list += " tvg-logo=\"" + tr.Poster + "\""
+	if poster != "" {
+		list += " tvg-logo=\"" + poster + "\""
 	}
-	list += " type=\"playlist\"," + tr.Title + "\n"
-	list += host + "/stream/" + url.PathEscape(tr.Title) + ".m3u?link=" + tr.TorrentSpec.InfoHash.HexString() + "&m3u&fn=file.m3u\n"
+	list += " type=\"playlist\"," + title + "\n"
+	list += host + "/stream/" + url.PathEscape(title) + ".m3u?link=" + tr.TorrentSpec.InfoHash.HexString() + "&m3u&fn=file.m3u\n"
 	return list
 }
 
@@ -110,7 +111,8 @@ func statusFromData(tr *torr.Torrent) *state.TorrentStatus {
 	if tr == nil {
 		return nil
 	}
-	files := torr.FileStatsFromData(tr.Data)
+	title, _, _, data := tr.Meta()
+	files := torr.FileStatsFromData(data)
 	if len(files) == 0 {
 		return nil
 	}
@@ -118,7 +120,7 @@ func statusFromData(tr *torr.Torrent) *state.TorrentStatus {
 	if tr.TorrentSpec != nil {
 		st.Hash = tr.TorrentSpec.InfoHash.HexString()
 	}
-	st.Title = tr.Title
+	st.Title = title
 	st.FileStats = files
 	return st
 }
@@ -137,7 +139,7 @@ func statusFromSpec(tr *torr.Torrent) *state.TorrentStatus {
 
 	st := new(state.TorrentStatus)
 	st.Hash = tr.TorrentSpec.InfoHash.HexString()
-	st.Title = tr.Title
+	st.Title, _, _, _ = tr.Meta()
 	st.Name = info.Name
 
 	// same paths and order as Torrent.Status, so the ids match what /stream resolves

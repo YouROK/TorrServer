@@ -51,7 +51,8 @@ func (d *RootDir) ReadDir(n int) ([]fs.DirEntry, error) {
 	nodes := map[string]INode{}
 
 	for _, torrent := range torrs {
-		cat := categoryName(torrent.Category)
+		_, _, category, _ := torrent.Meta()
+		cat := categoryName(category)
 		if _, ok := nodes[cat]; !ok {
 			nodes[cat] = NewCategoryDir(cat)
 		}
