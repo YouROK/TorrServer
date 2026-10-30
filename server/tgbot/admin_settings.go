@@ -255,8 +255,8 @@ func settingsCallback(c tele.Context, action string) error {
 		return c.Respond(&tele.CallbackResponse{})
 	}
 
-	if len(action) > 9 && action[:9] == "reset_def|" {
-		if action[9:] != "1" {
+	if answer, ok := strings.CutPrefix(action, "reset_def|"); ok {
+		if answer != "1" {
 			msg := sendSettingsMenuText(c, uid, "4")
 			kbd := sendSettingsMenuKbd(uid, "4")
 			if _, err := c.Bot().Edit(c.Callback().Message, msg, kbd, tele.ModeHTML); err != nil {
@@ -297,11 +297,10 @@ func settingsCallback(c tele.Context, action string) error {
 		return c.Respond(&tele.CallbackResponse{Text: tr(uid, "settings_saved")})
 	}
 
-	if len(action) > 12 && action[:12] == "storage_view|" {
+	if val, ok := strings.CutPrefix(action, "storage_view|"); ok {
 		if settings.ReadOnly {
 			return c.Respond(&tele.CallbackResponse{Text: tr(uid, "settings_readonly")})
 		}
-		val := action[12:]
 		prefs := map[string]interface{}{"viewed": val}
 		if err := settings.SetStoragePreferences(prefs); err != nil {
 			return c.Respond(&tele.CallbackResponse{Text: fmt.Sprintf(tr(uid, "settings_error"), err.Error())})
