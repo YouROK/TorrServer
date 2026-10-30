@@ -162,12 +162,16 @@ func SetTorrent(hashHex, title, poster, category string, data string) *Torrent {
 		if title == "" && torr.Torrent != nil && torr.Info() != nil {
 			title = torr.Info().Name
 		}
+		// Status() and AddTorrentDB read these under muTorrent, and add's
+		// background goroutine fills Title concurrently.
+		torr.muTorrent.Lock()
 		torr.Title = title
 		torr.Poster = poster
 		torr.Category = category
 		if data != "" {
 			torr.Data = data
 		}
+		torr.muTorrent.Unlock()
 	}
 	// update torrent data in DB
 	if torrDb != nil {

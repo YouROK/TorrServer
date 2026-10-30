@@ -428,6 +428,24 @@ func (t *Torrent) Close() bool {
 	return true
 }
 
+// EnsureTitle sets Title to fallback() when it is still empty. The check and
+// the write share muTorrent, so a concurrent SetTorrent is not overwritten and
+// does not race. fallback runs without the lock and may be called for nothing.
+func (t *Torrent) EnsureTitle(fallback func() string) {
+	t.muTorrent.Lock()
+	empty := t.Title == ""
+	t.muTorrent.Unlock()
+	if !empty {
+		return
+	}
+	title := fallback()
+	t.muTorrent.Lock()
+	if t.Title == "" {
+		t.Title = title
+	}
+	t.muTorrent.Unlock()
+}
+
 func (t *Torrent) Status() *state.TorrentStatus {
 	t.muTorrent.Lock()
 	defer t.muTorrent.Unlock()

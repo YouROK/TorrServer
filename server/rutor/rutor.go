@@ -25,9 +25,17 @@ import (
 )
 
 var (
-	mu     sync.RWMutex
-	torrs  []*models.TorrentDetails
-	isStop atomic.Bool
+	mu    sync.RWMutex
+	torrs []*models.TorrentDetails
+	// gen counts Start and Stop calls. An updater goroutine runs for the value
+	// Start gave it and exits as soon as gen moves, so a Stop that lands before
+	// the goroutine's first step, or a Stop then Start inside one tick, never
+	// leaves a stale updater behind.
+	gen atomic.Uint64
+	// updaters tracks running updater goroutines. Production code never waits
+	// on it; tests do, to get a happens-before edge with the goroutine's reads
+	// of settings before they restore them.
+	updaters sync.WaitGroup
 
 	// rutorDBURL is a var so tests can serve the index from httptest.
 	rutorDBURL = "http://releases.yourok.ru/torr/rutor.ls"
@@ -39,15 +47,17 @@ func Start() {
 	if !settings.BTsets.EnableRutorSearch {
 		return
 	}
+	g := gen.Add(1)
+	updaters.Add(1)
 	go func() {
+		defer updaters.Done()
 		if !updateDB() {
 			loadDB()
 		}
-		isStop.Store(false)
-		for !isStop.Load() {
+		for gen.Load() == g {
 			for i := 0; i < 3*60*60; i++ {
 				time.Sleep(time.Second)
-				if isStop.Load() {
+				if gen.Load() != g {
 					return
 				}
 			}
@@ -58,7 +68,7 @@ func Start() {
 
 func Stop() {
 	mu.Lock()
-	isStop.Store(true)
+	gen.Add(1)
 	torrs = nil
 	torrsearch.NewIndex(nil)
 	mu.Unlock()
@@ -130,7 +140,12 @@ func updateDB() bool {
 	return false
 }
 
-func loadDB() {
+func loadDB() { loadDBAt(gen.Load()) }
+
+// loadDBAt publishes the index only if gen is still g when decoding ends. A
+// Stop (or Start) that lands meanwhile makes the load stale: it must not
+// republish an index Stop just dropped.
+func loadDBAt(g uint64) {
 	log.TLogln("Load rutor db")
 	ff, err := os.Open(filepath.Join(settings.Path, "rutor.ls"))
 	if err == nil {
@@ -155,6 +170,9 @@ func loadDB() {
 		}
 		mu.Lock()
 		defer mu.Unlock()
+		if gen.Load() != g {
+			return
+		}
 		torrs = ftorrs
 		log.TLogln("Index rutor db")
 		torrsearch.NewIndex(torrs)

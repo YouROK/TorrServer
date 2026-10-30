@@ -291,6 +291,42 @@ func TestStartLoadsFreshDBAndStopEndsLoop(t *testing.T) {
 	if Search("matrix") != nil {
 		t.Error("Stop must drop the in-memory index")
 	}
-	// The updater goroutine notices isStop within its 1s tick.
+	// The updater goroutine notices the generation change within its 1s tick.
 	leakcheck.AssertNoGoroutineLeak(t, base)
+}
+
+// Stop right after Start, before the updater goroutine took its first step,
+// must still end it: the goroutine used to reset the stop flag and run on.
+func TestStopImmediatelyAfterStartEndsUpdater(t *testing.T) {
+	dir := setup(t)
+	if err := os.WriteFile(filepath.Join(dir, "rutor.ls"), compress(t, sample), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	serve(t, http.StatusInternalServerError, nil, new(atomic.Int32))
+
+	for i := 0; i < 20; i++ {
+		Start()
+		gen.Add(1) // what Stop does under mu, without its 1.5s settle sleep
+		done := make(chan struct{})
+		go func() { updaters.Wait(); close(done) }()
+		select {
+		case <-done:
+		case <-time.After(5 * time.Second):
+			t.Fatal("updater still running after Stop")
+		}
+	}
+}
+
+// A load that finishes after Stop must not bring the index back.
+func TestStaleLoadDoesNotRepublishIndex(t *testing.T) {
+	dir := setup(t)
+	if err := os.WriteFile(filepath.Join(dir, "rutor.ls"), compress(t, sample), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	g := gen.Load()
+	gen.Add(1) // Stop landed while a load that began at g was decoding
+	loadDBAt(g)
+	if Search("matrix") != nil {
+		t.Fatal("stale load republished the index")
+	}
 }
