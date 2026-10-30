@@ -1,6 +1,7 @@
 package torznab
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 	"net/http/httptest"
@@ -29,3 +30,29 @@ func TestFetchCapsAndSearchLocal(t *testing.T) {
 }
 
 func unsetCtx() context.Context { return nil }
+
+func TestFetchCapsFailures(t *testing.T) {
+	cases := map[string]http.HandlerFunc{
+		"non-200": func(w http.ResponseWriter, r *http.Request) { http.Error(w, "no", http.StatusForbidden) },
+		"error":   func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte(`<error code="100"/>`)) },
+		"empty":   func(w http.ResponseWriter, r *http.Request) {},
+		"oversized": func(w http.ResponseWriter, r *http.Request) {
+			_, _ = w.Write(bytes.Repeat([]byte(" "), 2<<20))
+			_, _ = w.Write([]byte(sampleCapsXML))
+		},
+	}
+	for name, h := range cases {
+		t.Run(name, func(t *testing.T) {
+			url := useIndexer(t, h)
+			if caps, err := FetchCaps(context.Background(), url, "k"); err == nil {
+				t.Fatalf("caps = %v, want error", caps)
+			}
+		})
+	}
+	srv := httptest.NewServer(http.NotFoundHandler())
+	url := srv.URL
+	srv.Close()
+	if _, err := FetchCaps(context.Background(), url, "k"); err == nil {
+		t.Fatal("closed server")
+	}
+}

@@ -1,6 +1,7 @@
 package torznab
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -52,5 +53,26 @@ func TestParseCapsBytes(t *testing.T) {
 	}
 	if len(tv.Subcats) != 1 || tv.Subcats[0].ID != "5040" {
 		t.Fatalf("tv subcats = %+v", tv.Subcats)
+	}
+}
+
+func TestParseCapsBytesRejects(t *testing.T) {
+	cases := map[string]struct {
+		body string
+		want string
+	}{
+		"api error":  {`<error code="101" description="Account suspended"/>`, "api error: Account suspended"},
+		"error code": {`<error code="102"/>`, "api error: 102"},
+		"bad xml":    {`<caps><limits`, "invalid xml response"},
+		"empty":      {``, "invalid xml response"},
+		"wrong root": {`<rss><channel/></rss>`, "expected element type <caps> but have <rss>"},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			caps, err := ParseCapsBytes([]byte(tc.body))
+			if err == nil || caps != nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("caps=%v err=%v, want %q", caps, err, tc.want)
+			}
+		})
 	}
 }
