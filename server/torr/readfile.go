@@ -9,6 +9,7 @@ import (
 	"github.com/anacrolix/torrent"
 
 	"server/torr/state"
+	"server/torr/storage/torrstor"
 )
 
 // ReadFile reads a small torrent file in full (e.g. subtitles).
@@ -50,9 +51,15 @@ func (t *Torrent) ReadFile(ctx context.Context, fileID int, maxSize int64) ([]by
 	if reader == nil {
 		return nil, errors.New("cannot create torrent reader")
 	}
-	// Closing the reader also unblocks the goroutine below if the context expires.
 	defer t.CloseReader(reader)
 	reader.SetResponsive()
+
+	// Reader.Read waits on context.Background and Close does not wake it, so the
+	// goroutine below reads with readCtx and ends as soon as ReadFile returns, whether
+	// it finished, ctx expired or the caller gave up. Without it every expired call
+	// left a goroutine blocked until the torrent produced bytes.
+	readCtx, cancelRead := context.WithCancel(ctx)
+	defer cancelRead()
 
 	type result struct {
 		data []byte
@@ -65,7 +72,7 @@ func (t *Torrent) ReadFile(ctx context.Context, fileID int, maxSize int64) ([]by
 		// by itself and would return data of the next file in the torrent.
 		// (Stream() is protected because ServeContent copies exactly size bytes.)
 		buf := make([]byte, size)
-		_, err := io.ReadFull(reader, buf)
+		err := readFullContext(readCtx, reader, buf)
 		done <- result{buf, err}
 	}()
 
@@ -75,4 +82,23 @@ func (t *Torrent) ReadFile(ctx context.Context, fileID int, maxSize int64) ([]by
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}
+}
+
+// readFullContext is io.ReadFull with a context: it returns when buf is full, on a
+// read error, or when ctx is done.
+func readFullContext(ctx context.Context, r *torrstor.Reader, buf []byte) error {
+	for n := 0; n < len(buf); {
+		m, err := r.ReadContext(ctx, buf[n:])
+		n += m
+		if n >= len(buf) {
+			return nil
+		}
+		if err != nil {
+			if err == io.EOF && n > 0 {
+				err = io.ErrUnexpectedEOF
+			}
+			return err
+		}
+	}
+	return nil
 }

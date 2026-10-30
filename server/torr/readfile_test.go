@@ -75,7 +75,8 @@ func TestReadFileNoInfo(t *testing.T) {
 }
 
 // With no peer the read blocks forever. ReadFile must return when the context
-// ends and must not leave the reader goroutine behind (CloseReader unblocks it).
+// ends and must not leave the reader goroutine behind (the read runs on a context
+// that ReadFile cancels on return).
 func TestReadFileHonoursContextAndDoesNotLeak(t *testing.T) {
 	offlinetest.Prepare(t)
 	show := offlinetest.WriteShow(t)
@@ -105,5 +106,37 @@ func TestReadFileHonoursContextAndDoesNotLeak(t *testing.T) {
 	leakcheck.AssertNoGoroutineLeak(t, base)
 	if n := tor.cache.GetUseReaders(); n != 0 {
 		t.Errorf("reader left registered after ctx expiry: %d", n)
+	}
+}
+
+// Every expired ReadFile must release its reader goroutine, not just the first:
+// with no peer the read can only end through the context.
+func TestReadFileCancelReleasesEveryGoroutine(t *testing.T) {
+	offlinetest.Prepare(t)
+	show := offlinetest.WriteShow(t)
+	bt := NewBTS()
+	InitApiHelper(bt)
+	if err := bt.Connect(); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(bt.Disconnect)
+	tor, err := AddTorrent(show.Spec, "Show", "", "", "tv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := fileIDByPath(t, tor, "episode1.srt")
+
+	base := runtime.NumGoroutine()
+	for i := 0; i < 12; i++ {
+		ctx, cancel := context.WithTimeout(t.Context(), 30*time.Millisecond)
+		_, err := tor.ReadFile(ctx, id, 1<<20)
+		cancel()
+		if !errors.Is(err, context.DeadlineExceeded) {
+			t.Fatalf("round %d: err = %v, want DeadlineExceeded", i, err)
+		}
+	}
+	leakcheck.AssertNoGoroutineLeak(t, base)
+	if n := tor.cache.GetUseReaders(); n != 0 {
+		t.Errorf("%d readers left registered", n)
 	}
 }
