@@ -192,6 +192,7 @@ Process env read by Go:
 - `SSL_CERT_FILE` / `SSL_CERT_DIR` on Linux. `configureCARoots` will not override a value the user already set.
 - `GODEBUG=madvdontneed=1` is the container default so dropped piece RAM returns to the OS.
 - `GOMEMLIMIT` is unset by default and passed through Compose. Playback with a 64MiB cache measured ~127MiB vs ~29MiB idle; the limit makes GC run sooner. It is documentation, not a code default: a limit below the live cache makes GC spin.
+- systemd/cgroup memory reads 2-3x the Go heap after a torrent closes when THP is `always`: Go's freed 2MiB pages stay charged to the cgroup until the kernel's deferred split. `anon` / `RssAnon` and `/runtime/status` are the real numbers (README, "Reading memory use on Linux"). Measured: `GODEBUG=disablethp=1` did not change it on Go 1.27.3, and `//go:debug disablethp` is rejected by the compiler. Do not chase it in code without a `memory.max` case that shows an OOM.
 
 `docker-entrypoint.sh` maps `TS_*` onto flags. It enables TLS from `TS_SSL_ENABLE=1`. `docker-compose.yml` and `.env.example` publish `TS_EN_SSL`. Those names are not the same variable. Wiring TLS through Compose requires the entrypoint to see `TS_SSL_ENABLE`, or the flag is never passed. README documents `TS_SSL_ENABLE`.
 
