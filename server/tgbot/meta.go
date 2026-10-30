@@ -29,7 +29,8 @@ func currentTorrentMeta(hash string) (torrentMeta, bool) {
 	}
 	st := t.Status()
 	if st == nil {
-		return torrentMeta{Title: t.Title, Poster: t.Poster, Category: t.Category, Data: t.Data}, true
+		title, poster, category, data := t.Meta()
+		return torrentMeta{Title: title, Poster: poster, Category: category, Data: data}, true
 	}
 	return torrentMeta{Title: st.Title, Poster: st.Poster, Category: st.Category, Data: st.Data}, true
 }

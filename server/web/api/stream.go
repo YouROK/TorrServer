@@ -139,10 +139,7 @@ func stream(c *gin.Context) {
 
 	tor := torr.GetTorrent(spec.InfoHash.HexString())
 	if tor != nil {
-		title = tor.Title
-		poster = tor.Poster
-		data = tor.Data
-		category = tor.Category
+		title, poster, category, data = tor.Meta()
 	}
 	if tor == nil || tor.Stat == state.TorrentInDB {
 		tor, err = torr.AddTorrent(spec, title, poster, data, category)
@@ -157,9 +154,7 @@ func stream(c *gin.Context) {
 		return
 	}
 
-	if tor.Title == "" {
-		tor.Title = tor.Name()
-	}
+	tor.EnsureTitle(func() string { return tor.Name() })
 
 	// save to db
 	if save {
@@ -265,19 +260,18 @@ func streamNoAuth(c *gin.Context) {
 		return
 	}
 
+	torTitle, torPoster, torCategory, data := tor.Meta()
 	if title == "" {
-		title = tor.Title
+		title = torTitle
 	}
 
 	if poster == "" {
-		poster = tor.Poster
+		poster = torPoster
 	}
 
 	if category == "" {
-		category = tor.Category
+		category = torCategory
 	}
-
-	data := tor.Data
 
 	if tor.Stat == state.TorrentInDB {
 		tor, err = torr.AddTorrent(spec, title, poster, data, category)

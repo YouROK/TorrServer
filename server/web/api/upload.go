@@ -87,11 +87,12 @@ func torrentUpload(c *gin.Context) {
 			continue
 		}
 
-		if tor.Data != "" && set.BTsets.EnableDebug {
-			log.TLogln("torrent data:", tor.Data)
+		_, _, torCategory, torData := tor.Meta()
+		if torData != "" && set.BTsets.EnableDebug {
+			log.TLogln("torrent data:", torData)
 		}
-		if tor.Category != "" && set.BTsets.EnableDebug {
-			log.TLogln("torrent category:", tor.Category)
+		if torCategory != "" && set.BTsets.EnableDebug {
+			log.TLogln("torrent category:", torCategory)
 		}
 
 		go func(t *torr.Torrent) {
@@ -100,9 +101,7 @@ func torrentUpload(c *gin.Context) {
 				return
 			}
 
-			if t.Title == "" {
-				t.Title = t.Name()
-			}
+			t.EnsureTitle(func() string { return t.Name() })
 
 			if save {
 				torr.SaveTorrentToDB(t)

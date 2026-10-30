@@ -312,9 +312,8 @@ func watchDir(dir string, stop <-chan struct{}) {
 					return
 				}
 
-				if tor.Title == "" { // If torrent has no custom title, assign default name from metadata.
-					tor.Title = tor.Name()
-				}
+				// If torrent has no custom title, assign default name from metadata.
+				tor.EnsureTitle(func() string { return tor.Name() })
 
 				// Long database operation is now safe
 				torr.SaveTorrentToDB(tor) // Save torrent metadata into SQLite database.

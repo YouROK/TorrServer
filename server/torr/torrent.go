@@ -428,6 +428,16 @@ func (t *Torrent) Close() bool {
 	return true
 }
 
+// Meta returns Title, Poster, Category and Data as one snapshot under muTorrent.
+// Callers outside this package must use it instead of reading the fields: the add
+// handler's background goroutine, SetTorrent and AddTorrentDB write them while a
+// stream or play request reads.
+func (t *Torrent) Meta() (title, poster, category, data string) {
+	t.muTorrent.Lock()
+	defer t.muTorrent.Unlock()
+	return t.Title, t.Poster, t.Category, t.Data
+}
+
 // EnsureTitle sets Title to fallback() when it is still empty. The check and
 // the write share muTorrent, so a concurrent SetTorrent is not overwritten and
 // does not race. fallback runs without the lock and may be called for nothing.

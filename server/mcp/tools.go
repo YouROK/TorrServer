@@ -357,15 +357,16 @@ func addTorrent(ctx context.Context, req *mcpsdk.CallToolRequest, in addTorrentI
 
 	got := tor.GotInfo()
 	if got {
-		if tor.Title == "" {
-			tor.Title = spec.DisplayName
-			tor.Title = strings.ReplaceAll(tor.Title, "rutor.info", "")
-			tor.Title = strings.ReplaceAll(tor.Title, "_", " ")
-			tor.Title = strings.TrimSpace(tor.Title)
-			if tor.Title == "" {
-				tor.Title = tor.Name()
+		tor.EnsureTitle(func() string {
+			title := spec.DisplayName
+			title = strings.ReplaceAll(title, "rutor.info", "")
+			title = strings.ReplaceAll(title, "_", " ")
+			title = strings.TrimSpace(title)
+			if title == "" {
+				title = tor.Name()
 			}
-		}
+			return title
+		})
 	}
 
 	save := true

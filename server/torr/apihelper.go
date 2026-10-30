@@ -40,9 +40,11 @@ func LoadTorrent(tor *Torrent) *Torrent {
 	if !tr.WaitInfo() {
 		return nil
 	}
+	tr.muTorrent.Lock()
 	tr.Title = tor.Title
 	tr.Poster = tor.Poster
 	tr.Data = tor.Data
+	tr.muTorrent.Unlock()
 	return tr
 }
 
@@ -55,36 +57,42 @@ func AddTorrent(spec *torrent.TorrentSpec, title, poster string, data string, ca
 
 	torDB := GetTorrentDB(spec.InfoHash)
 
+	// The torrent is already in bt.torrents: a concurrent request can read or fill
+	// these fields. Resolve the metadata name before taking muTorrent (Info locks
+	// the client) and fill only what is still empty under it.
+	infoName := ""
+	if torr.Torrent != nil && torr.Info() != nil {
+		infoName = torr.Info().Name
+	}
+	torr.muTorrent.Lock()
 	if torr.Title == "" {
 		torr.Title = title
 		if title == "" && torDB != nil {
 			torr.Title = torDB.Title
 		}
-		if torr.Title == "" && torr.Torrent != nil && torr.Info() != nil {
-			torr.Title = torr.Info().Name
+		if torr.Title == "" {
+			torr.Title = infoName
 		}
 	}
-
 	if torr.Category == "" {
 		torr.Category = category
 		if torr.Category == "" && torDB != nil {
 			torr.Category = torDB.Category
 		}
 	}
-
 	if torr.Poster == "" {
 		torr.Poster = poster
 		if torr.Poster == "" && torDB != nil {
 			torr.Poster = torDB.Poster
 		}
 	}
-
 	if torr.Data == "" {
 		torr.Data = data
 		if torr.Data == "" && torDB != nil {
 			torr.Data = torDB.Data
 		}
 	}
+	torr.muTorrent.Unlock()
 
 	return torr, nil
 }
@@ -129,12 +137,14 @@ func GetTorrent(hashHex string) *Torrent {
 			log.TLogln("New torrent", tor.Hash())
 			tr, _ := NewTorrent(tor.TorrentSpec, bts)
 			if tr != nil {
+				tr.muTorrent.Lock()
 				tr.Title = tor.Title
 				tr.Poster = tor.Poster
 				tr.Data = tor.Data
 				tr.Size = tor.Size
 				tr.Timestamp = tor.Timestamp
 				tr.Category = tor.Category
+				tr.muTorrent.Unlock()
 				tr.GotInfo()
 			}
 		}()

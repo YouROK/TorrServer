@@ -34,11 +34,12 @@ func addTorrentFromSpec(c tele.Context, torrSpec *torrent.TorrentSpec, displayLa
 	}
 
 	if set.BTsets != nil && set.BTsets.EnableDebug {
-		if tor.Data != "" {
-			log.TLogln("tg add data", logSafeStr(tor.Data, 60))
+		_, _, category, data := tor.Meta()
+		if data != "" {
+			log.TLogln("tg add data", logSafeStr(data, 60))
 		}
-		if tor.Category != "" {
-			log.TLogln("tg add category", logSafeStr(tor.Category, 40))
+		if category != "" {
+			log.TLogln("tg add category", logSafeStr(category, 40))
 		}
 	}
 
@@ -49,15 +50,16 @@ func addTorrentFromSpec(c tele.Context, torrSpec *torrent.TorrentSpec, displayLa
 		return nil, errors.New("timeout connection get torrent info")
 	}
 
-	if tor.Title == "" {
-		tor.Title = torrSpec.DisplayName
-		tor.Title = strings.ReplaceAll(tor.Title, "rutor.info", "")
-		tor.Title = strings.ReplaceAll(tor.Title, "_", " ")
-		tor.Title = strings.Trim(tor.Title, " ")
-		if tor.Title == "" {
-			tor.Title = tor.Name()
+	tor.EnsureTitle(func() string {
+		title := torrSpec.DisplayName
+		title = strings.ReplaceAll(title, "rutor.info", "")
+		title = strings.ReplaceAll(title, "_", " ")
+		title = strings.Trim(title, " ")
+		if title == "" {
+			title = tor.Name()
 		}
-	}
+		return title
+	})
 
 	torr.SaveTorrentToDB(tor)
 
@@ -123,7 +125,7 @@ func afterAdd(c tele.Context, tor *torr.Torrent) error {
 		return nil
 	}
 	hash := tor.Hash().HexString()
-	if strings.TrimSpace(tor.Category) == "" {
+	if _, _, category, _ := tor.Meta(); strings.TrimSpace(category) == "" {
 		return sendCategoryPicker(c, hash)
 	}
 	return showTorrentCard(c, hash, "0", false)
