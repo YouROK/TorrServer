@@ -128,3 +128,43 @@ func TestNormalizeHost(t *testing.T) {
 		})
 	}
 }
+
+func TestIndexerLabel(t *testing.T) {
+	tests := []struct {
+		name string
+		cfg  settings.TorznabConfig
+		want string
+	}{
+		{"custom name wins", settings.TorznabConfig{Name: "  My Idx ", Host: "http://a.example"}, "  My Idx "},
+		{"blank name uses host", settings.TorznabConfig{Name: "  ", Host: "https://jackett.example:9117/api/v2.0/indexers/x"}, "jackett.example:9117"},
+		{"bare host gets http", settings.TorznabConfig{Host: "idx.example"}, "idx.example"},
+		{"unparseable host returned as is", settings.TorznabConfig{Host: "http://[::1"}, "http://[::1"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := indexerLabel(tt.cfg); got != tt.want {
+				t.Fatalf("indexerLabel() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseTorznabError(t *testing.T) {
+	tests := []struct {
+		name, body, want string
+	}{
+		{"description", `<error code="100" description="Incorrect user credentials"/>`, "Incorrect user credentials"},
+		{"code only", `<error code="900"/>`, "900"},
+		{"neither", `<error/>`, "unknown error"},
+		{"not an error root", `<rss><channel/></rss>`, ""},
+		{"not xml", `plain text`, ""},
+		{"empty", ``, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := parseTorznabError([]byte(tt.body)); got != tt.want {
+				t.Fatalf("parseTorznabError() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
