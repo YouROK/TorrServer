@@ -130,12 +130,23 @@ func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 
 // addExtraTrackers appends one tier. An extra tier per URL would not slow
 // announces: this anacrolix fork starts a scraper for every URL in every tier.
+//
+// udp:// URLs with a literal IP are pinned to udp4 or udp6 (utils.PinUDPFamily),
+// both in the extras and in the tiers the magnet already carries, so the fork
+// does not start a scraper for the family that cannot resolve.
 func addExtraTrackers(spec *torrent.TorrentSpec, lists ...[]string) {
+	if len(spec.Trackers) > 0 {
+		pinned := make([][]string, len(spec.Trackers))
+		for i, tier := range spec.Trackers {
+			pinned[i] = utils.PinUDPFamily(tier)
+		}
+		spec.Trackers = pinned
+	}
 	var all []string
 	for _, list := range lists {
 		all = append(all, list...)
 	}
-	all = utils.SanitizeTrackers(all)
+	all = utils.PinUDPFamily(utils.SanitizeTrackers(all))
 	if len(all) == 0 {
 		return
 	}

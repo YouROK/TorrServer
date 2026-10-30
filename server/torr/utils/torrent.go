@@ -226,6 +226,40 @@ func acceptTracker(raw string) (stored, key string, ok bool) {
 	return stored, stored, true
 }
 
+// PinUDPFamily rewrites udp://<IPv4> to udp4:// and udp://[IPv6] to udp6://.
+// The fork starts a udp4 and a udp6 scraper for every udp:// URL. For a literal
+// address the other family can never resolve (getIP skips it), so that scraper
+// only fails with "no acceptable ips" every five minutes until the torrent
+// closes. Host names stay udp://: the family is unknown without DNS. The input
+// slice is not modified.
+func PinUDPFamily(urls []string) []string {
+	if urls == nil {
+		return nil
+	}
+	out := make([]string, len(urls))
+	for i, raw := range urls {
+		out[i] = pinUDPFamily(raw)
+	}
+	return out
+}
+
+func pinUDPFamily(raw string) string {
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme != "udp" {
+		return raw
+	}
+	ip := net.ParseIP(u.Hostname())
+	if ip == nil {
+		return raw
+	}
+	if ip.To4() != nil {
+		u.Scheme = "udp4"
+	} else {
+		u.Scheme = "udp6"
+	}
+	return u.String()
+}
+
 // mergeTrackers appends every remote URL that is not already in local, then
 // the local list. remoteCount is how many remote URLs were kept.
 func mergeTrackers(remote, local []string) (merged []string, remoteCount int) {

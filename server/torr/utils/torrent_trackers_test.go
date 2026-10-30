@@ -837,3 +837,38 @@ func TestTrackersConcurrentReload(t *testing.T) {
 	}
 	wg.Wait()
 }
+
+func TestPinUDPFamily(t *testing.T) {
+	in := []string{
+		"udp://198.51.100.1:1337/announce",
+		"udp://[2001:db8::1]:6969/announce?x=1",
+		"udp://tracker.example:80/announce",
+		"http://198.51.100.2:80/announce",
+		"wss://tracker.example/announce",
+		"udp4://198.51.100.3:1/announce",
+		"://bad",
+	}
+	orig := append([]string(nil), in...)
+	want := []string{
+		"udp4://198.51.100.1:1337/announce",
+		"udp6://[2001:db8::1]:6969/announce?x=1",
+		"udp://tracker.example:80/announce",
+		"http://198.51.100.2:80/announce",
+		"wss://tracker.example/announce",
+		"udp4://198.51.100.3:1/announce",
+		"://bad",
+	}
+	got := PinUDPFamily(in)
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("PinUDPFamily = %v, want %v", got, want)
+	}
+	if !reflect.DeepEqual(in, orig) {
+		t.Fatalf("input modified: %v", in)
+	}
+	if PinUDPFamily(nil) != nil {
+		t.Fatal("nil in, non-nil out")
+	}
+	if got := PinUDPFamily([]string{}); got == nil || len(got) != 0 {
+		t.Fatalf("empty in = %v", got)
+	}
+}

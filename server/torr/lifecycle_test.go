@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"runtime"
 	"strings"
 	"testing"
@@ -50,7 +51,7 @@ func TestAddExtraTrackersKeepsUnion(t *testing.T) {
 		}
 	}
 	for i := 1; i <= 20; i++ {
-		want := fmt.Sprintf("udp://198.51.100.%d:1337/announce", i)
+		want := fmt.Sprintf("udp4://198.51.100.%d:1337/announce", i)
 		if _, ok := seen[want]; !ok {
 			t.Fatalf("dropped %s", want)
 		}
@@ -201,4 +202,32 @@ func TestClientCloseStopsDHTServe(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 	client.Close()
 	leakcheck.AssertNoGoroutineLeak(t, baseG)
+}
+
+func TestAddExtraTrackersPinsLiteralIPFamily(t *testing.T) {
+	magnet := []string{"udp://198.51.100.1:1337/announce", "udp://open.example:80/announce"}
+	spec := &torrent.TorrentSpec{Trackers: [][]string{magnet}}
+	addExtraTrackers(spec, []string{
+		"udp://198.51.100.1:1337/announce",
+		"udp://[2001:db8::1]:6969/announce",
+		"udp://other.example:80/announce",
+	})
+	if len(spec.Trackers) != 2 {
+		t.Fatalf("tiers = %d, want magnet tier + one extra", len(spec.Trackers))
+	}
+	wantMagnet := []string{"udp4://198.51.100.1:1337/announce", "udp://open.example:80/announce"}
+	if !reflect.DeepEqual(spec.Trackers[0], wantMagnet) {
+		t.Fatalf("magnet tier = %v, want %v", spec.Trackers[0], wantMagnet)
+	}
+	wantExtra := []string{
+		"udp4://198.51.100.1:1337/announce",
+		"udp6://[2001:db8::1]:6969/announce",
+		"udp://other.example:80/announce",
+	}
+	if !reflect.DeepEqual(spec.Trackers[1], wantExtra) {
+		t.Fatalf("extra tier = %v, want %v", spec.Trackers[1], wantExtra)
+	}
+	if magnet[0] != "udp://198.51.100.1:1337/announce" {
+		t.Fatalf("caller's tier modified: %v", magnet)
+	}
 }
