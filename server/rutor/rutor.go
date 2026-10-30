@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/agnivade/levenshtein"
@@ -26,32 +27,38 @@ import (
 var (
 	mu     sync.RWMutex
 	torrs  []*models.TorrentDetails
-	isStop bool
+	isStop atomic.Bool
+
+	// rutorDBURL is a var so tests can serve the index from httptest.
+	rutorDBURL = "http://releases.yourok.ru/torr/rutor.ls"
 )
 
 func Start() {
+	// Read the setting here, not in the goroutine: the caller owns BTsets and
+	// a disabled search must not leave a goroutine behind.
+	if !settings.BTsets.EnableRutorSearch {
+		return
+	}
 	go func() {
-		if settings.BTsets.EnableRutorSearch {
-			if !updateDB() {
-				loadDB()
-			}
-			isStop = false
-			for !isStop {
-				for i := 0; i < 3*60*60; i++ {
-					time.Sleep(time.Second)
-					if isStop {
-						return
-					}
+		if !updateDB() {
+			loadDB()
+		}
+		isStop.Store(false)
+		for !isStop.Load() {
+			for i := 0; i < 3*60*60; i++ {
+				time.Sleep(time.Second)
+				if isStop.Load() {
+					return
 				}
-				updateDB()
 			}
+			updateDB()
 		}
 	}()
 }
 
 func Stop() {
 	mu.Lock()
-	isStop = true
+	isStop.Store(true)
 	torrs = nil
 	torrsearch.NewIndex(nil)
 	mu.Unlock()
@@ -79,17 +86,26 @@ func updateDB() bool {
 		return false
 	}
 
-	resp, err := http.Get("http://releases.yourok.ru/torr/rutor.ls")
+	resp, err := http.Get(rutorDBURL)
 	if err != nil {
 		log.TLogln("Error connect to rutor db:", err)
 		_ = out.Close()
+		_ = os.Remove(fnTmp)
 		return false
 	}
 	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		// An error page must not replace a good rutor.ls.
+		log.TLogln("Error download rutor db: status", resp.Status)
+		_ = out.Close()
+		_ = os.Remove(fnTmp)
+		return false
+	}
 	_, err = io.Copy(out, resp.Body)
 	_ = out.Close()
 	if err != nil {
 		log.TLogln("Error download rutor db:", err)
+		_ = os.Remove(fnTmp)
 		return false
 	}
 
