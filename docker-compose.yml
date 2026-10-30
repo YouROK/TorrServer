@@ -10,7 +10,7 @@
 # Copy and edit environment defaults:
 #   cp .env.example .env
 #
-# All-in README.md § "Running in Docker & Docker Compose"
+# All-in docs/docker.md
 
 name: torrserver
 

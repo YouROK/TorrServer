@@ -228,17 +228,18 @@ REGISTRY_IMAGE=myorg/torrserver make release
 
 Versions are defined in `.github/versions.env`:
 
-- Main server build: **Go 1.26.4**
-- Android build: **Go 1.25.7** + Android NDK (release workflow / `Dockerfile.builder`)
+- Main server build: `GO_VERSION`
+- Android build: `GO_ANDROID_VERSION` + Android NDK (release workflow / `Dockerfile.builder`)
 
 **Local `make`** uses `go$(GO_VERSION)` when that wrapper is on `PATH`; otherwise it falls back to system `go`. For exact CI parity:
 
 ```bash
-go install golang.org/dl/go1.26.4@latest && go1.26.4 download
-go install golang.org/dl/go1.25.7@latest && go1.25.7 download   # Android only
+# substitute the values from .github/versions.env
+go install golang.org/dl/go<GO_VERSION>@latest && go<GO_VERSION> download
+go install golang.org/dl/go<GO_ANDROID_VERSION>@latest && go<GO_ANDROID_VERSION> download   # Android only
 ```
 
-Override explicitly: `make GO_BINARY=go binary` or `make GO_BINARY=go1.26.4 binary`.
+Override explicitly: `make GO_BINARY=go binary` or `make GO_BINARY=go<GO_VERSION> binary`.
 
 ---
 

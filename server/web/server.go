@@ -213,7 +213,7 @@ func startServers(h http.Handler) error {
 func warnSelfSignedStrict(flag string) {
 	if sslcerts.IsGenerated(sslCertPaths()) {
 		log.TLogln("Warning: " + flag + " with a self-signed certificate: media players and TVs " +
-			"usually reject it and won't play. Use a trusted certificate (see README, HTTPS)" +
+			"usually reject it and won't play. Use a trusted certificate (see docs/https.md)" +
 			" or, on a trusted network, --force-https --http-media.")
 	}
 }

@@ -192,9 +192,9 @@ Process env read by Go:
 - `SSL_CERT_FILE` / `SSL_CERT_DIR` on Linux. `configureCARoots` will not override a value the user already set.
 - `GODEBUG=madvdontneed=1` is the container default so dropped piece RAM returns to the OS.
 - `GOMEMLIMIT` is unset by default and passed through Compose. Playback with a 64MiB cache measured ~127MiB vs ~29MiB idle; the limit makes GC run sooner. It is documentation, not a code default: a limit below the live cache makes GC spin.
-- systemd/cgroup memory reads 2-3x the Go heap after a torrent closes when THP is `always`: Go's freed 2MiB pages stay charged to the cgroup until the kernel's deferred split. `anon` / `RssAnon` and `/runtime/status` are the real numbers (README, "Reading memory use on Linux"). Measured: `GODEBUG=disablethp=1` did not change it on Go 1.27.3, and `//go:debug disablethp` is rejected by the compiler. Do not chase it in code without a `memory.max` case that shows an OOM.
+- systemd/cgroup memory reads 2-3x the Go heap after a torrent closes when THP is `always`: Go's freed 2MiB pages stay charged to the cgroup until the kernel's deferred split. `anon` / `RssAnon` and `/runtime/status` are the real numbers (`docs/memory.md`). Measured: `GODEBUG=disablethp=1` did not change it on Go 1.27.3, and `//go:debug disablethp` is rejected by the compiler. Do not chase it in code without a `memory.max` case that shows an OOM.
 
-`docker-entrypoint.sh` maps `TS_*` onto flags. It enables TLS from `TS_SSL_ENABLE=1`. `docker-compose.yml` and `.env.example` publish `TS_EN_SSL`. Those names are not the same variable. Wiring TLS through Compose requires the entrypoint to see `TS_SSL_ENABLE`, or the flag is never passed. README documents `TS_SSL_ENABLE`.
+`docker-entrypoint.sh` maps `TS_*` onto flags. It enables TLS from `TS_SSL_ENABLE=1`. `docker-compose.yml` and `.env.example` publish `TS_EN_SSL`. Those names are not the same variable. Wiring TLS through Compose requires the entrypoint to see `TS_SSL_ENABLE`, or the flag is never passed. `docs/docker.md` documents `TS_SSL_ENABLE`.
 
 `BTSets` defaults worth not "cleaning up": cache 64MiB, readahead 95%, preload 50%, connections 25, retrackers mode 1, responsive on, LPD on, Bonjour on, `StoreSettingsInJson` true. `CacheSize == 0` in `SetBTSets` is rewritten to 64MiB. `UseDisk` is forced off when `TorrentsSavePath` is empty.
 
@@ -304,4 +304,4 @@ Run `make bench` when the diff touches `server/torr`, `server/torr/storage/torrs
 - Upstream anacrolix APIs marked `NE`.
 - Editing `server/docs` or `server/web/pages/template/pages` by hand.
 - A unit test that listens on the public DHT, talks to Telegram, or requires `ffprobe` on `PATH`.
-- Changing `TS_EN_SSL` or `TS_SSL_ENABLE` on only one of Compose, the entrypoint, and the README.
+- Changing `TS_EN_SSL` or `TS_SSL_ENABLE` on only one of Compose, the entrypoint, and `docs/docker.md`.
