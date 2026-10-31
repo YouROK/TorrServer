@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	tele "gopkg.in/telebot.v4"
@@ -57,13 +58,13 @@ func sendSettingsMenuText(c tele.Context, uid int64, page string) string {
 	case "2":
 		msg += " — " + tr(uid, "settings_page2")
 		msg += "\n\n"
-		msg += fmt.Sprintf("💾 %s: %d MB · Preload %d%% · ReadAhead %d%%\n", tr(uid, "settings_limits_cache"), s.CacheSize/(1024*1024), s.PreloadCache, s.ReaderReadAHead)
+		msg += fmt.Sprintf("💾 %s: %d MB · Preload %.2f%% · ReadAhead %d%%\n", tr(uid, "settings_limits_cache"), s.CacheSize/(1024*1024), s.PreloadCache, s.ReaderReadAHead)
 		msg += fmt.Sprintf("🔌 %s: %d · Port %s · Timeout %ds\n", tr(uid, "settings_limits_connections"), s.ConnectionsLimit, portStr(s.PeersListenPort), s.TorrentDisconnectTimeout)
 		msg += fmt.Sprintf("⬇️ %s: Down %s · Up %s · Retr %s\n", tr(uid, "settings_limits_speed"), rateStr(s.DownloadRateLimit), rateStr(s.UploadRateLimit), retrackersStr(s.RetrackersMode))
 	case "2a":
 		msg += " — " + tr(uid, "settings_page2") + " · " + tr(uid, "settings_limits_cache")
 		msg += "\n\n"
-		msg += fmt.Sprintf("Cache %d MB · Preload %d%% · ReadAhead %d%%", s.CacheSize/(1024*1024), s.PreloadCache, s.ReaderReadAHead)
+		msg += fmt.Sprintf("Cache %d MB · Preload %.2f%% · ReadAhead %d%%", s.CacheSize/(1024*1024), s.PreloadCache, s.ReaderReadAHead)
 	case "2b":
 		msg += " — " + tr(uid, "settings_page2") + " · " + tr(uid, "settings_limits_connections")
 		msg += "\n\n"
@@ -577,7 +578,7 @@ func settingsCallback(c tele.Context, action string) error {
 					sets.CacheSize = int64(v) * 1024 * 1024
 				}
 			case "preload":
-				if v := parseInt(value); v >= 0 && v <= 100 {
+				if v, ok := parseFloat(value); ok && v >= 0 && v <= 100 {
 					sets.PreloadCache = v
 				}
 			case "readahead":
@@ -650,4 +651,10 @@ func parseInt(s string) int {
 		}
 	}
 	return n
+}
+
+func parseFloat(s string) (float64, bool) {
+	s = strings.TrimSuffix(strings.TrimSpace(s), "%")
+	v, err := strconv.ParseFloat(strings.ReplaceAll(s, ",", "."), 64)
+	return v, err == nil
 }
