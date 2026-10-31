@@ -203,4 +203,10 @@ GStreamer module.
   indexes), so their playlists are `/gst/{hash}/subs/1000.m3u8` and so on.
 - The whole subtitle file is read once per task (at most 16 tracks, 4 MiB each,
   15 seconds in total) and cut into segments aligned with the video segments.
-  A track that cannot be read is skipped; the next master request tries again.
+  A track that cannot be read for a temporary reason (timeout, a server error) is skipped
+  and the next master request tries again, at most three times. A track that cannot be
+  used at all (for example, an ASS file without dialogue lines, or a file larger than the
+  limit) is skipped for good.
+
+External audio tracks (voice-overs in separate files) are described in
+[../extfiles/README.md](../extfiles/README.md).

@@ -38,7 +38,7 @@ const StatusMessage = styled('div')(({ theme, severity }) => ({
   },
 }))
 
-export default function SecondarySettingsComponent({ settings, inputForm, updateSettings }) {
+export default function SecondarySettingsComponent({ settings, inputForm, updateSettings, gstAvailable }) {
   const { t } = useTranslation()
   const [storageSettings, setStorageSettings] = useState({
     settings: 'json',
@@ -72,6 +72,9 @@ export default function SecondarySettingsComponent({ settings, inputForm, update
     ResponsiveMode,
     MergeAllM3U,
     ShowFSActiveTorr,
+    MaxSubtitleSizeMB,
+    ExternalSubtitleTimeoutSec,
+    ExternalSubtitleAttempts,
   } = settings || {}
 
   // Use useMemo to compute basePath once
@@ -408,6 +411,54 @@ export default function SecondarySettingsComponent({ settings, inputForm, update
         />
         <FormHelperText margin='none'>{t('SettingsDialog.ShowFSActiveTorrHint')}</FormHelperText>
       </FormGroup>
+      {/* External subtitles */}
+      <SettingSectionLabel style={{ marginTop: '20px' }}>{t('SettingsDialog.ExternalSubtitles')}</SettingSectionLabel>
+      <TextField
+        onChange={inputForm}
+        margin='normal'
+        id='MaxSubtitleSizeMB'
+        label={t('SettingsDialog.MaxSubtitleSize')}
+        helperText={t('SettingsDialog.MaxSubtitleSizeHint')}
+        InputProps={{
+          endAdornment: <InputAdornment position='end'>{t('MB')}</InputAdornment>,
+        }}
+        inputProps={{ min: 1, max: 32 }}
+        value={MaxSubtitleSizeMB ?? ''}
+        type='number'
+        variant='outlined'
+        fullWidth
+      />
+      {gstAvailable && (
+        <>
+          <TextField
+            onChange={inputForm}
+            margin='normal'
+            id='ExternalSubtitleTimeoutSec'
+            label={t('SettingsDialog.ExternalSubtitleTimeout')}
+            helperText={t('SettingsDialog.ExternalSubtitleTimeoutHint')}
+            InputProps={{
+              endAdornment: <InputAdornment position='end'>{t('Seconds')}</InputAdornment>,
+            }}
+            inputProps={{ min: 1, max: 60 }}
+            value={ExternalSubtitleTimeoutSec ?? ''}
+            type='number'
+            variant='outlined'
+            fullWidth
+          />
+          <TextField
+            onChange={inputForm}
+            margin='normal'
+            id='ExternalSubtitleAttempts'
+            label={t('SettingsDialog.ExternalSubtitleAttempts')}
+            helperText={t('SettingsDialog.ExternalSubtitleAttemptsHint')}
+            inputProps={{ min: 1, max: 10 }}
+            value={ExternalSubtitleAttempts ?? ''}
+            type='number'
+            variant='outlined'
+            fullWidth
+          />
+        </>
+      )}
       {/* Storage Settings Section */}
       <Box mt={4} mb={2}>
         <SettingSectionLabel>{t('SettingsDialog.StorageConfiguration')}</SettingSectionLabel>
