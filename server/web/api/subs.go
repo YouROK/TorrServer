@@ -12,9 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"server/subs"
-	"server/torr"
-	"server/torr/state"
-	"server/web/api/utils"
 )
 
 type subTrackJS struct {
@@ -42,94 +39,18 @@ type subTrackJS struct {
 //	@Success		200	"List of tracks (JSON) or WebVTT"
 //	@Router			/subs/{hash}/{id} [get]
 func subsTracks(c *gin.Context) {
-	hash := c.Param("hash")
-	indexStr := c.Param("id")
-	notAuth := c.GetBool("auth_required") && c.GetString(gin.AuthUserKey) == ""
-
-	if hash == "" || indexStr == "" {
-		c.AbortWithError(http.StatusNotFound, errors.New("no infohash or file index in link"))
+	vc, ok := loadVideoContext(c)
+	if !ok {
 		return
 	}
+	tor := vc.tor
 
-	spec, err := utils.ParseLink(hash)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-
-	tor := torr.GetTorrent(spec.InfoHash.HexString())
-	if tor == nil && notAuth {
-		c.Header("WWW-Authenticate", "Basic realm=Authorization Required")
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
-	if tor == nil {
-		c.AbortWithError(http.StatusNotFound, errors.New("torrent not found"))
-		return
-	}
-
-	if tor.Stat == state.TorrentInDB {
-		tor, err = torr.AddTorrent(spec, tor.Title, tor.Poster, tor.Data, tor.Category)
-		if err != nil {
-			c.AbortWithError(http.StatusInternalServerError, err)
-			return
-		}
-	}
-
-	if !tor.GotInfo() {
-		c.AbortWithError(http.StatusInternalServerError, errors.New("torrent connection timeout"))
-		return
-	}
-
-	// Video index: same rules as in play.go.
-	videoID := -1
-	if len(tor.Files()) == 1 {
-		videoID = 1
-	} else if id, err := strconv.Atoi(indexStr); err == nil {
-		videoID = id
-	}
-	if videoID == -1 {
-		c.AbortWithError(http.StatusBadRequest, errors.New("file \"index\" is wrong"))
-		return
-	}
-
-	lengths := make(map[string]int64)
-	for _, f := range tor.Files() {
-		lengths[f.Path()] = f.Length()
-	}
-
-	var files []subs.FileInfo
-	for _, fs := range tor.Status().FileStats {
-		files = append(files, subs.FileInfo{
-			Index: fs.Id,
-			Path:  strings.ReplaceAll(fs.Path, "\\", "/"),
-			Size:  lengths[fs.Path],
-		})
-	}
-
-	var video *subs.FileInfo
-	for i := range files {
-		if files[i].Index == videoID {
-			video = &files[i]
-			break
-		}
-	}
-	if video == nil {
-		c.AbortWithError(http.StatusNotFound, errors.New("video file not found"))
-		return
-	}
-
-	if !subs.IsVideo(video.Path) {
-		c.AbortWithError(http.StatusBadRequest, errors.New("file is not a video"))
-		return
-	}
-
-	tracks := subs.Match(*video, files)
+	tracks := subs.Match(vc.video, vc.files)
 
 	// Mode 1: list the tracks.
 	trackStr := c.Query("track")
 	if trackStr == "" {
-		base := "/subs/" + spec.InfoHash.HexString() + "/" + strconv.Itoa(videoID)
+		base := "/subs/" + vc.infoHash + "/" + strconv.Itoa(vc.videoID)
 		out := make([]subTrackJS, 0, len(tracks))
 		for _, t := range tracks {
 			out = append(out, subTrackJS{Track: t, URL: base + "?track=" + strconv.Itoa(t.FileIndex)})
