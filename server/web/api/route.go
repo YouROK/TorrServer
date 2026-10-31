@@ -39,6 +39,7 @@ func SetupRoute(route gin.IRouter) {
 	route.GET("/play/:hash/:id", play)
 
 	route.GET("/subs/:hash/:id", subsTracks)
+	route.GET("/audio/:hash/:id", audioTracks)
 
 	authorized.POST("/viewed", viewed)
 

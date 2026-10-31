@@ -1,5 +1,6 @@
 // Package extfiles finds the files that lie next to a video in a torrent and belong to
-// it: for now, external subtitles (see package subs). It uses the standard library only.
+// it: external subtitles (see package subs) and external audio tracks (MatchAudio).
+// It uses the standard library only.
 package extfiles
 
 import (
@@ -42,6 +43,11 @@ var langTokens = map[string]string{
 // IsVideo reports whether the file looks like a video (by extension).
 func IsVideo(p string) bool {
 	return videoExt[strings.ToLower(path.Ext(p))]
+}
+
+// IsAudio reports whether the file looks like an audio file (by extension).
+func IsAudio(p string) bool {
+	return audioExt[strings.ToLower(path.Ext(p))]
 }
 
 // Video is a video file together with what is needed to tell which other files of the
