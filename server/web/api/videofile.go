@@ -14,8 +14,8 @@ import (
 	"server/web/api/utils"
 )
 
-// videoContext is what the /subs handler needs to know about the requested video file
-// and the torrent it belongs to.
+// videoContext is what the /subs and /audio handlers need to know about the requested
+// video file and the torrent it belongs to.
 type videoContext struct {
 	tor      *torr.Torrent
 	infoHash string
