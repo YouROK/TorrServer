@@ -204,3 +204,6 @@ GStreamer module.
 - The whole subtitle file is read once per task (at most 16 tracks, 4 MiB each,
   15 seconds in total) and cut into segments aligned with the video segments.
   A track that cannot be read is skipped; the next master request tries again.
+
+External audio tracks (voice-overs in separate files) are described in
+[../extfiles/README.md](../extfiles/README.md).
