@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	sets "server/settings"
 	"server/subs"
 )
 
@@ -46,7 +47,7 @@ func subsTracks(c *gin.Context) {
 	}
 	tor := vc.tor
 
-	maxSize := int64(subs.MaxSubSize)
+	maxSize := sets.MaxSubtitleSize()
 	tracks, tooLarge := subs.MatchLimit(vc.video, vc.files, maxSize)
 
 	// Mode 1: list the tracks.
@@ -54,7 +55,7 @@ func subsTracks(c *gin.Context) {
 	if trackStr == "" {
 		// Say why a subtitle file of this video is not in the list.
 		for _, t := range tooLarge {
-			log.Printf("subs: skip %q: %d bytes is over the limit of %d bytes", t.Name, t.Size, maxSize)
+			log.Printf("subs: skip %q: %d bytes is over the limit of %d bytes (setting MaxSubtitleSizeMB)", t.Name, t.Size, maxSize)
 		}
 		base := "/subs/" + vc.infoHash + "/" + strconv.Itoa(vc.videoID)
 		out := make([]subTrackJS, 0, len(tracks))
@@ -82,7 +83,7 @@ func subsTracks(c *gin.Context) {
 		// A file of this video that is over the size limit: say so instead of 404.
 		for _, t := range tooLarge {
 			if t.FileIndex == trackID {
-				c.AbortWithError(http.StatusRequestEntityTooLarge, errors.New("subtitle file is over the size limit"))
+				c.AbortWithError(http.StatusRequestEntityTooLarge, errors.New("subtitle file is over the size limit (setting MaxSubtitleSizeMB)"))
 				return
 			}
 		}
