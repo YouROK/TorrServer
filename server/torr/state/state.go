@@ -30,6 +30,13 @@ const (
 	TorrentInDB
 )
 
+// Offline mode states of a torrent (TorrentStatus.OfflineState).
+const (
+	OfflineDownloading = "downloading" // being downloaded completely into the offline storage
+	OfflinePaused      = "paused"      // the offline download is paused, the data downloaded so far is kept
+	OfflineReady       = "ready"       // fully stored on disk, served without the BitTorrent network
+)
+
 type TorrentStatus struct {
 	Title               string      `json:"title"`
 	Category            string      `json:"category"`
@@ -41,6 +48,9 @@ type TorrentStatus struct {
 	TorrsHash           string      `json:"torrs_hash,omitempty"`
 	Stat                TorrentStat `json:"stat"`
 	StatString          string      `json:"stat_string"`
+	OfflineState        string      `json:"offline_state,omitempty"`
+	OfflineError        string      `json:"offline_error,omitempty"` // why the server stopped the offline download
+	OfflinePinned       bool        `json:"offline_pinned,omitempty"` // the offline copy is protected from the quota rotation
 	LoadedSize          int64       `json:"loaded_size,omitempty"`
 	TorrentSize         int64       `json:"torrent_size,omitempty"`
 	PreloadedBytes      int64       `json:"preloaded_bytes,omitempty"`

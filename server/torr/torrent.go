@@ -16,6 +16,7 @@ import (
 
 	"server/log"
 	"server/settings"
+	"server/torr/offline"
 	"server/torr/state"
 	cacheSt "server/torr/storage/state"
 	"server/torr/storage/torrstor"
@@ -56,6 +57,14 @@ type Torrent struct {
 	closed <-chan struct{}
 
 	progressTicker *time.Ticker
+
+	// offline mode ("", state.OfflineDownloading, state.OfflineReady)
+	offlineState string
+	offlineDir   string // base directory of the offline data ("" = current default)
+	offlineUsed  int64  // unix time of the last use of the offline copy (muOffline)
+	offlinePin   bool   // the offline copy is protected from the rotation (muOffline)
+	muOffline    sync.RWMutex
+	offStore     *offline.Storage // set for torrents that are downloaded in offline mode
 }
 
 func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
@@ -63,6 +72,31 @@ func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 	if bt == nil || bt.client == nil {
 		return nil, errors.New("BT client not connected")
 	}
+
+	// NewTorrent is called concurrently for the same torrent: every status request of the web UI
+	// for a torrent that is not loaded yet starts one. The check and the registration must be one
+	// step. A second AddTorrentSpec for a torrent that is already in the client initialises it
+	// again (the storage is opened a second time and the pieces in flight are reset), which broke
+	// running offline downloads and could crash the server.
+	bt.newMu.Lock()
+	defer bt.newMu.Unlock()
+	bt.mu.RLock()
+	existing := bt.torrents[spec.InfoHash]
+	bt.mu.RUnlock()
+	if existing != nil {
+		// AddTorrentSpec used to merge the trackers of the new spec into a torrent
+		// that is already loaded; keep doing that without a second AddTorrentSpec
+		if len(spec.Trackers) > 0 {
+			existing.muTorrent.Lock()
+			gt := existing.Torrent
+			existing.muTorrent.Unlock()
+			if gt != nil {
+				gt.AddTrackers(spec.Trackers)
+			}
+		}
+		return existing, nil
+	}
+
 	switch settings.BTsets.RetrackersMode {
 	case 1:
 		spec.Trackers = append(spec.Trackers, [][]string{utils.GetDefTrackers()}...)
@@ -77,10 +111,32 @@ func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 		spec.Trackers = append(spec.Trackers, [][]string{trackers}...)
 	}
 
-	if len(spec.InfoBytes) == 0 {
-		if db := GetTorrentDB(spec.InfoHash); db != nil && db.TorrentSpec != nil {
+	offlineState := ""
+	offlineDir := ""
+	if db := GetTorrentDB(spec.InfoHash); db != nil {
+		offlineState = db.OfflineState()
+		offlineDir = db.offlineBase()
+		if len(spec.InfoBytes) == 0 && db.TorrentSpec != nil {
 			spec.InfoBytes = db.TorrentSpec.InfoBytes
 		}
+	}
+
+	// Offline torrents are stored by their own file storage. The storage is set on a
+	// copy of the spec only: the original is persisted to the DB as JSON.
+	addSpec := spec
+	var offStore *offline.Storage
+	if offlineState == state.OfflineDownloading {
+		bt.mu.RLock()
+		off := bt.offline
+		bt.mu.RUnlock()
+		if off == nil {
+			return nil, errors.New("offline storage is not available")
+		}
+		off.Use(spec.InfoHash, offlineDir)
+		offStore = off
+		cp := *spec
+		cp.Storage = off
+		addSpec = &cp
 	}
 
 	// The read lock is taken and released explicitly, NOT with defer: the code below
@@ -91,7 +147,7 @@ func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 		bt.mu.RUnlock()
 		return nil, errors.New("BT client not connected")
 	}
-	goTorrent, _, err := bt.client.AddTorrentSpec(spec)
+	goTorrent, _, err := bt.client.AddTorrentSpec(addSpec)
 	bt.mu.RUnlock()
 	if err != nil {
 		return nil, err
@@ -117,10 +173,18 @@ func NewTorrent(spec *torrent.TorrentSpec, bt *BTServer) (*Torrent, error) {
 	torr.TorrentSpec = spec
 	torr.AddExpiredTime(timeout)
 	torr.Timestamp = time.Now().Unix()
+	torr.offlineState = offlineState
+	torr.offStore = offStore
+	if offlineState != "" {
+		torr.offlineDir = offlineDir
+	}
 
 	go torr.watch()
 
 	bt.torrents[spec.InfoHash] = torr
+	if offlineState == state.OfflineDownloading {
+		go torr.runOffline()
+	}
 	return torr, nil
 }
 
@@ -138,15 +202,21 @@ func (t *Torrent) WaitInfo() bool {
 		return false
 	}
 
-	// Close torrent if no info in 1 minute + TorrentDisconnectTimeout config option
-	tm := time.NewTimer(time.Minute + time.Second*time.Duration(settings.BTsets.TorrentDisconnectTimeout))
+	// Close torrent if no info in 1 minute + TorrentDisconnectTimeout config option.
+	// An offline download waits for the metadata of a rare torrent as long as it takes.
+	var timeout <-chan time.Time
+	if t.OfflineState() != state.OfflineDownloading {
+		tm := time.NewTimer(time.Minute + time.Second*time.Duration(settings.BTsets.TorrentDisconnectTimeout))
+		defer tm.Stop()
+		timeout = tm.C
+	}
 
 	select {
 	case <-torrent.GotInfo():
 		if t.TorrentSpec != nil && len(t.TorrentSpec.InfoBytes) == 0 {
 			t.TorrentSpec.InfoBytes = torrent.Metainfo().InfoBytes
 		}
-		if t.bt != nil {
+		if t.bt != nil && t.offStore == nil { // offline downloads have their own storage, no cache
 			// bt.storage is replaced by Connect under bt.mu; snapshot it under the
 			// lock and use the snapshot afterwards, because the storage object keeps
 			// its own locking and is never closed. Reading the field unlocked was
@@ -167,7 +237,7 @@ func (t *Torrent) WaitInfo() bool {
 		return true
 	case <-t.closed:
 		return false
-	case <-tm.C:
+	case <-timeout:
 		return false
 	}
 }
@@ -176,6 +246,10 @@ func (t *Torrent) GotInfo() bool {
 	// log.TLogln("GotInfo state:", t.Stat)
 	if t == nil {
 		return false
+	}
+	// A ready offline torrent has everything it needs on disk and no client torrent.
+	if t.OfflineReady() {
+		return true
 	}
 	// Every stream request calls this, often several at once for one file. Once the info
 	// is in, only report it: flipping Stat through TorrentGettingInfo on each call raced
@@ -288,6 +362,9 @@ func (t *Torrent) updateRA() {
 	// 	}
 	// 	go t.cache.AdjustRA(adj)
 	// }
+	if t.cache == nil { // offline torrents have no cache
+		return
+	}
 	adj := int64(16 << 20) // 16 MB fixed RA
 	go t.cache.AdjustRA(adj)
 }
@@ -328,7 +405,7 @@ func (t *Torrent) Length() int64 {
 }
 
 func (t *Torrent) NewReader(file *torrent.File) *torrstor.Reader {
-	if t.Stat == state.TorrentClosed {
+	if t.Stat == state.TorrentClosed || t.cache == nil {
 		return nil
 	}
 	reader := t.cache.NewReader(file)
@@ -336,6 +413,9 @@ func (t *Torrent) NewReader(file *torrent.File) *torrstor.Reader {
 }
 
 func (t *Torrent) CloseReader(reader *torrstor.Reader) {
+	if t.cache == nil {
+		return
+	}
 	t.cache.CloseReader(reader)
 	t.AddExpiredTime(time.Second * time.Duration(settings.BTsets.TorrentDisconnectTimeout))
 }
@@ -383,12 +463,13 @@ func (t *Torrent) Close() bool {
 
 func (t *Torrent) Status() *state.TorrentStatus {
 	t.muTorrent.Lock()
-	defer t.muTorrent.Unlock()
 
 	st := new(state.TorrentStatus)
 
 	st.Stat = t.Stat
 	st.StatString = t.Stat.String()
+	st.OfflineState = t.OfflineState()
+	st.OfflinePinned = t.OfflinePinned()
 	st.Title = t.Title
 	st.Category = t.Category
 	st.Poster = t.Poster
@@ -405,6 +486,12 @@ func (t *Torrent) Status() *state.TorrentStatus {
 		st.Name = t.Torrent.Name()
 		st.Hash = t.Torrent.InfoHash().HexString()
 		st.LoadedSize = t.Torrent.BytesCompleted()
+		if t.offStore != nil && t.OfflineState() == state.OfflineDownloading {
+			// Only verified pieces survive a restart; the received chunks of unfinished pieces do not.
+			if _, _, b, ok := t.offStore.Stats(t.Torrent.InfoHash()); ok {
+				st.LoadedSize = b
+			}
+		}
 
 		st.PreloadedBytes = t.PreloadedBytes
 		st.PreloadSize = t.PreloadSize
@@ -463,6 +550,28 @@ func (t *Torrent) Status() *state.TorrentStatus {
 			if err == nil {
 				st.TorrsHash = token
 			}
+		}
+	}
+
+	// The offline branches read the sidecar from disk and parse the metadata.
+	// The web UI polls the status every second, so this I/O must not happen
+	// under muTorrent, where it blocked every other reader of the torrent
+	// (review remark N-3): the conditions are snapshotted under the lock and
+	// the offline status is filled in without it.
+	noClient := t.Torrent == nil
+	offState := t.OfflineState()
+	t.muTorrent.Unlock()
+
+	if offState != "" {
+		st.OfflineError = offlineErrorOf(t.Hash())
+	}
+
+	if noClient && (offState == state.OfflineReady || offState == state.OfflinePaused) {
+		t.fillOfflineStatus(st)
+	} else if offState == state.OfflinePaused {
+		// a paused offline torrent that is loaded for online use: show what is saved on disk
+		if lay, err := t.offlineLayout(); err == nil {
+			st.LoadedSize = t.pausedVerified(lay)
 		}
 	}
 

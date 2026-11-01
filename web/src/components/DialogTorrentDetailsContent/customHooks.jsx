@@ -6,6 +6,7 @@ export const useUpdateCache = hash => {
   const [cache, setCache] = useState({})
   const componentIsMounted = useRef(true)
   const timerID = useRef(null)
+  const inFlight = useRef(false)
 
   useEffect(
     () => () => {
@@ -18,6 +19,11 @@ export const useUpdateCache = hash => {
   useEffect(() => {
     if (hash) {
       timerID.current = setInterval(() => {
+        // The next request is not sent before the previous one is answered. With a busy server the
+        // 100 ms timer used to pile up hundreds of requests and hang the browser.
+        if (inFlight.current) return
+        inFlight.current = true
+
         const updateCache = newCache => componentIsMounted.current && setCache(newCache)
 
         axios
@@ -25,6 +31,9 @@ export const useUpdateCache = hash => {
           .then(({ data }) => updateCache(data))
           // empty cache if error
           .catch(() => updateCache({}))
+          .finally(() => {
+            inFlight.current = false
+          })
       }, 100)
     } else clearInterval(timerID.current)
 

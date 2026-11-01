@@ -1,6 +1,7 @@
 import styled, { css } from 'styled-components'
 
 export const TorrentCard = styled.div`
+  position: relative;
   ${({
     theme: {
       torrentCard: { cardPrimaryColor },
@@ -168,6 +169,16 @@ export const TorrentCardDescription = styled.div`
       @media (max-width: 700px) {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    // offline torrents show "downloaded / total" in the size cell: it needs more room than 80px
+    .description-statistics-wrapper.offline {
+      grid-template-columns: max-content max-content 1fr;
+      column-gap: 10px;
+
+      .description-statistics-element-value {
+        white-space: nowrap;
       }
     }
 
