@@ -37,6 +37,7 @@ type subTrackJS struct {
 //	@Produce		json
 //	@Produce		text/vtt
 //	@Success		200	"List of tracks (JSON) or WebVTT"
+//	@Failure		413	"Subtitle file is over the size limit"
 //	@Router			/subs/{hash}/{id} [get]
 func subsTracks(c *gin.Context) {
 	vc, ok := loadVideoContext(c)
@@ -45,11 +46,16 @@ func subsTracks(c *gin.Context) {
 	}
 	tor := vc.tor
 
-	tracks := subs.Match(vc.video, vc.files)
+	maxSize := int64(subs.MaxSubSize)
+	tracks, tooLarge := subs.MatchLimit(vc.video, vc.files, maxSize)
 
 	// Mode 1: list the tracks.
 	trackStr := c.Query("track")
 	if trackStr == "" {
+		// Say why a subtitle file of this video is not in the list.
+		for _, t := range tooLarge {
+			log.Printf("subs: skip %q: %d bytes is over the limit of %d bytes", t.Name, t.Size, maxSize)
+		}
 		base := "/subs/" + vc.infoHash + "/" + strconv.Itoa(vc.videoID)
 		out := make([]subTrackJS, 0, len(tracks))
 		for _, t := range tracks {
@@ -73,6 +79,13 @@ func subsTracks(c *gin.Context) {
 		}
 	}
 	if track == nil {
+		// A file of this video that is over the size limit: say so instead of 404.
+		for _, t := range tooLarge {
+			if t.FileIndex == trackID {
+				c.AbortWithError(http.StatusRequestEntityTooLarge, errors.New("subtitle file is over the size limit"))
+				return
+			}
+		}
 		c.AbortWithError(http.StatusNotFound, errors.New("subtitle track not found"))
 		return
 	}
@@ -95,7 +108,7 @@ func subsTracks(c *gin.Context) {
 	defer cancel()
 
 	started := time.Now()
-	raw, err := tor.ReadFile(ctx, track.FileIndex, subs.MaxSubSize)
+	raw, err := tor.ReadFile(ctx, track.FileIndex, maxSize)
 	if err != nil {
 		log.Printf("subs: read file %d (%s) failed after %s: %v", track.FileIndex, track.Name, time.Since(started).Round(time.Millisecond), err)
 		if errors.Is(err, context.DeadlineExceeded) {

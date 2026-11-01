@@ -1503,6 +1503,9 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "List of tracks (JSON) or WebVTT"
+                    },
+                    "413": {
+                        "description": "Subtitle file is over the size limit"
                     }
                 }
             }
