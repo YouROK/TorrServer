@@ -93,16 +93,57 @@ func NewService(conf Config) *Service {
 }
 
 func (s *Service) GetOrAdd(hash string, fileID string, audio int) (*Task, error) {
-	if hash == "" || fileID == "" {
+	return s.GetOrAddSession(hash, "", fileID, audio)
+}
+
+// Per-viewer tasks: a task is one GStreamer pipeline with one playback position, so two players on the same
+// torrent would keep seeking it back and forth (and /gst/remove from one of them would kill the other). With
+// ?sid=<viewer> on master.m3u8 the task id is "<hash>.<sid>" and every viewer gets its own pipeline; the
+// playlist URLs carry that id. Without sid the id stays the hash.
+const sessionSeparator = "."
+
+func taskIDFor(hash string, session string) string {
+	if session == "" {
+		return hash
+	}
+	return hash + sessionSeparator + session
+}
+
+// HashOfTaskID returns the torrent hash of a task id ("<hash>" or "<hash>.<sid>").
+func HashOfTaskID(id string) string {
+	if i := strings.Index(id, sessionSeparator); i >= 0 {
+		return id[:i]
+	}
+	return id
+}
+
+func validSession(session string) bool {
+	if session == "" || len(session) > 64 {
+		return false
+	}
+	for _, r := range session {
+		if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-' || r == '_') {
+			return false
+		}
+	}
+	return true
+}
+
+func (s *Service) GetOrAddSession(hash string, session string, fileID string, audio int) (*Task, error) {
+	if hash == "" || fileID == "" || strings.Contains(hash, sessionSeparator) {
 		return nil, ErrBadSource
 	}
+	if !validSession(session) {
+		session = ""
+	}
+	id := taskIDFor(hash, session)
 
 	for {
 		if s.disposed.Load() {
 			return nil, ErrServiceClosed
 		}
-		value, err, _ := s.taskCalls.Do(hash, func() (any, error) {
-			return s.getOrAdd(hash, fileID, audio)
+		value, err, _ := s.taskCalls.Do(id, func() (any, error) {
+			return s.getOrAdd(hash, id, fileID, audio)
 		})
 		if err != nil {
 			return nil, err
@@ -111,19 +152,18 @@ func (s *Service) GetOrAdd(hash string, fileID string, audio int) (*Task, error)
 		if !ok {
 			return nil, errors.New("gstreamer task creation returned an invalid result")
 		}
-		if taskMatchesRequest(task, hash, fileID, audio) {
+		if taskMatchesRequest(task, id, fileID, audio) {
 			return task, nil
 		}
 	}
 }
 
-func (s *Service) getOrAdd(hash string, fileID string, audio int) (*Task, error) {
+func (s *Service) getOrAdd(hash string, id string, fileID string, audio int) (*Task, error) {
 	if s.disposed.Load() {
 		return nil, ErrServiceClosed
 	}
 	conf := s.currentConfig()
 	sourceURL := sourceURL(conf, hash, fileID)
-	id := hash
 
 	s.mu.RLock()
 	task := s.tasks[id]
@@ -147,6 +187,7 @@ func (s *Service) getOrAdd(hash string, fileID string, audio int) (*Task, error)
 	if err != nil {
 		return nil, err
 	}
+	task.Hash = hash
 
 	var replaced *Task
 	var evicted []*Task
@@ -182,8 +223,8 @@ func (s *Service) getOrAdd(hash string, fileID string, audio int) (*Task, error)
 	return task, nil
 }
 
-func taskMatchesRequest(task *Task, hash string, fileID string, audio int) bool {
-	return task != nil && !task.IsDisposed() && task.ID == hash && task.FileID == fileID && task.Audio == audio
+func taskMatchesRequest(task *Task, id string, fileID string, audio int) bool {
+	return task != nil && !task.IsDisposed() && task.ID == id && task.FileID == fileID && task.Audio == audio
 }
 
 func shouldUseCueTimeline(conf Config, probe ProbeInfo) bool {
@@ -517,6 +558,54 @@ func (s *Service) Get(id string) *Task {
 	task.UpdateLastActive()
 	s.mu.RUnlock()
 	return task
+}
+
+// GetAnyForHash returns a live task of the torrent (any viewer), for torrent-level requests such as the
+// heartbeat requested with the bare hash.
+func (s *Service) GetAnyForHash(hash string) *Task {
+	if hash == "" || s.disposed.Load() {
+		return nil
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for id, task := range s.tasks {
+		if HashOfTaskID(id) == hash && task != nil && !task.IsDisposed() {
+			task.UpdateLastActive()
+			return task
+		}
+	}
+	return nil
+}
+
+func (s *Service) hasTasksForHash(hash string) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for id, task := range s.tasks {
+		if HashOfTaskID(id) == hash && task != nil && !task.IsDisposed() {
+			return true
+		}
+	}
+	return false
+}
+
+// RemoveTorrent removes every task of a torrent (all viewers), e.g. when the torrent itself is dropped.
+func (s *Service) RemoveTorrent(hash string) bool {
+	if hash == "" {
+		return false
+	}
+	s.mu.Lock()
+	var removed []*Task
+	for id, task := range s.tasks {
+		if HashOfTaskID(id) == hash {
+			delete(s.tasks, id)
+			if task != nil {
+				removed = append(removed, task)
+			}
+		}
+	}
+	s.mu.Unlock()
+	disposeTasks(removed)
+	return len(removed) > 0
 }
 
 func (s *Service) TryRemove(id string) bool {
