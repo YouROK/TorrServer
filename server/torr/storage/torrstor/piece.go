@@ -51,6 +51,16 @@ func (p *Piece) ReadAt(b []byte, off int64) (n int, err error) {
 	}
 }
 
+// memCost is what this piece costs the cache budget. In RAM mode that is the allocated buffer
+// (a whole piece from the first written byte), not the bytes received; Size stays the logical
+// downloaded size used for progress reporting. Disk pieces cost their file size.
+func (p *Piece) memCost() int64 {
+	if p.mPiece != nil {
+		return p.mPiece.allocated()
+	}
+	return p.Size
+}
+
 func (p *Piece) MarkComplete() error {
 	p.Complete = true
 	return nil
