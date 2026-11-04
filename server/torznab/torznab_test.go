@@ -3,6 +3,7 @@ package torznab
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"server/settings"
@@ -26,5 +27,24 @@ func TestSearchOneFormatsSizeInBinaryUnits(t *testing.T) {
 	}
 	if results[1].Size != "512 B" {
 		t.Errorf("size = %q, want %q", results[1].Size, "512 B")
+	}
+}
+
+func TestSearchOneAcceptsHostWithoutScheme(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("t") == "caps" {
+			w.Write([]byte(`<caps></caps>`))
+			return
+		}
+		w.Write([]byte(`<rss><channel><item><title>a</title><size>1</size></item></channel></rss>`))
+	}))
+	defer srv.Close()
+
+	host := strings.TrimPrefix(srv.URL, "http://")
+	if err := Test(host, "key"); err != nil {
+		t.Fatalf("Test(%q) = %v", host, err)
+	}
+	if results := searchOne(host, "key", "", settings.CategoryAll, "q"); len(results) != 1 {
+		t.Fatalf("searchOne(%q) got %d results, want 1", host, len(results))
 	}
 }

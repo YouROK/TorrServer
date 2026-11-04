@@ -58,10 +58,13 @@ func httpGet(u string) (*http.Response, error) {
 }
 
 // buildAPIURL normalizes a Torznab host and returns the parsed URL
-// pointing to the "api" endpoint. It accepts hosts both with and
-// without a trailing "/api" or "/api/" segment.
+// pointing to the "api" endpoint. It accepts hosts with or without an
+// http(s):// scheme and with or without a trailing "/api" or "/api/" segment.
 func buildAPIURL(host string) (*url.URL, error) {
 	host = strings.TrimSpace(host)
+	if !strings.HasPrefix(host, "http://") && !strings.HasPrefix(host, "https://") {
+		host = "http://" + host
+	}
 	host = strings.TrimRight(host, "/")
 	host = strings.TrimSuffix(host, "/api")
 	host = strings.TrimRight(host, "/")
@@ -199,9 +202,6 @@ func searchOne(host, key, categories string, categoryType settings.CategoryType,
 }
 
 func Test(host, key string) error {
-	if !strings.HasPrefix(host, "http://") && !strings.HasPrefix(host, "https://") {
-		host = "http://" + host
-	}
 	if !strings.HasSuffix(host, "/") {
 		host += "/"
 	}
