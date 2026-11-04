@@ -23,6 +23,8 @@ type Cache struct {
 	storage.TorrentImpl
 	storage *Storage
 
+	// filled is the eviction input: memory the pieces occupy (allocated buffers in RAM mode),
+	// recomputed by getRemPieces. It is not the downloaded byte count (see GetState).
 	capacity int64
 	filled   int64
 	hash     metainfo.Hash
@@ -223,7 +225,6 @@ func (c *Cache) GetState() *state.CacheState {
 		})
 	}
 
-	c.filled = fill
 	cState.Capacity = c.capacity
 	cState.PiecesLength = c.pieceLength
 	cState.PiecesCount = c.pieceCount
@@ -281,7 +282,7 @@ func (c *Cache) getRemPieces() []*Piece {
 	// Determine which chunks can be deleted
 	for id, p := range c.getPieces() {
 		if p.Size > 0 {
-			fill += p.Size
+			fill += p.memCost()
 		}
 		if len(ranges) > 0 {
 			if !inRanges(ranges, id) {
