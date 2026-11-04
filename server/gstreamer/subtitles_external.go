@@ -148,7 +148,7 @@ func (t *Task) ensureExternalSubtitles(ctx context.Context) {
 	if t == nil || !t.Config.Subtitles {
 		return
 	}
-	base := settings.LoopbackBaseURL() + "/subs/" + url.PathEscape(t.ID) + "/" + url.PathEscape(t.FileID)
+	base := settings.LoopbackBaseURL() + "/subs/" + url.PathEscape(t.torrentHash()) + "/" + url.PathEscape(t.FileID)
 	t.loadExternalSubtitles(ctx, base)
 }
 

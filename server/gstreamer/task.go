@@ -23,6 +23,7 @@ type pipelineRunner interface {
 
 type Task struct {
 	ID        string
+	Hash      string // torrent hash; ID is "<hash>" or "<hash>.<sid>"
 	FileID    string
 	Audio     int
 	SourceURL string
@@ -382,4 +383,11 @@ func (t *Task) IsFrozen() bool {
 		return false
 	}
 	return t.runner.IsFrozen()
+}
+
+func (t *Task) torrentHash() string {
+	if t.Hash != "" {
+		return t.Hash
+	}
+	return HashOfTaskID(t.ID)
 }
