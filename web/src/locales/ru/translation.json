@@ -196,6 +196,9 @@
   "PIP": "Картинка в картинке",
   "Play": "Играть",
   "Playlist": "Плейлист",
+  "AllFiles": "Все файлы",
+  "ExpandAll": "Развернуть все",
+  "CollapseAll": "Свернуть все",
   "Preload": "Предзагр.",
   "ProjectSource": "GitHub проекта",
   "PWAGuide": {
