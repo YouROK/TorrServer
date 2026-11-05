@@ -1435,3 +1435,145 @@ func TestTaskWithSegmentSkipsConsumerAfterCancellation(t *testing.T) {
 		t.Fatal("segment consumer was called after request cancellation")
 	}
 }
+
+func TestPipelineHEVCHDRCapsProbeLifetime(t *testing.T) {
+	previous := gstRuntime
+	t.Cleanup(func() { gstRuntime = previous })
+	for _, tc := range []struct {
+		name      string
+		caps      string
+		transcode bool
+		start     float64
+		fail      bool
+		want      bool
+	}{
+		{name: "HEVC from zero", caps: "video/x-h265", want: true},
+		{name: "HEVC before preroll", caps: "video/x-h265", start: 12, want: true},
+		{name: "failed HEVC startup", caps: "video/x-h265", start: 12, fail: true, want: true},
+		{name: "H264", caps: "video/x-h264"},
+		{name: "AV1", caps: "video/x-av1"},
+		{name: "VP9", caps: "video/x-vp9"},
+		{name: "decoded HEVC", caps: "video/x-h265", transcode: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			runner := &gstRunner{task: &Task{Config: Config{TranscodeH265: tc.transcode}.normalized(),
+				Probe: ProbeInfo{Tracks: []TrackInfo{{Type: "video", CapsName: tc.caps}}}}}
+			unrefs := make(map[uintptr]int)
+			removed := make(map[uintptr]int)
+			var nextID uintptr
+			seekPending := false
+			api := &gstAPI{}
+			api.gstParseLaunch = func(string, unsafe.Pointer) uintptr { return 1 }
+			api.gstBinGetByName = func(_ uintptr, name string) uintptr {
+				switch name {
+				case "out":
+					return 2
+				case "mq":
+					return 4
+				case "mux":
+					return 5
+				case "video_timestamper":
+					return 6
+				case "video_encoder":
+					return 7
+				}
+				return 0
+			}
+			api.gstPipelineGetBus = func(uintptr) uintptr { return 3 }
+			api.gstObjectUnref = func(object uintptr) { unrefs[object]++ }
+			api.gstMiniObjectUnref = func(object uintptr) { unrefs[object]++ }
+			api.gstElementGetStaticPad = func(element uintptr, name string) uintptr {
+				if element == 6 && name == "src" {
+					return 8
+				}
+				if element == 4 && name == "src_0" {
+					return 9
+				}
+				t.Fatalf("unexpected pad %d/%s", element, name)
+				return 0
+			}
+			api.gstPadAddProbe = func(pad uintptr, mask uint32, callback uintptr, token uintptr, _ uintptr) uintptr {
+				nextID++
+				if callback == hevcHDRCapsProbeCallback {
+					if pad != 8 || mask != gstPadProbeTypeEventDownstream {
+						t.Error("HDR probe installed on wrong pad or mask")
+					}
+				}
+				return nextID
+			}
+			api.gstPadRemoveProbe = func(_ uintptr, id uintptr) { removed[id]++ }
+			api.gstElementGetState = func(uintptr, unsafe.Pointer, unsafe.Pointer, uint64) int32 { return gstStateChangeSuccess }
+			api.gstElementSetState = func(element uintptr, state int32) int32 {
+				if element == 1 && (state == gstStatePaused || state == gstStatePlaying) {
+					if (runner.hevcHDRCapsProbe != nil) != tc.want {
+						t.Error("HDR probe installation must precede preroll/playback")
+					}
+					if tc.fail {
+						runner.hevcHDRCapsProbe.state.(*hevcHDRCapsProbeState).initialCaps = 71
+						return gstStateChangeFailure
+					}
+				}
+				return gstStateChangeSuccess
+			}
+			api.gstEventNewSeek = func(float64, int32, int32, int32, int64, int32, int64) uintptr { return 10 }
+			api.gstPadSendEvent = func(uintptr, uintptr) int32 { seekPending = true; return 1 }
+			api.gstBusTimedPopFiltered = func(_ uintptr, _ uint64, filter int32) uintptr {
+				if filter == gstMessageAsyncDone && seekPending {
+					seekPending = false
+					return 11
+				}
+				return 0
+			}
+			gstRuntime = api
+			defer runner.releaseTransientState()
+			defer runner.stopPipeline()
+			_, err := runner.startPipeline(tc.start)
+			if tc.fail {
+				if err == nil {
+					t.Fatal("startup unexpectedly succeeded")
+				}
+				if runner.hevcHDRCapsProbe != nil || removed[1] != 1 || unrefs[8] != 1 || unrefs[71] != 1 {
+					t.Fatal("failed startup leaked HDR probe")
+				}
+				tc.fail = false
+				if _, err := runner.startPipeline(0); err != nil {
+					t.Fatal(err)
+				}
+			} else if err != nil {
+				t.Fatal(err)
+			}
+			registration := runner.hevcHDRCapsProbe
+			if (registration != nil) != tc.want {
+				t.Fatal("unexpected HDR registration")
+			}
+			if !tc.want {
+				return
+			}
+			state := registration.state.(*hevcHDRCapsProbeState)
+			if state.initialCaps != 0 {
+				t.Fatal("fresh pipeline inherited HDR snapshot")
+			}
+			state.initialCaps = 70 // Stand in for the owned native caps reference.
+			if _, err := runner.reusePipeline(24, false, time.Millisecond); err != nil {
+				t.Fatal(err)
+			}
+			if runner.hevcHDRCapsProbe != registration || state.initialCaps != 70 || removed[uintptr(registration.id.Load())] != 0 {
+				t.Fatal("reused seek discarded HDR registration or snapshot")
+			}
+			token, id := registration.token, uintptr(registration.id.Load())
+			runner.stopPipeline()
+			if !state.closed || state.initialCaps != 0 || unrefs[70] != 1 || removed[id] != 1 {
+				t.Fatal("stop leaked HDR registration or native snapshot")
+			}
+			if _, ok := videoProbeStates.Load(token); ok {
+				t.Fatal("stopped HDR probe remains registered")
+			}
+			if _, err := runner.startPipeline(0); err != nil {
+				t.Fatal(err)
+			}
+			if runner.hevcHDRCapsProbe == registration || runner.hevcHDRCapsProbe.state.(*hevcHDRCapsProbeState).initialCaps != 0 {
+				t.Fatal("restarted pipeline inherited stale HDR metadata")
+			}
+		})
+	}
+}

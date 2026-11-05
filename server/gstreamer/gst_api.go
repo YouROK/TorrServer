@@ -100,6 +100,16 @@ type gstAPI struct {
 	gstBufferMap            func(buffer uintptr, mapInfo unsafe.Pointer, flags int32) int32
 	gstBufferUnmap          func(buffer uintptr, mapInfo unsafe.Pointer)
 
+	gstMiniObjectCopy         func(object uintptr) uintptr
+	gstEventParseCaps         func(event uintptr, caps unsafe.Pointer)
+	gstEventNewCaps           func(caps uintptr) uintptr
+	gstEventGetStructure      func(event uintptr) uintptr
+	gstEventWritableStructure func(event uintptr) uintptr
+	gstCapsGetStructure       func(caps uintptr, index uint32) uintptr
+	gstStructureGetValue      func(structure uintptr, field string) uintptr
+	gstStructureSetValue      func(structure uintptr, field string, value uintptr)
+	gstStructureRemoveField   func(structure uintptr, field string)
+
 	gstAppSinkTryPullSample func(sink uintptr, timeout uint64) uintptr
 	gstAppSinkIsEOS         func(sink uintptr) int32
 
@@ -128,6 +138,15 @@ func (g *gstAPI) bind(gstHandle uintptr, gstAppHandle uintptr, glibHandle uintpt
 	purego.RegisterLibFunc(&g.gstElementQueryPosition, gstHandle, "gst_element_query_position")
 	purego.RegisterLibFunc(&g.gstEventNewSeek, gstHandle, "gst_event_new_seek")
 	purego.RegisterLibFunc(&g.gstEventParseSegment, gstHandle, "gst_event_parse_segment")
+	purego.RegisterLibFunc(&g.gstMiniObjectCopy, gstHandle, "gst_mini_object_copy")
+	purego.RegisterLibFunc(&g.gstEventParseCaps, gstHandle, "gst_event_parse_caps")
+	purego.RegisterLibFunc(&g.gstEventNewCaps, gstHandle, "gst_event_new_caps")
+	purego.RegisterLibFunc(&g.gstEventGetStructure, gstHandle, "gst_event_get_structure")
+	purego.RegisterLibFunc(&g.gstEventWritableStructure, gstHandle, "gst_event_writable_structure")
+	purego.RegisterLibFunc(&g.gstCapsGetStructure, gstHandle, "gst_caps_get_structure")
+	purego.RegisterLibFunc(&g.gstStructureGetValue, gstHandle, "gst_structure_get_value")
+	purego.RegisterLibFunc(&g.gstStructureSetValue, gstHandle, "gst_structure_set_value")
+	purego.RegisterLibFunc(&g.gstStructureRemoveField, gstHandle, "gst_structure_remove_field")
 	purego.RegisterLibFunc(&g.gstPadAddProbe, gstHandle, "gst_pad_add_probe")
 	purego.RegisterLibFunc(&g.gstPadRemoveProbe, gstHandle, "gst_pad_remove_probe")
 	purego.RegisterLibFunc(&g.gstPadSendEvent, gstHandle, "gst_pad_send_event")
