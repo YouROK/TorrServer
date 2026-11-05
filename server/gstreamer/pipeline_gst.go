@@ -54,13 +54,14 @@ type gstRunner struct {
 
 	reader *mp4BoxReader
 
-	pipeline        uintptr
-	bus             uintptr
-	sink            uintptr
-	subtitleSinks   map[int]uintptr
-	subtitleStores  map[int]*subtitleStore
-	videoStartProbe *gstPadProbeRegistration
-	videoClipProbe  *gstPadProbeRegistration
+	pipeline         uintptr
+	bus              uintptr
+	sink             uintptr
+	subtitleSinks    map[int]uintptr
+	subtitleStores   map[int]*subtitleStore
+	videoStartProbe  *gstPadProbeRegistration
+	videoClipProbe   *gstPadProbeRegistration
+	hevcHDRCapsProbe *gstPadProbeRegistration
 
 	watchMu     sync.Mutex
 	watchCancel chan struct{}
@@ -1329,14 +1330,20 @@ func (r *gstRunner) startPipeline(seconds float64) (float64, error) {
 	actualStartSeconds := seconds
 
 	cleanup := func() {
-		r.removeVideoSeekProbes()
 		gstRuntime.elementSetState(pipeline, gstStateNull)
+		r.removeVideoSeekProbes()
+		removeVideoPadProbe(&r.hevcHDRCapsProbe)
 		gstRuntime.objectUnref(sink)
 		gstRuntime.objectUnref(pipeline)
 		gstRuntime.objectUnref(bus)
 		for _, subSink := range subtitleSinks {
 			gstRuntime.objectUnref(subSink)
 		}
+	}
+
+	if err := r.installHEVCHDRCapsProbe(pipeline); err != nil {
+		cleanup()
+		return 0, err
 	}
 
 	if seconds > 0 {
@@ -1446,10 +1453,11 @@ func (r *gstRunner) setPipelineState(pipeline uintptr, bus uintptr, state int32)
 
 func (r *gstRunner) stopPipeline() {
 	r.stopBusWatch()
-	r.removeVideoSeekProbes()
 	if r.pipeline != 0 {
 		_ = gstRuntime.elementSetState(r.pipeline, gstStateNull)
 	}
+	r.removeVideoSeekProbes()
+	removeVideoPadProbe(&r.hevcHDRCapsProbe)
 	if r.sink != 0 {
 		gstRuntime.objectUnref(r.sink)
 		r.sink = 0
