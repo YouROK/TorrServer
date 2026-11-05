@@ -1,11 +1,13 @@
 import { memo, useMemo, useState } from 'react'
-import { Button } from '@material-ui/core'
+import { Button, IconButton } from '@material-ui/core'
 import ChevronRightIcon from '@material-ui/icons/ChevronRight'
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore'
 import FolderIcon from '@material-ui/icons/Folder'
 import FolderOpenIcon from '@material-ui/icons/FolderOpen'
+import GetAppIcon from '@material-ui/icons/GetApp'
 import InsertDriveFileOutlinedIcon from '@material-ui/icons/InsertDriveFileOutlined'
 import { useTranslation } from 'react-i18next'
+import { streamHost } from 'utils/Hosts'
 import { humanizeSize } from 'utils/Utils'
 
 import { TreeRow, TreeToolbar, TreeWrapper } from './style'
@@ -68,7 +70,7 @@ const flattenTree = (node, depth, isOpen, out = []) => {
   return out
 }
 
-const AllFiles = memo(({ files }) => {
+const AllFiles = memo(({ files, hash }) => {
   const { t } = useTranslation()
   // user choices: { [dirPath]: boolean }, everything else is opened/closed by default rules
   const [overrides, setOverrides] = useState({})
@@ -81,6 +83,8 @@ const AllFiles = memo(({ files }) => {
   const toggleDir = dir =>
     setOverrides(prev => ({ ...prev, [dir.path]: !(prev[dir.path] ?? defaultOpen.has(dir.path)) }))
   const setAll = value => setOverrides(Object.fromEntries(collectDirPaths(tree).map(path => [path, value])))
+
+  const getFileLink = (name, id) => `${streamHost()}/${encodeURIComponent(name)}?link=${hash}&index=${id}&play`
 
   const formatSize = size => humanizeSize(size) || `0 ${t('B')}`
 
@@ -133,6 +137,7 @@ const AllFiles = memo(({ files }) => {
                 </span>
                 <span className='tree-count'>({dir.count})</span>
                 <span className='tree-size'>{formatSize(dir.size)}</span>
+                <span className='tree-action' />
               </TreeRow>
             )
           }
@@ -145,6 +150,18 @@ const AllFiles = memo(({ files }) => {
                 {file.name}
               </span>
               <span className='tree-size'>{formatSize(file.size)}</span>
+              <span className='tree-action'>
+                <IconButton
+                  component='a'
+                  href={getFileLink(file.name, file.id)}
+                  download={file.name}
+                  size='small'
+                  title={t('Download')}
+                  aria-label={t('Download')}
+                >
+                  <GetAppIcon />
+                </IconButton>
+              </span>
             </TreeRow>
           )
         })}
