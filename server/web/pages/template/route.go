@@ -6,7 +6,7 @@ import (
 
 func RouteWebPages(route gin.IRouter) {
 	route.GET("/", func(c *gin.Context) {
-		serve(c, Indexhtml, `"4f7132e23d27b343d96f197e3d47d741"`, "text/html; charset=utf-8", false)
+		serve(c, Indexhtml, `"6bbbbea3a04e825274816a0d62be72a7"`, "text/html; charset=utf-8", false)
 	})
 
 	route.GET("/apple-splash-1125-2436.jpg", func(c *gin.Context) {
@@ -114,7 +114,7 @@ func RouteWebPages(route gin.IRouter) {
 	})
 
 	route.GET("/asset-manifest.json", func(c *gin.Context) {
-		serve(c, Assetmanifestjson, `"3451f0806913f9df7a2b5d5cd7c661b4"`, "application/json", false)
+		serve(c, Assetmanifestjson, `"7f58160fae1d11141024a7d8ec1ed389"`, "application/json", false)
 	})
 
 	route.GET("/browserconfig.xml", func(c *gin.Context) {
@@ -146,7 +146,7 @@ func RouteWebPages(route gin.IRouter) {
 	})
 
 	route.GET("/index.html", func(c *gin.Context) {
-		serve(c, Indexhtml, `"4f7132e23d27b343d96f197e3d47d741"`, "text/html; charset=utf-8", false)
+		serve(c, Indexhtml, `"6bbbbea3a04e825274816a0d62be72a7"`, "text/html; charset=utf-8", false)
 	})
 
 	route.GET("/logo.png", func(c *gin.Context) {
@@ -165,24 +165,24 @@ func RouteWebPages(route gin.IRouter) {
 		serve(c, Sitewebmanifest, `"e1cb30ce5123a7f926497f48075ad250"`, "application/manifest+json", false)
 	})
 
-	route.GET("/static/js/2.7a202c12.chunk.js", func(c *gin.Context) {
-		serve(c, Staticjs27a202c12chunkjs, `"0ad1c473f77e7e1d60620956fa2a10ab"`, "application/javascript; charset=utf-8", true)
+	route.GET("/static/js/2.b7635188.chunk.js", func(c *gin.Context) {
+		serve(c, Staticjs2b7635188chunkjs, `"de614dc7484b64c2f22e51aad80e3c97"`, "application/javascript; charset=utf-8", true)
 	})
 
-	route.GET("/static/js/2.7a202c12.chunk.js.LICENSE.txt", func(c *gin.Context) {
-		serve(c, Staticjs27a202c12chunkjsLICENSEtxt, `"9c4a958bc09e18ebd8a6506ecc2d412e"`, "text/plain; charset=utf-8", true)
+	route.GET("/static/js/2.b7635188.chunk.js.LICENSE.txt", func(c *gin.Context) {
+		serve(c, Staticjs2b7635188chunkjsLICENSEtxt, `"9c4a958bc09e18ebd8a6506ecc2d412e"`, "text/plain; charset=utf-8", true)
 	})
 
-	route.GET("/static/js/2.7a202c12.chunk.js.map", func(c *gin.Context) {
-		serve(c, Staticjs27a202c12chunkjsmap, `"ba6f3698e36620ac76c053fa00ab50ea"`, "application/json", true)
+	route.GET("/static/js/2.b7635188.chunk.js.map", func(c *gin.Context) {
+		serve(c, Staticjs2b7635188chunkjsmap, `"80e5dab50a21e36dcba060fdbd719909"`, "application/json", true)
 	})
 
-	route.GET("/static/js/main.7ce39df0.chunk.js", func(c *gin.Context) {
-		serve(c, Staticjsmain7ce39df0chunkjs, `"1492b53a0c5f0ca49bbbe3c5507f339f"`, "application/javascript; charset=utf-8", true)
+	route.GET("/static/js/main.2b275b86.chunk.js", func(c *gin.Context) {
+		serve(c, Staticjsmain2b275b86chunkjs, `"968783253b2eeedf28160056135c16b6"`, "application/javascript; charset=utf-8", true)
 	})
 
-	route.GET("/static/js/main.7ce39df0.chunk.js.map", func(c *gin.Context) {
-		serve(c, Staticjsmain7ce39df0chunkjsmap, `"f3ea59b025ec3dcd32ca41d042b64e97"`, "application/json", true)
+	route.GET("/static/js/main.2b275b86.chunk.js.map", func(c *gin.Context) {
+		serve(c, Staticjsmain2b275b86chunkjsmap, `"a3ee7e2d0611aec9ede6c3b0b9865128"`, "application/json", true)
 	})
 
 	route.GET("/static/js/runtime-main.5ed86a79.js", func(c *gin.Context) {
