@@ -32,7 +32,7 @@ export const AppWrapper = styled.div`
       grid-template-rows: var(--pwa-header-height) minmax(0, 1fr) ${pwaFooterHeight}px;
 
       @media (max-width: 700px) {
-        --pwa-header-height: 42px;
+        --pwa-header-height: 56px;
       }
     `)}
   `}
