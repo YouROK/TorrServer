@@ -202,6 +202,9 @@
   "PIP": "Imagine-în-Imagine",
   "Play": "Redare",
   "Playlist": "Playlist",
+  "AllFiles": "Toate fișierele",
+  "ExpandAll": "Extinde tot",
+  "CollapseAll": "Restrânge tot",
   "Preload": "Preîncărcare",
   "ProjectSource": "GitHub",
   "PWAGuide": {
