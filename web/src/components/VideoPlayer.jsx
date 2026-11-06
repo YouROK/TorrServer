@@ -13,6 +13,8 @@ import {
 } from '@material-ui/core'
 import { makeStyles, withStyles } from '@material-ui/core/styles'
 import CloseIcon from '@material-ui/icons/Close'
+import CastIcon from '@material-ui/icons/Cast'
+import CastConnectedIcon from '@material-ui/icons/CastConnected'
 import Forward10Icon from '@material-ui/icons/Forward10'
 import FullscreenIcon from '@material-ui/icons/Fullscreen'
 import FullscreenExitIcon from '@material-ui/icons/FullscreenExit'
@@ -29,23 +31,11 @@ import Hls from 'hls.js'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { StyledDialog } from 'style/CustomMaterialUiStyles'
 import { useTranslation } from 'react-i18next'
+import { getVideoMimeType } from 'utils/GoogleCast'
+import { useExternalMediaBase } from 'utils/MediaBase'
+import useGoogleCast from 'utils/useGoogleCast'
 
 import { StyledButton } from './TorrentCard/style'
-
-function getMimeType(url) {
-  const ext = url.split('?')[0].split('.').pop().toLowerCase()
-  switch (ext) {
-    case 'mp4':
-      return 'video/mp4'
-    case 'ogg':
-    case 'ogv':
-      return 'video/ogg'
-    case 'webm':
-      return 'video/webm'
-    default:
-      return ''
-  }
-}
 
 const canPlayNativeHls = video =>
   Boolean(video.canPlayType('application/vnd.apple.mpegurl') || video.canPlayType('application/x-mpegURL'))
@@ -270,6 +260,16 @@ const VideoPlayer = ({
   const [subtitleAnchorEl, setSubtitleAnchorEl] = useState(null)
   const [subtitleTracks, setSubtitleTracks] = useState([])
   const [subtitleTrack, setSubtitleTrack] = useState(-1)
+  const mediaBase = useExternalMediaBase()
+  const cast = useGoogleCast({ active: open, source: videoSrc, base: mediaBase, hls, title, video: videoElement })
+  const displayTime = cast.connected ? cast.currentTime : currentTime
+  const displayDuration = cast.connected ? cast.duration : duration
+  const displayPlaying = cast.connected ? !cast.paused : playing
+  const castLabel = cast.connected
+    ? 'Disconnect'
+    : cast.busy
+    ? 'Connecting'
+    : cast.error || (!cast.ready ? 'Loading' : !cast.available ? 'NoDevices' : 'Start')
 
   const setVideoNode = useCallback(node => {
     videoRef.current = node
@@ -282,7 +282,9 @@ const VideoPlayer = ({
 
   useEffect(() => {
     const vid = document.createElement('video')
-    const supported = hls ? Hls.isSupported() || canPlayNativeHls(vid) : Boolean(vid.canPlayType(getMimeType(videoSrc)))
+    const supported = hls
+      ? Hls.isSupported() || canPlayNativeHls(vid)
+      : Boolean(vid.canPlayType(getVideoMimeType(videoSrc)))
     if (!supported) onNotSupportedRef.current?.()
   }, [hls, videoSrc])
 
@@ -359,18 +361,25 @@ const VideoPlayer = ({
   }, [heartbeatSrc, open])
 
   const handlePlayPause = useCallback(() => {
+    if (cast.connected) {
+      cast.toggle()
+      return
+    }
     const video = videoRef.current
     if (!video) return
     video.paused ? video.play() : video.pause()
-  }, [])
+  }, [cast])
 
-  const togglePlay = () => setPlaying(p => !p)
   const handleTimeUpdate = () => setCurrentTime(videoRef.current.currentTime)
   const handleLoaded = () => {
     setDuration(videoRef.current.duration)
     setLoading(false)
   }
   const handleSeek = (_, val) => {
+    if (cast.connected) {
+      cast.seek(val)
+      return
+    }
     videoRef.current.currentTime = val
     handleTimeUpdate()
   }
@@ -387,13 +396,17 @@ const VideoPlayer = ({
 
   const skip = useCallback(
     secs => {
+      if (cast.connected) {
+        cast.seek(cast.currentTime + secs)
+        return
+      }
       const video = videoRef.current
       if (!video) return
       const target = Math.min(Math.max(video.currentTime + secs, 0), duration)
       video.currentTime = target
       setCurrentTime(target)
     },
-    [duration],
+    [cast, duration],
   )
 
   const enterFull = () => videoRef.current.requestFullscreen()
@@ -489,11 +502,16 @@ const VideoPlayer = ({
           <Typography variant='h6' noWrap>
             {title || 'Video Player'}
           </Typography>
-          <IconButton size='medium' onClick={closePlayer} className={classes.iconButton}>
+          <IconButton size='medium' onClick={closePlayer} className={classes.iconButton} aria-label={t('Close')}>
             <CloseIcon fontSize='medium' />
           </IconButton>
         </DialogTitle>
         <DialogContent style={{ padding: 0 }}>
+          {cast.error && (
+            <Box role='status' p={1} bgcolor='#222' color='#fff'>
+              <Typography variant='body2'>{t(`GoogleCast.${cast.error}`)}</Typography>
+            </Box>
+          )}
           <Box className={classes.videoWrapper} onClick={handlePlayPause} style={isMobile ? { minHeight: 240 } : {}}>
             <video
               autoPlay
@@ -501,13 +519,13 @@ const VideoPlayer = ({
               src={hls ? undefined : videoSrc}
               onTimeUpdate={handleTimeUpdate}
               onLoadedMetadata={handleLoaded}
-              onPlay={togglePlay}
-              onPause={togglePlay}
+              onPlay={() => setPlaying(true)}
+              onPause={() => setPlaying(false)}
               className={classes.video}
             >
               <track kind='captions' srcLang='en' label='English captions' src={hls ? undefined : captionSrc} default />
             </video>
-            {loading && (
+            {loading && !cast.connected && (
               <Box className={classes.loadingOverlay}>
                 <CircularProgress fontSize='medium' />
               </Box>
@@ -516,7 +534,7 @@ const VideoPlayer = ({
               size='medium'
               className={classes.centralControl}
               style={{
-                opacity: playing ? 0 : 1,
+                opacity: displayPlaying ? 0 : 1,
               }}
             >
               <PlayArrowIcon fontSize='medium' />
@@ -525,21 +543,28 @@ const VideoPlayer = ({
               {isMobile && (
                 <Box className={classes.timeRow}>
                   <Typography variant='body2'>
-                    {formatTime(currentTime)} / {formatTime(duration)}
+                    {formatTime(displayTime)} / {formatTime(displayDuration)}
                   </Typography>
                 </Box>
               )}
               <PrettoSlider
                 className={classes.slider}
-                value={currentTime}
-                max={duration}
+                value={Math.min(displayTime, displayDuration)}
+                max={displayDuration}
+                disabled={cast.connected && !cast.canSeek}
                 onChange={handleSeek}
                 size='medium'
               />
               <Box className={classes.controlRow}>
-                <Tooltip title={playing ? t('Pause') : t('Play')}>
-                  <IconButton size='medium' onClick={handlePlayPause} className={classes.iconButton}>
-                    {playing ? <PauseIcon fontSize='medium' /> : <PlayArrowIcon fontSize='medium' />}
+                <Tooltip title={displayPlaying ? t('Pause') : t('Play')}>
+                  <IconButton
+                    size='medium'
+                    onClick={handlePlayPause}
+                    className={classes.iconButton}
+                    aria-label={displayPlaying ? t('Pause') : t('Play')}
+                    disabled={cast.connected && !cast.canPause}
+                  >
+                    {displayPlaying ? <PauseIcon fontSize='medium' /> : <PlayArrowIcon fontSize='medium' />}
                   </IconButton>
                 </Tooltip>
                 <Tooltip title={t('Rewind-10-Sec')}>
@@ -568,7 +593,12 @@ const VideoPlayer = ({
                   </IconButton>
                 </Tooltip>
                 <Tooltip title={muted ? t('Unmute') : t('Mute')}>
-                  <IconButton size='medium' className={classes.iconButton} onClick={toggleMute}>
+                  <IconButton
+                    size='medium'
+                    className={classes.iconButton}
+                    onClick={toggleMute}
+                    disabled={cast.connected}
+                  >
                     {muted ? <VolumeOffIcon fontSize='medium' /> : <VolumeUpIcon fontSize='medium' />}
                   </IconButton>
                 </Tooltip>
@@ -576,6 +606,7 @@ const VideoPlayer = ({
                   <Slider
                     className={classes.slider}
                     value={volume * 100}
+                    disabled={cast.connected}
                     onChange={handleVolume}
                     size='medium'
                     style={{ width: 70 }}
@@ -584,17 +615,31 @@ const VideoPlayer = ({
                 {!isMobile && (
                   <Box className={classes.timeRow}>
                     <Typography variant='body2'>
-                      {formatTime(currentTime)} / {formatTime(duration)}
+                      {formatTime(displayTime)} / {formatTime(displayDuration)}
                     </Typography>
                   </Box>
                 )}
                 <Box flexGrow={1} />
+                <Tooltip title={t(`GoogleCast.${castLabel}`)}>
+                  <span>
+                    <IconButton
+                      size='medium'
+                      className={classes.iconButton}
+                      aria-label={t(`GoogleCast.${cast.connected ? 'Disconnect' : 'Start'}`)}
+                      disabled={!cast.connected && (!cast.available || cast.busy)}
+                      onClick={cast.connected ? cast.disconnect : cast.start}
+                    >
+                      {cast.connected ? <CastConnectedIcon /> : <CastIcon />}
+                    </IconButton>
+                  </span>
+                </Tooltip>
                 {subtitleTracks.length > 0 && (
                   <>
                     <Tooltip title={t('GStreamer.Subtitles')}>
                       <IconButton
                         size='medium'
                         onClick={openSubtitleMenu}
+                        disabled={cast.connected}
                         className={classes.iconButton}
                         style={subtitleTrack >= 0 ? { color: '#00e68a' } : undefined}
                       >
@@ -623,7 +668,12 @@ const VideoPlayer = ({
                   </>
                 )}
                 <Tooltip title={t('Speed')}>
-                  <IconButton size='medium' onClick={openSpeedMenu} className={classes.iconButton}>
+                  <IconButton
+                    size='medium'
+                    onClick={openSpeedMenu}
+                    className={classes.iconButton}
+                    disabled={cast.connected}
+                  >
                     <SpeedIcon fontSize='medium' />
                   </IconButton>
                 </Tooltip>
@@ -644,6 +694,7 @@ const VideoPlayer = ({
                     size='medium'
                     className={classes.iconButton}
                     onClick={() => videoRef.current.requestPictureInPicture()}
+                    disabled={cast.connected}
                   >
                     <PictureInPictureIcon fontSize='medium' />
                   </IconButton>
