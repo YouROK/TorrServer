@@ -13,7 +13,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"server/settings"
 )
@@ -33,12 +32,6 @@ const (
 
 	maxExternalSubtitles        = 16
 	maxExternalSubtitleListSize = 1 << 20
-	maxExternalSubtitleSize     = 4 << 20
-	externalSubtitleTimeout     = 15 * time.Second
-
-	// How many times a master playlist request may retry loading tracks that failed
-	// for a temporary reason (timeout, 5xx) before the task gives up on them.
-	maxExternalSubtitleAttempts = 3
 )
 
 var errSubtitleTooLarge = errors.New("subtitle file is too large")
@@ -168,7 +161,7 @@ func (t *Task) loadExternalSubtitles(ctx context.Context, base string) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, externalSubtitleTimeout)
+	ctx, cancel := context.WithTimeout(ctx, settings.ExternalSubtitleTimeout())
 	defer cancel()
 
 	tracks, failed, err := fetchExternalSubtitles(ctx, base)
@@ -182,7 +175,7 @@ func (t *Task) loadExternalSubtitles(ctx context.Context, base string) {
 		return
 	}
 	t.externalAttempts++
-	if t.externalAttempts >= maxExternalSubtitleAttempts {
+	if t.externalAttempts >= settings.ExternalSubtitleAttempts() {
 		log.Printf("[gst] external subtitles for %s/%s: giving up on %d track(s) after %d attempts", t.ID, t.FileID, failed, t.externalAttempts)
 		return
 	}
@@ -210,7 +203,7 @@ func fetchExternalSubtitles(ctx context.Context, base string) ([]externalSubtitl
 	tracks := make([]externalSubtitle, 0, len(list))
 	failed := 0
 	for i, item := range list {
-		vtt, err := httpGetLimited(ctx, base+"?track="+strconv.Itoa(item.Index)+"&format=vtt", maxExternalSubtitleSize)
+		vtt, err := httpGetLimited(ctx, base+"?track="+strconv.Itoa(item.Index)+"&format=vtt", settings.MaxSubtitleSize())
 		if err != nil {
 			log.Printf("[gst] external subtitle %q: %v", item.Name, err)
 			if !isPermanentSubtitleError(err) {
