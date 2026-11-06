@@ -88,7 +88,7 @@ export const TorrentCardButtons = styled.div`
   gap: 10px;
 
   @media (max-width: 1260px), (max-height: 500px) {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   }
 
   @media (max-width: 340px) {
