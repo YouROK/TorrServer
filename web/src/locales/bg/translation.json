@@ -202,6 +202,9 @@
   "PIP": "PIP",
   "Play": "Възпроизв.",
   "Playlist": "Плейлист",
+  "AllFiles": "Всички файлове",
+  "ExpandAll": "Разгъни всички",
+  "CollapseAll": "Свий всички",
   "Preload": "Предварително зареждане",
   "ProjectSource": "GitHub на проекта",
   "PWAGuide": {
