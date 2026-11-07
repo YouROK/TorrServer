@@ -48,6 +48,12 @@ function getMimeType(url) {
   }
 }
 
+// MUI renders menus and tooltips in a layer of <body>, but in fullscreen the browser shows only the fullscreen
+// element and its descendants, so they stay behind the video: in fullscreen they must be created inside it
+const portalContainer = () => document.fullscreenElement || document.body
+
+const PlayerTooltip = props => <Tooltip PopperProps={{ container: portalContainer }} {...props} />
+
 const canPlayNativeHls = video =>
   Boolean(video.canPlayType('application/vnd.apple.mpegurl') || video.canPlayType('application/x-mpegURL'))
 
@@ -110,6 +116,13 @@ const useStyles = makeStyles(theme => ({
     '&:hover $controls, &:hover $centralControl, &:hover $skipButton': {
       opacity: 1,
     },
+  },
+  videoWrapperFull: {
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    '& video': { width: '100%', height: '100%', objectFit: 'contain' },
   },
   video: {
     width: '100%',
@@ -304,6 +317,7 @@ const VideoPlayer = ({
   const classes = useStyles()
   const isMobile = useMediaQuery('@media (max-width:930px)')
   const videoRef = useRef(null)
+  const wrapperRef = useRef(null)
   const hlsRef = useRef(null)
   const dynamicTrackRef = useRef(null)
   const onNotSupportedRef = useRef(onNotSupported)
@@ -450,7 +464,13 @@ const VideoPlayer = ({
     [duration],
   )
 
-  const enterFull = () => videoRef.current.requestFullscreen()
+  // The wrapper (not the <video>) goes fullscreen: the controls and the subtitle layers must stay visible
+  const enterFull = () => {
+    const wrapper = wrapperRef.current
+    if (wrapper?.requestFullscreen) wrapper.requestFullscreen()
+    else if (wrapper?.webkitRequestFullscreen) wrapper.webkitRequestFullscreen()
+    else if (videoRef.current?.webkitEnterFullscreen) videoRef.current.webkitEnterFullscreen()
+  }
   const exitFull = () => document.exitFullscreen()
 
   useEffect(() => {
@@ -618,7 +638,12 @@ const VideoPlayer = ({
           </IconButton>
         </DialogTitle>
         <DialogContent style={{ padding: 0 }}>
-          <Box className={classes.videoWrapper} onClick={handlePlayPause} style={isMobile ? { minHeight: 240 } : {}}>
+          <Box
+            ref={wrapperRef}
+            className={`${classes.videoWrapper} ${fullscreen ? classes.videoWrapperFull : ''}`}
+            onClick={handlePlayPause}
+            style={isMobile ? { minHeight: 240 } : {}}
+          >
             <video
               autoPlay
               ref={setVideoNode}
@@ -661,12 +686,12 @@ const VideoPlayer = ({
                 size='medium'
               />
               <Box className={classes.controlRow}>
-                <Tooltip title={playing ? t('Pause') : t('Play')}>
+                <PlayerTooltip title={playing ? t('Pause') : t('Play')}>
                   <IconButton size='medium' onClick={handlePlayPause} className={classes.iconButton}>
                     {playing ? <PauseIcon fontSize='medium' /> : <PlayArrowIcon fontSize='medium' />}
                   </IconButton>
-                </Tooltip>
-                <Tooltip title={t('Rewind-10-Sec')}>
+                </PlayerTooltip>
+                <PlayerTooltip title={t('Rewind-10-Sec')}>
                   <IconButton
                     size='medium'
                     className={classes.iconButton}
@@ -677,9 +702,9 @@ const VideoPlayer = ({
                   >
                     <Replay10Icon fontSize='medium' />
                   </IconButton>
-                </Tooltip>
+                </PlayerTooltip>
 
-                <Tooltip title={t('Forward-10-Sec')}>
+                <PlayerTooltip title={t('Forward-10-Sec')}>
                   <IconButton
                     size='medium'
                     className={classes.iconButton}
@@ -690,12 +715,12 @@ const VideoPlayer = ({
                   >
                     <Forward10Icon fontSize='medium' />
                   </IconButton>
-                </Tooltip>
-                <Tooltip title={muted ? t('Unmute') : t('Mute')}>
+                </PlayerTooltip>
+                <PlayerTooltip title={muted ? t('Unmute') : t('Mute')}>
                   <IconButton size='medium' className={classes.iconButton} onClick={toggleMute}>
                     {muted ? <VolumeOffIcon fontSize='medium' /> : <VolumeUpIcon fontSize='medium' />}
                   </IconButton>
-                </Tooltip>
+                </PlayerTooltip>
                 {!isMobile && (
                   <Slider
                     className={classes.slider}
@@ -715,7 +740,7 @@ const VideoPlayer = ({
                 <Box flexGrow={1} />
                 {hasSubtitleMenu && (
                   <>
-                    <Tooltip title={t('GStreamer.Subtitles')}>
+                    <PlayerTooltip title={t('GStreamer.Subtitles')}>
                       <IconButton
                         size='medium'
                         onClick={openSubtitleMenu}
@@ -724,8 +749,9 @@ const VideoPlayer = ({
                       >
                         <SubtitlesIcon fontSize='medium' />
                       </IconButton>
-                    </Tooltip>
+                    </PlayerTooltip>
                     <Menu
+                      container={portalContainer}
                       anchorEl={subtitleAnchorEl}
                       open={Boolean(subtitleAnchorEl)}
                       onClose={closeSubtitleMenu}
@@ -742,12 +768,13 @@ const VideoPlayer = ({
                     </Menu>
                   </>
                 )}
-                <Tooltip title={t('Speed')}>
+                <PlayerTooltip title={t('Speed')}>
                   <IconButton size='medium' onClick={openSpeedMenu} className={classes.iconButton}>
                     <SpeedIcon fontSize='medium' />
                   </IconButton>
-                </Tooltip>
+                </PlayerTooltip>
                 <Menu
+                  container={portalContainer}
                   anchorEl={anchorEl}
                   open={Boolean(anchorEl)}
                   onClose={closeSpeedMenu}
@@ -759,7 +786,7 @@ const VideoPlayer = ({
                     </MenuItem>
                   ))}
                 </Menu>
-                <Tooltip title={t('PIP')}>
+                <PlayerTooltip title={t('PIP')}>
                   <IconButton
                     size='medium'
                     className={classes.iconButton}
@@ -767,19 +794,19 @@ const VideoPlayer = ({
                   >
                     <PictureInPictureIcon fontSize='medium' />
                   </IconButton>
-                </Tooltip>
+                </PlayerTooltip>
 
-                <Tooltip title={t('Download')}>
+                <PlayerTooltip title={t('Download')}>
                   <IconButton size='medium' className={classes.iconButton} onClick={downloadVideo}>
                     <GetAppIcon fontSize='medium' />
                   </IconButton>
-                </Tooltip>
+                </PlayerTooltip>
 
-                <Tooltip title={fullscreen ? t('ExitFullscreen') : t('Fullscreen')}>
+                <PlayerTooltip title={fullscreen ? t('ExitFullscreen') : t('Fullscreen')}>
                   <IconButton size='medium' onClick={fullscreen ? exitFull : enterFull} className={classes.iconButton}>
                     {fullscreen ? <FullscreenExitIcon fontSize='medium' /> : <FullscreenIcon fontSize='medium' />}
                   </IconButton>
-                </Tooltip>
+                </PlayerTooltip>
               </Box>
             </Box>
           </Box>
