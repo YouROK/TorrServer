@@ -44,6 +44,7 @@ export default function SettingsDialog({ handleClose }) {
   const [isSenPlayerUsed, setIsSenPlayerUsed] = useState(JSON.parse(localStorage.getItem('isSenPlayerUsed')) ?? false)
   const [isIinaUsed, setIsIinaUsed] = useState(JSON.parse(localStorage.getItem('isIinaUsed')) ?? false)
   const [isAssStyled, setIsAssStyled] = useState(JSON.parse(localStorage.getItem('isAssStyled')) ?? true)
+  const [assRenderer, setAssRenderer] = useState(localStorage.getItem('assRenderer') || 'auto')
   const [gstAvailable, setGstAvailable] = useState(false)
   const [wafDirty, setWAFDirty] = useState(false)
 
@@ -93,6 +94,7 @@ export default function SettingsDialog({ handleClose }) {
     localStorage.setItem('isSenPlayerUsed', isSenPlayerUsed)
     localStorage.setItem('isIinaUsed', isIinaUsed)
     localStorage.setItem('isAssStyled', isAssStyled)
+    localStorage.setItem('assRenderer', assRenderer)
     notifyPlayerSettingsChanged()
   }
 
@@ -259,7 +261,12 @@ export default function SettingsDialog({ handleClose }) {
                   isIinaUsed={isIinaUsed}
                   setIsIinaUsed={setIsIinaUsed}
                 />
-                <PlayerSettings isAssStyled={isAssStyled} setIsAssStyled={setIsAssStyled} />
+                <PlayerSettings
+                  isAssStyled={isAssStyled}
+                  setIsAssStyled={setIsAssStyled}
+                  assRenderer={assRenderer}
+                  setAssRenderer={setAssRenderer}
+                />
               </TabPanel>
 
               <TabPanel value={selectedTab} index={tabAccess} dir={direction}>

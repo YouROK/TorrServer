@@ -1,9 +1,22 @@
 import { useTranslation } from 'react-i18next'
-import { Button, ButtonGroup, FormControl, FormHelperText, FormLabel } from '@material-ui/core'
+import {
+  Button,
+  ButtonGroup,
+  FormControl,
+  FormHelperText,
+  FormLabel,
+  MenuItem,
+  TextField,
+} from '@material-ui/core'
 
 import { SecondarySettingsContent, SettingSectionLabel } from './style'
 
-export default function PlayerSettings({ isAssStyled, setIsAssStyled }) {
+export default function PlayerSettings({
+  isAssStyled,
+  setIsAssStyled,
+  assRenderer,
+  setAssRenderer,
+}) {
   const { t } = useTranslation()
 
   return (
@@ -30,6 +43,25 @@ export default function PlayerSettings({ isAssStyled, setIsAssStyled }) {
         </ButtonGroup>
         <FormHelperText>{t('SettingsDialog.AssStyledHint')}</FormHelperText>
       </FormControl>
+
+      {isAssStyled && (
+        <>
+          <TextField
+            select
+            fullWidth
+            margin='normal'
+            variant='outlined'
+            label={t('SettingsDialog.AssRenderer')}
+            value={assRenderer}
+            onChange={e => setAssRenderer(e.target.value)}
+            helperText={t('SettingsDialog.AssRendererHint')}
+          >
+            <MenuItem value='auto'>{t('SettingsDialog.AssRendererAuto')}</MenuItem>
+            <MenuItem value='full'>{t('SettingsDialog.AssRendererFull')}</MenuItem>
+            <MenuItem value='simple'>{t('SettingsDialog.AssRendererSimple')}</MenuItem>
+          </TextField>
+        </>
+      )}
     </SecondarySettingsContent>
   )
 }

@@ -11,6 +11,9 @@
 # production
 /build
 
+# JASSUB files copied from node_modules by scripts/copy-jassub.js
+/public/jassub
+
 # misc
 .DS_Store
 .env.local

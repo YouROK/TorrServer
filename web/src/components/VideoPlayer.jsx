@@ -29,9 +29,9 @@ import Hls from 'hls.js'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { StyledDialog } from 'style/CustomMaterialUiStyles'
 import { useTranslation } from 'react-i18next'
-import AssRenderer from 'utils/ass/renderer'
+import AssPlayer from 'utils/ass'
 import TextCues from 'utils/TextCues'
-import { useBooleanPlayerPreference } from 'utils/PlayerPreferences'
+import { useBooleanPlayerPreference, useStringPlayerPreference } from 'utils/PlayerPreferences'
 import {
   fetchExternalSubtitles,
   isAssTrack,
@@ -155,11 +155,10 @@ const useStyles = makeStyles(theme => ({
       bottom: 'calc(var(--subs-lift, 112px) + 8px)',
     },
   },
+  // Not a flex container: JASSUB puts its own element next to the <video> and positions the canvas
+  // relative to it, which only works in the normal flow. object-fit centers the picture.
   videoWrapperFull: {
     height: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
     '& video': { width: '100%', height: '100%', objectFit: 'contain' },
   },
   // No activity: the controls, the buttons over the picture and the cursor are hidden and
@@ -382,6 +381,10 @@ const VideoPlayer = ({
   const dynamicTrackRef = useRef(null)
   const loadTokenRef = useRef(0)
   const assStyled = useBooleanPlayerPreference('isAssStyled', true)
+  const assRenderer = useStringPlayerPreference('assRenderer', 'auto')
+  // read when an ASS track is opened; must not re-create selectExternal when they change
+  const assOptionsRef = useRef({})
+  assOptionsRef.current = { mode: assRenderer }
   const onNotSupportedRef = useRef(onNotSupported)
   const { t } = useTranslation()
   const [open, setOpen] = useState(initiallyOpen)
@@ -629,8 +632,10 @@ const VideoPlayer = ({
           if (!response.ok) throw new Error(`status ${response.status}`)
           const text = await response.text()
           if (token !== loadTokenRef.current || !videoRef.current || !wrapperRef.current) return
-          if (!assRef.current) assRef.current = new AssRenderer(video, wrapperRef.current)
-          assRef.current.load(text)
+          if (!assRef.current) {
+            assRef.current = new AssPlayer(video, wrapperRef.current, assOptionsRef.current)
+          }
+          await assRef.current.load(text)
         } catch {
           // the file could not be read: leave the player without subtitles
           if (token === loadTokenRef.current) setExternalKey(null)
