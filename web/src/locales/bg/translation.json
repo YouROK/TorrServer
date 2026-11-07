@@ -205,6 +205,8 @@
   "AllFiles": "Всички файлове",
   "ExpandAll": "Разгъни всички",
   "CollapseAll": "Свий всички",
+  "CopyName": "Копирай името",
+  "CopyPath": "Копирай пътя",
   "Preload": "Предварително зареждане",
   "ProjectSource": "GitHub на проекта",
   "PWAGuide": {

@@ -205,6 +205,8 @@
   "AllFiles": "Усі файли",
   "ExpandAll": "Розгорнути все",
   "CollapseAll": "Згорнути все",
+  "CopyName": "Копіювати назву",
+  "CopyPath": "Копіювати шлях",
   "Preload": "Передзав.",
   "ProjectSource": "Сайт проекту",
   "PWAGuide": {

@@ -199,6 +199,8 @@
   "AllFiles": "Все файлы",
   "ExpandAll": "Развернуть все",
   "CollapseAll": "Свернуть все",
+  "CopyName": "Копировать имя",
+  "CopyPath": "Копировать путь",
   "Preload": "Предзагр.",
   "ProjectSource": "GitHub проекта",
   "PWAGuide": {

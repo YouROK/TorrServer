@@ -199,6 +199,8 @@
   "AllFiles": "All files",
   "ExpandAll": "Expand all",
   "CollapseAll": "Collapse all",
+  "CopyName": "Copy name",
+  "CopyPath": "Copy path",
   "Preload": "Preload",
   "ProjectSource": "Project GitHub",
   "PWAGuide": {

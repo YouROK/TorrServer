@@ -205,6 +205,8 @@
   "AllFiles": "Toate fișierele",
   "ExpandAll": "Extinde tot",
   "CollapseAll": "Restrânge tot",
+  "CopyName": "Copiază numele",
+  "CopyPath": "Copiază calea",
   "Preload": "Preîncărcare",
   "ProjectSource": "GitHub",
   "PWAGuide": {
