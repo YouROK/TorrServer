@@ -48,6 +48,9 @@ function getMimeType(url) {
   }
 }
 
+// The controls hide after this time without movement of the mouse, touches and keys
+const IDLE_MS = 3000
+
 // MUI renders menus and tooltips in a layer of <body>, but in fullscreen the browser shows only the fullscreen
 // element and its descendants, so they stay behind the video: in fullscreen they must be created inside it
 const portalContainer = () => document.fullscreenElement || document.body
@@ -123,6 +126,16 @@ const useStyles = makeStyles(theme => ({
     alignItems: 'center',
     justifyContent: 'center',
     '& video': { width: '100%', height: '100%', objectFit: 'contain' },
+  },
+  // No activity: the controls, the buttons over the picture and the cursor are hidden.
+  // Defined after videoWrapper, so it wins over its :hover rules.
+  videoWrapperIdle: {
+    cursor: 'none',
+    '& video': { cursor: 'none' },
+    '& $controls, &:hover $controls, & $centralControl, &:hover $centralControl, & $skipButton, &:hover $skipButton': {
+      opacity: 0,
+      pointerEvents: 'none',
+    },
   },
   video: {
     width: '100%',
@@ -331,6 +344,7 @@ const VideoPlayer = ({
   const [muted, setMuted] = useState(false)
   const [volume, setVolume] = useState(1)
   const [fullscreen, setFullscreen] = useState(false)
+  const [idle, setIdle] = useState(false)
   const [anchorEl, setAnchorEl] = useState(null)
   const [speed, setSpeed] = useState(1)
   const [subtitleAnchorEl, setSubtitleAnchorEl] = useState(null)
@@ -478,6 +492,32 @@ const VideoPlayer = ({
     document.addEventListener('fullscreenchange', onFull)
     return () => document.removeEventListener('fullscreenchange', onFull)
   }, [])
+
+  // While the video plays, the controls hide after a few seconds without activity (the cursor too); a move
+  // of the mouse, a touch or a key brings them back. On pause and while a menu is open they stay.
+  const menuOpen = Boolean(anchorEl || subtitleAnchorEl)
+  useEffect(() => {
+    const wrapper = wrapperRef.current
+    if (!open || !playing || !wrapper || menuOpen) {
+      setIdle(false)
+      return undefined
+    }
+    let timer = 0
+    const wake = () => {
+      setIdle(false)
+      window.clearTimeout(timer)
+      timer = window.setTimeout(() => setIdle(true), IDLE_MS)
+    }
+    wake()
+    const events = ['mousemove', 'pointerdown', 'touchstart', 'wheel']
+    events.forEach(name => wrapper.addEventListener(name, wake, { passive: true }))
+    document.addEventListener('keydown', wake)
+    return () => {
+      window.clearTimeout(timer)
+      events.forEach(name => wrapper.removeEventListener(name, wake))
+      document.removeEventListener('keydown', wake)
+    }
+  }, [open, playing, menuOpen])
 
   const openSpeedMenu = e => setAnchorEl(e.currentTarget)
   const closeSpeedMenu = () => setAnchorEl(null)
@@ -640,7 +680,9 @@ const VideoPlayer = ({
         <DialogContent style={{ padding: 0 }}>
           <Box
             ref={wrapperRef}
-            className={`${classes.videoWrapper} ${fullscreen ? classes.videoWrapperFull : ''}`}
+            className={`${classes.videoWrapper} ${fullscreen ? classes.videoWrapperFull : ''} ${
+              idle ? classes.videoWrapperIdle : ''
+            }`}
             onClick={handlePlayPause}
             style={isMobile ? { minHeight: 240 } : {}}
           >
