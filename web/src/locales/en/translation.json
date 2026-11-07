@@ -1,4 +1,17 @@
 {
+  "GoogleCast": {
+    "Start": "Google Cast",
+    "Disconnect": "Stop casting",
+    "Loading": "Loading Google Cast…",
+    "Connecting": "Connecting to Google Cast…",
+    "NoDevices": "No Google Cast devices available",
+    "HTTPS": "Google Cast requires HTTPS and a supported browser. Local playback is still available.",
+    "Unavailable": "Google Cast is unavailable. Use a supported browser and reopen the player to retry loading the SDK.",
+    "Url": "The receiver needs a reachable HTTP(S) media URL without embedded credentials. Check the external media address; localhost cannot be used.",
+    "Media": "This file type cannot be sent directly to Google Cast. Use a supported MP4, WebM, Ogg or HLS stream.",
+    "Session": "Could not connect to Google Cast. Check the receiver and try again.",
+    "Load": "The receiver could not load this stream. Check its network access and media compatibility, then try again."
+  },
   "About": "About",
   "Actions": "Actions",
   "Add": "Add",
