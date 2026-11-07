@@ -29,6 +29,7 @@ import Hls from 'hls.js'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { StyledDialog } from 'style/CustomMaterialUiStyles'
 import { useTranslation } from 'react-i18next'
+import TextCues from 'utils/TextCues'
 import { fetchExternalSubtitles, linkFileIndex, subtitleFileUrl, trackLabel } from 'utils/Subs'
 
 import { StyledButton } from './TorrentCard/style'
@@ -119,6 +120,32 @@ const useStyles = makeStyles(theme => ({
     '&:hover $controls, &:hover $centralControl, &:hover $skipButton': {
       opacity: 1,
     },
+    '&:hover $subtitleLayer': {
+      bottom: 'calc(var(--subs-lift, 112px) + 8px)',
+    },
+  },
+  // Text subtitles (WebVTT); the lift above the controls is measured by the component
+  subtitleLayer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: theme.spacing(3),
+    padding: theme.spacing(0, 6),
+    zIndex: 2,
+    textAlign: 'center',
+    color: '#fff',
+    fontSize: 'clamp(15px, 2.2vw, 34px)',
+    lineHeight: 1.3,
+    pointerEvents: 'none',
+    transition: 'bottom 200ms',
+    '& > div': {
+      whiteSpace: 'pre-wrap',
+      textShadow: '0 0 4px #000, 0 0 4px #000, 1px 1px 2px #000, -1px -1px 2px #000',
+    },
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(0, 2),
+      bottom: 'calc(var(--subs-lift, 112px) + 8px)',
+    },
   },
   videoWrapperFull: {
     height: '100%',
@@ -127,14 +154,17 @@ const useStyles = makeStyles(theme => ({
     justifyContent: 'center',
     '& video': { width: '100%', height: '100%', objectFit: 'contain' },
   },
-  // No activity: the controls, the buttons over the picture and the cursor are hidden.
-  // Defined after videoWrapper, so it wins over its :hover rules.
+  // No activity: the controls, the buttons over the picture and the cursor are hidden and
+  // the text subtitles go back to the bottom. Defined after videoWrapper, so it wins over its :hover rules.
   videoWrapperIdle: {
     cursor: 'none',
     '& video': { cursor: 'none' },
     '& $controls, &:hover $controls, & $centralControl, &:hover $centralControl, & $skipButton, &:hover $skipButton': {
       opacity: 0,
       pointerEvents: 'none',
+    },
+    '& $subtitleLayer, &:hover $subtitleLayer': {
+      bottom: theme.spacing(3),
     },
   },
   video: {
@@ -331,6 +361,9 @@ const VideoPlayer = ({
   const isMobile = useMediaQuery('@media (max-width:930px)')
   const videoRef = useRef(null)
   const wrapperRef = useRef(null)
+  const controlsRef = useRef(null)
+  const textLayerRef = useRef(null)
+  const [controlsHeight, setControlsHeight] = useState(112)
   const hlsRef = useRef(null)
   const dynamicTrackRef = useRef(null)
   const onNotSupportedRef = useRef(onNotSupported)
@@ -381,6 +414,7 @@ const VideoPlayer = ({
 
     if (Hls.isSupported()) {
       hlsPlayer = new Hls()
+      hlsPlayer.subtitleDisplay = false // text subtitles are drawn by TextCues
       hlsRef.current = hlsPlayer
       hlsPlayer.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
         setSubtitleTracks(data.subtitleTracks || [])
@@ -429,6 +463,24 @@ const VideoPlayer = ({
       }
     }
   }, [hls, open, videoElement, videoSrc])
+
+  useEffect(() => {
+    if (!open || !videoElement || !textLayerRef.current) return undefined
+    const cues = new TextCues(videoElement, textLayerRef.current)
+    return () => cues.destroy()
+  }, [open, videoElement])
+
+  // Height of the controls bar: text subtitles are drawn above it
+  useEffect(() => {
+    const controls = controlsRef.current
+    if (!open || !controls) return undefined
+    const update = () => setControlsHeight(controls.offsetHeight || 112)
+    update()
+    if (typeof ResizeObserver === 'undefined') return undefined
+    const observer = new ResizeObserver(update)
+    observer.observe(controls)
+    return () => observer.disconnect()
+  }, [open, videoElement])
 
   useEffect(() => {
     if (!open || !heartbeatSrc) return undefined
@@ -551,7 +603,7 @@ const VideoPlayer = ({
       element.src = subtitleFileUrl(track)
       video.appendChild(element)
       dynamicTrackRef.current = element
-      element.track.mode = 'showing'
+      element.track.mode = 'hidden' // TextCues draws it
     },
     [clearExternal],
   )
@@ -583,7 +635,7 @@ const VideoPlayer = ({
     clearExternal()
     const hlsPlayer = hlsRef.current
     if (hlsPlayer) {
-      hlsPlayer.subtitleDisplay = index >= 0
+      hlsPlayer.subtitleDisplay = false
       hlsPlayer.subtitleTrack = index
     } else if (videoRef.current) {
       disableNativeTracks(videoRef.current)
@@ -684,7 +736,7 @@ const VideoPlayer = ({
               idle ? classes.videoWrapperIdle : ''
             }`}
             onClick={handlePlayPause}
-            style={isMobile ? { minHeight: 240 } : {}}
+            style={{ '--subs-lift': `${controlsHeight}px`, ...(isMobile ? { minHeight: 240 } : {}) }}
           >
             <video
               autoPlay
@@ -698,6 +750,7 @@ const VideoPlayer = ({
             >
               <track kind='captions' srcLang='en' label='English captions' src={hls ? undefined : captionSrc} default />
             </video>
+            <div ref={textLayerRef} className={classes.subtitleLayer} />
             {loading && (
               <Box className={classes.loadingOverlay}>
                 <CircularProgress fontSize='medium' />
@@ -712,7 +765,7 @@ const VideoPlayer = ({
             >
               <PlayArrowIcon fontSize='medium' />
             </IconButton>
-            <Box className={classes.controls} onClick={e => e.stopPropagation()}>
+            <Box ref={controlsRef} className={classes.controls} onClick={e => e.stopPropagation()}>
               {isMobile && (
                 <Box className={classes.timeRow}>
                   <Typography variant='body2'>
