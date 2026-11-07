@@ -29,8 +29,16 @@ import Hls from 'hls.js'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { StyledDialog } from 'style/CustomMaterialUiStyles'
 import { useTranslation } from 'react-i18next'
+import AssRenderer from 'utils/ass/renderer'
 import TextCues from 'utils/TextCues'
-import { fetchExternalSubtitles, linkFileIndex, subtitleFileUrl, trackLabel } from 'utils/Subs'
+import { useBooleanPlayerPreference } from 'utils/PlayerPreferences'
+import {
+  fetchExternalSubtitles,
+  isAssTrack,
+  linkFileIndex,
+  subtitleFileUrl,
+  trackLabel,
+} from 'utils/Subs'
 
 import { StyledButton } from './TorrentCard/style'
 
@@ -303,10 +311,12 @@ const externalHlsPosition = track => {
 }
 
 // Entries of the subtitle menu. Labels start with [int] for tracks inside the video file and
-// with [ext] for external files.
+// with [ext] for external files. An ASS/SSA file is offered in one format: with styling
+// (rendered by the player) or as text (WebVTT), depending on the setting.
 //  kind 'hls'  - a track of the HLS playlist (embedded tracks and the WebVTT copy of external files)
+//  kind 'ass'  - an ASS/SSA file shown with its styling
 //  kind 'text' - an external file shown as WebVTT (direct playback only)
-const buildSubtitleMenu = (hlsMode, subtitleTracks, externalTracks) => {
+const buildSubtitleMenu = (hlsMode, subtitleTracks, externalTracks, assStyled) => {
   const items = []
   const hlsExternal = new Map()
   subtitleTracks.forEach((track, index) => {
@@ -320,7 +330,10 @@ const buildSubtitleMenu = (hlsMode, subtitleTracks, externalTracks) => {
 
   externalTracks.forEach((track, position) => {
     const label = `[ext] ${trackLabel(track)}`
-    if (!hlsMode) {
+    if (assStyled && isAssTrack(track)) {
+      items.push({ key: `ass:${track.index}`, label, kind: 'ass', track })
+      hlsExternal.delete(position) // its WebVTT copy is not offered
+    } else if (!hlsMode) {
       items.push({ key: `text:${track.index}`, label, kind: 'text', track })
     } else if (hlsExternal.has(position)) {
       const { index } = hlsExternal.get(position)
@@ -365,7 +378,10 @@ const VideoPlayer = ({
   const textLayerRef = useRef(null)
   const [controlsHeight, setControlsHeight] = useState(112)
   const hlsRef = useRef(null)
+  const assRef = useRef(null)
   const dynamicTrackRef = useRef(null)
+  const loadTokenRef = useRef(0)
+  const assStyled = useBooleanPlayerPreference('isAssStyled', true)
   const onNotSupportedRef = useRef(onNotSupported)
   const { t } = useTranslation()
   const [open, setOpen] = useState(initiallyOpen)
@@ -384,7 +400,7 @@ const VideoPlayer = ({
   const [subtitleTracks, setSubtitleTracks] = useState([])
   const [subtitleTrack, setSubtitleTrack] = useState(-1)
   const [externalTracks, setExternalTracks] = useState([])
-  const [externalKey, setExternalKey] = useState(null) // 'text:<index>' of the selected external track
+  const [externalKey, setExternalKey] = useState(null) // 'ass:<index>' or 'text:<index>' of the selected external track
 
   const setVideoNode = useCallback(node => {
     videoRef.current = node
@@ -579,6 +595,8 @@ const VideoPlayer = ({
     closeSpeedMenu()
   }
   const clearExternal = useCallback(() => {
+    loadTokenRef.current += 1
+    if (assRef.current) assRef.current.unload()
     if (dynamicTrackRef.current) {
       dynamicTrackRef.current.remove()
       dynamicTrackRef.current = null
@@ -586,26 +604,49 @@ const VideoPlayer = ({
     setExternalKey(null)
   }, [])
 
-  // Direct playback: shows an external subtitle file as WebVTT through a <track> element.
-  // (With HLS the server puts the WebVTT copy of external files into the playlist.)
+  // Shows an external subtitle file: variant 'ass' draws it with its styling,
+  // 'text' shows it as WebVTT (direct playback; with HLS the server provides the WebVTT copy)
   const selectExternal = useCallback(
-    track => {
+    async (track, variant) => {
       const video = videoRef.current
       if (!video) return
       clearExternal()
-      disableNativeTracks(video)
-      setExternalKey(`text:${track.index}`)
+      const token = loadTokenRef.current
 
-      const element = document.createElement('track')
-      element.kind = 'subtitles'
-      element.label = trackLabel(track)
-      if (track.lang && track.lang !== 'und') element.srclang = track.lang
-      element.src = subtitleFileUrl(track)
-      video.appendChild(element)
-      dynamicTrackRef.current = element
-      element.track.mode = 'hidden' // TextCues draws it
+      // switch off the other subtitle sources
+      const hlsPlayer = hlsRef.current
+      if (hlsPlayer) {
+        hlsPlayer.subtitleDisplay = false
+        hlsPlayer.subtitleTrack = -1
+      }
+      setSubtitleTrack(-1)
+      disableNativeTracks(video)
+      setExternalKey(`${variant}:${track.index}`)
+
+      if (variant === 'ass') {
+        try {
+          const response = await fetch(subtitleFileUrl(track, true))
+          if (!response.ok) throw new Error(`status ${response.status}`)
+          const text = await response.text()
+          if (token !== loadTokenRef.current || !videoRef.current || !wrapperRef.current) return
+          if (!assRef.current) assRef.current = new AssRenderer(video, wrapperRef.current)
+          assRef.current.load(text)
+        } catch {
+          // the file could not be read: leave the player without subtitles
+          if (token === loadTokenRef.current) setExternalKey(null)
+        }
+      } else if (!hls) {
+        const element = document.createElement('track')
+        element.kind = 'subtitles'
+        element.label = trackLabel(track)
+        if (track.lang && track.lang !== 'und') element.srclang = track.lang
+        element.src = subtitleFileUrl(track, false)
+        video.appendChild(element)
+        dynamicTrackRef.current = element
+        element.track.mode = 'hidden' // TextCues draws it
+      }
     },
-    [clearExternal],
+    [hls, clearExternal],
   )
 
   useEffect(() => {
@@ -626,8 +667,22 @@ const VideoPlayer = ({
     if (hls || !externalTracks.length || !captionSrc) return
     const index = linkFileIndex(captionSrc)
     const track = externalTracks.find(item => item.index === index)
-    if (track) selectExternal(track)
+    if (track) selectExternal(track, 'text')
   }, [externalTracks, hls, captionSrc, selectExternal])
+
+  useEffect(() => {
+    if (open || !assRef.current) return
+    assRef.current.destroy()
+    assRef.current = null
+  }, [open])
+
+  useEffect(
+    () => () => {
+      if (assRef.current) assRef.current.destroy()
+      assRef.current = null
+    },
+    [],
+  )
 
   const openSubtitleMenu = e => setSubtitleAnchorEl(e.currentTarget)
   const closeSubtitleMenu = () => setSubtitleAnchorEl(null)
@@ -643,8 +698,8 @@ const VideoPlayer = ({
     setSubtitleTrack(index)
     closeSubtitleMenu()
   }
-  const changeExternalTrack = track => {
-    selectExternal(track)
+  const changeExternalTrack = (track, variant) => {
+    selectExternal(track, variant)
     closeSubtitleMenu()
   }
   const downloadVideo = () => {
@@ -688,7 +743,7 @@ const VideoPlayer = ({
     return () => document.removeEventListener('keydown', handleKey)
   }, [handleKey])
 
-  const subtitleMenu = buildSubtitleMenu(hls, subtitleTracks, externalTracks)
+  const subtitleMenu = buildSubtitleMenu(hls, subtitleTracks, externalTracks, assStyled)
   const hasSubtitleMenu = subtitleMenu.length > 0
   const subtitlesOn = subtitleTrack >= 0 || externalKey !== null
   const isItemSelected = item => {
@@ -697,7 +752,7 @@ const VideoPlayer = ({
   }
   const selectItem = item => {
     if (item.kind === 'hls') changeSubtitleTrack(item.hlsIndex)
-    else changeExternalTrack(item.track)
+    else changeExternalTrack(item.track, item.kind)
   }
 
   return (

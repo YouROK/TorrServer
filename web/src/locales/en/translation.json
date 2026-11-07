@@ -228,6 +228,10 @@
   "SettingsDialog": {
     "AdditionalSettings": "Additional Settings",
     "AddRetrackers": "Add retrackers",
+    "AssFormatGraphic": "Graphic (with styling)",
+    "AssFormatText": "Text (WebVTT)",
+    "AssStyled": "ASS subtitle format",
+    "AssStyledHint": "Graphic: external ASS/SSA files are drawn with their fonts, colours and positions. Text: they are converted to plain WebVTT text. Each file is offered in one format only.",
     "BBoltDatabase": "BBolt Database",
     "Bonjour": "Bonjour (mDNS)",
     "BonjourHint": "Advertise on the LAN for local discovery (mDNS)",
@@ -267,6 +271,7 @@
     "MobileAppSettings": "Players",
     "PeersListenPort": "Peers Listen Port",
     "PeersListenPortHint": "1024 - 65535, 0 - random",
+    "PlayerSettings": "Built-in player",
     "PreloadCache": "Preload Cache Before Play",
     "ProMode": "PRO mode",
     "RAM": "RAM",

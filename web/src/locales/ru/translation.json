@@ -228,6 +228,10 @@
   "SettingsDialog": {
     "AdditionalSettings": "Расширенные настройки",
     "AddRetrackers": "Добавлять",
+    "AssFormatGraphic": "Графический (с оформлением)",
+    "AssFormatText": "Текстовый (WebVTT)",
+    "AssStyled": "Формат ASS-субтитров",
+    "AssStyledHint": "Графический: внешние ASS/SSA-файлы рисуются со шрифтами, цветами и позициями. Текстовый: они преобразуются в обычный текст WebVTT. Каждый файл доступен только в одном формате.",
     "BBoltDatabase": "База данных BBolt",
     "Bonjour": "Bonjour (mDNS)",
     "BonjourHint": "Объявлять в локальной сети для обнаружения (mDNS)",
@@ -267,6 +271,7 @@
     "MobileAppSettings": "Плееры",
     "PeersListenPort": "Порт для входящих подключений",
     "PeersListenPortHint": "1024 - 65535, 0 - авто",
+    "PlayerSettings": "Встроенный плеер",
     "PreloadCache": "Буфер предзагрузки",
     "ProMode": "ПРО-режим",
     "RAM": "Оперативная память",

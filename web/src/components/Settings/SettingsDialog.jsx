@@ -19,6 +19,7 @@ import { a11yProps, TabPanel } from './tabComponents'
 import PrimarySettingsComponent from './PrimarySettingsComponent'
 import SecondarySettingsComponent from './SecondarySettingsComponent'
 import MobileAppSettings from './MobileAppSettings'
+import PlayerSettings from './PlayerSettings'
 import TorznabSettings from './TorznabSettings'
 import TMDBSettings from './TMDBSettings'
 import GStreamerSettings from './GStreamerSettings'
@@ -42,6 +43,7 @@ export default function SettingsDialog({ handleClose }) {
   const [isInfuseUsed, setIsInfuseUsed] = useState(JSON.parse(localStorage.getItem('isInfuseUsed')) ?? false)
   const [isSenPlayerUsed, setIsSenPlayerUsed] = useState(JSON.parse(localStorage.getItem('isSenPlayerUsed')) ?? false)
   const [isIinaUsed, setIsIinaUsed] = useState(JSON.parse(localStorage.getItem('isIinaUsed')) ?? false)
+  const [isAssStyled, setIsAssStyled] = useState(JSON.parse(localStorage.getItem('isAssStyled')) ?? true)
   const [gstAvailable, setGstAvailable] = useState(false)
   const [wafDirty, setWAFDirty] = useState(false)
 
@@ -90,6 +92,7 @@ export default function SettingsDialog({ handleClose }) {
     localStorage.setItem('isInfuseUsed', isInfuseUsed)
     localStorage.setItem('isSenPlayerUsed', isSenPlayerUsed)
     localStorage.setItem('isIinaUsed', isIinaUsed)
+    localStorage.setItem('isAssStyled', isAssStyled)
     notifyPlayerSettingsChanged()
   }
 
@@ -256,6 +259,7 @@ export default function SettingsDialog({ handleClose }) {
                   isIinaUsed={isIinaUsed}
                   setIsIinaUsed={setIsIinaUsed}
                 />
+                <PlayerSettings isAssStyled={isAssStyled} setIsAssStyled={setIsAssStyled} />
               </TabPanel>
 
               <TabPanel value={selectedTab} index={tabAccess} dir={direction}>
