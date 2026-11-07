@@ -33,6 +33,9 @@ const cellRatio = (name, bold, italic) => {
   return ratio
 }
 
+// How long to wait for fonts from the torrent before drawing with fallback fonts
+const FONT_WAIT_MS = 8000
+
 const styleSpan = (span, seg, style, sx, sy, border) => {
   const s = span.style
   s.fontFamily = fontFamily(seg.fn)
@@ -74,6 +77,7 @@ export default class AssRenderer {
     this.nodes = new Map()
     this.geo = null
     this.raf = 0
+    this.faces = []
 
     this.layer = document.createElement('div')
     Object.assign(this.layer.style, {
@@ -102,6 +106,13 @@ export default class AssRenderer {
     ;['pause', 'ended'].forEach(name => video.addEventListener(name, this.onPause))
     ;['loadedmetadata', 'resize'].forEach(name => video.addEventListener(name, this.onGeometry))
     document.addEventListener('fullscreenchange', this.onGeometry)
+    // a font finished loading: sizes of the lines change, lay them out again
+    this.onFontsLoaded = () => {
+      cellCache.clear()
+      this.clear()
+      this.tick()
+    }
+    if (document.fonts?.addEventListener) document.fonts.addEventListener('loadingdone', this.onFontsLoaded)
 
     if (typeof ResizeObserver !== 'undefined') {
       this.observer = new ResizeObserver(this.onGeometry)
@@ -116,16 +127,47 @@ export default class AssRenderer {
 
   // Parses an ASS file and shows it. Returns the number of drawable events.
   load(text) {
+    return this.loadScript(parseAss(text))
+  }
+
+  loadScript(script) {
     this.clear()
-    this.script = parseAss(text)
+    this.script = script
     this.tick()
     return this.script.events.length
+  }
+
+  // Makes fonts [{ name, url, bold, italic, byFamily }] available to the page. Waits for them,
+  // but not longer than a few seconds: fonts come from the torrent and may be slow.
+  async setFonts(faces) {
+    this.removeFonts()
+    if (!faces.length || !window.FontFace || !document.fonts) return
+    const loading = faces.map(face => {
+      const weight = face.byFamily ? (face.bold ? '700' : '400') : '100 900'
+      const style = face.byFamily && face.italic ? 'italic' : 'normal'
+      const fontFace = new window.FontFace(face.name, `url("${face.url.replace(/"/g, '%22')}")`, { weight, style })
+      this.faces.push(fontFace)
+      document.fonts.add(fontFace)
+      return fontFace.load().catch(() => null)
+    })
+    const timeout = new Promise(resolve => {
+      window.setTimeout(resolve, FONT_WAIT_MS)
+    })
+    await Promise.race([Promise.all(loading), timeout])
+  }
+
+  removeFonts() {
+    cellCache.clear()
+    if (!document.fonts) return
+    this.faces.forEach(face => document.fonts.delete(face))
+    this.faces = []
   }
 
   // Hides the current subtitles but keeps the renderer for the next track.
   unload() {
     this.clear()
     this.script = null
+    this.removeFonts()
   }
 
   destroy() {
@@ -135,6 +177,8 @@ export default class AssRenderer {
     ;['pause', 'ended'].forEach(name => this.video.removeEventListener(name, this.onPause))
     ;['loadedmetadata', 'resize'].forEach(name => this.video.removeEventListener(name, this.onGeometry))
     document.removeEventListener('fullscreenchange', this.onGeometry)
+    if (document.fonts?.removeEventListener) document.fonts.removeEventListener('loadingdone', this.onFontsLoaded)
+    this.removeFonts()
     if (this.observer) this.observer.disconnect()
     else window.removeEventListener('resize', this.onGeometry)
     this.clear()

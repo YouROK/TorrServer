@@ -1,5 +1,7 @@
+import { parseAss } from './parser'
 import AssRenderer from './renderer'
 import JassubRenderer, { jassubSupported, loadJassub } from './jassub'
+import { resolveFonts } from './torfonts'
 
 const log = (...args) => {
   // eslint-disable-next-line no-console
@@ -16,9 +18,9 @@ export const chooseRenderer = mode => {
 }
 
 // Shows ASS subtitles over a video with the best available renderer:
-// libass (JASSUB) or the simple DOM renderer.
+// libass (JASSUB) or the simple DOM renderer, with fonts from the torrent.
 //
-// options: { mode: 'auto' | 'full' | 'simple' }
+// options: { mode: 'auto' | 'full' | 'simple', fonts: boolean, fontFiles: [{ path, url, source }] }
 export default class AssPlayer {
   constructor(video, container, options = {}) {
     this.video = video
@@ -30,22 +32,36 @@ export default class AssPlayer {
     this.kind = null
   }
 
-  async load(text) {
+  // fontSource: where the fonts of this track should come from first when the same font is in several places
+  // ('external': files of the torrent, 'embedded': attached to the video file)
+  async load(text, fontSource) {
     this.token += 1
     const { token } = this
     this.unload()
+
+    const script = parseAss(text)
+    let faces = []
+    if (this.options.fonts !== false && this.options.fontFiles?.length) {
+      try {
+        faces = await resolveFonts(this.options.fontFiles, script.fonts, fontSource)
+      } catch (error) {
+        log('fonts from the torrent are not available:', error.message)
+      }
+    }
+    if (token !== this.token) return
 
     if (chooseRenderer(this.options.mode) === 'full') {
       try {
         const JASSUB = await loadJassub()
         if (token !== this.token) return
-        this.jassub = new JassubRenderer(JASSUB, this.video, text, error => {
+        const urls = [...new Set(faces.map(face => face.url))]
+        this.jassub = new JassubRenderer(JASSUB, this.video, text, urls, error => {
           if (token !== this.token) return
           log('libass failed, using the simple renderer:', error.message)
-          this.showSimple(text, token)
+          this.showSimple(script, faces, token)
         })
         this.kind = 'full'
-        log('libass (JASSUB)')
+        log(`libass (JASSUB), ${urls.length} font file(s) from the torrent`)
         return
       } catch (error) {
         log('libass is not available, using the simple renderer:', error.message)
@@ -55,19 +71,20 @@ export default class AssPlayer {
         }
       }
     }
-    this.showSimple(text, token)
+    await this.showSimple(script, faces, token)
   }
 
-  showSimple(text, token) {
+  async showSimple(script, faces, token) {
     if (this.jassub) {
       this.jassub.destroy()
       this.jassub = null
     }
-    if (token !== this.token) return
     if (!this.simple) this.simple = new AssRenderer(this.video, this.container)
-    this.simple.load(text)
+    await this.simple.setFonts(faces)
+    if (token !== this.token) return
+    this.simple.loadScript(script)
     this.kind = 'simple'
-    log('simple renderer')
+    log(`simple renderer, ${faces.length} font face(s) from the torrent`)
   }
 
   unload() {

@@ -45,6 +45,7 @@ export default function SettingsDialog({ handleClose }) {
   const [isIinaUsed, setIsIinaUsed] = useState(JSON.parse(localStorage.getItem('isIinaUsed')) ?? false)
   const [isAssStyled, setIsAssStyled] = useState(JSON.parse(localStorage.getItem('isAssStyled')) ?? true)
   const [assRenderer, setAssRenderer] = useState(localStorage.getItem('assRenderer') || 'auto')
+  const [assFonts, setAssFonts] = useState(JSON.parse(localStorage.getItem('assFonts')) ?? true)
   const [gstAvailable, setGstAvailable] = useState(false)
   const [wafDirty, setWAFDirty] = useState(false)
 
@@ -95,6 +96,7 @@ export default function SettingsDialog({ handleClose }) {
     localStorage.setItem('isIinaUsed', isIinaUsed)
     localStorage.setItem('isAssStyled', isAssStyled)
     localStorage.setItem('assRenderer', assRenderer)
+    localStorage.setItem('assFonts', assFonts)
     notifyPlayerSettingsChanged()
   }
 
@@ -266,6 +268,8 @@ export default function SettingsDialog({ handleClose }) {
                   setIsAssStyled={setIsAssStyled}
                   assRenderer={assRenderer}
                   setAssRenderer={setAssRenderer}
+                  assFonts={assFonts}
+                  setAssFonts={setAssFonts}
                 />
               </TabPanel>
 

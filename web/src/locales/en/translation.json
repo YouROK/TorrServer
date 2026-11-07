@@ -228,6 +228,8 @@
   "SettingsDialog": {
     "AdditionalSettings": "Additional Settings",
     "AddRetrackers": "Add retrackers",
+    "AssFonts": "Fonts from the torrent",
+    "AssFontsHint": "Use font files from the torrent and, if the server provides them, fonts attached to the video file for ASS subtitles. Reads small parts of the font files.",
     "AssFormatGraphic": "Graphic (with styling)",
     "AssFormatText": "Text (WebVTT)",
     "AssRenderer": "ASS renderer",

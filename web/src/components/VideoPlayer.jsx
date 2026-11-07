@@ -34,6 +34,8 @@ import TextCues from 'utils/TextCues'
 import { useBooleanPlayerPreference, useStringPlayerPreference } from 'utils/PlayerPreferences'
 import {
   fetchExternalSubtitles,
+  fetchFontFiles,
+  fontsListUrl,
   isAssTrack,
   linkFileIndex,
   subtitleFileUrl,
@@ -381,10 +383,12 @@ const VideoPlayer = ({
   const dynamicTrackRef = useRef(null)
   const loadTokenRef = useRef(0)
   const assStyled = useBooleanPlayerPreference('isAssStyled', true)
+  const assFonts = useBooleanPlayerPreference('assFonts', true)
   const assRenderer = useStringPlayerPreference('assRenderer', 'auto')
+  const fontsRequestRef = useRef(null) // the list of fonts for ASS: GET /subs/{hash}/{id}?fonts
   // read when an ASS track is opened; must not re-create selectExternal when they change
   const assOptionsRef = useRef({})
-  assOptionsRef.current = { mode: assRenderer }
+  assOptionsRef.current = { mode: assRenderer, fonts: assFonts }
   const onNotSupportedRef = useRef(onNotSupported)
   const { t } = useTranslation()
   const [open, setOpen] = useState(initiallyOpen)
@@ -632,10 +636,11 @@ const VideoPlayer = ({
           if (!response.ok) throw new Error(`status ${response.status}`)
           const text = await response.text()
           if (token !== loadTokenRef.current || !videoRef.current || !wrapperRef.current) return
-          if (!assRef.current) {
-            assRef.current = new AssPlayer(video, wrapperRef.current, assOptionsRef.current)
-          }
-          await assRef.current.load(text)
+          const fontFiles = (await fontsRequestRef.current) || []
+          if (token !== loadTokenRef.current || !videoRef.current || !wrapperRef.current) return
+          if (!assRef.current) assRef.current = new AssPlayer(video, wrapperRef.current)
+          assRef.current.options = { ...assOptionsRef.current, fontFiles }
+          await assRef.current.load(text, 'external')
         } catch {
           // the file could not be read: leave the player without subtitles
           if (token === loadTokenRef.current) setExternalKey(null)
@@ -665,6 +670,18 @@ const VideoPlayer = ({
       setExternalTracks([])
     }
   }, [open, subsSrc])
+
+  // Fonts for ASS subtitles, from the torrent and from the video file, in one list. The request is made when
+  // they can be used; a track waits for it. Old servers do not know ?fonts: the list is empty then.
+  useEffect(() => {
+    if (!open || !subsSrc || !assStyled || !assFonts) return undefined
+    const controller = new AbortController()
+    fontsRequestRef.current = fetchFontFiles(fontsListUrl(subsSrc), controller.signal)
+    return () => {
+      controller.abort()
+      fontsRequestRef.current = null
+    }
+  }, [open, subsSrc, assStyled, assFonts])
 
   // Direct playback: the same-name .srt/.vtt file used to be shown through a static <track>.
   // When the track list is available, pick that file from the list instead.

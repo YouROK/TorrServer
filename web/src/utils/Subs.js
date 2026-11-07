@@ -36,3 +36,27 @@ export const linkFileIndex = link => {
 
 // Name of an external track: its title, or the file name
 export const trackLabel = track => track.title || track.name || 'Subtitle'
+
+// Link to the fonts for the ASS subtitles of a video file: the font files of the torrent and the fonts attached
+// to the video file, in one list (GET /subs/{hash}/{id}?fonts)
+export const fontsListUrl = subsLink => `${subsLink}?fonts`
+
+// Resolves to [{ path, url, source }], source is 'external' (a file of the torrent) or 'embedded' (attached to
+// the video file). [] on any error. An old server answers ?fonts with the list of subtitles: it has no 'source'.
+export const fetchFontFiles = async (url, signal) => {
+  try {
+    const response = await fetch(url, { signal })
+    if (!response.ok) return []
+    const list = await response.json()
+    if (!Array.isArray(list)) return []
+    return list
+      .filter(item => item && typeof item.source === 'string' && item.name && item.url)
+      .map(item => ({
+        path: item.name,
+        url: serverUrl(item.url).toString(),
+        source: item.source,
+      }))
+  } catch {
+    return []
+  }
+}

@@ -506,5 +506,16 @@ export const parseAss = source => {
   })
 
   events.sort((a, b) => a.start - b.start || a.order - b.order)
-  return { info, playResX, playResY, scaledBorder, styles, events }
+
+  // Fonts used by the drawn text (style fonts and \fn overrides)
+  const fonts = new Set()
+  events.forEach(ev =>
+    ev.segments.forEach(seg => {
+      const name = String(seg.fn || '')
+        .replace(/^@/, '')
+        .trim()
+      if (name) fonts.add(name)
+    }),
+  )
+  return { info, playResX, playResY, scaledBorder, styles, events, fonts: [...fonts] }
 }

@@ -3,9 +3,11 @@ import {
   Button,
   ButtonGroup,
   FormControl,
+  FormControlLabel,
   FormHelperText,
   FormLabel,
   MenuItem,
+  Switch,
   TextField,
 } from '@material-ui/core'
 
@@ -16,6 +18,8 @@ export default function PlayerSettings({
   setIsAssStyled,
   assRenderer,
   setAssRenderer,
+  assFonts,
+  setAssFonts,
 }) {
   const { t } = useTranslation()
 
@@ -60,6 +64,15 @@ export default function PlayerSettings({
             <MenuItem value='full'>{t('SettingsDialog.AssRendererFull')}</MenuItem>
             <MenuItem value='simple'>{t('SettingsDialog.AssRendererSimple')}</MenuItem>
           </TextField>
+
+          <FormControlLabel
+            control={<Switch checked={assFonts} onChange={e => setAssFonts(e.target.checked)} color='secondary' />}
+            label={t('SettingsDialog.AssFonts')}
+            labelPlacement='start'
+          />
+          <div>
+            <small>{t('SettingsDialog.AssFontsHint')}</small>
+          </div>
         </>
       )}
     </SecondarySettingsContent>

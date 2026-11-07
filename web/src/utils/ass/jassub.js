@@ -31,7 +31,8 @@ export const loadJassub = () => {
 }
 
 export default class JassubRenderer {
-  constructor(JASSUB, video, text, onError) {
+  // fontUrls: URLs of font files that should be available to libass
+  constructor(JASSUB, video, text, fontUrls, onError) {
     this.destroyed = false
     this.instance = new JASSUB({
       video,
@@ -39,6 +40,7 @@ export default class JassubRenderer {
       workerUrl: assetUrl('jassub-worker.js'),
       wasmUrl: assetUrl('jassub-worker.wasm'),
       modernWasmUrl: assetUrl('jassub-worker-modern.wasm'),
+      fonts: fontUrls,
       availableFonts: { 'liberation sans': assetUrl('default.woff2') },
       defaultFont: 'liberation sans',
     })
