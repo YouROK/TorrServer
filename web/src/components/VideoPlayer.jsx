@@ -29,6 +29,7 @@ import Hls from 'hls.js'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { StyledDialog } from 'style/CustomMaterialUiStyles'
 import { useTranslation } from 'react-i18next'
+import { fetchExternalSubtitles, linkFileIndex, subtitleFileUrl, trackLabel } from 'utils/Subs'
 
 import { StyledButton } from './TorrentCard/style'
 
@@ -238,10 +239,60 @@ const subtitleLabel = track => {
   return track.lang && track.lang.toLowerCase() !== name.toLowerCase() ? `${name} (${track.lang})` : name
 }
 
+// External HLS subtitle renditions (see server/gstreamer/subtitles_external.go) are numbered
+// 1000 + position in the /subs list; returns that position or null for embedded tracks
+const externalHlsPosition = track => {
+  const match = /\/subs\/(\d+)\.m3u8/.exec(track.url || '')
+  return match && Number(match[1]) >= 1000 ? Number(match[1]) - 1000 : null
+}
+
+// Entries of the subtitle menu. Labels start with [int] for tracks inside the video file and
+// with [ext] for external files.
+//  kind 'hls'  - a track of the HLS playlist (embedded tracks and the WebVTT copy of external files)
+//  kind 'text' - an external file shown as WebVTT (direct playback only)
+const buildSubtitleMenu = (hlsMode, subtitleTracks, externalTracks) => {
+  const items = []
+  const hlsExternal = new Map()
+  subtitleTracks.forEach((track, index) => {
+    const position = externalHlsPosition(track)
+    if (position === null) {
+      items.push({ key: `hls:${index}`, label: `[int] ${subtitleLabel(track)}`, kind: 'hls', hlsIndex: index })
+    } else {
+      hlsExternal.set(position, { track, index })
+    }
+  })
+
+  externalTracks.forEach((track, position) => {
+    const label = `[ext] ${trackLabel(track)}`
+    if (!hlsMode) {
+      items.push({ key: `text:${track.index}`, label, kind: 'text', track })
+    } else if (hlsExternal.has(position)) {
+      const { index } = hlsExternal.get(position)
+      items.push({ key: `hls:${index}`, label, kind: 'hls', hlsIndex: index })
+      hlsExternal.delete(position)
+    }
+  })
+
+  // external HLS tracks that are not in the list (yet): keep them as they are
+  hlsExternal.forEach(({ track, index }) => {
+    items.push({ key: `hls:${index}`, label: `[ext] ${subtitleLabel(track)}`, kind: 'hls', hlsIndex: index })
+  })
+  return items
+}
+
+const disableNativeTracks = video => {
+  const { textTracks } = video
+  for (let i = 0; i < textTracks.length; i++) {
+    const track = textTracks[i]
+    track.mode = 'disabled'
+  }
+}
+
 const VideoPlayer = ({
   videoSrc,
   downloadSrc = videoSrc,
   captionSrc = '',
+  subsSrc = '',
   title,
   onNotSupported,
   hls = false,
@@ -254,6 +305,7 @@ const VideoPlayer = ({
   const isMobile = useMediaQuery('@media (max-width:930px)')
   const videoRef = useRef(null)
   const hlsRef = useRef(null)
+  const dynamicTrackRef = useRef(null)
   const onNotSupportedRef = useRef(onNotSupported)
   const { t } = useTranslation()
   const [open, setOpen] = useState(initiallyOpen)
@@ -270,6 +322,8 @@ const VideoPlayer = ({
   const [subtitleAnchorEl, setSubtitleAnchorEl] = useState(null)
   const [subtitleTracks, setSubtitleTracks] = useState([])
   const [subtitleTrack, setSubtitleTrack] = useState(-1)
+  const [externalTracks, setExternalTracks] = useState([])
+  const [externalKey, setExternalKey] = useState(null) // 'text:<index>' of the selected external track
 
   const setVideoNode = useCallback(node => {
     videoRef.current = node
@@ -412,15 +466,73 @@ const VideoPlayer = ({
     setSpeed(val)
     closeSpeedMenu()
   }
+  const clearExternal = useCallback(() => {
+    if (dynamicTrackRef.current) {
+      dynamicTrackRef.current.remove()
+      dynamicTrackRef.current = null
+    }
+    setExternalKey(null)
+  }, [])
+
+  // Direct playback: shows an external subtitle file as WebVTT through a <track> element.
+  // (With HLS the server puts the WebVTT copy of external files into the playlist.)
+  const selectExternal = useCallback(
+    track => {
+      const video = videoRef.current
+      if (!video) return
+      clearExternal()
+      disableNativeTracks(video)
+      setExternalKey(`text:${track.index}`)
+
+      const element = document.createElement('track')
+      element.kind = 'subtitles'
+      element.label = trackLabel(track)
+      if (track.lang && track.lang !== 'und') element.srclang = track.lang
+      element.src = subtitleFileUrl(track)
+      video.appendChild(element)
+      dynamicTrackRef.current = element
+      element.track.mode = 'showing'
+    },
+    [clearExternal],
+  )
+
+  useEffect(() => {
+    if (!open || !subsSrc) return undefined
+    const controller = new AbortController()
+    fetchExternalSubtitles(subsSrc, controller.signal).then(list => {
+      if (!controller.signal.aborted) setExternalTracks(list)
+    })
+    return () => {
+      controller.abort()
+      setExternalTracks([])
+    }
+  }, [open, subsSrc])
+
+  // Direct playback: the same-name .srt/.vtt file used to be shown through a static <track>.
+  // When the track list is available, pick that file from the list instead.
+  useEffect(() => {
+    if (hls || !externalTracks.length || !captionSrc) return
+    const index = linkFileIndex(captionSrc)
+    const track = externalTracks.find(item => item.index === index)
+    if (track) selectExternal(track)
+  }, [externalTracks, hls, captionSrc, selectExternal])
+
   const openSubtitleMenu = e => setSubtitleAnchorEl(e.currentTarget)
   const closeSubtitleMenu = () => setSubtitleAnchorEl(null)
   const changeSubtitleTrack = index => {
+    clearExternal()
     const hlsPlayer = hlsRef.current
     if (hlsPlayer) {
       hlsPlayer.subtitleDisplay = index >= 0
       hlsPlayer.subtitleTrack = index
+    } else if (videoRef.current) {
+      disableNativeTracks(videoRef.current)
     }
     setSubtitleTrack(index)
+    closeSubtitleMenu()
+  }
+  const changeExternalTrack = track => {
+    selectExternal(track)
     closeSubtitleMenu()
   }
   const downloadVideo = () => {
@@ -463,6 +575,18 @@ const VideoPlayer = ({
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
   }, [handleKey])
+
+  const subtitleMenu = buildSubtitleMenu(hls, subtitleTracks, externalTracks)
+  const hasSubtitleMenu = subtitleMenu.length > 0
+  const subtitlesOn = subtitleTrack >= 0 || externalKey !== null
+  const isItemSelected = item => {
+    if (item.kind === 'hls') return externalKey === null && subtitleTrack === item.hlsIndex
+    return externalKey === `${item.kind}:${item.track.index}`
+  }
+  const selectItem = item => {
+    if (item.kind === 'hls') changeSubtitleTrack(item.hlsIndex)
+    else changeExternalTrack(item.track)
+  }
 
   return (
     <>
@@ -589,14 +713,14 @@ const VideoPlayer = ({
                   </Box>
                 )}
                 <Box flexGrow={1} />
-                {subtitleTracks.length > 0 && (
+                {hasSubtitleMenu && (
                   <>
                     <Tooltip title={t('GStreamer.Subtitles')}>
                       <IconButton
                         size='medium'
                         onClick={openSubtitleMenu}
                         className={classes.iconButton}
-                        style={subtitleTrack >= 0 ? { color: '#00e68a' } : undefined}
+                        style={subtitlesOn ? { color: '#00e68a' } : undefined}
                       >
                         <SubtitlesIcon fontSize='medium' />
                       </IconButton>
@@ -607,16 +731,12 @@ const VideoPlayer = ({
                       onClose={closeSubtitleMenu}
                       className={classes.subtitleMenu}
                     >
-                      <MenuItem selected={subtitleTrack === -1} onClick={() => changeSubtitleTrack(-1)}>
+                      <MenuItem selected={!subtitlesOn} onClick={() => changeSubtitleTrack(-1)}>
                         {t('None')}
                       </MenuItem>
-                      {subtitleTracks.map((track, index) => (
-                        <MenuItem
-                          key={`${track.groupId || 'subs'}:${track.id ?? index}`}
-                          selected={subtitleTrack === index}
-                          onClick={() => changeSubtitleTrack(index)}
-                        >
-                          {subtitleLabel(track)}
+                      {subtitleMenu.map(item => (
+                        <MenuItem key={item.key} selected={isItemSelected(item)} onClick={() => selectItem(item)}>
+                          {item.label}
                         </MenuItem>
                       ))}
                     </Menu>
