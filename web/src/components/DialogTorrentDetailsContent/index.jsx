@@ -243,7 +243,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
               </ButtonGroup>
 
               {filesView === 'all' ? (
-                <AllFiles files={torrentFileList} />
+                <AllFiles files={torrentFileList} hash={hash} />
               ) : (
                 <>
                   {seasonAmount?.length > 1 && (
