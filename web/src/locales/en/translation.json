@@ -196,6 +196,9 @@
   "PIP": "Picture-In-Picture",
   "Play": "Play",
   "Playlist": "Playlist",
+  "AllFiles": "All files",
+  "ExpandAll": "Expand all",
+  "CollapseAll": "Collapse all",
   "Preload": "Preload",
   "ProjectSource": "Project GitHub",
   "PWAGuide": {

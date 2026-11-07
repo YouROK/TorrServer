@@ -13,6 +13,7 @@ import { useUpdateCache, useGetSettings } from './customHooks'
 import DialogHeader from './DialogHeader'
 import TorrentCache from './TorrentCache'
 import Table from './Table'
+import AllFiles from './AllFiles'
 import DetailedView from './DetailedView'
 import {
   DialogContentGrid,
@@ -45,6 +46,7 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
   const [playableFileList, setPlayableFileList] = useState()
   const [seasonAmount, setSeasonAmount] = useState(null)
   const [selectedSeason, setSelectedSeason] = useState()
+  const [filesView, setFilesView] = useState('playlist') // 'playlist' | 'all'
   const [isSnakeDebugMode] = useState(JSON.parse(localStorage.getItem('isSnakeDebugMode')) || false)
 
   const {
@@ -228,34 +230,52 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
             <TorrentFilesSection>
               <SectionTitle mb={20}>{t('TorrentContent')}</SectionTitle>
 
-              {seasonAmount?.length > 1 && (
-                <>
-                  <SectionSubName mb={7}>{t('SelectSeason')}</SectionSubName>
-                  <ButtonGroup style={{ marginBottom: '30px' }} color='secondary'>
-                    {seasonAmount.map(season => (
-                      <Button
-                        key={season}
-                        variant={selectedSeason === season ? 'contained' : 'outlined'}
-                        onClick={() => setSelectedSeason(season)}
-                      >
-                        {season}
-                      </Button>
-                    ))}
-                  </ButtonGroup>
+              <ButtonGroup style={{ marginBottom: '30px' }} color='secondary'>
+                <Button
+                  variant={filesView === 'playlist' ? 'contained' : 'outlined'}
+                  onClick={() => setFilesView('playlist')}
+                >
+                  {t('Playlist')}
+                </Button>
+                <Button variant={filesView === 'all' ? 'contained' : 'outlined'} onClick={() => setFilesView('all')}>
+                  {t('AllFiles')}
+                </Button>
+              </ButtonGroup>
 
-                  <SectionTitle mb={20}>
-                    {t('Season')} {selectedSeason}
-                  </SectionTitle>
+              {filesView === 'all' ? (
+                <AllFiles files={torrentFileList} />
+              ) : (
+                <>
+                  {seasonAmount?.length > 1 && (
+                    <>
+                      <SectionSubName mb={7}>{t('SelectSeason')}</SectionSubName>
+                      <ButtonGroup style={{ marginBottom: '30px' }} color='secondary'>
+                        {seasonAmount.map(season => (
+                          <Button
+                            key={season}
+                            variant={selectedSeason === season ? 'contained' : 'outlined'}
+                            onClick={() => setSelectedSeason(season)}
+                          >
+                            {season}
+                          </Button>
+                        ))}
+                      </ButtonGroup>
+
+                      <SectionTitle mb={20}>
+                        {t('Season')} {selectedSeason}
+                      </SectionTitle>
+                    </>
+                  )}
+
+                  <Table
+                    hash={hash}
+                    playableFileList={playableFileList}
+                    viewedFileList={viewedFileList}
+                    selectedSeason={selectedSeason}
+                    seasonAmount={seasonAmount}
+                  />
                 </>
               )}
-
-              <Table
-                hash={hash}
-                playableFileList={playableFileList}
-                viewedFileList={viewedFileList}
-                selectedSeason={selectedSeason}
-                seasonAmount={seasonAmount}
-              />
             </TorrentFilesSection>
           </DialogContentGrid>
         )}
