@@ -71,6 +71,12 @@ export const TreeRow = styled.div`
     font-size: 0.9em;
   }
 
+  .tree-action {
+    flex: none;
+    width: 34px;
+    margin-left: 4px;
+  }
+
   .tree-size {
     flex: none;
     min-width: 80px;
