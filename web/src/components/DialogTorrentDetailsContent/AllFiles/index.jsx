@@ -1,11 +1,13 @@
 import { memo, useMemo, useState } from 'react'
-import { Button, IconButton } from '@material-ui/core'
+import { Button, IconButton, Menu, MenuItem } from '@material-ui/core'
 import ChevronRightIcon from '@material-ui/icons/ChevronRight'
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore'
+import FileCopyOutlinedIcon from '@material-ui/icons/FileCopyOutlined'
 import FolderIcon from '@material-ui/icons/Folder'
 import FolderOpenIcon from '@material-ui/icons/FolderOpen'
 import GetAppIcon from '@material-ui/icons/GetApp'
 import InsertDriveFileOutlinedIcon from '@material-ui/icons/InsertDriveFileOutlined'
+import CopyToClipboard from 'react-copy-to-clipboard'
 import { useTranslation } from 'react-i18next'
 import { streamHost } from 'utils/Hosts'
 import { humanizeSize } from 'utils/Utils'
@@ -42,7 +44,7 @@ const buildTree = files => {
       node.count += 1
     })
 
-    node.files.push({ id, name: fileName, size })
+    node.files.push({ id, name: fileName, size, path: [...parts, fileName].join('/') })
   })
 
   return root
@@ -80,6 +82,8 @@ const AllFiles = memo(({ files, hash }) => {
   const { t } = useTranslation()
   // user choices: { [dirPath]: boolean }, everything else is opened/closed by default rules
   const [overrides, setOverrides] = useState({})
+  // copy menu: { anchorEl, name, path } of the row it was opened for
+  const [menu, setMenu] = useState(null)
 
   const tree = useMemo(() => buildTree(files || []), [files])
   const defaultOpen = useMemo(() => collectDefaultOpen(tree, true, 0, new Set()), [tree])
@@ -91,6 +95,19 @@ const AllFiles = memo(({ files, hash }) => {
   const setAll = value => setOverrides(Object.fromEntries(collectDirPaths(tree).map(path => [path, value])))
 
   const getFileLink = (name, id) => `${streamHost()}/${encodeURIComponent(name)}?link=${hash}&index=${id}&play`
+
+  const closeMenu = () => setMenu(null)
+  const openMenu = (e, name, path) => {
+    e.stopPropagation()
+    setMenu({ anchorEl: e.currentTarget, name, path })
+  }
+
+  const copyTitle = `${t('CopyName')} / ${t('CopyPath')}`
+  const renderCopyButton = (name, path) => (
+    <IconButton size='small' title={copyTitle} aria-label={copyTitle} onClick={e => openMenu(e, name, path)}>
+      <FileCopyOutlinedIcon />
+    </IconButton>
+  )
 
   const formatSize = size => humanizeSize(size) || `0 ${t('B')}`
 
@@ -132,6 +149,7 @@ const AllFiles = memo(({ files, hash }) => {
                   if (!hasSelectionIn(e.currentTarget)) toggleDir(dir)
                 }}
                 onKeyDown={e => {
+                  if (e.target !== e.currentTarget) return
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
                     toggleDir(dir)
@@ -145,7 +163,9 @@ const AllFiles = memo(({ files, hash }) => {
                 </span>
                 <span className='tree-count'>({dir.count})</span>
                 <span className='tree-size'>{formatSize(dir.size)}</span>
-                <span className='tree-action' />
+                <span className='tree-actions'>
+                  <span className='tree-action'>{renderCopyButton(dir.name, dir.path.slice(1))}</span>
+                </span>
               </TreeRow>
             )
           }
@@ -158,22 +178,34 @@ const AllFiles = memo(({ files, hash }) => {
                 {file.name}
               </span>
               <span className='tree-size'>{formatSize(file.size)}</span>
-              <span className='tree-action'>
-                <IconButton
-                  component='a'
-                  href={getFileLink(file.name, file.id)}
-                  download={file.name}
-                  size='small'
-                  title={t('Download')}
-                  aria-label={t('Download')}
-                >
-                  <GetAppIcon />
-                </IconButton>
+              <span className='tree-actions'>
+                <span className='tree-action'>{renderCopyButton(file.name, file.path)}</span>
+                <span className='tree-action'>
+                  <IconButton
+                    component='a'
+                    href={getFileLink(file.name, file.id)}
+                    download={file.name}
+                    size='small'
+                    title={t('Download')}
+                    aria-label={t('Download')}
+                  >
+                    <GetAppIcon />
+                  </IconButton>
+                </span>
               </span>
             </TreeRow>
           )
         })}
       </TreeWrapper>
+
+      <Menu anchorEl={menu?.anchorEl} open={!!menu} onClose={closeMenu}>
+        <CopyToClipboard text={menu?.name ?? ''} onCopy={closeMenu}>
+          <MenuItem>{t('CopyName')}</MenuItem>
+        </CopyToClipboard>
+        <CopyToClipboard text={menu?.path ?? ''} onCopy={closeMenu}>
+          <MenuItem>{t('CopyPath')}</MenuItem>
+        </CopyToClipboard>
+      </Menu>
     </>
   )
 })

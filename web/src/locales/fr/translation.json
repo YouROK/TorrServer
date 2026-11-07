@@ -200,6 +200,8 @@
   "AllFiles": "Tous les fichiers",
   "ExpandAll": "Tout développer",
   "CollapseAll": "Tout réduire",
+  "CopyName": "Copier le nom",
+  "CopyPath": "Copier le chemin",
   "Preload": "Préchargement",
   "ProjectSource": "GitHub du projet",
   "PWAGuide": {
