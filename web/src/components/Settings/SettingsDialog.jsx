@@ -12,6 +12,7 @@ import CircularProgress from '@material-ui/core/CircularProgress'
 import { StyledDialog } from 'style/CustomMaterialUiStyles'
 import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
 import { notifyPlayerSettingsChanged } from 'utils/PlayerPreferences'
+import { setFileNameSettings } from 'utils/FileNameRules'
 
 import { SettingsHeader, FooterSection, Content, StyledTabs, StyledTab } from './style'
 import defaultSettings from './defaultSettings'
@@ -83,6 +84,7 @@ export default function SettingsDialog({ handleClose }) {
     sets.ReaderReadAHead = cachePercentage
     sets.PreloadCache = preloadCachePercentage
     axios.post(settingsHost(), { action: 'set', sets })
+    setFileNameSettings(sets)
     // Clear TMDB cache so fresh settings are fetched on next poster search
     clearTMDBCache()
     localStorage.setItem('isVlcUsed', isVlcUsed)
