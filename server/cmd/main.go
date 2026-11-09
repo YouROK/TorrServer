@@ -1,3 +1,8 @@
+// EN: Disable MPTCP to reduce CVE-2026-98432 RCE risk: bug is in IPv4 TCP, but as of 2026-11-05 RCE is confirmed with MPTCP (see link below)
+// RU: Отключаем MPTCP для снижения риска RCE по CVE-2026-98432: ошибка в IPv4 TCP, но на 2026-11-05 RCE подтверждён при MPTCP (см. ссылку ниже)
+// reference: https://www.anthropic.com/research/discovering-vulnerabilities-with-claude section "5. Zero-click remote code execution in Linux"
+//go:debug multipathtcp=0
+
 package main
 
 import (

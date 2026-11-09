@@ -47,6 +47,30 @@ func TestIsBlockedReferer(t *testing.T) {
 	}
 }
 
+// Browsers send IDN hosts in punycode, so a rule written in Unicode must match that form.
+func TestIsBlockedRefererIDN(t *testing.T) {
+	blocked := blockedReferersFromConfig([]byte("пример.рф\n"))
+
+	if _, ok := isBlockedReferer("http://xn--e1afmkfd.xn--p1ai/", "", blocked); !ok {
+		t.Fatal("expected punycode referer to be blocked")
+	}
+	if _, ok := isBlockedReferer("", "http://пример.рф", blocked); !ok {
+		t.Fatal("expected unicode origin to be blocked")
+	}
+}
+
+// The same IPv6 address can be written several ways; a rule must match any of them.
+func TestIsBlockedRefererIPv6(t *testing.T) {
+	blocked := blockedReferersFromConfig([]byte("2001:0db8::0001\n"))
+
+	if _, ok := isBlockedReferer("http://[2001:db8::1]/", "", blocked); !ok {
+		t.Fatal("expected compressed IPv6 referer to be blocked")
+	}
+	if _, ok := isBlockedReferer("", "http://[2001:DB8:0:0:0:0:0:1]:8090", blocked); !ok {
+		t.Fatal("expected expanded IPv6 origin to be blocked")
+	}
+}
+
 func TestBlockedReferersFromConfig(t *testing.T) {
 	got := blockedReferersFromConfig([]byte("example.com\nbylampa.online\n"))
 	want := append(append([]string(nil), defaultBlockedReferers...), "example.com")

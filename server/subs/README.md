@@ -142,8 +142,9 @@ matches. Sibling directories (neither contains the other) are not matched.
    .m4v .ts .mov .webm` are counted, including samples), a subtitle matches if
    either:
    - its name without the extension starts with the video name without the
-     extension (case-insensitive): `ep01.mkv` matches `ep01.rus.srt` and
-     `ep01.eng.ass`;
+     extension (case-insensitive), and the next character is not a letter or a
+     digit: `ep01.mkv` matches `ep01.rus.srt` and `ep01.eng.ass`, but not
+     `ep010.srt`;
    - the episode number is the same. Recognized: `S01E02` (also with a space,
      `.`, `_` or `-` between `S01` and `E02`), `1x02`, and a standalone number
      of 1-3 digits delimited by spaces, `.`, `_`, `-` or brackets (the last such

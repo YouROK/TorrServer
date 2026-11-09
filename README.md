@@ -1109,5 +1109,7 @@ See [server/subs/README.md](server/subs/README.md) for the supported formats and
 - [uPagge](https://github.com/uPagge) Struchkov Mark
 - [LuckyRu](https://github.com/LuckyRu) Alexander
 - [ManSio](https://github.com/ManSio) Mikhail
-- [vladikshkwok](https://github.com/vladikshkwok)
+- [vladikshkwok](https://github.com/vladikshkwok) Vladis.Shkarubov
+- [jayhemnani9910](https://github.com/jayhemnani9910) Jay Hemnani
+- [Drafteed](https://github.com/Drafteed) Artem Draft
 - and others

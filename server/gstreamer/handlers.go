@@ -40,18 +40,25 @@ func (s *Service) remove(c *gin.Context) {
 		return
 	}
 
-	dropTorrentForGStreamer(id)
+	// keep the torrent while another viewer still streams it
+	if hash := HashOfTaskID(id); !s.hasTasksForHash(hash) {
+		dropTorrentForGStreamer(hash)
+	}
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
 func (s *Service) heartbeat(c *gin.Context) {
-	hash := c.Param("hash")
-	if s.Get(hash) == nil {
+	id := c.Param("hash")
+	task := s.Get(id)
+	if task == nil && !strings.Contains(id, sessionSeparator) {
+		task = s.GetAnyForHash(id) // clients that poll torrent stats use the bare torrent hash
+	}
+	if task == nil {
 		c.Status(http.StatusNotFound)
 		return
 	}
 
-	c.JSON(http.StatusOK, torrentHeartbeatState(hash))
+	c.JSON(http.StatusOK, torrentHeartbeatState(HashOfTaskID(id)))
 }
 
 func (s *Service) probe(c *gin.Context) {
@@ -81,7 +88,7 @@ func (s *Service) master(c *gin.Context) {
 	fileID := firstNonEmpty(c.Query("index"), c.Query("id"), c.Query("fileID"))
 	audio := parseQueryInt(c, "audio", 0)
 
-	task, err := s.GetOrAdd(hash, fileID, audio)
+	task, err := s.GetOrAddSession(hash, c.Query("sid"), fileID, audio)
 	if err != nil {
 		gstSourceFailure(hash, fileID, audio, "master task creation", err)
 		abortWithSourceError(c, err)

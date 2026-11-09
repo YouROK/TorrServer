@@ -68,5 +68,7 @@ func clientIP(c *gin.Context) net.IP {
 		// RemoteAddr without port (rare)
 		host = strings.Trim(c.Request.RemoteAddr, "[]")
 	}
+	// A link-local IPv6 client comes with its zone, e.g. fe80::1%eth0.
+	host, _, _ = strings.Cut(host, "%")
 	return net.ParseIP(host)
 }

@@ -378,7 +378,7 @@ const Torrent = ({ torrent }) => {
     <>
       <TorrentCard>
         <TorrentCardPoster isPoster={poster} onClick={handleClickOpenEditDialog}>
-          {poster ? <img src={poster} alt='poster' /> : <NoImageIcon />}
+          {poster ? <img src={poster} alt='poster' loading='lazy' decoding='async' /> : <NoImageIcon />}
         </TorrentCardPoster>
 
         <TorrentCardButtons>

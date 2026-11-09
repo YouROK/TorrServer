@@ -56,6 +56,17 @@ func TestCP1251(t *testing.T) {
 	}
 }
 
+func TestCP1251Ukrainian(t *testing.T) {
+	// "Їжак і єнот, ґанок" in Windows-1251
+	cp := []byte{0xAF, 0xE6, 0xE0, 0xEA, 0x20, 0xB3, 0x20, 0xBA, 0xED, 0xEE, 0xF2, 0x2C, 0x20, 0xB4, 0xE0, 0xED, 0xEE, 0xEA}
+	if got := Decode(cp); got != "Їжак і єнот, ґанок" {
+		t.Errorf("decode: %q", got)
+	}
+	if b, _, _ := Encode("Їжак і єнот, ґанок", "cp1251"); string(b) != string(cp) {
+		t.Errorf("encode: %x", b)
+	}
+}
+
 func TestUnsupportedFormat(t *testing.T) {
 	if _, err := ToVTT([]byte("x"), "sub"); err == nil {
 		t.Error("expected error for unsupported format")

@@ -1,5 +1,28 @@
 import styled, { css } from 'styled-components'
 
+export const SearchFieldWrapper = styled.div`
+  position: relative;
+  grid-column: 1 / -1;
+  margin-top: 3px;
+
+  > .MuiSvgIcon-root {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .MuiOutlinedInput-input {
+    padding-left: 46px;
+  }
+
+  .MuiInputLabel-outlined:not(.MuiInputLabel-shrink) {
+    transform: translate(46px, 12px) scale(1);
+  }
+`
+
 export default styled.div`
   ${({
     isButton,

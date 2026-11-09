@@ -1,6 +1,4 @@
-import { createGlobalStyle, css } from 'styled-components'
-
-import { standaloneMedia } from './standaloneMedia'
+import { createGlobalStyle } from 'styled-components'
 
 export default createGlobalStyle`
   *,
@@ -18,11 +16,6 @@ export default createGlobalStyle`
     -moz-osx-font-smoothing: grayscale;
     letter-spacing: -0.1px;
     -webkit-tap-highlight-color: transparent;
-
-
-    ${standaloneMedia(css`
-      height: 100vh;
-    `)}
   }
 
   button {

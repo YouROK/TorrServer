@@ -94,8 +94,17 @@ func SaveTorrentToDB(torr *Torrent) {
 	AddTorrentDB(torr)
 }
 
+// hashFromHex parses an info hash that came from an API request. Malformed
+// input is reported instead of panicking like metainfo.NewHashFromHex.
+func hashFromHex(hashHex string) (hash metainfo.Hash, ok bool) {
+	return hash, hash.FromHexString(hashHex) == nil
+}
+
 func GetTorrent(hashHex string) *Torrent {
-	hash := metainfo.NewHashFromHex(hashHex)
+	hash, ok := hashFromHex(hashHex)
+	if !ok {
+		return nil
+	}
 	timeout := time.Second * time.Duration(sets.BTsets.TorrentDisconnectTimeout)
 	if timeout > time.Minute {
 		timeout = time.Minute
@@ -127,7 +136,10 @@ func GetTorrent(hashHex string) *Torrent {
 }
 
 func SetTorrent(hashHex, title, poster, category string, data string) *Torrent {
-	hash := metainfo.NewHashFromHex(hashHex)
+	hash, ok := hashFromHex(hashHex)
+	if !ok {
+		return nil
+	}
 	torr := bts.GetTorrent(hash)
 	torrDb := GetTorrentDB(hash)
 
@@ -172,7 +184,10 @@ func RemTorrent(hashHex string) {
 		log.TLogln("API RemTorrent: Read-only DB mode!", hashHex)
 		return
 	}
-	hash := metainfo.NewHashFromHex(hashHex)
+	hash, ok := hashFromHex(hashHex)
+	if !ok {
+		return
+	}
 
 	// Download the torrent before deleting it to get the "closed" status
 	torr := bts.GetTorrent(hash)
@@ -240,7 +255,10 @@ func ListTorrent() []*Torrent {
 }
 
 func DropTorrent(hashHex string) {
-	hash := metainfo.NewHashFromHex(hashHex)
+	hash, ok := hashFromHex(hashHex)
+	if !ok {
+		return
+	}
 	bts.RemoveTorrent(hash)
 }
 

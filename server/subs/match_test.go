@@ -37,6 +37,33 @@ func TestMatchEpisodesInSubfolder(t *testing.T) {
 	}
 }
 
+func TestMatchNamePrefixEndsAtWord(t *testing.T) {
+	files := []FileInfo{
+		{Index: 1, Path: "Show/Show - 1.mkv", Size: 1 << 30},
+		{Index: 2, Path: "Show/Show - 1.srt", Size: 50_000},
+		{Index: 3, Path: "Show/Show - 10.mkv", Size: 1 << 30},
+		{Index: 4, Path: "Show/Show - 10.srt", Size: 50_000},
+		{Index: 5, Path: "Show/Show - 11.mkv", Size: 1 << 30},
+		{Index: 6, Path: "Show/Show - 11.rus.srt", Size: 50_000},
+	}
+	for i, want := range map[int]int{0: 2, 2: 4, 4: 6} {
+		got := Match(files[i], files)
+		if len(got) != 1 || got[0].FileIndex != want {
+			t.Errorf("%s: want only subtitle %d, got %+v", files[i].Path, want, got)
+		}
+	}
+
+	files = []FileInfo{
+		{Index: 1, Path: "Alien.mkv", Size: 1 << 30},
+		{Index: 2, Path: "Aliens.mkv", Size: 1 << 30},
+		{Index: 3, Path: "Alien.eng.srt", Size: 50_000},
+		{Index: 4, Path: "Aliens.eng.srt", Size: 50_000},
+	}
+	if got := Match(files[0], files); len(got) != 1 || got[0].FileIndex != 3 {
+		t.Errorf("Alien.mkv: want only subtitle 3, got %+v", got)
+	}
+}
+
 func TestMatchSkipsHugeFiles(t *testing.T) {
 	files := []FileInfo{
 		{Index: 1, Path: "movie.mkv", Size: 1 << 30},
