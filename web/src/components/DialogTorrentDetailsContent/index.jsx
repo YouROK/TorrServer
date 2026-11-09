@@ -1,10 +1,11 @@
 import { NoImageIcon } from 'icons'
 import { humanizeSize, removeRedundantCharacters } from 'utils/Utils'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button, ButtonGroup } from '@material-ui/core'
 import ptt from 'parse-torrent-title'
 import axios from 'axios'
 import { viewedHost } from 'utils/Hosts'
+import { useFileNameConfig } from 'utils/FileNameRules'
 import { GETTING_INFO, IN_DB } from 'torrentStates'
 import CircularProgress from '@material-ui/core/CircularProgress'
 import { useTranslation } from 'react-i18next'
@@ -29,7 +30,7 @@ import {
 } from './style'
 import { DownlodSpeedWidget, UploadSpeedWidget, PeersWidget, SizeWidget, StatusWidget, CategoryWidget } from './widgets'
 import TorrentFunctions from './TorrentFunctions'
-import { isFilePlayable } from './helpers'
+import { getFileInfo, isFilePlayable } from './helpers'
 
 const Loader = () => (
   <div style={{ minHeight: '80vh', display: 'grid', placeItems: 'center' }}>
@@ -62,22 +63,24 @@ export default function DialogTorrentDetailsContent({ closeDialog, torrent }) {
 
   const cache = useUpdateCache(hash)
   const settings = useGetSettings(cache)
+  const fileNameConfig = useFileNameConfig()
+  const seasonsConfigRef = useRef(null)
 
   const { Capacity, PiecesCount, PiecesLength, Filled } = cache
 
   useEffect(() => {
-    if (playableFileList && seasonAmount === null) {
-      const seasons = []
-      playableFileList.forEach(({ path }) => {
-        const currentSeason = ptt.parse(path).season
-        if (currentSeason) {
-          !seasons.includes(currentSeason) && seasons.push(currentSeason)
-        }
-      })
-      seasons.length && setSelectedSeason(seasons[0])
-      setSeasonAmount(seasons.sort((a, b) => a - b))
-    }
-  }, [playableFileList, seasonAmount])
+    // seasons are collected when the files appear and again when the parser settings change
+    if (!playableFileList || (seasonAmount !== null && seasonsConfigRef.current === fileNameConfig)) return
+    seasonsConfigRef.current = fileNameConfig
+
+    const seasons = []
+    playableFileList.forEach(({ path }) => {
+      const { season: currentSeason } = getFileInfo(path, fileNameConfig)
+      if (Number.isFinite(currentSeason) && !seasons.includes(currentSeason)) seasons.push(currentSeason)
+    })
+    setSelectedSeason(seasons[0])
+    setSeasonAmount(seasons.sort((a, b) => a - b))
+  }, [playableFileList, seasonAmount, fileNameConfig])
 
   useEffect(() => {
     setPlayableFileList(torrentFileList?.filter(({ path }) => isFilePlayable(path)))

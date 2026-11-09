@@ -8,6 +8,7 @@ import {
 } from '@material-ui/icons'
 import { getPeerString, humanizeSize, humanizeSpeed, removeRedundantCharacters } from 'utils/Utils'
 import { playlistTorrHost, streamHost, torrentsHost } from 'utils/Hosts'
+import { useFileNameConfig } from 'utils/FileNameRules'
 import { NoImageIcon } from 'icons'
 import DialogTorrentDetailsContent from 'components/DialogTorrentDetailsContent'
 import Dialog from '@material-ui/core/Dialog'
@@ -34,7 +35,12 @@ import { useBooleanPlayerPreference } from 'utils/PlayerPreferences'
 import { GETTING_INFO, IN_DB, CLOSED, PRELOAD, WORKING } from 'torrentStates'
 import { TORRENT_CATEGORIES } from 'components/categories'
 import VideoPlayer from 'components/VideoPlayer'
-import { isFilePlayable } from 'components/DialogTorrentDetailsContent/helpers'
+import {
+  getFileDisplayName,
+  getFileDisplayNames,
+  isFilePlayable,
+  isLegacyNaming,
+} from 'components/DialogTorrentDetailsContent/helpers'
 import {
   gstreamerHeartbeatUrl,
   gstreamerMasterUrl,
@@ -78,6 +84,7 @@ const filesFromMetadata = data => {
   }
 }
 
+// Legacy naming (parse-torrent-title parser): "S01E02 - Title" or "1. Title"
 const episodeLabel = (path, index) => {
   const name = fileName(path)
   const parsed = ptt.parse(name)
@@ -146,6 +153,8 @@ const sameFileList = (left, right) => {
 }
 
 const Torrent = ({ torrent }) => {
+  const fileNameConfig = useFileNameConfig()
+  const legacyNaming = isLegacyNaming(fileNameConfig)
   const { t } = useTranslation()
   const [isDetailedInfoOpened, setIsDetailedInfoOpened] = useState(false)
   const [isDeleteTorrentOpened, setIsDeleteTorrentOpened] = useState(false)
@@ -234,6 +243,10 @@ const Torrent = ({ torrent }) => {
     ? resolvedFileList
     : filesFromMetadata(data)
   const playableVideoList = fileList.filter(({ path }) => isFilePlayable(path))
+  const displayNames = getFileDisplayNames(
+    playableVideoList.map(({ path }) => path),
+    fileNameConfig,
+  )
   const getVideoCaption = path => {
     // Get base name without extension
     const baseName = path.replace(/\.[^/.]+$/, '')
@@ -247,7 +260,9 @@ const Torrent = ({ torrent }) => {
     return {
       ...file,
       key: `${file.id}:${hls ? 'gst' : 'stream'}`,
-      label: episodeLabel(file.path, index),
+      label: legacyNaming
+        ? episodeLabel(file.path, index)
+        : displayNames.get(file.path) ?? getFileDisplayName(file.path, fileNameConfig),
       videoSrc: hls ? gstreamerMasterUrl(hash, file.id) : downloadSrc,
       downloadSrc,
       hls,
@@ -269,7 +284,7 @@ const Torrent = ({ torrent }) => {
     ...player,
     key: `${player.key}:audio:${audio}`,
     videoSrc: gstreamerMasterUrl(hash, player.id, audio),
-    playerTitle: title || player.label,
+    playerTitle: legacyNaming ? title || player.label : player.label,
   })
 
   const showAudioTracks = (player, tracks, anchor) => {
