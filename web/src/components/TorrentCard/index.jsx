@@ -495,13 +495,15 @@ const Torrent = ({ torrent }) => {
                 PaperProps={{ style: { maxHeight: '65vh', width: 420, maxWidth: 'calc(100vw - 32px)' } }}
               >
                 {!currentHistory?.ids && (
-                  <div
-                    role='status'
-                    aria-label={`${t('Viewed')}: ${t(currentHistory?.failed ? 'Error' : 'Loading')}`}
-                    style={{ padding: '4px 16px', display: 'flex' }}
-                  >
-                    {currentHistory?.failed ? <ErrorOutlineIcon fontSize='small' /> : <CircularProgress size={20} />}
-                  </div>
+                  <MenuItem disabled role='presentation' style={{ padding: '4px 16px' }}>
+                    <div
+                      role='status'
+                      aria-label={`${t('Viewed')}: ${t(currentHistory?.failed ? 'Error' : 'Loading')}`}
+                      style={{ display: 'flex' }}
+                    >
+                      {currentHistory?.failed ? <ErrorOutlineIcon fontSize='small' /> : <CircularProgress size={20} />}
+                    </div>
+                  </MenuItem>
                 )}
                 {availablePlayers.map(player => (
                   <MenuItem
