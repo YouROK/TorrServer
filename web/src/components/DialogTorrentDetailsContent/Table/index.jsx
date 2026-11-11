@@ -263,12 +263,12 @@ const Table = memo(
                       </a>
                     )}
 
-                    {player.hls && playerSupported && (
+                    {playerSupported && (
                       <VideoPlayer
                         title={title}
                         videoSrc={player.src}
                         downloadSrc={link}
-                        hls
+                        hls={player.hls}
                         heartbeatSrc={player.heartbeatSrc}
                         onNotSupported={() => markPlayerUnsupported(player.key)}
                       />
