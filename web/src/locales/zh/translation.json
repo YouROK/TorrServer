@@ -203,6 +203,11 @@
   "PIP": "画中画",
   "Play": "播放",
   "Playlist": "播放列表",
+  "AllFiles": "所有文件",
+  "ExpandAll": "全部展开",
+  "CollapseAll": "全部折叠",
+  "CopyName": "复制名称",
+  "CopyPath": "复制路径",
   "Preload": "预加载",
   "ProjectSource": "项目GitHub",
   "PWAGuide": {
