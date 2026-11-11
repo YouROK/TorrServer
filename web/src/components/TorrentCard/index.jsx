@@ -5,9 +5,11 @@ import {
   PlayArrow as PlayArrowIcon,
   Close as CloseIcon,
   Delete as DeleteIcon,
+  Check as CheckIcon,
+  ErrorOutline as ErrorOutlineIcon,
 } from '@material-ui/icons'
 import { getPeerString, humanizeSize, humanizeSpeed, removeRedundantCharacters } from 'utils/Utils'
-import { playlistTorrHost, streamHost, torrentsHost } from 'utils/Hosts'
+import { playlistTorrHost, streamHost, torrentsHost, viewedHost } from 'utils/Hosts'
 import { NoImageIcon } from 'icons'
 import DialogTorrentDetailsContent from 'components/DialogTorrentDetailsContent'
 import Dialog from '@material-ui/core/Dialog'
@@ -151,6 +153,7 @@ const Torrent = ({ torrent }) => {
   const [isDeleteTorrentOpened, setIsDeleteTorrentOpened] = useState(false)
   const [unsupportedPlayers, setUnsupportedPlayers] = useState({})
   const [episodeMenuAnchor, setEpisodeMenuAnchor] = useState(null)
+  const [viewedHistory, setViewedHistory] = useState(null)
   const [selectedPlayer, setSelectedPlayer] = useState(null)
   const [resolvedFileList, setResolvedFileList] = useState([])
   const [isResolvingPlayers, setIsResolvingPlayers] = useState(false)
@@ -195,6 +198,33 @@ const Torrent = ({ torrent }) => {
     data,
     file_stats: torrentFileList,
   } = torrent
+
+  useEffect(() => {
+    if (!episodeMenuAnchor) return undefined
+    let active = true
+    setViewedHistory(null)
+    axios.post(viewedHost(), { action: 'list', hash }).then(
+      ({ data: history }) => {
+        if (!active) return
+        // A null response is the API's empty history. Other malformed responses stay unknown.
+        if (history != null && (!Array.isArray(history) || history.some(item => !Number.isInteger(item?.file_index)))) {
+          setViewedHistory({ hash, anchor: episodeMenuAnchor, failed: true })
+          return
+        }
+        setViewedHistory({ hash, anchor: episodeMenuAnchor, ids: (history || []).map(item => item.file_index) })
+      },
+      () => {
+        if (active) setViewedHistory({ hash, anchor: episodeMenuAnchor, failed: true })
+      },
+    )
+    // Invalidate pending responses on close, a different torrent, or unmount.
+    return () => {
+      active = false
+    }
+  }, [episodeMenuAnchor, hash])
+
+  const currentHistory =
+    viewedHistory?.hash === hash && viewedHistory?.anchor === episodeMenuAnchor ? viewedHistory : null
 
   const dropTorrent = () => axios.post(torrentsHost(), { action: 'drop', hash })
   const deleteTorrent = () => axios.post(torrentsHost(), { action: 'rem', hash })
@@ -464,6 +494,17 @@ const Torrent = ({ torrent }) => {
                 transformOrigin={{ vertical: 'top', horizontal: 'left' }}
                 PaperProps={{ style: { maxHeight: '65vh', width: 420, maxWidth: 'calc(100vw - 32px)' } }}
               >
+                {!currentHistory?.ids && (
+                  <MenuItem disabled role='presentation' style={{ padding: '4px 16px' }}>
+                    <div
+                      role='status'
+                      aria-label={`${t('Viewed')}: ${t(currentHistory?.failed ? 'Error' : 'Loading')}`}
+                      style={{ display: 'flex' }}
+                    >
+                      {currentHistory?.failed ? <ErrorOutlineIcon fontSize='small' /> : <CircularProgress size={20} />}
+                    </div>
+                  </MenuItem>
+                )}
                 {availablePlayers.map(player => (
                   <MenuItem
                     key={player.key}
@@ -473,7 +514,11 @@ const Torrent = ({ torrent }) => {
                     }}
                   >
                     <ListItemIcon style={{ minWidth: 34 }}>
-                      <PlayArrowIcon fontSize='small' />
+                      {currentHistory?.ids?.includes(player.id) ? (
+                        <CheckIcon fontSize='small' role='img' aria-hidden={false} aria-label={t('Viewed')} />
+                      ) : (
+                        <PlayArrowIcon fontSize='small' />
+                      )}
                     </ListItemIcon>
                     <ListItemText primary={player.label} secondary={humanizeSize(player.length)} />
                   </MenuItem>
