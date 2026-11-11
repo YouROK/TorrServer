@@ -426,6 +426,18 @@ export const GstSubsectionLabel = styled(SettingSectionLabel)`
   margin-top: 20px;
 `
 
+export const SettingSubsectionLabel = styled(SettingSectionLabel)`
+  font-size: 20px;
+  padding-bottom: 12px;
+  margin-top: 20px;
+`
+
+export const SettingSubsubsectionLabel = styled(SettingSectionLabel)`
+  font-size: 16px;
+  padding-bottom: 8px;
+  margin-top: 12px;
+`
+
 export const PreloadCachePercentage = styled.div.attrs(({ value }) => ({
   // this block is here according to styled-components recomendation about fast changable components
   style: {

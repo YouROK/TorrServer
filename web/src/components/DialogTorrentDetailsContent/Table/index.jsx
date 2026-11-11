@@ -12,11 +12,13 @@ import {
   useGStreamerRuntime,
 } from 'utils/GStreamer'
 import { externalLink, useExternalMediaBase } from 'utils/MediaBase'
+import { useFileNameConfig } from 'utils/FileNameRules'
 
 import VideoPlayer from '../../VideoPlayer'
+import { getFileDisplayNames, getFileInfos, isLegacyNaming } from '../helpers'
 import { TableStyle, ShortTableWrapper, ShortTable } from './style'
 
-const { memo, useState } = require('react')
+const { memo, useMemo, useState } = require('react')
 
 // russian episode detection support
 ptt.addHandler('episode', /(\d{1,4})[- |. ]серия|серия[- |. ](\d{1,4})/i, {
@@ -35,6 +37,10 @@ const Table = memo(
     const [unsupportedPlayers, setUnsupportedPlayers] = useState({})
     const gstRuntime = useGStreamerRuntime()
     const mediaBase = useExternalMediaBase()
+    const fileNameConfig = useFileNameConfig()
+    const filePaths = useMemo(() => (playableFileList || []).map(({ path }) => path), [playableFileList])
+    const displayNames = useMemo(() => getFileDisplayNames(filePaths, fileNameConfig), [filePaths, fileNameConfig])
+    const fileInfos = useMemo(() => getFileInfos(filePaths, fileNameConfig), [filePaths, fileNameConfig])
     const preloadBuffer = fileId => fetch(`${streamHost()}?link=${hash}&index=${fileId}&preload`)
     const getFileLink = (path, id) =>
       `${streamHost()}/${encodeURIComponent(path.split('\\').pop().split('/').pop())}?link=${hash}&index=${id}&play`
@@ -50,12 +56,12 @@ const Table = memo(
     const markPlayerUnsupported = key => {
       setUnsupportedPlayers(current => ({ ...current, [key]: true }))
     }
-    const fileHasEpisodeText = !!playableFileList?.find(({ path }) => ptt.parse(path).episode)
-    const fileHasSeasonText = !!playableFileList?.find(({ path }) => ptt.parse(path).season)
-    const fileHasResolutionText = !!playableFileList?.find(({ path }) => ptt.parse(path).resolution)
-
-    // if files in list is more then 1 and no season text detected by ptt.parse, show full name
-    const shouldDisplayFullFileName = playableFileList?.length > 1 && !fileHasEpisodeText
+    // a file without a season is not hidden by the season tabs (rules parser); legacy keeps the old behavior
+    const isSeasonRowVisible = season =>
+      season === selectedSeason || !seasonAmount?.length || (!fileNameConfig.usePtt && !Number.isFinite(season))
+    const fileHasEpisodeText = !!playableFileList?.find(({ path }) => fileInfos.get(path)?.episode)
+    const fileHasSeasonText = !!playableFileList?.find(({ path }) => fileInfos.get(path)?.season)
+    const fileHasResolutionText = !!playableFileList?.find(({ path }) => fileInfos.get(path)?.resolution)
 
     const isVlcUsed = JSON.parse(localStorage.getItem('isVlcUsed')) ?? false
     const isInfuseUsed = JSON.parse(localStorage.getItem('isInfuseUsed')) ?? false
@@ -87,7 +93,9 @@ const Table = memo(
 
           <tbody>
             {playableFileList.map(({ id, path, length }) => {
-              const { title, resolution, episode, season } = ptt.parse(path)
+              const { resolution, episode, season } = fileInfos.get(path) || {}
+              const title = displayNames.get(path)
+              const playerTitle = isLegacyNaming(fileNameConfig) ? fileInfos.get(path)?.title || title : title
               const isViewed = viewedFileList?.includes(id)
               const link = getFileLink(path, id)
               const player = getPlayer(path, id)
@@ -98,10 +106,10 @@ const Table = memo(
               const iinaLink = `iina://weblink?url=${encodeURIComponent(fullLink)}`
 
               return (
-                (season === selectedSeason || !seasonAmount?.length) && (
+                isSeasonRowVisible(season) && (
                   <tr key={id} className={isViewed ? 'viewed-file-row' : null}>
                     <td data-label='viewed' aria-label='viewed' className={isViewed ? 'viewed-file-indicator' : null} />
-                    <td data-label='name'>{shouldDisplayFullFileName ? path : title}</td>
+                    <td data-label='name'>{title}</td>
                     {fileHasSeasonText && seasonAmount?.length === 1 && <td data-label='season'>{season}</td>}
                     {fileHasEpisodeText && <td data-label='episode'>{episode}</td>}
                     {fileHasResolutionText && <td data-label='resolution'>{resolution}</td>}
@@ -141,7 +149,7 @@ const Table = memo(
                         )}
                         {playerSupported ? (
                           <VideoPlayer
-                            title={title}
+                            title={playerTitle}
                             videoSrc={player.src}
                             downloadSrc={link}
                             hls={player.hls}
@@ -180,7 +188,9 @@ const Table = memo(
 
         <ShortTableWrapper>
           {playableFileList.map(({ id, path, length }) => {
-            const { title, resolution, episode, season } = ptt.parse(path)
+            const { resolution, episode, season } = fileInfos.get(path) || {}
+            const title = displayNames.get(path)
+            const playerTitle = isLegacyNaming(fileNameConfig) ? fileInfos.get(path)?.title || title : title
             const isViewed = viewedFileList?.includes(id)
             const link = getFileLink(path, id)
             const player = getPlayer(path, id)
@@ -191,9 +201,9 @@ const Table = memo(
             const iinaLink = `iina://weblink?url=${encodeURIComponent(fullLink)}`
 
             return (
-              (season === selectedSeason || !seasonAmount?.length) && (
+              isSeasonRowVisible(season) && (
                 <ShortTable key={id} isViewed={isViewed}>
-                  <div className='short-table-name'>{shouldDisplayFullFileName ? path : title}</div>
+                  <div className='short-table-name'>{title}</div>
                   <div className='short-table-data'>
                     {isViewed && (
                       <div className='short-table-field'>
@@ -265,7 +275,7 @@ const Table = memo(
 
                     {player.hls && playerSupported && (
                       <VideoPlayer
-                        title={title}
+                        title={playerTitle}
                         videoSrc={player.src}
                         downloadSrc={link}
                         hls
