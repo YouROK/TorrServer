@@ -235,7 +235,8 @@ func (c *Cache) GetState() *state.CacheState {
 	return cState
 }
 
-func (c *Cache) cleanPieces() {
+
+func (c *Cache) doCleanPieces() {
 	if c.isRemove.Load() || c.isClosed.Load() {
 		return
 	}
@@ -249,8 +250,8 @@ func (c *Cache) cleanPieces() {
 	c.isRemove.Store(true)
 	defer func() { c.isRemove.Store(false) }()
 
-	remPieces := c.getRemPieces()
 	if c.filled > c.capacity {
+		remPieces := c.getRemPieces()
 		rems := (c.filled-c.capacity)/c.pieceLength + 1
 		for _, p := range remPieces {
 			c.removePiece(p)
@@ -260,6 +261,14 @@ func (c *Cache) cleanPieces() {
 				return
 			}
 		}
+	}
+}
+
+func (c *Cache) cleanPieces() {
+	if settings.BTsets.OneCacheForAll {
+		c.storage.cleanPieces()
+	} else {
+		c.doCleanPieces()
 	}
 }
 
