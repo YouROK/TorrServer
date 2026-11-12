@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"server/log"
 )
@@ -106,6 +107,11 @@ type BTSets struct {
 
 	// M3U
 	MergeAllM3U bool // merge all torrents files into a single all.m3u playlist
+
+	// External subtitles (/subs and the gstreamer HLS module)
+	MaxSubtitleSizeMB          int // in MB, bigger subtitle files are ignored; 0 - default, see MaxSubtitleSize
+	ExternalSubtitleTimeoutSec int // in seconds, time limit for loading the subtitle tracks of a video into HLS; 0 - default
+	ExternalSubtitleAttempts   int // how many times loading may be tried for tracks that failed for a temporary reason; 0 - default
 }
 
 func (v *BTSets) String() string {
@@ -138,6 +144,86 @@ wss://tracker.openwebtorrent.com`
 
 var BTsets *BTSets
 
+const (
+	// DefaultMaxSubtitleSizeMB is the default size limit of an external subtitle file.
+	// Keep it in line with subs.MaxSubSize.
+	DefaultMaxSubtitleSizeMB = 16
+	// MaxSubtitleSizeLimitMB is the upper bound of the MaxSubtitleSizeMB setting:
+	// a subtitle file is read into memory as a whole.
+	MaxSubtitleSizeLimitMB = 32
+)
+
+// Defaults and upper bounds of the settings that control loading of the external subtitle
+// tracks into HLS. The timeout is bounded by the 60 s that /subs itself allows for reading
+// one file, and a longer one only delays the start of the playback.
+const (
+	DefaultExternalSubtitleTimeoutSec = 15
+	MaxExternalSubtitleTimeoutSec     = 60
+	DefaultExternalSubtitleAttempts   = 3
+	MaxExternalSubtitleAttempts       = 10
+)
+
+// normalizeSubtitles brings the external subtitle settings into the allowed ranges:
+// 0 or less means the default, anything above the upper bound is cut.
+func (v *BTSets) normalizeSubtitles() {
+	if v.MaxSubtitleSizeMB <= 0 {
+		v.MaxSubtitleSizeMB = DefaultMaxSubtitleSizeMB
+	}
+	if v.MaxSubtitleSizeMB > MaxSubtitleSizeLimitMB {
+		v.MaxSubtitleSizeMB = MaxSubtitleSizeLimitMB
+	}
+	if v.ExternalSubtitleTimeoutSec <= 0 {
+		v.ExternalSubtitleTimeoutSec = DefaultExternalSubtitleTimeoutSec
+	}
+	if v.ExternalSubtitleTimeoutSec > MaxExternalSubtitleTimeoutSec {
+		v.ExternalSubtitleTimeoutSec = MaxExternalSubtitleTimeoutSec
+	}
+	if v.ExternalSubtitleAttempts <= 0 {
+		v.ExternalSubtitleAttempts = DefaultExternalSubtitleAttempts
+	}
+	if v.ExternalSubtitleAttempts > MaxExternalSubtitleAttempts {
+		v.ExternalSubtitleAttempts = MaxExternalSubtitleAttempts
+	}
+}
+
+// MaxSubtitleSize returns the size limit of an external subtitle file, in bytes.
+func MaxSubtitleSize() int64 {
+	mb := DefaultMaxSubtitleSizeMB
+	if BTsets != nil && BTsets.MaxSubtitleSizeMB > 0 {
+		mb = BTsets.MaxSubtitleSizeMB
+	}
+	if mb > MaxSubtitleSizeLimitMB {
+		mb = MaxSubtitleSizeLimitMB
+	}
+	return int64(mb) << 20
+}
+
+// ExternalSubtitleTimeout returns the time limit for loading the external subtitle
+// tracks of a video into HLS.
+func ExternalSubtitleTimeout() time.Duration {
+	sec := DefaultExternalSubtitleTimeoutSec
+	if BTsets != nil && BTsets.ExternalSubtitleTimeoutSec > 0 {
+		sec = BTsets.ExternalSubtitleTimeoutSec
+	}
+	if sec > MaxExternalSubtitleTimeoutSec {
+		sec = MaxExternalSubtitleTimeoutSec
+	}
+	return time.Duration(sec) * time.Second
+}
+
+// ExternalSubtitleAttempts returns how many times loading the external subtitle tracks
+// of a video may be tried, when some of them fail for a temporary reason. 1 means no retry.
+func ExternalSubtitleAttempts() int {
+	n := DefaultExternalSubtitleAttempts
+	if BTsets != nil && BTsets.ExternalSubtitleAttempts > 0 {
+		n = BTsets.ExternalSubtitleAttempts
+	}
+	if n > MaxExternalSubtitleAttempts {
+		n = MaxExternalSubtitleAttempts
+	}
+	return n
+}
+
 func SetBTSets(sets *BTSets) {
 	if ReadOnly {
 		return
@@ -166,6 +252,8 @@ func SetBTSets(sets *BTSets) {
 	if sets.PreloadCache > 100 {
 		sets.PreloadCache = 100
 	}
+
+	sets.normalizeSubtitles()
 
 	if sets.TorrentsSavePath == "" {
 		sets.UseDisk = false
@@ -214,6 +302,9 @@ func SetDefaultConfig() {
 	sets.LPDIPv6 = false
 	sets.EnableBonjour = true
 	sets.MergeAllM3U = false
+	sets.MaxSubtitleSizeMB = DefaultMaxSubtitleSizeMB
+	sets.ExternalSubtitleTimeoutSec = DefaultExternalSubtitleTimeoutSec
+	sets.ExternalSubtitleAttempts = DefaultExternalSubtitleAttempts
 	// Set default TMDB settings
 	sets.TMDBSettings = TMDBConfig{
 		APIKey:     "",
@@ -240,6 +331,8 @@ func loadBTSets() {
 			if BTsets.ReaderReadAHead < 5 {
 				BTsets.ReaderReadAHead = 5
 			}
+			// Configs that predate the setting have no value for it.
+			BTsets.normalizeSubtitles()
 			// Set default TMDB settings if missing (for existing configs)
 			if BTsets.TMDBSettings.APIURL == "" {
 				BTsets.TMDBSettings = TMDBConfig{
