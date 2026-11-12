@@ -28,6 +28,7 @@ type subTrackJS struct {
 //	@Description	Without "track": list external subtitle tracks found in the torrent for the given video file.
 //	@Description	With "track": return that subtitle file, by default converted to WebVTT.
 //	@Description	"format": "vtt" (default) or "original" (no conversion). "encoding": output charset, default utf8.
+//	@Description	With "fonts": list the fonts for ASS subtitles of the video: [{source, name, type, size, url}].
 //
 //	@Tags			API
 //
@@ -36,6 +37,7 @@ type subTrackJS struct {
 //	@Param			track	query	int		false	"Subtitle file index (from the list)"
 //	@Param			format	query	string	false	"vtt (default) or original"
 //	@Param			encoding	query	string	false	"Output encoding, default utf8 (also: windows-1251)"
+//	@Param			fonts	query	string	false	"Present (no value): list the fonts of the video (font files of the torrent near it)"
 //
 //	@Produce		json
 //	@Produce		text/vtt
@@ -121,6 +123,12 @@ func subsTracks(c *gin.Context) {
 
 	if !subs.IsVideo(video.Path) {
 		c.AbortWithError(http.StatusBadRequest, errors.New("file is not a video"))
+		return
+	}
+
+	// Fonts for ASS subtitles: ?fonts (list).
+	if _, ok := c.GetQuery("fonts"); ok {
+		subsFonts(c, spec.InfoHash.HexString(), *video, files)
 		return
 	}
 
