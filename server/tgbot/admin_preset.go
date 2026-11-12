@@ -203,7 +203,7 @@ func applyPresetKV(s *settings.BTSets, args []string, uid int64) (bool, string) 
 				ok = true
 			}
 		case "preload":
-			if v := parseInt(val); v >= 0 && v <= 100 {
+			if v, valid := parseFloat(val); valid && v >= 0 && v <= 100 {
 				s.PreloadCache = v
 				ok = true
 			}
