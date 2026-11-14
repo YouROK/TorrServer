@@ -173,7 +173,8 @@
     width: 100%;
 }
 
-.add-body {
+/* Тело окна добавления - две колонки, постер слева от полей */
+.modal-body.add-body {
     display: flex;
     flex-direction: row;
     gap: 20px;
@@ -182,6 +183,7 @@
 
 .add-preview {
     flex: 0 0 260px;
+    width: 260px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -961,7 +963,7 @@
    Мобильная адаптация
    ---------------------------------------------------------------------------- */
 @media (max-width: 720px) {
-    .add-body { flex-direction: column; }
+    .modal-body.add-body { flex-direction: column; }
 
     .add-preview {
         flex: 0 0 auto;
