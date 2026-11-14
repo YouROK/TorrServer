@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -18,6 +19,23 @@ func realFFmpegPath(t *testing.T) string {
 	candidates := []string{
 		filepath.Join("..", "..", "dist", binaryName("ffmpeg")),
 		"/usr/bin/ffmpeg",
+	}
+
+	for _, path := range candidates {
+		if st, err := os.Stat(path); err == nil && !st.IsDir() {
+			return path
+		}
+	}
+	return ""
+}
+
+// realFFprobePath возвращает путь к настоящему ffprobe, если он доступен.
+func realFFprobePath(t *testing.T) string {
+	t.Helper()
+
+	candidates := []string{
+		filepath.Join("..", "..", "dist", binaryName("ffprobe")),
+		"/usr/bin/ffprobe",
 	}
 
 	for _, path := range candidates {
@@ -323,6 +341,74 @@ func TestRealDisabledModule(t *testing.T) {
 	}
 	if _, err := f.Start(context.Background(), StartRequest{}); err == nil {
 		t.Error("Start must fail when transcoding is disabled")
+	}
+}
+
+// TestRealProbeWithoutFFmpeg проверяет разбор медиа без ffmpeg.
+func TestRealProbeWithoutFFmpeg(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping real ffprobe test in short mode")
+	}
+	path := realFFprobePath(t)
+	if path == "" {
+		t.Skip("ffprobe binary is not available")
+	}
+
+	pb, err := inspectProbe(path)
+	if err != nil {
+		t.Fatalf("inspectProbe: %v", err)
+	}
+
+	f := (&FFmpeg{cfg: DefaultConfig(), dataDir: t.TempDir()}).setup(nil, pb, ErrNotInstalled, nil)
+	if f.Enabled() {
+		t.Error("transcoding must be disabled without ffmpeg")
+	}
+	if !f.ProbeEnabled() {
+		t.Fatalf("probe must be available: %s", f.ProbeReason())
+	}
+
+	info := f.Info()
+	if info.FFprobePath != pb.Path || info.ProbeVersion == "" {
+		t.Errorf("probe info was not reported: %+v", info)
+	}
+	if info.FFmpegPath != "" {
+		t.Errorf("ffmpeg path = %q, want empty", info.FFmpegPath)
+	}
+
+	input := makeTestMedia(t)
+	parsed, err := f.Probe(context.Background(), input)
+	if err != nil {
+		t.Fatalf("Probe: %v", err)
+	}
+	if parsed.Container != "mkv" {
+		t.Errorf("container = %q, want mkv", parsed.Container)
+	}
+}
+
+// TestRealTranscodeWithoutProbe проверяет, что без ffprobe транскодирование выключено.
+func TestRealTranscodeWithoutProbe(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping real ffmpeg test in short mode")
+	}
+	path := realFFmpegPath(t)
+	if path == "" {
+		t.Skip("ffmpeg binary is not available")
+	}
+
+	bin, err := inspect(path, DefaultConfig())
+	if err != nil {
+		t.Fatalf("inspect: %v", err)
+	}
+
+	f := (&FFmpeg{cfg: DefaultConfig(), dataDir: t.TempDir()}).setup(bin, nil, nil, ErrProbeNotInstalled)
+	if f.Enabled() {
+		t.Error("transcoding must be disabled without ffprobe")
+	}
+	if f.ProbeEnabled() {
+		t.Error("probe must be disabled without ffprobe")
+	}
+	if !strings.Contains(f.Reason(), "ffprobe") {
+		t.Errorf("reason = %q, want mention of ffprobe", f.Reason())
 	}
 }
 

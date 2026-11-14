@@ -95,6 +95,12 @@ func TestParseVersionOutput(t *testing.T) {
 			wantStr: "4.4.2",
 		},
 		{
+			name:    "ffprobe build",
+			out:     "ffprobe version 8.1.3-Jellyfin Copyright (c) 2007-2026\n",
+			want:    Version{8, 1, 3},
+			wantStr: "8.1.3",
+		},
+		{
 			name:    "git build",
 			out:     "ffmpeg version N-109000-g1234567890 Copyright (c) 2000-2022\n",
 			wantErr: true,
@@ -214,6 +220,34 @@ func TestFindCandidatesSkipsMissing(t *testing.T) {
 		if c.source == sourceConfig {
 			t.Errorf("missing config binary was offered as candidate: %s", c.path)
 		}
+	}
+}
+
+func TestFindProbeCandidatesOrder(t *testing.T) {
+	dir := t.TempDir()
+	name := binaryName("ffprobe")
+
+	nearPath := filepath.Join(dir, name)
+	if err := os.WriteFile(nearPath, []byte("stub"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	cfgPath := filepath.Join(dir, "custom-"+name)
+	if err := os.WriteFile(cfgPath, []byte("stub"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Setenv("PATH", dir)
+
+	got := findProbeCandidates(cfgPath, filepath.Join(dir, binaryName("ffmpeg")))
+	if len(got) < 2 {
+		t.Fatalf("candidates = %d, want at least 2", len(got))
+	}
+	if got[0].source != sourceConfig || got[0].path != cfgPath {
+		t.Errorf("first candidate = %+v, want config %s", got[0], cfgPath)
+	}
+	if got[1].path != nearPath {
+		t.Errorf("second candidate = %s, want %s", got[1].path, nearPath)
 	}
 }
 

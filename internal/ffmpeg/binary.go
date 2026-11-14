@@ -24,18 +24,18 @@ const (
 	Tag = "[FFmpeg]"
 )
 
-// versionRe разбирает версию из первой строки вывода ffmpeg -version.
-var versionRe = regexp.MustCompile(`^ffmpeg version n?((?:[0-9]+\.?)+)`)
+// versionRe разбирает версию из первой строки вывода ffmpeg или ffprobe -version.
+var versionRe = regexp.MustCompile(`^(?:ffmpeg|ffprobe) version n?((?:[0-9]+\.?)+)`)
 
 var (
-	ErrNotInstalled = errors.New("ffmpeg not installed")
-	ErrTooOld       = errors.New("ffmpeg version is too old")
+	ErrNotInstalled      = errors.New("ffmpeg not installed")
+	ErrProbeNotInstalled = errors.New("ffprobe not installed")
+	ErrTooOld            = errors.New("ffmpeg version is too old")
 )
 
 // Binary описывает найденный исполняемый файл ffmpeg вместе с его возможностями.
 type Binary struct {
-	FFmpeg  string
-	FFprobe string
+	FFmpeg string
 
 	Version    Version
 	VersionStr string
@@ -48,6 +48,13 @@ type Binary struct {
 	PauseSupport bool
 
 	pauseOnce sync.Once
+}
+
+// ProbeBinary описывает найденный исполняемый файл ffprobe.
+type ProbeBinary struct {
+	Path       string
+	Version    Version
+	VersionStr string
 }
 
 // Version - разобранная версия ffmpeg.
@@ -182,39 +189,53 @@ func findCandidates(explicit string) []candidate {
 	return list
 }
 
-// findProbePath ищет ffprobe рядом с ffmpeg и в PATH.
-func findProbePath(explicit, ffmpegPath string) string {
-	if explicit != "" {
-		if abs, err := filepath.Abs(explicit); err == nil {
-			if st, err := os.Stat(abs); err == nil && !st.IsDir() {
-				return abs
-			}
+// findProbeCandidates собирает пути к ffprobe в порядке приоритета.
+// ffmpegPath нужен только для поиска соседнего бинарника.
+func findProbeCandidates(explicit, ffmpegPath string) []candidate {
+	var list []candidate
+	seen := make(map[string]struct{})
+
+	add := func(path string, source candidateSource) {
+		if path == "" {
+			return
 		}
-		return ""
+		abs, err := filepath.Abs(path)
+		if err != nil {
+			abs = path
+		}
+		if _, ok := seen[abs]; ok {
+			return
+		}
+		if st, err := os.Stat(abs); err != nil || st.IsDir() {
+			return
+		}
+		seen[abs] = struct{}{}
+		list = append(list, candidate{path: abs, source: source})
 	}
 
-	sibling := filepath.Join(filepath.Dir(ffmpegPath), binaryName("ffprobe"))
-	if st, err := os.Stat(sibling); err == nil && !st.IsDir() {
-		return sibling
+	if explicit != "" {
+		add(explicit, sourceConfig)
 	}
 
-	if p, err := exec.LookPath("ffprobe"); err == nil {
-		return p
+	if ffmpegPath != "" {
+		add(filepath.Join(filepath.Dir(ffmpegPath), binaryName("ffprobe")), sourceNear)
 	}
 
 	if dir := executableDir(); dir != "" {
-		near := filepath.Join(dir, binaryName("ffprobe"))
-		if st, err := os.Stat(near); err == nil && !st.IsDir() {
-			return near
-		}
+		add(filepath.Join(dir, binaryName("ffprobe")), sourceNear)
+		add(filepath.Join(dir, "bin", binaryName("ffprobe")), sourceNear)
 	}
 
-	return ""
+	if p, err := exec.LookPath("ffprobe"); err == nil {
+		add(p, sourcePath)
+	}
+
+	return list
 }
 
 // probeBinary ищет подходящий ffmpeg и проверяет его возможности.
-func probeBinary() (*Binary, error) {
-	candidates := findCandidates("")
+func probeBinary(explicit string) (*Binary, error) {
+	candidates := findCandidates(explicit)
 	if len(candidates) == 0 {
 		return nil, ErrNotInstalled
 	}
@@ -236,35 +257,77 @@ func probeBinary() (*Binary, error) {
 	return nil, lastErr
 }
 
-// inspect проверяет один бинарник и собирает список его возможностей.
-func inspect(path string, cfg Config) (*Binary, error) {
+// findProbeBinary ищет ffprobe и проверяет его версию.
+func findProbeBinary(explicit, ffmpegPath string) (*ProbeBinary, error) {
+	candidates := findProbeCandidates(explicit, ffmpegPath)
+	if len(candidates) == 0 {
+		return nil, ErrProbeNotInstalled
+	}
+
+	var lastErr error
+	for _, c := range candidates {
+		pb, err := inspectProbe(c.path)
+		if err == nil {
+			return pb, nil
+		}
+		lastErr = err
+		log.Warnf("%s Candidate %s rejected: %v", ProbeTag, c.path, err)
+	}
+
+	if lastErr == nil {
+		lastErr = ErrProbeNotInstalled
+	}
+	return nil, lastErr
+}
+
+// binaryVersion запускает бинарник с -version и разбирает версию.
+func binaryVersion(path string) (Version, string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultStartTimeout)
 	defer cancel()
 
 	versionOut, err := runOutput(ctx, path, "-hide_banner", "-version")
 	if err != nil {
-		return nil, fmt.Errorf("failed to run -version: %w", err)
+		return Version{}, "", fmt.Errorf("failed to run -version: %w", err)
 	}
 	if strings.Contains(versionOut, "Libav developers") {
-		return nil, errors.New("avconv is not supported")
+		return Version{}, "", errors.New("avconv is not supported")
 	}
 
 	version, versionStr, err := parseVersionOutput(versionOut)
 	if err != nil {
-		return nil, err
+		return Version{}, "", err
 	}
 	if !version.AtLeast(DefaultMinVersion) {
-		return nil, fmt.Errorf("%w: %s is below minimum %s", ErrTooOld, version.String(), DefaultMinVersion)
+		return Version{}, "", fmt.Errorf("%w: %s is below minimum %s", ErrTooOld, version.String(), DefaultMinVersion)
+	}
+	return version, versionStr, nil
+}
+
+// inspectProbe проверяет ffprobe и разбирает его версию.
+func inspectProbe(path string) (*ProbeBinary, error) {
+	version, versionStr, err := binaryVersion(path)
+	if err != nil {
+		return nil, err
+	}
+	return &ProbeBinary{
+		Path:       path,
+		Version:    version,
+		VersionStr: versionStr,
+	}, nil
+}
+
+// inspect проверяет один бинарник и собирает список его возможностей.
+func inspect(path string, cfg Config) (*Binary, error) {
+	version, versionStr, err := binaryVersion(path)
+	if err != nil {
+		return nil, err
 	}
 
-	probePath := findProbePath("", path)
-	if probePath == "" {
-		return nil, errors.New("ffprobe not found next to ffmpeg")
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultStartTimeout)
+	defer cancel()
 
 	bin := &Binary{
 		FFmpeg:     path,
-		FFprobe:    probePath,
 		Version:    version,
 		VersionStr: versionStr,
 	}
@@ -291,7 +354,7 @@ func inspect(path string, cfg Config) (*Binary, error) {
 	return bin, nil
 }
 
-// parseVersionOutput достаёт версию из вывода ffmpeg -version.
+// parseVersionOutput достаёт версию из вывода ffmpeg или ffprobe -version.
 func parseVersionOutput(out string) (Version, string, error) {
 	line := out
 	if idx := strings.IndexByte(out, '\n'); idx >= 0 {

@@ -109,6 +109,19 @@ func (s *Server) transcodeReason() string {
 	return s.transcoder.Reason()
 }
 
+// probeEnabled сообщает, доступен ли разбор медиа через ffprobe.
+func (s *Server) probeEnabled() bool {
+	return s.transcoder != nil && s.transcoder.ProbeEnabled()
+}
+
+// probeReason возвращает причину недоступности разбора медиа.
+func (s *Server) probeReason() string {
+	if s.transcoder == nil {
+		return "transcoding module is not linked"
+	}
+	return s.transcoder.ProbeReason()
+}
+
 // SetPluginManager связывает веб-сервер с менеджером плагинов после инициализации
 func (s *Server) SetPluginManager(pm *plugin.Manager) {
 	s.pluginMgr = pm

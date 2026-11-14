@@ -37,8 +37,8 @@ func (s *Server) handleTranscodeInfo(c *gin.Context) {
 	val, _ := c.Get("user")
 	currentUser := val.(*user.User)
 
-	if !s.transcodeEnabled() {
-		writeTranscodeUnavailable(c, s.transcodeReason())
+	if !s.probeEnabled() {
+		writeProbeUnavailable(c, s.probeReason())
 		return
 	}
 
@@ -471,6 +471,14 @@ func writeTranscodeUnavailable(c *gin.Context, reason string) {
 	})
 }
 
+// writeProbeUnavailable сообщает, что разбор медиа недоступен.
+func writeProbeUnavailable(c *gin.Context, reason string) {
+	c.JSON(http.StatusServiceUnavailable, gin.H{
+		"error":  "ffprobe is unavailable",
+		"reason": reason,
+	})
+}
+
 // writeTranscodeError переводит ошибку транскодирования в HTTP-ответ.
 func writeTranscodeError(c *gin.Context, err error) {
 	switch {
@@ -552,8 +560,8 @@ func (s *Server) handleTranscodeModule(c *gin.Context) {
 // ProbeFile разбирает файл раздачи и возвращает сведения о потоках.
 // Метод нужен другим модулям, например плагинам.
 func (s *Server) ProbeFile(ctx context.Context, userID, hash string, fileIdx int) (*media.MediaInfo, error) {
-	if !s.transcodeEnabled() {
-		return nil, errors.New("transcoding is unavailable")
+	if !s.probeEnabled() {
+		return nil, errors.New(s.probeReason())
 	}
 
 	u, err := s.userSvc.GetUserByID(userID)

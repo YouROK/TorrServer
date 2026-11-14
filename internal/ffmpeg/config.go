@@ -25,6 +25,8 @@ const (
 // Config описывает настройки транскодинга из файла конфигурации.
 type Config struct {
 	Enabled       bool   `yaml:"enabled" json:"enabled"`
+	Path          string `yaml:"path" json:"path"`                 // Путь к ffmpeg, пусто - поиск рядом с сервером и в PATH
+	ProbePath     string `yaml:"probe_path" json:"probe_path"`     // Путь к ffprobe, пусто - поиск рядом с сервером и в PATH
 	CacheDir      string `yaml:"cache_dir" json:"cache_dir"`       // Пусто - используется <data_dir>/transcode
 	MaxSessions   int    `yaml:"max_sessions" json:"max_sessions"` // 0 - без ограничения
 	ProbeTimeout  int    `yaml:"probe_timeout_sec" json:"probe_timeout_sec"`
@@ -88,6 +90,8 @@ func (c *Config) Normalize() {
 		c.KeepAhead = DefaultKeepAhead
 	}
 	c.CacheDir = strings.TrimSpace(c.CacheDir)
+	c.Path = strings.TrimSpace(c.Path)
+	c.ProbePath = strings.TrimSpace(c.ProbePath)
 }
 
 // ResolveCacheDir возвращает каталог для файлов транскодирования.

@@ -33,17 +33,19 @@ type StartRequest struct {
 
 // FFmpeg объединяет поиск бинарей, разбор медиа и запуск процессов.
 type FFmpeg struct {
-	cfg     Config
-	dataDir string
-	binary  *Binary
-	prober  *probe.Prober
-	jobs    *job.Manager
+	cfg      Config
+	dataDir  string
+	binary   *Binary
+	probeBin *ProbeBinary
+	prober   *probe.Prober
+	jobs     *job.Manager
 
-	mu      sync.RWMutex
-	lastErr error
+	mu       sync.RWMutex
+	lastErr  error
+	probeErr error
 }
 
-// New создаёт модуль транскодинга и ищет подходящий ffmpeg.
+// New создаёт модуль, независимо находя ffmpeg и ffprobe.
 func New(cfg Config, dataDir string) *FFmpeg {
 	cfg.Normalize()
 
@@ -51,17 +53,17 @@ func New(cfg Config, dataDir string) *FFmpeg {
 
 	if cfg.validate() != nil || !cfg.Enabled {
 		f.lastErr = errors.New("transcoding is disabled")
+		f.probeErr = errors.New("ffmpeg module is disabled")
 		return f
 	}
 
-	bin, err := probeBinary()
-	if err != nil {
-		f.lastErr = err
-		log.Errorf("%s Transcoding disabled: %v", Tag, err)
-		return f
+	bin, ffmpegErr := probeBinary(cfg.Path)
+	ffmpegPath := ""
+	if bin != nil {
+		ffmpegPath = bin.FFmpeg
 	}
-
-	return f.setup(bin)
+	pb, probeErr := findProbeBinary(cfg.ProbePath, ffmpegPath)
+	return f.setup(bin, pb, ffmpegErr, probeErr)
 }
 
 // newWithBinary создаёт модуль на заданном бинарнике, минуя поиск.
@@ -71,6 +73,7 @@ func newWithBinary(cfg Config, dataDir, ffmpegPath string) *FFmpeg {
 	f := &FFmpeg{cfg: cfg, dataDir: dataDir}
 	if !cfg.Enabled {
 		f.lastErr = errors.New("transcoding is disabled")
+		f.probeErr = errors.New("ffmpeg module is disabled")
 		return f
 	}
 
@@ -80,11 +83,37 @@ func newWithBinary(cfg Config, dataDir, ffmpegPath string) *FFmpeg {
 		log.Errorf("%s Transcoding disabled: %v", Tag, err)
 		return f
 	}
-	return f.setup(bin)
+	pb, probeErr := findProbeBinary(cfg.ProbePath, ffmpegPath)
+	return f.setup(bin, pb, nil, probeErr)
 }
 
-// setup достраивает модуль после успешной проверки бинарника.
-func (f *FFmpeg) setup(bin *Binary) *FFmpeg {
+// setup достраивает модуль по найденным бинарям.
+// Бинари проверяются по отдельности: ffprobe разбирает медиа, ffmpeg кодирует.
+func (f *FFmpeg) setup(bin *Binary, pb *ProbeBinary, ffmpegErr, probeErr error) *FFmpeg {
+	if pb != nil {
+		f.probeBin = pb
+		f.prober = probe.New(pb.Path, probe.Config{
+			Timeout:   f.cfg.probeTimeout(),
+			CacheSize: 128,
+		})
+		log.Infof("%s ffprobe %s at %s", ProbeTag, pb.VersionStr, pb.Path)
+	} else {
+		if probeErr == nil {
+			probeErr = ErrProbeNotInstalled
+		}
+		f.probeErr = probeErr
+		log.Warnf("%s ffprobe not found: %v", ProbeTag, probeErr)
+	}
+
+	if bin == nil {
+		if ffmpegErr == nil {
+			ffmpegErr = ErrNotInstalled
+		}
+		f.lastErr = ffmpegErr
+		log.Warnf("%s Transcoding disabled: %v", Tag, ffmpegErr)
+		return f
+	}
+
 	cacheDir := f.cfg.ResolveCacheDir(f.dataDir)
 	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
 		f.lastErr = fmt.Errorf("failed to create cache dir: %w", err)
@@ -105,10 +134,6 @@ func (f *FFmpeg) setup(bin *Binary) *FFmpeg {
 		}
 	}
 
-	f.prober = probe.New(bin.FFprobe, probe.Config{
-		Timeout:   f.cfg.probeTimeout(),
-		CacheSize: 128,
-	})
 	// Поддержку паузы проверяем один раз: от неё зависит ограничение скорости
 	pauseSupport := bin.DetectPause()
 
@@ -124,7 +149,13 @@ func (f *FFmpeg) setup(bin *Binary) *FFmpeg {
 	})
 
 	log.Infof("%s Using ffmpeg %s at %s", Tag, bin.Version.String(), bin.FFmpeg)
-	log.Infof("%s ffprobe at %s", ProbeTag, bin.FFprobe)
+
+	// Транскодирование разбирает источник через ffprobe, поэтому без него недоступно
+	if f.prober == nil {
+		f.lastErr = f.probeErr
+		log.Warnf("%s Transcoding disabled: %v", Tag, f.probeErr)
+		return f
+	}
 
 	if pauseSupport {
 		log.Infof("%s Pause and resume are supported via stdin", Tag)
@@ -134,9 +165,10 @@ func (f *FFmpeg) setup(bin *Binary) *FFmpeg {
 	return f
 }
 
-// Enabled сообщает, готов ли модуль к работе.
+// Enabled сообщает, готов ли модуль к транскодированию.
+// Транскодирование требует оба бинаря: ffprobe разбирает источник, ffmpeg кодирует.
 func (f *FFmpeg) Enabled() bool {
-	return f != nil && f.binary != nil && f.jobs != nil && f.jobs.Enabled()
+	return f != nil && f.binary != nil && f.prober != nil && f.jobs != nil && f.jobs.Enabled()
 }
 
 // Reason возвращает причину, по которой транскодинг недоступен.
@@ -150,16 +182,44 @@ func (f *FFmpeg) Reason() string {
 	if f.lastErr != nil {
 		return f.lastErr.Error()
 	}
+	if f.binary == nil {
+		return ErrNotInstalled.Error()
+	}
+	if f.prober == nil {
+		return ErrProbeNotInstalled.Error()
+	}
 	return "unknown reason"
 }
 
-// Info описывает найденный бинарь и его возможности.
+// ProbeEnabled сообщает, доступен ли разбор медиа через ffprobe.
+func (f *FFmpeg) ProbeEnabled() bool {
+	return f != nil && f.prober != nil
+}
+
+// ProbeReason возвращает причину, по которой разбор медиа недоступен.
+func (f *FFmpeg) ProbeReason() string {
+	if f == nil {
+		return "not initialized"
+	}
+	if f.ProbeEnabled() {
+		return ""
+	}
+	if f.probeErr != nil {
+		return f.probeErr.Error()
+	}
+	return ErrProbeNotInstalled.Error()
+}
+
+// Info описывает найденные бинари и их возможности.
 type Info struct {
 	Enabled      bool     `json:"enabled"`
 	Reason       string   `json:"reason,omitempty"`
+	ProbeEnabled bool     `json:"probe_enabled"`
+	ProbeReason  string   `json:"probe_reason,omitempty"`
 	FFmpegPath   string   `json:"ffmpeg_path,omitempty"`
 	FFprobePath  string   `json:"ffprobe_path,omitempty"`
 	Version      string   `json:"version,omitempty"`
+	ProbeVersion string   `json:"probe_version,omitempty"`
 	PauseSupport bool     `json:"pause_support"`
 	CacheDir     string   `json:"cache_dir"`
 	MaxSessions  int      `json:"max_sessions"`
@@ -171,33 +231,43 @@ type Info struct {
 // Info возвращает сведения о состоянии модуля.
 func (f *FFmpeg) Info() Info {
 	if f == nil {
-		return Info{Reason: "not initialized"}
+		return Info{Reason: "not initialized", ProbeReason: "not initialized"}
 	}
 
-	info := Info{Enabled: f.Enabled(), Reason: f.Reason(), MaxSessions: f.cfg.MaxSessions}
-	if !f.Enabled() {
-		return info
+	info := Info{
+		Enabled:      f.Enabled(),
+		Reason:       f.Reason(),
+		ProbeEnabled: f.ProbeEnabled(),
+		ProbeReason:  f.ProbeReason(),
+		CacheDir:     f.CacheDir(),
+		MaxSessions:  f.cfg.MaxSessions,
 	}
 
-	info.FFmpegPath = f.binary.FFmpeg
-	info.FFprobePath = f.binary.FFprobe
-	info.Version = f.binary.Version.String()
-	info.PauseSupport = f.binary.PauseSupport
-	info.ActiveJobs = f.jobs.Count()
-	info.CacheDir = f.CacheDir()
-	for name := range f.binary.Encoders {
-		info.Encoders = append(info.Encoders, name)
+	if f.binary != nil {
+		info.FFmpegPath = f.binary.FFmpeg
+		info.Version = f.binary.Version.String()
+		info.PauseSupport = f.binary.PauseSupport
+		for name := range f.binary.Encoders {
+			info.Encoders = append(info.Encoders, name)
+		}
+		for name := range f.binary.Hwaccels {
+			info.Hwaccels = append(info.Hwaccels, name)
+		}
 	}
-	for name := range f.binary.Hwaccels {
-		info.Hwaccels = append(info.Hwaccels, name)
+	if f.probeBin != nil {
+		info.FFprobePath = f.probeBin.Path
+		info.ProbeVersion = f.probeBin.VersionStr
+	}
+	if f.jobs != nil {
+		info.ActiveJobs = f.jobs.Count()
 	}
 	return info
 }
 
 // Probe разбирает медиафайл по ссылке.
 func (f *FFmpeg) Probe(ctx context.Context, input string) (*media.MediaInfo, error) {
-	if !f.Enabled() {
-		return nil, fmt.Errorf("transcoding is unavailable: %s", f.Reason())
+	if !f.ProbeEnabled() {
+		return nil, fmt.Errorf("ffprobe is not available: %s", f.ProbeReason())
 	}
 	return f.prober.Probe(ctx, input)
 }
