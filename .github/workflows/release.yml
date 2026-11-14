@@ -46,30 +46,30 @@ jobs:
           echo "Building ${version} for tag ${GITHUB_REF_NAME}"
 
   build:
-    name: Build ${{ matrix.platform }}
+    name: Build ${{ matrix.target }}
     needs: verify
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        platform:
-          - linux/amd64
-          - linux/arm64
-          - linux/arm7
-          - linux/arm5
-          - linux/386
-          - windows/amd64
-          - windows/386
-          - darwin/amd64
-          - darwin/arm64
-          - freebsd/amd64
-          - freebsd/arm7
-          - linux/mips
-          - linux/mipsle
-          - linux/mips64
-          - linux/mips64le
-          - linux/riscv64
+        include:
+          - { target: linux/amd64, artifact: linux-amd64 }
+          - { target: linux/arm64, artifact: linux-arm64 }
+          - { target: linux/arm7, artifact: linux-arm7 }
+          - { target: linux/arm5, artifact: linux-arm5 }
+          - { target: linux/386, artifact: linux-386 }
+          - { target: windows/amd64, artifact: windows-amd64 }
+          - { target: windows/386, artifact: windows-386 }
+          - { target: darwin/amd64, artifact: darwin-amd64 }
+          - { target: darwin/arm64, artifact: darwin-arm64 }
+          - { target: freebsd/amd64, artifact: freebsd-amd64 }
+          - { target: freebsd/arm7, artifact: freebsd-arm7 }
+          - { target: linux/mips, artifact: linux-mips }
+          - { target: linux/mipsle, artifact: linux-mipsle }
+          - { target: linux/mips64, artifact: linux-mips64 }
+          - { target: linux/mips64le, artifact: linux-mips64le }
+          - { target: linux/riscv64, artifact: linux-riscv64 }
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -84,7 +84,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          platform="${{ matrix.platform }}"
+          platform="${{ matrix.target }}"
           goos="${platform%/*}"
           goarch="${platform#*/}"
           goarm=""
@@ -129,7 +129,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ replace(matrix.platform, '/', '-') }}
+          name: ${{ matrix.artifact }}
           path: build/TorrServer-*
           if-no-files-found: error
 
