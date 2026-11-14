@@ -3,6 +3,7 @@ package auth
 import (
 	"encoding/base64"
 	"encoding/json"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -61,11 +62,34 @@ func BasicAuth(accounts gin.Accounts) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set("auth_required", true)
 
+		// GStreamer and ffprobe use the dedicated random loopback listener.
+		// Neither a local proxy on the public port nor forwarded headers grant this trust.
+		if internalRequest(c.Request) {
+			c.Set(gin.AuthUserKey, "internal")
+			return
+		}
+
 		user, found := pairs.searchCredential(c.Request.Header.Get("Authorization"))
 		if found {
 			c.Set(gin.AuthUserKey, user)
 		}
 	}
+}
+
+func internalRequest(request *http.Request) bool {
+	if settings.InternalPort == "" {
+		return false
+	}
+	local, ok := request.Context().Value(http.LocalAddrContextKey).(net.Addr)
+	if !ok || local == nil {
+		return false
+	}
+	host, port, err := net.SplitHostPort(local.String())
+	if err != nil || port != settings.InternalPort || !net.ParseIP(host).IsLoopback() {
+		return false
+	}
+	peer, _, err := net.SplitHostPort(request.RemoteAddr)
+	return err == nil && net.ParseIP(peer).IsLoopback()
 }
 
 func CheckAuth() gin.HandlerFunc {

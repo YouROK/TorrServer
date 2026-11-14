@@ -4,12 +4,13 @@ package bridge
 
 import (
 	"server/gstreamer"
+	"server/web/auth"
 
 	"github.com/gin-gonic/gin"
 )
 
 func SetupRoute(route gin.IRouter) {
-	gstreamer.SetupRoute(route)
+	gstreamer.SetupRoute(route.Group("/", auth.CheckAuth()))
 }
 
 func BuiltIn() bool {
