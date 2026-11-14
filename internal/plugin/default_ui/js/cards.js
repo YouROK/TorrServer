@@ -132,7 +132,7 @@ function upsertCard(c) {
     if (existing) {
         patchCard(existing, c);
     } else {
-        grid.insertAdjacentHTML('beforeend', cardHTML(c));
+        grid.insertAdjacentHTML('afterbegin', cardHTML(c));
     }
 }
 

@@ -594,3 +594,43 @@ func TestManager_EphemeralTorrentStaysReadable(t *testing.T) {
 		t.Fatalf("GetTorrentStatus for own ephemeral torrent failed: %v", err)
 	}
 }
+
+func TestManager_ListTorrentsSortedByTimestamp(t *testing.T) {
+	mgr, _, _, _, owner := setupManagerTest(t)
+
+	// Хэш первой (старшей) раздачи лексикографически меньше второй
+	specOlder := &torrent.TorrentSpec{
+		InfoHash:    metainfo.NewHashFromHex("0000000000000000000000000000000000000001"),
+		DisplayName: "Older Torrent",
+	}
+	specNewer := &torrent.TorrentSpec{
+		InfoHash:    metainfo.NewHashFromHex("ffffffffffffffffffffffffffffffffffffffff"),
+		DisplayName: "Newer Torrent",
+	}
+
+	if _, err := mgr.AddTorrent(owner, specOlder, "Older Torrent", "", "movie", true); err != nil {
+		t.Fatalf("Failed to add older spec: %v", err)
+	}
+	// Небольшая пауза, чтобы метка времени добавления отличалась
+	time.Sleep(20 * time.Millisecond)
+
+	if _, err := mgr.AddTorrent(owner, specNewer, "Newer Torrent", "", "movie", true); err != nil {
+		t.Fatalf("Failed to add newer spec: %v", err)
+	}
+
+	list, err := mgr.ListTorrents(owner)
+	if err != nil {
+		t.Fatalf("ListTorrents failed: %v", err)
+	}
+	if len(list) != 2 {
+		t.Fatalf("Expected 2 torrents, got %d", len(list))
+	}
+
+	// Свежая раздача должна идти первой
+	if list[0].Hash != specNewer.InfoHash.HexString() {
+		t.Errorf("Expected first torrent to be newer %s, got %s", specNewer.InfoHash.HexString(), list[0].Hash)
+	}
+	if list[1].Hash != specOlder.InfoHash.HexString() {
+		t.Errorf("Expected second torrent to be older %s, got %s", specOlder.InfoHash.HexString(), list[1].Hash)
+	}
+}
