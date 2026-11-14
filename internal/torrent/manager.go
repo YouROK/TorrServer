@@ -7,6 +7,7 @@ import (
 	"io"
 	"runtime"
 	"silo/internal/torrshash"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -283,6 +284,13 @@ func (m *Manager) GetTorrentStatus(u *user.User, hashHex string) (*TorrentStatus
 		st.Title = ResolveTitle(userTitle, metaName, hashHex)
 		if ut != nil {
 			st.ViewedFiles = ut.ViewedFiles
+			if !ut.AddedAt.IsZero() {
+				st.Timestamp = ut.AddedAt.Unix()
+			} else if recErr == nil && rec != nil && rec.Timestamp > 0 {
+				st.Timestamp = rec.Timestamp
+			}
+		} else if recErr == nil && rec != nil && rec.Timestamp > 0 {
+			st.Timestamp = rec.Timestamp
 		}
 		// В torrs-ссылку техническое название не пишем: имя из метаданных есть у получателя
 		st.Torrs = packTorrs(hashHex, ResolveTitle(userTitle, metaName, ""), st.Poster, st.Category, st.TorrentSize, flattenTrackers(sess.Trackers()))
@@ -302,6 +310,11 @@ func (m *Manager) GetTorrentStatus(u *user.User, hashHex string) (*TorrentStatus
 
 	title := ResolveTitle(ut.Title, rec.Name, hashHex)
 
+	ts := rec.Timestamp
+	if !ut.AddedAt.IsZero() {
+		ts = ut.AddedAt.Unix()
+	}
+
 	return &TorrentStatus{
 		Title:       title,
 		Name:        rec.Name,
@@ -312,7 +325,7 @@ func (m *Manager) GetTorrentStatus(u *user.User, hashHex string) (*TorrentStatus
 		StatString:  TorrentInDB.String(),
 		TorrentSize: rec.Size,
 		FileStats:   rec.Files,
-		Timestamp:   rec.Timestamp,
+		Timestamp:   ts,
 		ViewedFiles: ut.ViewedFiles,
 		Torrs:       packTorrs(rec.Hash, title, ut.Poster, ut.Category, rec.Size, rec.Trackers),
 	}, nil
@@ -487,6 +500,9 @@ func (m *Manager) ListTorrents(u *user.User) ([]*TorrentStatus, error) {
 			result = append(result, st)
 		}
 	}
+	sort.SliceStable(result, func(i, j int) bool {
+		return result[i].Timestamp > result[j].Timestamp
+	})
 	return result, nil
 }
 

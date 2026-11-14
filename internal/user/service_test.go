@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"silo/internal/config"
 	"silo/internal/database"
@@ -501,5 +502,39 @@ func TestUserTorrentSetAllFilesViewed(t *testing.T) {
 	ut.SetAllFilesViewed([]int{0, 1, 2}, false)
 	if len(ut.ViewedFiles) != 0 {
 		t.Errorf("после снятия ViewedFiles = %v, want пусто", ut.ViewedFiles)
+	}
+}
+
+// TestUserTorrentsSortedByAddedAt проверяет сортировку списка торрентов пользователя по времени добавления
+func TestUserTorrentsSortedByAddedAt(t *testing.T) {
+	svc, cleanup := setupTestEnv(t, "")
+	defer cleanup()
+
+	owner, _ := svc.Authenticate("")
+	u, err := svc.CreateUser(owner, "user_sorted", "pass", RankUser, Limits{})
+	if err != nil {
+		t.Fatalf("CreateUser failed: %v", err)
+	}
+
+	if err := svc.AddTorrent(u, "0000000000000000000000000000000000000001", "Older", "", "movie"); err != nil {
+		t.Fatalf("AddTorrent older failed: %v", err)
+	}
+	time.Sleep(10 * time.Millisecond)
+	if err := svc.AddTorrent(u, "ffffffffffffffffffffffffffffffffffffffff", "Newer", "", "movie"); err != nil {
+		t.Fatalf("AddTorrent newer failed: %v", err)
+	}
+
+	list, err := svc.ListTorrents(u)
+	if err != nil {
+		t.Fatalf("ListTorrents failed: %v", err)
+	}
+	if len(list) != 2 {
+		t.Fatalf("Expected 2 torrents, got %d", len(list))
+	}
+	if list[0].TorrentHash != "ffffffffffffffffffffffffffffffffffffffff" {
+		t.Errorf("Expected first torrent to be newer ffffffffffffffffffffffffffffffffffffffff, got %s", list[0].TorrentHash)
+	}
+	if list[1].TorrentHash != "0000000000000000000000000000000000000001" {
+		t.Errorf("Expected second torrent to be older 0000000000000000000000000000000000000001, got %s", list[1].TorrentHash)
 	}
 }

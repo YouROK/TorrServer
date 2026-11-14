@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 
 	"silo/internal/database"
 
@@ -356,7 +357,13 @@ func (s *Store) ListUserTorrents(userID string) ([]*UserTorrent, error) {
 		}
 		return nil
 	})
-	return list, err
+	if err != nil {
+		return nil, err
+	}
+	sort.Slice(list, func(i, j int) bool {
+		return list[i].AddedAt.After(list[j].AddedAt)
+	})
+	return list, nil
 }
 
 // CountUserTorrents возвращает текущее число торрентов у пользователя (для проверки лимитов)
