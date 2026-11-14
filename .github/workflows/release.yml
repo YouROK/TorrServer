@@ -1,0 +1,248 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  BUILD_LDFLAGS: '-s -w -checklinkname=0'
+  BUILD_TAGS: 'nosqlite'
+  NDK_VERSION: '27.0.12077973'
+
+jobs:
+  verify:
+    name: Verify version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Check version matches tag
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(sed -n 's/.*var Version = "\([^"]*\)".*/\1/p' internal/version/version.go | head -n1)"
+          if [ -z "${version}" ]; then
+            echo "::error file=internal/version/version.go::version is not set"
+            exit 1
+          fi
+          if [ "${version}" != "${GITHUB_REF_NAME}" ]; then
+            echo "::error file=internal/version/version.go::version ${version} does not match tag ${GITHUB_REF_NAME}"
+            exit 1
+          fi
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          echo "Building ${version} for tag ${GITHUB_REF_NAME}"
+
+  build:
+    name: Build ${{ matrix.platform }}
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
+          - linux/arm7
+          - linux/arm5
+          - linux/386
+          - windows/amd64
+          - windows/386
+          - darwin/amd64
+          - darwin/arm64
+          - freebsd/amd64
+          - freebsd/arm7
+          - linux/mips
+          - linux/mipsle
+          - linux/mips64
+          - linux/mips64le
+          - linux/riscv64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build
+        shell: bash
+        run: |
+          set -euo pipefail
+          platform="${{ matrix.platform }}"
+          goos="${platform%/*}"
+          goarch="${platform#*/}"
+          goarm=""
+          gomips=""
+          gomips64=""
+          case "${goarch}" in
+            arm5|arm7)
+              goarm="${goarch#arm}"
+              goarch="arm"
+              ;;
+            mips|mipsle)
+              gomips="softfloat"
+              ;;
+            mips64|mips64le)
+              gomips64="softfloat"
+              ;;
+          esac
+          name="${goos}-${goarch}${goarm}"
+          ext=""
+          if [ "${goos}" = "windows" ]; then
+            ext=".exe"
+          fi
+          envs=(GOOS="${goos}" GOARCH="${goarch}" CGO_ENABLED=0)
+          if [ -n "${goarm}" ]; then
+            envs+=(GOARM="${goarm}")
+          fi
+          if [ -n "${gomips}" ]; then
+            envs+=(GOMIPS="${gomips}")
+          fi
+          if [ -n "${gomips64}" ]; then
+            envs+=(GOMIPS64="${gomips64}")
+          fi
+          mkdir -p build
+          env "${envs[@]}" go build \
+            -ldflags="${BUILD_LDFLAGS}" \
+            -tags="${BUILD_TAGS}" \
+            -trimpath \
+            -o "build/TorrServer-${name}${ext}" \
+            ./cmd/server
+          ls -l "build/TorrServer-${name}${ext}"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ replace(matrix.platform, '/', '-') }}
+          path: build/TorrServer-*
+          if-no-files-found: error
+
+  build-android:
+    name: Build android/${{ matrix.abi }}
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - abi: arm7
+            goarch: arm
+            goarm: '7'
+            cc: armv7a-linux-androideabi21-clang
+          - abi: arm64
+            goarch: arm64
+            goarm: ''
+            cc: aarch64-linux-android21-clang
+          - abi: '386'
+            goarch: '386'
+            goarm: ''
+            cc: i686-linux-android21-clang
+          - abi: amd64
+            goarch: amd64
+            goarm: ''
+            cc: x86_64-linux-android21-clang
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK
+        shell: bash
+        run: sdkmanager --install "ndk;${NDK_VERSION}"
+
+      - name: Build
+        shell: bash
+        run: |
+          set -euo pipefail
+          toolchain="${ANDROID_HOME}/ndk/${NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          envs=(
+            GOOS=android
+            GOARCH="${{ matrix.goarch }}"
+            CGO_ENABLED=1
+            CC="${toolchain}/${{ matrix.cc }}"
+            CXX="${toolchain}/${{ matrix.cc }}++"
+          )
+          if [ -n "${{ matrix.goarm }}" ]; then
+            envs+=(GOARM="${{ matrix.goarm }}")
+          fi
+          mkdir -p build
+          env "${envs[@]}" go build \
+            -ldflags="${BUILD_LDFLAGS}" \
+            -tags="${BUILD_TAGS}" \
+            -trimpath \
+            -o "build/TorrServer-android-${{ matrix.abi }}" \
+            ./cmd/server
+          ls -l "build/TorrServer-android-${{ matrix.abi }}"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-${{ matrix.abi }}
+          path: build/TorrServer-android-*
+          if-no-files-found: error
+
+  release:
+    name: Publish ${{ needs.verify.outputs.version }}
+    needs:
+      - verify
+      - build
+      - build-android
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Collect binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          find artifacts -type f -name 'TorrServer-*' -exec mv {} dist/ \;
+          ls -l dist
+
+      - name: Write checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dist
+          sha256sum TorrServer-* > SHA256SUMS.txt
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ needs.verify.outputs.version }}
+          tag_name: ${{ github.ref_name }}
+          files: |
+            dist/TorrServer-*
+            dist/SHA256SUMS.txt
+          fail_on_unmatched_files: true
+          generate_release_notes: true
