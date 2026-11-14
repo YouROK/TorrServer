@@ -15,7 +15,6 @@ concurrency:
 env:
   BUILD_LDFLAGS: '-s -w -checklinkname=0'
   BUILD_TAGS: 'nosqlite'
-  NDK_VERSION: '27.0.12077973'
 
 jobs:
   verify:
@@ -134,30 +133,10 @@ jobs:
           if-no-files-found: error
 
   build-android:
-    name: Build android/${{ matrix.abi }}
+    name: Build android
     needs: verify
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - abi: arm7
-            goarch: arm
-            goarm: '7'
-            cc: armv7a-linux-androideabi21-clang
-          - abi: arm64
-            goarch: arm64
-            goarm: ''
-            cc: aarch64-linux-android21-clang
-          - abi: '386'
-            goarch: '386'
-            goarm: ''
-            cc: i686-linux-android21-clang
-          - abi: amd64
-            goarch: amd64
-            goarm: ''
-            cc: x86_64-linux-android21-clang
+    timeout-minutes: 40
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -168,41 +147,52 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Install NDK
         shell: bash
-        run: sdkmanager --install "ndk;${NDK_VERSION}"
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 -o "${RUNNER_TEMP}/ndk.zip" \
+            "https://dl.google.com/android/repository/android-ndk-r27-linux.zip"
+          unzip -q "${RUNNER_TEMP}/ndk.zip" -d "${RUNNER_TEMP}"
+          echo "ANDROID_NDK_HOME=${RUNNER_TEMP}/android-ndk-r27" >> "${GITHUB_ENV}"
 
       - name: Build
         shell: bash
         run: |
           set -euo pipefail
-          toolchain="${ANDROID_HOME}/ndk/${NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64/bin"
-          envs=(
-            GOOS=android
-            GOARCH="${{ matrix.goarch }}"
-            CGO_ENABLED=1
-            CC="${toolchain}/${{ matrix.cc }}"
-            CXX="${toolchain}/${{ matrix.cc }}++"
+          toolchain="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          abis=(
+            "arm7:arm:7:armv7a-linux-androideabi21-clang"
+            "arm64:arm64::aarch64-linux-android21-clang"
+            "386:386::i686-linux-android21-clang"
+            "amd64:amd64::x86_64-linux-android21-clang"
           )
-          if [ -n "${{ matrix.goarm }}" ]; then
-            envs+=(GOARM="${{ matrix.goarm }}")
-          fi
           mkdir -p build
-          env "${envs[@]}" go build \
-            -ldflags="${BUILD_LDFLAGS}" \
-            -tags="${BUILD_TAGS}" \
-            -trimpath \
-            -o "build/TorrServer-android-${{ matrix.abi }}" \
-            ./cmd/server
-          ls -l "build/TorrServer-android-${{ matrix.abi }}"
+          for entry in "${abis[@]}"; do
+            IFS=: read -r abi goarch goarm cc <<< "${entry}"
+            envs=(
+              GOOS=android
+              GOARCH="${goarch}"
+              CGO_ENABLED=1
+              CC="${toolchain}/${cc}"
+              CXX="${toolchain}/${cc}++"
+            )
+            if [ -n "${goarm}" ]; then
+              envs+=(GOARM="${goarm}")
+            fi
+            env "${envs[@]}" go build \
+              -ldflags="${BUILD_LDFLAGS}" \
+              -tags="${BUILD_TAGS}" \
+              -trimpath \
+              -o "build/TorrServer-android-${abi}" \
+              ./cmd/server
+          done
+          ls -l build/TorrServer-android-*
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: android-${{ matrix.abi }}
+          name: android
           path: build/TorrServer-android-*
           if-no-files-found: error
 
