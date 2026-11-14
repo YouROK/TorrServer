@@ -399,12 +399,7 @@ getVersionTag() {
 buildDownloadUrl() {
   local target_version="$1"
   local binary_name="$2"
-
-  if [[ "$target_version" == "latest" ]]; then
-    echo "${REPO_URL}/releases/latest/download/${binary_name}"
-  else
-    echo "${REPO_URL}/releases/download/${target_version}/${binary_name}"
-  fi
+  echo "${REPO_URL}/releases/download/${target_version}/${binary_name}"
 }
 
 getLang() {
@@ -605,10 +600,11 @@ killRunning() {
 #############################################
 
 getLatestRelease() {
-  curl -s "${REPO_API_URL}/releases/latest" |
-  grep -iE '"tag_name":|"version":' |
-  sed -E 's/.*"([^"]+)".*/\1/' |
-  head -n1
+  # ponytail: first 100 releases. Paginate if Silo pushes every MatriX tag off page 1.
+  local response tag
+  response=$(curl -s "${REPO_API_URL}/releases?per_page=100" || true)
+  tag=$(printf '%s\n' "$response" | grep -oE '"tag_name":[[:space:]]*"'"${VERSION_PREFIX}"'\.[^"]+"' | head -n1 | sed -E 's/.*"([^"]+)".*/\1/') || true
+  printf '%s\n' "$tag"
 }
 
 getSpecificRelease() {
@@ -1038,11 +1034,7 @@ installTorrServer() {
   binName=$(getBinaryName)
   if [[ ! -f "$dirInstall/$binName" ]] || [[ ! -x "$dirInstall/$binName" ]] || [[ $(stat -f%z "$dirInstall/$binName" 2>/dev/null) -eq 0 ]]; then
     local urlBin
-    if [[ -n "$specificVersion" ]]; then
-      urlBin=$(buildDownloadUrl "$target_version" "$binName")
-    else
-      urlBin=$(buildDownloadUrl "latest" "$binName")
-    fi
+    urlBin=$(buildDownloadUrl "$target_version" "$binName")
     downloadBinary "$urlBin" "$dirInstall/$binName" "$target_version"
   fi
   removeAlternateBinary
@@ -1135,7 +1127,6 @@ installService() {
 # Common function to update/downgrade TorrServer version
 updateTorrServerVersion() {
   local target_version="$1"
-  local use_latest_url="${2:-0}"
 
   killRunning
 
@@ -1145,11 +1136,7 @@ updateTorrServerVersion() {
   local binName
   binName=$(getBinaryName)
   local urlBin
-  if [[ $use_latest_url -eq 1 && -z "$specificVersion" ]]; then
-    urlBin=$(buildDownloadUrl "latest" "$binName")
-  else
-    urlBin=$(buildDownloadUrl "$target_version" "$binName")
-  fi
+  urlBin=$(buildDownloadUrl "$target_version" "$binName")
 
   downloadBinary "$urlBin" "$dirInstall/$binName" "$target_version"
   removeAlternateBinary
@@ -1177,13 +1164,13 @@ updateTorrServerVersion() {
 UpdateVersion() {
   local target_version
   target_version=$(getTargetVersion)
-  updateTorrServerVersion "$target_version" 1
+  updateTorrServerVersion "$target_version"
 }
 
 DowngradeVersion() {
   local target_version
   target_version=$(getVersionTag "$downgradeRelease")
-  updateTorrServerVersion "$target_version" 0
+  updateTorrServerVersion "$target_version"
 }
 
 #############################################
