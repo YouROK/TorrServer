@@ -29,23 +29,23 @@ func SetupRoute(route gin.IRouter) {
 
 	authorized.POST("/cache", cache)
 
-	route.HEAD("/stream", stream)
-	route.GET("/stream", stream)
+	authorized.HEAD("/stream", stream)
+	authorized.GET("/stream", stream)
 
-	route.HEAD("/stream/*fname", stream)
-	route.GET("/stream/*fname", stream)
+	authorized.HEAD("/stream/*fname", stream)
+	authorized.GET("/stream/*fname", stream)
 
-	route.HEAD("/play/:hash/:id", play)
-	route.GET("/play/:hash/:id", play)
+	authorized.HEAD("/play/:hash/:id", play)
+	authorized.GET("/play/:hash/:id", play)
 
-	route.GET("/subs/:hash/:id", subsTracks)
+	authorized.GET("/subs/:hash/:id", subsTracks)
 
 	authorized.POST("/viewed", viewed)
 
 	authorized.GET("/playlistall/all.m3u", allPlayList)
 
-	route.GET("/playlist", playList)
-	route.GET("/playlist/*fname", playList)
+	authorized.GET("/playlist", playList)
+	authorized.GET("/playlist/*fname", playList)
 
 	authorized.GET("/download/:size", download)
 

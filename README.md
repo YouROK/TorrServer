@@ -623,6 +623,13 @@ The users data file should be located near to the settings. Basic auth, read mor
 
 Note: You should enable authentication with -a (--httpauth) TorrServer startup option.
 
+With HTTP authentication enabled, media requests also require valid Basic credentials:
+streams (including HEAD and Range requests), playlists, playback links, subtitles,
+and GStreamer playlists/segments. Internal processing keeps using the dedicated
+random loopback listener; requests to the public port do not receive this exemption.
+Configure the same credentials in external players; a torrent infohash alone is not an
+access credential. Authentication remains disabled by default.
+
 ## Retrackers
 
 When adding a torrent, TorrServer can modify announce trackers according to **Settings → Additional → Retrackers**:
