@@ -7206,6 +7206,13 @@ iterator.prototype@^1.1.4:
     has-symbols "^1.1.0"
     set-function-name "^2.0.2"
 
+jassub@~1.8:
+  version "1.8.8"
+  resolved "https://registry.yarnpkg.com/jassub/-/jassub-1.8.8.tgz#6fb21110f87b470543d65e7b8aa7b7a82e23b15b"
+  integrity sha512-Vtw27Z0/hN2Tm2Qs4HAR+eONwwSD5ULo/hisPvmiaW9Ya6aFCt7esvWQSZy6nvBASbRyKmpghgeioIPqXGHA0Q==
+  dependencies:
+    rvfc-polyfill "^1.0.7"
+
 jest-changed-files@^26.6.2:
   version "26.6.2"
   resolved "https://registry.yarnpkg.com/jest-changed-files/-/jest-changed-files-26.6.2.tgz#f6198479e1cc66f22f9ae1e22acaa0b429c042d0"
@@ -10793,6 +10800,11 @@ rusha@^0.8.13:
   version "0.8.14"
   resolved "https://registry.yarnpkg.com/rusha/-/rusha-0.8.14.tgz#a977d0de9428406138b7bb90d3de5dcd024e2f68"
   integrity sha512-cLgakCUf6PedEu15t8kbsjnwIFFR2D4RfL+W3iWFJ4iac7z4B0ZI8fxy4R3J956kAI68HclCFGL8MPoUVC3qVA==
+
+rvfc-polyfill@^1.0.7:
+  version "1.0.8"
+  resolved "https://registry.yarnpkg.com/rvfc-polyfill/-/rvfc-polyfill-1.0.8.tgz#4361448d19991a97985ca7e9a1d4ec6a0df7ef2d"
+  integrity sha512-uA+0wwTkZ4OT8v45pfDfH+7Yq8mY6MvNngiF5Sq6VBgjJsvsfgt7Q18cyZqZjfAhW9rhkgXPX0cW0R9uw7yElA==
 
 safe-array-concat@^1.1.2, safe-array-concat@^1.1.3:
   version "1.1.3"

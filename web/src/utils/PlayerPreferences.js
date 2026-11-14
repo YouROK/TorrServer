@@ -7,6 +7,8 @@ const readBooleanPreference = (key, defaultValue = false) => {
   return value === null ? defaultValue : JSON.parse(value)
 }
 
+const readStringPreference = (key, defaultValue) => localStorage.getItem(key) || defaultValue
+
 export const notifyPlayerSettingsChanged = () => {
   window.dispatchEvent(new Event(PLAYER_SETTINGS_EVENT))
 }
@@ -18,6 +20,26 @@ export const useBooleanPlayerPreference = (key, defaultValue = false) => {
     const update = event => {
       if (event.type === 'storage' && event.key && event.key !== key) return
       setValue(readBooleanPreference(key, defaultValue))
+    }
+
+    window.addEventListener(PLAYER_SETTINGS_EVENT, update)
+    window.addEventListener('storage', update)
+    return () => {
+      window.removeEventListener(PLAYER_SETTINGS_EVENT, update)
+      window.removeEventListener('storage', update)
+    }
+  }, [defaultValue, key])
+
+  return value
+}
+
+export const useStringPlayerPreference = (key, defaultValue) => {
+  const [value, setValue] = useState(() => readStringPreference(key, defaultValue))
+
+  useEffect(() => {
+    const update = event => {
+      if (event.type === 'storage' && event.key && event.key !== key) return
+      setValue(readStringPreference(key, defaultValue))
     }
 
     window.addEventListener(PLAYER_SETTINGS_EVENT, update)
