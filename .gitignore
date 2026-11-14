@@ -1,3 +1,5 @@
 /dist/
 .idea/
 /.gocache/
+/build/
+/copy.sh

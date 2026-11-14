@@ -6,7 +6,7 @@ import (
 )
 
 // Version is set at build time via -ldflags "-X internal/version.Version=<tag>"
-var Version = "Silo.1"
+var Version = "Silo.2"
 
 func GetTorrentVersion() string {
 	bi, ok := debug.ReadBuildInfo()
