@@ -1,6 +1,7 @@
 package torrstor
 
 import (
+	"context"
 	"io"
 	"sync"
 	"time"
@@ -27,6 +28,9 @@ type Reader struct {
 	lastAccess int64
 	isUse      bool
 	mu         sync.Mutex
+
+	// ctx cancels a read that is waiting for a piece.
+	ctx context.Context
 }
 
 func newReader(file *torrent.File, cache *Cache) *Reader {
@@ -37,11 +41,18 @@ func newReader(file *torrent.File, cache *Cache) *Reader {
 	r.SetReadahead(0)
 	r.cache = cache
 	r.isUse = true
+	r.ctx = context.Background()
 
 	cache.muReaders.Lock()
 	cache.readers[r] = struct{}{}
 	cache.muReaders.Unlock()
 	return r
+}
+
+// SetContext sets the context that cancels a read waiting for a piece.
+// Call it before the first read.
+func (r *Reader) SetContext(ctx context.Context) {
+	r.ctx = ctx
 }
 
 func (r *Reader) Seek(offset int64, whence int) (n int64, err error) {
@@ -72,7 +83,7 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 	if r.file.Torrent() != nil && r.file.Torrent().Info() != nil {
 		r.beginIO()
 		defer r.endIO()
-		n, err = r.Reader.Read(p)
+		n, err = r.Reader.ReadContext(r.ctx, p)
 
 		// samsung tv fix xvid/divx
 		//if r.offset == 0 && len(p) >= 192 {
