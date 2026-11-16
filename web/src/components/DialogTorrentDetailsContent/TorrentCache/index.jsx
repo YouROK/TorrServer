@@ -1,5 +1,5 @@
 import Measure from 'react-measure'
-import { useState, memo, useRef, useEffect, useContext } from 'react'
+import { useState, memo, useRef, useEffect, useContext, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import isEqual from 'lodash/isEqual'
 import { DarkModeContext } from 'components/App'
@@ -7,8 +7,11 @@ import { THEME_MODES } from 'style/materialUISetup'
 
 import { useCreateCacheMap } from '../customHooks'
 import getShortCacheMap from './getShortCacheMap'
+import fitCacheMap from './fitCacheMap'
 import { SnakeWrapper, ScrollNotification } from './style'
 import { createGradient, snakeSettings } from './snakeSettings'
+
+const MAX_SHRINK = 256
 
 const TorrentCache = ({ cache, isMini, isSnakeDebugMode }) => {
   const { t } = useTranslation()
@@ -16,6 +19,8 @@ const TorrentCache = ({ cache, isMini, isSnakeDebugMode }) => {
   const { width } = dimensions
   const canvasRef = useRef(null)
   const ctxRef = useRef(null)
+  // grows every time the browser rejects the canvas, so the map is drawn with fewer (merged) cells
+  const [shrink, setShrink] = useState(1)
   const cacheMap = useCreateCacheMap(cache)
   const settingsTarget = isMini ? 'mini' : 'default'
   const { isDarkMode } = useContext(DarkModeContext)
@@ -40,10 +45,15 @@ const TorrentCache = ({ cache, isMini, isSnakeDebugMode }) => {
 
   let shotCacheMap
   if (isMini) {
-    const preloadPiecesAmount = Math.round(cache.Capacity / cache.PiecesLength - 1)
+    // there can't be more blocks than pieces in the torrent, even if the cache is bigger than the torrent
+    const preloadPiecesAmount = Math.min(Math.round(cache.Capacity / cache.PiecesLength - 1), cache.PiecesCount)
     shotCacheMap = getShortCacheMap({ cacheMap, preloadPiecesAmount, piecesInOneRow })
   }
-  const source = isMini ? shotCacheMap : cacheMap
+  const fullSource = isMini ? shotCacheMap : cacheMap
+  const source = useMemo(
+    () => fitCacheMap({ source: fullSource, piecesInOneRow, pieceSizeWithGap, canvasWidth, shrink }),
+    [fullSource, piecesInOneRow, pieceSizeWithGap, canvasWidth, shrink],
+  )
   const startingXPoint = Math.ceil((canvasWidth - pieceSizeWithGap * piecesInOneRow) / 2) // needed to center grid
   const height = Math.ceil(source.length / piecesInOneRow) * pieceSizeWithGap
 
@@ -54,7 +64,17 @@ const TorrentCache = ({ cache, isMini, isSnakeDebugMode }) => {
     canvas.width = canvasWidth
     canvas.height = height
     ctxRef.current = canvas.getContext('2d')
-  }, [canvasRef, height, canvasWidth])
+
+    try {
+      // a canvas that is too big for the browser throws "Canvas is already in error state" on the first draw call
+      ctxRef.current.translate(0, 0)
+      ctxRef.current.setTransform(1, 0, 0, 1, 0, 0)
+    } catch (_) {
+      // retry with a smaller map on a fresh canvas instead of crashing the whole app
+      ctxRef.current = null
+      setShrink(current => (current < MAX_SHRINK ? current * 2 : current))
+    }
+  }, [canvasRef, height, canvasWidth, shrink])
 
   useEffect(() => {
     const ctx = ctxRef.current
@@ -106,6 +126,7 @@ const TorrentCache = ({ cache, isMini, isSnakeDebugMode }) => {
       }
     })
   }, [
+    shrink,
     cacheMap,
     height,
     canvasWidth,
@@ -131,7 +152,7 @@ const TorrentCache = ({ cache, isMini, isSnakeDebugMode }) => {
       {({ measureRef }) => (
         <div style={{ display: 'flex', flexDirection: 'column' }} ref={measureRef}>
           <SnakeWrapper themeType={theme} isMini={isMini}>
-            <canvas ref={canvasRef} />
+            <canvas key={shrink} ref={canvasRef} />
           </SnakeWrapper>
 
           {isMini && height >= cacheMaxHeight && <ScrollNotification>{t('ScrollDown')}</ScrollNotification>}
