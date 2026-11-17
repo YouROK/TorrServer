@@ -50,8 +50,10 @@ func (t *Torrent) ReadFile(ctx context.Context, fileID int, maxSize int64) ([]by
 	if reader == nil {
 		return nil, errors.New("cannot create torrent reader")
 	}
-	// Closing the reader also unblocks the goroutine below if the context expires.
 	defer t.CloseReader(reader)
+	// Closing the reader does not wake a read that waits for data; the context does,
+	// so the goroutine below finishes once ctx expires.
+	reader.SetContext(ctx)
 
 	// Not SetResponsive() on purpose. A responsive reader returns chunks as soon as the client has
 	// received them, without waiting for the whole piece to be complete and verified. If the cache
