@@ -97,6 +97,9 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 	}
 	// Ensure reader is always closed
 	defer t.CloseReader(reader)
+	// A read waiting for data must end when the client goes away (players drop the
+	// connection on every seek), otherwise the reader outlives the request
+	reader.SetContext(req.Context())
 
 	if sets.BTsets.ResponsiveMode {
 		reader.SetResponsive()
