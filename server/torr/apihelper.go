@@ -100,6 +100,16 @@ func hashFromHex(hashHex string) (hash metainfo.Hash, ok bool) {
 	return hash, hash.FromHexString(hashHex) == nil
 }
 
+// PeekTorrent looks up an active torrent without extending its
+// expiration deadline or restoring it from the database.
+func PeekTorrent(hashHex string) *Torrent {
+	hash, ok := hashFromHex(hashHex)
+	if !ok {
+		return nil
+	}
+	return bts.GetTorrent(hash)
+}
+
 func GetTorrent(hashHex string) *Torrent {
 	hash, ok := hashFromHex(hashHex)
 	if !ok {

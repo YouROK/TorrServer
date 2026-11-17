@@ -49,7 +49,7 @@ func getCache(req cacheReqJS, c *gin.Context) {
 		c.AbortWithError(http.StatusBadRequest, errors.New("hash is empty"))
 		return
 	}
-	tor := torr.GetTorrent(req.Hash)
+	tor := torr.PeekTorrent(req.Hash)
 
 	if tor != nil {
 		st := tor.CacheState()
