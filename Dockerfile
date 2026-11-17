@@ -12,7 +12,8 @@ ENV REACT_APP_TMDB_API_KEY=$REACT_APP_TMDB_API_KEY
 ENV PUBLIC_URL=$PUBLIC_URL
 
 COPY ./web/package.json ./web/yarn.lock ./
-RUN yarn install
+RUN --mount=type=cache,target=/usr/local/share/.cache/yarn \
+    yarn install --frozen-lockfile --network-timeout 600000
 
 # Build front once upon multiarch build
 COPY ./web .
@@ -23,39 +24,31 @@ RUN yarn run build
 ### BUILD TORRSERVER MULTIARCH START ###
 FROM --platform=$BUILDPLATFORM golang:1.27.1-alpine AS builder
 
+WORKDIR /opt/src/server
+
+# Modules get their own layer (a plain layer, so the gha cache keeps it too):
+# it is reused until go.mod/go.sum change
+COPY ./server/go.mod ./server/go.sum ./
+RUN go mod download
+
 COPY . /opt/src
 COPY --from=front /app/build /opt/src/web/build
 
-WORKDIR /opt/src
-
+ARG TARGETOS
 ARG TARGETARCH
+ARG TARGETVARIANT
 ARG VERSION=MatriX.Docker
 
-# Step for multiarch build with docker buildx
-ENV GOARCH=$TARGETARCH
-
-# Build torrserver
-RUN apk add --update g++ \
-    && go run gen_web.go \
+# Same flags as the release binaries in ts_build.yml. The compiler always runs
+# natively on the build platform; only the output is for the target platform.
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    cd /opt/src && go run gen_web.go \
     && cd server \
-    && go mod tidy \
-    && go clean -i -r -cache \
-    && go build -ldflags "-s -w -checklinkname=0 -X server/version.Version=${VERSION}" --o "torrserver" ./cmd
+    && CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH GOARM=${TARGETVARIANT#v} \
+       go build -trimpath -tags=nosqlite \
+       -ldflags "-s -w -checklinkname=0 -X server/version.Version=${VERSION}" \
+       -o /opt/src/server/torrserver ./cmd
 ### BUILD TORRSERVER MULTIARCH END ###
-
-
-### UPX COMPRESSING START ###
-FROM ubuntu AS compressed
-
-COPY --from=builder /opt/src/server/torrserver ./torrserver
-
-RUN apt update && apt install -y upx-ucl && upx --best --lzma ./torrserver
-# Compress torrserver only for amd64 and arm64 no variant platforms
-# ARG TARGETARCH
-# ARG TARGETVARIANT
-# RUN if [ "$TARGETARCH" == 'amd64' ]; then compress=1; elif [ "$TARGETARCH" == 'arm64' ] && [ -z "$TARGETVARIANT"  ]; then compress=1; else compress=0; fi \
-# && if [[ "$compress" -eq 1 ]]; then ./upx --best --lzma ./torrserver; fi
-### UPX COMPRESSING END ###
 
 
 ### BUILD MAIN IMAGE START ###
@@ -67,10 +60,11 @@ ENV TS_TORR_DIR="/opt/ts/torrents"
 ENV TS_PORT=8090
 ENV GODEBUG=madvdontneed=1
 
-COPY --from=compressed ./torrserver /usr/bin/torrserver
-COPY ./docker-entrypoint.sh /docker-entrypoint.sh
-
+# Rarely changing layers first: an image update then only ships the new binary
 RUN apk add --no-cache --update ffmpeg
+
+COPY ./docker-entrypoint.sh /docker-entrypoint.sh
+COPY --from=builder /opt/src/server/torrserver /usr/bin/torrserver
 
 CMD /docker-entrypoint.sh
 ### BUILD MAIN IMAGE end ###

@@ -2,3 +2,6 @@ web/node_modules
 web/build
 web/dist
 web/.env_example
+.git
+dist
+server/gstreamer/gst-libs
