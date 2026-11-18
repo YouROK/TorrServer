@@ -160,8 +160,14 @@ func (t *Torrent) WaitInfo() bool {
 					// torrent was dropped while waiting for info: CloseHash already removed the cache
 					return false
 				}
-				t.cache = cache
+				t.muTorrent.Lock()
+				if t.Stat == state.TorrentClosed || t.Torrent != torrent {
+					t.muTorrent.Unlock()
+					return false
+				}
 				cache.SetTorrent(torrent)
+				t.cache = cache
+				t.muTorrent.Unlock()
 			}
 		}
 		return true
@@ -328,15 +334,17 @@ func (t *Torrent) Length() int64 {
 }
 
 func (t *Torrent) NewReader(file *torrent.File) *torrstor.Reader {
-	if t.Stat == state.TorrentClosed {
+	t.muTorrent.Lock()
+	closed, cache, engine := t.Stat == state.TorrentClosed, t.cache, t.Torrent
+	t.muTorrent.Unlock()
+	if closed || cache == nil || file.Torrent() != engine {
 		return nil
 	}
-	reader := t.cache.NewReader(file)
-	return reader
+	return cache.NewReader(file)
 }
 
 func (t *Torrent) CloseReader(reader *torrstor.Reader) {
-	t.cache.CloseReader(reader)
+	reader.Close()
 	t.AddExpiredTime(time.Second * time.Duration(settings.BTsets.TorrentDisconnectTimeout))
 }
 

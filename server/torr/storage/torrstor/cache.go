@@ -143,12 +143,17 @@ func (c *Cache) Piece(m metainfo.Piece) storage.PieceImpl {
 }
 
 func (c *Cache) Close() error {
+	// This is called with the engine's client lock held during Drop.
+	// Stop reader registration without waiting for backend I/O here.
+	c.muReaders.Lock()
+	c.isClosed.Store(true)
+	c.muReaders.Unlock()
+
 	if c.torrent != nil {
 		log.TLogln("Close cache for:", c.torrent.Name(), c.hash)
 	} else {
 		log.TLogln("Close cache for:", c.hash)
 	}
-	c.isClosed.Store(true)
 
 	c.storage.removeCache(c.hash)
 
@@ -270,7 +275,7 @@ func (c *Cache) getRemPieces() []*Piece {
 	ranges := make([]Range, 0)
 	for _, r := range readers {
 		r.checkReader()
-		if r.isUse {
+		if r.active() {
 			ranges = append(ranges, r.getPiecesRange())
 		}
 	}
@@ -324,7 +329,7 @@ func (c *Cache) setLoadPriority(ranges []Range) {
 	c.muPrio.Lock()
 	defer c.muPrio.Unlock()
 	for _, r := range readers {
-		if !r.isUse {
+		if !r.active() {
 			continue
 		}
 		if c.isIdInFileBE(ranges, r.getReaderPiece()) {
@@ -387,11 +392,9 @@ func (c *Cache) GetUseReaders() int {
 	if c == nil {
 		return 0
 	}
-	c.muReaders.RLock()
-	defer c.muReaders.RUnlock()
 	readers := 0
-	for reader := range c.readers {
-		if reader.isUse {
+	for _, reader := range c.readersSnapshot() {
+		if reader.active() {
 			readers++
 		}
 	}
@@ -408,16 +411,11 @@ func (c *Cache) Readers() int {
 }
 
 func (c *Cache) CloseReader(r *Reader) {
-	r.cache.muReaders.Lock()
-	delete(r.cache.readers, r)
-	r.cache.muReaders.Unlock()
-	// Reader.Close touches anacrolix internals, keep it outside muReaders
 	r.Close()
-	go c.clearPriority()
 }
 
 func (c *Cache) clearPriority() {
-	if c.torrent == nil {
+	if c.isClosed.Load() || c.torrent == nil {
 		return
 	}
 	// This used to sleep for a second before clearing priorities. A reader
@@ -429,7 +427,7 @@ func (c *Cache) clearPriority() {
 	ranges := make([]Range, 0)
 	for _, r := range c.readersSnapshot() {
 		r.checkReader()
-		if r.isUse {
+		if r.active() {
 			ranges = append(ranges, r.getPiecesRange())
 		}
 	}
