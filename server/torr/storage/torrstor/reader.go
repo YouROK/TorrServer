@@ -1,6 +1,7 @@
 package torrstor
 
 import (
+	"context"
 	"io"
 	"sync"
 	"time"
@@ -19,6 +20,10 @@ type Reader struct {
 
 	cache    *Cache
 	isClosed bool
+
+	// ctx is the lifetime of whoever consumes the data (an HTTP request, ReadFile).
+	// Set once by SetContext before the first Read.
+	ctx context.Context
 
 	// inFlight counts reads and seeks inside the underlying reader; guarded by mu.
 	inFlight int
@@ -72,7 +77,7 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 	if r.file.Torrent() != nil && r.file.Torrent().Info() != nil {
 		r.beginIO()
 		defer r.endIO()
-		n, err = r.Reader.Read(p)
+		n, err = r.readBackend(p)
 
 		// samsung tv fix xvid/divx
 		//if r.offset == 0 && len(p) >= 192 {
@@ -98,6 +103,22 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 		log.TLogln("Torrent closed and readed")
 	}
 	return
+}
+
+// SetContext ties reads to ctx. anacrolix Read waits with context.Background(): a read
+// blocked on a piece no peer has yet only returns when the data arrives or the torrent
+// closes, and closing the reader does not wake it. Until then the reader stays registered
+// and keeps its piece priorities at the old position, e.g. after the player seeks and
+// drops the connection. With a context the read returns ctx.Err() as soon as it is done.
+func (r *Reader) SetContext(ctx context.Context) {
+	r.ctx = ctx
+}
+
+func (r *Reader) readBackend(p []byte) (int, error) {
+	if r.ctx != nil {
+		return r.Reader.ReadContext(r.ctx, p)
+	}
+	return r.Reader.Read(p)
 }
 
 func (r *Reader) SetReadahead(length int64) {
