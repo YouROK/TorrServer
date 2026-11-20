@@ -29,7 +29,18 @@ func (s *Server) handleLogin(c *gin.Context) {
 
 	// Устанавливаем Cookie на 30 дней
 	setTokenCookie(c, token)
-	c.JSON(http.StatusOK, gin.H{"user": u, "token": token})
+	c.JSON(http.StatusOK, gin.H{"user": publicUser(u, true), "token": token})
+}
+
+// publicUser возвращает копию пользователя для ответа API: без хэша пароля,
+// а токен - только если withToken. Сам u не меняется.
+func publicUser(u *user.User, withToken bool) *user.User {
+	safe := *u
+	safe.PasswordHash = ""
+	if !withToken {
+		safe.APIToken = ""
+	}
+	return &safe
 }
 
 // setTokenCookie выставляет cookie с токеном доступа (30 дней).
@@ -55,10 +66,6 @@ func (s *Server) handleGetMe(c *gin.Context) {
 	}
 	currentUser := val.(*user.User)
 
-	// Копия: обнулять поля самого пользователя нельзя, он общий для запроса.
-	// Токен нужен клиенту для ссылок плееру, хэш пароля - нет.
-	safe := *currentUser
-	safe.PasswordHash = ""
-
-	c.JSON(http.StatusOK, &safe)
+	// Токен нужен клиенту для ссылок плееру
+	c.JSON(http.StatusOK, publicUser(currentUser, true))
 }
