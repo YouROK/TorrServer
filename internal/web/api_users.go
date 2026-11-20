@@ -28,14 +28,14 @@ func (s *Server) handleListUsers(c *gin.Context) {
 		return
 	}
 
-	// Хэши паролей и токены доступа в список не попадают: по токену
-	// из списка можно войти под его владельцем, включая Owner
+	// Токены в список не попадают: по токену из списка можно войти
+	// под его владельцем, включая Owner
+	list := make([]*user.User, 0, len(users))
 	for _, u := range users {
-		u.PasswordHash = ""
-		u.APIToken = ""
+		list = append(list, publicUser(u, false))
 	}
 
-	c.JSON(http.StatusOK, gin.H{"users": users})
+	c.JSON(http.StatusOK, gin.H{"users": list})
 }
 
 func (s *Server) handleCreateUser(c *gin.Context) {
@@ -63,9 +63,7 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 
 	// Токен выдаётся отдельно ручкой regenerate-token, в ответе на создание
 	// он не нужен
-	newUser.PasswordHash = ""
-	newUser.APIToken = ""
-	c.JSON(http.StatusCreated, newUser)
+	c.JSON(http.StatusCreated, publicUser(newUser, false))
 }
 
 func (s *Server) handleUpdateUser(c *gin.Context) {

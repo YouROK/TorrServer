@@ -180,3 +180,61 @@ func TestTokenCookieHasSameSiteLax(t *testing.T) {
 		t.Fatalf("cookie %q not set on login", CookieTokenName)
 	}
 }
+
+// Ответ на вход не должен содержать bcrypt-хэш пароля, а токен
+// возвращается только самому пользователю.
+func TestLoginResponseOmitsPasswordHash(t *testing.T) {
+	s, svc := setupAuthTestEnv(t, "supersecret")
+	s.registerRoutes()
+
+	owner, err := svc.GetUserByID("owner")
+	if err != nil {
+		t.Fatalf("get owner: %v", err)
+	}
+	if _, err := svc.CreateUser(owner, "alice", "alicepass", user.RankUser, user.Limits{}); err != nil {
+		t.Fatalf("create user: %v", err)
+	}
+
+	body := strings.NewReader(`{"username":"alice","password":"alicepass"}`)
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/login", body)
+	req.Header.Set("Content-Type", "application/json")
+	s.router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("login status = %d, body: %s", rec.Code, rec.Body.String())
+	}
+	if strings.Contains(rec.Body.String(), "$2a$") {
+		t.Fatalf("login response leaks bcrypt hash: %s", rec.Body.String())
+	}
+
+	var resp struct {
+		User  user.User `json:"user"`
+		Token string    `json:"token"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if resp.User.PasswordHash != "" {
+		t.Errorf("password_hash = %q, want empty", resp.User.PasswordHash)
+	}
+	if resp.Token == "" || resp.User.APIToken != resp.Token {
+		t.Errorf("api_token = %q, token = %q, want the same non-empty token", resp.User.APIToken, resp.Token)
+	}
+}
+
+// publicUser не должен менять исходного пользователя: он общий для запроса.
+func TestPublicUserKeepsOriginal(t *testing.T) {
+	u := &user.User{ID: "u1", PasswordHash: "hash", APIToken: "ts_token"}
+
+	got := publicUser(u, false)
+	if got.PasswordHash != "" || got.APIToken != "" {
+		t.Errorf("publicUser(false) = %+v, want no secrets", got)
+	}
+	if withToken := publicUser(u, true); withToken.APIToken != "ts_token" || withToken.PasswordHash != "" {
+		t.Errorf("publicUser(true) = %+v, want token and no hash", withToken)
+	}
+	if u.PasswordHash != "hash" || u.APIToken != "ts_token" {
+		t.Errorf("original user modified: %+v", u)
+	}
+}
