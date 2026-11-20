@@ -1,5 +1,4 @@
 import styled, { css } from 'styled-components'
-import { standaloneMedia } from 'style/standaloneMedia'
 
 export const DialogWrapper = styled.div`
   height: 100%;
