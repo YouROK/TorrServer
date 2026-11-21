@@ -30,6 +30,22 @@ function infoViewedSet() {
     return new Set(list);
 }
 
+function infoProgress(fileId) {
+    const map = infoStatus && infoStatus.progress;
+    const p = map && map[fileId];
+    return p && p.position > 0 ? p : null;
+}
+
+function progressText(p) {
+    return fmtDuration(p.position) + (p.duration > 0 ? ' / ' + fmtDuration(p.duration) : '');
+}
+
+// progressPercent возвращает -1, если длительность неизвестна
+function progressPercent(p) {
+    if (!(p.duration > 0)) return -1;
+    return Math.min(100, Math.max(0, p.position / p.duration * 100));
+}
+
 // infoAllViewed сообщает, отмечены ли просмотренными все файлы раздачи.
 function infoAllViewed() {
     const files = (infoStatus && infoStatus.file_stats) || [];
@@ -129,8 +145,11 @@ function renderInfo() {
         })
         : base;
 
-    // Отметка входит в сигнатуру: иначе список не перерисуется при просмотре
-    const filesJSON = JSON.stringify(visible.map((f) => [f.id, viewed.has(f.id)]));
+    // Отметка и прогресс входят в сигнатуру, иначе список не перерисуется
+    const filesJSON = JSON.stringify(visible.map((f) => {
+        const p = infoProgress(f.id);
+        return [f.id, viewed.has(f.id), p ? [Math.floor(p.position), Math.floor(p.duration || 0)] : 0];
+    }));
     if (filesJSON !== infoFilesJSON) {
         infoFilesJSON = filesJSON;
         const filesBox = document.getElementById('info-files');
@@ -140,11 +159,17 @@ function renderInfo() {
             filesBox.innerHTML = visible.map((f) => {
                 const idx = f.path.lastIndexOf('/');
                 const parent = idx > 0 ? f.path.slice(0, idx) : '';
-                const sub = (parent ? parent + ' · ' : '') + fmtSize(f.length);
+                const progress = infoProgress(f.id);
+                const sub = (parent ? parent + ' · ' : '') + fmtSize(f.length) +
+                    (progress ? ' · ' + progressText(progress) : '');
+                const percent = progress ? progressPercent(progress) : -1;
                 return '<div class="file-row">' +
                     '<div class="file-main">' +
                     '<div class="file-name">' + esc(f.name || f.path) + '</div>' +
                     '<div class="file-sub">' + esc(sub) + '</div>' +
+                    (percent >= 0
+                        ? '<div class="file-progress"><div class="file-progress-bar" style="width:' + percent.toFixed(1) + '%"></div></div>'
+                        : '') +
                     '</div>' +
                     '<div class="file-actions">' +
                     '<span class="file-viewed' + (viewed.has(f.id) ? ' is-on' : '') + '" title="' + esc(t('viewed')) + '"></span>' +

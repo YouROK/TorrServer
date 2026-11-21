@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"path/filepath"
+
+	"silo/internal/user"
 )
 
 // TorrentStat отражает текущее состояние сессии в памяти
@@ -83,6 +85,8 @@ type TorrentStatus struct {
 	BytesReadUsefulData int64              `json:"bytes_read_useful_data"`
 	FileStats           []*TorrentFileStat `json:"file_stats,omitempty"`
 	ViewedFiles         []int              `json:"viewed_files,omitempty"`
+	// Progress пуст, пока прогресс не сохраняется
+	Progress map[int]user.FileProgress `json:"progress,omitempty"`
 }
 
 // TorrentRecord - глобальная физическая карточка раздачи в базе (без личных данных!)

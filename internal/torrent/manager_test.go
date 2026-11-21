@@ -62,6 +62,7 @@ func setupManagerTest(t *testing.T) (*Manager, *user.Service, *Engine, *Store, *
 
 	// Сервис пользователей
 	cfg := config.DefaultConfig()
+	cfg.Library.TrackProgress = true
 	userStore := user.NewStore(db)
 	userSvc := user.NewService(userStore, cfg)
 
@@ -451,6 +452,60 @@ func TestManager_ViewedFilesInStatus(t *testing.T) {
 	}
 	if len(otherSt.ViewedFiles) != 0 {
 		t.Errorf("other user viewed_files = %v, want empty", otherSt.ViewedFiles)
+	}
+}
+
+func TestManager_ProgressInStatus(t *testing.T) {
+	mgr, _, engine, _, owner := setupManagerTest(t)
+
+	spec := createSyntheticSpec(t)
+	hashHex := spec.InfoHash.HexString()
+
+	if _, err := mgr.AddTorrent(owner, spec, "Progress Test", "", "", true); err != nil {
+		t.Fatalf("AddTorrent failed: %v", err)
+	}
+
+	tracked, err := mgr.SetFileProgress(owner, hashHex, 1, 42.5, 600)
+	if err != nil {
+		t.Fatalf("SetFileProgress failed: %v", err)
+	}
+	if !tracked {
+		t.Fatal("tracked = false with tracking on")
+	}
+
+	check := func(name string, st *TorrentStatus) {
+		t.Helper()
+		if got := st.Progress[1]; got.Position != 42.5 || got.Duration != 600 {
+			t.Errorf("%s progress[1] = %+v, want {42.5 600}", name, got)
+		}
+		if len(st.ViewedFiles) != 1 || st.ViewedFiles[0] != 1 {
+			t.Errorf("%s viewed_files = %v, want [1]", name, st.ViewedFiles)
+		}
+	}
+
+	live, err := mgr.GetTorrentStatus(owner, hashHex)
+	if err != nil {
+		t.Fatalf("GetTorrentStatus failed: %v", err)
+	}
+	check("live", live)
+
+	engine.Stop(spec.InfoHash)
+
+	sleeping, err := mgr.GetTorrentStatus(owner, hashHex)
+	if err != nil {
+		t.Fatalf("GetTorrentStatus failed for sleeping torrent: %v", err)
+	}
+	check("sleeping", sleeping)
+
+	if err := mgr.SetFileViewed(owner, hashHex, 1, false); err != nil {
+		t.Fatalf("SetFileViewed(false) failed: %v", err)
+	}
+	st, err := mgr.GetTorrentStatus(owner, hashHex)
+	if err != nil {
+		t.Fatalf("GetTorrentStatus failed: %v", err)
+	}
+	if len(st.Progress) != 0 {
+		t.Errorf("progress = %v, want empty after unmarking", st.Progress)
 	}
 }
 

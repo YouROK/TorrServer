@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math"
+	"sync/atomic"
 	"time"
 
 	"silo/internal/bus"
@@ -20,13 +22,15 @@ var (
 	ErrInvalidPassword  = errors.New("invalid password")
 	ErrPasswordTooLong  = errors.New("password is too long")
 	ErrOwnerProtected   = errors.New("cannot modify or delete the owner")
+	ErrInvalidProgress  = errors.New("invalid playback progress")
 )
 
 type Service struct {
-	store  *Store
-	cfg    *config.Config
-	bus    *bus.Client
-	ownerU *User // Виртуальный профиль Owner для режима без пароля
+	store         *Store
+	cfg           *config.Config
+	bus           *bus.Client
+	ownerU        *User // Виртуальный профиль Owner для режима без пароля
+	trackProgress atomic.Bool
 }
 
 func NewService(store *Store, cfg *config.Config) *Service {
@@ -61,8 +65,13 @@ func NewService(store *Store, cfg *config.Config) *Service {
 		}
 	}
 	s.ownerU = owner
+	s.trackProgress.Store(cfg.Library.TrackProgress)
 
 	return s
+}
+
+func (s *Service) ProgressTracking() bool {
+	return s.trackProgress.Load()
 }
 
 // IsAuthRequired возвращает true, если задан пароль Owner
@@ -392,6 +401,36 @@ func (s *Service) SetFileViewed(u *User, hash string, fileIdx int, viewed bool) 
 		"viewed":   viewed,
 	})
 	return nil
+}
+
+// SetFileProgress отмечает файл просмотренным и запоминает позицию, если прогресс сохраняется.
+// tracked сообщает, записана ли позиция.
+func (s *Service) SetFileProgress(u *User, hash string, fileIdx int, position, duration float64) (tracked bool, err error) {
+	if !validSeconds(position) || !validSeconds(duration) {
+		return false, ErrInvalidProgress
+	}
+
+	tracked = s.ProgressTracking()
+	if tracked {
+		err = s.store.SetFileProgressStatus(u.ID, hash, fileIdx, position, duration)
+	} else {
+		err = s.store.SetFileViewedStatus(u.ID, hash, fileIdx, true)
+	}
+	if err != nil {
+		return false, err
+	}
+
+	s.bus.Emit("user:file:viewed", map[string]any{
+		"user_id":  u.ID,
+		"hash":     hash,
+		"file_idx": fileIdx,
+		"viewed":   true,
+	})
+	return tracked, nil
+}
+
+func validSeconds(v float64) bool {
+	return v >= 0 && !math.IsInf(v, 0)
 }
 
 // SetAllFilesViewed отмечает или снимает отметку у всех файлов раздачи

@@ -186,6 +186,7 @@ func (s *Server) registerRoutes() {
 		api.GET("/torrents/:hash/cache", s.handleGetCache)
 		api.GET("/torrents/:hash/peers", s.handleGetPeers)
 		api.POST("/torrents/:hash/files/:idx/viewed", s.handleSetFileViewed)
+		api.POST("/torrents/:hash/files/:idx/progress", s.handleSetFileProgress)
 		api.POST("/torrents/:hash/viewed", s.handleSetAllFilesViewed)
 		api.POST("/torrents/:hash/files/:idx/preload", s.handlePreloadTorrent)
 		api.POST("/torrents/:hash/wake", s.handleWakeTorrent)
