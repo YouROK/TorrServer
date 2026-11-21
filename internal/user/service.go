@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"sync/atomic"
 	"time"
 
 	"silo/internal/bus"
@@ -25,10 +26,11 @@ var (
 )
 
 type Service struct {
-	store  *Store
-	cfg    *config.Config
-	bus    *bus.Client
-	ownerU *User // Виртуальный профиль Owner для режима без пароля
+	store         *Store
+	cfg           *config.Config
+	bus           *bus.Client
+	ownerU        *User // Виртуальный профиль Owner для режима без пароля
+	trackProgress atomic.Bool
 }
 
 func NewService(store *Store, cfg *config.Config) *Service {
@@ -63,8 +65,13 @@ func NewService(store *Store, cfg *config.Config) *Service {
 		}
 	}
 	s.ownerU = owner
+	s.trackProgress.Store(cfg.Library.TrackProgress)
 
 	return s
+}
+
+func (s *Service) ProgressTracking() bool {
+	return s.trackProgress.Load()
 }
 
 // IsAuthRequired возвращает true, если задан пароль Owner
@@ -396,13 +403,21 @@ func (s *Service) SetFileViewed(u *User, hash string, fileIdx int, viewed bool) 
 	return nil
 }
 
-// SetFileProgress сохраняет позицию воспроизведения и отмечает файл просмотренным
-func (s *Service) SetFileProgress(u *User, hash string, fileIdx int, position, duration float64) error {
+// SetFileProgress отмечает файл просмотренным и запоминает позицию, если прогресс сохраняется.
+// tracked сообщает, записана ли позиция.
+func (s *Service) SetFileProgress(u *User, hash string, fileIdx int, position, duration float64) (tracked bool, err error) {
 	if !validSeconds(position) || !validSeconds(duration) {
-		return ErrInvalidProgress
+		return false, ErrInvalidProgress
 	}
-	if err := s.store.SetFileProgressStatus(u.ID, hash, fileIdx, position, duration); err != nil {
-		return err
+
+	tracked = s.ProgressTracking()
+	if tracked {
+		err = s.store.SetFileProgressStatus(u.ID, hash, fileIdx, position, duration)
+	} else {
+		err = s.store.SetFileViewedStatus(u.ID, hash, fileIdx, true)
+	}
+	if err != nil {
+		return false, err
 	}
 
 	s.bus.Emit("user:file:viewed", map[string]any{
@@ -411,7 +426,7 @@ func (s *Service) SetFileProgress(u *User, hash string, fileIdx int, position, d
 		"file_idx": fileIdx,
 		"viewed":   true,
 	})
-	return nil
+	return tracked, nil
 }
 
 func validSeconds(v float64) bool {

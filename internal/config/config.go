@@ -18,6 +18,7 @@ type Config struct {
 	Torrent TorrentConfig `yaml:"torrent" json:"torrent"`
 	Logging LoggingConfig `yaml:"logging" json:"logging"`
 	Auth    AuthConfig    `yaml:"auth" json:"auth"`
+	Library LibraryConfig `yaml:"library" json:"library"`
 	FFmpeg  ffmpeg.Config `yaml:"ffmpeg" json:"ffmpeg"`
 }
 
@@ -50,6 +51,11 @@ type LoggingConfig struct {
 type AuthConfig struct {
 	// Если пароль пустой ("") - авторизация отключена, сервер работает в открытом режиме!
 	OwnerPassword string `yaml:"owner_password" json:"owner_password"`
+}
+
+type LibraryConfig struct {
+	// Сохранять позицию воспроизведения, а не только отметку просмотра
+	TrackProgress bool `yaml:"track_progress" json:"track_progress"`
 }
 
 // DBPath возвращает полный путь к файлу базы данных

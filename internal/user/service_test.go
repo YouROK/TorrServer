@@ -557,8 +557,13 @@ func TestSetFileProgressPersists(t *testing.T) {
 		t.Fatalf("AddTorrent u2: %v", err)
 	}
 
-	if err := svc.SetFileProgress(u1, hash, 0, 61, 3600); err != nil {
+	svc.trackProgress.Store(true)
+	tracked, err := svc.SetFileProgress(u1, hash, 0, 61, 3600)
+	if err != nil {
 		t.Fatalf("SetFileProgress: %v", err)
+	}
+	if !tracked {
+		t.Error("tracked = false with tracking on")
 	}
 
 	ut1, _ := svc.GetUserTorrent(u1.ID, hash)
@@ -574,7 +579,48 @@ func TestSetFileProgressPersists(t *testing.T) {
 		t.Errorf("u2 must have no progress: %+v", ut2)
 	}
 
-	if err := svc.SetFileProgress(u1, hash, 0, -1, 0); !errors.Is(err, ErrInvalidProgress) {
+	if _, err := svc.SetFileProgress(u1, hash, 0, -1, 0); !errors.Is(err, ErrInvalidProgress) {
 		t.Errorf("negative position: err = %v, want ErrInvalidProgress", err)
+	}
+}
+
+func TestSetFileProgressDisabled(t *testing.T) {
+	svc, cleanup := setupTestEnv(t, "")
+	defer cleanup()
+
+	owner, _ := svc.Authenticate("")
+	hash := "abcd1234efgh"
+	if err := svc.AddTorrent(owner, hash, "Movie", "", ""); err != nil {
+		t.Fatalf("AddTorrent: %v", err)
+	}
+
+	svc.trackProgress.Store(true)
+	if _, err := svc.SetFileProgress(owner, hash, 0, 30, 0); err != nil {
+		t.Fatalf("SetFileProgress: %v", err)
+	}
+
+	svc.trackProgress.Store(false)
+	tracked, err := svc.SetFileProgress(owner, hash, 0, 90, 0)
+	if err != nil {
+		t.Fatalf("SetFileProgress: %v", err)
+	}
+	if tracked {
+		t.Error("tracked = true with tracking off")
+	}
+
+	ut, _ := svc.GetUserTorrent(owner.ID, hash)
+	if got := ut.Progress[0].Position; got != 30 {
+		t.Errorf("Position = %v, want 30", got)
+	}
+
+	if _, err := svc.SetFileProgress(owner, hash, 1, 15, 0); err != nil {
+		t.Fatalf("SetFileProgress: %v", err)
+	}
+	ut, _ = svc.GetUserTorrent(owner.ID, hash)
+	if !ut.IsFileViewed(1) {
+		t.Error("file 1 must be viewed with tracking off")
+	}
+	if _, ok := ut.Progress[1]; ok {
+		t.Error("file 1 position must not be stored")
 	}
 }
