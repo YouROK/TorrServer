@@ -283,6 +283,7 @@ func (m *Manager) GetTorrentStatus(u *user.User, hashHex string) (*TorrentStatus
 		st.Title = ResolveTitle(userTitle, metaName, hashHex)
 		if ut != nil {
 			st.ViewedFiles = ut.ViewedFiles
+			st.Progress = m.userProgress(ut)
 		}
 		// В torrs-ссылку техническое название не пишем: имя из метаданных есть у получателя
 		st.Torrs = packTorrs(hashHex, ResolveTitle(userTitle, metaName, ""), st.Poster, st.Category, st.TorrentSize, flattenTrackers(sess.Trackers()))
@@ -314,6 +315,7 @@ func (m *Manager) GetTorrentStatus(u *user.User, hashHex string) (*TorrentStatus
 		FileStats:   rec.Files,
 		Timestamp:   rec.Timestamp,
 		ViewedFiles: ut.ViewedFiles,
+		Progress:    m.userProgress(ut),
 		Torrs:       packTorrs(rec.Hash, title, ut.Poster, ut.Category, rec.Size, rec.Trackers),
 	}, nil
 }
@@ -496,6 +498,17 @@ func (m *Manager) RemoveTorrent(u *user.User, hashHex string) error {
 
 func (m *Manager) SetFileViewed(u *user.User, hashHex string, fileIdx int, viewed bool) error {
 	return m.userSvc.SetFileViewed(u, hashHex, fileIdx, viewed)
+}
+
+func (m *Manager) SetFileProgress(u *user.User, hashHex string, fileIdx int, position, duration float64) (bool, error) {
+	return m.userSvc.SetFileProgress(u, hashHex, fileIdx, position, duration)
+}
+
+func (m *Manager) userProgress(ut *user.UserTorrent) map[int]user.FileProgress {
+	if !m.userSvc.ProgressTracking() {
+		return nil
+	}
+	return ut.Progress
 }
 
 // SetAllFilesViewed отмечает или снимает отметку у всех файлов раздачи.

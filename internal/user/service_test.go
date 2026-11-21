@@ -503,3 +503,166 @@ func TestUserTorrentSetAllFilesViewed(t *testing.T) {
 		t.Errorf("после снятия ViewedFiles = %v, want пусто", ut.ViewedFiles)
 	}
 }
+
+func TestUserTorrentFileProgress(t *testing.T) {
+	ut := &UserTorrent{}
+
+	ut.SetFileProgress(3, 125.5, 2700)
+	if !ut.IsFileViewed(3) {
+		t.Error("file 3 must be viewed after saving progress")
+	}
+	if got := ut.Progress[3]; got.Position != 125.5 || got.Duration != 2700 {
+		t.Errorf("Progress[3] = %+v, want {125.5 2700}", got)
+	}
+
+	ut.SetFileProgress(3, 130, 0)
+	if got := ut.Progress[3]; got.Position != 130 || got.Duration != 2700 {
+		t.Errorf("Progress[3] = %+v, want {130 2700}", got)
+	}
+
+	ut.SetFileProgress(3, 0, 0)
+	if _, ok := ut.Progress[3]; ok {
+		t.Error("file 3 progress must be cleared")
+	}
+	if !ut.IsFileViewed(3) {
+		t.Error("file 3 must stay viewed")
+	}
+
+	ut.SetFileProgress(1, 10, 0)
+	ut.UnmarkFileViewed(1)
+	if _, ok := ut.Progress[1]; ok {
+		t.Error("file 1 progress must be dropped with the viewed mark")
+	}
+
+	ut.SetFileProgress(2, 20, 0)
+	ut.SetAllFilesViewed([]int{1, 2, 3}, false)
+	if len(ut.Progress) != 0 {
+		t.Errorf("Progress = %v after unmarking all, want empty", ut.Progress)
+	}
+}
+
+func TestSetFileProgressPersists(t *testing.T) {
+	svc, cleanup := setupTestEnv(t, "secret")
+	defer cleanup()
+
+	owner, _, _ := svc.Login("owner", "secret")
+	u1, _ := svc.CreateUser(owner, "viewer1", "pass", RankUser, Limits{})
+	u2, _ := svc.CreateUser(owner, "viewer2", "pass", RankUser, Limits{})
+
+	hash := "abcd1234efgh"
+	if err := svc.AddTorrent(u1, hash, "Movie", "", ""); err != nil {
+		t.Fatalf("AddTorrent u1: %v", err)
+	}
+	if err := svc.AddTorrent(u2, hash, "Movie", "", ""); err != nil {
+		t.Fatalf("AddTorrent u2: %v", err)
+	}
+
+	svc.trackProgress.Store(true)
+	tracked, err := svc.SetFileProgress(u1, hash, 0, 61, 3600)
+	if err != nil {
+		t.Fatalf("SetFileProgress: %v", err)
+	}
+	if !tracked {
+		t.Error("tracked = false with tracking on")
+	}
+
+	ut1, _ := svc.GetUserTorrent(u1.ID, hash)
+	if got := ut1.Progress[0]; got.Position != 61 || got.Duration != 3600 {
+		t.Errorf("u1 Progress[0] = %+v, want {61 3600}", got)
+	}
+	if !ut1.IsFileViewed(0) {
+		t.Error("file 0 must be viewed for u1")
+	}
+
+	ut2, _ := svc.GetUserTorrent(u2.ID, hash)
+	if len(ut2.Progress) != 0 || len(ut2.ViewedFiles) != 0 {
+		t.Errorf("u2 must have no progress: %+v", ut2)
+	}
+
+	if _, err := svc.SetFileProgress(u1, hash, 0, -1, 0); !errors.Is(err, ErrInvalidProgress) {
+		t.Errorf("negative position: err = %v, want ErrInvalidProgress", err)
+	}
+}
+
+func TestSetFileProgressDisabled(t *testing.T) {
+	svc, cleanup := setupTestEnv(t, "")
+	defer cleanup()
+
+	owner, _ := svc.Authenticate("")
+	hash := "abcd1234efgh"
+	if err := svc.AddTorrent(owner, hash, "Movie", "", ""); err != nil {
+		t.Fatalf("AddTorrent: %v", err)
+	}
+
+	svc.trackProgress.Store(true)
+	if _, err := svc.SetFileProgress(owner, hash, 0, 30, 0); err != nil {
+		t.Fatalf("SetFileProgress: %v", err)
+	}
+
+	svc.trackProgress.Store(false)
+	tracked, err := svc.SetFileProgress(owner, hash, 0, 90, 0)
+	if err != nil {
+		t.Fatalf("SetFileProgress: %v", err)
+	}
+	if tracked {
+		t.Error("tracked = true with tracking off")
+	}
+
+	ut, _ := svc.GetUserTorrent(owner.ID, hash)
+	if got := ut.Progress[0].Position; got != 30 {
+		t.Errorf("Position = %v, want 30", got)
+	}
+
+	if _, err := svc.SetFileProgress(owner, hash, 1, 15, 0); err != nil {
+		t.Fatalf("SetFileProgress: %v", err)
+	}
+	ut, _ = svc.GetUserTorrent(owner.ID, hash)
+	if !ut.IsFileViewed(1) {
+		t.Error("file 1 must be viewed with tracking off")
+	}
+	if _, ok := ut.Progress[1]; ok {
+		t.Error("file 1 position must not be stored")
+	}
+}
+
+func TestSetProgressTracking(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "progress_setting.db")
+	db, err := database.Open(dbPath)
+	if err != nil {
+		t.Fatalf("Failed to open test database: %v", err)
+	}
+	defer db.Close()
+
+	cfg := config.DefaultConfig()
+	cfg.Auth.OwnerPassword = "secret"
+	svc := NewService(NewStore(db), cfg)
+
+	if svc.ProgressTracking() {
+		t.Fatal("tracking must be off by default")
+	}
+
+	owner, _, _ := svc.Login("owner", "secret")
+	admin, _ := svc.CreateUser(owner, "admin", "pass", RankAdmin, Limits{})
+
+	if err := svc.SetProgressTracking(admin, true); !errors.Is(err, ErrPermissionDenied) {
+		t.Errorf("admin: err = %v, want ErrPermissionDenied", err)
+	}
+	if err := svc.SetProgressTracking(owner, true); err != nil {
+		t.Fatalf("SetProgressTracking: %v", err)
+	}
+	if !svc.ProgressTracking() {
+		t.Error("toggle must apply immediately")
+	}
+
+	if !NewService(NewStore(db), cfg).ProgressTracking() {
+		t.Error("saved value must override config.yaml")
+	}
+
+	if err := svc.SetProgressTracking(owner, false); err != nil {
+		t.Fatalf("SetProgressTracking: %v", err)
+	}
+	cfg.Library.TrackProgress = true
+	if NewService(NewStore(db), cfg).ProgressTracking() {
+		t.Error("saved false must override track_progress: true")
+	}
+}

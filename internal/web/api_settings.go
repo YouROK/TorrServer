@@ -1,6 +1,7 @@
 package web
 
 import (
+	"errors"
 	"net/http"
 
 	"silo/internal/log"
@@ -55,6 +56,35 @@ func (s *Server) handleSaveTorrentConfig(c *gin.Context) {
 
 	log.Infof("[Web] Torrent engine config saved by user %s", currentUser.Username)
 	c.JSON(http.StatusOK, gin.H{"status": "saved", "restart_required": true})
+}
+
+func (s *Server) handleGetProgressTracking(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"enabled": s.userSvc.ProgressTracking()})
+}
+
+func (s *Server) handleSetProgressTracking(c *gin.Context) {
+	val, _ := c.Get("user")
+	currentUser := val.(*user.User)
+
+	var req struct {
+		Enabled *bool `json:"enabled"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil || req.Enabled == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request format"})
+		return
+	}
+
+	if err := s.userSvc.SetProgressTracking(currentUser, *req.Enabled); err != nil {
+		if errors.Is(err, user.ErrPermissionDenied) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "owner access required"})
+			return
+		}
+		log.Errorf("[Web] Failed to save progress tracking setting: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save setting"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"enabled": *req.Enabled})
 }
 
 // handleSetBlocklist обновляет динамический блок-лист IP

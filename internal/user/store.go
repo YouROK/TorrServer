@@ -416,6 +416,13 @@ func (s *Store) SetFileViewedStatus(userID, hash string, fileIdx int, viewed boo
 	})
 }
 
+func (s *Store) SetFileProgressStatus(userID, hash string, fileIdx int, position, duration float64) error {
+	return s.updateUserTorrent(userID, hash, func(ut *UserTorrent) error {
+		ut.SetFileProgress(fileIdx, position, duration)
+		return nil
+	})
+}
+
 // SetAllFilesViewedStatus отмечает или снимает отметку у всех файлов раздачи
 func (s *Store) SetAllFilesViewedStatus(userID, hash string, fileIdx []int, viewed bool) error {
 	return s.updateUserTorrent(userID, hash, func(ut *UserTorrent) error {
@@ -468,4 +475,29 @@ func decrementRef(b *bolt.Bucket, hash string) int {
 	binary.BigEndian.PutUint32(buf, uint32(count))
 	_ = b.Put(k, buf)
 	return count
+}
+
+var keyTrackProgress = []byte("track_progress")
+
+// GetProgressTracking возвращает found=false, если настройку не сохраняли
+func (s *Store) GetProgressTracking() (enabled, found bool, err error) {
+	err = s.db.GetRawConn().View(func(tx *bolt.Tx) error {
+		data := tx.Bucket(database.BucketSettings).Get(keyTrackProgress)
+		if data == nil {
+			return nil
+		}
+		found = true
+		return json.Unmarshal(data, &enabled)
+	})
+	return enabled, found, err
+}
+
+func (s *Store) SaveProgressTracking(enabled bool) error {
+	data, err := json.Marshal(enabled)
+	if err != nil {
+		return err
+	}
+	return s.db.GetRawConn().Update(func(tx *bolt.Tx) error {
+		return tx.Bucket(database.BucketSettings).Put(keyTrackProgress, data)
+	})
 }

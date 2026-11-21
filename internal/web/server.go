@@ -186,6 +186,7 @@ func (s *Server) registerRoutes() {
 		api.GET("/torrents/:hash/cache", s.handleGetCache)
 		api.GET("/torrents/:hash/peers", s.handleGetPeers)
 		api.POST("/torrents/:hash/files/:idx/viewed", s.handleSetFileViewed)
+		api.POST("/torrents/:hash/files/:idx/progress", s.handleSetFileProgress)
 		api.POST("/torrents/:hash/viewed", s.handleSetAllFilesViewed)
 		api.POST("/torrents/:hash/files/:idx/preload", s.handlePreloadTorrent)
 		api.POST("/torrents/:hash/wake", s.handleWakeTorrent)
@@ -221,6 +222,10 @@ func (s *Server) registerRoutes() {
 		// Конфиг торрент-движка из БД (Owner+)
 		api.GET("/system/torrent-config", s.handleGetTorrentConfig)
 		api.POST("/system/torrent-config", s.handleSaveTorrentConfig)
+
+		// Сохранение позиции: читают все, переключает Owner
+		api.GET("/system/progress-tracking", s.handleGetProgressTracking)
+		api.POST("/system/progress-tracking", s.handleSetProgressTracking)
 
 		// Плагины (Owner+)
 		api.GET("/plugins", s.handleListPlugins)
