@@ -57,6 +57,42 @@ type UserTorrent struct {
 	Category    string    `json:"category"`
 	AddedAt     time.Time `json:"added_at"`     // Дата добавления пользователем
 	ViewedFiles []int     `json:"viewed_files"` // Индексы просмотренных файлов: [0, 1, 3]
+	// Progress - позиция воспроизведения по индексу файла
+	Progress map[int]FileProgress `json:"progress,omitempty"`
+}
+
+// FileProgress - позиция воспроизведения в секундах
+type FileProgress struct {
+	Position float64 `json:"position"`
+	Duration float64 `json:"duration,omitempty"` // 0 - неизвестна
+}
+
+// SetFileProgress отмечает файл просмотренным и запоминает позицию.
+// Нулевая позиция очищает прогресс, отметка остаётся.
+// Без длительности сохраняется ранее известная.
+func (ut *UserTorrent) SetFileProgress(fileIdx int, position, duration float64) {
+	ut.MarkFileViewed(fileIdx)
+	if position <= 0 {
+		delete(ut.Progress, fileIdx)
+		return
+	}
+	if ut.Progress == nil {
+		ut.Progress = make(map[int]FileProgress)
+	}
+	if duration <= 0 {
+		duration = ut.Progress[fileIdx].Duration
+	}
+	ut.Progress[fileIdx] = FileProgress{Position: position, Duration: duration}
+}
+
+// SetFileDuration записывает длительность, только если она ещё неизвестна
+func (ut *UserTorrent) SetFileDuration(fileIdx int, duration float64) {
+	p, ok := ut.Progress[fileIdx]
+	if !ok || p.Duration > 0 || duration <= 0 {
+		return
+	}
+	p.Duration = duration
+	ut.Progress[fileIdx] = p
 }
 
 // MarkFileViewed помечает файл как просмотренный
@@ -71,6 +107,7 @@ func (ut *UserTorrent) MarkFileViewed(fileIdx int) {
 
 // UnmarkFileViewed снимает отметку о просмотре
 func (ut *UserTorrent) UnmarkFileViewed(fileIdx int) {
+	delete(ut.Progress, fileIdx)
 	var filtered []int
 	for _, idx := range ut.ViewedFiles {
 		if idx != fileIdx {
@@ -85,6 +122,7 @@ func (ut *UserTorrent) UnmarkFileViewed(fileIdx int) {
 func (ut *UserTorrent) SetAllFilesViewed(fileIdx []int, viewed bool) {
 	if !viewed {
 		ut.ViewedFiles = []int{}
+		ut.Progress = nil
 		return
 	}
 

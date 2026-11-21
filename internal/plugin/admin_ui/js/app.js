@@ -1259,10 +1259,21 @@ async function renderSettings() {
     view.innerHTML = '<div class="panel"><p>Loading...</p></div>';
 
     try {
-        const cfg = await api('/system/torrent-config');
+        const [cfg, progress] = await Promise.all([
+            api('/system/torrent-config'),
+            api('/system/progress-tracking'),
+        ]);
         const st = cfg.storage || {};
 
         view.innerHTML = `
+        <div class="panel">
+            <h2>${t('library')}</h2>
+            <div class="checks">
+                <label><input type="checkbox" id="lib-progress" ${progress.enabled ? 'checked' : ''}> ${t('track_progress')}</label>
+            </div>
+            <p class="hint">${t('track_progress_hint')}</p>
+        </div>
+
         <div class="panel">
             <h2>${t('torrent_engine')}</h2>
 
@@ -1304,6 +1315,22 @@ async function renderSettings() {
 
             <button class="btn" id="te-save" type="button">${t('save')}</button>
         </div>`;
+
+        // Применяется сразу, при ошибке возвращается прежнее состояние
+        document.getElementById('lib-progress').addEventListener('change', async (e) => {
+            const box = e.target;
+            box.disabled = true;
+            try {
+                const res = await api('/system/progress-tracking', { method: 'POST', body: JSON.stringify({ enabled: box.checked }) });
+                box.checked = !!res.enabled;
+                toast(t('saved'));
+            } catch (err) {
+                box.checked = !box.checked;
+                toast(err.message);
+            } finally {
+                box.disabled = false;
+            }
+        });
 
         document.getElementById('te-save').addEventListener('click', async () => {
             const payload = {

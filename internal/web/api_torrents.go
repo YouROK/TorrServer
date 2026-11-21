@@ -334,6 +334,44 @@ func (s *Server) handleSetFileViewed(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "updated"})
 }
 
+// handleSetFileProgress отвечает tracked=false, если поставлена только отметка.
+func (s *Server) handleSetFileProgress(c *gin.Context) {
+	val, _ := c.Get("user")
+	currentUser := val.(*user.User)
+	hashHex := c.Param("hash")
+
+	fileIdx, err := strconv.Atoi(c.Param("idx"))
+	if err != nil || fileIdx < 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid file index"})
+		return
+	}
+
+	var req struct {
+		Position *float64 `json:"position"`
+		Duration float64  `json:"duration"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil || req.Position == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request format"})
+		return
+	}
+
+	tracked, err := s.torrentMgr.SetFileProgress(currentUser, hashHex, fileIdx, *req.Position, req.Duration)
+	if errors.Is(err, user.ErrInvalidProgress) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if tracked && req.Duration <= 0 {
+		s.fillDuration(currentUser, hashHex, fileIdx)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "updated", "tracked": tracked})
+}
+
 // handleSetAllFilesViewed отмечает или снимает отметку у всех файлов раздачи
 func (s *Server) handleSetAllFilesViewed(c *gin.Context) {
 	val, _ := c.Get("user")

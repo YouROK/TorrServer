@@ -137,5 +137,8 @@
   "edit": "Edit",
   "pause": "Pause",
   "resume": "Resume",
-  "name_required": "Enter a name"
+  "name_required": "Enter a name",
+  "library": "Library",
+  "track_progress": "Save playback position",
+  "track_progress_hint": "Players report the position and the server keeps it per user. Applies immediately, no restart needed"
 }
