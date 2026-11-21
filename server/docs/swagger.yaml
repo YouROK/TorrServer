@@ -600,6 +600,30 @@ info:
   title: Swagger Torrserver API
   version: '{version.Version}'
 paths:
+  /audio/{hash}/{id}:
+    get:
+      description: |-
+        List audio files found in the torrent that belong to the given video file
+        (for example voice-overs in "Sound [Group]/ep01.mka"). "url" is the link to the file itself.
+      parameters:
+      - description: Torrent infohash
+        in: path
+        name: hash
+        required: true
+        type: string
+      - description: Video file index in torrent
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of tracks (JSON)
+      summary: External audio tracks of a video file
+      tags:
+      - API
   /cache:
     post:
       description: Return cache stats.
