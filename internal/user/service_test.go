@@ -624,3 +624,45 @@ func TestSetFileProgressDisabled(t *testing.T) {
 		t.Error("file 1 position must not be stored")
 	}
 }
+
+func TestSetProgressTracking(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "progress_setting.db")
+	db, err := database.Open(dbPath)
+	if err != nil {
+		t.Fatalf("Failed to open test database: %v", err)
+	}
+	defer db.Close()
+
+	cfg := config.DefaultConfig()
+	cfg.Auth.OwnerPassword = "secret"
+	svc := NewService(NewStore(db), cfg)
+
+	if svc.ProgressTracking() {
+		t.Fatal("tracking must be off by default")
+	}
+
+	owner, _, _ := svc.Login("owner", "secret")
+	admin, _ := svc.CreateUser(owner, "admin", "pass", RankAdmin, Limits{})
+
+	if err := svc.SetProgressTracking(admin, true); !errors.Is(err, ErrPermissionDenied) {
+		t.Errorf("admin: err = %v, want ErrPermissionDenied", err)
+	}
+	if err := svc.SetProgressTracking(owner, true); err != nil {
+		t.Fatalf("SetProgressTracking: %v", err)
+	}
+	if !svc.ProgressTracking() {
+		t.Error("toggle must apply immediately")
+	}
+
+	if !NewService(NewStore(db), cfg).ProgressTracking() {
+		t.Error("saved value must override config.yaml")
+	}
+
+	if err := svc.SetProgressTracking(owner, false); err != nil {
+		t.Fatalf("SetProgressTracking: %v", err)
+	}
+	cfg.Library.TrackProgress = true
+	if NewService(NewStore(db), cfg).ProgressTracking() {
+		t.Error("saved false must override track_progress: true")
+	}
+}

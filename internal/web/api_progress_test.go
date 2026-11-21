@@ -104,3 +104,41 @@ func TestHandleSetFileProgressDisabled(t *testing.T) {
 		t.Errorf("Progress = %v, want empty", ut.Progress)
 	}
 }
+
+func TestHandleProgressTrackingToggle(t *testing.T) {
+	s, owner := setupAddTestEnv(t)
+
+	call := func(handler gin.HandlerFunc, method, body string, u *user.User) *httptest.ResponseRecorder {
+		rec := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(rec)
+		c.Request = httptest.NewRequest(method, "/api/system/progress-tracking", bytes.NewBufferString(body))
+		c.Request.Header.Set("Content-Type", "application/json")
+		c.Set("user", u)
+		handler(c)
+		return rec
+	}
+
+	if rec := call(s.handleSetProgressTracking, http.MethodPost, `{"enabled": true}`, owner); rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	rec := call(s.handleGetProgressTracking, http.MethodGet, "", owner)
+	var resp struct {
+		Enabled bool `json:"enabled"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if !resp.Enabled {
+		t.Error("enabled = false after enabling")
+	}
+
+	if rec := call(s.handleSetProgressTracking, http.MethodPost, `{}`, owner); rec.Code != http.StatusBadRequest {
+		t.Errorf("empty body: expected 400, got %d", rec.Code)
+	}
+
+	guest := &user.User{ID: "u_guest", Username: "guest", Rank: user.RankUser}
+	if rec := call(s.handleSetProgressTracking, http.MethodPost, `{"enabled": false}`, guest); rec.Code != http.StatusForbidden {
+		t.Errorf("non-owner: expected 403, got %d", rec.Code)
+	}
+}

@@ -223,6 +223,10 @@ func (s *Server) registerRoutes() {
 		api.GET("/system/torrent-config", s.handleGetTorrentConfig)
 		api.POST("/system/torrent-config", s.handleSaveTorrentConfig)
 
+		// Сохранение позиции: читают все, переключает Owner
+		api.GET("/system/progress-tracking", s.handleGetProgressTracking)
+		api.POST("/system/progress-tracking", s.handleSetProgressTracking)
+
 		// Плагины (Owner+)
 		api.GET("/plugins", s.handleListPlugins)
 		api.POST("/plugins/upload", s.handleUploadPlugin)

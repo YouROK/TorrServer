@@ -65,7 +65,14 @@ func NewService(store *Store, cfg *config.Config) *Service {
 		}
 	}
 	s.ownerU = owner
+
+	// Значение из админки важнее config.yaml
 	s.trackProgress.Store(cfg.Library.TrackProgress)
+	if enabled, found, err := store.GetProgressTracking(); err != nil {
+		log.Warnf("[User] Failed to read progress tracking setting, using config value: %v", err)
+	} else if found {
+		s.trackProgress.Store(enabled)
+	}
 
 	return s
 }
@@ -400,6 +407,21 @@ func (s *Service) SetFileViewed(u *User, hash string, fileIdx int, viewed bool) 
 		"file_idx": fileIdx,
 		"viewed":   viewed,
 	})
+	return nil
+}
+
+// SetProgressTracking переключает сохранение позиции без перезапуска.
+// Значение хранится в базе и перекрывает library.track_progress из config.yaml.
+func (s *Service) SetProgressTracking(actor *User, enabled bool) error {
+	if actor == nil || !actor.Rank.IsOwner() {
+		return ErrPermissionDenied
+	}
+	if err := s.store.SaveProgressTracking(enabled); err != nil {
+		return err
+	}
+	s.trackProgress.Store(enabled)
+
+	log.Infof("[User] Progress tracking set to %v by '%s'", enabled, actor.Username)
 	return nil
 }
 
