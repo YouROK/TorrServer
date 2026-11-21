@@ -10,6 +10,7 @@
     "hls.js": "1.6.16",
     "i18next": "^20.3.1",
     "i18next-browser-languagedetector": "^6.1.8",
+    "jassub": "~1.8",
     "lodash": "^4.18.1",
     "material-ui-image": "^3.3.2",
     "parse-torrent": "^9.1.3",
@@ -29,8 +30,9 @@
     "uuid": "^14.0.0"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "copy-jassub": "node scripts/copy-jassub.js",
+    "start": "node scripts/copy-jassub.js && react-scripts start",
+    "build": "node scripts/copy-jassub.js && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "lint": "eslint --ext .js,.jsx src --color",
