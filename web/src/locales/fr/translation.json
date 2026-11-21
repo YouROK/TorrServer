@@ -327,6 +327,8 @@
     "UseVLC": "Demander d'ouvrir la vidéo dans VLC",
     "UseVLCDesktopHintPrefix": "Sur PC nécessite",
     "UseVLCHint": "Ajouter un bouton de lecteur VLC à la liste de contenu du torrent",
+    "TrackTimecode": "Suivre le timecode",
+    "TrackTimecodeHint": "Enregistrer la position de lecture (timecode) dans l'historique pour reprendre la lecture dans des clients comme Lampa",
     "ViewedHistoryStorage": "Stockage de l'historique des vues :",
     "ViewedStorageHint": "Choisissez où stocker l'historique des vues"
   },
