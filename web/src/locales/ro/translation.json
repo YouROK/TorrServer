@@ -333,6 +333,8 @@
     "UseVLC": "Solicitare pentru deschiderea videoclipului în VLC",
     "UseVLCDesktopHintPrefix": "Pe PC este necesar",
     "UseVLCHint": "Adăugați butonul VLC player la lista de conținut torrent",
+    "TrackTimecode": "Urmărire timecode",
+    "TrackTimecodeHint": "Salvați poziția de redare (timecode) în istoricul vizionărilor pentru reluarea redării în clienți precum Lampa",
     "ViewedHistoryStorage": "Istoricul vizualizărilor stocate:",
     "ViewedStorageHint": "Alegeți unde să stocați istoricul vizualizat"
   },

@@ -327,6 +327,8 @@
     "UseVLC": "Prompt to open video in VLC",
     "UseVLCDesktopHintPrefix": "Desktop requires",
     "UseVLCHint": "Add VLC player button to torrent content list",
+    "TrackTimecode": "Track playback timecode",
+    "TrackTimecodeHint": "Store playback position (timecode) in viewed data for resuming playback in clients like Lampa",
     "ViewedHistoryStorage": "Viewed History Storage:",
     "ViewedStorageHint": "Choose where to store viewed history"
   },
