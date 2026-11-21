@@ -11,6 +11,39 @@
     },
     "basePath": "/",
     "paths": {
+        "/audio/{hash}/{id}": {
+            "get": {
+                "description": "List audio files found in the torrent that belong to the given video file\n(for example voice-overs in \"Sound [Group]/ep01.mka\"). \"url\" is the link to the file itself.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API"
+                ],
+                "summary": "External audio tracks of a video file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Torrent infohash",
+                        "name": "hash",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Video file index in torrent",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of tracks (JSON)"
+                    }
+                }
+            }
+        },
         "/cache": {
             "post": {
                 "security": [
@@ -1463,6 +1496,9 @@
                 "responses": {
                     "200": {
                         "description": "List of tracks (JSON) or WebVTT"
+                    },
+                    "413": {
+                        "description": "Subtitle file is over the size limit"
                     }
                 }
             }
@@ -2150,6 +2186,14 @@
                     "description": "Torznab",
                     "type": "boolean"
                 },
+                "externalSubtitleAttempts": {
+                    "description": "how many times loading may be tried for tracks that failed for a temporary reason; 0 - default",
+                    "type": "integer"
+                },
+                "externalSubtitleTimeoutSec": {
+                    "description": "in seconds, time limit for loading the subtitle tracks of a video into HLS; 0 - default",
+                    "type": "integer"
+                },
                 "forceEncrypt": {
                     "description": "Torrent",
                     "type": "boolean"
@@ -2160,6 +2204,10 @@
                 },
                 "lpdipv6": {
                     "type": "boolean"
+                },
+                "maxSubtitleSizeMB": {
+                    "description": "External subtitles (/subs and the gstreamer HLS module)",
+                    "type": "integer"
                 },
                 "mergeAllM3U": {
                     "description": "M3U",

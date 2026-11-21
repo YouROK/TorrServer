@@ -178,12 +178,20 @@ func (s *Service) getOrAdd(hash string, id string, fileID string, audio int) (*T
 	if err != nil {
 		return nil, err
 	}
+	var options []TaskOption
+	if isExternalAudio(audio) {
+		external, err := s.resolveExternalAudio(hash, fileID, audio)
+		if err != nil {
+			return nil, err
+		}
+		options = append(options, WithExternalAudio(external))
+	}
 	var cue *CueTimeline
 	if shouldUseCueTimeline(conf, probe) {
 		cue = readMatroskaCueTimeline(sourceURL, probe.FileSize, probe.DurationNS)
 	}
 
-	task, err = NewTask(id, fileID, audio, sourceURL, probe, cue, conf)
+	task, err = NewTask(id, fileID, audio, sourceURL, probe, cue, conf, options...)
 	if err != nil {
 		return nil, err
 	}
