@@ -24,6 +24,12 @@ import (
 // setupAddTestEnv поднимает Server с движком и менеджером для проверки добавления
 func setupAddTestEnv(t *testing.T) (*Server, *user.User) {
 	t.Helper()
+	return setupAddTestEnvWith(t, nil)
+}
+
+// setupAddTestEnvWith позволяет поправить конфиг до запуска сервисов
+func setupAddTestEnvWith(t *testing.T, tune func(cfg *config.Config)) (*Server, *user.User) {
+	t.Helper()
 	gin.SetMode(gin.TestMode)
 
 	db, err := database.Open(filepath.Join(t.TempDir(), "add_test.db"))
@@ -33,6 +39,9 @@ func setupAddTestEnv(t *testing.T) (*Server, *user.User) {
 	t.Cleanup(func() { _ = db.Close() })
 
 	cfg := config.DefaultConfig()
+	if tune != nil {
+		tune(cfg)
+	}
 	userSvc := user.NewService(user.NewStore(db), cfg)
 
 	owner, err := userSvc.Authenticate("")
