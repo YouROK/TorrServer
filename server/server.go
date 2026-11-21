@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"os"
@@ -104,8 +105,10 @@ func cleanCache() {
 	log.TLogln("Remove unused cache in dir:", settings.BTsets.TorrentsSavePath)
 	keep := map[string]bool{}
 	for _, d := range dirs {
-		if len(d.Name()) != 40 {
-			// Not a hash
+		// Only cache folders: a directory named after an info hash. Checking the length
+		// alone also matched the user's own folders with 40-character names, e.g. a movie
+		// folder in the root of a USB drive used as the cache path, and emptied them.
+		if !d.IsDir() || !isInfoHashName(d.Name()) {
 			continue
 		}
 
@@ -130,6 +133,14 @@ func cleanCache() {
 			}
 		}
 	}
+}
+
+func isInfoHashName(name string) bool {
+	if len(name) != 40 {
+		return false
+	}
+	_, err := hex.DecodeString(name)
+	return err == nil
 }
 
 func removeAllFiles(path string) {
