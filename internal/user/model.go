@@ -85,6 +85,16 @@ func (ut *UserTorrent) SetFileProgress(fileIdx int, position, duration float64) 
 	ut.Progress[fileIdx] = FileProgress{Position: position, Duration: duration}
 }
 
+// SetFileDuration записывает длительность, только если она ещё неизвестна
+func (ut *UserTorrent) SetFileDuration(fileIdx int, duration float64) {
+	p, ok := ut.Progress[fileIdx]
+	if !ok || p.Duration > 0 || duration <= 0 {
+		return
+	}
+	p.Duration = duration
+	ut.Progress[fileIdx] = p
+}
+
 // MarkFileViewed помечает файл как просмотренный
 func (ut *UserTorrent) MarkFileViewed(fileIdx int) {
 	for _, idx := range ut.ViewedFiles {

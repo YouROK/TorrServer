@@ -666,3 +666,24 @@ func TestSetProgressTracking(t *testing.T) {
 		t.Error("saved false must override track_progress: true")
 	}
 }
+
+func TestUserTorrentSetFileDuration(t *testing.T) {
+	ut := &UserTorrent{}
+
+	ut.SetFileDuration(0, 100)
+	if len(ut.Progress) != 0 {
+		t.Errorf("Progress = %v, want empty", ut.Progress)
+	}
+
+	ut.SetFileProgress(0, 10, 0)
+	ut.SetFileDuration(0, 1500)
+	if got := ut.Progress[0]; got.Position != 10 || got.Duration != 1500 {
+		t.Errorf("Progress[0] = %+v, want {10 1500}", got)
+	}
+
+	ut.SetFileProgress(1, 20, 600)
+	ut.SetFileDuration(1, 700)
+	if got := ut.Progress[1].Duration; got != 600 {
+		t.Errorf("Duration = %v, want 600 from the player", got)
+	}
+}

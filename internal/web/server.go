@@ -48,6 +48,10 @@ type Server struct {
 	// Фоновые задачи сервера: закрытие дожидается их завершения
 	tasks *bus.Group
 
+	// durationProbes - файлы, длительность которых определяется или не определилась
+	durationProbes sync.Map
+	durationOff    sync.Once
+
 	// sourceOpen подменяет открытие файла раздачи в тестах
 	sourceOpen sourceOpener
 }

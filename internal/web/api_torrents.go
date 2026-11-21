@@ -365,6 +365,10 @@ func (s *Server) handleSetFileProgress(c *gin.Context) {
 		return
 	}
 
+	if tracked && req.Duration <= 0 {
+		s.fillDuration(currentUser, hashHex, fileIdx)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"status": "updated", "tracked": tracked})
 }
 

@@ -451,6 +451,17 @@ func (s *Service) SetFileProgress(u *User, hash string, fileIdx int, position, d
 	return tracked, nil
 }
 
+// SetFileDuration сохраняет длительность, определённую сервером, не перекрывая присланную плеером
+func (s *Service) SetFileDuration(u *User, hash string, fileIdx int, duration float64) error {
+	if !validSeconds(duration) {
+		return ErrInvalidProgress
+	}
+	if !s.ProgressTracking() {
+		return nil
+	}
+	return s.store.SetFileDurationStatus(u.ID, hash, fileIdx, duration)
+}
+
 func validSeconds(v float64) bool {
 	return v >= 0 && !math.IsInf(v, 0)
 }
