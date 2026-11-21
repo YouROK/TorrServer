@@ -688,6 +688,19 @@
     text-overflow: ellipsis;
 }
 
+.file-progress {
+    height: 3px;
+    margin-top: 4px;
+    border-radius: 2px;
+    background: var(--silo-border);
+    overflow: hidden;
+}
+
+.file-progress-bar {
+    height: 100%;
+    background: var(--silo-amber);
+}
+
 .file-actions {
     display: flex;
     align-items: center;
