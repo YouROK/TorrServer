@@ -503,3 +503,78 @@ func TestUserTorrentSetAllFilesViewed(t *testing.T) {
 		t.Errorf("после снятия ViewedFiles = %v, want пусто", ut.ViewedFiles)
 	}
 }
+
+func TestUserTorrentFileProgress(t *testing.T) {
+	ut := &UserTorrent{}
+
+	ut.SetFileProgress(3, 125.5, 2700)
+	if !ut.IsFileViewed(3) {
+		t.Error("file 3 must be viewed after saving progress")
+	}
+	if got := ut.Progress[3]; got.Position != 125.5 || got.Duration != 2700 {
+		t.Errorf("Progress[3] = %+v, want {125.5 2700}", got)
+	}
+
+	ut.SetFileProgress(3, 130, 0)
+	if got := ut.Progress[3]; got.Position != 130 || got.Duration != 2700 {
+		t.Errorf("Progress[3] = %+v, want {130 2700}", got)
+	}
+
+	ut.SetFileProgress(3, 0, 0)
+	if _, ok := ut.Progress[3]; ok {
+		t.Error("file 3 progress must be cleared")
+	}
+	if !ut.IsFileViewed(3) {
+		t.Error("file 3 must stay viewed")
+	}
+
+	ut.SetFileProgress(1, 10, 0)
+	ut.UnmarkFileViewed(1)
+	if _, ok := ut.Progress[1]; ok {
+		t.Error("file 1 progress must be dropped with the viewed mark")
+	}
+
+	ut.SetFileProgress(2, 20, 0)
+	ut.SetAllFilesViewed([]int{1, 2, 3}, false)
+	if len(ut.Progress) != 0 {
+		t.Errorf("Progress = %v after unmarking all, want empty", ut.Progress)
+	}
+}
+
+func TestSetFileProgressPersists(t *testing.T) {
+	svc, cleanup := setupTestEnv(t, "secret")
+	defer cleanup()
+
+	owner, _, _ := svc.Login("owner", "secret")
+	u1, _ := svc.CreateUser(owner, "viewer1", "pass", RankUser, Limits{})
+	u2, _ := svc.CreateUser(owner, "viewer2", "pass", RankUser, Limits{})
+
+	hash := "abcd1234efgh"
+	if err := svc.AddTorrent(u1, hash, "Movie", "", ""); err != nil {
+		t.Fatalf("AddTorrent u1: %v", err)
+	}
+	if err := svc.AddTorrent(u2, hash, "Movie", "", ""); err != nil {
+		t.Fatalf("AddTorrent u2: %v", err)
+	}
+
+	if err := svc.SetFileProgress(u1, hash, 0, 61, 3600); err != nil {
+		t.Fatalf("SetFileProgress: %v", err)
+	}
+
+	ut1, _ := svc.GetUserTorrent(u1.ID, hash)
+	if got := ut1.Progress[0]; got.Position != 61 || got.Duration != 3600 {
+		t.Errorf("u1 Progress[0] = %+v, want {61 3600}", got)
+	}
+	if !ut1.IsFileViewed(0) {
+		t.Error("file 0 must be viewed for u1")
+	}
+
+	ut2, _ := svc.GetUserTorrent(u2.ID, hash)
+	if len(ut2.Progress) != 0 || len(ut2.ViewedFiles) != 0 {
+		t.Errorf("u2 must have no progress: %+v", ut2)
+	}
+
+	if err := svc.SetFileProgress(u1, hash, 0, -1, 0); !errors.Is(err, ErrInvalidProgress) {
+		t.Errorf("negative position: err = %v, want ErrInvalidProgress", err)
+	}
+}

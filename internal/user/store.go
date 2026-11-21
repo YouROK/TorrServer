@@ -416,6 +416,13 @@ func (s *Store) SetFileViewedStatus(userID, hash string, fileIdx int, viewed boo
 	})
 }
 
+func (s *Store) SetFileProgressStatus(userID, hash string, fileIdx int, position, duration float64) error {
+	return s.updateUserTorrent(userID, hash, func(ut *UserTorrent) error {
+		ut.SetFileProgress(fileIdx, position, duration)
+		return nil
+	})
+}
+
 // SetAllFilesViewedStatus отмечает или снимает отметку у всех файлов раздачи
 func (s *Store) SetAllFilesViewedStatus(userID, hash string, fileIdx []int, viewed bool) error {
 	return s.updateUserTorrent(userID, hash, func(ut *UserTorrent) error {
