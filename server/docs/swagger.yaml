@@ -1531,6 +1531,7 @@ paths:
         Without "track": list external subtitle tracks found in the torrent for the given video file.
         With "track": return that subtitle file, by default converted to WebVTT.
         "format": "vtt" (default) or "original" (no conversion). "encoding": output charset, default utf8.
+        With "fonts": list the fonts for ASS subtitles of the video: [{source, name, type, size, url}].
       parameters:
       - description: Torrent infohash
         in: path
@@ -1553,6 +1554,11 @@ paths:
       - description: 'Output encoding, default utf8 (also: windows-1251)'
         in: query
         name: encoding
+        type: string
+      - description: 'Present (no value): list the fonts of the video (font files
+          of the torrent near it)'
+        in: query
+        name: fonts
         type: string
       produces:
       - application/json

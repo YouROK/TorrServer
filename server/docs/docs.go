@@ -1424,7 +1424,7 @@ const docTemplate = `{
         },
         "/subs/{hash}/{id}": {
             "get": {
-                "description": "Without \"track\": list external subtitle tracks found in the torrent for the given video file.\nWith \"track\": return that subtitle file, by default converted to WebVTT.\n\"format\": \"vtt\" (default) or \"original\" (no conversion). \"encoding\": output charset, default utf8.",
+                "description": "Without \"track\": list external subtitle tracks found in the torrent for the given video file.\nWith \"track\": return that subtitle file, by default converted to WebVTT.\n\"format\": \"vtt\" (default) or \"original\" (no conversion). \"encoding\": output charset, default utf8.\nWith \"fonts\": list the fonts for ASS subtitles of the video: [{source, name, type, size, url}].",
                 "produces": [
                     "application/json",
                     "text/vtt"
@@ -1464,6 +1464,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Output encoding, default utf8 (also: windows-1251)",
                         "name": "encoding",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Present (no value): list the fonts of the video (font files of the torrent near it)",
+                        "name": "fonts",
                         "in": "query"
                     }
                 ],
