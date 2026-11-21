@@ -142,7 +142,7 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 		resp.Header().Set("X-Stream-Timeout", fmt.Sprintf("%d", streamTimeout))
 	}
 	// Add ETag
-	etag := hex.EncodeToString([]byte(fmt.Sprintf("%s/%s", t.Hash().HexString(), file.Path())))
+	etag := hex.EncodeToString(fmt.Appendf(nil, "%s/%s", t.Hash().HexString(), file.Path()))
 	resp.Header().Set("ETag", httptoo.EncodeQuotedString(etag))
 	// DLNA headers
 	resp.Header().Set("transferMode.dlna.org", "Streaming")
