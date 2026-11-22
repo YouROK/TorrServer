@@ -333,6 +333,8 @@
     "UseVLC": "提示在VLC中打开视频",
     "UseVLCDesktopHintPrefix": "桌面端需要",
     "UseVLCHint": "将VLC播放器按钮添加到种子内容列表",
+    "TrackTimecode": "跟踪播放时间码",
+    "TrackTimecodeHint": "在已观看数据中保存播放位置（时间码），以便在 Lampa 等客户端中继续播放",
     "ViewedHistoryStorage": "查看历史存储：",
     "ViewedStorageHint": "存储查看历史记录的位置"
   },

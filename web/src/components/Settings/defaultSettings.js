@@ -48,4 +48,5 @@ wss://tracker.openwebtorrent.com`,
   SslKey: '',
   ShowFSActiveTorr: true,
   StoreSettingsInJson: true,
+  TrackTimecode: false,
 }
