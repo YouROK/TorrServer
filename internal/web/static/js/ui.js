@@ -172,6 +172,26 @@
             });
         },
 
+        // labels подписывает ячейки строки заголовками колонок.
+        // На узком экране таблица становится карточками, и подпись
+        // показывает, к какой колонке относится значение.
+        labels(row) {
+            if (!row || !row.cells || typeof row.closest !== 'function') return;
+
+            const table = row.closest('table');
+            const head = table && table.tHead && table.tHead.rows[0];
+            if (!head || row.cells.length !== head.cells.length) return;
+
+            Array.from(row.cells).forEach((cell, index) => {
+                const label = head.cells[index].textContent.trim();
+                if (label) {
+                    cell.setAttribute('data-label', label);
+                } else {
+                    cell.removeAttribute('data-label');
+                }
+            });
+        },
+
         // rows обновляет строки таблицы по ключу.
         // Неизменившиеся строки не трогаются, поэтому фокус и выделение в них живут.
         // options.key возвращает ключ строки, options.html - её разметку.
@@ -227,6 +247,7 @@
                 // Лишние перемещения сбрасывают фокус и выделение внутри строки
                 const at = previous ? previous.nextSibling : host.firstChild;
                 if (row !== at) host.insertBefore(row, at);
+                this.labels(row);
                 previous = row;
             });
 

@@ -252,3 +252,34 @@ El.prototype.__defineGetter__('nextSibling', function () {
 }
 
 console.log('ui.js rows: all checks passed');
+
+// labels переносит заголовки колонок в подписи ячеек строки
+{
+    function cell(label) {
+        return {
+            attrs: label ? { 'data-label': label } : {},
+            setAttribute(k, v) { this.attrs[k] = v; },
+            removeAttribute(k) { delete this.attrs[k]; },
+        };
+    }
+
+    const head = new El('tr');
+    head.cells = [{ textContent: 'Name' }, { textContent: ' ' }];
+
+    const row = new El('tr');
+    row.cells = [cell(null), cell('stale')];
+    row.closest = (sel) => (sel === 'table' ? { tHead: { rows: [head] } } : null);
+
+    ui.labels(row);
+    assert.strictEqual(row.cells[0].attrs['data-label'], 'Name', 'подпись ячейки из заголовка');
+    assert.strictEqual('data-label' in row.cells[1].attrs, false, 'пустой заголовок не даёт подписи');
+
+    // Строка с другим числом ячеек (colspan) подписей не получает
+    const merged = new El('tr');
+    merged.cells = [cell(null)];
+    merged.closest = row.closest;
+    ui.labels(merged);
+    assert.strictEqual('data-label' in merged.cells[0].attrs, false, 'colspan не подписывается');
+}
+
+console.log('ui.js labels: all checks passed');

@@ -951,18 +951,35 @@ input[type="number"] {
 
     .content { padding: 16px; }
 
+    .topbar { margin-bottom: 16px; }
+
     .panel {
         max-width: 100%;
         padding: 16px;
     }
 
+    /* Панель с таблицей: карточки занимают всю ширину */
+    .panel.panel-wide { padding: 12px; }
+
+    /* Поля и кнопки строки встают в колонку на всю ширину.
+       flex-basis из .row .input в колонке превратился бы в высоту поля,
+       а inline flex и max-width из разметки плагина - в узкое поле. */
     .row {
         flex-direction: column;
         align-items: stretch;
+        gap: 10px;
     }
 
-    .row .input,
-    .row .btn { width: 100%; }
+    .row > .input,
+    .row > .btn,
+    .row > .file-input {
+        flex: 0 0 auto !important;
+        width: 100%;
+        min-width: 0;
+        max-width: 100% !important;
+    }
+
+    .row > .file-input { flex-wrap: wrap; }
 
     .modal {
         width: 100%;
@@ -1003,16 +1020,90 @@ input[type="number"] {
 
     .cards { grid-template-columns: 1fr; }
 
-    /* Кнопки действий в столбик */
-    .actions-cell {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
+    /* Таблица раскладывается карточками: заголовок колонки становится
+       подписью над значением. Подписи ставит siloUI.rows. */
+    .table-wrap {
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        overflow: visible;
     }
 
-    .actions-cell > * {
-        margin-right: 0;
+    .table { display: block; }
+
+    .table thead { display: none; }
+
+    .table tbody { display: block; }
+
+    .table tr {
+        display: block;
+        background: var(--silo-surface);
+        border: 1px solid var(--silo-border);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin-bottom: 12px;
+    }
+
+    .table tr:last-child { margin-bottom: 0; }
+
+    /* Наведение и границы строк в карточке не нужны */
+    .table tr:hover td { background: transparent; }
+
+    .table td {
+        display: block;
+        width: auto;
+        padding: 5px 0;
+        border-bottom: 0;
+        white-space: normal;
+        text-align: left;
+    }
+
+    .table td[data-label]::before {
+        content: attr(data-label);
+        display: block;
+        color: var(--silo-text-faint);
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+    }
+
+    .table td:first-child {
+        color: var(--silo-text);
+        font-weight: 600;
+        padding-top: 0;
+    }
+
+    .table td:empty { display: none; }
+
+    /* Кнопки действий раскладываются сеткой, если не влезают в строку */
+    .table .actions-cell {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+        gap: 6px;
+        margin-top: 8px;
+        padding-top: 10px;
+        border-top: 1px solid var(--silo-border);
+        white-space: normal;
+    }
+
+    .table td.actions-cell::before { content: none; }
+
+    .table .actions-cell > * {
         width: 100%;
+        margin-right: 0;
+        padding-left: 8px;
+        padding-right: 8px;
+        font-size: 12px;
+    }
+
+    /* Круглая кнопка-подсказка остается круглой: сетка не растягивает её */
+    .table .actions-cell > .btn-icon {
+        width: 26px;
+        height: 26px;
+        padding: 0;
+        justify-self: start;
     }
 
     .login-card {
