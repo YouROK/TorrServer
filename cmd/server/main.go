@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 
 	"silo/internal/app"
@@ -16,7 +17,13 @@ import (
 
 func main() {
 	configPath := flag.String("c", "config.yaml", "path to YAML configuration file")
+	showVersion := flag.Bool("version", false, "print version and exit")
 	flag.Parse()
+
+	if *showVersion {
+		printVersion()
+		return
+	}
 
 	cfg, err := config.Load(*configPath)
 	if err != nil {
@@ -54,4 +61,14 @@ func main() {
 	<-ctx.Done()
 	log.Warn("[App] Shutdown signal received")
 	application.Stop()
+}
+
+// printVersion выводит версию сборки, движка и платформу одной строкой.
+func printVersion() {
+	engine := version.GetTorrentVersion()
+	if engine == "" {
+		engine = "unknown"
+	}
+	fmt.Printf("%s (torrent engine %s, %s %s/%s)\n",
+		version.Version, engine, runtime.Version(), runtime.GOOS, runtime.GOARCH)
 }
