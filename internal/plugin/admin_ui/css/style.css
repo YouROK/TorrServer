@@ -408,6 +408,9 @@ details.manual-install[open] > summary::before { transform: rotate(90deg); }
 
     .logs-box { max-height: 50vh; }
 
+    /* Каталог листается пальцем, стрелки ленты занимают место впустую */
+    .carousel-nav { display: none; }
+
     .modal-wide .table { table-layout: auto; }
 
     .stream-row {
