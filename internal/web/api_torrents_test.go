@@ -206,3 +206,89 @@ func mustUnmarshalInfo(t *testing.T, raw []byte) []byte {
 	}
 	return mi.InfoBytes
 }
+
+// TestHandleReAddTorrentMergesCard проверяет, что повторное добавление через API
+// не затирает постер, отметки просмотра и дату добавления.
+func TestHandleReAddTorrentMergesCard(t *testing.T) {
+	s, owner := setupAddTestEnv(t)
+
+	const hash = "abcdefabcdefabcdefabcdefabcdefabcdefabcd"
+
+	add := func(title, poster string) *httptest.ResponseRecorder {
+		payload, _ := json.Marshal(map[string]any{
+			"link":       hash,
+			"title":      title,
+			"poster":     poster,
+			"category":   "Movies",
+			"save_to_db": true,
+		})
+
+		rec := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(rec)
+		c.Request = httptest.NewRequest(http.MethodPost, "/api/torrents", bytes.NewReader(payload))
+		c.Request.Header.Set("Content-Type", "application/json")
+		c.Set("user", owner)
+
+		s.handleAddTorrent(c)
+		return rec
+	}
+
+	if rec := add("First", "http://old.jpg"); rec.Code != http.StatusCreated {
+		t.Fatalf("first add: expected 201, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if err := s.userSvc.SetFileViewed(owner, hash, 1, true); err != nil {
+		t.Fatalf("SetFileViewed: %v", err)
+	}
+
+	before, err := s.userSvc.GetUserTorrent(owner.ID, hash)
+	if err != nil {
+		t.Fatalf("GetUserTorrent: %v", err)
+	}
+
+	// Повторное добавление с пустыми полями: старые значения остаются
+	rec := add("", "")
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("re-add: expected 201, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var status struct {
+		Title  string `json:"title"`
+		Poster string `json:"poster"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &status); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if status.Title != "First" || status.Poster != "http://old.jpg" {
+		t.Errorf("status потерял данные: title=%q poster=%q", status.Title, status.Poster)
+	}
+
+	kept, err := s.userSvc.GetUserTorrent(owner.ID, hash)
+	if err != nil {
+		t.Fatalf("GetUserTorrent after re-add: %v", err)
+	}
+	if kept.Title != "First" || kept.Poster != "http://old.jpg" || kept.Category != "movie" {
+		t.Errorf("карточка затёрта пустыми полями: %+v", kept)
+	}
+	if !kept.IsFileViewed(1) {
+		t.Errorf("отметка просмотра потеряна: %v", kept.ViewedFiles)
+	}
+	if !kept.AddedAt.Equal(before.AddedAt) {
+		t.Errorf("дата добавления изменилась: %v -> %v", before.AddedAt, kept.AddedAt)
+	}
+
+	// Новое название заменяет старое, пустой постер не затирает прежний
+	rec = add("Second", "")
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("rename: expected 201, got %d: %s", rec.Code, rec.Body.String())
+	}
+	status = struct {
+		Title  string `json:"title"`
+		Poster string `json:"poster"`
+	}{}
+	if err := json.Unmarshal(rec.Body.Bytes(), &status); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if status.Title != "Second" || status.Poster != "http://old.jpg" {
+		t.Errorf("status после переименования: title=%q poster=%q", status.Title, status.Poster)
+	}
+}

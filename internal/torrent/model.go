@@ -97,6 +97,52 @@ type TorrentRecord struct {
 	Files     []*TorrentFileStat `json:"files,omitempty"`
 }
 
+// MergeTorrentRecords дополняет старую запись новой: пустые поля не затирают
+// старое, трекеры объединяются без дублей.
+func MergeTorrentRecords(old, in *TorrentRecord) *TorrentRecord {
+	out := *old
+	out.Hash = in.Hash
+
+	if in.Name != "" {
+		out.Name = in.Name
+	}
+	if in.Size != 0 {
+		out.Size = in.Size
+	}
+	if in.Timestamp != 0 {
+		out.Timestamp = in.Timestamp
+	}
+	if in.MagnetUri != "" {
+		out.MagnetUri = in.MagnetUri
+	}
+	if len(in.InfoBytes) > 0 {
+		out.InfoBytes = in.InfoBytes
+	}
+	if len(in.Files) > 0 {
+		out.Files = in.Files
+	}
+
+	out.Trackers = mergeTrackerLists(old.Trackers, in.Trackers)
+	return &out
+}
+
+// mergeTrackerLists объединяет списки трекеров без дублей, сохраняя порядок.
+func mergeTrackerLists(old, in []string) []string {
+	seen := make(map[string]bool, len(old)+len(in))
+	merged := make([]string, 0, len(old)+len(in))
+
+	for _, list := range [][]string{old, in} {
+		for _, tr := range list {
+			if tr == "" || seen[tr] {
+				continue
+			}
+			seen[tr] = true
+			merged = append(merged, tr)
+		}
+	}
+	return merged
+}
+
 // ResolveTitle выбирает название раздачи: личное, затем имя из метаданных, затем техническое.
 // Пустой hash отключает техническую подстановку: название остается пустым.
 func ResolveTitle(title, metaName, hash string) string {

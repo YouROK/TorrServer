@@ -118,3 +118,17 @@ func (ut *UserTorrent) IsFileViewed(fileIdx int) bool {
 	}
 	return false
 }
+
+// MergeFrom дополняет карточку новыми данными: непустые название, постер и
+// категория заменяют старые, дата добавления и отметки просмотра сохраняются.
+func (ut *UserTorrent) MergeFrom(in *UserTorrent) {
+	if in.Title != "" {
+		ut.Title = in.Title
+	}
+	if in.Poster != "" {
+		ut.Poster = in.Poster
+	}
+	if in.Category != "" {
+		ut.Category = in.Category
+	}
+}

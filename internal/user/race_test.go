@@ -18,7 +18,7 @@ func TestSetFileViewedConcurrent(t *testing.T) {
 	}
 
 	const hash = "0123456789abcdef0123456789abcdef01234567"
-	if err := svc.AddTorrent(u, hash, "Test", "", ""); err != nil {
+	if _, err := svc.AddTorrent(u, hash, "Test", "", ""); err != nil {
 		t.Fatalf("AddTorrent: %v", err)
 	}
 
@@ -57,7 +57,7 @@ func TestSetFileViewedKeepsMetaConcurrent(t *testing.T) {
 	}
 
 	const hash = "abcdefabcdefabcdefabcdefabcdefabcdefabcd"
-	if err := svc.AddTorrent(u, hash, "Original", "", ""); err != nil {
+	if _, err := svc.AddTorrent(u, hash, "Original", "", ""); err != nil {
 		t.Fatalf("AddTorrent: %v", err)
 	}
 
@@ -107,7 +107,7 @@ func TestMaxTorrentsConcurrent(t *testing.T) {
 		go func(n int) {
 			defer wg.Done()
 			hash := hashForIndex(n)
-			if err := svc.AddTorrent(u, hash, "T", "", ""); err == nil {
+			if _, err := svc.AddTorrent(u, hash, "T", "", ""); err == nil {
 				mu.Lock()
 				added++
 				mu.Unlock()
@@ -137,4 +137,45 @@ func hashForIndex(n int) string {
 		out[i] = hexDigits[(n+i)%len(hexDigits)]
 	}
 	return string(out)
+}
+
+// TestAddTorrentKeepsViewedConcurrent проверяет, что повторное добавление
+// не затирает параллельную отметку просмотра.
+func TestAddTorrentKeepsViewedConcurrent(t *testing.T) {
+	svc, cleanup := setupTestEnv(t, "secret")
+	defer cleanup()
+
+	owner, _, _ := svc.Login("owner", "secret")
+	u, err := svc.CreateUser(owner, "viewer_merge_race", "pass", RankUser, Limits{})
+	if err != nil {
+		t.Fatalf("CreateUser: %v", err)
+	}
+
+	const hash = "1111222233334444555566667777888899990000"
+	if _, err := svc.AddTorrent(u, hash, "Original", "", ""); err != nil {
+		t.Fatalf("AddTorrent: %v", err)
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		_ = svc.SetFileViewed(u, hash, 1, true)
+	}()
+	go func() {
+		defer wg.Done()
+		_, _ = svc.AddTorrent(u, hash, "Renamed", "http://poster.jpg", "movies")
+	}()
+	wg.Wait()
+
+	ut, err := svc.GetUserTorrent(u.ID, hash)
+	if err != nil {
+		t.Fatalf("GetUserTorrent: %v", err)
+	}
+	if !ut.IsFileViewed(1) {
+		t.Error("отметка просмотра потеряна при параллельном добавлении")
+	}
+	if ut.Title != "Renamed" {
+		t.Errorf("title = %q, want Renamed", ut.Title)
+	}
 }

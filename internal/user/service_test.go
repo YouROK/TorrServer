@@ -213,13 +213,13 @@ func TestUserTorrentsAndViewedFiles(t *testing.T) {
 	hash := "abcd1234efgh"
 
 	// Пользователь u1 добавляет раздачу со своим постером и названием (например, из Lampa)
-	err := svc.AddTorrent(u1, hash, "[Lampa] Interstellar 4K", "http://lampa.jpg", "Movies")
+	_, err := svc.AddTorrent(u1, hash, "[Lampa] Interstellar 4K", "http://lampa.jpg", "Movies")
 	if err != nil {
 		t.Fatalf("Failed to add torrent for u1: %v", err)
 	}
 
 	// Пользователь u2 добавляет ТОТ ЖЕ САМЫЙ торрент со своим названием и постером (например, из NUM)
-	err = svc.AddTorrent(u2, hash, "[NUM] Dune & Interstellar", "http://num.jpg", "Sci-Fi")
+	_, err = svc.AddTorrent(u2, hash, "[NUM] Dune & Interstellar", "http://num.jpg", "Sci-Fi")
 	if err != nil {
 		t.Fatalf("Failed to add torrent for u2: %v", err)
 	}
@@ -501,5 +501,65 @@ func TestUserTorrentSetAllFilesViewed(t *testing.T) {
 	ut.SetAllFilesViewed([]int{0, 1, 2}, false)
 	if len(ut.ViewedFiles) != 0 {
 		t.Errorf("после снятия ViewedFiles = %v, want пусто", ut.ViewedFiles)
+	}
+}
+
+// TestAddTorrentMergesExistingCard проверяет повторное добавление: пустые поля
+// не затирают карточку, непустые заменяют, отметки просмотра сохраняются.
+func TestAddTorrentMergesExistingCard(t *testing.T) {
+	svc, cleanup := setupTestEnv(t, "secret")
+	defer cleanup()
+
+	owner, _, _ := svc.Login("owner", "secret")
+	u, err := svc.CreateUser(owner, "viewer_merge", "pass", RankUser, Limits{})
+	if err != nil {
+		t.Fatalf("CreateUser: %v", err)
+	}
+
+	const hash = "0123456789abcdef0123456789abcdef01234567"
+	if _, err := svc.AddTorrent(u, hash, "Original", "http://old.jpg", "movies"); err != nil {
+		t.Fatalf("AddTorrent: %v", err)
+	}
+	if err := svc.SetFileViewed(u, hash, 2, true); err != nil {
+		t.Fatalf("SetFileViewed: %v", err)
+	}
+
+	before, err := svc.GetUserTorrent(u.ID, hash)
+	if err != nil {
+		t.Fatalf("GetUserTorrent: %v", err)
+	}
+
+	// Повторное добавление с пустыми полями ничего не затирает
+	if _, err := svc.AddTorrent(u, hash, "", "", ""); err != nil {
+		t.Fatalf("AddTorrent with empty fields: %v", err)
+	}
+
+	kept, err := svc.GetUserTorrent(u.ID, hash)
+	if err != nil {
+		t.Fatalf("GetUserTorrent after empty add: %v", err)
+	}
+	if kept.Title != "Original" || kept.Poster != "http://old.jpg" || kept.Category != "movies" {
+		t.Errorf("карточка затёрта пустыми полями: %+v", kept)
+	}
+	if !kept.IsFileViewed(2) {
+		t.Errorf("отметка просмотра потеряна: %v", kept.ViewedFiles)
+	}
+	if !kept.AddedAt.Equal(before.AddedAt) {
+		t.Errorf("дата добавления изменилась: %v -> %v", before.AddedAt, kept.AddedAt)
+	}
+
+	// Непустые поля заменяют старые
+	if _, err := svc.AddTorrent(u, hash, "Renamed", "http://new.jpg", "series"); err != nil {
+		t.Fatalf("AddTorrent with new fields: %v", err)
+	}
+	updated, err := svc.GetUserTorrent(u.ID, hash)
+	if err != nil {
+		t.Fatalf("GetUserTorrent after rename: %v", err)
+	}
+	if updated.Title != "Renamed" || updated.Poster != "http://new.jpg" || updated.Category != "series" {
+		t.Errorf("новые поля не применились: %+v", updated)
+	}
+	if !updated.IsFileViewed(2) {
+		t.Errorf("отметка просмотра потеряна при замене полей: %v", updated.ViewedFiles)
 	}
 }

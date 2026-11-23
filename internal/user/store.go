@@ -233,29 +233,41 @@ func (s *Store) DeleteUser(userID string) ([]string, error) {
 // ПОЛЬЗОВАТЕЛЬСКИЕ ТОРРЕНТЫ (Связи и просмотры)
 // ============================================================================
 
-// putUserTorrent записывает карточку и обновляет счетчик ссылок в текущей транзакции
-func putUserTorrent(tx *bolt.Tx, ut *UserTorrent) error {
+// putUserTorrent записывает карточку и обновляет счетчик ссылок в текущей транзакции.
+// Существующая карточка дополняется новыми данными, отметки просмотра сохраняются.
+func putUserTorrent(tx *bolt.Tx, ut *UserTorrent) (*UserTorrent, bool, error) {
 	bUT := tx.Bucket(database.BucketUserTorrents)
 	bRefs := tx.Bucket(database.BucketTorrentRefs)
 
 	key := []byte(fmt.Sprintf("%s:%s", ut.UserID, ut.TorrentHash))
-	isNew := bUT.Get(key) == nil
+	data := bUT.Get(key)
+	created := data == nil
 
-	data, err := json.Marshal(ut)
-	if err != nil {
-		return err
+	card := ut
+	if !created {
+		var old UserTorrent
+		if err := json.Unmarshal(data, &old); err != nil {
+			return nil, false, err
+		}
+		old.MergeFrom(ut)
+		card = &old
 	}
 
-	if err := bUT.Put(key, data); err != nil {
-		return err
+	out, err := json.Marshal(card)
+	if err != nil {
+		return nil, false, err
+	}
+
+	if err := bUT.Put(key, out); err != nil {
+		return nil, false, err
 	}
 
 	// Увеличиваем счетчик ссылок только при первом добавлении
-	if isNew {
+	if created {
 		incrementRef(bRefs, ut.TorrentHash)
 	}
 
-	return nil
+	return card, created, nil
 }
 
 // countUserTorrents считает карточки пользователя в готовом бакете
@@ -273,8 +285,12 @@ func countUserTorrents(b *bolt.Bucket, userID string) int {
 // AddUserTorrentLimited добавляет карточку с проверкой лимита.
 // Проверка идёт в той же транзакции, что и запись: иначе параллельные
 // добавления видят одно и то же число и обходят MaxTorrents.
-func (s *Store) AddUserTorrentLimited(ut *UserTorrent, maxTorrents int) error {
-	return s.db.GetRawConn().Update(func(tx *bolt.Tx) error {
+// Существующая карточка дополняется, признак created сообщает о новой записи.
+func (s *Store) AddUserTorrentLimited(ut *UserTorrent, maxTorrents int) (*UserTorrent, bool, error) {
+	var card *UserTorrent
+	var created bool
+
+	err := s.db.GetRawConn().Update(func(tx *bolt.Tx) error {
 		if maxTorrents > 0 {
 			bUT := tx.Bucket(database.BucketUserTorrents)
 			key := []byte(fmt.Sprintf("%s:%s", ut.UserID, ut.TorrentHash))
@@ -285,8 +301,15 @@ func (s *Store) AddUserTorrentLimited(ut *UserTorrent, maxTorrents int) error {
 			}
 		}
 
-		return putUserTorrent(tx, ut)
+		var err error
+		card, created, err = putUserTorrent(tx, ut)
+		return err
 	})
+
+	if err != nil {
+		return nil, false, err
+	}
+	return card, created, nil
 }
 
 // updateUserTorrent меняет карточку внутри одной транзакции.

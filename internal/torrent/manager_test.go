@@ -19,10 +19,16 @@ import (
 // createSyntheticSpec создает тестовую раздачу прямо в оперативной памяти (без интернета)
 func createSyntheticSpec(t *testing.T) *torrent.TorrentSpec {
 	t.Helper()
+	return createSyntheticSpecNamed(t, "Test_Series_Season_1")
+}
+
+// createSyntheticSpecNamed создает тестовую раздачу с заданным именем
+func createSyntheticSpecNamed(t *testing.T, name string) *torrent.TorrentSpec {
+	t.Helper()
 
 	info := metainfo.Info{
 		PieceLength: 32 * 1024, // Кусок 32 КБ
-		Name:        "Test_Series_Season_1",
+		Name:        name,
 		Files: []metainfo.FileInfo{
 			{Length: 64 * 1024, Path: []string{"Season 1", "S01E01.mkv"}},
 			{Length: 64 * 1024, Path: []string{"Season 1", "S01E02.mkv"}},
@@ -442,7 +448,7 @@ func TestManager_ViewedFilesInStatus(t *testing.T) {
 
 	// Отметки одного пользователя не видны другому
 	other, _ := mgr.userSvc.CreateUser(owner, "viewer", "pass", user.RankUser, user.Limits{})
-	if err := mgr.userSvc.AddTorrent(other, hashHex, "Other Title", "", ""); err != nil {
+	if _, err := mgr.userSvc.AddTorrent(other, hashHex, "Other Title", "", ""); err != nil {
 		t.Fatalf("AddTorrent for other user failed: %v", err)
 	}
 	otherSt, err := mgr.GetTorrentStatus(other, hashHex)
@@ -592,5 +598,101 @@ func TestManager_EphemeralTorrentStaysReadable(t *testing.T) {
 
 	if _, err := mgr.GetTorrentStatus(owner, hashHex); err != nil {
 		t.Fatalf("GetTorrentStatus for own ephemeral torrent failed: %v", err)
+	}
+}
+
+// TestManager_ReAddKeepsStoredRecord проверяет, что повторное добавление
+// по хэшу не теряет info bytes, файлы, размер и трекеры в базе.
+func TestManager_ReAddKeepsStoredRecord(t *testing.T) {
+	mgr, _, _, tStore, owner := setupManagerTest(t)
+
+	spec := createSyntheticSpec(t)
+	spec.Trackers = [][]string{{"udp://old.example:80/announce"}}
+	hashHex := spec.InfoHash.HexString()
+
+	if _, err := mgr.AddTorrent(owner, spec, "Keep Record", "", "", true); err != nil {
+		t.Fatalf("AddTorrent: %v", err)
+	}
+
+	// Ждём, пока фоновая задача сохранит метаданные
+	time.Sleep(200 * time.Millisecond)
+
+	stored, err := tStore.Get(hashHex)
+	if err != nil {
+		t.Fatalf("Get stored record: %v", err)
+	}
+	if len(stored.InfoBytes) == 0 || len(stored.Files) == 0 || stored.Size == 0 {
+		t.Fatalf("метаданные не сохранились: %+v", stored)
+	}
+
+	// Повторное добавление по одному хэшу: info bytes и файлов в spec нет
+	again := &torrent.TorrentSpec{
+		InfoHash: spec.InfoHash,
+		Trackers: [][]string{{"udp://new.example:80/announce"}},
+	}
+	if _, err := mgr.AddTorrent(owner, again, "", "", "", true); err != nil {
+		t.Fatalf("re-add: %v", err)
+	}
+	time.Sleep(200 * time.Millisecond)
+
+	merged, err := tStore.Get(hashHex)
+	if err != nil {
+		t.Fatalf("Get merged record: %v", err)
+	}
+	if len(merged.InfoBytes) == 0 {
+		t.Error("info bytes потеряны при повторном добавлении")
+	}
+	if len(merged.Files) != len(stored.Files) {
+		t.Errorf("файлы потеряны: %d -> %d", len(stored.Files), len(merged.Files))
+	}
+	if merged.Size != stored.Size {
+		t.Errorf("размер потерян: %d -> %d", stored.Size, merged.Size)
+	}
+
+	for _, want := range []string{"udp://old.example:80/announce", "udp://new.example:80/announce"} {
+		found := false
+		for _, tr := range merged.Trackers {
+			if tr == want {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("трекер %s потерян: %v", want, merged.Trackers)
+		}
+	}
+}
+
+// TestManager_FailedAddLeavesNoOwner проверяет, что при ошибке добавления
+// пользователь не становится владельцем раздачи и не получает к ней доступ.
+func TestManager_FailedAddLeavesNoOwner(t *testing.T) {
+	mgr, _, engine, _, owner := setupManagerTest(t)
+
+	limited, err := mgr.userSvc.CreateUser(owner, "limited", "pass", user.RankUser, user.Limits{MaxTorrents: 1})
+	if err != nil {
+		t.Fatalf("CreateUser: %v", err)
+	}
+
+	first := createSyntheticSpecNamed(t, "Limited_First")
+	if _, err := mgr.AddTorrent(limited, first, "First", "", "", true); err != nil {
+		t.Fatalf("first add: %v", err)
+	}
+
+	second := createSyntheticSpecNamed(t, "Limited_Second")
+	if _, err := mgr.AddTorrent(limited, second, "Second", "", "", true); err == nil {
+		t.Fatal("ожидалась ошибка лимита")
+	}
+
+	hashHex := second.InfoHash.HexString()
+	if _, err := mgr.GetTorrentStatus(limited, hashHex); err != ErrNotOwned {
+		t.Errorf("статус неудачно добавленной раздачи = %v, want %v", err, ErrNotOwned)
+	}
+
+	sess, ok := engine.Get(second.InfoHash)
+	if !ok {
+		t.Fatal("сессия должна остаться в RAM до автозасыпания")
+	}
+	if sess.OwnedBy(limited.ID) {
+		t.Error("неудачное добавление не должно делать пользователя владельцем")
 	}
 }

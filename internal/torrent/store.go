@@ -34,6 +34,36 @@ func (s *Store) Save(rec *TorrentRecord) error {
 	})
 }
 
+// SaveMerged сохраняет запись, дополняя уже существующую в базе.
+// Возвращает запись в том виде, в котором она записана.
+func (s *Store) SaveMerged(rec *TorrentRecord) (*TorrentRecord, error) {
+	var merged *TorrentRecord
+
+	err := s.db.GetRawConn().Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(database.BucketTorrents)
+
+		merged = rec
+		if data := b.Get([]byte(rec.Hash)); data != nil {
+			var old TorrentRecord
+			if err := json.Unmarshal(data, &old); err != nil {
+				return err
+			}
+			merged = MergeTorrentRecords(&old, rec)
+		}
+
+		data, err := json.Marshal(merged)
+		if err != nil {
+			return err
+		}
+		return b.Put([]byte(rec.Hash), data)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return merged, nil
+}
+
 // Get находит метаданные раздачи по хэшу
 func (s *Store) Get(hash string) (*TorrentRecord, error) {
 	var rec TorrentRecord

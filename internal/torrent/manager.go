@@ -138,24 +138,34 @@ func (m *Manager) AddTorrent(u *user.User, spec *torrent.TorrentSpec, title, pos
 		return nil, fmt.Errorf("failed to start engine session: %w", err)
 	}
 
+	// Уже работающая сессия новый spec не применяет: новые трекеры досылаем отдельно
+	session.AddTrackers(missingTrackers(session.Trackers(), flattenTrackers(spec.Trackers)))
+
+	var rec *TorrentRecord
+	if saveToDB {
+		// Карточка пишется до метаданных сессии: при ошибке пользователь не
+		// становится владельцем раздачи, которой нет в его библиотеке
+		ut, err := m.userSvc.AddTorrent(u, hashHex, title, poster, category)
+		if err != nil {
+			return nil, err
+		}
+		title, poster, category = ut.Title, ut.Poster, ut.Category
+
+		rec = &TorrentRecord{
+			Hash:      hashHex,
+			Timestamp: time.Now().Unix(),
+			Trackers:  flattenTrackers(spec.Trackers),
+		}
+		// Запись дополняется, чтобы не терять info bytes, файлы и размер
+		if stored, err := m.store.SaveMerged(rec); err == nil {
+			rec = stored
+		} else {
+			log.Warnf("[Torrent Manager] Failed to merge torrent record %s: %v", hashHex, err)
+		}
+	}
+
 	// Пустое название не сохраняем: оно подставится из метаданных при получении информации
 	session.SetUserMeta(u.ID, title, poster, category)
-
-	if !saveToDB {
-		session.tasks.Go(func(ctx context.Context) { m.asyncFetchMetadata(ctx, session, nil) })
-		return session.Status(u.ID), nil
-	}
-
-	if err := m.userSvc.AddTorrent(u, hashHex, title, poster, category); err != nil {
-		return nil, err
-	}
-
-	rec := &TorrentRecord{
-		Hash:      hashHex,
-		Timestamp: time.Now().Unix(),
-		Trackers:  flattenTrackers(spec.Trackers),
-	}
-	_ = m.store.Save(rec)
 
 	session.tasks.Go(func(ctx context.Context) { m.asyncFetchMetadata(ctx, session, rec) })
 
@@ -574,6 +584,26 @@ func flattenTrackers(tiers [][]string) []string {
 	return list
 }
 
+// missingTrackers выбирает трекеры из incoming, которых ещё нет в сессии.
+func missingTrackers(existing [][]string, incoming []string) []string {
+	seen := make(map[string]bool, len(incoming))
+	for _, tier := range existing {
+		for _, tr := range tier {
+			seen[tr] = true
+		}
+	}
+
+	var missing []string
+	for _, tr := range incoming {
+		if tr == "" || seen[tr] {
+			continue
+		}
+		seen[tr] = true
+		missing = append(missing, tr)
+	}
+	return missing
+}
+
 // tiersFromList оборачивает плоский список трекеров в тиры
 func tiersFromList(list []string) [][]string {
 	tiers := make([][]string, 0, len(list))
@@ -670,7 +700,7 @@ func (m *Manager) ImportLibrary(u *user.User, lines []string) (int, error) {
 			continue
 		}
 
-		if err := m.userSvc.AddTorrent(u, th.Hash, th.Title(), th.Poster(), CategoryKey(th.Category())); err != nil {
+		if _, err := m.userSvc.AddTorrent(u, th.Hash, th.Title(), th.Poster(), CategoryKey(th.Category())); err != nil {
 			log.Warnf("[Torrent Manager] Failed to add imported torrent %s: %v", th.Hash, err)
 			continue
 		}

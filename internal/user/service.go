@@ -327,8 +327,9 @@ func (s *Service) DeleteUser(actor *User, targetID string) error {
 // ПОЛЬЗОВАТЕЛЬСКИЕ ТОРРЕНТЫ (С контролем лимитов)
 // ============================================================================
 
-// AddTorrent добавляет торрент в список пользователя
-func (s *Service) AddTorrent(u *User, hash, title, poster, category string) error {
+// AddTorrent добавляет торрент в список пользователя и возвращает его карточку.
+// Повторное добавление дополняет существующую карточку.
+func (s *Service) AddTorrent(u *User, hash, title, poster, category string) (*UserTorrent, error) {
 	ut := &UserTorrent{
 		UserID:      u.ID,
 		TorrentHash: hash,
@@ -341,15 +342,20 @@ func (s *Service) AddTorrent(u *User, hash, title, poster, category string) erro
 
 	// Лимит проверяется в той же транзакции, что и запись: иначе
 	// параллельные добавления обходят MaxTorrents
-	if err := s.store.AddUserTorrentLimited(ut, u.Limits.MaxTorrents); err != nil {
-		return err
+	card, created, err := s.store.AddUserTorrentLimited(ut, u.Limits.MaxTorrents)
+	if err != nil {
+		return nil, err
 	}
 
-	log.Infof("[User:%s] Added torrent '%s' (%s)", u.Username, title, hash)
+	if created {
+		log.Infof("[User:%s] Added torrent '%s' (%s)", u.Username, card.Title, hash)
+	} else {
+		log.Infof("[User:%s] Merged torrent '%s' (%s)", u.Username, card.Title, hash)
+	}
 
 	// Оповещаем торрент-движок, что торрент добавлен
-	s.bus.Emit("user:torrent:added", ut)
-	return nil
+	s.bus.Emit("user:torrent:added", card)
+	return card, nil
 }
 
 // GetUserTorrent возвращает личную карточку торрента пользователя (с его постером и названием)

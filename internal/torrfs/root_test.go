@@ -37,7 +37,7 @@ func setupTorrFSTest(t *testing.T) (*TorrFS, *user.Service, *torrent.Store, *use
 func addCategorized(t *testing.T, userSvc *user.Service, store *torrent.Store, owner *user.User, hash, title, category string) {
 	t.Helper()
 
-	if err := userSvc.AddTorrent(owner, hash, title, "", category); err != nil {
+	if _, err := userSvc.AddTorrent(owner, hash, title, "", category); err != nil {
 		t.Fatalf("add user torrent: %v", err)
 	}
 	rec := &torrent.TorrentRecord{
