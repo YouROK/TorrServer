@@ -842,6 +842,7 @@ async function showUserTorrents(id, username) {
 
             const torrents = data.torrents || [];
             syncList(tbody, torrents, (tr) => tr.torrent_hash, createRow, updateRow);
+            Array.from(tbody.rows).forEach((row) => siloUI.labels(row));
             emptyHint.hidden = torrents.length > 0;
             initialised = true;
         } catch (e) {
