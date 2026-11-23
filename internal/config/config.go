@@ -28,7 +28,7 @@ type ServerConfig struct {
 
 type StorageConfig struct {
 	DataDir string `yaml:"data_dir" json:"data_dir"` // Базовая папка для данных программы (./data)
-	DBName  string `yaml:"db_name" json:"db_name"`   // Имя файла БД (torrserver.db)
+	DBName  string `yaml:"db_name" json:"db_name"`   // Имя файла БД (silo.db)
 }
 
 type PluginsConfig struct {
@@ -65,7 +65,7 @@ func DefaultConfig() *Config {
 		},
 		Storage: StorageConfig{
 			DataDir: "data",
-			DBName:  "torrserver.db",
+			DBName:  "silo.db",
 		},
 		Plugins: PluginsConfig{
 			Dir: "plugins",
