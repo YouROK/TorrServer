@@ -45,7 +45,14 @@ GOBIN="go"
 
 $GOBIN version
 
-LDFLAGS="'-s -w -checklinkname=0'"
+# Версия берется из тега, на котором стоит сборка. Вне тега - dev
+VERSION="$(git describe --tags --exact-match 2>/dev/null || echo dev)"
+if [[ "${VERSION}" != "dev" && ! "${VERSION}" =~ ^Silo\.[0-9]+$ ]]; then
+  echo "warning: tag ${VERSION} does not match Silo.<number>, plugin checks will be skipped"
+fi
+echo "Version: ${VERSION}"
+
+LDFLAGS="'-s -w -checklinkname=0 -X silo/internal/version.Version=${VERSION}'"
 FAILURES=""
 ROOT=${PWD}
 OUTPUT="${ROOT}/build/TorrServer"

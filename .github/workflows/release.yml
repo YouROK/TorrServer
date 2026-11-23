@@ -24,21 +24,15 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Check version matches tag
+      # Версия сборки - это тег, на котором запущен workflow
+      - name: Resolve version from tag
         id: version
         shell: bash
         run: |
           set -euo pipefail
-          version="$(sed -n 's/.*var Version = "\([^"]*\)".*/\1/p' internal/version/version.go | head -n1)"
-          if [ -z "${version}" ]; then
-            echo "::error file=internal/version/version.go::version is not set"
-            exit 1
-          fi
-          if [ "${version}" != "${GITHUB_REF_NAME}" ]; then
-            echo "::error file=internal/version/version.go::version ${version} does not match tag ${GITHUB_REF_NAME}"
+          version="${GITHUB_REF_NAME}"
+          if ! [[ "${version}" =~ ^Silo\.[0-9]+$ ]]; then
+            echo "::error::tag ${version} does not match Silo.<number>"
             exit 1
           fi
           echo "version=${version}" >> "${GITHUB_OUTPUT}"
@@ -81,6 +75,8 @@ jobs:
 
       - name: Build
         shell: bash
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
         run: |
           set -euo pipefail
           platform="${{ matrix.target }}"
@@ -118,7 +114,7 @@ jobs:
           fi
           mkdir -p build
           env "${envs[@]}" go build \
-            -ldflags="${BUILD_LDFLAGS}" \
+            -ldflags="${BUILD_LDFLAGS} -X silo/internal/version.Version=${VERSION}" \
             -tags="${BUILD_TAGS}" \
             -trimpath \
             -o "build/TorrServer-${name}${ext}" \
@@ -158,6 +154,8 @@ jobs:
 
       - name: Build
         shell: bash
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
         run: |
           set -euo pipefail
           toolchain="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin"
@@ -181,7 +179,7 @@ jobs:
               envs+=(GOARM="${goarm}")
             fi
             env "${envs[@]}" go build \
-              -ldflags="${BUILD_LDFLAGS}" \
+              -ldflags="${BUILD_LDFLAGS} -X silo/internal/version.Version=${VERSION}" \
               -tags="${BUILD_TAGS}" \
               -trimpath \
               -o "build/TorrServer-android-${abi}" \

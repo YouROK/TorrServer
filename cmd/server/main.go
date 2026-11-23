@@ -65,10 +65,14 @@ func main() {
 
 // printVersion выводит версию сборки, движка и платформу одной строкой.
 func printVersion() {
+	release := version.Version
+	if release == "" {
+		release = "dev"
+	}
 	engine := version.GetTorrentVersion()
 	if engine == "" {
 		engine = "unknown"
 	}
 	fmt.Printf("%s (torrent engine %s, %s %s/%s)\n",
-		version.Version, engine, runtime.Version(), runtime.GOOS, runtime.GOARCH)
+		release, engine, runtime.Version(), runtime.GOOS, runtime.GOARCH)
 }

@@ -5,8 +5,9 @@ import (
 	"runtime/debug"
 )
 
-// Version is set at build time via -ldflags "-X internal/version.Version=<tag>"
-var Version = "Silo.2"
+// Version - версия релиза, при сборке берётся из тега:
+// -ldflags "-X silo/internal/version.Version=<tag>". Без ldflags - "dev".
+var Version = "dev"
 
 func GetTorrentVersion() string {
 	bi, ok := debug.ReadBuildInfo()
