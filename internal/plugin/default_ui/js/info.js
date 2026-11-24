@@ -9,7 +9,6 @@ let infoHash = null;
 let infoTimer = null;
 let infoStatus = null;
 let infoFolder = '';
-let infoFilesJSON = '';
 let infoFoldersJSON = '';
 
 function isMediaName(name) {
@@ -44,7 +43,7 @@ function renderViewedToggle() {
     if (!btn) return;
 
     const files = (infoStatus && infoStatus.file_stats) || [];
-    btn.textContent = t(infoAllViewed() ? 'unmark_all_viewed' : 'mark_all_viewed');
+    siloUI.text(btn, t(infoAllViewed() ? 'unmark_all_viewed' : 'mark_all_viewed'));
     btn.disabled = files.length === 0;
 }
 
@@ -70,18 +69,44 @@ function streamUrl(idx, withToken) {
     return url;
 }
 
+// fileRowHTML собирает содержимое строки файла без обёртки .file-row.
+function fileRowHTML(f, isViewed) {
+    const idx = f.path.lastIndexOf('/');
+    const parent = idx > 0 ? f.path.slice(0, idx) : '';
+    const sub = (parent ? parent + ' · ' : '') + fmtSize(f.length);
+    return '<div class="file-main">' +
+        '<div class="file-name">' + esc(f.name || f.path) + '</div>' +
+        '<div class="file-sub">' + esc(sub) + '</div>' +
+        '</div>' +
+        '<div class="file-actions">' +
+        '<span class="file-viewed' + (isViewed ? ' is-on' : '') + '" title="' + esc(t('viewed')) + '"></span>' +
+        '<button class="btn btn-sm" type="button" data-open="' + f.id + '">' + t('open') + '</button>' +
+        '<button class="btn-sm-icon" type="button" data-transcode="' + f.id + '" title="' + t('transcode') + '">' +
+        '<img src="img/ico-transcode.svg" alt="" onerror="this.style.display=\'none\'">' +
+        '</button>' +
+        '<button class="btn-sm-icon" type="button" data-fileinfo="' + f.id + '" title="' + t('file_info') + '">' +
+        '<img src="img/ico-info.svg" alt="" onerror="this.textContent=\'i\'">' +
+        '</button>' +
+        '<button class="btn-sm-icon" type="button" data-preload="' + f.id + '" title="' + t('preload') + '">' +
+        '<img src="img/ico-download.svg" alt="" onerror="this.style.display=\'none\'">' +
+        '</button>' +
+        '<button class="btn-sm-icon" type="button" data-copylink="' + f.id + '" title="' + esc(t('copy_link')) + '">' +
+        '<img src="img/ico-link.svg" alt="" onerror="this.style.display=\'none\'">' +
+        '</button>' +
+        '</div>';
+}
+
 function renderInfo() {
     if (!infoStatus) return;
 
-    document.getElementById('info-title').textContent = infoStatus.title || infoHash;
-    document.getElementById('info-hash').textContent = infoStatus.hash || infoHash || '';
+    siloUI.text(document.getElementById('info-title'), infoStatus.title || infoHash);
+    siloUI.text(document.getElementById('info-hash'), infoStatus.hash || infoHash || '');
+
     const poster = document.getElementById('info-poster');
-    if (infoStatus.poster) {
-        poster.src = infoStatus.poster;
-        poster.style.display = 'block';
-    } else {
-        poster.style.display = 'none';
-    }
+    const posterURL = infoStatus.poster || '';
+    if (posterURL && poster.getAttribute('src') !== posterURL) poster.setAttribute('src', posterURL);
+    const posterDisplay = posterURL ? 'block' : 'none';
+    if (poster.style.display !== posterDisplay) poster.style.display = posterDisplay;
 
     const peersVal = (infoStatus.active_peers || 0) + '/' + (infoStatus.total_peers || 0) + ' · ' + (infoStatus.connected_seeders || 0);
     const plaques = [
@@ -92,10 +117,8 @@ function renderInfo() {
         [t('status'), infoStatus.stat_string || '-'],
         [t('category'), infoStatus.category ? categoryLabel(infoStatus.category) : '-'],
     ];
-    // Плашки обновляются точечно: они меняются каждую секунду
-    siloUI.render(document.getElementById('info-plaques'), plaques
-        .map((p) => '<div class="plaque"><span class="plaque-label">' + p[0] + '</span><span class="plaque-value">' + esc(p[1]) + '</span></div>')
-        .join(''));
+    // Плашки меняются каждую секунду, поэтому обновляются только их значения
+    siloUI.plaques(document.getElementById('info-plaques'), plaques);
 
     const base = infoBaseFiles();
     const folders = infoFoldersOf(base);
@@ -129,43 +152,15 @@ function renderInfo() {
         })
         : base;
 
-    // Отметка входит в сигнатуру: иначе список не перерисуется при просмотре
-    const filesJSON = JSON.stringify(visible.map((f) => [f.id, viewed.has(f.id)]));
-    if (filesJSON !== infoFilesJSON) {
-        infoFilesJSON = filesJSON;
-        const filesBox = document.getElementById('info-files');
-        if (visible.length === 0) {
-            filesBox.innerHTML = '<div class="file-empty">' + t('no_files') + '</div>';
-        } else {
-            filesBox.innerHTML = visible.map((f) => {
-                const idx = f.path.lastIndexOf('/');
-                const parent = idx > 0 ? f.path.slice(0, idx) : '';
-                const sub = (parent ? parent + ' · ' : '') + fmtSize(f.length);
-                return '<div class="file-row">' +
-                    '<div class="file-main">' +
-                    '<div class="file-name">' + esc(f.name || f.path) + '</div>' +
-                    '<div class="file-sub">' + esc(sub) + '</div>' +
-                    '</div>' +
-                    '<div class="file-actions">' +
-                    '<span class="file-viewed' + (viewed.has(f.id) ? ' is-on' : '') + '" title="' + esc(t('viewed')) + '"></span>' +
-                    '<button class="btn btn-sm" type="button" data-open="' + f.id + '">' + t('open') + '</button>' +
-                    '<button class="btn-sm-icon" type="button" data-transcode="' + f.id + '" title="' + t('transcode') + '">' +
-                    '<img src="img/ico-transcode.svg" alt="" onerror="this.style.display=\'none\'">' +
-                    '</button>' +
-                    '<button class="btn-sm-icon" type="button" data-fileinfo="' + f.id + '" title="' + t('file_info') + '">' +
-                    '<img src="img/ico-info.svg" alt="" onerror="this.textContent=\'i\'">' +
-                    '</button>' +
-                    '<button class="btn-sm-icon" type="button" data-preload="' + f.id + '" title="' + t('preload') + '">' +
-                    '<img src="img/ico-download.svg" alt="" onerror="this.style.display=\'none\'">' +
-                    '</button>' +
-                    '<button class="btn-sm-icon" type="button" data-copylink="' + f.id + '" title="' + t('copy_link') + '">' +
-                    '<img src="img/ico-link.svg" alt="" onerror="this.style.display=\'none\'">' +
-                    '</button>' +
-                    '</div>' +
-                    '</div>';
-            }).join('');
-        }
-    }
+    // Строки обновляются по идентификатору: выбор и отметки в чужих строках не трогаются
+    const rows = visible.length === 0
+        ? [{ key: 'empty', html: esc(t('no_files')), cls: 'file-empty' }]
+        : visible.map((f) => ({ key: String(f.id), html: fileRowHTML(f, viewed.has(f.id)), cls: 'file-row' }));
+    siloUI.items(document.getElementById('info-files'), rows, {
+        key: (r) => r.key,
+        html: (r) => r.html,
+        attrs: (r) => ({ class: r.cls }),
+    });
 
     renderViewedToggle();
 }
@@ -256,17 +251,16 @@ function switchTab(tab) {
 function openInfoModal(hash) {
     infoHash = hash;
     infoFolder = '';
-    infoFilesJSON = '';
     infoFoldersJSON = '';
     infoStatus = null;
     currentTab = 'files';
 
     const card = cardsStore.get(hash);
-    document.getElementById('info-title').textContent = card ? (card.title || hash) : hash;
-    document.getElementById('info-hash').textContent = hash;
+    siloUI.text(document.getElementById('info-title'), card ? (card.title || hash) : hash);
+    siloUI.text(document.getElementById('info-hash'), hash);
     const poster = document.getElementById('info-poster');
     if (card && card.poster) {
-        poster.src = card.poster;
+        if (poster.getAttribute('src') !== card.poster) poster.setAttribute('src', card.poster);
         poster.style.display = 'block';
     } else {
         poster.style.display = 'none';
@@ -309,7 +303,6 @@ function bindInfoModal() {
     });
     document.getElementById('info-media-only').addEventListener('change', () => {
         infoFoldersJSON = '';
-        infoFilesJSON = '';
         renderInfo();
     });
     document.getElementById('info-viewed-toggle').addEventListener('click', async (e) => {
@@ -325,11 +318,10 @@ function bindInfoModal() {
                 body: JSON.stringify({ viewed: viewed }),
             });
             if (!res.ok) throw new Error('request failed');
-            // Список перерисуется после ближайшего опроса
+            // Список обновится после ближайшего опроса
             const data = await fetch('/api/torrents/' + infoHash);
             if (data.ok) {
                 infoStatus = await data.json();
-                infoFilesJSON = '';
                 renderInfo();
             }
         } catch (err) {

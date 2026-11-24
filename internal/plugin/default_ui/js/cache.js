@@ -38,20 +38,16 @@ function renderCachePlaques() {
     if (!box) return;
 
     if (!cacheData) {
-        box.innerHTML = '';
+        siloUI.plaques(box, []);
         return;
     }
 
-    const rows = [
+    // Значения плашек меняются вместе с данными кэша, сами плашки остаются
+    siloUI.plaques(box, [
         [t('cache_size'),    fmtSize(cacheData.filled) + ' / ' + fmtSize(cacheData.capacity)],
         [t('pieces_count'),  String(cacheData.piece_count)],
         [t('pieces_length'), fmtSize(cacheData.piece_length)],
-    ];
-
-    box.innerHTML = rows.map((p) =>
-        '<div class="plaque"><span class="plaque-label">' + p[0] + '</span>' +
-        '<span class="plaque-value">' + esc(p[1]) + '</span></div>'
-    ).join('');
+    ]);
 }
 
 function cacheZoomSet(px) {

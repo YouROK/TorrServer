@@ -86,8 +86,9 @@ function patchCard(el, c) {
     }
 
     const posterEl = el.querySelector('.poster');
-    const img = posterEl.querySelector('img');
-    const placeholder = posterEl.querySelector('.placeholder');
+    // Только прямые потомки: в постере лежит и меню карточки со своими img.
+    const img = posterEl.querySelector(':scope > img');
+    const placeholder = posterEl.querySelector(':scope > .placeholder');
     if (c.poster) {
         if (img) {
             if (img.getAttribute('src') !== c.poster) img.setAttribute('src', c.poster);
@@ -104,8 +105,9 @@ function patchCard(el, c) {
         if (!badgeEl) {
             posterEl.insertAdjacentHTML('afterbegin', '<span class="card-badge ' + badge.cls + '">' + t(badge.key) + '</span>');
         } else {
-            badgeEl.className = 'card-badge ' + badge.cls;
-            badgeEl.textContent = t(badge.key);
+            const cls = 'card-badge ' + badge.cls;
+            if (badgeEl.className !== cls) badgeEl.className = cls;
+            siloUI.text(badgeEl, t(badge.key));
         }
     } else if (badgeEl) {
         badgeEl.remove();
