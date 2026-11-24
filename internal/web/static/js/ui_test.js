@@ -283,3 +283,106 @@ console.log('ui.js rows: all checks passed');
 }
 
 console.log('ui.js labels: all checks passed');
+
+// items обновляет элементы списка так же, как rows строки таблицы
+{
+    const host = makeTbody();
+    const list = [{ id: 'a', cls: 'card', text: 'A' }, { id: 'b', cls: 'card', text: 'B' }];
+    const opts = {
+        key: (x) => x.id,
+        html: (x) => '<span>' + x.text + '</span>',
+        attrs: (x) => ({ class: x.cls }),
+    };
+
+    ui.items(host, list, opts);
+    assert.strictEqual(host.children.length, 2, 'элементы списка созданы');
+    assert.strictEqual(host.children[0].tagName, 'DIV', 'по умолчанию элемент - div');
+    assert.strictEqual(host.children[0].getAttribute('class'), 'card', 'класс элемента из attrs');
+
+    const nodeA = host.children[0];
+    const nodeB = host.children[1];
+    ui.items(host, list, opts);
+    assert.strictEqual(host.children[0], nodeA, 'элемент без изменений переиспользуется');
+    assert.strictEqual(host.children[1], nodeB, 'элемент без изменений переиспользуется');
+
+    list[1].text = 'B2';
+    ui.items(host, list, opts);
+    assert.strictEqual(host.children[0], nodeA, 'соседний элемент не пересоздаётся');
+    assert.ok(host.children[1]._html.indexOf('B2') >= 0, 'изменённый элемент обновился');
+
+    ui.items(host, [list[0]], Object.assign({}, opts, { tag: 'li' }));
+    assert.strictEqual(host.children.length, 1, 'лишний элемент удаляется');
+}
+
+console.log('ui.js items: all checks passed');
+
+// makePlaqueHost собирает контейнер плашек и считает записи текста
+function makePlaqueHost() {
+    const host = new El('div');
+    host.builds = 0;
+    host._labels = [];
+    host._values = [];
+
+    function makeSpan() {
+        const el = new El('span');
+        let text = '';
+        el.writes = 0;
+        Object.defineProperty(el, 'textContent', {
+            get() { return text; },
+            set(v) { el.writes++; text = String(v); },
+        });
+        return el;
+    }
+
+    Object.defineProperty(host, 'innerHTML', {
+        get() { return host._html; },
+        set(v) {
+            host.builds++;
+            host._html = v;
+            const count = (v.match(/plaque-value/g) || []).length;
+            host._labels = [];
+            host._values = [];
+            for (let i = 0; i < count; i++) {
+                host._labels.push(makeSpan());
+                host._values.push(makeSpan());
+            }
+        },
+    });
+
+    host.querySelectorAll = (sel) => {
+        if (sel === '.plaque-value') return host._values;
+        if (sel === '.plaque-label') return host._labels;
+        return [];
+    };
+    return host;
+}
+
+// plaques перестраивает разметку только при смене набора, иначе правит значения
+{
+    const box = makePlaqueHost();
+    const rows = [['Скорость', '1 KB/s'], ['Размер', '2 GiB']];
+
+    ui.plaques(box, rows);
+    assert.strictEqual(box.builds, 1, 'разметка строится один раз');
+    assert.strictEqual(box._labels[0].textContent, 'Скорость', 'подпись поставлена');
+    assert.strictEqual(box._values[0].textContent, '1 KB/s', 'значение поставлено');
+
+    const labelWrites = box._labels[0].writes + box._labels[1].writes;
+    const valueWrites = box._values[0].writes + box._values[1].writes;
+
+    ui.plaques(box, rows);
+    assert.strictEqual(box.builds, 1, 'без изменений разметка не перестраивается');
+    assert.strictEqual(box._labels[0].writes + box._labels[1].writes, labelWrites, 'подписи не переписываются');
+    assert.strictEqual(box._values[0].writes + box._values[1].writes, valueWrites, 'значения не переписываются');
+
+    rows[0][1] = '3 KB/s';
+    ui.plaques(box, rows);
+    assert.strictEqual(box._values[0].textContent, '3 KB/s', 'изменившееся значение обновилось');
+    assert.strictEqual(box._values[1].writes, 1, 'соседнее значение не переписывается');
+
+    rows[0][0] = 'Канал';
+    ui.plaques(box, rows);
+    assert.strictEqual(box.builds, 2, 'смена подписи перестраивает плашки');
+}
+
+console.log('ui.js plaques: all checks passed');

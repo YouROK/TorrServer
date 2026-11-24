@@ -192,70 +192,107 @@
             });
         },
 
-        // rows обновляет строки таблицы по ключу.
-        // Неизменившиеся строки не трогаются, поэтому фокус и выделение в них живут.
-        // options.key возвращает ключ строки, options.html - её разметку.
-        // options.attrs возвращает атрибуты самой строки (например draggable),
-        // их нужно задавать здесь: узел <tr> создаёт модуль, а не вызывающий код.
-        rows(target, items, options) {
+        // plaques заполняет плашки парами [подпись, значение].
+        // Разметка строится один раз, дальше меняются только изменившиеся значения.
+        plaques(target, pairs) {
             const host = typeof target === 'string' ? document.getElementById(target) : target;
             if (!host) return null;
 
-            const keyOf = options.key || ((item) => item.id);
-            const htmlOf = options.html || ((item) => String(item));
-            const attrsOf = options.attrs || null;
+            const items = pairs || [];
+            let values = Array.from(host.querySelectorAll('.plaque-value'));
+            const labels = Array.from(host.querySelectorAll('.plaque-label'));
+            const rebuild = values.length !== items.length || labels.length !== items.length ||
+                labels.some((el, i) => el.textContent !== String(items[i][0]));
+
+            if (rebuild) {
+                host.innerHTML = items.map(() =>
+                    '<div class="plaque"><span class="plaque-label"></span><span class="plaque-value"></span></div>'
+                ).join('');
+                values = Array.from(host.querySelectorAll('.plaque-value'));
+                Array.from(host.querySelectorAll('.plaque-label'))
+                    .forEach((el, i) => { el.textContent = String(items[i][0]); });
+            }
+
+            values.forEach((el, i) => this.text(el, items[i][1]));
+            return host;
+        },
+
+        // items обновляет элементы списка по ключу.
+        // Неизменившиеся элементы не трогаются, поэтому фокус и выделение в них живут.
+        // options.key возвращает ключ элемента, options.html - его разметку,
+        // options.tag - тег (по умолчанию div).
+        // options.attrs возвращает атрибуты самого элемента (например class),
+        // их нужно задавать здесь: узел создаёт модуль, а не вызывающий код.
+        items(target, list, options) {
+            const host = typeof target === 'string' ? document.getElementById(target) : target;
+            if (!host) return null;
+
+            const opts = options || {};
+            const tag = opts.tag || 'div';
+            const keyOf = opts.key || ((item) => item.id);
+            const htmlOf = opts.html || ((item) => String(item));
+            const attrsOf = opts.attrs || null;
 
             const mark = focusSignature(host);
             const existing = new Map();
-            Array.from(host.children).forEach((row) => {
-                const key = row.getAttribute('data-row');
-                if (key !== null) existing.set(key, row);
+            Array.from(host.children).forEach((el) => {
+                const key = el.getAttribute('data-row');
+                if (key !== null) existing.set(key, el);
             });
 
             const seen = new Set();
             let previous = null;
 
-            (items || []).forEach((item) => {
+            (list || []).forEach((item) => {
                 const key = String(keyOf(item));
                 const html = htmlOf(item);
                 const attrs = attrsOf ? attrsOf(item) : null;
                 const attrsJSON = attrs ? JSON.stringify(attrs) : '';
                 seen.add(key);
 
-                let row = existing.get(key);
-                if (!row) {
-                    row = document.createElement('tr');
-                    row.setAttribute('data-row', key);
-                    row.siloHtml = html;
-                    row.siloAttrsJSON = attrsJSON;
-                    applyAttrs(row, attrs);
-                    row.innerHTML = html;
+                let el = existing.get(key);
+                if (!el) {
+                    el = document.createElement(tag);
+                    el.setAttribute('data-row', key);
+                    el.siloHtml = html;
+                    el.siloAttrsJSON = attrsJSON;
+                    applyAttrs(el, attrs);
+                    el.innerHTML = html;
                 } else {
-                    if (row.siloAttrsJSON !== attrsJSON) {
-                        row.siloAttrsJSON = attrsJSON;
-                        applyAttrs(row, attrs);
+                    if (el.siloAttrsJSON !== attrsJSON) {
+                        el.siloAttrsJSON = attrsJSON;
+                        applyAttrs(el, attrs);
                     }
-                    if (row.siloHtml !== html) {
+                    if (el.siloHtml !== html) {
                         // Сравнивается исходная разметка, а не innerHTML:
                         // браузер нормализует атрибуты и сравнение всегда давало бы различие
-                        row.siloHtml = html;
-                        row.innerHTML = html;
+                        el.siloHtml = html;
+                        el.innerHTML = html;
                     }
                 }
 
                 // Узел перемещается, только если стоит не на своём месте.
-                // Лишние перемещения сбрасывают фокус и выделение внутри строки
+                // Лишние перемещения сбрасывают фокус и выделение внутри элемента
                 const at = previous ? previous.nextSibling : host.firstChild;
-                if (row !== at) host.insertBefore(row, at);
-                this.labels(row);
-                previous = row;
+                if (el !== at) host.insertBefore(el, at);
+                previous = el;
             });
 
-            existing.forEach((row, key) => {
-                if (!seen.has(key)) row.remove();
+            existing.forEach((el, key) => {
+                if (!seen.has(key)) el.remove();
             });
 
             restoreFocus(host, mark);
+            return host;
+        },
+
+        // rows обновляет строки таблицы по ключу (см. items).
+        // Подписи ячеек зависят от заголовков таблицы, поэтому ставятся здесь.
+        rows(target, list, options) {
+            const host = this.items(target, list, Object.assign({}, options, { tag: 'tr' }));
+            if (!host) return null;
+
+            Array.from(host.children).forEach((row) => this.labels(row));
             return host;
         },
 
