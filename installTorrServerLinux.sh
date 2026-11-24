@@ -759,10 +759,17 @@ getSpecificRelease() {
   local version="$1"
   local tag_name
   tag_name=$(getVersionTag "$version")
-  local response
-  response=$(curl -s --connect-timeout 10 --max-time 30 "${REPO_API_URL}/releases/tags/$tag_name")
+  local LC_ALL=C
+  local response max_bytes=$((2 * 1024 * 1024))
+  # Read one extra byte to detect overflow even without a Content-Length header.
+  # Preserve the byte count across command substitution, including trailing newlines.
+  if ! response=$(curl -s --connect-timeout 10 --max-time 30 "${REPO_API_URL}/releases/tags/$tag_name" |
+    head -c "$((max_bytes + 1))" | tr '\000\n' '  '); then
+    echo ""
+    return 0
+  fi
 
-  if echo "$response" | grep -q '"tag_name"'; then
+  if (( ${#response} <= max_bytes )) && grep -q '"tag_name"' <<< "$response"; then
     echo "$tag_name"
   else
     echo ""
