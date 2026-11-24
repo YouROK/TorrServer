@@ -8,7 +8,7 @@
     "axios": "^1.20.0",
     "clsx": "^1.1.1",
     "hls.js": "1.6.16",
-    "i18next": "^20.3.1",
+    "i18next": "^26.3.4",
     "i18next-browser-languagedetector": "^6.1.8",
     "lodash": "^4.18.1",
     "material-ui-image": "^3.3.2",
