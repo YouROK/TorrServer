@@ -1,6 +1,7 @@
 package torr
 
 import (
+	"encoding/base32"
 	"fmt"
 	"io"
 	"os"
@@ -96,7 +97,13 @@ func SaveTorrentToDB(torr *Torrent) {
 
 // hashFromHex parses an info hash that came from an API request. Malformed
 // input is reported instead of panicking like metainfo.NewHashFromHex.
+// A 32-char base32 btih is a legal info hash too: ParseLink accepts it from
+// magnet links, so API lookups accept it here as well.
 func hashFromHex(hashHex string) (hash metainfo.Hash, ok bool) {
+	if len(hashHex) == 32 {
+		n, err := base32.StdEncoding.Decode(hash[:], []byte(hashHex))
+		return hash, err == nil && n == 20
+	}
 	return hash, hash.FromHexString(hashHex) == nil
 }
 
@@ -195,7 +202,7 @@ func RemTorrent(hashHex string) {
 		// If the torrent isn't in memory, just delete it from the database and the files
 		RemTorrentDB(hash)
 		if sets.BTsets.UseDisk && hashHex != "" && hashHex != "/" {
-			name := filepath.Join(sets.BTsets.TorrentsSavePath, hashHex)
+			name := filepath.Join(sets.BTsets.TorrentsSavePath, hash.HexString())
 			os.RemoveAll(name)
 		}
 		return
@@ -216,7 +223,7 @@ func RemTorrent(hashHex string) {
 
 		// Now we can safely delete the files from the disk
 		if sets.BTsets.UseDisk && hashHex != "" && hashHex != "/" {
-			name := filepath.Join(sets.BTsets.TorrentsSavePath, hashHex)
+			name := filepath.Join(sets.BTsets.TorrentsSavePath, hash.HexString())
 			if _, err := os.Stat(name); err == nil {
 				log.TLogln("Removing cache files for:", hashHex)
 				os.RemoveAll(name)
