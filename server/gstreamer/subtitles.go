@@ -68,6 +68,9 @@ func (t *Task) subtitleStore(index int) *subtitleStore {
 	if t == nil {
 		return nil
 	}
+	if store := t.externalSubtitleStore(index); store != nil {
+		return store
+	}
 	t.subtitleMu.RLock()
 	store := t.subtitleStores[index]
 	t.subtitleMu.RUnlock()
@@ -136,6 +139,14 @@ func subtitleProgressNS(seconds float64) uint64 {
 		return maximum
 	}
 	return uint64(math.Round(seconds * 1_000_000_000))
+}
+
+// embeddedSubtitleName is the NAME of an embedded subtitle track in the master playlist.
+func embeddedSubtitleName(track TrackInfo) string {
+	if track.Title != "" {
+		return track.Title
+	}
+	return "Subtitle " + strconv.Itoa(track.Index)
 }
 
 func supportedSubtitleTrack(track TrackInfo) bool {

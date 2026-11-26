@@ -1,6 +1,7 @@
 package torrstor
 
 import (
+	"context"
 	"io"
 	"sync"
 	"time"
@@ -19,6 +20,13 @@ type Reader struct {
 
 	cache    *Cache
 	isClosed bool
+
+	// ctx is the lifetime of whoever consumes the data (an HTTP request, ReadFile).
+	// Set once by SetContext before the first Read.
+	ctx context.Context
+
+	// inFlight counts reads and seeks inside the underlying reader; guarded by mu.
+	inFlight int
 
 	///Preload
 	lastAccess int64
@@ -53,7 +61,8 @@ func (r *Reader) Seek(offset int64, whence int) (n int64, err error) {
 	case io.SeekEnd:
 		r.offset = r.file.Length() + offset
 	}
-	r.readerOn()
+	r.beginIO()
+	defer r.endIO()
 	n, err = r.Reader.Seek(offset, whence)
 	r.offset = n
 	r.lastAccess = time.Now().Unix()
@@ -66,8 +75,9 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 		return
 	}
 	if r.file.Torrent() != nil && r.file.Torrent().Info() != nil {
-		r.readerOn()
-		n, err = r.Reader.Read(p)
+		r.beginIO()
+		defer r.endIO()
+		n, err = r.readBackend(p)
 
 		// samsung tv fix xvid/divx
 		//if r.offset == 0 && len(p) >= 192 {
@@ -93,6 +103,22 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 		log.TLogln("Torrent closed and readed")
 	}
 	return
+}
+
+// SetContext ties reads to ctx. anacrolix Read waits with context.Background(): a read
+// blocked on a piece no peer has yet only returns when the data arrives or the torrent
+// closes, and closing the reader does not wake it. Until then the reader stays registered
+// and keeps its piece priorities at the old position, e.g. after the player seeks and
+// drops the connection. With a context the read returns ctx.Err() as soon as it is done.
+func (r *Reader) SetContext(ctx context.Context) {
+	r.ctx = ctx
+}
+
+func (r *Reader) readBackend(p []byte) (int, error) {
+	if r.ctx != nil {
+		return r.Reader.ReadContext(r.ctx, p)
+	}
+	return r.Reader.Read(p)
 }
 
 func (r *Reader) SetReadahead(length int64) {
@@ -168,9 +194,29 @@ func (r *Reader) checkReader() {
 	}
 }
 
+// beginIO claims the reader for one read or seek and resumes it if the sweep parked it.
+// Registering under mu is what keeps readerOff from parking it until endIO.
+func (r *Reader) beginIO() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.inFlight++
+	r.resume()
+}
+
+func (r *Reader) endIO() {
+	r.mu.Lock()
+	r.inFlight--
+	r.mu.Unlock()
+}
+
 func (r *Reader) readerOn() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	r.resume()
+}
+
+// resume must be called with mu held.
+func (r *Reader) resume() {
 	if !r.isUse {
 		if pos, err := r.Reader.Seek(0, io.SeekCurrent); err == nil && pos == 0 {
 			r.Reader.Seek(r.offset, io.SeekStart)
@@ -183,6 +229,11 @@ func (r *Reader) readerOn() {
 func (r *Reader) readerOff() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	// lastAccess is stamped only when a read returns, so a read blocked on the swarm makes a
+	// busy reader look idle; seeking the anacrolix reader under it moves that read.
+	if r.inFlight > 0 {
+		return
+	}
 	if r.isUse {
 		r.SetReadahead(0)
 		r.isUse = false

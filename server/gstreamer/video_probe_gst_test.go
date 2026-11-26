@@ -4,6 +4,7 @@ package gstreamer
 
 import (
 	"runtime"
+	"sync"
 	"testing"
 	"time"
 	"unsafe"
@@ -228,4 +229,208 @@ func testPadProbeInfo(probeType uint32, data uintptr) (uintptr, any) {
 	}
 	info := &gstPadProbeInfoUnixABI{probeType: probeType, data: data}
 	return uintptr(unsafe.Pointer(info)), info
+}
+
+func TestHEVCHDRCapsProbeRetainsInitialMetadata(t *testing.T) {
+	conf := DefaultConfig()
+	setupGStreamer(conf)
+	api, err := loadGST(conf)
+	if err != nil {
+		t.Skipf("gstreamer runtime is not available: %v", err)
+	}
+	if err := api.init(); err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("native GStreamer %s on %s/%s", api.version, runtime.GOOS, runtime.GOARCH)
+	var capsFromString func(string) uintptr
+	var capsEqual func(uintptr, uintptr) int32
+	var pushEvent func(uintptr, uintptr) int32
+	var eventSeqnum func(uintptr) uint32
+	var setSeqnum func(uintptr, uint32)
+	var ref func(uintptr) uintptr
+	purego.RegisterLibFunc(&capsFromString, api.handles[1], "gst_caps_from_string")
+	purego.RegisterLibFunc(&capsEqual, api.handles[1], "gst_caps_is_equal")
+	purego.RegisterLibFunc(&pushEvent, api.handles[1], "gst_pad_push_event")
+	purego.RegisterLibFunc(&eventSeqnum, api.handles[1], "gst_event_get_seqnum")
+	purego.RegisterLibFunc(&setSeqnum, api.handles[1], "gst_event_set_seqnum")
+	purego.RegisterLibFunc(&ref, api.handles[1], "gst_mini_object_ref")
+	const base = "video/x-h265,stream-format=(string)hvc1,alignment=(string)au,width=(int)1920,height=(int)1080,codec_data=(buffer)010203"
+	const hdr = ",mastering-display-info=(string)arbitrary-display,content-light-level=(string)731:219"
+	for _, initial := range []string{hdr, ",mastering-display-info=(uint)47,content-light-level=(guint64)913", ",mastering-display-info=(string)other-display,content-light-level=(string)921:107", ",mastering-display-info=(string)display-only", ",content-light-level=(string)619:71", ""} {
+		t.Run(initial, func(t *testing.T) {
+			pipeline, err := api.parseLaunch("identity name=probe ! fakesink name=out async=false")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer api.objectUnref(pipeline)
+			pad := gstPipelineElementPad(api, pipeline, "probe", "src")
+			state := &hevcHDRCapsProbeState{api: api}
+			registration := addVideoPadProbe(api, pad, gstPadProbeTypeEventDownstream, hevcHDRCapsProbeCallback, state)
+			if registration == nil {
+				t.Fatal("failed to install HDR probe")
+			}
+			defer removeVideoPadProbe(&registration)
+			downstream := gstPipelineElementPad(api, pipeline, "out", "sink")
+			var expected uintptr
+			var received int
+			callback := purego.NewCallback(func(_ purego.CDecl, _ uintptr, info uintptr, _ uintptr) uintptr {
+				event := gstProbeInfoData(info)
+				if gstEventType(event) == gstEventCaps {
+					var caps uintptr
+					api.gstEventParseCaps(event, unsafe.Pointer(&caps))
+					if capsEqual(caps, expected) == 0 {
+						t.Error("downstream caps differ from expected typed fields")
+					}
+					if eventSeqnum(event) != 1234 {
+						t.Error("CAPS event sequence number changed")
+					}
+					received++
+				}
+				return gstPadProbeOK
+			})
+			capture := addVideoPadProbe(api, downstream, gstPadProbeTypeEventDownstream, callback, nil)
+			defer removeVideoPadProbe(&capture)
+			defer api.elementSetState(pipeline, gstStateNull)
+			if api.elementSetState(pipeline, gstStatePlaying) == gstStateChangeFailure {
+				t.Fatal("failed to activate pipeline")
+			}
+			for i, fields := range []string{initial, initial, ",mastering-display-info=(string)arbitrary-display", ",content-light-level=(string)731:219", ",mastering-display-info=(string)different,content-light-level=(string)991:83", ""} {
+				if i == 3 {
+					flush := &gstEventABI{eventType: gstEventFlushStart}
+					info, keep := testPadProbeInfo(gstPadProbeTypeEventDownstream, uintptr(unsafe.Pointer(flush)))
+					if hevcHDRCapsPadProbe(purego.CDecl{}, 0, info, registration.token) != gstPadProbeOK {
+						t.Error("flush rejected")
+					}
+					runtime.KeepAlive(keep)
+					runtime.KeepAlive(flush)
+				}
+				current := base
+				if i > 1 {
+					current = "video/x-h265,stream-format=(string)hev1,alignment=(string)au,width=(int)1280,height=(int)720,codec_data=(buffer)040506"
+				}
+				caps := capsFromString(current + fields)
+				expected = capsFromString(current + initial)
+				if caps == 0 || expected == 0 {
+					t.Fatal("failed to parse synthetic test caps")
+				}
+				event := api.gstEventNewCaps(caps)
+				api.miniObjectUnref(caps)
+				setSeqnum(event, 1234)
+				ref(event) // Keep the original alive to verify copy-on-write.
+				before := received
+				if pushEvent(pad, event) == 0 {
+					t.Error("CAPS event rejected")
+				}
+				if received != before+1 {
+					t.Error("CAPS event did not reach downstream probe")
+				}
+				var original uintptr
+				api.gstEventParseCaps(event, unsafe.Pointer(&original))
+				unchanged := capsFromString(current + fields)
+				if capsEqual(original, unchanged) == 0 {
+					t.Error("original event was mutated")
+				}
+				api.miniObjectUnref(unchanged)
+				api.miniObjectUnref(event)
+				api.miniObjectUnref(expected)
+			}
+			flush := &gstEventABI{eventType: gstEventFlushStart}
+			buffer := &gstBufferABI{pts: 17, dts: 13}
+			for _, item := range []struct {
+				kind uint32
+				data uintptr
+			}{
+				{gstPadProbeTypeEventDownstream, uintptr(unsafe.Pointer(flush))},
+				{gstPadProbeTypeBuffer, uintptr(unsafe.Pointer(buffer))},
+			} {
+				info, keep := testPadProbeInfo(item.kind, item.data)
+				if hevcHDRCapsPadProbe(purego.CDecl{}, 0, info, registration.token) != gstPadProbeOK || gstProbeInfoData(info) != item.data {
+					t.Error("non-CAPS data changed")
+				}
+				runtime.KeepAlive(keep)
+			}
+			runtime.KeepAlive(flush)
+			runtime.KeepAlive(buffer)
+			// Hold one extra reference so teardown ownership can be checked safely.
+			if state.initialCaps == 0 {
+				t.Fatal("initial HDR snapshot was not captured")
+			}
+			snapshot := ref(state.initialCaps)
+			removeVideoPadProbe(&registration)
+			if got := (*gstMiniObjectABI)(unsafe.Pointer(snapshot)).refCount; got != 1 {
+				t.Errorf("snapshot references after removal=%d, want 1", got)
+			}
+			api.miniObjectUnref(snapshot)
+		})
+	}
+}
+
+func TestHEVCHDRCapsProbeRemovalWaitsForCallback(t *testing.T) {
+	entered := make(chan struct{})
+	release := make(chan struct{})
+	removed := make(chan struct{})
+	callbackDone := make(chan struct{})
+	cleanupDone := make(chan struct{})
+	var mu sync.Mutex
+	var released []uintptr
+	api := &gstAPI{
+		gstEventParseCaps: func(_ uintptr, caps unsafe.Pointer) {
+			close(entered)
+			<-release
+			*(*uintptr)(caps) = 41
+		},
+		gstMiniObjectCopy:  func(uintptr) uintptr { return 42 },
+		gstMiniObjectUnref: func(object uintptr) { mu.Lock(); released = append(released, object); mu.Unlock() },
+		gstPadRemoveProbe:  func(uintptr, uintptr) { close(removed) },
+		gstObjectUnref:     func(uintptr) {},
+	}
+	state := &hevcHDRCapsProbeState{api: api}
+	registration := &gstPadProbeRegistration{api: api, pad: 1, token: uintptr(videoProbeNextToken.Add(1)), state: state}
+	registration.id.Store(2)
+	videoProbeStates.Store(registration.token, state)
+	event := &gstEventABI{eventType: gstEventCaps}
+	info, keep := testPadProbeInfo(gstPadProbeTypeEventDownstream, uintptr(unsafe.Pointer(event)))
+	go func() {
+		defer close(callbackDone)
+		hevcHDRCapsPadProbe(purego.CDecl{}, 0, info, registration.token)
+	}()
+	select {
+	case <-entered:
+	case <-time.After(time.Second):
+		t.Fatal("callback did not start")
+	}
+	go func() {
+		target := registration
+		removeVideoPadProbe(&target)
+		close(cleanupDone)
+	}()
+	select {
+	case <-removed:
+	case <-time.After(time.Second):
+		t.Fatal("removal did not start")
+	}
+	mu.Lock()
+	if len(released) != 0 {
+		t.Error("snapshot released while callback was using it")
+	}
+	mu.Unlock()
+	close(release)
+	select {
+	case <-callbackDone:
+	case <-time.After(time.Second):
+		t.Fatal("callback did not finish")
+	}
+	select {
+	case <-cleanupDone:
+	case <-time.After(time.Second):
+		t.Fatal("cleanup did not finish")
+	}
+	if len(released) != 1 || released[0] != 42 || !state.closed || state.initialCaps != 0 {
+		t.Fatalf("snapshot cleanup: released=%v closed=%v caps=%d", released, state.closed, state.initialCaps)
+	}
+	if _, ok := videoProbeStates.Load(registration.token); ok {
+		t.Fatal("probe state remains registered")
+	}
+	runtime.KeepAlive(event)
+	runtime.KeepAlive(keep)
 }

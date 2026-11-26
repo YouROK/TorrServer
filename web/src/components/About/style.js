@@ -1,5 +1,4 @@
 import styled, { css } from 'styled-components'
-import { standaloneMedia } from 'style/standaloneMedia'
 
 export const DialogWrapper = styled.div`
   height: 100%;
@@ -27,10 +26,6 @@ export const HeaderSection = styled.section`
       width: 60px;
     }
   }
-
-  ${standaloneMedia(css`
-    padding-top: 30px;
-  `)}
 `
 
 export const ThanksSection = styled.section`

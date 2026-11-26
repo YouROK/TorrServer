@@ -36,22 +36,25 @@ func NewTorrDir(parent INode, name string, torrent *torr.Torrent) *TorrDir {
 
 func (d *TorrDir) ReadDir(n int) ([]fs.DirEntry, error) {
 	if d.Torrent() == nil {
-		return nil, fs.ErrInvalid
+		return nil, &fs.PathError{Op: "readdir", Path: d.Name(), Err: fs.ErrInvalid}
 	}
 	// соединяемся с торрентом при чтении директории торрента
 	if !d.Torrent().GotInfo() {
 		hash := d.Torrent().Hash().String()
+		gotInfo := false
 		for i := 0; i < settings.BTsets.TorrentDisconnectTimeout*2; i++ {
 			tor := torr.GetTorrent(hash)
 			if tor.GotInfo() {
 				d.SetTorrent(tor)
+				gotInfo = true
 				break
 			}
 
 			time.Sleep(time.Millisecond * 500)
 		}
-		if d.Torrent() == nil {
-			return nil, fs.ErrNotExist
+		// without metadata the torrent file list is unavailable
+		if !gotInfo {
+			return nil, &fs.PathError{Op: "readdir", Path: d.Name(), Err: fs.ErrNotExist}
 		}
 	}
 

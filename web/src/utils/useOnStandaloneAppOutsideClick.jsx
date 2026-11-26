@@ -9,8 +9,8 @@ export default function useOnStandaloneAppOutsideClick(onClickOutside) {
 
     const handleClickOutside = event => {
       if (ref.current && !ref.current.contains(event.target)) {
-        const { target, path, composedPath } = event
-        const eventPath = path || (composedPath && composedPath()) || []
+        const { target, path } = event
+        const eventPath = path || event.composedPath?.() || []
 
         const isWithinMuiMenu =
           target.closest('[role="listbox"]') ||

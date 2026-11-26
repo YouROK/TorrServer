@@ -50,6 +50,12 @@ var hardwareCandidates = []hardwareCandidate{
 		},
 	},
 	{
+		name: "VAAPI",
+		build: func(bitrate int, keyIntMax int) string {
+			return fmt.Sprintf("videoconvert ! video/x-raw,format=NV12 ! vah264enc name=video_encoder bitrate=%d key-int-max=%d b-frames=0 rate-control=cbr ! ", bitrate, keyIntMax)
+		},
+	},
+	{
 		name: "Direct3D12",
 		build: func(bitrate int, keyIntMax int) string {
 			return fmt.Sprintf("videoconvert ! video/x-raw,format=NV12 ! d3d12h264enc name=video_encoder bitrate=%d gop-size=%d rate-control=cbr ! ", bitrate, keyIntMax)

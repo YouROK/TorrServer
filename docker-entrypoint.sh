@@ -9,6 +9,8 @@ if [ "$TS_SSL_ENABLE" = "1" ]; then FLAGS="${FLAGS} --ssl"; fi
 if [ "$TS_SEARCH_WA_ENABLE" = "1" ]; then FLAGS="${FLAGS} --searchwa"; fi
 if [ "$TS_WEBDAV_ENABLE" = "1" ]; then FLAGS="${FLAGS} --webdav"; fi
 if [ "$TS_FORCE_HTTPS_ENABLE" = "1" ]; then FLAGS="${FLAGS} --force-https"; fi
+if [ "$TS_HTTP_MEDIA_ENABLE" = "1" ]; then FLAGS="${FLAGS} --http-media"; fi
+if [ "$TS_HTTPS_ONLY_ENABLE" = "1" ]; then FLAGS="${FLAGS} --https-only"; fi
 if [ -n "$TS_SSL_PORT" ]; then FLAGS="${FLAGS} --sslport ${TS_SSL_PORT}"; fi
 if [ -n "$TS_SSL_CERT_PATH" ]; then FLAGS="${FLAGS} --sslcert ${TS_SSL_CERT_PATH}"; fi
 if [ -n "$TS_SSL_KEY_PATH" ]; then FLAGS="${FLAGS} --sslkey ${TS_SSL_KEY_PATH}"; fi
@@ -19,8 +21,8 @@ if [ -n "$TS_TORR_ADDR" ]; then FLAGS="${FLAGS} --torrentaddr ${TS_TORR_ADDR}"; 
 if [ -n "$TS_PUBLIC_IPV4_ADDR" ]; then FLAGS="${FLAGS} --pubipv4 ${TS_PUBLIC_IPV4_ADDR}"; fi
 if [ -n "$TS_PUBLIC_IPV6_ADDR" ]; then FLAGS="${FLAGS} --pubipv6 ${TS_PUBLIC_IPV6_ADDR}"; fi
 if [ -n "$TS_MAX_SIZE" ]; then FLAGS="${FLAGS} --maxsize ${TS_MAX_SIZE}"; fi
-if [ -n "$TS_TELEGRAM_TOKEN" ]; then FLAGS="${FLAGS} --tg ${TS_TELEGRAM_TOKEN}"; fi
-if [ -n "$TS_FUSE_PATH" ]; then FLAGS="${FLAGS} --fuse ${TS_FUSE_PATH}"; fi
+if [ -n "$TS_TELEGRAM_TOKEN" ]; then FLAGS="${FLAGS} --tgtoken ${TS_TELEGRAM_TOKEN}"; fi
+if [ -n "$TS_FUSE_PATH" ]; then FLAGS="${FLAGS} --fusepath ${TS_FUSE_PATH}"; fi
 
 if [ ! -d "$TS_CONF_PATH" ]; then
   mkdir -p "$TS_CONF_PATH"

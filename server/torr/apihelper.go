@@ -1,6 +1,8 @@
 package torr
 
 import (
+	"encoding/base32"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -12,11 +14,19 @@ import (
 
 	"server/log"
 	sets "server/settings"
+	"server/torr/utils"
 )
 
 var bts *BTServer
 
+// bts is read by request handlers without any synchronisation of their own, so it
+// must be written exactly once. Connect calls this on every settings save with the
+// same receiver, and the repeated assignment was reported by -race as a data race
+// against every /stat request.
 func InitApiHelper(bt *BTServer) {
+	if bts == bt {
+		return
+	}
 	bts = bt
 }
 
@@ -85,8 +95,23 @@ func SaveTorrentToDB(torr *Torrent) {
 	AddTorrentDB(torr)
 }
 
+// hashFromHex parses an info hash that came from an API request. Malformed
+// input is reported instead of panicking like metainfo.NewHashFromHex.
+// A 32-char base32 btih is a legal info hash too: ParseLink accepts it from
+// magnet links, so API lookups accept it here as well.
+func hashFromHex(hashHex string) (hash metainfo.Hash, ok bool) {
+	if len(hashHex) == 32 {
+		n, err := base32.StdEncoding.Decode(hash[:], []byte(hashHex))
+		return hash, err == nil && n == 20
+	}
+	return hash, hash.FromHexString(hashHex) == nil
+}
+
 func GetTorrent(hashHex string) *Torrent {
-	hash := metainfo.NewHashFromHex(hashHex)
+	hash, ok := hashFromHex(hashHex)
+	if !ok {
+		return nil
+	}
 	timeout := time.Second * time.Duration(sets.BTsets.TorrentDisconnectTimeout)
 	if timeout > time.Minute {
 		timeout = time.Minute
@@ -118,7 +143,10 @@ func GetTorrent(hashHex string) *Torrent {
 }
 
 func SetTorrent(hashHex, title, poster, category string, data string) *Torrent {
-	hash := metainfo.NewHashFromHex(hashHex)
+	hash, ok := hashFromHex(hashHex)
+	if !ok {
+		return nil
+	}
 	torr := bts.GetTorrent(hash)
 	torrDb := GetTorrentDB(hash)
 
@@ -163,7 +191,10 @@ func RemTorrent(hashHex string) {
 		log.TLogln("API RemTorrent: Read-only DB mode!", hashHex)
 		return
 	}
-	hash := metainfo.NewHashFromHex(hashHex)
+	hash, ok := hashFromHex(hashHex)
+	if !ok {
+		return
+	}
 
 	// Download the torrent before deleting it to get the "closed" status
 	torr := bts.GetTorrent(hash)
@@ -171,7 +202,7 @@ func RemTorrent(hashHex string) {
 		// If the torrent isn't in memory, just delete it from the database and the files
 		RemTorrentDB(hash)
 		if sets.BTsets.UseDisk && hashHex != "" && hashHex != "/" {
-			name := filepath.Join(sets.BTsets.TorrentsSavePath, hashHex)
+			name := filepath.Join(sets.BTsets.TorrentsSavePath, hash.HexString())
 			os.RemoveAll(name)
 		}
 		return
@@ -192,7 +223,7 @@ func RemTorrent(hashHex string) {
 
 		// Now we can safely delete the files from the disk
 		if sets.BTsets.UseDisk && hashHex != "" && hashHex != "/" {
-			name := filepath.Join(sets.BTsets.TorrentsSavePath, hashHex)
+			name := filepath.Join(sets.BTsets.TorrentsSavePath, hash.HexString())
 			if _, err := os.Stat(name); err == nil {
 				log.TLogln("Removing cache files for:", hashHex)
 				os.RemoveAll(name)
@@ -231,7 +262,10 @@ func ListTorrent() []*Torrent {
 }
 
 func DropTorrent(hashHex string) {
-	hash := metainfo.NewHashFromHex(hashHex)
+	hash, ok := hashFromHex(hashHex)
+	if !ok {
+		return
+	}
 	bts.RemoveTorrent(hash)
 }
 
@@ -241,15 +275,37 @@ func SetSettings(set *sets.BTSets) {
 		return
 	}
 	sets.SetBTSets(set)
+	utils.InvalidateTrackersCache()
 	log.TLogln("drop all torrents")
 	dropAllTorrent()
 	time.Sleep(time.Second * 1)
 	log.TLogln("disconect")
 	bts.Disconnect()
 	log.TLogln("connect")
-	bts.Connect()
+	reconnect()
 	time.Sleep(time.Second * 1)
 	log.TLogln("end set settings")
+}
+
+// reconnect retries Connect after Disconnect. The uTP socket of the closed client
+// closes lazily, only after its peer connections are gone, and until then
+// PeersListenPort is busy: "listen udp4 :port: bind: address already in use".
+// A failed Connect would leave bts.client nil until restart.
+func reconnect() {
+	var err error
+	for i := 0; i < 30; i++ {
+		if err = bts.Connect(); err == nil {
+			if i > 0 {
+				log.TLogln("connect ok, attempt", i+1)
+			}
+			return
+		}
+		if i == 0 {
+			log.TLogln("connect error, retrying:", err)
+		}
+		time.Sleep(time.Second)
+	}
+	log.TLogln("connect failed:", err)
 }
 
 func SetDefSettings() {
@@ -258,13 +314,14 @@ func SetDefSettings() {
 		return
 	}
 	sets.SetDefaultConfig()
+	utils.InvalidateTrackersCache()
 	log.TLogln("drop all torrents")
 	dropAllTorrent()
 	time.Sleep(time.Second * 1)
 	log.TLogln("disconect")
 	bts.Disconnect()
 	log.TLogln("connect")
-	bts.Connect()
+	reconnect()
 	time.Sleep(time.Second * 1)
 	log.TLogln("end set default settings")
 }
@@ -277,13 +334,32 @@ func dropAllTorrent() {
 }
 
 func Shutdown() {
+	if sets.Embedded {
+		log.TLogln("Received shutdown (embedded)")
+		if sets.EmbeddedStop != nil {
+			sets.EmbeddedStop()
+		}
+		return
+	}
 	bts.Disconnect()
 	sets.CloseDB()
 	log.TLogln("Received shutdown. Quit")
 	os.Exit(0)
 }
 
+// Disconnect sets bts.client to nil while a reconnect is in progress. Reading it
+// without holding bt.mu races with that write and panics inside the torrent
+// library, so readers enter bt.mu for the whole call: that also keeps Disconnect
+// from closing the client underneath a reader, and a nil client is reported
+// instead of dereferenced.
 func WriteStatus(w io.Writer) {
+	bts.mu.RLock()
+	defer bts.mu.RUnlock()
+
+	if bts.client == nil {
+		_, _ = fmt.Fprintf(w, "Torrent client is not connected\n")
+		return
+	}
 	bts.client.WriteStatus(w)
 }
 

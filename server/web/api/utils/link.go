@@ -74,7 +74,7 @@ func ParseLink(link string) (*torrent.TorrentSpec, error) {
 	case "": // infohash
 		return fromMagnet("magnet:?xt=urn:btih:" + urlLink.Path)
 	default:
-		err = fmt.Errorf("%s unknown scheme: %s", urlLink, urlLink.Scheme)
+		err = fmt.Errorf("unknown scheme %q: %v", urlLink.Scheme, urlLink)
 	}
 	return nil, err
 }

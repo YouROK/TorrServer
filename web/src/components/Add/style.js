@@ -132,7 +132,7 @@ export const IconWrapper = styled.div`
   justify-items: center;
   align-content: start;
   gap: 10px;
-  align-self: start;
+  // align-self: start; // start | center
 
   svg {
     transition: all 0.3s;

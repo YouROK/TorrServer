@@ -14,9 +14,7 @@ type CategoryDir struct {
 }
 
 func NewCategoryDir(category string) *CategoryDir {
-	if category == "" {
-		category = "other"
-	}
+	category = categoryName(category)
 	d := &CategoryDir{
 		info: info{
 			name:  category,
@@ -29,24 +27,58 @@ func NewCategoryDir(category string) *CategoryDir {
 	return d
 }
 
+func categoryName(category string) string {
+	category = SanitizeName(category)
+	if category == "" {
+		return "other"
+	}
+	return category
+}
+
+func torrentName(t *torr.Torrent) string {
+	name := SanitizeName(t.Title)
+	if name == "" {
+		name = t.Hash().String()
+	}
+	return name
+}
+
 func (d *CategoryDir) Stat() (fs.FileInfo, error) {
 	return d.info, nil
 }
 
+// torrentNames names the directory of each torrent. Torrents whose titles give
+// the same name get the start of their hash appended, or only the first of
+// them could be opened.
+func torrentNames(torrs []*torr.Torrent) []string {
+	names := make([]string, len(torrs))
+	count := map[string]int{}
+	for i, t := range torrs {
+		names[i] = torrentName(t)
+		count[names[i]]++
+	}
+	for i, t := range torrs {
+		if count[names[i]] > 1 {
+			names[i] += " [" + t.Hash().HexString()[:8] + "]"
+		}
+	}
+	return names
+}
+
 func (d *CategoryDir) ReadDir(n int) ([]fs.DirEntry, error) {
 	nodes := []fs.DirEntry{}
-	torrs := torr.ListTorrent()
-	for _, t := range torrs {
-		if t.Category == "" {
-			t.Category = "other"
+	var torrs []*torr.Torrent
+	for _, t := range torr.ListTorrent() {
+		if categoryName(t.Category) != d.Name() {
+			continue
 		}
-		if t.Category == d.Name() {
-			if settings.BTsets.ShowFSActiveTorr && !t.GotInfo() {
-				continue
-			}
-			td := NewTorrDir(nil, t.Title, t)
-			nodes = append(nodes, td)
+		if settings.BTsets.ShowFSActiveTorr && !t.GotInfo() {
+			continue
 		}
+		torrs = append(torrs, t)
+	}
+	for i, name := range torrentNames(torrs) {
+		nodes = append(nodes, NewTorrDir(nil, name, torrs[i]))
 	}
 
 	return nodes, nil

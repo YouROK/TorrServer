@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -11,13 +12,21 @@ import (
 
 	"server/torr"
 	"server/torr/state"
-	utils2 "server/utils"
 	"server/web/api/utils"
 
 	"github.com/anacrolix/torrent"
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
 )
+
+// unescapeQuery decodes a query value once more, as /stream and the search
+// handlers always have. A value whose "%" is not an escape, such as a title
+// "100% Pure", is kept as it is instead of becoming empty.
+func unescapeQuery(value string) string {
+	if unescaped, err := url.QueryUnescape(value); err == nil {
+		return unescaped
+	}
+	return value
+}
 
 // get stat
 // http://127.0.0.1:8090/stream/fname?link=...&stat
@@ -75,7 +84,7 @@ func stream(c *gin.Context) {
 		err := utils.TestLink(link, !notAuth)
 		if err != nil {
 			log.TLogln("Wrong link:", err)
-			c.AbortWithError(http.StatusBadRequest, errors.New("wrong link"))
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "wrong link"})
 			return
 		}
 	}
@@ -91,14 +100,14 @@ func stream(c *gin.Context) {
 	}
 
 	if link == "" {
-		c.AbortWithError(http.StatusBadRequest, errors.New("link should not be empty"))
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "link should not be empty"})
 		return
 	}
 
-	link, _ = url.QueryUnescape(link)
-	title, _ = url.QueryUnescape(title)
-	poster, _ = url.QueryUnescape(poster)
-	category, _ = url.QueryUnescape(category)
+	link = unescapeQuery(link)
+	title = unescapeQuery(title)
+	poster = unescapeQuery(poster)
+	category = unescapeQuery(category)
 
 	var spec *torrent.TorrentSpec
 	var torrsHash *torrshash.TorrsHash
@@ -108,7 +117,7 @@ func stream(c *gin.Context) {
 		spec, torrsHash, err = utils.ParseTorrsHash(link)
 		if err != nil {
 			log.TLogln("error parse torrshash:", err)
-			c.AbortWithError(http.StatusBadRequest, err)
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": fmt.Errorf("error parse torrshash: %v", err).Error()})
 			return
 		}
 		if title == "" {
@@ -123,7 +132,7 @@ func stream(c *gin.Context) {
 	} else {
 		spec, err = utils.ParseLink(link)
 		if err != nil {
-			c.AbortWithError(http.StatusInternalServerError, err)
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": fmt.Errorf("error parse link: %v", err).Error()})
 			return
 		}
 	}
@@ -138,13 +147,13 @@ func stream(c *gin.Context) {
 	if tor == nil || tor.Stat == state.TorrentInDB {
 		tor, err = torr.AddTorrent(spec, title, poster, data, category)
 		if err != nil {
-			c.AbortWithError(http.StatusInternalServerError, err)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": fmt.Errorf("error adding torrent: %v", err).Error()})
 			return
 		}
 	}
 
 	if !tor.GotInfo() {
-		c.AbortWithError(http.StatusInternalServerError, errors.New("torrent connection timeout"))
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "torrent connection timeout"})
 		return
 	}
 
@@ -169,7 +178,7 @@ func stream(c *gin.Context) {
 		}
 	}
 	if index == -1 && play { // if file index not set and play file exec
-		c.AbortWithError(http.StatusBadRequest, errors.New("\"index\" is empty or wrong"))
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "\"index\" is empty or wrong"})
 		return
 	}
 	// preload torrent
@@ -189,13 +198,13 @@ func stream(c *gin.Context) {
 		} else if !strings.HasSuffix(strings.ToLower(name), ".m3u") && !strings.HasSuffix(strings.ToLower(name), ".m3u8") {
 			name += ".m3u"
 		}
-		m3ulist := "#EXTM3U\n" + getM3uList(tor.Status(), utils2.GetScheme(c)+"://"+utils2.GetHost(c), fromlast)
+		m3ulist := "#EXTM3U\n" + getM3uList(tor.Status(), mediaBaseURL(c), fromlast, indexStr)
 		sendM3U(c, name, tor.Hash().HexString(), m3ulist)
 		return
 	} else
 	// return play if query
 	if play {
-		tor.Stream(index, c.Request, c.Writer)
+		_ = tor.Stream(index, c.Request, c.Writer)
 		return
 	}
 }
@@ -212,14 +221,14 @@ func streamNoAuth(c *gin.Context) {
 	category := c.Query("category")
 
 	if link == "" {
-		c.AbortWithError(http.StatusBadRequest, errors.New("link should not be empty"))
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "link should not be empty"})
 		return
 	}
 
-	link, _ = url.QueryUnescape(link)
-	title, _ = url.QueryUnescape(title)
-	poster, _ = url.QueryUnescape(poster)
-	category, _ = url.QueryUnescape(category)
+	link = unescapeQuery(link)
+	title = unescapeQuery(title)
+	poster = unescapeQuery(poster)
+	category = unescapeQuery(category)
 
 	var spec *torrent.TorrentSpec
 	var torrsHash *torrshash.TorrsHash
@@ -229,7 +238,7 @@ func streamNoAuth(c *gin.Context) {
 		spec, torrsHash, err = utils.ParseTorrsHash(link)
 		if err != nil {
 			log.TLogln("error parse torrshash:", err)
-			c.AbortWithError(http.StatusBadRequest, err)
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": fmt.Errorf("error parse torrshash: %v", err).Error()})
 			return
 		}
 		if title == "" {
@@ -244,7 +253,7 @@ func streamNoAuth(c *gin.Context) {
 	} else {
 		spec, err = utils.ParseLink(link)
 		if err != nil {
-			c.AbortWithError(http.StatusInternalServerError, err)
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": fmt.Errorf("error parse link: %v", err).Error()})
 			return
 		}
 	}
@@ -273,13 +282,13 @@ func streamNoAuth(c *gin.Context) {
 	if tor.Stat == state.TorrentInDB {
 		tor, err = torr.AddTorrent(spec, title, poster, data, category)
 		if err != nil {
-			c.AbortWithError(http.StatusInternalServerError, err)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": fmt.Errorf("error adding torrent: %v", err).Error()})
 			return
 		}
 	}
 
 	if !tor.GotInfo() {
-		c.AbortWithError(http.StatusInternalServerError, errors.New("torrent connection timeout"))
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "torrent connection timeout"})
 		return
 	}
 
@@ -294,7 +303,7 @@ func streamNoAuth(c *gin.Context) {
 		}
 	}
 	if index == -1 && play { // if file index not set and play file exec
-		c.AbortWithError(http.StatusBadRequest, errors.New("\"index\" is empty or wrong"))
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "\"index\" is empty or wrong"})
 		return
 	}
 	// preload torrent
@@ -309,13 +318,13 @@ func streamNoAuth(c *gin.Context) {
 		} else if !strings.HasSuffix(strings.ToLower(name), ".m3u") && !strings.HasSuffix(strings.ToLower(name), ".m3u8") {
 			name += ".m3u"
 		}
-		m3ulist := "#EXTM3U\n" + getM3uList(tor.Status(), utils2.GetScheme(c)+"://"+utils2.GetHost(c), fromlast)
+		m3ulist := "#EXTM3U\n" + getM3uList(tor.Status(), mediaBaseURL(c), fromlast, indexStr)
 		sendM3U(c, name, tor.Hash().HexString(), m3ulist)
 		return
 	} else
 	// return play if query
 	if play {
-		tor.Stream(index, c.Request, c.Writer)
+		_ = tor.Stream(index, c.Request, c.Writer)
 		return
 	}
 	c.Header("WWW-Authenticate", "Basic realm=Authorization Required")

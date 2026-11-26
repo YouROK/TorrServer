@@ -2,7 +2,6 @@ package api
 
 import (
 	"net/http"
-	"net/url"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -37,7 +36,7 @@ func torznabSearch(c *gin.Context) {
 		index = i
 	}
 
-	query, _ = url.QueryUnescape(query)
+	query = unescapeQuery(query)
 	list := torznab.Search(query, index)
 	if list == nil {
 		list = []*models.TorrentDetails{}

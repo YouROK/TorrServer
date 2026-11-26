@@ -72,7 +72,7 @@ pkgs.stdenv.mkDerivation rec {
     cd ..
 
     cd server
-    swag init -g web/server.go --parseDependency --parseInternal --parseDepth 5
+    swag init -g web/server.go --parseInternal --parseDepth 5
     cd ..
 
     mkdir -p server/vendor

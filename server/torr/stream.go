@@ -68,8 +68,13 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 			break
 		}
 	}
+	// The handler has already checked the request, so every failure from here on must
+	// still answer it: returning without a write made gin send an empty 200 OK, which
+	// players read as a zero-length file.
 	if stFile == nil {
-		return fmt.Errorf("file with id %v not found", fileID)
+		err := fmt.Errorf("file with id %v not found", fileID)
+		http.Error(resp, err.Error(), http.StatusNotFound)
+		return err
 	}
 
 	// Find the actual torrent file
@@ -82,7 +87,9 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 		}
 	}
 	if file == nil {
-		return fmt.Errorf("file with id %v not found", fileID)
+		err := fmt.Errorf("file with id %v not found", fileID)
+		http.Error(resp, err.Error(), http.StatusNotFound)
+		return err
 	}
 
 	// Check file size limit
@@ -96,7 +103,10 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 	// Create reader with context for timeout
 	reader := t.NewReader(file)
 	if reader == nil {
-		return errors.New("cannot create torrent reader")
+		// NewReader returns nil only for a torrent closed after the GotInfo check above
+		err := errors.New("cannot create torrent reader")
+		http.Error(resp, err.Error(), http.StatusServiceUnavailable)
+		return err
 	}
 
 	// Helper function to check if torrent is closed
@@ -107,12 +117,10 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 	}
 
 	// Ensure reader is always closed
-	defer func() {
-		// Check if torrent is still valid before closing
-		if !isTorrentClosed() {
-			t.CloseReader(reader)
-		}
-	}()
+	defer t.CloseReader(reader)
+	// A read waiting for data must end when the client goes away (players drop the
+	// connection on every seek), otherwise the reader outlives the request
+	reader.SetContext(req.Context())
 
 	if sets.BTsets.ResponsiveMode {
 		reader.SetResponsive()
@@ -130,11 +138,22 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 		}
 	}
 
-	// Mark as viewed
-	sets.SetViewed(&sets.Viewed{
-		Hash:      t.Hash().HexString(),
-		FileIndex: fileID,
-	})
+	// Mark as viewed. An existing entry is left alone: rewriting it with its own
+	// TimeCode changes nothing, but costs a DB write (fsync) on every range request,
+	// i.e. on every seek.
+	viewed := false
+	for _, v := range sets.ListViewed(t.Hash().HexString()) {
+		if v.FileIndex == fileID {
+			viewed = true
+			break
+		}
+	}
+	if !viewed {
+		sets.SetViewed(&sets.Viewed{
+			Hash:      t.Hash().HexString(),
+			FileIndex: fileID,
+		})
+	}
 
 	// Set response headers
 	resp.Header().Set("Connection", "close")
@@ -145,7 +164,7 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 		resp.Header().Set("X-Stream-Timeout", fmt.Sprintf("%d", streamTimeout))
 	}
 	// Add ETag
-	etag := hex.EncodeToString([]byte(fmt.Sprintf("%s/%s", t.Hash().HexString(), file.Path())))
+	etag := hex.EncodeToString(fmt.Appendf(nil, "%s/%s", t.Hash().HexString(), file.Path()))
 	resp.Header().Set("ETag", httptoo.EncodeQuotedString(etag))
 	// DLNA headers
 	resp.Header().Set("transferMode.dlna.org", "Streaming")
@@ -181,7 +200,7 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 	// }
 	// http.ServeContent(wrappedResp, req, file.Path(), time.Unix(t.Timestamp, 0), reader)
 
-	http.ServeContent(resp, req, file.Path(), time.Unix(t.Timestamp, 0), reader)
+	http.ServeContent(resp, req, file.Path(), time.Unix(t.Timestamp, 0), newBufferedStreamReader(reader, 1<<20))
 
 	if sets.BTsets.EnableDebug {
 		if clerr != nil {

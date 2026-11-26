@@ -12,6 +12,7 @@ import (
 	"server/log"
 	"server/rutor/models"
 	"server/settings"
+	"server/version"
 )
 
 type TorznabAttribute struct {
@@ -31,6 +32,8 @@ type TorznabItem struct {
 	Description string             `xml:"description"`
 	PubDate     string             `xml:"pubDate"`
 	Size        int64              `xml:"size"`
+	Indexer     string             `xml:"jackettindexer"`
+	Prowlarr    string             `xml:"prowlarrindexer"`
 	Enclosure   []TorznabEnclosure `xml:"enclosure"`
 	Attributes  []TorznabAttribute `xml:"attr"`
 }
@@ -43,6 +46,32 @@ type TorznabResponse struct {
 	Channel TorznabChannel `xml:"channel"`
 }
 
+// httpGet performs a GET request with a browser-like User-Agent, because
+// some Torznab indexers (e.g. behind a WAF) return 403 without one.
+func httpGet(u string) (*http.Response, error) {
+	req, err := http.NewRequest(http.MethodGet, u, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", "TorrServer-Torznab/"+version.Version)
+	return http.DefaultClient.Do(req)
+}
+
+// buildAPIURL normalizes a Torznab host and returns the parsed URL
+// pointing to the "api" endpoint. It accepts hosts with or without an
+// http(s):// scheme and with or without a trailing "/api" or "/api/" segment.
+func buildAPIURL(host string) (*url.URL, error) {
+	host = strings.TrimSpace(host)
+	if !strings.HasPrefix(host, "http://") && !strings.HasPrefix(host, "https://") {
+		host = "http://" + host
+	}
+	host = strings.TrimRight(host, "/")
+	host = strings.TrimSuffix(host, "/api")
+	host = strings.TrimRight(host, "/")
+
+	return url.Parse(host + "/api")
+}
+
 func Search(query string, index int) []*models.TorrentDetails {
 	if !settings.BTsets.EnableTorznabSearch || len(settings.BTsets.TorznabUrls) == 0 {
 		return nil
@@ -52,7 +81,13 @@ func Search(query string, index int) []*models.TorrentDetails {
 	if index >= 0 && index < len(settings.BTsets.TorznabUrls) {
 		config := settings.BTsets.TorznabUrls[index]
 		if config.Host != "" && config.Key != "" {
-			return searchOne(config.Host, config.Key, query)
+			return searchOne(
+				config.Host,
+				config.Key,
+				config.Categories,
+				config.CatType,
+				query,
+			)
 		}
 		return nil
 	}
@@ -61,7 +96,13 @@ func Search(query string, index int) []*models.TorrentDetails {
 		if config.Host == "" || config.Key == "" {
 			continue
 		}
-		results := searchOne(config.Host, config.Key, query)
+		results := searchOne(
+			config.Host,
+			config.Key,
+			config.Categories,
+			config.CatType,
+			query,
+		)
 		if results != nil {
 			allResults = append(allResults, results...)
 		}
@@ -69,12 +110,12 @@ func Search(query string, index int) []*models.TorrentDetails {
 	return allResults
 }
 
-func searchOne(host, key, query string) []*models.TorrentDetails {
+func searchOne(host, key, categories string, categoryType settings.CategoryType, query string) []*models.TorrentDetails {
 	if !strings.HasSuffix(host, "/") {
 		host += "/"
 	}
 
-	u, err := url.Parse(host + "api")
+	u, err := buildAPIURL(host)
 	if err != nil {
 		log.TLogln("Error parsing Torznab host:", err)
 		return nil
@@ -84,10 +125,20 @@ func searchOne(host, key, query string) []*models.TorrentDetails {
 	q.Set("apikey", key)
 	q.Set("t", "search")
 	q.Set("q", query)
-	q.Set("cat", "5000,2000") // Movies and TV
+
+	switch categoryType {
+	case settings.CategoryAll:
+	case settings.CategoryManual:
+		if categories != "" {
+			q.Set("cat", categories)
+		}
+	default:
+		q.Set("cat", "5000,2000") // Movies, TV
+	}
+
 	u.RawQuery = q.Encode()
 
-	resp, err := http.Get(u.String())
+	resp, err := httpGet(u.String())
 	if err != nil {
 		log.TLogln("Error connecting to Torznab:", err)
 		return nil
@@ -107,10 +158,14 @@ func searchOne(host, key, query string) []*models.TorrentDetails {
 
 	var results []*models.TorrentDetails
 	for _, item := range torznabResp.Channel.Items {
+		if item.Indexer == "" {
+			item.Indexer = item.Prowlarr
+		}
 		detail := &models.TorrentDetails{
 			Title:      item.Title,
 			Name:       item.Title, // Use Title as Name for now
 			Link:       item.Link,
+			Tracker:    item.Indexer,
 			CreateDate: parseDate(item.PubDate),
 		}
 
@@ -147,14 +202,11 @@ func searchOne(host, key, query string) []*models.TorrentDetails {
 }
 
 func Test(host, key string) error {
-	if !strings.HasPrefix(host, "http://") && !strings.HasPrefix(host, "https://") {
-		host = "http://" + host
-	}
 	if !strings.HasSuffix(host, "/") {
 		host += "/"
 	}
 
-	u, err := url.Parse(host + "api")
+	u, err := buildAPIURL(host)
 	if err != nil {
 		return err
 	}
@@ -164,7 +216,7 @@ func Test(host, key string) error {
 	q.Set("t", "caps")
 	u.RawQuery = q.Encode()
 
-	resp, err := http.Get(u.String())
+	resp, err := httpGet(u.String())
 	if err != nil {
 		return err
 	}
@@ -222,7 +274,7 @@ func formatSize(bytes int64) string {
 		div *= unit
 		exp++
 	}
-	return fmt.Sprintf("%.1f %cCiB", float64(bytes)/float64(div), "KMGTPE"[exp])
+	return fmt.Sprintf("%.1f %ciB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }
 
 func extractHash(magnet string) string {

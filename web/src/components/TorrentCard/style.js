@@ -7,6 +7,8 @@ export const TorrentCard = styled.div`
     },
   }) => css`
     border-radius: 5px;
+    content-visibility: auto;
+    contain-intrinsic-height: auto 180px;
     display: grid;
     grid-template-columns: 120px 260px 1fr;
     grid-template-rows: 180px;
@@ -23,11 +25,13 @@ export const TorrentCard = styled.div`
 
       grid-template-columns: 70px 1fr;
       grid-template-rows: 110px max-content;
+      contain-intrinsic-height: auto 150px;
     }
 
     @media (max-width: 770px) {
       grid-template-columns: 60px 1fr;
       grid-template-rows: 90px max-content;
+      contain-intrinsic-height: auto 130px;
     }
   `}
 `
@@ -84,7 +88,7 @@ export const TorrentCardButtons = styled.div`
   gap: 10px;
 
   @media (max-width: 1260px), (max-height: 500px) {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   }
 
   @media (max-width: 340px) {

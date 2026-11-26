@@ -31,8 +31,4 @@ export const StyledDialog = styled(Dialog).attrs({
   `)}
 `
 
-export const StyledHeader = styled(Header)`
-  ${standaloneMedia(css`
-    padding-top: 47px;
-  `)}
-`
+export const StyledHeader = Header

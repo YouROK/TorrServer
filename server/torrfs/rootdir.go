@@ -48,18 +48,13 @@ func (d *RootDir) Stat() (fs.FileInfo, error) {
 
 func (d *RootDir) ReadDir(n int) ([]fs.DirEntry, error) {
 	torrs := torr.ListTorrent()
-	cats := map[string]struct{}{}
 	nodes := map[string]INode{}
 
 	for _, torrent := range torrs {
-		cats[torrent.Category] = struct{}{}
-	}
-
-	for cat := range cats {
-		if cat == "" {
-			cat = "other"
+		cat := categoryName(torrent.Category)
+		if _, ok := nodes[cat]; !ok {
+			nodes[cat] = NewCategoryDir(cat)
 		}
-		nodes[cat] = NewCategoryDir(cat)
 	}
 
 	var entries []fs.DirEntry

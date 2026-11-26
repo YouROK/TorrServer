@@ -161,6 +161,10 @@ export default function App() {
                   isOffline={isOffline}
                   isLoading={isLoading}
                   setIsDonationDialogOpen={setIsDonationDialogOpen}
+                  onBackToList={() => {
+                    setGlobalFilterCategory('all')
+                    setIsDrawerOpen(false)
+                  }}
                 />
 
                 {/* <MuiThemeProvider theme={lightTheme}> */}

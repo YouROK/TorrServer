@@ -559,12 +559,7 @@ getVersionTag() {
 buildDownloadUrl() {
   local target_version="$1"
   local binary_name="$2"
-
-  if [[ "$target_version" == "latest" ]]; then
-    echo "${REPO_URL}/releases/latest/download/${binary_name}"
-  else
-    echo "${REPO_URL}/releases/download/${target_version}/${binary_name}"
-  fi
+  echo "${REPO_URL}/releases/download/${target_version}/${binary_name}"
 }
 
 getLang() {
@@ -753,20 +748,28 @@ systemctlCmd() {
 #############################################
 
 getLatestRelease() {
-  curl -s --connect-timeout 10 --max-time 30 "${REPO_API_URL}/releases/latest" |
-  grep -iE '"tag_name":|"version":' |
-  sed -E 's/.*"([^"]+)".*/\1/' |
-  head -n1
+  # ponytail: first 100 releases. Paginate if Silo pushes every MatriX tag off page 1.
+  local response tag
+  response=$(curl -s --connect-timeout 10 --max-time 30 "${REPO_API_URL}/releases?per_page=100" || true)
+  tag=$(printf '%s\n' "$response" | grep -oE '"tag_name":[[:space:]]*"'"${VERSION_PREFIX}"'\.[^"]+"' | head -n1 | sed -E 's/.*"([^"]+)".*/\1/') || true
+  printf '%s\n' "$tag"
 }
 
 getSpecificRelease() {
   local version="$1"
   local tag_name
   tag_name=$(getVersionTag "$version")
-  local response
-  response=$(curl -s --connect-timeout 10 --max-time 30 "${REPO_API_URL}/releases/tags/$tag_name")
+  local LC_ALL=C
+  local response max_bytes=$((2 * 1024 * 1024))
+  # Read one extra byte to detect overflow even without a Content-Length header.
+  # Preserve the byte count across command substitution, including trailing newlines.
+  if ! response=$(curl -s --connect-timeout 10 --max-time 30 "${REPO_API_URL}/releases/tags/$tag_name" |
+    head -c "$((max_bytes + 1))" | tr '\000\n' '  '); then
+    echo ""
+    return 0
+  fi
 
-  if echo "$response" | grep -q '"tag_name"'; then
+  if (( ${#response} <= max_bytes )) && grep -q '"tag_name"' <<< "$response"; then
     echo "$tag_name"
   else
     echo ""
@@ -1929,11 +1932,7 @@ installTorrServer() {
   binName=$(getBinaryName)
   if [[ ! -f "$dirInstall/$binName" ]] || [[ ! -x "$dirInstall/$binName" ]] || [[ $(stat -c%s "$dirInstall/$binName" 2>/dev/null) -eq 0 ]]; then
     local urlBin
-    if [[ -n "$specificVersion" ]]; then
-      urlBin=$(buildDownloadUrl "$target_version" "$binName")
-    else
-      urlBin=$(buildDownloadUrl "latest" "$binName")
-    fi
+    urlBin=$(buildDownloadUrl "$target_version" "$binName")
     downloadBinary "$urlBin" "$dirInstall/$binName" "$target_version"
   fi
   removeAlternateBinary
@@ -2009,7 +2008,6 @@ installTorrServer() {
 updateTorrServerVersion() {
   local target_version="$1"
   local cancel_message="$2"
-  local use_latest_url="${3:-0}"
 
   if ! checkGlibcCompatibility "$target_version"; then
     if [[ $SILENT_MODE -eq 0 ]]; then
@@ -2029,11 +2027,7 @@ updateTorrServerVersion() {
   local binName
   binName=$(getBinaryName)
   local urlBin
-  if [[ $use_latest_url -eq 1 && -z "$specificVersion" ]]; then
-    urlBin=$(buildDownloadUrl "latest" "$binName")
-  else
-    urlBin=$(buildDownloadUrl "$target_version" "$binName")
-  fi
+  urlBin=$(buildDownloadUrl "$target_version" "$binName")
 
   downloadBinary "$urlBin" "$dirInstall/$binName" "$target_version"
   removeAlternateBinary
@@ -2059,13 +2053,13 @@ updateTorrServerVersion() {
 UpdateVersion() {
   local target_version
   target_version=$(getTargetVersion)
-  updateTorrServerVersion "$target_version" "update_cancelled" 1
+  updateTorrServerVersion "$target_version" "update_cancelled"
 }
 
 DowngradeVersion() {
   local target_version
   target_version=$(getVersionTag "$downgradeRelease")
-  updateTorrServerVersion "$target_version" "downgrade_cancelled" 0
+  updateTorrServerVersion "$target_version" "downgrade_cancelled"
 }
 
 #############################################

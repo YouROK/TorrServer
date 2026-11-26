@@ -5,9 +5,11 @@ import {
   PlayArrow as PlayArrowIcon,
   Close as CloseIcon,
   Delete as DeleteIcon,
+  Check as CheckIcon,
+  ErrorOutline as ErrorOutlineIcon,
 } from '@material-ui/icons'
 import { getPeerString, humanizeSize, humanizeSpeed, removeRedundantCharacters } from 'utils/Utils'
-import { playlistTorrHost, streamHost, torrentsHost } from 'utils/Hosts'
+import { playlistTorrHost, streamHost, torrentsHost, viewedHost } from 'utils/Hosts'
 import { NoImageIcon } from 'icons'
 import DialogTorrentDetailsContent from 'components/DialogTorrentDetailsContent'
 import Dialog from '@material-ui/core/Dialog'
@@ -30,6 +32,7 @@ import { useTranslation } from 'react-i18next'
 import AddDialog from 'components/Add/AddDialog'
 import { StyledDialog } from 'style/CustomMaterialUiStyles'
 import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
+import { useBooleanPlayerPreference } from 'utils/PlayerPreferences'
 import { GETTING_INFO, IN_DB, CLOSED, PRELOAD, WORKING } from 'torrentStates'
 import { TORRENT_CATEGORIES } from 'components/categories'
 import VideoPlayer from 'components/VideoPlayer'
@@ -41,6 +44,7 @@ import {
   shouldUseGStreamerPlayer,
   useGStreamerRuntime,
 } from 'utils/GStreamer'
+import { externalLink, useExternalMediaBase } from 'utils/MediaBase'
 
 import {
   StatusIndicators,
@@ -149,6 +153,7 @@ const Torrent = ({ torrent }) => {
   const [isDeleteTorrentOpened, setIsDeleteTorrentOpened] = useState(false)
   const [unsupportedPlayers, setUnsupportedPlayers] = useState({})
   const [episodeMenuAnchor, setEpisodeMenuAnchor] = useState(null)
+  const [viewedHistory, setViewedHistory] = useState(null)
   const [selectedPlayer, setSelectedPlayer] = useState(null)
   const [resolvedFileList, setResolvedFileList] = useState([])
   const [isResolvingPlayers, setIsResolvingPlayers] = useState(false)
@@ -158,10 +163,13 @@ const Torrent = ({ torrent }) => {
   const [audioMenuAnchor, setAudioMenuAnchor] = useState(null)
   const [audioMenuPlayer, setAudioMenuPlayer] = useState(null)
   const [isResolvingAudio, setIsResolvingAudio] = useState(false)
+  const isVlcUsed = useBooleanPlayerPreference('isVlcUsed')
+  const showQuickVlcButton = useBooleanPlayerPreference('showQuickVlcButton')
   const isMounted = useRef(true)
   const episodeButtonRef = useRef(null)
   const audioButtonRef = useRef(null)
   const gstRuntime = useGStreamerRuntime()
+  const mediaBase = useExternalMediaBase()
 
   useEffect(
     () => () => {
@@ -190,6 +198,33 @@ const Torrent = ({ torrent }) => {
     data,
     file_stats: torrentFileList,
   } = torrent
+
+  useEffect(() => {
+    if (!episodeMenuAnchor) return undefined
+    let active = true
+    setViewedHistory(null)
+    axios.post(viewedHost(), { action: 'list', hash }).then(
+      ({ data: history }) => {
+        if (!active) return
+        // A null response is the API's empty history. Other malformed responses stay unknown.
+        if (history != null && (!Array.isArray(history) || history.some(item => !Number.isInteger(item?.file_index)))) {
+          setViewedHistory({ hash, anchor: episodeMenuAnchor, failed: true })
+          return
+        }
+        setViewedHistory({ hash, anchor: episodeMenuAnchor, ids: (history || []).map(item => item.file_index) })
+      },
+      () => {
+        if (active) setViewedHistory({ hash, anchor: episodeMenuAnchor, failed: true })
+      },
+    )
+    // Invalidate pending responses on close, a different torrent, or unmount.
+    return () => {
+      active = false
+    }
+  }, [episodeMenuAnchor, hash])
+
+  const currentHistory =
+    viewedHistory?.hash === hash && viewedHistory?.anchor === episodeMenuAnchor ? viewedHistory : null
 
   const dropTorrent = () => axios.post(torrentsHost(), { action: 'drop', hash })
   const deleteTorrent = () => axios.post(torrentsHost(), { action: 'rem', hash })
@@ -253,6 +288,12 @@ const Torrent = ({ torrent }) => {
   const availablePlayers = players.filter(player => !unsupportedPlayers[player.key])
   const singlePlayer = players.length === 1 ? players[0] : null
   const audioMenuTracks = audioMenuPlayer ? audioTracksByFile[audioMenuPlayer.id] || [] : []
+
+  const openSingleFileInVlc = () => {
+    if (!singlePlayer) return
+    const streamUrl = externalLink(singlePlayer.downloadSrc, mediaBase)
+    window.location.href = `vlc://${streamUrl}`
+  }
 
   const playerWithAudio = (player, audio) => ({
     ...player,
@@ -367,7 +408,7 @@ const Torrent = ({ torrent }) => {
     <>
       <TorrentCard>
         <TorrentCardPoster isPoster={poster} onClick={handleClickOpenEditDialog}>
-          {poster ? <img src={poster} alt='poster' /> : <NoImageIcon />}
+          {poster ? <img src={poster} alt='poster' loading='lazy' decoding='async' /> : <NoImageIcon />}
         </TorrentCardPoster>
 
         <TorrentCardButtons>
@@ -375,6 +416,13 @@ const Torrent = ({ torrent }) => {
             <UnfoldMoreIcon />
             <span>{t('Details')}</span>
           </StyledButton>
+
+          {isVlcUsed && showQuickVlcButton && singlePlayer && (
+            <StyledButton onClick={openSingleFileInVlc} title={t('SettingsDialog.UseVLC')}>
+              <PlayArrowIcon />
+              <span>VLC</span>
+            </StyledButton>
+          )}
 
           {singlePlayer && !unsupportedPlayers[singlePlayer.key] ? (
             singlePlayer.hls ? (
@@ -446,6 +494,17 @@ const Torrent = ({ torrent }) => {
                 transformOrigin={{ vertical: 'top', horizontal: 'left' }}
                 PaperProps={{ style: { maxHeight: '65vh', width: 420, maxWidth: 'calc(100vw - 32px)' } }}
               >
+                {!currentHistory?.ids && (
+                  <MenuItem disabled role='presentation' style={{ padding: '4px 16px' }}>
+                    <div
+                      role='status'
+                      aria-label={`${t('Viewed')}: ${t(currentHistory?.failed ? 'Error' : 'Loading')}`}
+                      style={{ display: 'flex' }}
+                    >
+                      {currentHistory?.failed ? <ErrorOutlineIcon fontSize='small' /> : <CircularProgress size={20} />}
+                    </div>
+                  </MenuItem>
+                )}
                 {availablePlayers.map(player => (
                   <MenuItem
                     key={player.key}
@@ -455,7 +514,11 @@ const Torrent = ({ torrent }) => {
                     }}
                   >
                     <ListItemIcon style={{ minWidth: 34 }}>
-                      <PlayArrowIcon fontSize='small' />
+                      {currentHistory?.ids?.includes(player.id) ? (
+                        <CheckIcon fontSize='small' role='img' aria-hidden={false} aria-label={t('Viewed')} />
+                      ) : (
+                        <PlayArrowIcon fontSize='small' />
+                      )}
                     </ListItemIcon>
                     <ListItemText primary={player.label} secondary={humanizeSize(player.length)} />
                   </MenuItem>

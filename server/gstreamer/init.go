@@ -3,6 +3,7 @@
 package gstreamer
 
 import (
+	"strings"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -36,7 +37,10 @@ func Remove(id string) bool {
 	if service == nil {
 		return false
 	}
-	return service.TryRemove(id)
+	if strings.Contains(id, sessionSeparator) {
+		return service.TryRemove(id)
+	}
+	return service.RemoveTorrent(id)
 }
 
 func getDefaultService() *Service {

@@ -12,8 +12,8 @@ import AboutDialog from 'components/About'
 import CloseServer from 'components/CloseServer'
 import SearchDialogButton from 'components/Search'
 import { memo } from 'react'
-import CheckIcon from '@material-ui/icons/Check'
-import ClearIcon from '@material-ui/icons/Clear'
+import ViewListIcon from '@material-ui/icons/ViewList'
+import LabelOffIcon from '@material-ui/icons/LabelOff'
 import { TORRENT_CATEGORIES } from 'components/categories'
 import FilterByCategory from 'components/FilterByCategory'
 
@@ -38,7 +38,7 @@ const Sidebar = ({ isDrawerOpen, setIsDonationDialogOpen, isOffline, isLoading, 
           key='all'
           categoryKey='all'
           categoryName={t('All')}
-          icon={<CheckIcon />}
+          icon={<ViewListIcon />}
           setGlobalFilterCategory={setGlobalFilterCategory}
         />
         {TORRENT_CATEGORIES.map(category => (
@@ -54,7 +54,7 @@ const Sidebar = ({ isDrawerOpen, setIsDonationDialogOpen, isOffline, isLoading, 
           key='uncategorized'
           categoryKey=''
           categoryName={t('Uncategorized')}
-          icon={<ClearIcon />}
+          icon={<LabelOffIcon />}
           setGlobalFilterCategory={setGlobalFilterCategory}
         />
       </List>

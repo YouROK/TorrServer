@@ -23,6 +23,7 @@ type pipelineRunner interface {
 
 type Task struct {
 	ID        string
+	Hash      string // torrent hash; ID is "<hash>" or "<hash>.<sid>"
 	FileID    string
 	Audio     int
 	SourceURL string
@@ -44,6 +45,12 @@ type Task struct {
 
 	subtitleMu     sync.RWMutex
 	subtitleStores map[int]*subtitleStore
+
+	externalLoadMu   sync.Mutex
+	externalMu       sync.RWMutex
+	external         []externalSubtitle
+	externalLoaded   bool
+	externalAttempts int // failed loading attempts; guarded by externalLoadMu
 
 	disposed atomic.Bool
 }
@@ -376,4 +383,11 @@ func (t *Task) IsFrozen() bool {
 		return false
 	}
 	return t.runner.IsFrozen()
+}
+
+func (t *Task) torrentHash() string {
+	if t.Hash != "" {
+		return t.Hash
+	}
+	return HashOfTaskID(t.ID)
 }

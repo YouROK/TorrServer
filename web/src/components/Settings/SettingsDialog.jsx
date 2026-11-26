@@ -11,6 +11,7 @@ import SwipeableViews from 'react-swipeable-views'
 import CircularProgress from '@material-ui/core/CircularProgress'
 import { StyledDialog } from 'style/CustomMaterialUiStyles'
 import useOnStandaloneAppOutsideClick from 'utils/useOnStandaloneAppOutsideClick'
+import { notifyPlayerSettingsChanged } from 'utils/PlayerPreferences'
 
 import { SettingsHeader, FooterSection, Content, StyledTabs, StyledTab } from './style'
 import defaultSettings from './defaultSettings'
@@ -21,6 +22,7 @@ import MobileAppSettings from './MobileAppSettings'
 import TorznabSettings from './TorznabSettings'
 import TMDBSettings from './TMDBSettings'
 import GStreamerSettings from './GStreamerSettings'
+import WAFSettings from './WAFSettings'
 
 export default function SettingsDialog({ handleClose }) {
   const { t } = useTranslation()
@@ -34,17 +36,22 @@ export default function SettingsDialog({ handleClose }) {
   const [preloadCachePercentage, setPreloadCachePercentage] = useState(0)
   const [isProMode, setIsProMode] = useState(JSON.parse(localStorage.getItem('isProMode')) || false)
   const [isVlcUsed, setIsVlcUsed] = useState(JSON.parse(localStorage.getItem('isVlcUsed')) ?? false)
+  const [showQuickVlcButton, setShowQuickVlcButton] = useState(
+    JSON.parse(localStorage.getItem('showQuickVlcButton')) ?? false,
+  )
   const [isInfuseUsed, setIsInfuseUsed] = useState(JSON.parse(localStorage.getItem('isInfuseUsed')) ?? false)
   const [isSenPlayerUsed, setIsSenPlayerUsed] = useState(JSON.parse(localStorage.getItem('isSenPlayerUsed')) ?? false)
   const [isIinaUsed, setIsIinaUsed] = useState(JSON.parse(localStorage.getItem('isIinaUsed')) ?? false)
   const [gstAvailable, setGstAvailable] = useState(false)
+  const [wafDirty, setWAFDirty] = useState(false)
 
   const tabMain = 0
   const tabAdditional = 1
   const tabSearch = 2
   const tabApp = 3
-  const tabGStreamer = 4
-  const maxTab = gstAvailable ? tabGStreamer : tabApp
+  const tabAccess = 4
+  const tabGStreamer = 5
+  const maxTab = gstAvailable ? tabGStreamer : tabAccess
 
   useEffect(() => {
     fetch(gstSettingsHost())
@@ -59,10 +66,18 @@ export default function SettingsDialog({ handleClose }) {
     })
   }, [])
 
-  const ref = useOnStandaloneAppOutsideClick(handleClose)
+  // eslint-disable-next-line no-alert
+  const confirmWAFDiscard = () => !wafDirty || window.confirm(t('WAF.UnsavedConfirm'))
+  const requestClose = () => {
+    if (!confirmWAFDiscard()) return false
+    handleClose()
+    return true
+  }
+
+  const ref = useOnStandaloneAppOutsideClick(requestClose)
 
   const handleSave = () => {
-    handleClose()
+    if (!requestClose()) return
     const sets = JSON.parse(JSON.stringify(settings))
     sets.CacheSize = cacheSize * 1024 * 1024
     sets.ReaderReadAHead = cachePercentage
@@ -71,9 +86,11 @@ export default function SettingsDialog({ handleClose }) {
     // Clear TMDB cache so fresh settings are fetched on next poster search
     clearTMDBCache()
     localStorage.setItem('isVlcUsed', isVlcUsed)
+    localStorage.setItem('showQuickVlcButton', showQuickVlcButton)
     localStorage.setItem('isInfuseUsed', isInfuseUsed)
     localStorage.setItem('isSenPlayerUsed', isSenPlayerUsed)
     localStorage.setItem('isIinaUsed', isIinaUsed)
+    notifyPlayerSettingsChanged()
   }
 
   const inputForm = ({ target: { type, value, checked, id } }) => {
@@ -92,7 +109,7 @@ export default function SettingsDialog({ handleClose }) {
       )
         sets[id] = Boolean(!checked)
       else sets[id] = Boolean(checked)
-    } else if (type === 'url' || type === 'text') {
+    } else if (type === 'url' || type === 'text' || type === 'textarea') {
       sets[id] = value
     } else if (!type && value !== undefined) {
       // Fallback for custom handlers that don't provide type
@@ -118,11 +135,15 @@ export default function SettingsDialog({ handleClose }) {
   }, [CacheSize, ReaderReadAHead, PreloadCache])
 
   const updateSettings = newProps => setSettings({ ...settings, ...newProps })
-  const handleChange = (_, newValue) => setSelectedTab(newValue)
-  const handleChangeIndex = index => setSelectedTab(index)
+  const changeTab = index => {
+    if (selectedTab === tabAccess && index !== tabAccess && !confirmWAFDiscard()) return
+    setSelectedTab(index)
+  }
+  const handleChange = (_, newValue) => changeTab(newValue)
+  const handleChangeIndex = index => changeTab(index)
 
   return (
-    <StyledDialog open onClose={handleClose} fullScreen={fullScreen} fullWidth maxWidth='md' ref={ref}>
+    <StyledDialog open onClose={requestClose} fullScreen={fullScreen} fullWidth maxWidth='md' ref={ref}>
       <SettingsHeader>
         <div>{t('SettingsDialog.Settings')}</div>
         <FormControlLabel
@@ -168,6 +189,8 @@ export default function SettingsDialog({ handleClose }) {
 
           <StyledTab label={t('SettingsDialog.Tabs.App')} {...a11yProps(tabApp)} />
 
+          <StyledTab label={t('SettingsDialog.Tabs.Access')} {...a11yProps(tabAccess)} />
+
           {gstAvailable && (
             <StyledTab
               disabled={!isProMode}
@@ -211,7 +234,12 @@ export default function SettingsDialog({ handleClose }) {
               </TabPanel>
 
               <TabPanel value={selectedTab} index={tabSearch} dir={direction}>
-                <TorznabSettings settings={settings} inputForm={inputForm} updateSettings={updateSettings} />
+                <TorznabSettings
+                  settings={settings}
+                  inputForm={inputForm}
+                  updateSettings={updateSettings}
+                  isProMode={isProMode}
+                />
               </TabPanel>
 
               <TabPanel value={selectedTab} index={tabApp} dir={direction}>
@@ -219,6 +247,8 @@ export default function SettingsDialog({ handleClose }) {
                 <MobileAppSettings
                   isVlcUsed={isVlcUsed}
                   setIsVlcUsed={setIsVlcUsed}
+                  showQuickVlcButton={showQuickVlcButton}
+                  setShowQuickVlcButton={setShowQuickVlcButton}
                   isInfuseUsed={isInfuseUsed}
                   setIsInfuseUsed={setIsInfuseUsed}
                   isSenPlayerUsed={isSenPlayerUsed}
@@ -226,6 +256,10 @@ export default function SettingsDialog({ handleClose }) {
                   isIinaUsed={isIinaUsed}
                   setIsIinaUsed={setIsIinaUsed}
                 />
+              </TabPanel>
+
+              <TabPanel value={selectedTab} index={tabAccess} dir={direction}>
+                <WAFSettings onDirtyChange={setWAFDirty} />
               </TabPanel>
 
               {gstAvailable && (
@@ -241,7 +275,7 @@ export default function SettingsDialog({ handleClose }) {
       </Content>
 
       <FooterSection>
-        <Button onClick={handleClose} color='secondary' variant='outlined'>
+        <Button onClick={requestClose} color='secondary' variant='outlined'>
           {t('Cancel')}
         </Button>
 
@@ -260,7 +294,13 @@ export default function SettingsDialog({ handleClose }) {
           {t('SettingsDialog.ResetToDefault')}
         </Button>
 
-        <Button variant='contained' onClick={handleSave} color='secondary'>
+        <Button
+          variant='contained'
+          onClick={handleSave}
+          color='secondary'
+          disabled={selectedTab === tabAccess && wafDirty}
+          title={selectedTab === tabAccess && wafDirty ? t('WAF.SeparateSaveHint') : undefined}
+        >
           {t('Save')}
         </Button>
       </FooterSection>

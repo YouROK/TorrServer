@@ -7,7 +7,9 @@ import {
   FormGroup,
   FormHelperText,
   IconButton,
-  MenuItem,
+  InputLabel,
+  // MenuItem,
+  Select,
   Switch,
   TextField,
 } from '@material-ui/core'
@@ -278,7 +280,23 @@ export default function GStreamerSettings() {
         fullWidth
       />
 
-      <TextField
+      <FormGroup style={{ marginBottom: 20 }}>
+        <InputLabel htmlFor='gstreamer-source'>{t('GStreamer.Source')}</InputLabel>
+        <Select
+          native
+          id='gstreamer-source'
+          name='gstreamer-source'
+          value={gstreamerSettings.Source || 'stream'}
+          onChange={e => updateField('Source', e.target.value)}
+          variant='outlined'
+        >
+          <option value='stream'>{t('GStreamer.SourceStream')}</option>
+          <option value='play'>{t('GStreamer.SourcePlay')}</option>
+        </Select>
+        <FormHelperText style={{ marginTop: 8 }}>{t('GStreamer.SourceHint')}</FormHelperText>
+      </FormGroup>
+
+      {/* <TextField
         select
         id='gstreamer-source'
         label={t('GStreamer.Source')}
@@ -291,7 +309,7 @@ export default function GStreamerSettings() {
       >
         <MenuItem value='stream'>{t('GStreamer.SourceStream')}</MenuItem>
         <MenuItem value='play'>{t('GStreamer.SourcePlay')}</MenuItem>
-      </TextField>
+      </TextField> */}
 
       <Divider />
 
@@ -590,8 +608,15 @@ export default function GStreamerSettings() {
             aria-label={t('Close')}
             onClick={() => setStatus({ message: '', type: '' })}
             size='small'
+            style={{
+              minWidth: 'auto',
+              width: '40px',
+              height: '40px',
+              flexShrink: 0,
+              padding: '0',
+            }}
           >
-            <CloseIcon fontSize='small' />
+            <CloseIcon style={{ fontSize: '0.75rem' }} />
           </IconButton>
         </SettingsStatusMessage>
       )}
