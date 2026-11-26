@@ -109,13 +109,6 @@ func (t *Torrent) Stream(fileID int, req *http.Request, resp http.ResponseWriter
 		return err
 	}
 
-	// Helper function to check if torrent is closed
-	isTorrentClosed := func() bool {
-		t.muTorrent.Lock()
-		defer t.muTorrent.Unlock()
-		return t.Stat == state.TorrentClosed || t.Torrent == nil
-	}
-
 	// Ensure reader is always closed
 	defer t.CloseReader(reader)
 	// A read waiting for data must end when the client goes away (players drop the
