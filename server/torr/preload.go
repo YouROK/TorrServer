@@ -3,6 +3,7 @@ package torr
 import (
 	"fmt"
 	"io"
+	"runtime/debug"
 	"strconv"
 	"sync"
 	"time"
@@ -18,6 +19,14 @@ import (
 )
 
 func (t *Torrent) Preload(index int, size int64) {
+	// recovery from panic
+	defer func() {
+		if r := recover(); r != nil {
+			log.TLogln("Recovered from panic in Preload:", r)
+			// Stack trace for debugging
+			debug.PrintStack()
+		}
+	}()
 	if size <= 0 {
 		return
 	}

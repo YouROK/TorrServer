@@ -45,7 +45,7 @@ require (
 	github.com/alexflint/go-scalar v1.2.0 // indirect
 	github.com/anacrolix/btree v0.1.1 // indirect
 	github.com/anacrolix/chansync v0.8.0 // indirect
-	github.com/anacrolix/dht/v2 v2.24.0 // indirect
+	github.com/anacrolix/dht/v2 v2.24.1-0.20260924041734-a9c967f9d68b // indirect
 	github.com/anacrolix/envpprof v1.6.0 // indirect
 	github.com/anacrolix/ffprobe v1.1.0 // indirect
 	github.com/anacrolix/generics v0.2.0 // indirect
@@ -55,7 +55,6 @@ require (
 	github.com/anacrolix/missinggo/perf v1.0.0 // indirect
 	github.com/anacrolix/mmsg v1.1.1 // indirect
 	github.com/anacrolix/multiless v0.4.0 // indirect
-	github.com/anacrolix/stm v0.6.0 // indirect
 	github.com/anacrolix/sync v0.6.0 // indirect
 	github.com/anacrolix/upnp v0.1.4 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect

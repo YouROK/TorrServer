@@ -111,7 +111,8 @@ func (bt *BTServer) configure() {
 		bt.config.Slogger = tslog.DebugTorrentLogger()
 		// bt.config.Slogger = analog.Default.WithFilterLevel(log.Debug).Slogger()
 	} else {
-		bt.config.Slogger = tslog.WarnTorrentLogger()
+		// Filtered logger to reduce spammy logs from the torrent library
+		bt.config.Slogger = tslog.ErrorTorrentLogger()
 	}
 	bt.config.DisableIPv6 = !settings.BTsets.EnableIPv6
 	bt.config.DisableTCP = settings.BTsets.DisableTCP

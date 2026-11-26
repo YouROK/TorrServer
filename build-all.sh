@@ -2,21 +2,21 @@
 
 PLATFORMS=(
   'linux/amd64'
-  # 'linux/arm64'
-  # 'linux/arm7'
+  'linux/arm64'
+  'linux/arm7'
   'linux/arm5'
-  # 'linux/386'
-  # 'windows/amd64'
-  # 'windows/386'
+  'linux/386'
+  'windows/amd64'
+  'windows/386'
   'darwin/amd64'
-  # 'darwin/arm64'
-  # 'freebsd/amd64'
-  # 'freebsd/arm7'
-  # 'linux/mips'
-  # 'linux/mipsle'
-  # 'linux/mips64'
-  # 'linux/mips64le'
-  # 'linux/riscv64'
+  'darwin/arm64'
+  'freebsd/amd64'
+  'freebsd/arm7'
+  'linux/mips'
+  'linux/mipsle'
+  'linux/mips64'
+  'linux/mips64le'
+  'linux/riscv64'
 )
 
 type setopt >/dev/null 2>&1
@@ -83,9 +83,9 @@ for PLATFORM in "${PLATFORMS[@]}"; do
   CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GO_ARM} ${GO_MIPS} CGO_ENABLED=0 ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
   echo "${CMD}"
   eval "$CMD" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
-  CMD="upx -q ${BIN_FILENAME}"; # upx --brute produce much smaller binaries
-  echo "compress with ${CMD}"
-  eval "$CMD"
+  # CMD="upx -q ${BIN_FILENAME}"; # upx --brute produce much smaller binaries
+  # echo "compress with ${CMD}"
+  # eval "$CMD"
 done
 
 echo "Build AppImages"
@@ -174,12 +174,12 @@ done
 
 declare -a COMPILERS=(
   "arm7:armv7a-linux-androideabi21-clang"
-  # "arm64:aarch64-linux-android21-clang"
-  # "386:i686-linux-android21-clang"
-  # "amd64:x86_64-linux-android21-clang"
+  "arm64:aarch64-linux-android21-clang"
+  "386:i686-linux-android21-clang"
+  "amd64:x86_64-linux-android21-clang"
 )
 
-export NDK_VERSION="27.0.12077973" # 25.1.8937393 26.2.11394342 27.0.12077973
+export NDK_VERSION="30.0.16248370" # 25.1.8937393 26.2.11394342 27.0.12077973
 export NDK_TOOLCHAIN=${ANDROID_HOME}/ndk/${NDK_VERSION}/toolchains/llvm/prebuilt/darwin-x86_64
 GOOS=android
 
@@ -193,9 +193,9 @@ for V in "${COMPILERS[@]}"; do
   CMD="GOOS=${GOOS} GOARCH=${GOARCH} ${GO_ARM} CGO_ENABLED=1 ${GOBIN} build ${BUILD_FLAGS} -o ${BIN_FILENAME} ./cmd"
   echo "${CMD}"
   eval "${CMD}" || FAILURES="${FAILURES} ${GOOS}/${GOARCH}${GOARM}"
-  CMD="upx -q ${BIN_FILENAME}"; # upx --brute produce much smaller binaries
-  echo "compress with ${CMD}"
-  eval "$CMD"
+  # CMD="upx -q ${BIN_FILENAME}"; # upx --brute produce much smaller binaries
+  # echo "compress with ${CMD}"
+  # eval "$CMD"
 done
 
 # eval errors

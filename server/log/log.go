@@ -163,8 +163,8 @@ func NewTorrentLogHandler(level slog.Level) *TorrentLogHandler {
 	return &TorrentLogHandler{
 		level: level,
 		bannedPrefixes: []string{
-			"reader",
-			"readAt",
+			"read failed", // reader spam
+			"own message", // bep14 spam
 		},
 	}
 }
