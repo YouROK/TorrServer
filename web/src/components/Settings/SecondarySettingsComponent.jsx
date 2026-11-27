@@ -329,11 +329,20 @@ export default function SecondarySettingsComponent({ settings, inputForm, update
         />
         <FormHelperText margin='none'>{t('SettingsDialog.MergeAllM3UHint')}</FormHelperText>
       </FormGroup>
+      <FormGroup>
+        <FormControlLabel
+          control={
+            <Switch checked={Boolean(TrackTimecode)} onChange={inputForm} id='TrackTimecode' color='secondary' />
+          }
+          label={t('SettingsDialog.TrackTimecode')}
+          labelPlacement='start'
+        />
+        <FormHelperText margin='none'>{t('SettingsDialog.TrackTimecodeHint')}</FormHelperText>
+      </FormGroup>
       <br />
       <FormGroup style={{ marginBottom: '20px' }}>
         <InputLabel htmlFor='RetrackersMode'>{t('SettingsDialog.RetrackersMode')}</InputLabel>
         <Select
-          native
           type='number'
           id='RetrackersMode'
           name='RetrackersMode'
@@ -342,10 +351,10 @@ export default function SecondarySettingsComponent({ settings, inputForm, update
           variant='outlined'
           margin='dense'
         >
-          <option value={0}>{t('SettingsDialog.DontAddRetrackers')}</option>
-          <option value={1}>{t('SettingsDialog.AddRetrackers')}</option>
-          <option value={2}>{t('SettingsDialog.RemoveRetrackers')}</option>
-          <option value={3}>{t('SettingsDialog.ReplaceRetrackers')}</option>
+          <MenuItem value={0}>{t('SettingsDialog.DontAddRetrackers')}</MenuItem>
+          <MenuItem value={1}>{t('SettingsDialog.AddRetrackers')}</MenuItem>
+          <MenuItem value={2}>{t('SettingsDialog.RemoveRetrackers')}</MenuItem>
+          <MenuItem value={3}>{t('SettingsDialog.ReplaceRetrackers')}</MenuItem>
         </Select>
         <FormHelperText style={{ marginTop: '8px' }}>{t('SettingsDialog.RetrackersModeHint')}</FormHelperText>
       </FormGroup>
@@ -443,17 +452,6 @@ export default function SecondarySettingsComponent({ settings, inputForm, update
             <MenuItem value='json'>{t('SettingsDialog.JsonFile')} (viewed.json)</MenuItem>
           </Select>
           <FormHelperText style={{ marginTop: '8px' }}>{t('SettingsDialog.ViewedStorageHint')}</FormHelperText>
-        </FormGroup>
-
-        <FormGroup style={{ marginTop: '16px' }}>
-          <FormControlLabel
-            control={
-              <Switch checked={Boolean(TrackTimecode)} onChange={inputForm} id='TrackTimecode' color='secondary' />
-            }
-            label={t('SettingsDialog.TrackTimecode')}
-            labelPlacement='start'
-          />
-          <FormHelperText margin='none'>{t('SettingsDialog.TrackTimecodeHint')}</FormHelperText>
         </FormGroup>
 
         <Box mt={2} mb={2}>

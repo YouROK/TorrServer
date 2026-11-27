@@ -138,8 +138,8 @@ export default function WAFSettings({ onDirtyChange }) {
         <small>{t('WAF.Subtitle')}</small>
       </SettingSectionLabel>
 
-      <FormHelperText style={{ marginBottom: 16 }}>{t('WAF.StorageHint')}</FormHelperText>
-      <FormHelperText style={{ marginBottom: 16 }}>{t('WAF.SeparateSaveHint')}</FormHelperText>
+      <FormHelperText style={{ marginTop: 0, marginBottom: 16 }}>{t('WAF.StorageHint')}</FormHelperText>
+      <FormHelperText style={{ marginTop: 2, marginBottom: 16 }}>{t('WAF.SeparateSaveHint')}</FormHelperText>
 
       {readOnly && (
         <SettingsStatusMessage severity='info' role='status' aria-live='polite'>
@@ -147,7 +147,7 @@ export default function WAFSettings({ onDirtyChange }) {
         </SettingsStatusMessage>
       )}
 
-      <FormHelperText style={{ marginBottom: 16 }}>{t('WAF.IPRulesHint')}</FormHelperText>
+      <FormHelperText style={{ marginTop: 2, marginBottom: 16 }}>{t('WAF.IPRulesHint')}</FormHelperText>
 
       <TextField
         label={t('WAF.Whitelist')}

@@ -192,6 +192,9 @@ export const MainSettingsContent = styled.div`
   }
 
   .MuiFormHelperText-root {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+
     @media (max-width: 600px) {
       font-size: 11px;
       margin-top: 2px;
@@ -227,6 +230,9 @@ export const SecondarySettingsContent = styled.div`
   }
 
   .MuiFormHelperText-root {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+
     @media (max-width: 600px) {
       font-size: 11px;
       margin-top: 2px;

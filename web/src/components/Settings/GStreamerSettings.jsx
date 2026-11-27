@@ -8,7 +8,7 @@ import {
   FormHelperText,
   IconButton,
   InputLabel,
-  // MenuItem,
+  MenuItem,
   Select,
   Switch,
   TextField,
@@ -283,33 +283,17 @@ export default function GStreamerSettings() {
       <FormGroup style={{ marginBottom: 20 }}>
         <InputLabel htmlFor='gstreamer-source'>{t('GStreamer.Source')}</InputLabel>
         <Select
-          native
           id='gstreamer-source'
           name='gstreamer-source'
           value={gstreamerSettings.Source || 'stream'}
           onChange={e => updateField('Source', e.target.value)}
           variant='outlined'
         >
-          <option value='stream'>{t('GStreamer.SourceStream')}</option>
-          <option value='play'>{t('GStreamer.SourcePlay')}</option>
+          <MenuItem value='stream'>{t('GStreamer.SourceStream')}</MenuItem>
+          <MenuItem value='play'>{t('GStreamer.SourcePlay')}</MenuItem>
         </Select>
         <FormHelperText style={{ marginTop: 8 }}>{t('GStreamer.SourceHint')}</FormHelperText>
       </FormGroup>
-
-      {/* <TextField
-        select
-        id='gstreamer-source'
-        label={t('GStreamer.Source')}
-        value={gstreamerSettings.Source || 'stream'}
-        onChange={e => updateField('Source', e.target.value)}
-        margin='normal'
-        helperText={t('GStreamer.SourceHint')}
-        variant='outlined'
-        fullWidth
-      >
-        <MenuItem value='stream'>{t('GStreamer.SourceStream')}</MenuItem>
-        <MenuItem value='play'>{t('GStreamer.SourcePlay')}</MenuItem>
-      </TextField> */}
 
       <Divider />
 
