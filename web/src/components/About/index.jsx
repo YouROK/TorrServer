@@ -124,6 +124,9 @@ export default function AboutDialog() {
                 <LinkComponent name='Vladis.Shkarubov' link='https://github.com/vladikshkwok' />
                 <LinkComponent name='Jay Hemnani' link='https://github.com/jayhemnani9910' />
                 <LinkComponent name='Artem Draft' link='https://github.com/Drafteed' />
+                <LinkComponent name='LLlnak' link='https://github.com/LLlnak' />
+                <LinkComponent name='Matt Van Horn' link='https://github.com/mvanhorn' />
+                <LinkComponent name='BL4DCP' link='https://github.com/BL4DCP' />
               </div>
             </Section>
           </div>

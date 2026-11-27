@@ -1112,4 +1112,7 @@ See [server/subs/README.md](server/subs/README.md) for the supported formats and
 - [vladikshkwok](https://github.com/vladikshkwok) Vladis.Shkarubov
 - [jayhemnani9910](https://github.com/jayhemnani9910) Jay Hemnani
 - [Drafteed](https://github.com/Drafteed) Artem Draft
+- [LLlnak](https://github.com/LLlnak)
+- [mvanhorn](https://github.com/mvanhorn) Matt Van Horn
+- [BL4DCP](https://github.com/BL4DCP)
 - and others

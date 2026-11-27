@@ -6,7 +6,7 @@ import (
 
 func RouteWebPages(route gin.IRouter) {
 	route.GET("/", func(c *gin.Context) {
-		serve(c, Indexhtml, `"905c7504f52e5d94e939f3c4eefe2f85"`, "text/html; charset=utf-8", false)
+		serve(c, Indexhtml, `"d65ae68113b26c7bf5278ef3a00bb93c"`, "text/html; charset=utf-8", false)
 	})
 
 	route.GET("/apple-splash-1125-2436.jpg", func(c *gin.Context) {
@@ -114,7 +114,7 @@ func RouteWebPages(route gin.IRouter) {
 	})
 
 	route.GET("/asset-manifest.json", func(c *gin.Context) {
-		serve(c, Assetmanifestjson, `"87e082375382d52ed362140515b3bf68"`, "application/json", false)
+		serve(c, Assetmanifestjson, `"11c98dfcfde64c378a2de43f92a9af5f"`, "application/json", false)
 	})
 
 	route.GET("/browserconfig.xml", func(c *gin.Context) {
@@ -146,7 +146,7 @@ func RouteWebPages(route gin.IRouter) {
 	})
 
 	route.GET("/index.html", func(c *gin.Context) {
-		serve(c, Indexhtml, `"905c7504f52e5d94e939f3c4eefe2f85"`, "text/html; charset=utf-8", false)
+		serve(c, Indexhtml, `"d65ae68113b26c7bf5278ef3a00bb93c"`, "text/html; charset=utf-8", false)
 	})
 
 	route.GET("/logo.png", func(c *gin.Context) {
@@ -165,15 +165,15 @@ func RouteWebPages(route gin.IRouter) {
 		serve(c, Sitewebmanifest, `"e1cb30ce5123a7f926497f48075ad250"`, "application/manifest+json", false)
 	})
 
-	route.GET("/static/js/main.e11d6aae.js", func(c *gin.Context) {
-		serve(c, Staticjsmaine11d6aaejs, `"8949fcc4c76281d33a9f69df56ba7291"`, "application/javascript; charset=utf-8", true)
+	route.GET("/static/js/main.771d90de.js", func(c *gin.Context) {
+		serve(c, Staticjsmain771d90dejs, `"8fa2ba354f9fef0f6d822a74ed403d16"`, "application/javascript; charset=utf-8", true)
 	})
 
-	route.GET("/static/js/main.e11d6aae.js.LICENSE.txt", func(c *gin.Context) {
-		serve(c, Staticjsmaine11d6aaejsLICENSEtxt, `"4e6872dfa1774733ba3c6ad9aad122eb"`, "text/plain; charset=utf-8", true)
+	route.GET("/static/js/main.771d90de.js.LICENSE.txt", func(c *gin.Context) {
+		serve(c, Staticjsmain771d90dejsLICENSEtxt, `"4e6872dfa1774733ba3c6ad9aad122eb"`, "text/plain; charset=utf-8", true)
 	})
 
-	route.GET("/static/js/main.e11d6aae.js.map", func(c *gin.Context) {
-		serve(c, Staticjsmaine11d6aaejsmap, `"fb1a190743a8c94bbf727d113ef7bafd"`, "application/json", true)
+	route.GET("/static/js/main.771d90de.js.map", func(c *gin.Context) {
+		serve(c, Staticjsmain771d90dejsmap, `"4362fc676ec11b0bbb5124e12edf1f95"`, "application/json", true)
 	})
 }
