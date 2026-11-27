@@ -33,6 +33,76 @@ type TMDBConfig struct {
 	ImageURLRu string // Image URL for Russian users (default: https://imagetmdb.com)
 }
 
+// FileNameRule describes one step of building a file title from a file name.
+// Rules are executed by the web UI (JavaScript RegExp syntax); the server only stores them.
+type FileNameRule struct {
+	Name        string
+	Enabled     bool
+	Mode        string // "replace", "extract" or "capture"
+	Pattern     string // JavaScript RegExp source
+	Replacement string // replace mode only; supports $1, $<name>
+	Flags       string // JavaScript RegExp flags, e.g. "i"
+}
+
+const (
+	FileNameRuleReplace = "replace"
+	FileNameRuleExtract = "extract"
+	FileNameRuleCapture = "capture"
+)
+
+const (
+	maxFileNameRules    = 100
+	maxFileNameRuleText = 1000
+	maxFileNameRuleName = 200
+	maxFileNameTemplate = 500
+)
+
+// sanitizeFileNameRules drops unusable rules and normalizes the rest.
+// It always returns a non-nil slice so the setting is serialized as [] and not null.
+func sanitizeFileNameRules(in []FileNameRule) []FileNameRule {
+	out := make([]FileNameRule, 0, len(in))
+	for _, r := range in {
+		if len(out) >= maxFileNameRules {
+			break
+		}
+		if r.Pattern == "" || len(r.Pattern) > maxFileNameRuleText || len(r.Replacement) > maxFileNameRuleText {
+			continue
+		}
+		switch r.Mode {
+		case FileNameRuleExtract, FileNameRuleCapture:
+			r.Replacement = ""
+		default:
+			r.Mode = FileNameRuleReplace
+		}
+		if runes := []rune(r.Name); len(runes) > maxFileNameRuleName {
+			r.Name = string(runes[:maxFileNameRuleName])
+		}
+		r.Flags = sanitizeRegexFlags(r.Flags)
+		out = append(out, r)
+	}
+	return out
+}
+
+// sanitizeFileNameTemplate trims the template and limits its length. Empty means "use the default".
+func sanitizeFileNameTemplate(s string) string {
+	s = strings.TrimSpace(s)
+	if runes := []rune(s); len(runes) > maxFileNameTemplate {
+		s = string(runes[:maxFileNameTemplate])
+	}
+	return s
+}
+
+// sanitizeRegexFlags keeps only the JavaScript RegExp flags that make sense for renaming.
+func sanitizeRegexFlags(flags string) string {
+	var b strings.Builder
+	for _, f := range flags {
+		if strings.ContainsRune("gimsu", f) && !strings.ContainsRune(b.String(), f) {
+			b.WriteRune(f)
+		}
+	}
+	return b.String()
+}
+
 type BTSets struct {
 	// Cache
 	CacheSize       int64 // in byte, def 64 MB
@@ -106,6 +176,14 @@ type BTSets struct {
 
 	// M3U
 	MergeAllM3U bool // merge all torrents files into a single all.m3u playlist
+
+	// File titles (rules are applied by the web UI)
+	FileNameBuiltinRulesDisabled bool // skip the built-in rules (they ship with the web UI)
+	FileNameCustomRulesDisabled  bool // skip the user's own rules
+	FileNameRules                []FileNameRule
+	FileNameTemplate             string // video title template (see web/src/utils/FileNameRules.js), empty = default
+	FileNameAsTitle              bool   // video title is the plain file name, rules and template are ignored
+	FileNameUsePtt               bool   // legacy: season, episode and resolution come from parse-torrent-title, not from the rules
 }
 
 func (v *BTSets) String() string {
@@ -167,6 +245,9 @@ func SetBTSets(sets *BTSets) {
 		sets.PreloadCache = 100
 	}
 
+	sets.FileNameRules = sanitizeFileNameRules(sets.FileNameRules)
+	sets.FileNameTemplate = sanitizeFileNameTemplate(sets.FileNameTemplate)
+
 	if sets.TorrentsSavePath == "" {
 		sets.UseDisk = false
 	} else if sets.UseDisk {
@@ -214,6 +295,12 @@ func SetDefaultConfig() {
 	sets.LPDIPv6 = false
 	sets.EnableBonjour = true
 	sets.MergeAllM3U = false
+	sets.FileNameBuiltinRulesDisabled = false
+	sets.FileNameCustomRulesDisabled = false
+	sets.FileNameRules = []FileNameRule{}
+	sets.FileNameTemplate = ""
+	sets.FileNameAsTitle = false
+	sets.FileNameUsePtt = false
 	// Set default TMDB settings
 	sets.TMDBSettings = TMDBConfig{
 		APIKey:     "",
@@ -240,6 +327,8 @@ func loadBTSets() {
 			if BTsets.ReaderReadAHead < 5 {
 				BTsets.ReaderReadAHead = 5
 			}
+			BTsets.FileNameRules = sanitizeFileNameRules(BTsets.FileNameRules)
+			BTsets.FileNameTemplate = sanitizeFileNameTemplate(BTsets.FileNameTemplate)
 			// Set default TMDB settings if missing (for existing configs)
 			if BTsets.TMDBSettings.APIURL == "" {
 				BTsets.TMDBSettings = TMDBConfig{
