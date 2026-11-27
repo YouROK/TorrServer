@@ -1,5 +1,5 @@
 ### FRONT BUILD START ###
-FROM --platform=$BUILDPLATFORM node:16-alpine AS front
+FROM --platform=$BUILDPLATFORM node:20-alpine AS front
 
 WORKDIR /app
 
@@ -10,6 +10,7 @@ ARG PUBLIC_URL=''
 ENV REACT_APP_SERVER_HOST=$REACT_APP_SERVER_HOST
 ENV REACT_APP_TMDB_API_KEY=$REACT_APP_TMDB_API_KEY
 ENV PUBLIC_URL=$PUBLIC_URL
+ENV NODE_OPTIONS=--openssl-legacy-provider
 
 COPY ./web/package.json ./web/yarn.lock ./
 RUN --mount=type=cache,target=/usr/local/share/.cache/yarn \
