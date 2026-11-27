@@ -92,7 +92,7 @@ func Start() error {
 	corsCfg.AllowPrivateNetwork = true
 	corsCfg.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "HEAD", "OPTIONS", "DELETE"}
 	corsCfg.AllowHeaders = []string{
-		"Origin", "Content-Length", "Content-Type", "X-Requested-With", "Accept", "Authorization",
+		"Origin", "Content-Length", "Content-Type", "X-Requested-With", "Accept", "Authorization", "Range",
 		"Mcp-Protocol-Version", "Mcp-Session-Id", "Last-Event-ID", "Mcp-Method", "Mcp-Name",
 	}
 
